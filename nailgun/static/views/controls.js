@@ -96,9 +96,7 @@ export var Input = React.createClass({
       input = this.getInputDOMNode();
 
     if (input.files.length) {
-      reader.onload = (function() {
-        return this.saveFile(input.value.replace(/^.*[\\\/]/g, ''), reader.result);
-      }).bind(this);
+      reader.onload = () => this.saveFile(input.value.replace(/^.*[\\\/]/g, ''), reader.result);
       reader.readAsBinaryString(input.files[0]);
     }
   },
@@ -233,7 +231,7 @@ export var RadioGroup = React.createClass({
             }
           </h4>
         }
-        {_.map(this.props.values, function(value) {
+        {_.map(this.props.values, (value) => {
           return <Input
             {...this.props}
             {...value}
@@ -241,7 +239,7 @@ export var RadioGroup = React.createClass({
             key={value.data}
             value={value.data}
           />;
-        }, this)}
+        })}
       </div>
     );
   }

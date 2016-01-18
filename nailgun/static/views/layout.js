@@ -61,7 +61,7 @@ export var Navbar = React.createClass({
     return this.props.notifications.fetch({limit: this.props.notificationsDisplayCount});
   },
   componentDidMount() {
-    this.props.user.on('change:authenticated', function(model, value) {
+    this.props.user.on('change:authenticated', (model, value) => {
       if (value) {
         this.startPolling();
       } else {
@@ -69,7 +69,7 @@ export var Navbar = React.createClass({
         this.props.statistics.clear();
         this.props.notifications.reset();
       }
-    }, this);
+    });
   },
   getDefaultProps() {
     return {
@@ -102,7 +102,7 @@ export var Navbar = React.createClass({
             </div>
             <div className='col-xs-6'>
               <ul className='nav navbar-nav pull-left'>
-                {_.map(this.props.elements, function(element) {
+                {_.map(this.props.elements, (element) => {
                   return (
                     <li className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} key={element.label}>
                       <a href={element.url}>
@@ -110,7 +110,7 @@ export var Navbar = React.createClass({
                       </a>
                     </li>
                   );
-                }, this)}
+                })}
               </ul>
             </div>
             <div className='col-xs-4'>
@@ -205,7 +205,7 @@ var LanguagePopover = React.createClass({
     return (
       <Popover {...this.props} className='language-popover'>
         <ul className='nav nav-pills nav-stacked'>
-          {_.map(i18n.getAvailableLocales(), function(locale) {
+          {_.map(i18n.getAvailableLocales(), (locale) => {
             return (
               <li key={locale} className={utils.classNames({active: locale == currentLocale})}>
                 <a onClick={_.partial(this.changeLocale, locale)}>
@@ -213,7 +213,7 @@ var LanguagePopover = React.createClass({
                 </a>
               </li>
             );
-          }, this)}
+          })}
         </ul>
       </Popover>
     );

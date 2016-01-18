@@ -48,7 +48,7 @@ NotificationsPage = React.createClass({
           <h1 className='title'>{i18n('notifications_page.title')}</h1>
         </div>
         <div className='content-box'>
-          {_.map(notificationGroups, function(notifications, date) {
+          {_.map(notificationGroups, (notifications, date) => {
             return (
               <div className='row notification-group' key={date}>
                 <div className='title col-xs-12'>
@@ -62,7 +62,7 @@ NotificationsPage = React.createClass({
                 })}
               </div>
             );
-          }, this)}
+          })}
         </div>
       </div>
     );
@@ -78,9 +78,7 @@ Notification = React.createClass({
   },
   markAsRead() {
     var notification = this.props.notification;
-    notification.toJSON = function() {
-      return notification.pick('id', 'status');
-    };
+    notification.toJSON = () => notification.pick('id', 'status');
     notification.save({status: 'read'});
   },
   onNotificationClick() {

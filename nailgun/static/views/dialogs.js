@@ -829,7 +829,7 @@ export var ShowNodeInfoDialog = React.createClass({
           </div>
         </div>
         <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>
-          {_.map(groups, function(group, groupIndex) {
+          {_.map(groups, (group, groupIndex) => {
             var groupEntries = meta[group],
               subEntries = [];
             if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name');
@@ -848,33 +848,33 @@ export var ShowNodeInfoDialog = React.createClass({
                   <div className='panel-body enable-selection'>
                     {_.isArray(groupEntries) &&
                       <div>
-                        {_.map(groupEntries, function(entry, entryIndex) {
+                        {_.map(groupEntries, (entry, entryIndex) => {
                           return (
                             <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
-                              {_.map(utils.sortEntryProperties(entry, sortOrder[group]), function(propertyName) {
+                              {_.map(utils.sortEntryProperties(entry, sortOrder[group]), (propertyName) => {
                                 if (!_.isObject(entry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
-                              }, this)}
+                              })}
                             </div>
                           );
-                        }, this)}
+                        })}
                       </div>
                     }
                     {_.isPlainObject(groupEntries) &&
                       <div>
-                        {_.map(groupEntries, function(propertyValue, propertyName) {
+                        {_.map(groupEntries, (propertyValue, propertyName) => {
                           if (!_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
-                        }, this)}
+                        })}
                         {!_.isEmpty(subEntries) &&
                           <div>
-                            {_.map(subEntries, function(subentry, subentrysIndex) {
+                            {_.map(subEntries, (subentry, subentrysIndex) => {
                               return (
                                 <div className='nested-object' key={'subentries_' + groupIndex + subentrysIndex}>
-                                  {_.map(utils.sortEntryProperties(subentry), function(propertyName) {
+                                  {_.map(utils.sortEntryProperties(subentry), (propertyName) => {
                                     return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
-                                  }, this)}
+                                  })}
                                 </div>
                               );
-                            }, this)}
+                            })}
                           </div>
                         }
                       </div>
@@ -905,7 +905,7 @@ export var ShowNodeInfoDialog = React.createClass({
                 </div>
               </div>
             );
-          }, this)}
+          })}
         </div>
       </div>
     );
@@ -1119,7 +1119,7 @@ export var ChangePasswordDialog = React.createClass({
       translationKeys = ['current_password', 'new_password', 'confirm_new_password'];
     return (
       <div className='forms-box'>
-        {_.map(fields, function(name, index) {
+        {_.map(fields, (name, index) => {
           return <Input
             key={name}
             name={name}
@@ -1134,7 +1134,7 @@ export var ChangePasswordDialog = React.createClass({
             defaultValue={this.state[name]}
             error={this.getError(name)}
           />;
-        }, this)}
+        })}
       </div>
     );
   },
@@ -1261,13 +1261,13 @@ export var RegistrationDialog = React.createClass({
       .done((response) => {
         var currentAttributes = _.cloneDeep(this.props.settings.attributes);
 
-        var collector = function(path) {
-          return function(name) {
+        var collector = (path) => {
+          return (name) => {
             this.props.settings.set(this.props.settings.makePath(path, name, 'value'), response[name]);
           };
         };
-        _.each(['company', 'name', 'email'], collector('statistics'), this);
-        _.each(['email', 'password'], collector('tracking'), this);
+        _.each(['company', 'name', 'email'], collector('statistics'));
+        _.each(['email', 'password'], collector('tracking'));
 
         this.props.saveSettings(currentAttributes)
           .done(() => {
@@ -1311,7 +1311,7 @@ export var RegistrationDialog = React.createClass({
           </div>
         }
         <form className='form-inline row'>
-          {_.map(sortedFields, function(inputName) {
+          {_.map(sortedFields, (inputName) => {
             var input = fieldsList[inputName],
               path = 'credentials.' + inputName,
               inputError = (registrationForm.validationError || {})[path],
@@ -1334,7 +1334,7 @@ export var RegistrationDialog = React.createClass({
               description={inputName != 'agree' && input.description}
               maxLength='50'
             />;
-          }, this)}
+          })}
         </form>
       </div>
     );

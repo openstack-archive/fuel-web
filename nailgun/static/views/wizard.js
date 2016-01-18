@@ -731,7 +731,7 @@ var CreateClusterWizard = React.createClass({
           <div className='wizard-steps-nav col-xs-3'>
             <ul className='wizard-step-nav-item nav nav-pills nav-stacked'>
               {
-                this.state.panes.map(function(pane, index) {
+                this.state.panes.map((pane, index) => {
                   var classes = utils.classNames('wizard-step', {
                     disabled: index > this.state.maxAvailablePaneIndex,
                     available: index <= this.state.maxAvailablePaneIndex && index != activeIndex,
@@ -743,7 +743,7 @@ var CreateClusterWizard = React.createClass({
                       <a onClick={_.partial(this.goToPane, index)}>{pane.title}</a>
                     </li>
                   );
-                }, this)
+                })
               }
             </ul>
           </div>

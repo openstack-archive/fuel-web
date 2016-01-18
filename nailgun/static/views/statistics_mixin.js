@@ -56,27 +56,27 @@ export default {
   prepareStatisticsToSave() {
     var currentAttributes = _.cloneDeep(this.props.settings.attributes);
     // We're saving only two checkboxes
-    _.each(this.props.statsCheckboxes, function(field) {
+    _.each(this.props.statsCheckboxes, (field) => {
       var path = this.props.settings.makePath('statistics', field, 'value');
       this.props.settings.set(path, this.props.statistics.get(path));
-    }, this);
+    });
     return this.saveSettings(currentAttributes);
   },
   prepareTrackingToSave(response) {
     var currentAttributes = _.cloneDeep(this.props.settings.attributes);
     // Saving user contact data to Statistics section
-    _.each(response, function(value, name) {
+    _.each(response, (value, name) => {
       if (name != 'password') {
         var path = this.props.settings.makePath('statistics', name, 'value');
         this.props.settings.set(path, value);
         this.props.tracking.set(path, value);
       }
-    }, this);
+    });
     // Saving email and password to Tracking section
-    _.each(this.props.tracking.get('tracking'), function(data, inputName) {
+    _.each(this.props.tracking.get('tracking'), (data, inputName) => {
       var path = this.props.settings.makePath('tracking', inputName, 'value');
       this.props.settings.set(path, this.props.tracking.get(path));
-    }, this);
+    });
     this.saveSettings(currentAttributes).done(this.setConnected);
   },
   showResponseErrors(response) {
@@ -246,7 +246,7 @@ export default {
         }
         <div className='connection-form'>
           {showProgressBar && <ProgressBar />}
-          {_.map(sortedFields, function(inputName) {
+          {_.map(sortedFields, (inputName) => {
             return <Input
               ref={inputName}
               key={inputName}
@@ -256,7 +256,7 @@ export default {
               onChange={this.onTrackingSettingChange}
               error={(model.validationError || {})[model.makePath('tracking', inputName)]}
             />;
-          }, this)}
+          })}
           <div className='links-container'>
             <button className='btn btn-link create-account pull-left' onClick={this.showRegistrationDialog}>
               {i18n('welcome_page.register.create_account')}

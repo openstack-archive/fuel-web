@@ -200,7 +200,7 @@ var SettingsTab = React.createClass({
     // Prepare list of settings organized by groups
     var groupedSettings = {};
     _.each(settingsGroupList, (group) => groupedSettings[group] = {});
-    _.each(settings.attributes, function(section, sectionName) {
+    _.each(settings.attributes, (section, sectionName) => {
       var isHidden = this.checkRestrictions('hide', section.metadata).result;
       if (!isHidden) {
         var group = section.metadata.group,
@@ -223,26 +223,26 @@ var SettingsTab = React.createClass({
             groupedSettings.other[sectionName] = {settings: [], invalid: hasErrors};
           }
 
-          _.each(settingGroups, function(settingGroup) {
+          _.each(settingGroups, (settingGroup) => {
             var calculatedGroup = settings.sanitizeGroup(settingGroup),
-              pickedSettings = _.compact(_.map(section, function(setting, settingName) {
+              pickedSettings = _.compact(_.map(section, (setting, settingName) => {
                 if (
                   settingName != 'metadata' &&
                   setting.type != 'hidden' &&
                   settings.sanitizeGroup(setting.group) == calculatedGroup &&
                   !this.checkRestrictions('hide', setting).result
                 ) return settingName;
-              }, this)),
+              })),
               hasErrors = _.any(pickedSettings, (settingName) => {
                 return (settings.validationError || {})[settings.makePath(sectionName, settingName)];
               });
             if (!_.isEmpty(pickedSettings)) {
               groupedSettings[calculatedGroup][sectionName] = {settings: pickedSettings, invalid: hasErrors};
             }
-          }, this);
+          });
         }
       }
-    }, this);
+    });
     groupedSettings = _.omit(groupedSettings, _.isEmpty);
 
     return (
@@ -258,21 +258,21 @@ var SettingsTab = React.createClass({
           activeSettingsSectionName={this.props.activeSettingsSectionName}
           checkRestrictions={this.checkRestrictions}
         />
-        {_.map(groupedSettings, function(selectedGroup, groupName) {
+        {_.map(groupedSettings, (selectedGroup, groupName) => {
           if (groupName != this.props.activeSettingsSectionName) return null;
 
           var sortedSections = _.sortBy(_.keys(selectedGroup), (name) => settings.get(name + '.metadata.weight'));
           return (
             <div className={'col-xs-10 forms-box ' + groupName} key={groupName}>
-              {_.map(sortedSections, function(sectionName) {
+              {_.map(sortedSections, (sectionName) => {
                 var settingsToDisplay = selectedGroup[sectionName].settings ||
-                  _.compact(_.map(settings.get(sectionName), function(setting, settingName) {
+                  _.compact(_.map(settings.get(sectionName), (setting, settingName) => {
                     if (
                       settingName != 'metadata' &&
                       setting.type != 'hidden' &&
                       !this.checkRestrictions('hide', setting).result
                     ) return settingName;
-                  }, this));
+                  }));
                 return <SettingSection
                   {... _.pick(this.state, 'initialAttributes', 'settingsForChecks', 'configModels')}
                   key={sectionName}
@@ -288,10 +288,10 @@ var SettingsTab = React.createClass({
                   lockedCluster={lockedCluster}
                   checkRestrictions={this.checkRestrictions}
                 />;
-              }, this)}
+              })}
             </div>
           );
-        }, this)}
+        })}
         <div className='col-xs-12 page-buttons content-elements'>
           <div className='well clearfix'>
             <div className='btn-group pull-right'>
@@ -318,7 +318,7 @@ var SettingSubtabs = React.createClass({
       <div className='col-xs-2'>
         <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
         {
-          this.props.settingsGroupList.map(function(groupName) {
+          this.props.settingsGroupList.map((groupName) => {
             if (!this.props.groupedSettings[groupName]) return null;
 
             var hasErrors = _.any(_.pluck(this.props.groupedSettings[groupName], 'invalid'));
@@ -335,7 +335,7 @@ var SettingSubtabs = React.createClass({
                 </a>
               </li>
             );
-          }, this)
+          })
         }
         </CSSTransitionGroup>
       </div>

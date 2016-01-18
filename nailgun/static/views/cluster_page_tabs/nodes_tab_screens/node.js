@@ -221,7 +221,7 @@ var Node = React.createClass({
   renderRoleList(roles) {
     return (
       <ul>
-        {_.map(roles, function(role) {
+        {_.map(roles, (role) => {
           return (
             <li
               key={this.props.node.id + role}
@@ -230,7 +230,7 @@ var Node = React.createClass({
               {role}
             </li>
           );
-        }, this)}
+        })}
       </ul>
     );
   },

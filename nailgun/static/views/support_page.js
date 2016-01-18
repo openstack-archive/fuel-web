@@ -123,9 +123,9 @@ var RegistrationInfo = React.createClass({
           text={i18n('support_page.product_registered_content')}
         >
           <div className='registeredData enable-selection'>
-            {_.map(['name', 'email', 'company'], function(value) {
+            {_.map(['name', 'email', 'company'], (value) => {
               return <div key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {this.props.tracking.get('statistics')[value].value}</div>;
-            }, this)}
+            })}
             <div><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.tracking.get('master_node_uid')}</div>
           </div>
           <p>

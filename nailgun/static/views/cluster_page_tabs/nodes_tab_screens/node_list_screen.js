@@ -222,19 +222,19 @@ NodeListScreen = React.createClass({
       clusterNodes = this.props.cluster.get('nodes').filter((node) => !_.contains(this.props.selectedNodeIds, node.id)),
       nodesForLimitCheck = new models.Nodes(_.union(selectedNodes, clusterNodes));
 
-    cluster.get('roles').each(function(role) {
+    cluster.get('roles').each((role) => {
       if ((role.get('limits') || {}).max) {
         var roleName = role.get('name'),
           isRoleAlreadyAssigned = nodesForLimitCheck.any((node) => node.hasRole(roleName));
         processedRoleLimits[roleName] = role.checkLimits(this.state.configModels, nodesForLimitCheck, !isRoleAlreadyAssigned, ['max']);
       }
-    }, this);
+    });
 
-    _.each(processedRoleLimits, function(roleLimit, roleName) {
+    _.each(processedRoleLimits, (roleLimit, roleName) => {
       if (_.contains(this.state.selectedRoles, roleName)) {
         maxNumberOfNodes.push(roleLimit.limits.max);
       }
-    }, this);
+    });
     return {
       // need to cache roles with limits in order to avoid calculating this twice on the RolePanel
       processedRoleLimits: processedRoleLimits,
@@ -249,9 +249,9 @@ NodeListScreen = React.createClass({
     if (!options.assign) node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
   },
   hasChanges() {
-    return this.props.mode != 'list' && this.props.nodes.any(function(node) {
+    return this.props.mode != 'list' && this.props.nodes.any((node) => {
       return !_.isEqual(node.get('pending_roles'), this.initialRoles[node.id]);
-    }, this);
+    });
   },
   changeSearch(value) {
     this.updateSearch(_.trim(value));
@@ -405,9 +405,9 @@ NodeListScreen = React.createClass({
     }
   },
   revertChanges() {
-    this.props.nodes.each(function(node) {
+    this.props.nodes.each((node) => {
       node.set({pending_roles: this.initialRoles[node.id]}, {silent: true});
-    }, this);
+    });
   },
   toggleLabelsPanel(value) {
     this.setState({
@@ -424,13 +424,11 @@ NodeListScreen = React.createClass({
       processedRoleData = cluster ? this.processRoleLimits() : {};
 
     // labels to manage in labels panel
-    var selectedNodes = new models.Nodes(this.props.nodes.filter(function(node) {
-        return this.props.selectedNodeIds[node.id];
-      }, this)),
+    var selectedNodes = new models.Nodes(this.props.nodes.filter((node) => this.props.selectedNodeIds[node.id])),
       selectedNodeLabels = _.chain(selectedNodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
 
     // filter nodes
-    var filteredNodes = nodes.filter(function(node) {
+    var filteredNodes = nodes.filter((node) => {
       // search field
       if (this.state.search) {
         var search = this.state.search.toLowerCase();
@@ -468,8 +466,8 @@ NodeListScreen = React.createClass({
             break;
         }
         return result;
-      }, this);
-    }, this);
+      });
+    });
 
     var screenNodesLabels = this.getNodeLabels();
     return (
@@ -561,9 +559,9 @@ MultiSelectControl = React.createClass({
       label = this.props.label + ': ' + (valuesAmount > 3 ?
           i18n('cluster_page.nodes_tab.node_management_panel.selected_options', {label: this.props.label, count: valuesAmount})
         :
-          _.map(this.props.values, function(itemName) {
+          _.map(this.props.values, (itemName) => {
             return _.find(this.props.options, {name: itemName}).label;
-          }, this).join(', '));
+          }).join(', '));
     }
 
     var attributes, labels;
@@ -611,29 +609,29 @@ MultiSelectControl = React.createClass({
                   />
                 </div>
                 <div key='divider' className='divider' />
-                {_.map(this.props.options, function(option) {
+                {_.map(this.props.options, (option) => {
                   return <Input {...optionProps(option)}
                     label={option.label}
                     checked={_.contains(this.props.values, option.name)}
                     onChange={this.onChange}
                   />;
-                }, this)}
+                })}
               </div>
             :
               <div>
-                {_.map(attributes, function(option) {
+                {_.map(attributes, (option) => {
                   return <Input {...optionProps(option)}
                     checked={_.contains(this.props.values, option.name)}
                     onChange={_.partialRight(this.onChange, false)}
                   />;
-                }, this)}
+                })}
                 {!!attributes.length && !!labels.length && <div key='divider' className='divider' />}
-                {_.map(labels, function(option) {
+                {_.map(labels, (option) => {
                   return <Input {...optionProps(option)}
                     key={'label-' + option.name}
                     onChange={_.partialRight(this.onChange, true)}
                   />;
-                }, this)}
+                })}
               </div>
             }
           </Popover>
@@ -758,7 +756,7 @@ ManagementPanel = React.createClass({
     if (!this.isSavingPossible()) return $.Deferred().reject();
 
     this.setState({actionInProgress: true});
-    var nodes = new models.Nodes(this.props.nodes.map(function(node) {
+    var nodes = new models.Nodes(this.props.nodes.map((node) => {
       var data = {id: node.id, pending_roles: node.get('pending_roles')};
       if (node.get('pending_roles').length) {
         if (this.props.mode == 'add') return _.extend(data, {cluster_id: this.props.cluster.id, pending_addition: true});
@@ -766,7 +764,7 @@ ManagementPanel = React.createClass({
         return _.extend(data, {cluster_id: null, pending_addition: false});
       }
       return data;
-    }, this));
+    }));
     return Backbone.sync('update', nodes)
       .done(() => {
         $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(() => {
@@ -945,7 +943,7 @@ ManagementPanel = React.createClass({
           <div className='node-list-management-buttons col-xs-5'>
             <div className='view-mode-switcher'>
               <div className='btn-group' data-toggle='buttons'>
-                {_.map(models.Nodes.prototype.viewModes, function(mode) {
+                {_.map(models.Nodes.prototype.viewModes, (mode) => {
                   return (
                     <Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                       <label
@@ -963,7 +961,7 @@ ManagementPanel = React.createClass({
                       </label>
                     </Tooltip>
                   );
-                }, this)}
+                })}
               </div>
             </div>
             {this.props.mode != 'edit' && [
@@ -1119,7 +1117,7 @@ ManagementPanel = React.createClass({
                       </button>
                     }
                   </div>
-                  {this.props.activeSorters.map(function(sorter) {
+                  {this.props.activeSorters.map((sorter) => {
                     var asc = sorter.order == 'asc';
                     return (
                       <div
@@ -1142,7 +1140,7 @@ ManagementPanel = React.createClass({
                         {this.props.activeSorters.length > 1 && this.renderDeleteSorterButton(sorter)}
                       </div>
                     );
-                  }, this)}
+                  })}
                   <MultiSelectControl
                     name='sorter-more'
                     label={i18n(ns + 'more')}
@@ -1166,7 +1164,7 @@ ManagementPanel = React.createClass({
                       </button>
                     }
                   </div>
-                  {_.map(this.props.activeFilters, function(filter) {
+                  {_.map(this.props.activeFilters, (filter) => {
                     var props = {
                       key: (filter.isLabel ? 'label-' : '') + filter.name,
                       ref: filter.name,
@@ -1188,7 +1186,7 @@ ManagementPanel = React.createClass({
                       return <NumberRangeControl {...props} min={filter.limits[0]} max={filter.limits[1]} />;
                     }
                     return <MultiSelectControl {...props} options={this.props.getFilterOptions(filter)} />;
-                  }, this)}
+                  })}
                   <MultiSelectControl
                     name='filter-more'
                     label={i18n(ns + 'more')}
@@ -1241,7 +1239,7 @@ ManagementPanel = React.createClass({
                     <div className='active-sorters row' onClick={this.toggleSorters}>
                       <strong className='col-xs-1'>{i18n(ns + 'sort_by')}</strong>
                       <div className='col-xs-11'>
-                        {this.props.activeSorters.map(function(sorter, index) {
+                        {this.props.activeSorters.map((sorter, index) => {
                           var asc = sorter.order == 'asc';
                           return (
                             <span key={sorter.name + (sorter.isLabel && '-label')}>
@@ -1256,7 +1254,7 @@ ManagementPanel = React.createClass({
                               {!!this.props.activeSorters[index + 1] && ' + '}
                             </span>
                           );
-                        }, this)}
+                        })}
                       </div>
                       {canResetSorters &&
                         <button className='btn btn-link btn-reset-sorting' onClick={this.resetSorters}>
@@ -1278,7 +1276,7 @@ ManagementPanel = React.createClass({
 NodeLabelsPanel = React.createClass({
   mixins: [unsavedChangesMixin],
   getInitialState() {
-    var labels = _.map(this.props.labels, function(label) {
+    var labels = _.map(this.props.labels, (label) => {
       var labelValues = this.props.nodes.getLabelValues(label),
         definedLabelValues = _.reject(labelValues, _.isUndefined);
       return {
@@ -1288,7 +1286,7 @@ NodeLabelsPanel = React.createClass({
         indeterminate: labelValues.length != definedLabelValues.length,
         error: null
       };
-    }, this);
+    });
     return {
       labels: _.cloneDeep(labels),
       initialLabels: _.cloneDeep(labels),
@@ -1299,9 +1297,9 @@ NodeLabelsPanel = React.createClass({
     return !_.isEqual(this.state.labels, this.state.initialLabels);
   },
   componentDidMount() {
-    _.each(this.state.labels, function(labelData) {
+    _.each(this.state.labels, (labelData) => {
       this.refs[labelData.key].getInputDOMNode().indeterminate = labelData.indeterminate;
-    }, this);
+    });
   },
   addLabel() {
     var labels = this.state.labels;
@@ -1367,10 +1365,10 @@ NodeLabelsPanel = React.createClass({
     this.setState({actionInProgress: true});
 
     var nodes = new models.Nodes(
-      this.props.nodes.map(function(node) {
+      this.props.nodes.map((node) => {
         var nodeLabels = node.get('labels');
 
-        _.each(this.state.labels, function(labelData, index) {
+        _.each(this.state.labels, (labelData, index) => {
           var oldLabel = this.props.labels[index];
 
           // delete label
@@ -1394,10 +1392,10 @@ NodeLabelsPanel = React.createClass({
           if (!_.isUndefined(nodeLabels[label]) && labelData.values.length == 1) {
             nodeLabels[label] = labelData.values[0];
           }
-        }, this);
+        });
 
         return {id: node.id, labels: nodeLabels};
-      }, this)
+      })
     );
 
     return Backbone.sync('update', nodes)
@@ -1433,7 +1431,7 @@ NodeLabelsPanel = React.createClass({
               {i18n(ns + 'bulk_label_action_end')}
             </p>
 
-            {_.map(this.state.labels, function(labelData, index) {
+            {_.map(this.state.labels, (labelData, index) => {
               var labelValueProps = labelData.values.length > 1 ? {
                 value: '',
                 wrapperClassName: 'has-warning',
@@ -1514,14 +1512,14 @@ RolePanel = React.createClass({
     this.assignRoles();
   },
   updateIndeterminateRolesState() {
-    _.each(this.refs, function(roleView, role) {
+    _.each(this.refs, (roleView, role) => {
       roleView.getInputDOMNode().indeterminate = _.contains(this.props.indeterminateRoles, role);
-    }, this);
+    });
   },
   assignRoles() {
     var roles = this.props.cluster.get('roles');
-    this.props.nodes.each(function(node) {
-      if (this.props.selectedNodeIds[node.id]) roles.each(function(role) {
+    this.props.nodes.each((node) => {
+      if (this.props.selectedNodeIds[node.id]) roles.each((role) => {
         var roleName = role.get('name');
         if (!node.hasRole(roleName, true)) {
           var nodeRoles = node.get('pending_roles');
@@ -1532,8 +1530,8 @@ RolePanel = React.createClass({
           }
           node.set({pending_roles: nodeRoles}, {assign: true});
         }
-      }, this);
-    }, this);
+      });
+    });
   },
   processRestrictions(role, models) {
     var name = role.get('name'),
@@ -1561,7 +1559,7 @@ RolePanel = React.createClass({
     return (
       <div className='well role-panel'>
         <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
-        {this.props.cluster.get('roles').map(function(role) {
+        {this.props.cluster.get('roles').map((role) => {
           if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
             var name = role.get('name'),
               processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.props.configModels) : {};
@@ -1581,7 +1579,7 @@ RolePanel = React.createClass({
               />
             );
           }
-        }, this)}
+        })}
       </div>
     );
   }
@@ -1640,7 +1638,7 @@ NodeList = React.createClass({
       };
 
     var groupingMethod = (node) => {
-      return _.compact(_.map(this.props.activeSorters, function(sorter) {
+      return _.compact(_.map(this.props.activeSorters, (sorter) => {
         if (_.contains(uniqValueSorters, sorter.name)) return;
 
         if (sorter.isLabel) return getLabelValue(node, sorter.name);
@@ -1686,7 +1684,7 @@ NodeList = React.createClass({
             result = i18n('node_details.' + sorter.name, {count: node.resource(sorter.name)});
         }
         return result;
-      }, this)).join('; ');
+      })).join('; ');
     };
     var groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
 
@@ -1772,9 +1770,9 @@ NodeList = React.createClass({
   },
   render() {
     var groups = this.groupNodes(),
-      rolesWithLimitReached = _.keys(_.omit(this.props.processedRoleLimits, function(roleLimit, roleName) {
+      rolesWithLimitReached = _.keys(_.omit(this.props.processedRoleLimits, (roleLimit, roleName) => {
         return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
-      }, this));
+      }));
     return (
       <div className={utils.classNames({'node-list row': true, compact: this.props.viewMode == 'compact'})}>
         {groups.length > 1 &&
@@ -1783,14 +1781,14 @@ NodeList = React.createClass({
           </div>
         }
         <div className='col-xs-12 content-elements'>
-          {groups.map(function(group) {
+          {groups.map((group) => {
             return <NodeGroup {...this.props}
               key={group[0]}
               label={group[0]}
               nodes={group[1]}
               rolesWithLimitReached={rolesWithLimitReached}
             />;
-          }, this)}
+          })}
           {this.props.totalNodesLength ?
             (
               !this.props.nodes.length &&
@@ -1829,7 +1827,7 @@ NodeGroup = React.createClass({
           </div>
         </div>
         <div className='row'>
-          {this.props.nodes.map(function(node) {
+          {this.props.nodes.map((node) => {
             return <Node
               {... _.pick(this.props, 'mode', 'viewMode', 'nodeNetworkGroups')}
               key={node.id}
@@ -1840,7 +1838,7 @@ NodeGroup = React.createClass({
               locked={this.props.locked || _.contains(nodesWithRestrictionsIds, node.id)}
               onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}
             />;
-          }, this)}
+          })}
         </div>
       </div>
     );

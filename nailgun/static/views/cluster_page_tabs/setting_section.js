@@ -62,10 +62,10 @@ var SettingSection = React.createClass({
   },
   checkValues(values, path, currentValue, restriction) {
     var extraModels = {settings: this.props.settingsForChecks};
-    var result = _.all(values, function(value) {
+    var result = _.all(values, (value) => {
       this.props.settingsForChecks.set(path, value);
       return new Expression(restriction.condition, this.props.configModels, restriction).evaluate(extraModels);
-    }, this);
+    });
     this.props.settingsForChecks.set(path, currentValue);
     return result;
   },
@@ -78,7 +78,7 @@ var SettingSection = React.createClass({
       valuesToCheck = this.getValuesToCheck(setting, valueAttribute),
       pathToCheck = this.props.makePath(path, valueAttribute),
       roles = this.props.cluster.get('roles');
-    return _.compact(this.props.allocatedRoles.map(function(roleName) {
+    return _.compact(this.props.allocatedRoles.map((roleName) => {
       var role = roles.findWhere({name: roleName});
       if (_.any(role.get('restrictions'), (restriction) => {
         restriction = utils.expandRestriction(restriction);
@@ -86,7 +86,7 @@ var SettingSection = React.createClass({
           return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], restriction);
         }
       })) return role.get('label');
-    }, this));
+    }));
   },
   checkDependentSettings(sectionName, settingName) {
     var path = this.props.makePath(sectionName, settingName),
@@ -102,10 +102,10 @@ var SettingSection = React.createClass({
       }
     };
     // collect dependencies
-    _.each(this.props.settings.attributes, function(section, sectionName) {
+    _.each(this.props.settings.attributes, (section, sectionName) => {
       // don't take into account hidden dependent settings
       if (this.props.checkRestrictions('hide', section.metadata).result) return;
-      _.each(section, function(setting, settingName) {
+      _.each(section, (setting, settingName) => {
         // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
         if (!this.areCalculationsPossible(setting) ||
           this.props.makePath(sectionName, settingName) == path ||
@@ -117,8 +117,8 @@ var SettingSection = React.createClass({
           var activeOption = _.find(setting.values, {data: setting.value});
           if (activeOption) addDependentRestrictions(activeOption, setting.label);
         }
-      }, this);
-    }, this);
+      });
+    });
     // evaluate dependencies
     if (!_.isEmpty(dependentRestrictions)) {
       var valueAttribute = this.props.getValueAttribute(settingName),
@@ -214,7 +214,7 @@ var SettingSection = React.createClass({
               />
             </div>
           }
-          {_.map(sortedSettings, function(settingName) {
+          {_.map(sortedSettings, (settingName) => {
             var setting = section[settingName],
               settingKey = settingName + (isPlugin ? '-' + metadata.chosen_id : ''),
               path = this.props.makePath(sectionName, settingName),
@@ -241,7 +241,7 @@ var SettingSection = React.createClass({
 
             if (setting.values) {
               var values = _.chain(_.cloneDeep(setting.values))
-                .map(function(value) {
+                .map((value) => {
                   var processedValueRestrictions = this.props.checkRestrictions('disable', value);
                   if (!this.props.checkRestrictions('hide', value).result) {
                     value.disabled = isSettingDisabled || processedValueRestrictions.result;
@@ -249,7 +249,7 @@ var SettingSection = React.createClass({
                     value.tooltipText = showSettingWarning && processedValueRestrictions.message;
                     return value;
                   }
-                }, this)
+                })
                 .compact()
                 .value();
               if (setting.type == 'radio') return <RadioGroup {...this.props}
@@ -279,7 +279,7 @@ var SettingSection = React.createClass({
               tooltipText={showSettingWarning && settingWarning}
               onChange={this.props.onChange}
             />;
-          }, this)}
+          })}
         </div>
       </div>
     );

@@ -368,18 +368,14 @@ var LogsTable = React.createClass({
     var tabRows = [],
       logsEntries = this.props.logsEntries;
     if (logsEntries && logsEntries.length) {
-      tabRows = _.map(
-        logsEntries,
-        function(entry, index) {
-          var key = logsEntries.length - index;
-          return <tr key={key} className={this.getLevelClass(entry[1])}>
-            <td>{entry[0]}</td>
-            <td>{entry[1]}</td>
-            <td>{entry[2]}</td>
-          </tr>;
-        },
-        this
-      );
+      tabRows = _.map(logsEntries, (entry, index) => {
+        var key = logsEntries.length - index;
+        return <tr key={key} className={this.getLevelClass(entry[1])}>
+          <td>{entry[0]}</td>
+          <td>{entry[1]}</td>
+          <td>{entry[2]}</td>
+        </tr>;
+      });
     }
     return logsEntries.length ?
       <table className='table log-entries'>
@@ -400,12 +396,9 @@ var LogsTable = React.createClass({
                 <div>
                   <span>{i18n('cluster_page.logs_tab.bottom_text')}</span>:
                   {
-                    [100, 500, 1000, 5000].map(
-                      function(count) {
-                        return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count} </button>;
-                      },
-                      this
-                    )
+                    [100, 500, 1000, 5000].map((count) => {
+                      return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count}</button>;
+                    })
                   }
                 </div>
               </td>

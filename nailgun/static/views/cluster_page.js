@@ -178,12 +178,12 @@ var ClusterPage = React.createClass({
   },
   removeFinishedTasks(tasks) {
     var requests = [];
-    _.each(tasks, function(task) {
+    _.each(tasks, (task) => {
       if (task.match({active: false})) {
         this.props.cluster.get('tasks').remove(task);
         requests.push(task.destroy({silent: true}));
       }
-    }, this);
+    });
     return $.when(...requests);
   },
   shouldDataBeFetched() {
@@ -213,12 +213,12 @@ var ClusterPage = React.createClass({
     );
   },
   componentWillMount() {
-    this.props.cluster.on('change:release_id', function() {
+    this.props.cluster.on('change:release_id', () => {
       var release = new models.Release({id: this.props.cluster.get('release_id')});
       release.fetch().done(() => {
         this.props.cluster.set({release: release});
       });
-    }, this);
+    });
     this.updateLogSettings();
   },
   componentWillReceiveProps(newProps) {
@@ -288,7 +288,7 @@ var ClusterPage = React.createClass({
         </div>
         <div className='tabs-box'>
           <div className='tabs'>
-            {tabUrls.map(function(url) {
+            {tabUrls.map((url) => {
               return (
                 <a
                   key={url}
@@ -299,7 +299,7 @@ var ClusterPage = React.createClass({
                   <div className='label'>{i18n('cluster_page.tabs.' + url)}</div>
                 </a>
               );
-            }, this)}
+            })}
           </div>
         </div>
         <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>

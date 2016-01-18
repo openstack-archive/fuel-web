@@ -62,9 +62,7 @@ _.each(collectionMethods, (method) => {
       source = args[0];
 
     if (_.isPlainObject(source)) {
-      args[0] = function(model) {
-        return _.isMatch(model.attributes, source);
-      };
+      args[0] = (model) => _.isMatch(model.attributes, source);
     }
 
     args.unshift(this.models);
@@ -131,7 +129,7 @@ var restrictionMixin = models.restrictionMixin = {
      *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
     **/
 
-    var evaluateExpressionHelper = function(expression, models, options) {
+    var evaluateExpressionHelper = (expression, models, options) => {
       var ret;
 
       if (_.isUndefined(expression)) {
@@ -162,7 +160,7 @@ var restrictionMixin = models.restrictionMixin = {
       messages,
       label = this.get('label');
 
-    var checkOneLimit = function(obj, limitType) {
+    var checkOneLimit = (obj, limitType) => {
       var limitValue,
         comparator;
 
@@ -276,7 +274,7 @@ models.Roles = BaseCollection.extend(restrictionMixin).extend({
     this.on('update', this.processConflictsAndRestrictions, this);
   },
   processConflictsAndRestrictions() {
-    this.each(function(role) {
+    this.each((role) => {
       role.expandLimits(role.get('limits'));
 
       var roleConflicts = role.get('conflicts'),
@@ -292,11 +290,11 @@ models.Roles = BaseCollection.extend(restrictionMixin).extend({
           .value();
       }
 
-      _.each(role.conflicts, function(conflictRoleName) {
+      _.each(role.conflicts, (conflictRoleName) => {
         var conflictingRole = this.findWhere({name: conflictRoleName});
         if (conflictingRole) conflictingRole.conflicts = _.uniq(_.union(conflictingRole.conflicts || [], [roleName]));
-      }, this);
-    }, this);
+      });
+    });
   }
 });
 
@@ -585,11 +583,11 @@ models.Tasks = BaseCollection.extend({
   },
   comparator: 'id',
   filterTasks(filters) {
-    return _.flatten(_.map(this.model.prototype.extendGroups(filters), function(name) {
+    return _.flatten(_.map(this.model.prototype.extendGroups(filters), (name) => {
       return this.filter((task) => {
         return task.match(_.extend(_.omit(filters, 'group'), {name: name}));
       });
-    }, this));
+    }));
   },
   findTask(filters) {
     return this.filterTasks(filters)[0];
@@ -664,9 +662,9 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
     var errors = {},
       models = options ? options.models : {},
       checkRestrictions = (setting) => this.checkRestrictions(models, null, setting);
-    _.each(attrs, function(group, groupName) {
+    _.each(attrs, (group, groupName) => {
       if ((group.metadata || {}).enabled === false || checkRestrictions(group.metadata).result) return;
-      _.each(group, function(setting, settingName) {
+      _.each(group, (setting, settingName) => {
         if (checkRestrictions(setting).result) return;
         var path = this.makePath(groupName, settingName);
         // support of custom controls
@@ -679,8 +677,8 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
 
         if (!(setting.regex || {}).source) return;
         if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
-      }, this);
-    }, this);
+      });
+    });
     return _.isEmpty(errors) ? null : errors;
   },
   makePath(...args) {
@@ -690,7 +688,7 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
     return settingName == 'metadata' ? 'enabled' : 'value';
   },
   hasChanges(initialAttributes, models) {
-    return _.any(this.attributes, function(section, sectionName) {
+    return _.any(this.attributes, (section, sectionName) => {
       var metadata = section.metadata,
         result = false;
       if (metadata) {
@@ -705,23 +703,23 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
       return result || (metadata || {}).enabled !== false && _.any(section, (setting, settingName) => {
         if (this.checkRestrictions(models, null, setting).result) return false;
         return !_.isEqual(setting.value, (initialAttributes[sectionName][settingName] || {}).value);
-      }, this);
-    }, this);
+      });
+    });
   },
   sanitizeGroup(group) {
     return _.contains(this.groupList, group) ? group : 'other';
   },
   getGroupList() {
     var groups = [];
-    _.each(this.attributes, function(section) {
+    _.each(this.attributes, (section) => {
       if (section.metadata.group) {
         groups.push(this.sanitizeGroup(section.metadata.group));
       } else {
-        _.each(section, function(setting, settingName) {
+        _.each(section, (setting, settingName) => {
           if (settingName != 'metadata') groups.push(this.sanitizeGroup(setting.group));
-        }, this);
+        });
       }
-    }, this);
+    });
     return _.intersection(this.groupList, groups);
   }
 });
@@ -778,16 +776,16 @@ models.Volume = BaseModel.extend({
     var currentDisk = this.collection.disk,
       groupAllocatedSpace = 0;
     if (currentDisk && currentDisk.collection)
-      groupAllocatedSpace = currentDisk.collection.reduce(function(sum, disk) {
+      groupAllocatedSpace = currentDisk.collection.reduce((sum, disk) => {
         return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');
-      }, 0, this);
+      }, 0);
     return minimum - groupAllocatedSpace;
   },
   getMaxSize() {
     var volumes = this.collection.disk.get('volumes'),
-      diskAllocatedSpace = volumes.reduce(function(total, volume) {
+      diskAllocatedSpace = volumes.reduce((total, volume) => {
         return this.get('name') == volume.get('name') ? total : total + volume.get('size');
-      }, 0, this);
+      }, 0);
     return this.collection.disk.get('size') - diskAllocatedSpace;
   },
   validate(attrs, options) {
@@ -949,7 +947,7 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
       novaNetManager = networkParameters.get('net_manager'),
       floatingRangesErrors;
 
-    nodeNetworkGroups.map(function(nodeNetworkGroup) {
+    nodeNetworkGroups.map((nodeNetworkGroup) => {
       var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
       var nodeNetworkGroupErrors = {};
       // validate networks
@@ -1002,7 +1000,7 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
       if (!_.isEmpty(nodeNetworkGroupErrors)) {
         nodeNetworkGroupsErrors[nodeNetworkGroup.id] = nodeNetworkGroupErrors;
       }
-    }, this);
+    });
 
     if (!_.isEmpty(nodeNetworkGroupsErrors)) {
       errors.networks = nodeNetworkGroupsErrors;
@@ -1194,7 +1192,7 @@ models.User = BaseModel.extend({
   constructorName: 'User',
   locallyStoredAttributes: ['username', 'token'],
   initialize() {
-    _.each(this.locallyStoredAttributes, function(attribute) {
+    _.each(this.locallyStoredAttributes, (attribute) => {
       var locallyStoredValue = localStorage.getItem(attribute);
       if (locallyStoredValue) {
         this.set(attribute, locallyStoredValue);
@@ -1206,7 +1204,7 @@ models.User = BaseModel.extend({
           localStorage.setItem(attribute, value);
         }
       });
-    }, this);
+    });
   }
 });
 
@@ -1261,12 +1259,12 @@ models.WizardModel = Backbone.DeepModel.extend({
   },
   validate(attrs, options) {
     var errors = [];
-    _.each(options.config, function(attributeConfig, attribute) {
+    _.each(options.config, (attributeConfig, attribute) => {
       if (!(attributeConfig.regex && attributeConfig.regex.source)) return;
-      var hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
+      var hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), (restriction) => {
         // this probably will be changed when other controls need validation
         return !utils.evaluateExpression(restriction.condition, {default: this}).value;
-      }, this);
+      });
       if (hasNoSatisfiedRestrictions) {
         var regExp = new RegExp(attributeConfig.regex.source);
         if (!this.get(options.paneName + '.' + attribute).match(regExp)) {
@@ -1276,7 +1274,7 @@ models.WizardModel = Backbone.DeepModel.extend({
           });
         }
       }
-    }, this);
+    });
     return errors.length ? errors : null;
   },
   initialize(config) {
@@ -1289,13 +1287,13 @@ models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
   baseUrl: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
   validate(attrs) {
     var errors = {};
-    _.each(attrs, function(group, groupName) {
-      _.each(group, function(setting, settingName) {
+    _.each(attrs, (group, groupName) => {
+      _.each(group, (setting, settingName) => {
         var path = this.makePath(groupName, settingName);
         if (!setting.regex || !setting.regex.source) return;
         if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
-      }, this);
-    }, this);
+      });
+    });
     return _.isEmpty(errors) ? null : errors;
   },
   makePath(...args) {

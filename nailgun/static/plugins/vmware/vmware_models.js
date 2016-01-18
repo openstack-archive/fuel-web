@@ -20,7 +20,7 @@ import models from 'models';
 
 var VmWareModels = {};
 
-VmWareModels.isRegularField = function(field) {
+VmWareModels.isRegularField = (field) => {
   return _.contains(['text', 'password', 'checkbox', 'select'], field.type);
 };
 
@@ -44,7 +44,7 @@ var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixi
   },
   validate() {
     var result = {};
-    _.each(this.attributes.metadata, function(field) {
+    _.each(this.attributes.metadata, (field) => {
       if (!VmWareModels.isRegularField(field) || field.type == 'checkbox') {
         return;
       }
@@ -58,7 +58,7 @@ var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixi
           result[field.name] = field.regex.error;
         }
       }
-    }, this);
+    });
     return _.isEmpty(result) ? null : result;
   },
   testRestrictions() {
@@ -67,13 +67,13 @@ var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixi
       disable: {}
     };
     var metadata = this.get('metadata');
-    _.each(metadata, function(field) {
+    _.each(metadata, (field) => {
       var disableResult = this.checkRestrictions(restrictionModels, undefined, field);
       results.disable[field.name] = disableResult;
 
       var hideResult = this.checkRestrictions(restrictionModels, 'hide', field);
       results.hide[field.name] = hideResult;
-    }, this);
+    });
     return results;
   }
 });
@@ -265,7 +265,7 @@ VmWareModels.VCenter = BaseModel.extend({
     }
 
     var errors = {};
-    _.each(this.get('metadata'), function(field) {
+    _.each(this.get('metadata'), (field) => {
       var model = this.get(field.name);
       // do not validate disabled restrictions
       var isDisabled = this.checkRestrictions(restrictionModels, undefined, field);
@@ -276,18 +276,18 @@ VmWareModels.VCenter = BaseModel.extend({
       if (model.validationError) {
         errors[field.name] = model.validationError;
       }
-    }, this);
+    });
 
     // check unassigned nodes exist
     var assignedNodes = {};
     var availabilityZones = this.get('availability_zones') || [];
-    availabilityZones.each(function(zone) {
+    availabilityZones.each((zone) => {
       var novaComputes = zone.get('nova_computes') || [];
       novaComputes.each((compute) => {
         var targetNode = compute.get('target_node');
         assignedNodes[targetNode.current.id] = targetNode.current.label;
-      }, this);
-    }, this);
+      });
+    });
     var unassignedNodes = restrictionModels.cluster.get('nodes').filter((node) => {
       return _.contains(node.get('pending_roles'), 'compute-vmware') && !assignedNodes[node.get('hostname')];
     });

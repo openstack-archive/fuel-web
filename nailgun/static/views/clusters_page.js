@@ -126,11 +126,18 @@ Cluster = React.createClass({
     var cluster = this.props.cluster;
     var status = cluster.get('status');
     var nodes = cluster.get('nodes');
-    var deletionTask = cluster.task({name: 'cluster_deletion', active: true}) || cluster.task({name: 'cluster_deletion', status: 'ready'});
+    var isClusterDeleted = !!cluster.task({name: 'cluster_deletion', active: true}) || !!cluster.task({name: 'cluster_deletion', status: 'ready'});
     var deploymentTask = cluster.task({group: 'deployment', active: true});
+    var Tag = isClusterDeleted ? 'div' : 'a';
     return (
       <div className='col-xs-3'>
-        <a className={utils.classNames({clusterbox: true, 'cluster-disabled': !!deletionTask})} href={!deletionTask ? '#cluster/' + cluster.id : 'javascript:void 0'}>
+        <Tag
+          className={utils.classNames({
+            clusterbox: true,
+            'cluster-disabled': isClusterDeleted
+          })}
+          href={isClusterDeleted ? null : '#cluster/' + cluster.id}
+        >
           <div className='name'>{cluster.get('name')}</div>
           <div className='tech-info'>
             <div key='nodes-title' className='item'>{i18n('clusters_page.cluster_hardware_nodes')}</div>
@@ -164,7 +171,7 @@ Cluster = React.createClass({
               </span>
             }
           </div>
-        </a>
+        </Tag>
       </div>
     );
   }

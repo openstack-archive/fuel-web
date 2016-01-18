@@ -37,8 +37,9 @@ NotificationsPage = React.createClass({
     }
   },
   checkDateIsToday(date) {
-    var today = new Date();
-    return [today.getDate(), today.getMonth() + 1, today.getFullYear()].join('-') == date;
+    var today = new Date(),
+      month = ('00' + (today.getMonth() + 1)).substr(-2);
+    return [today.getDate(), month, today.getFullYear()].join('-') === date;
   },
   render() {
     var notificationGroups = this.props.notifications.groupBy('date');

@@ -17,13 +17,15 @@
 define([
   'intern/dojo/node!lodash',
   'tests/functional/pages/modal',
+  'tests/functional/pages/dashboard',
   'intern/dojo/node!leadfoot/helpers/pollUntil',
   'tests/functional/helpers'
-], function(_, ModalWindow, pollUntil) {
+], function(_, ModalWindow, DashboardPage, pollUntil) {
   'use strict';
   function ClusterPage(remote) {
     this.remote = remote;
     this.modal = new ModalWindow(remote);
+    this.dashboardPage = new DashboardPage(remote);
   }
 
   ClusterPage.prototype = {
@@ -145,6 +147,18 @@ define([
         })
         .waitForCssSelector('div.tab-content div.row.changes-locked', 2000)
           .then(_.constant(true), _.constant(false));
+    },
+    deployEnvironment: function() {
+      var self = this;
+      return this.remote
+        .then(function() {
+          return self.goToTab('Dashboard');
+        })
+        .then(function() {
+          return self.dashboardPage.startDeployment();
+        })
+        .waitForElementDeletion('.dashboard-block .progress', 60000)
+        .waitForCssSelector('.links-block', 5000);
     }
   };
   return ClusterPage;

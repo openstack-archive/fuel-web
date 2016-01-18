@@ -43,7 +43,8 @@ define([
           .clickByCssSelector('.notifications-icon')
           .clickLinkByText('View all')
           .assertElementAppears('.notifications-page', 2000, 'Notification page is rendered')
-          .assertElementsExist('.notifications-page .notification', 'There are one or more notifications on the page')
+          .assertElementExist('.notifications-page .notification', 'There is the start notification on the page')
+          .assertElementTextEquals('.notification-group .title', 'Today', 'Notification group has "Today" label')
           .assertElementNotDisplayed('.notifications-icon .badge', 'Badge notification indicator is hidden');
       },
       'Notification badge behaviour': function() {

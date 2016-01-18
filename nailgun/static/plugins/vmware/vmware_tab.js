@@ -41,14 +41,14 @@ var Field = React.createClass({
     return (
       <Input
         {... _.pick(metadata, 'name', 'type', 'label', 'description')}
-        value={metadata.type == 'select' ? value.current.id : value}
+        value={metadata.type === 'select' ? value.current.id : value}
         checked={value}
-        toggleable={metadata.type == 'password'}
+        toggleable={metadata.type === 'password'}
         onChange={this.onChange}
         disabled={this.props.disabled}
         error={(this.props.model.validationError || {})[metadata.name]}
       >
-        {metadata.type == 'select' && value.options.map((value) => {
+        {metadata.type === 'select' && value.options.map((value) => {
           return <option key={value.id} value={value.id}>{value.label}</option>;
         })}
       </Input>
@@ -107,7 +107,7 @@ var NovaCompute = React.createClass({
     var nodes = this.props.cluster.get('nodes').filter((node) => node.hasRole('compute-vmware'));
 
     targetNode.options = [];
-    if (targetNode.current.id == 'controllers' || !this.props.isLocked) {
+    if (targetNode.current.id === 'controllers' || !this.props.isLocked) {
       targetNode.options.push({id: 'controllers', label: 'controllers'});
     } else {
       targetNode.options.push({id: 'invalid', label: 'Select node'});
@@ -184,7 +184,7 @@ var AvailabilityZone = React.createClass({
   },
   renderComputes(actions) {
     var novaComputes = this.props.model.get('nova_computes'),
-      isSingleInstance = novaComputes.length == 1,
+      isSingleInstance = novaComputes.length === 1,
       disabled = actions.disable.nova_computes,
       cluster = this.props.cluster;
 
@@ -354,18 +354,18 @@ var VmWareTab = React.createClass({
       return false;
     }
     var oldData = JSON.stringify(old, (key, data) => {
-      if (key == 'target_node') {
+      if (key === 'target_node') {
         delete data.options;
       }
       return data;
     });
     var currentData = JSON.stringify(current, (key, data) => {
-      if (key == 'target_node') {
+      if (key === 'target_node') {
         delete data.options;
       }
       return data;
     });
-    return oldData != currentData;
+    return oldData !== currentData;
   },
   isSavingPossible() {
     return !this.state.model.validationError;

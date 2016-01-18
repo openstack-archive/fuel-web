@@ -40,7 +40,7 @@ customControls.custom_repo_configuration = React.createClass({
           error.uri = i18n(ns + 'invalid_repo');
         }
         var priority = repo.priority;
-        if (_.isNaN(priority) || !_.isNull(priority) && (!(priority == _.parseInt(priority, 10)) || os == 'CentOS' && (priority < 1 || priority > 99))) {
+        if (_.isNaN(priority) || !_.isNull(priority) && (!(priority === _.parseInt(priority, 10)) || os === 'CentOS' && (priority < 1 || priority > 99))) {
           error.priority = i18n(ns + 'invalid_priority');
         }
         return _.isEmpty(error) ? null : error;
@@ -80,7 +80,7 @@ customControls.custom_repo_configuration = React.createClass({
           uri: '',
           priority: this.props.extra_priority
         };
-        if (os == 'Ubuntu') {
+        if (os === 'Ubuntu') {
           data.suite = '';
           data.section = '';
         } else {
@@ -96,7 +96,7 @@ customControls.custom_repo_configuration = React.createClass({
         repos[index].name = value;
         break;
       case 'change_priority':
-        repos[index].priority = value == '' ? null : Number(value);
+        repos[index].priority = value === '' ? null : Number(value);
         break;
       default:
         var repo = repos[index],
@@ -147,7 +147,7 @@ customControls.custom_repo_configuration = React.createClass({
                 error={error && error.name}
                 wrapperClassName='repo-name'
                 onChange={this.changeRepos.bind(this, 'change_name')}
-                label={index == 0 && i18n(ns + 'labels.name')}
+                label={index === 0 && i18n(ns + 'labels.name')}
                 debounce
               />
               <Input
@@ -155,7 +155,7 @@ customControls.custom_repo_configuration = React.createClass({
                 defaultValue={this.constructor.repoToString(repo, os)}
                 error={error && (error.uri ? error.name ? '' : error.uri : null)}
                 onChange={this.changeRepos.bind(this, null)}
-                label={index == 0 && i18n(ns + 'labels.uri')}
+                label={index === 0 && i18n(ns + 'labels.uri')}
                 wrapperClassName='repo-uri'
                 debounce
               />
@@ -166,7 +166,7 @@ customControls.custom_repo_configuration = React.createClass({
                 wrapperClassName='repo-priority'
                 onChange={this.changeRepos.bind(this, 'change_priority')}
                 extraContent={index > 0 && this.renderDeleteButton(index)}
-                label={index == 0 && i18n(ns + 'labels.priority')}
+                label={index === 0 && i18n(ns + 'labels.priority')}
                 placeholder={i18n(ns + 'placeholders.priority')}
                 debounce
               />

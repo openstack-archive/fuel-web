@@ -104,7 +104,7 @@ export var Navbar = React.createClass({
               <ul className='nav navbar-nav pull-left'>
                 {_.map(this.props.elements, (element) => {
                   return (
-                    <li className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} key={element.label}>
+                    <li className={utils.classNames({active: this.props.activeElement === element.url.slice(1)})} key={element.label}>
                       <a href={element.url}>
                         {i18n('navbar.' + element.label, {defaultValue: element.label})}
                       </a>
@@ -207,7 +207,7 @@ var LanguagePopover = React.createClass({
         <ul className='nav nav-pills nav-stacked'>
           {_.map(i18n.getAvailableLocales(), (locale) => {
             return (
-              <li key={locale} className={utils.classNames({active: locale == currentLocale})}>
+              <li key={locale} className={utils.classNames({active: locale === currentLocale})}>
                 <a onClick={_.partial(this.changeLocale, locale)}>
                   {i18n.getLanguageName(locale)}
                 </a>
@@ -304,10 +304,10 @@ var NotificationsPopover = React.createClass({
       nodeId = notification.get('node_id'),
       notificationClasses = {
         notification: true,
-        'text-danger': topic == 'error',
-        'text-warning': topic == 'warning',
+        'text-danger': topic === 'error',
+        'text-warning': topic === 'warning',
         clickable: nodeId,
-        unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
+        unread: notification.get('status') === 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
       },
       iconClass = {
         error: 'glyphicon-exclamation-sign',
@@ -325,7 +325,7 @@ var NotificationsPopover = React.createClass({
     );
   },
   render() {
-    var showMore = Backbone.history.getHash() != 'notifications';
+    var showMore = Backbone.history.getHash() !== 'notifications';
     var notifications = this.props.notifications.take(this.props.displayCount);
     return (
       <Popover {...this.props} className='notifications-popover'>

@@ -75,7 +75,7 @@ class Filter {
       if (nodes.length) {
         var resources = nodes.invoke('resource', this.name);
         limits = [_.min(resources), _.max(resources)];
-        if (this.name == 'hdd' || this.name == 'ram') {
+        if (this.name === 'hdd' || this.name === 'ram') {
           limits = [Math.floor(limits[0] / Math.pow(1024, 3)), Math.ceil(limits[1] / Math.pow(1024, 3))];
         }
       }
@@ -112,7 +112,7 @@ NodeListScreen = React.createClass({
         filter.updateLimits(nodes, true);
         return filter;
       }),
-      activeFilters = cluster && this.props.mode == 'add' ?
+      activeFilters = cluster && this.props.mode === 'add' ?
         Filter.fromObject(this.props.defaultFilters, false)
       :
         _.union(
@@ -122,7 +122,7 @@ NodeListScreen = React.createClass({
     _.invoke(activeFilters, 'updateLimits', nodes, false);
 
     var availableSorters = this.props.sorters.map((name) => new Sorter(name, 'asc', false)),
-      activeSorters = cluster && this.props.mode == 'add' ?
+      activeSorters = cluster && this.props.mode === 'add' ?
         _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false))
       :
         _.union(
@@ -130,7 +130,7 @@ NodeListScreen = React.createClass({
           _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
         );
 
-    var search = cluster && this.props.mode == 'add' ? '' : uiSettings.search,
+    var search = cluster && this.props.mode === 'add' ? '' : uiSettings.search,
       viewMode = uiSettings.view_mode,
       isLabelsPanelOpen = false;
 
@@ -176,7 +176,7 @@ NodeListScreen = React.createClass({
     _.invoke(this.state.activeFilters, 'updateLimits', this.props.nodes, false);
   },
   normalizeAppliedFilters(checkStandardNodeFilters = false) {
-    if (!this.props.cluster || this.props.mode != 'add') {
+    if (!this.props.cluster || this.props.mode !== 'add') {
       var normalizedFilters = _.map(this.state.activeFilters, (activeFilter) => {
         var filter = _.clone(activeFilter);
         if (filter.values.length) {
@@ -184,7 +184,7 @@ NodeListScreen = React.createClass({
             filter.values = _.intersection(filter.values, this.props.nodes.getLabelValues(filter.name));
           } else if (checkStandardNodeFilters && _.contains(['manufacturer', 'group_id', 'cluster'], filter.name)) {
             filter.values = _.filter(filter.values, (value) => {
-              return this.props.nodes.any((node) => node.get(filter.name) == value);
+              return this.props.nodes.any((node) => node.get(filter.name) === value);
             }, this);
           }
         }
@@ -203,7 +203,7 @@ NodeListScreen = React.createClass({
 
     this.changeSearch = _.debounce(this.changeSearch, 200, {leading: true});
 
-    if (this.props.mode != 'list') {
+    if (this.props.mode !== 'list') {
       // hack to prevent node roles update after node polling
       this.props.nodes.on('change:pending_roles', this.checkRoleAssignment, this);
     }
@@ -249,7 +249,7 @@ NodeListScreen = React.createClass({
     if (!options.assign) node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
   },
   hasChanges() {
-    return this.props.mode != 'list' && this.props.nodes.any((node) => {
+    return this.props.mode !== 'list' && this.props.nodes.any((node) => {
       return !_.isEqual(node.get('pending_roles'), this.initialRoles[node.id]);
     });
   },
@@ -262,7 +262,7 @@ NodeListScreen = React.createClass({
   },
   updateSearch(value) {
     this.setState({search: value});
-    if (!this.props.cluster || this.props.mode != 'add') {
+    if (!this.props.cluster || this.props.mode !== 'add') {
       this.changeUISettings({search: value});
     }
   },
@@ -277,15 +277,15 @@ NodeListScreen = React.createClass({
   },
   changeSortingOrder(sorterToChange) {
     this.updateSorting(this.state.activeSorters.map((sorter) => {
-      if (sorter.name == sorterToChange.name && sorter.isLabel == sorterToChange.isLabel) {
-        return new Sorter(sorter.name, sorter.order == 'asc' ? 'desc' : 'asc', sorter.isLabel);
+      if (sorter.name === sorterToChange.name && sorter.isLabel === sorterToChange.isLabel) {
+        return new Sorter(sorter.name, sorter.order === 'asc' ? 'desc' : 'asc', sorter.isLabel);
       }
       return sorter;
     }));
   },
   updateSorting(sorters) {
     this.setState({activeSorters: sorters});
-    if (!this.props.cluster || this.props.mode != 'add') {
+    if (!this.props.cluster || this.props.mode !== 'add') {
       var groupedSorters = _.groupBy(sorters, 'isLabel');
       this.changeUISettings({
         sort: _.map(groupedSorters.false, Sorter.toObject),
@@ -295,7 +295,7 @@ NodeListScreen = React.createClass({
   },
   updateFilters(filters) {
     this.setState({activeFilters: filters});
-    if (!this.props.cluster || this.props.mode != 'add') {
+    if (!this.props.cluster || this.props.mode !== 'add') {
       var groupedFilters = _.groupBy(filters, 'isLabel');
       this.changeUISettings({
         filter: Filter.toObject(groupedFilters.false),
@@ -363,7 +363,7 @@ NodeListScreen = React.createClass({
     // sort option list
     options.sort((option1, option2) => {
       // sort Node Network Group filter options by node network group id
-      if (this.props.name == 'group_id') return option1.name - option2.name;
+      if (this.props.name === 'group_id') return option1.name - option2.name;
       return utils.natsort(option1.label, option2.label, {insensitive: true});
     });
 
@@ -374,7 +374,7 @@ NodeListScreen = React.createClass({
   },
   changeFilter(filterToChange, values) {
     this.updateFilters(this.state.activeFilters.map((filter) => {
-      if (filter.name == filterToChange.name && filter.isLabel == filterToChange.isLabel) {
+      if (filter.name === filterToChange.name && filter.isLabel === filterToChange.isLabel) {
         var changedFilter = new Filter(filter.name, values, filter.isLabel);
         changedFilter.limits = filter.limits;
         return changedFilter;
@@ -390,7 +390,7 @@ NodeListScreen = React.createClass({
   },
   changeViewMode(name, value) {
     this.setState({viewMode: value});
-    if (!this.props.cluster || this.props.mode != 'add') {
+    if (!this.props.cluster || this.props.mode !== 'add') {
       this.changeUISettings({view_mode: value});
     }
   },
@@ -461,7 +461,7 @@ NodeListScreen = React.createClass({
           default:
             // handle number ranges
             var currentValue = node.resource(filter.name);
-            if (filter.name == 'hdd' || filter.name == 'ram') currentValue = currentValue / Math.pow(1024, 3);
+            if (filter.name === 'hdd' || filter.name === 'ram') currentValue = currentValue / Math.pow(1024, 3);
             result = currentValue >= filter.values[0] && (_.isUndefined(filter.values[1]) || currentValue <= filter.values[1]);
             break;
         }
@@ -472,7 +472,7 @@ NodeListScreen = React.createClass({
     var screenNodesLabels = this.getNodeLabels();
     return (
       <div>
-        {this.props.mode == 'edit' &&
+        {this.props.mode === 'edit' &&
           <div className='alert alert-warning'>
             {i18n('cluster_page.nodes_tab.disk_configuration_reset_warning')}
           </div>
@@ -496,7 +496,7 @@ NodeListScreen = React.createClass({
           revertChanges={this.revertChanges}
           selectNodes={this.selectNodes}
         />
-        {!!this.props.cluster && this.props.mode != 'list' &&
+        {!!this.props.cluster && this.props.mode !== 'list' &&
           <RolePanel
             {... _.pick(this.state, 'selectedRoles', 'indeterminateRoles', 'configModels')}
             {... _.pick(this.props, 'cluster', 'mode', 'nodes', 'selectedNodeIds')}
@@ -538,7 +538,7 @@ MultiSelectControl = React.createClass({
   },
   onChange(name, checked, isLabel) {
     if (!this.props.dynamicValues) {
-      var values = name == 'all' ?
+      var values = name === 'all' ?
           checked ? _.pluck(this.props.options, 'name') : []
         :
           checked ? _.union(this.props.values, [name]) : _.difference(this.props.values, [name]);
@@ -548,7 +548,7 @@ MultiSelectControl = React.createClass({
     }
   },
   closeOnEscapeKey(e) {
-    if (e.key == 'Escape') this.props.toggle(false);
+    if (e.key === 'Escape') this.props.toggle(false);
   },
   render() {
     if (!this.props.options.length) return null;
@@ -604,7 +604,7 @@ MultiSelectControl = React.createClass({
                     type='checkbox'
                     label={i18n('cluster_page.nodes_tab.node_management_panel.select_all')}
                     name='all'
-                    checked={valuesAmount == this.props.options.length}
+                    checked={valuesAmount === this.props.options.length}
                     onChange={this.onChange}
                   />
                 </div>
@@ -669,7 +669,7 @@ NumberRangeControl = React.createClass({
     this.props.onChange(values);
   },
   closeOnEscapeKey(e) {
-    if (e.key == 'Escape') this.props.toggle(this.props.name, false);
+    if (e.key === 'Escape') this.props.toggle(this.props.name, false);
   },
   render() {
     var classNames = {'btn-group number-range': true, open: this.props.isOpen};
@@ -759,7 +759,7 @@ ManagementPanel = React.createClass({
     var nodes = new models.Nodes(this.props.nodes.map((node) => {
       var data = {id: node.id, pending_roles: node.get('pending_roles')};
       if (node.get('pending_roles').length) {
-        if (this.props.mode == 'add') return _.extend(data, {cluster_id: this.props.cluster.id, pending_addition: true});
+        if (this.props.mode === 'add') return _.extend(data, {cluster_id: this.props.cluster.id, pending_addition: true});
       } else if (node.get('pending_addition')) {
         return _.extend(data, {cluster_id: null, pending_addition: false});
       }
@@ -768,7 +768,7 @@ ManagementPanel = React.createClass({
     return Backbone.sync('update', nodes)
       .done(() => {
         $.when(this.props.cluster.fetch(), this.props.cluster.fetchRelated('nodes')).always(() => {
-          if (this.props.mode == 'add') {
+          if (this.props.mode === 'add') {
             dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
             this.props.selectNodes();
           }
@@ -804,7 +804,7 @@ ManagementPanel = React.createClass({
     });
   },
   onSearchKeyDown(e) {
-    if (e.key == 'Escape') {
+    if (e.key === 'Escape') {
       this.clearSearchField();
       this.setState({activeSearch: false});
     }
@@ -846,7 +846,7 @@ ManagementPanel = React.createClass({
     });
   },
   isFilterOpen(filter) {
-    return !_.isNull(this.state.openFilter) && this.state.openFilter.name == filter.name && this.state.openFilter.isLabel == filter.isLabel;
+    return !_.isNull(this.state.openFilter) && this.state.openFilter.name === filter.name && this.state.openFilter.isLabel === filter.isLabel;
   },
   addFilter(filter) {
     this.props.addFilter(filter);
@@ -907,7 +907,7 @@ ManagementPanel = React.createClass({
     var ns = 'cluster_page.nodes_tab.node_management_panel.';
 
     var disksConflict, interfaceConflict;
-    if (this.props.mode == 'list' && this.props.nodes.length) {
+    if (this.props.mode === 'list' && this.props.nodes.length) {
       disksConflict = !this.props.nodes.areDisksConfigurable();
       interfaceConflict = !this.props.nodes.areInterfacesConfigurable();
     }
@@ -923,7 +923,7 @@ ManagementPanel = React.createClass({
 
     var inactiveSorters, canResetSorters;
     var inactiveFilters, appliedFilters;
-    if (this.props.mode != 'edit') {
+    if (this.props.mode !== 'edit') {
       var checkSorter = (sorter, isLabel) => !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
       inactiveSorters = _.union(_.filter(this.props.availableSorters, _.partial(checkSorter, _, false)), _.filter(this.props.labelSorters, _.partial(checkSorter, _, true)))
         .sort((sorter1, sorter2) => utils.natsort(sorter1.title, sorter2.title, {insensitive: true}));
@@ -947,15 +947,15 @@ ManagementPanel = React.createClass({
                   return (
                     <Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                       <label
-                        className={utils.classNames(managementButtonClasses(mode == this.props.viewMode, mode))}
-                        onClick={mode != this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
+                        className={utils.classNames(managementButtonClasses(mode === this.props.viewMode, mode))}
+                        onClick={mode !== this.props.viewMode && _.partial(this.props.changeViewMode, 'view_mode', mode)}
                       >
                         <input type='radio' name='view_mode' value={mode} />
                         <i
                           className={utils.classNames({
                             glyphicon: true,
-                            'glyphicon-th-list': mode == 'standard',
-                            'glyphicon-th': mode == 'compact'
+                            'glyphicon-th-list': mode === 'standard',
+                            'glyphicon-th': mode === 'compact'
                           })}
                         />
                       </label>
@@ -964,7 +964,7 @@ ManagementPanel = React.createClass({
                 })}
               </div>
             </div>
-            {this.props.mode != 'edit' && [
+            {this.props.mode !== 'edit' && [
               <Tooltip wrap key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
                 <button
                   disabled={!this.props.nodes.length}
@@ -1025,7 +1025,7 @@ ManagementPanel = React.createClass({
           </div>
           <div className='control-buttons-box col-xs-7 text-right'>
             {!!this.props.cluster && (
-              this.props.mode != 'list' ?
+              this.props.mode !== 'list' ?
                 <div className='btn-group' role='group'>
                   <button
                     className='btn btn-default'
@@ -1099,7 +1099,7 @@ ManagementPanel = React.createClass({
                 ]
             )}
           </div>
-          {this.props.mode != 'edit' && !!this.props.screenNodes.length && [
+          {this.props.mode !== 'edit' && !!this.props.screenNodes.length && [
             this.props.isLabelsPanelOpen &&
               <NodeLabelsPanel {... _.pick(this.props, 'nodes', 'screenNodes')}
                 key='labels'
@@ -1118,7 +1118,7 @@ ManagementPanel = React.createClass({
                     }
                   </div>
                   {this.props.activeSorters.map((sorter) => {
-                    var asc = sorter.order == 'asc';
+                    var asc = sorter.order === 'asc';
                     return (
                       <div
                         key={'sort_by-' + sorter.name + (sorter.isLabel && '-label')}
@@ -1200,7 +1200,7 @@ ManagementPanel = React.createClass({
               </div>
             )
           ]}
-          {this.props.mode != 'edit' && !!this.props.screenNodes.length &&
+          {this.props.mode !== 'edit' && !!this.props.screenNodes.length &&
             <div className='col-xs-12'>
               {(!this.state.areSortersVisible || !this.state.areFiltersVisible && !!appliedFilters.length) &&
                 <div className='active-sorters-filters'>
@@ -1240,7 +1240,7 @@ ManagementPanel = React.createClass({
                       <strong className='col-xs-1'>{i18n(ns + 'sort_by')}</strong>
                       <div className='col-xs-11'>
                         {this.props.activeSorters.map((sorter, index) => {
-                          var asc = sorter.order == 'asc';
+                          var asc = sorter.order === 'asc';
                           return (
                             <span key={sorter.name + (sorter.isLabel && '-label')}>
                               {sorter.title}
@@ -1282,8 +1282,8 @@ NodeLabelsPanel = React.createClass({
       return {
         key: label,
         values: _.uniq(definedLabelValues),
-        checked: labelValues.length == definedLabelValues.length,
-        indeterminate: labelValues.length != definedLabelValues.length,
+        checked: labelValues.length === definedLabelValues.length,
+        indeterminate: labelValues.length !== definedLabelValues.length,
         error: null
       };
     });
@@ -1344,8 +1344,8 @@ NodeLabelsPanel = React.createClass({
           currentLabel.error = i18n(ns + 'empty_label_key');
         } else {
           var doesLabelExist = _.any(labels, (label, index) => {
-            return index != currentIndex &&
-              _.trim(label.key) == _.trim(currentLabel.key) &&
+            return index !== currentIndex &&
+              _.trim(label.key) === _.trim(currentLabel.key) &&
               (label.checked || label.indeterminate);
           });
           if (doesLabelExist) currentLabel.error = i18n(ns + 'existing_label');
@@ -1389,7 +1389,7 @@ NodeLabelsPanel = React.createClass({
             nodeLabels[label] = labelData.values[0];
           }
           // change label value
-          if (!_.isUndefined(nodeLabels[label]) && labelData.values.length == 1) {
+          if (!_.isUndefined(nodeLabels[label]) && labelData.values.length === 1) {
             nodeLabels[label] = labelData.values[0];
           }
         });
@@ -1440,7 +1440,7 @@ NodeLabelsPanel = React.createClass({
                 value: labelData.values[0]
               };
 
-              var showControlLabels = index == 0;
+              var showControlLabels = index === 0;
               return (
                 <div className={utils.classNames({clearfix: true, 'has-label': showControlLabels})} key={index}>
                   <Input
@@ -1458,7 +1458,7 @@ NodeLabelsPanel = React.createClass({
                     onChange={_.partial(this.changeLabelKey, index)}
                     error={labelData.error}
                     wrapperClassName='label-key-control'
-                    autoFocus={index == this.state.labels.length - 1}
+                    autoFocus={index === this.state.labels.length - 1}
                   />
                   <Input {...labelValueProps}
                     type='text'
@@ -1593,7 +1593,7 @@ SelectAllMixin = {
     }
   },
   renderSelectAllCheckbox() {
-    var checked = this.props.mode == 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, (node) => !this.props.selectedNodeIds[node.id]));
+    var checked = this.props.mode === 'edit' || (this.props.nodes.length && !_.any(this.props.nodes, (node) => !this.props.selectedNodeIds[node.id]));
     return (
       <Input
         ref='select-all'
@@ -1601,7 +1601,7 @@ SelectAllMixin = {
         type='checkbox'
         checked={checked}
         disabled={
-          this.props.mode == 'edit' || this.props.locked || !this.props.nodes.length ||
+          this.props.mode === 'edit' || this.props.locked || !this.props.nodes.length ||
           !checked && !_.isNull(this.props.maxNumberOfNodes) && this.props.maxNumberOfNodes < this.props.nodes.length
         }
         label={i18n('common.select_all')}
@@ -1691,7 +1691,7 @@ NodeList = React.createClass({
     // sort grouped nodes by name, mac or ip
     var formattedSorters = _.compact(_.map(this.props.activeSorters, (sorter) => {
       if (_.contains(uniqValueSorters, sorter.name)) {
-        return {attr: sorter.name, desc: sorter.order == 'desc'};
+        return {attr: sorter.name, desc: sorter.order === 'desc'};
       }
     }));
     if (formattedSorters.length) {
@@ -1745,13 +1745,13 @@ NodeList = React.createClass({
             case 'group_id':
               var nodeGroup1 = node1.get('group_id'),
                 nodeGroup2 = node2.get('group_id');
-              result = nodeGroup1 == nodeGroup2 ? 0 :
+              result = nodeGroup1 === nodeGroup2 ? 0 :
                 !nodeGroup1 ? 1 : !nodeGroup2 ? -1 : nodeGroup1 - nodeGroup2;
               break;
             case 'cluster':
               var cluster1 = node1.get('cluster'),
                 cluster2 = node2.get('cluster');
-              result = cluster1 == cluster2 ? 0 :
+              result = cluster1 === cluster2 ? 0 :
                 !cluster1 ? 1 : !cluster2 ? -1 : utils.natsort(this.props.clusters.get(cluster1).get('name'), this.props.clusters.get(cluster2).get('name'));
               break;
             default:
@@ -1760,7 +1760,7 @@ NodeList = React.createClass({
           }
         }
 
-        if (sorter.order == 'desc') {
+        if (sorter.order === 'desc') {
           result = result * -1;
         }
         return !_.isUndefined(result) && !result;
@@ -1774,7 +1774,7 @@ NodeList = React.createClass({
         return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
       }));
     return (
-      <div className={utils.classNames({'node-list row': true, compact: this.props.viewMode == 'compact'})}>
+      <div className={utils.classNames({'node-list row': true, compact: this.props.viewMode === 'compact'})}>
         {groups.length > 1 &&
           <div className='col-xs-12 node-list-header'>
             {this.renderSelectAllCheckbox()}
@@ -1799,7 +1799,7 @@ NodeList = React.createClass({
           :
             <div className='alert alert-warning'>
               {utils.renderMultilineText(
-                i18n('cluster_page.nodes_tab.' + (this.props.mode == 'add' ? 'no_nodes_in_fuel' : 'no_nodes_in_environment'))
+                i18n('cluster_page.nodes_tab.' + (this.props.mode === 'add' ? 'no_nodes_in_fuel' : 'no_nodes_in_environment'))
               )}
             </div>
           }
@@ -1834,7 +1834,7 @@ NodeGroup = React.createClass({
               node={node}
               renderActionButtons={!!this.props.cluster}
               cluster={this.props.cluster || this.props.clusters.get(node.get('cluster'))}
-              checked={this.props.mode == 'edit' || this.props.selectedNodeIds[node.id]}
+              checked={this.props.mode === 'edit' || this.props.selectedNodeIds[node.id]}
               locked={this.props.locked || _.contains(nodesWithRestrictionsIds, node.id)}
               onNodeSelection={_.bind(this.props.selectNodes, this.props, [node.id])}
             />;

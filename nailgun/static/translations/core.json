@@ -103,13 +103,13 @@
                 "private": "Private",
                 "baremetal": "Baremetal",
                 "descriptions": {
-                    "public": "The Public network allows inbound connections to VMs (Controllers and Tenant VMs) from external networks (e.g., Internet) as well as outbound connections from VMs to the external networks.",
-                    "storage": "The Storage network is used to provide storage services such as replication traffic from Ceph. Management network is used for Ceph Public traffic.",
+                    "public": "The Public network allows inbound connections to VMs (Controllers and Tenant VMs) from external networks (e.g., the Internet) as well as outbound connections from VMs to the external networks.",
+                    "storage": "The Storage network is used to provide storage services such as replication traffic from Ceph. The Management network is used for Ceph Public traffic.",
                     "management": "The Management network is primarily used for OpenStack Cloud Management. It is used to access OpenStack services (nova-api, OpenStack dashboard, etc).",
                     "internal": "The Internal network connects all OpenStack nodes in the environment. All components of an OpenStack environment communicate with each other using this network.",
                     "floating": "This network is used to assign Floating IPs to tenant VMs.",
                     "private": "The private network facilitates communication between each tenant's VMs. Private network address spaces are not a part of the public network address space; fixed IPs of virtual instances cannot be accessed directly from the rest of the public network.",
-                    "baremetal": "Separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes.",
+                    "baremetal": "A separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes.",
                     "fuelweb_admin": "The Fuel Master node uses the Admin (PXE) network to provision and orchestrate the OpenStack environment providing DNS, DHCP, and gateway services to a node before that node is provisioned."
                 }
             },
@@ -379,7 +379,7 @@
                         "bond_button": "Bond Network Interfaces",
                         "unbond_button": "Unbond Network Interfaces",
                         "bond_speed_warning": "Bonding network interfaces with different network performance parameters is not recommended.",
-                        "several_bonds_warning": "This network interface is already bonded with other network inteface.",
+                        "several_bonds_warning": "This network interface is already bonded with other network interfaces.",
                         "speed": "Speed",
                         "all_modes": "All Modes",
                         "bonding_mode": "Mode",
@@ -491,7 +491,7 @@
                             "saving_warning": "Unable to apply changes.",
                             "labels_warning": "Unable to apply labels.",
                             "disks_configuration_warning": "Selected nodes have different disk capacities.",
-                            "interfaces_configuration_warning": "Selected nodes have different number of network interfaces."
+                            "interfaces_configuration_warning": "Selected nodes have a different number of network interfaces."
                         },
                         "labels_error": {
                             "label_already_exists": "Label already exists.",
@@ -514,7 +514,7 @@
                         "remove": "Remove",
                         "delete_node": "Delete node",
                         "discard_deletion": "Discard Deletion",
-                        "cant_discard": "Can not discard the node deletion",
+                        "cant_discard": "Cannot discard the node deletion",
                         "view_logs": "View Logs",
                         "edit_name": "Edit Name",
                         "more_info": "More Info",
@@ -589,7 +589,7 @@
                     "reset_environment_warning": "You are about to reset all existing nodes to the pre-deployment state and delete this environment. Environment settings and network configuration will be preserved.",
                     "reset_disabled_for_deploying_cluster": "The OpenStack environment is still being deployed. Wait untill Fuel completes the deployment and try again.",
                     "repeated_reset_disabled": "The environment is already being reset.",
-                    "no_changes_to_reset": "Not deployed environment can not be resetted",
+                    "no_changes_to_reset": "Not deployed environment cannot be reset.",
                     "rename_error": {
                         "title": "Unable to rename the OpenStack environment"
                     },
@@ -658,10 +658,10 @@
                     "add": "Add Group",
                     "node_network_group_name": "Name",
                     "node_network_group_duplicate_error": "This node network group name is already taken",
-                    "node_network_group_empty_name": "Node network group name can not be empty",
+                    "node_network_group_empty_name": "Node network group name cannot be empty",
                     "node_network_group_creation_error": "Node Network Group Creation Error",
                     "node_network_group_deletion_error": "Node Network Group Deletion Error",
-                    "default_node_network_group_info": "This node network group uses shared admin network and cannot be deleted",
+                    "default_node_network_group_info": "This node network group uses a shared admin network and cannot be deleted",
                     "save_changes_warning": "It is necessary to save changes before creating a new node network group",
                     "verification_multirack_warning": "Network verification is disabled for environments containing more than one node network group",
                     "not_enough_nodes": "At least two online nodes are required to verify environment network configuration",
@@ -830,8 +830,8 @@
                     "retry_delay_message_plural": "Reconnecting in __count__ seconds...",
                     "retrying": "Reconnecting...",
                     "unavailability_reasons": [
-                        "If you've just installed, restarted or upgraded the master node, it could take up to a few minutes to start Nailgun.",
-                        "If it's still unavailable for a long time, please check the logs."
+                        "If you've just installed, restarted or upgraded the master node, it could take up to a few minutes for Nailgun to start.",
+                        "If Nailgun is still unavailable after a few minutes, please check the logs."
                     ]
                 },
                 "create_cluster_wizard": {
@@ -1003,7 +1003,7 @@
                 "delete_nodes": {
                     "title": "Delete Nodes",
                     "common_message": "Are you sure you want to delete the selected node from the environment?",
-                    "common_message_plural": "Are you sure you want to delete selected nodes from the environment?",
+                    "common_message_plural": "Are you sure you want to delete the selected nodes from the environment?",
                     "not_deployed_nodes_message": "The not deployed node will return to the pool of unallocated nodes.",
                     "not_deployed_nodes_message_plural": "Not deployed nodes will return to the pool of unallocated nodes.",
                     "deployed_nodes_message": "The deployed node will be marked as pending deletion and will be removed from the environment after re-deployment.",
@@ -1017,7 +1017,7 @@
                     "cant_discard": "Cannot discard the changes."
                 },
                 "remove_node": {
-                    "default_message": "Fuel will remove this node from its database. This operation will not erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and the node will appear in Fuel as new unallocated server.",
+                    "default_message": "Fuel will remove this node from its database. This operation will not erase MBR or any data on this node. If you power on the node, it will boot bootstrap (discovery) system, and the node will appear in Fuel as a new unallocated server.",
                     "title": "Remove Node"
                 },
                 "remove_cluster": {

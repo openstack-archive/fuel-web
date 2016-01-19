@@ -90,6 +90,24 @@ define([
           .assertElementExists(dnsNameserversSelector + '.range-row .has-error',
               'New nameserver is added and contains validation error');
       },
+      'Validation error is removed after reverting changes': function() {
+        var startRangeSelector = 'input[name=range-start_gre_id_range]';
+        var endRangeSelector = 'input[name=range-end_gre_id_range]';
+        return this.remote
+          .clickByCssSelector('.subtab-link-neutron_l2')
+          .setInputValue(startRangeSelector, '1000')
+          .setInputValue(endRangeSelector, '1000')
+          .waitForCssSelector('.has-error ' + startRangeSelector, 1000)
+          .waitForCssSelector('.has-error ' + endRangeSelector, 1000)
+          .assertElementExists('.subtab-link-neutron_l2 i.glyphicon-danger-sign',
+            'Warning tab icon appears')
+          .clickByCssSelector('.btn-revert-changes')
+          .waitForElementDeletion('.has-error ' + startRangeSelector, 1000)
+          .waitForElementDeletion('.has-error ' + endRangeSelector, 1000)
+          .assertElementNotExists('.subtab-link-neutron_l2 i.glyphicon-danger-sign',
+            'Warning tab icon disappears')
+          .setInputValue(startRangeSelector, '1000');
+      },
       'Segmentation types differences': function() {
         return this.remote
           .clickByCssSelector('.subtab-link-default')

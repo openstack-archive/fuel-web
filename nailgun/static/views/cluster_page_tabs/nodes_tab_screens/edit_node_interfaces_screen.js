@@ -37,15 +37,15 @@ var EditNodeInterfacesScreen = React.createClass({
   ],
   statics: {
     fetchData(options) {
-      var cluster = options.cluster,
-        nodes = utils.getNodeListFromTabOptions(options);
+      var cluster = options.cluster;
+      var nodes = utils.getNodeListFromTabOptions(options);
 
       if (!nodes || !nodes.areInterfacesConfigurable()) {
         return $.Deferred().reject();
       }
 
-      var networkConfiguration = cluster.get('networkConfiguration'),
-        networksMetadata = new models.ReleaseNetworkProperties();
+      var networkConfiguration = cluster.get('networkConfiguration');
+      var networksMetadata = new models.ReleaseNetworkProperties();
 
       return $.when(...nodes.map((node) => {
         node.interfaces = new models.Interfaces();
@@ -143,13 +143,13 @@ var EditNodeInterfacesScreen = React.createClass({
   applyChanges() {
     if (!this.isSavingPossible()) return $.Deferred().reject();
 
-    var nodes = this.props.nodes,
-      interfaces = this.props.interfaces,
-      bonds = interfaces.filter((ifc) => ifc.isBond()),
-      bondsByName = bonds.reduce((result, bond) => {
-        result[bond.get('name')] = bond;
-        return result;
-      }, {});
+    var nodes = this.props.nodes;
+    var interfaces = this.props.interfaces;
+    var bonds = interfaces.filter((ifc) => ifc.isBond());
+    var bondsByName = bonds.reduce((result, bond) => {
+      result[bond.get('name')] = bond;
+      return result;
+    }, {});
 
     // bonding map contains indexes of slave interfaces
     // it is needed to build the same configuration for all the nodes
@@ -170,8 +170,8 @@ var EditNodeInterfacesScreen = React.createClass({
       node.interfaces.add(nodeBonds);
       // determining slaves using bonding map
       _.each(nodeBonds, (bond, bondIndex) => {
-        var slaveIndexes = bondingMap[bondIndex],
-          slaveInterfaces = _.map(slaveIndexes, node.interfaces.at, node.interfaces);
+        var slaveIndexes = bondingMap[bondIndex];
+        var slaveInterfaces = _.map(slaveIndexes, node.interfaces.at, node.interfaces);
         bond.set({slaves: _.invoke(slaveInterfaces, 'pick', 'name')});
       });
 
@@ -252,9 +252,9 @@ var EditNodeInterfacesScreen = React.createClass({
   },
   bondInterfaces() {
     this.setState({actionInProgress: true});
-    var interfaces = this.props.interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond()),
-      bonds = this.props.interfaces.find((ifc) => ifc.get('checked') && ifc.isBond()),
-      bondingProperties = this.props.bondingConfig.properties;
+    var interfaces = this.props.interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond());
+    var bonds = this.props.interfaces.find((ifc) => ifc.get('checked') && ifc.isBond());
+    var bondingProperties = this.props.bondingConfig.properties;
 
     if (!bonds) {
       // if no bond selected - create new one
@@ -297,14 +297,14 @@ var EditNodeInterfacesScreen = React.createClass({
     this.setState({actionInProgress: false});
   },
   removeInterfaceFromBond(bondName, slaveInterfaceName) {
-    var networks = this.props.cluster.get('networkConfiguration').get('networks'),
-      bond = this.props.interfaces.find({name: bondName}),
-      slaves = bond.get('slaves'),
-      bondHasUnmovableNetwork = bond.get('assigned_networks').any((interfaceNetwork) => {
-        return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
-      }),
-      slaveInterfaceNames = _.pluck(slaves, 'name'),
-      targetInterface = bond;
+    var networks = this.props.cluster.get('networkConfiguration').get('networks');
+    var bond = this.props.interfaces.find({name: bondName});
+    var slaves = bond.get('slaves');
+    var bondHasUnmovableNetwork = bond.get('assigned_networks').any((interfaceNetwork) => {
+      return interfaceNetwork.getFullNetwork(networks).get('meta').unmovable;
+    });
+    var slaveInterfaceNames = _.pluck(slaves, 'name');
+    var targetInterface = bond;
 
     // if PXE interface is being removed - place networks there
     if (bondHasUnmovableNetwork) {
@@ -318,9 +318,9 @@ var EditNodeInterfacesScreen = React.createClass({
 
     // if slaveInterfaceName is set - remove it from slaves, otherwise remove all
     if (slaveInterfaceName) {
-      var slavesUpdated = _.reject(slaves, {name: slaveInterfaceName}),
-        names = _.pluck(slavesUpdated, 'name'),
-        bondSlaveInterfaces = this.props.interfaces.filter((ifc) => _.contains(names, ifc.get('name')));
+      var slavesUpdated = _.reject(slaves, {name: slaveInterfaceName});
+      var names = _.pluck(slavesUpdated, 'name');
+      var bondSlaveInterfaces = this.props.interfaces.filter((ifc) => _.contains(names, ifc.get('name')));
 
       bond.set({
         slaves: slavesUpdated,
@@ -349,11 +349,11 @@ var EditNodeInterfacesScreen = React.createClass({
     }
   },
   validate() {
-    var interfaceErrors = {},
-      validationResult,
-      networkConfiguration = this.props.cluster.get('networkConfiguration'),
-      networkingParameters = networkConfiguration.get('networking_parameters'),
-      networks = networkConfiguration.get('networks');
+    var interfaceErrors = {};
+    var validationResult;
+    var networkConfiguration = this.props.cluster.get('networkConfiguration');
+    var networkingParameters = networkConfiguration.get('networking_parameters');
+    var networks = networkConfiguration.get('networks');
     if (!this.props.interfaces) {
       return;
     }
@@ -380,16 +380,16 @@ var EditNodeInterfacesScreen = React.createClass({
     return !_.chain(this.state.interfaceErrors).values().some().value() && !this.state.actionInProgress && this.hasChanges();
   },
   getIfcProperty(property) {
-    var {interfaces, nodes} = this.props,
-      bondsCount = interfaces.filter((ifc) => ifc.isBond()).length,
-      getPropertyValues = (ifcIndex) => {
-        return _.uniq(nodes.map((node) => {
-          var nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length,
-            nodeInterface = node.interfaces.at(ifcIndex + nodeBondsCount);
-          if (property == 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
-          return nodeInterface.get(property);
-        }));
-      };
+    var {interfaces, nodes} = this.props;
+    var bondsCount = interfaces.filter((ifc) => ifc.isBond()).length;
+    var getPropertyValues = (ifcIndex) => {
+      return _.uniq(nodes.map((node) => {
+        var nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length;
+        var nodeInterface = node.interfaces.at(ifcIndex + nodeBondsCount);
+        if (property == 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
+        return nodeInterface.get(property);
+      }));
+    };
     return interfaces.map((ifc, index) => {
       if (ifc.isBond()) {
         return _.map(ifc.get('slaves'),
@@ -400,28 +400,28 @@ var EditNodeInterfacesScreen = React.createClass({
     });
   },
   render() {
-    var nodes = this.props.nodes,
-      nodeNames = nodes.pluck('name'),
-      interfaces = this.props.interfaces,
-      locked = this.isLocked(),
-      bondingAvailable = this.bondingAvailable(),
-      configurationTemplateExists = this.configurationTemplateExists(),
-      checkedInterfaces = interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond()),
-      checkedBonds = interfaces.filter((ifc) => ifc.get('checked') && ifc.isBond()),
-      creatingNewBond = checkedInterfaces.length >= 2 && !checkedBonds.length,
-      addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length == 1,
-      bondingPossible = creatingNewBond || addingInterfacesToExistingBond,
-      unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length,
-      hasChanges = this.hasChanges(),
-      slaveInterfaceNames = _.pluck(_.flatten(_.filter(interfaces.pluck('slaves'))), 'name'),
-      loadDefaultsEnabled = !this.state.actionInProgress,
-      revertChangesEnabled = !this.state.actionInProgress && hasChanges,
-      invalidSpeedsForBonding = bondingPossible && this.validateSpeedsForBonding(checkedBonds.concat(checkedInterfaces)) || interfaces.any((ifc) => {
-        return ifc.isBond() && this.validateSpeedsForBonding([ifc]);
-      });
+    var nodes = this.props.nodes;
+    var nodeNames = nodes.pluck('name');
+    var interfaces = this.props.interfaces;
+    var locked = this.isLocked();
+    var bondingAvailable = this.bondingAvailable();
+    var configurationTemplateExists = this.configurationTemplateExists();
+    var checkedInterfaces = interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond());
+    var checkedBonds = interfaces.filter((ifc) => ifc.get('checked') && ifc.isBond());
+    var creatingNewBond = checkedInterfaces.length >= 2 && !checkedBonds.length;
+    var addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length == 1;
+    var bondingPossible = creatingNewBond || addingInterfacesToExistingBond;
+    var unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length;
+    var hasChanges = this.hasChanges();
+    var slaveInterfaceNames = _.pluck(_.flatten(_.filter(interfaces.pluck('slaves'))), 'name');
+    var loadDefaultsEnabled = !this.state.actionInProgress;
+    var revertChangesEnabled = !this.state.actionInProgress && hasChanges;
+    var invalidSpeedsForBonding = bondingPossible && this.validateSpeedsForBonding(checkedBonds.concat(checkedInterfaces)) || interfaces.any((ifc) => {
+      return ifc.isBond() && this.validateSpeedsForBonding([ifc]);
+    });
 
-    var interfaceSpeeds = this.getIfcProperty('current_speed'),
-      interfaceNames = this.getIfcProperty('name');
+    var interfaceSpeeds = this.getIfcProperty('current_speed');
+    var interfaceNames = this.getIfcProperty('name');
     return (
       <div className='row'>
         <div className='title'>
@@ -605,8 +605,8 @@ var NodeInterface = React.createClass({
     });
   },
   toggleOffloading() {
-    var interfaceProperties = this.props.interface.get('interface_properties'),
-      name = 'disable_offloading';
+    var interfaceProperties = this.props.interface.get('interface_properties');
+    var name = 'disable_offloading';
     this.onInterfacePropertiesChange(name, !interfaceProperties[name]);
   },
   onInterfacePropertiesChange(name, value) {
@@ -622,27 +622,27 @@ var NodeInterface = React.createClass({
     this.props.interface.set('interface_properties', interfaceProperties);
   },
   render() {
-    var ifc = this.props.interface,
-      cluster = this.props.cluster,
-      locked = this.props.locked,
-      availableBondingModes = ifc.isBond() ? this.getAvailableBondingModes() : [],
-      networkConfiguration = cluster.get('networkConfiguration'),
-      networks = networkConfiguration.get('networks'),
-      networkingParameters = networkConfiguration.get('networking_parameters'),
-      slaveInterfaces = ifc.getSlaveInterfaces(),
-      assignedNetworks = ifc.get('assigned_networks'),
-      connectionStatusClasses = (slave) => {
-        var slaveDown = slave.get('state') == 'down';
-        return {
-          'ifc-connection-status': true,
-          'ifc-online': !slaveDown,
-          'ifc-offline': slaveDown
-        };
-      },
-      bondProperties = ifc.get('bond_properties'),
-      interfaceProperties = ifc.get('interface_properties') || null,
-      offloadingModes = ifc.get('offloading_modes') || [],
-      bondingPossible = this.props.bondingAvailable && !locked;
+    var ifc = this.props.interface;
+    var cluster = this.props.cluster;
+    var locked = this.props.locked;
+    var availableBondingModes = ifc.isBond() ? this.getAvailableBondingModes() : [];
+    var networkConfiguration = cluster.get('networkConfiguration');
+    var networks = networkConfiguration.get('networks');
+    var networkingParameters = networkConfiguration.get('networking_parameters');
+    var slaveInterfaces = ifc.getSlaveInterfaces();
+    var assignedNetworks = ifc.get('assigned_networks');
+    var connectionStatusClasses = (slave) => {
+      var slaveDown = slave.get('state') == 'down';
+      return {
+        'ifc-connection-status': true,
+        'ifc-online': !slaveDown,
+        'ifc-offline': slaveDown
+      };
+    };
+    var bondProperties = ifc.get('bond_properties');
+    var interfaceProperties = ifc.get('interface_properties') || null;
+    var offloadingModes = ifc.get('offloading_modes') || [];
+    var bondingPossible = this.props.bondingAvailable && !locked;
 
     return this.props.connectDropTarget(
       <div className='ifc-container'>
@@ -823,15 +823,15 @@ var Network = React.createClass({
     }
   },
   render() {
-    var network = this.props.network,
-      interfaceNetwork = this.props.interfaceNetwork,
-      networkingParameters = this.props.networkingParameters,
-      classes = {
-        'network-block pull-left': true,
-        disabled: !this.constructor.source.canDrag(this.props),
-        dragging: this.props.isDragging
-      },
-      vlanRange = network.getVlanRange(networkingParameters);
+    var network = this.props.network;
+    var interfaceNetwork = this.props.interfaceNetwork;
+    var networkingParameters = this.props.networkingParameters;
+    var classes = {
+      'network-block pull-left': true,
+      disabled: !this.constructor.source.canDrag(this.props),
+      dragging: this.props.isDragging
+    };
+    var vlanRange = network.getVlanRange(networkingParameters);
 
     return this.props.connectDragSource(
       <div className={utils.classNames(classes)}>

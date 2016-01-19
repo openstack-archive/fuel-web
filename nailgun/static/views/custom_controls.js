@@ -25,12 +25,12 @@ customControls.custom_repo_configuration = React.createClass({
   statics: {
     // validate method represented as static method to support cluster settings validation
     validate(setting, models) {
-      var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.',
-        nameRegexp = /^[\w-.]+$/,
-        os = models.release.get('operating_system');
+      var ns = 'cluster_page.settings_tab.custom_repo_configuration.errors.';
+      var nameRegexp = /^[\w-.]+$/;
+      var os = models.release.get('operating_system');
       var errors = setting.value.map((repo) => {
-        var error = {},
-          value = this.repoToString(repo, os);
+        var error = {};
+        var value = this.repoToString(repo, os);
         if (!repo.name) {
           error.name = i18n(ns + 'empty_name');
         } else if (!repo.name.match(nameRegexp)) {
@@ -70,8 +70,8 @@ customControls.custom_repo_configuration = React.createClass({
   },
   changeRepos(method, index, value) {
     value = _.trim(value).replace(/\s+/g, ' ');
-    var repos = _.cloneDeep(this.props.value),
-      os = this.props.cluster.get('release').get('operating_system');
+    var repos = _.cloneDeep(this.props.value);
+    var os = this.props.cluster.get('release').get('operating_system');
     switch (method) {
       case 'add':
         var data = {
@@ -99,8 +99,8 @@ customControls.custom_repo_configuration = React.createClass({
         repos[index].priority = value == '' ? null : Number(value);
         break;
       default:
-        var repo = repos[index],
-          match = value.match(this.props.repoRegexes[os]);
+        var repo = repos[index];
+        var match = value.match(this.props.repoRegexes[os]);
         if (match) {
           _.each(this.props.repoAttributes[os], (attribute, index) => {
             repo[attribute] = match[index + 1] || '';
@@ -125,20 +125,20 @@ customControls.custom_repo_configuration = React.createClass({
     );
   },
   render() {
-    var ns = 'cluster_page.settings_tab.custom_repo_configuration.',
-      os = this.props.cluster.get('release').get('operating_system');
+    var ns = 'cluster_page.settings_tab.custom_repo_configuration.';
+    var os = this.props.cluster.get('release').get('operating_system');
     return (
       <div className='repos' key={this.state.key}>
         {this.props.description &&
           <span className='help-block' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(_.escape(this.props.description)))}} />
         }
         {this.props.value.map((repo, index) => {
-          var error = (this.props.error || {})[index],
-            props = {
-              name: index,
-              type: 'text',
-              disabled: this.props.disabled
-            };
+          var error = (this.props.error || {})[index];
+          var props = {
+            name: index,
+            type: 'text',
+            disabled: this.props.disabled
+          };
           return (
             <div className='form-inline' key={'repo-' + index}>
               <Input

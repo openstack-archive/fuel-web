@@ -25,13 +25,10 @@ define([
   'use strict';
 
   registerSuite(function() {
-    var common,
-      clusterPage,
-      dashboardPage,
-      clusterName,
-      searchButtonSelector = '.node-management-panel .btn-search',
-      sortingButtonSelector = '.node-management-panel .btn-sorters',
-      filtersButtonSelector = '.node-management-panel .btn-filters';
+    var common, clusterPage, dashboardPage, clusterName;
+    var searchButtonSelector = '.node-management-panel .btn-search';
+    var sortingButtonSelector = '.node-management-panel .btn-sorters';
+    var filtersButtonSelector = '.node-management-panel .btn-filters';
 
     return {
       name: 'Node management panel on cluster nodes page: search, sorting, filtering',
@@ -98,10 +95,10 @@ define([
             .assertElementExists(searchButtonSelector, 'Empty search control is closed when clicking outside the input');
         },
         'Test node list sorting': function() {
-          var activeSortersPanelSelector = '.active-sorters',
-            moreControlSelector = '.sorters .more-control',
-            firstNodeName,
-            self = this;
+          var activeSortersPanelSelector = '.active-sorters';
+          var moreControlSelector = '.sorters .more-control';
+          var firstNodeName;
+          var self = this;
           return this.remote
             .assertElementExists(activeSortersPanelSelector, 'Active sorters panel is shown if there are nodes in cluster')
             .assertElementNotExists(activeSortersPanelSelector + '.btn-reset-sorting', 'Default sorting can not be reset from active sorters panel')
@@ -144,8 +141,8 @@ define([
               .end();
         },
         'Test node list filtering': function() {
-          var activeFiltersPanelSelector = '.active-filters',
-            moreControlSelector = '.filters .more-control';
+          var activeFiltersPanelSelector = '.active-filters';
+          var moreControlSelector = '.filters .more-control';
           return this.remote
             .assertElementNotExists(activeFiltersPanelSelector, 'Environment has no active filters by default')
             .clickByCssSelector(filtersButtonSelector)

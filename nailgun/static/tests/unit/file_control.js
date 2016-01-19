@@ -52,12 +52,12 @@ suite('File Control', () => {
   });
 
   test('File fetching', () => {
-    var readMethod = sinon.mock(),
-      readerObject = {
-        readAsBinaryString: readMethod,
-        result: 'File contents'
-      },
-      saveMethod = sinon.spy(input, 'saveFile');
+    var readMethod = sinon.mock();
+    var readerObject = {
+      readAsBinaryString: readMethod,
+      result: 'File contents'
+    };
+    var saveMethod = sinon.spy(input, 'saveFile');
 
     window.FileReader = () => readerObject;
 
@@ -77,9 +77,9 @@ suite('File Control', () => {
   });
 
   test('File saving', () => {
-    var setState = sinon.spy(input, 'setState'),
-      dummyName = 'dummy.ext',
-      dummyContent = 'Lorem ipsum dolores';
+    var setState = sinon.spy(input, 'setState');
+    var dummyName = 'dummy.ext';
+    var dummyContent = 'Lorem ipsum dolores';
     input.saveFile(dummyName, dummyContent);
 
     assert.deepEqual(setState.args[0][0], {

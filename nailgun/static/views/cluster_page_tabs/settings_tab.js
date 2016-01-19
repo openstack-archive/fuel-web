@@ -75,11 +75,11 @@ var SettingsTab = React.createClass({
     if (!this.isSavingPossible()) return $.Deferred().reject();
 
     // collecting data to save
-    var settings = this.props.cluster.get('settings'),
-      dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
-        _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
-    var options = {url: settings.url, patch: true, wait: true, validate: false},
-      deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
+    var settings = this.props.cluster.get('settings');
+    var dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
+      _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
+    var options = {url: settings.url, patch: true, wait: true, validate: false};
+    var deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
     if (deferred) {
       this.setState({actionInProgress: true});
       deferred
@@ -107,10 +107,10 @@ var SettingsTab = React.createClass({
     return deferred;
   },
   loadDefaults() {
-    var settings = this.props.cluster.get('settings'),
-      lockedCluster = !this.props.cluster.isAvailableForSettingsChanges(),
-      defaultSettings = new models.Settings(),
-      deferred = defaultSettings.fetch({url: _.result(this.props.cluster, 'url') + '/attributes/defaults'});
+    var settings = this.props.cluster.get('settings');
+    var lockedCluster = !this.props.cluster.isAvailableForSettingsChanges();
+    var defaultSettings = new models.Settings();
+    var deferred = defaultSettings.fetch({url: _.result(this.props.cluster, 'url') + '/attributes/defaults'});
 
     if (deferred) {
       this.setState({actionInProgress: true});
@@ -154,8 +154,8 @@ var SettingsTab = React.createClass({
     settings.isValid({models: this.state.configModels});
   },
   onChange(groupName, settingName, value) {
-    var settings = this.props.cluster.get('settings'),
-      name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
+    var settings = this.props.cluster.get('settings');
+    var name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
     this.state.settingsForChecks.set(name, value);
     // FIXME: the following hacks cause we can't pass {validate: true} option to set method
     // this form of validation isn't supported in Backbone DeepModel
@@ -167,30 +167,30 @@ var SettingsTab = React.createClass({
     return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, setting);
   },
   isSavingPossible() {
-    var settings = this.props.cluster.get('settings'),
-      locked = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true}),
-      // network settings are shown on Networks tab, so they should not block
-      // saving of changes on Settings tab
-      areSettingsValid = !_.any(_.keys(settings.validationError), (settingPath) => {
-        var settingSection = settingPath.split('.')[0];
-        return settings.get(settingSection).metadata.group != 'network' &&
-          settings.get(settingPath).group != 'network';
-      });
+    var settings = this.props.cluster.get('settings');
+    var locked = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true});
+    // network settings are shown on Networks tab, so they should not block
+    // saving of changes on Settings tab
+    var areSettingsValid = !_.any(_.keys(settings.validationError), (settingPath) => {
+      var settingSection = settingPath.split('.')[0];
+      return settings.get(settingSection).metadata.group != 'network' &&
+        settings.get(settingPath).group != 'network';
+    });
     return !locked && this.hasChanges() && areSettingsValid;
   },
   render() {
-    var cluster = this.props.cluster,
-      settings = cluster.get('settings'),
-      settingsGroupList = settings.getGroupList(),
-      locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true}),
-      lockedCluster = !cluster.isAvailableForSettingsChanges(),
-      someSettingsEditable = _.any(settings.attributes, (group) => group.metadata.always_editable),
-      hasChanges = this.hasChanges(),
-      allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles')))),
-      classes = {
-        row: true,
-        'changes-locked': lockedCluster
-      };
+    var cluster = this.props.cluster;
+    var settings = cluster.get('settings');
+    var settingsGroupList = settings.getGroupList();
+    var locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true});
+    var lockedCluster = !cluster.isAvailableForSettingsChanges();
+    var someSettingsEditable = _.any(settings.attributes, (group) => group.metadata.always_editable);
+    var hasChanges = this.hasChanges();
+    var allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+    var classes = {
+      row: true,
+      'changes-locked': lockedCluster
+    };
 
     var invalidSections = {};
     _.each(settings.validationError, (error, key) => {
@@ -203,8 +203,8 @@ var SettingsTab = React.createClass({
     _.each(settings.attributes, (section, sectionName) => {
       var isHidden = this.checkRestrictions('hide', section.metadata).result;
       if (!isHidden) {
-        var group = section.metadata.group,
-          hasErrors = invalidSections[sectionName];
+        var group = section.metadata.group;
+        var hasErrors = invalidSections[sectionName];
         if (group) {
           if (group != 'network') {
             groupedSettings[settings.sanitizeGroup(group)][sectionName] = {invalid: hasErrors};
@@ -224,18 +224,18 @@ var SettingsTab = React.createClass({
           }
 
           _.each(settingGroups, (settingGroup) => {
-            var calculatedGroup = settings.sanitizeGroup(settingGroup),
-              pickedSettings = _.compact(_.map(section, (setting, settingName) => {
-                if (
-                  settingName != 'metadata' &&
-                  setting.type != 'hidden' &&
-                  settings.sanitizeGroup(setting.group) == calculatedGroup &&
-                  !this.checkRestrictions('hide', setting).result
-                ) return settingName;
-              })),
-              hasErrors = _.any(pickedSettings, (settingName) => {
-                return (settings.validationError || {})[settings.makePath(sectionName, settingName)];
-              });
+            var calculatedGroup = settings.sanitizeGroup(settingGroup);
+            var pickedSettings = _.compact(_.map(section, (setting, settingName) => {
+              if (
+                settingName != 'metadata' &&
+                setting.type != 'hidden' &&
+                settings.sanitizeGroup(setting.group) == calculatedGroup &&
+                !this.checkRestrictions('hide', setting).result
+              ) return settingName;
+            }));
+            var hasErrors = _.any(pickedSettings, (settingName) => {
+              return (settings.validationError || {})[settings.makePath(sectionName, settingName)];
+            });
             if (!_.isEmpty(pickedSettings)) {
               groupedSettings[calculatedGroup][sectionName] = {settings: pickedSettings, invalid: hasErrors};
             }

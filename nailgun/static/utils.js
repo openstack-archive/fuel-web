@@ -39,9 +39,9 @@ var utils = {
     return _.object(_.map((serializedOptions || '').split(';'), (option) => option.split(':')));
   },
   getNodeListFromTabOptions(options) {
-    var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes,
-      ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [],
-      nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
+    var nodeIds = utils.deserializeTabOptions(options.screenOptions[0]).nodes;
+    var ids = nodeIds ? nodeIds.split(',').map((id) => parseInt(id, 10)) : [];
+    var nodes = new models.Nodes(options.cluster.get('nodes').getByIds(ids));
     if (nodes.length == ids.length) return nodes;
   },
   renderMultilineText(text) {
@@ -71,8 +71,8 @@ var utils = {
     return modelPath;
   },
   evaluateExpression(expression, models, options) {
-    var compiledExpression = new Expression(expression, models, options),
-      value = compiledExpression.evaluate();
+    var compiledExpression = new Expression(expression, models, options);
+    var value = compiledExpression.evaluate();
     return {
       value: value,
       modelPaths: compiledExpression.modelPaths
@@ -120,7 +120,8 @@ var utils = {
     var base = 1024;
     treshold = treshold || 256;
     var units = ['byte', 'kb', 'mb', 'gb', 'tb'];
-    var i, result, unit = 'tb';
+    var i, result;
+    var unit = 'tb';
     for (i = 0; i < units.length; i += 1) {
       result = bytes / Math.pow(base, i);
       if (result < treshold) {
@@ -162,7 +163,8 @@ var utils = {
   },
   validateCidr(cidr, field) {
     field = field || 'cidr';
-    var error = {}, match;
+    var error = {};
+    var match;
     if (_.isString(cidr)) {
       match = cidr.match(utils.regexes.cidr);
       if (match) {
@@ -184,8 +186,8 @@ var utils = {
     return _.isString(ip) && !!ip.match(utils.regexes.ip);
   },
   validateIPRanges(ranges, cidr, existingRanges = [], warnings = {}) {
-    var ipRangesErrors = [],
-      ns = 'cluster_page.network_tab.validation.';
+    var ipRangesErrors = [];
+    var ns = 'cluster_page.network_tab.validation.';
     _.defaults(warnings, {
       INVALID_IP: i18n(ns + 'invalid_ip'),
       DOES_NOT_MATCH_CIDR: i18n(ns + 'ip_does_not_match_cidr'),
@@ -239,14 +241,14 @@ var utils = {
     return ipRangesErrors;
   },
   checkIPRangesIntersection([startIP, endIP], existingRanges) {
-    var startIPInt = IP.toLong(startIP),
-      endIPInt = IP.toLong(endIP);
+    var startIPInt = IP.toLong(startIP);
+    var endIPInt = IP.toLong(endIP);
     return _.find(existingRanges, ([ip1, ip2]) => IP.toLong(ip2) >= startIPInt && IP.toLong(ip1) <= endIPInt);
   },
   validateIpCorrespondsToCIDR(cidr, ip) {
     if (!cidr) return true;
-    var networkData = IP.cidrSubnet(cidr),
-      ipInt = IP.toLong(ip);
+    var networkData = IP.cidrSubnet(cidr);
+    var ipInt = IP.toLong(ip);
     return ipInt >= IP.toLong(networkData.firstAddress) && ipInt <= IP.toLong(networkData.lastAddress);
   },
   validateVlanRange(vlanStart, vlanEnd, vlan) {
@@ -309,8 +311,8 @@ var utils = {
       var attr = options.attr;
       return _.isFunction(model[attr]) ? model[attr]() : model.get(attr);
     };
-    var value1 = getValue(model1),
-      value2 = getValue(model2);
+    var value1 = getValue(model1);
+    var value2 = getValue(model2);
     if (_.isString(value1) && _.isString(value2)) {
       return utils.natsort(value1, value2, options);
     }
@@ -323,9 +325,9 @@ var utils = {
     return options.desc ? -result : result;
   },
   composeDocumentationLink(link) {
-    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
-      release = app.version.get('release'),
-      linkStart = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-' :
+    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
+    var release = app.version.get('release');
+    var linkStart = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-' :
         'https://docs.fuel-infra.org/openstack/fuel/fuel-';
     return linkStart + release + '/' + link;
   }

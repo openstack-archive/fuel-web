@@ -34,8 +34,8 @@ var HealthCheckTab = React.createClass({
   statics: {
     fetchData(options) {
       if (!options.cluster.get('ostf')) {
-        var ostf = {},
-          clusterId = options.cluster.id;
+        var ostf = {};
+        var clusterId = options.cluster.id;
         ostf.testsets = new models.TestSets();
         ostf.testsets.url = _.result(ostf.testsets, 'url') + '/' + clusterId;
         ostf.tests = new models.Tests();
@@ -119,9 +119,9 @@ var HealthcheckTabContent = React.createClass({
     this.setState({credentials: credentials});
   },
   runTests() {
-    var testruns = new models.TestRuns(),
-      oldTestruns = new models.TestRuns(),
-      testsetIds = this.props.testsets.pluck('id');
+    var testruns = new models.TestRuns();
+    var oldTestruns = new models.TestRuns();
+    var testsetIds = this.props.testsets.pluck('id');
     this.setState({actionInProgress: true});
     _.each(testsetIds, (testsetId) => {
       var testsToRun = _.pluck(this.props.tests.where({
@@ -129,15 +129,15 @@ var HealthcheckTabContent = React.createClass({
         checked: true
       }), 'id');
       if (testsToRun.length) {
-        var testrunConfig = {tests: testsToRun},
-          addCredentials = (obj) => {
-            obj.ostf_os_access_creds = {
-              ostf_os_username: this.state.credentials.user,
-              ostf_os_tenant_name: this.state.credentials.tenant,
-              ostf_os_password: this.state.credentials.password
-            };
-            return obj;
+        var testrunConfig = {tests: testsToRun};
+        var addCredentials = (obj) => {
+          obj.ostf_os_access_creds = {
+            ostf_os_username: this.state.credentials.user,
+            ostf_os_tenant_name: this.state.credentials.tenant,
+            ostf_os_password: this.state.credentials.password
           };
+          return obj;
+        };
 
         if (this.props.testruns.where({testset: testsetId}).length) {
           _.each(this.props.testruns.where({testset: testsetId}), (testrun) => {
@@ -198,8 +198,8 @@ var HealthcheckTabContent = React.createClass({
     }
   },
   render() {
-    var disabledState = this.isLocked(),
-      hasRunningTests = !!this.props.testruns.where({status: 'running'}).length;
+    var disabledState = this.isLocked();
+    var hasRunningTests = !!this.props.testruns.where({status: 'running'}).length;
     return (
       <div>
         {!disabledState &&
@@ -376,18 +376,18 @@ var Test = React.createClass({
     this.props.test.set('checked', value);
   },
   render() {
-    var test = this.props.test,
-      result = this.props.result,
-      description = _.escape(_.trim(test.get('description'))),
-      status = this.props.status,
-      currentStatusClassName = 'text-center healthcheck-status healthcheck-status-' + status,
-      iconClasses = {
-        success: 'glyphicon glyphicon-ok text-success',
-        failure: 'glyphicon glyphicon-remove text-danger',
-        error: 'glyphicon glyphicon-remove text-danger',
-        running: 'glyphicon glyphicon-refresh animate-spin',
-        wait_running: 'glyphicon glyphicon-time'
-      };
+    var test = this.props.test;
+    var result = this.props.result;
+    var description = _.escape(_.trim(test.get('description')));
+    var status = this.props.status;
+    var currentStatusClassName = 'text-center healthcheck-status healthcheck-status-' + status;
+    var iconClasses = {
+      success: 'glyphicon glyphicon-ok text-success',
+      failure: 'glyphicon glyphicon-remove text-danger',
+      error: 'glyphicon glyphicon-remove text-danger',
+      running: 'glyphicon glyphicon-refresh animate-spin',
+      wait_running: 'glyphicon glyphicon-time'
+    };
 
     return (
       <tr>

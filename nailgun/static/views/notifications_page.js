@@ -91,18 +91,18 @@ Notification = React.createClass({
     }
   },
   render() {
-    var topic = this.props.notification.get('topic'),
-      notificationClasses = {
-        'col-xs-12 notification': true,
-        'text-danger': topic == 'error',
-        'text-warning': topic == 'warning',
-        unread: this.props.notification.get('status') == 'unread'
-      },
-      iconClass = {
-        error: 'glyphicon-exclamation-sign',
-        warning: 'glyphicon-warning-sign',
-        discover: 'glyphicon-bell'
-      }[topic] || 'glyphicon-info-sign';
+    var topic = this.props.notification.get('topic');
+    var notificationClasses = {
+      'col-xs-12 notification': true,
+      'text-danger': topic == 'error',
+      'text-warning': topic == 'warning',
+      unread: this.props.notification.get('status') == 'unread'
+    };
+    var iconClass = {
+      error: 'glyphicon-exclamation-sign',
+      warning: 'glyphicon-warning-sign',
+      discover: 'glyphicon-bell'
+    }[topic] || 'glyphicon-info-sign';
     return (
       <div className={utils.classNames(notificationClasses)} onClick={this.onNotificationClick}>
         <div className='notification-time'>{this.props.notification.get('time')}</div>

@@ -83,12 +83,12 @@ var NodesTab = React.createClass({
   componentWillReceiveProps(newProps) {
     var screen = this.getScreen(newProps);
     if (this.state.screen != screen && this.checkScreenExists(screen)) {
-      var screenOptions = this.getScreenOptions(newProps),
-        newState = {
-          screen: screen,
-          screenOptions: screenOptions,
-          screenData: {}
-        };
+      var screenOptions = this.getScreenOptions(newProps);
+      var newState = {
+        screen: screen,
+        screenOptions: screenOptions,
+        screenData: {}
+      };
       if (this.shouldScreenDataBeLoaded(screen)) {
         this.setState(_.extend(newState, {loading: true}));
         this.loadScreenData(screen, screenOptions);

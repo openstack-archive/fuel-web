@@ -31,10 +31,10 @@ EquipmentPage = React.createClass({
     navbarActiveElement: 'equipment',
     breadcrumbsPath: [['home', '#'], 'equipment'],
     fetchData() {
-      var nodes = new models.Nodes(),
-        clusters = new models.Clusters(),
-        plugins = new models.Plugins(),
-        {releases, nodeNetworkGroups, fuelSettings} = app;
+      var nodes = new models.Nodes();
+      var clusters = new models.Clusters();
+      var plugins = new models.Plugins();
+      var {releases, nodeNetworkGroups, fuelSettings} = app;
 
       return $.when(
         nodes.fetch(),

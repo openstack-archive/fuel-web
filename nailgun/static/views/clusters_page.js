@@ -96,7 +96,8 @@ Cluster = React.createClass({
       this.props.cluster.task({name: 'cluster_deletion', status: 'ready'});
   },
   fetchData() {
-    var request, requests = [];
+    var request;
+    var requests = [];
     var deletionTask = this.props.cluster.task('cluster_deletion');
     if (deletionTask) {
       request = deletionTask.fetch();

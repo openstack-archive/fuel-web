@@ -32,10 +32,10 @@ var LogsTab = React.createClass({
     return this.state.to && this.state.logsEntries;
   },
   fetchData() {
-    var request,
-      logsEntries = this.state.logsEntries,
-      from = this.state.from,
-      to = this.state.to;
+    var request;
+    var logsEntries = this.state.logsEntries;
+    var from = this.state.from;
+    var to = this.state.to;
     request = this.fetchLogs({from: from, to: to})
       .done((data) => {
         this.setState({
@@ -142,17 +142,17 @@ var LogFilterBar = React.createClass({
     });
   },
   fetchSources(type, nodeId) {
-    var nodes = this.props.nodes,
-      chosenNodeId = nodeId || (nodes.length ? nodes.first().id : null);
+    var nodes = this.props.nodes;
+    var chosenNodeId = nodeId || (nodes.length ? nodes.first().id : null);
     this.sources = new models.LogSources();
     this.sources.deferred = (type == 'remote' && chosenNodeId) ?
       this.sources.fetch({url: '/api/logs/sources/nodes/' + chosenNodeId})
     :
       this.sources.fetch();
     this.sources.deferred.done(() => {
-      var filteredSources = this.sources.filter((source) => source.get('remote') == (type != 'local')),
-        chosenSource = _.findWhere(filteredSources, {id: this.state.source}) || _.first(filteredSources),
-        chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.level) ? this.state.level : _.first(chosenSource.get('levels')) : null;
+      var filteredSources = this.sources.filter((source) => source.get('remote') == (type != 'local'));
+      var chosenSource = _.findWhere(filteredSources, {id: this.state.source}) || _.first(filteredSources);
+      var chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.level) ? this.state.level : _.first(chosenSource.get('levels')) : null;
       this.setState({
         type: type,
         sources: this.sources,
@@ -194,8 +194,8 @@ var LogFilterBar = React.createClass({
     });
   },
   onSourceChange(name, value) {
-    var levels = this.state.sources.get(value).get('levels'),
-      data = {locked: false, source: value};
+    var levels = this.state.sources.get(value).get('levels');
+    var data = {locked: false, source: value};
     if (!_.contains(levels, this.state.level)) data.level = _.first(levels);
     this.setState(data);
   },
@@ -207,10 +207,10 @@ var LogFilterBar = React.createClass({
     }, this);
   },
   getRemoteSources() {
-    var options = {},
-      groups = [''],
-      sourcesByGroup = {'': []},
-      sources = this.state.sources;
+    var options = {};
+    var groups = [''];
+    var sourcesByGroup = {'': []};
+    var sources = this.state.sources;
     if (sources.length) {
       sources.each((source) => {
         var group = source.get('group') || '';
@@ -292,10 +292,10 @@ var LogFilterBar = React.createClass({
     </div>;
   },
   renderNodeSelect() {
-    var sortedNodes = this.props.nodes.models.sort(_.partialRight(utils.compare, {attr: 'name'})),
-      nodeOptions = sortedNodes.map((node) => {
-        return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
-      });
+    var sortedNodes = this.props.nodes.models.sort(_.partialRight(utils.compare, {attr: 'name'}));
+    var nodeOptions = sortedNodes.map((node) => {
+      return <option value={node.id} key={node.id}>{node.get('name') || node.get('mac')}</option>;
+    });
 
     return <div className='col-md-2 col-sm-3'>
       <Input
@@ -365,8 +365,8 @@ var LogsTable = React.createClass({
     }[level];
   },
   render() {
-    var tabRows = [],
-      logsEntries = this.props.logsEntries;
+    var tabRows = [];
+    var logsEntries = this.props.logsEntries;
     if (logsEntries && logsEntries.length) {
       tabRows = _.map(logsEntries, (entry, index) => {
         var key = logsEntries.length - index;

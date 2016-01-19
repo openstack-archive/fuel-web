@@ -32,8 +32,8 @@ var SupportPage = React.createClass({
     fetchData() {
       var tasks = new models.Tasks();
       return $.when(app.fuelSettings.fetch({cache: true}), tasks.fetch()).then(() => {
-        var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes)),
-          statistics = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
+        var tracking = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
+        var statistics = new models.FuelSettings(_.cloneDeep(app.fuelSettings.attributes));
         return {
           tasks: tasks,
           settings: app.fuelSettings,
@@ -161,8 +161,8 @@ var StatisticsSettings = React.createClass({
     unsavedChangesMixin
   ],
   hasChanges() {
-    var initialData = this.props.settings.get('statistics'),
-      currentData = this.props.statistics.get('statistics');
+    var initialData = this.props.settings.get('statistics');
+    var currentData = this.props.statistics.get('statistics');
     return _.any(this.props.statsCheckboxes, (field) => {
       return !_.isEqual(initialData[field].value, currentData[field].value);
     });
@@ -174,11 +174,11 @@ var StatisticsSettings = React.createClass({
     return this.isSavingPossible() ? this.prepareStatisticsToSave() : $.Deferred().resolve();
   },
   render() {
-    var statistics = this.props.statistics.get('statistics'),
-      sortedSettings = _.chain(_.keys(statistics))
-        .without('metadata')
-        .sortBy((settingName) => statistics[settingName].weight)
-        .value();
+    var statistics = this.props.statistics.get('statistics');
+    var sortedSettings = _.chain(_.keys(statistics))
+      .without('metadata')
+      .sortBy((settingName) => statistics[settingName].weight)
+      .value();
     return (
       <SupportPageElement
         className='img-statistics'
@@ -250,8 +250,8 @@ var DiagnosticSnapshot = React.createClass({
     this.startPolling();
   },
   render() {
-    var task = this.props.task,
-      generating = this.state.generating;
+    var task = this.props.task;
+    var generating = this.state.generating;
     return (
       <SupportPageElement
         className='img-download-logs'

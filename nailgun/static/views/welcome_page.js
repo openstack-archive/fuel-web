@@ -39,8 +39,8 @@ var WelcomePage = React.createClass({
   },
   onStartButtonClick() {
     this.clearRegistrationForm();
-    var statistics = this.props.tracking.get('statistics'),
-      currentAttributes = _.cloneDeep(this.props.settings.attributes);
+    var statistics = this.props.tracking.get('statistics');
+    var currentAttributes = _.cloneDeep(this.props.settings.attributes);
     statistics.user_choice_saved.value = true;
     // locked state is similar to actionInProgress but
     // we want the page isn't unlocked after successful saving
@@ -56,18 +56,18 @@ var WelcomePage = React.createClass({
       });
   },
   render() {
-    var ns = 'welcome_page.',
-      featureGroups = app.version.get('feature_groups'),
-      isMirantisIso = _.contains(featureGroups, 'mirantis'),
-      statsCollectorLink = 'https://stats.fuel-infra.org/',
-      privacyPolicyLink = 'https://www.mirantis.com/company/privacy-policy/',
-      username = this.props.settings.get('statistics').name.value;
-    var disabled = this.state.actionInProgress || this.state.locked,
-      buttonProps = {
-        disabled: disabled,
-        onClick: this.onStartButtonClick,
-        className: 'btn btn-lg btn-block btn-success'
-      };
+    var ns = 'welcome_page.';
+    var featureGroups = app.version.get('feature_groups');
+    var isMirantisIso = _.contains(featureGroups, 'mirantis');
+    var statsCollectorLink = 'https://stats.fuel-infra.org/';
+    var privacyPolicyLink = 'https://www.mirantis.com/company/privacy-policy/';
+    var username = this.props.settings.get('statistics').name.value;
+    var disabled = this.state.actionInProgress || this.state.locked;
+    var buttonProps = {
+      disabled: disabled,
+      onClick: this.onStartButtonClick,
+      className: 'btn btn-lg btn-block btn-success'
+    };
     return (
       <div className='welcome-page tracking'>
         <div className='col-md-8 col-md-offset-2 col-xs-10 col-xs-offset-1'>

@@ -55,15 +55,15 @@ var ClusterPage = React.createClass({
   statics: {
     navbarActiveElement: 'clusters',
     breadcrumbsPath(pageOptions) {
-      var cluster = pageOptions.cluster,
-        tabOptions = pageOptions.tabOptions[0],
-        addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/),
-        breadcrumbs = [
-          ['home', '#'],
-          ['environments', '#clusters'],
-          [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}],
-          [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, {active: !addScreenBreadcrumb}]
-        ];
+      var cluster = pageOptions.cluster;
+      var tabOptions = pageOptions.tabOptions[0];
+      var addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/);
+      var breadcrumbs = [
+        ['home', '#'],
+        ['environments', '#clusters'],
+        [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}],
+        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, {active: !addScreenBreadcrumb}]
+      ];
       if (addScreenBreadcrumb) {
         breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null, {active: true}]);
       }
@@ -271,10 +271,10 @@ var ClusterPage = React.createClass({
     }
   },
   render() {
-    var cluster = this.props.cluster,
-      availableTabs = this.getAvailableTabs(cluster),
-      tabUrls = _.pluck(availableTabs, 'url'),
-      tab = _.find(availableTabs, {url: this.props.activeTab});
+    var cluster = this.props.cluster;
+    var availableTabs = this.getAvailableTabs(cluster);
+    var tabUrls = _.pluck(availableTabs, 'url');
+    var tab = _.find(availableTabs, {url: this.props.activeTab});
     if (!tab) return null;
     var Tab = tab.tab;
 

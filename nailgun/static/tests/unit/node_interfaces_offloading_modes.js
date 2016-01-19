@@ -15,21 +15,18 @@
  **/
 import OffloadingModes from 'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control';
 
-var offloadingModesConrol,
-  TestMode22,
-  TestMode31,
-  fakeOffloadingModes,
-  fakeInterface = {
-    offloading_modes: fakeOffloadingModes,
-    get(key) {
-      assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to get data');
-      return fakeOffloadingModes;
-    },
-    set(key, value) {
-      assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to set data');
-      fakeOffloadingModes = value;
-    }
-  };
+var offloadingModesConrol, TestMode22, TestMode31, fakeOffloadingModes;
+var fakeInterface = {
+  offloading_modes: fakeOffloadingModes,
+  get(key) {
+    assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to get data');
+    return fakeOffloadingModes;
+  },
+  set(key, value) {
+    assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to set data');
+    fakeOffloadingModes = value;
+  }
+};
 
 suite('Offloadning Modes control', () => {
   setup(() => {

@@ -28,9 +28,9 @@ import {Input, RadioGroup, Table} from 'views/controls';
 import SettingSection from 'views/cluster_page_tabs/setting_section';
 import CSSTransitionGroup from 'react-addons-transition-group';
 
-var parametersNS = 'cluster_page.network_tab.networking_parameters.',
-  networkTabNS = 'cluster_page.network_tab.',
-  defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
+var parametersNS = 'cluster_page.network_tab.networking_parameters.';
+var networkTabNS = 'cluster_page.network_tab.';
+var defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
 
 var NetworkModelManipulationMixin = {
   setValue(attribute, value, options) {
@@ -59,9 +59,9 @@ var NetworkModelManipulationMixin = {
 
 var NetworkInputsMixin = {
   composeProps(attribute, isRange, isInteger) {
-    var network = this.props.network,
-      ns = network ? networkTabNS + 'network.' : parametersNS,
-      error = this.getError(attribute) || null;
+    var network = this.props.network;
+    var ns = network ? networkTabNS + 'network.' : parametersNS;
+    var error = this.getError(attribute) || null;
 
     // in case of verification error we need to pass an empty string to highlight the field only
     // but not overwriting validation error
@@ -149,15 +149,15 @@ var Range = React.createClass({
     if (input.value) return;
     if (_.isUndefined(error)) input.value = rangeStart;
     if (input.setSelectionRange) {
-      var startPos = _.lastIndexOf(rangeStart, '.') + 1,
-        endPos = rangeStart.length;
+      var startPos = _.lastIndexOf(rangeStart, '.') + 1;
+      var endPos = rangeStart.length;
       input.setSelectionRange(startPos, endPos);
     }
   },
   onRangeChange(name, newValue, attribute, rowIndex) {
-    var model = this.getModel(),
-      valuesToSet = _.cloneDeep(model.get(attribute)),
-      valuesToModify = this.props.extendable ? valuesToSet[rowIndex] : valuesToSet;
+    var model = this.getModel();
+    var valuesToSet = _.cloneDeep(model.get(attribute));
+    var valuesToModify = this.props.extendable ? valuesToSet[rowIndex] : valuesToSet;
 
     if (this.props.autoIncreaseWith) {
       valuesToSet = newValue;
@@ -188,8 +188,8 @@ var Range = React.createClass({
     });
   },
   getRangeProps(isRangeEnd) {
-    var error = this.props.error || null,
-      attributeName = this.props.name;
+    var error = this.props.error || null;
+    var attributeName = this.props.name;
     return {
       type: 'text',
       placeholder: error ? '' : this.props.placeholder,
@@ -222,19 +222,19 @@ var Range = React.createClass({
     );
   },
   render() {
-    var error = this.props.error || null,
-      attributeName = this.props.name,
-      attribute = this.getModel().get(attributeName),
-      ranges = this.props.autoIncreaseWith ?
-        [attribute || 0, (attribute + this.props.autoIncreaseWith - 1 || 0)] :
-        attribute,
-      wrapperClasses = {
-        'form-group range row': true,
-        mini: this.props.mini,
-        [this.props.wrapperClassName]: this.props.wrapperClassName
-      },
-      verificationError = this.props.verificationError || null,
-      [startInputError, endInputError] = error || [];
+    var error = this.props.error || null;
+    var attributeName = this.props.name;
+    var attribute = this.getModel().get(attributeName);
+    var ranges = this.props.autoIncreaseWith ?
+      [attribute || 0, (attribute + this.props.autoIncreaseWith - 1 || 0)] :
+      attribute;
+    var wrapperClasses = {
+      'form-group range row': true,
+      mini: this.props.mini,
+      [this.props.wrapperClassName]: this.props.wrapperClassName
+    };
+    var verificationError = this.props.verificationError || null;
+    var [startInputError, endInputError] = error || [];
 
     wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
     return (
@@ -406,8 +406,8 @@ var MultipleValuesInput = React.createClass({
     }
   },
   onChange(attribute, value, index) {
-    var model = this.getModel(),
-      valueToSet = _.cloneDeep(model.get(attribute));
+    var model = this.getModel();
+    var valueToSet = _.cloneDeep(model.get(attribute));
     valueToSet[index] = value;
     this.setValue(attribute, valueToSet);
   },
@@ -450,8 +450,8 @@ var MultipleValuesInput = React.createClass({
     );
   },
   render() {
-    var attributeName = this.props.name,
-      values = this.props.value;
+    var attributeName = this.props.name;
+    var values = this.props.value;
     return (
       <div className={'form-group row multiple-values ' + attributeName}>
         <div className='col-xs-12'>
@@ -607,9 +607,9 @@ var NetworkTab = React.createClass({
   },
   prepareIpRanges() {
     var removeEmptyRanges = (ranges) => {
-        return _.filter(ranges, (range) => _.compact(range).length);
-      },
-      networkConfiguration = this.props.cluster.get('networkConfiguration');
+      return _.filter(ranges, (range) => _.compact(range).length);
+    };
+    var networkConfiguration = this.props.cluster.get('networkConfiguration');
     networkConfiguration.get('networks').each((network) => {
       if (network.get('meta').notation == 'ip_ranges') {
         network.set({ip_ranges: removeEmptyRanges(network.get('ip_ranges'))});
@@ -621,9 +621,9 @@ var NetworkTab = React.createClass({
     }
   },
   onManagerChange(name, value) {
-    var networkConfiguration = this.props.cluster.get('networkConfiguration'),
-      networkingParameters = networkConfiguration.get('networking_parameters'),
-      fixedAmount = networkConfiguration.get('networking_parameters').get('fixed_networks_amount') || 1;
+    var networkConfiguration = this.props.cluster.get('networkConfiguration');
+    var networkingParameters = networkConfiguration.get('networking_parameters');
+    var fixedAmount = networkConfiguration.get('networking_parameters').get('fixed_networks_amount') || 1;
     networkingParameters.set({
       net_manager: value,
       fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
@@ -637,14 +637,14 @@ var NetworkTab = React.createClass({
     dispatcher.trigger('networkConfigurationUpdated', this.startVerification);
   },
   startVerification() {
-    var networkConfiguration = this.props.cluster.get('networkConfiguration'),
-      task = new models.Task(),
-      options = {
-        method: 'PUT',
-        url: _.result(networkConfiguration, 'url') + '/verify',
-        data: JSON.stringify(networkConfiguration)
-      },
-      ns = networkTabNS + 'verify_networks.verification_error.';
+    var networkConfiguration = this.props.cluster.get('networkConfiguration');
+    var task = new models.Task();
+    var options = {
+      method: 'PUT',
+      url: _.result(networkConfiguration, 'url') + '/verify',
+      data: JSON.stringify(networkConfiguration)
+    };
+    var ns = networkTabNS + 'verify_networks.verification_error.';
 
     task.save({}, options)
       .fail((response) => {
@@ -679,8 +679,8 @@ var NetworkTab = React.createClass({
     this.setState({actionInProgress: true});
     this.prepareIpRanges();
 
-    var requests = [],
-      result = $.Deferred();
+    var requests = [];
+    var result = $.Deferred();
 
     dispatcher.trigger('networkConfigurationUpdated', () => {
       return Backbone.sync('update', this.props.cluster.get('networkConfiguration'))
@@ -718,12 +718,12 @@ var NetworkTab = React.createClass({
 
     if (this.isNetworkSettingsChanged()) {
       // collecting data to save
-      var settings = this.props.cluster.get('settings'),
-        dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
-          _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
+      var settings = this.props.cluster.get('settings');
+      var dataToSave = this.props.cluster.isAvailableForSettingsChanges() ? settings.attributes :
+        _.pick(settings.attributes, (group) => (group.metadata || {}).always_editable);
 
-      var options = {url: settings.url, patch: true, wait: true, validate: false},
-        deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
+      var options = {url: settings.url, patch: true, wait: true, validate: false};
+      var deferred = new models.Settings(_.cloneDeep(dataToSave)).save(null, options);
       if (deferred) {
         this.setState({actionInProgress: true});
         deferred
@@ -782,8 +782,8 @@ var NetworkTab = React.createClass({
     );
   },
   getVerificationErrors() {
-    var task = this.state.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'}),
-      fieldsWithVerificationErrors = [];
+    var task = this.state.hideVerificationResult ? null : this.props.cluster.task({group: 'network', status: 'error'});
+    var fieldsWithVerificationErrors = [];
     // @TODO(morale): soon response format will be changed and this part should be rewritten
     if (task && task.get('result').length) {
       _.each(task.get('result'), (verificationError) => {
@@ -842,53 +842,53 @@ var NetworkTab = React.createClass({
       });
   },
   render() {
-    var isLocked = this.isLocked(),
-      hasChanges = this.hasChanges(),
-      {activeNetworkSectionName, cluster} = this.props,
-      networkConfiguration = this.props.cluster.get('networkConfiguration'),
-      networkingParameters = networkConfiguration.get('networking_parameters'),
-      manager = networkingParameters.get('net_manager'),
-      managers = [
-        {
-          label: i18n(networkTabNS + 'flatdhcp_manager'),
-          data: 'FlatDHCPManager',
-          checked: manager == 'FlatDHCPManager',
-          disabled: isLocked
-        },
-        {
-          label: i18n(networkTabNS + 'vlan_manager'),
-          data: 'VlanManager',
-          checked: manager == 'VlanManager',
-          disabled: isLocked
-        }
-      ],
-      classes = {
-        row: true,
-        'changes-locked': isLocked
+    var isLocked = this.isLocked();
+    var hasChanges = this.hasChanges();
+    var {activeNetworkSectionName, cluster} = this.props;
+    var networkConfiguration = this.props.cluster.get('networkConfiguration');
+    var networkingParameters = networkConfiguration.get('networking_parameters');
+    var manager = networkingParameters.get('net_manager');
+    var managers = [
+      {
+        label: i18n(networkTabNS + 'flatdhcp_manager'),
+        data: 'FlatDHCPManager',
+        checked: manager == 'FlatDHCPManager',
+        disabled: isLocked
       },
-      nodeNetworkGroups = this.nodeNetworkGroups = new models.NodeNetworkGroups(this.props.nodeNetworkGroups.where({cluster_id: cluster.id})),
-      isNovaEnvironment = cluster.get('net_provider') == 'nova_network',
-      networks = networkConfiguration.get('networks'),
-      isMultiRack = nodeNetworkGroups.length > 1,
-      networkVerifyTask = cluster.task('verify_networks'),
-      networkCheckTask = cluster.task('check_networks');
+      {
+        label: i18n(networkTabNS + 'vlan_manager'),
+        data: 'VlanManager',
+        checked: manager == 'VlanManager',
+        disabled: isLocked
+      }
+    ];
+    var classes = {
+      row: true,
+      'changes-locked': isLocked
+    };
+    var nodeNetworkGroups = this.nodeNetworkGroups = new models.NodeNetworkGroups(this.props.nodeNetworkGroups.where({cluster_id: cluster.id}));
+    var isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
+    var networks = networkConfiguration.get('networks');
+    var isMultiRack = nodeNetworkGroups.length > 1;
+    var networkVerifyTask = cluster.task('verify_networks');
+    var networkCheckTask = cluster.task('check_networks');
 
-    var {validationError} = networkConfiguration,
-      notEnoughOnlineNodesForVerification = cluster.get('nodes').where({online: true}).length < 2,
-      isVerificationDisabled = validationError ||
-        this.state.actionInProgress ||
-        !!cluster.task({group: ['deployment', 'network'], active: true}) ||
-        isMultiRack ||
-        notEnoughOnlineNodesForVerification;
+    var {validationError} = networkConfiguration;
+    var notEnoughOnlineNodesForVerification = cluster.get('nodes').where({online: true}).length < 2;
+    var isVerificationDisabled = validationError ||
+      this.state.actionInProgress ||
+      !!cluster.task({group: ['deployment', 'network'], active: true}) ||
+      isMultiRack ||
+      notEnoughOnlineNodesForVerification;
 
-    var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}),
-      nodeNetworkGroupProps = {
-        cluster: cluster,
-        locked: isLocked,
-        actionInProgress: this.state.actionInProgress,
-        verificationErrors: this.getVerificationErrors(),
-        validationError: validationError
-      };
+    var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName});
+    var nodeNetworkGroupProps = {
+      cluster: cluster,
+      locked: isLocked,
+      actionInProgress: this.state.actionInProgress,
+      verificationErrors: this.getVerificationErrors(),
+      validationError: validationError
+    };
 
     return (
       <div className={utils.classNames(classes)}>
@@ -1043,16 +1043,16 @@ var NodeNetworkGroup = React.createClass({
 
 var NetworkSubtabs = React.createClass({
   renderClickablePills(sections, isNetworkGroupPill) {
-    var {cluster, nodeNetworkGroups, validationError} = this.props,
-      isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
+    var {cluster, nodeNetworkGroups, validationError} = this.props;
+    var isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
 
-    var networkParametersErrors = (validationError || {}).networking_parameters,
-      networksErrors = (validationError || {}).networks;
+    var networkParametersErrors = (validationError || {}).networking_parameters;
+    var networksErrors = (validationError || {}).networks;
 
     return (sections.map((groupName) => {
-      var tabLabel = groupName,
-        isActive = groupName == this.props.activeGroupName,
-        isInvalid;
+      var tabLabel = groupName;
+      var isActive = groupName == this.props.activeGroupName;
+      var isInvalid;
 
       // is one of predefined sections selected (networking_parameters)
       if (groupName == 'neutron_l2') {
@@ -1103,9 +1103,9 @@ var NetworkSubtabs = React.createClass({
     }));
   },
   render() {
-    var {nodeNetworkGroups} = this.props,
-      settingsSections = [],
-      nodeGroupSections = nodeNetworkGroups.pluck('name');
+    var {nodeNetworkGroups} = this.props;
+    var settingsSections = [];
+    var nodeGroupSections = nodeNetworkGroups.pluck('name');
 
     if (this.props.cluster.get('net_provider') == 'nova_network') {
       settingsSections.push('nova_configuration');
@@ -1151,9 +1151,9 @@ var NodeNetworkGroupTitle = React.createClass({
     this.setState({nodeNetworkGroupNameChangingError: null});
     if (e.key == 'Enter') {
       this.setState({actionInProgress: true});
-      var element = this.refs['node-group-title-input'].getInputDOMNode(),
-        newName = _.trim(element.value),
-        currentNodeNetworkGroup = this.props.currentNodeNetworkGroup;
+      var element = this.refs['node-group-title-input'].getInputDOMNode();
+      var newName = _.trim(element.value);
+      var currentNodeNetworkGroup = this.props.currentNodeNetworkGroup;
 
       if (newName != currentNodeNetworkGroup.get('name')) {
         var validationError = currentNodeNetworkGroup.validate({name: newName});
@@ -1191,11 +1191,11 @@ var NodeNetworkGroupTitle = React.createClass({
     this.startRenaming(e);
   },
   render() {
-    var {currentNodeNetworkGroup, isRenamingPossible, isDeletionPossible} = this.props,
-      classes = {
-        'network-group-name': true,
-        'no-rename': !isRenamingPossible
-      };
+    var {currentNodeNetworkGroup, isRenamingPossible, isDeletionPossible} = this.props;
+    var classes = {
+      'network-group-name': true,
+      'no-rename': !isRenamingPossible
+    };
     return (
       <div className={utils.classNames(classes)} key={currentNodeNetworkGroup.id}>
         {this.state.isRenaming ?
@@ -1252,8 +1252,8 @@ var Network = React.createClass({
 
     var networkName = this.props.network.get('name');
 
-    var ipRangeProps = this.composeProps('ip_ranges', true),
-      gatewayProps = this.composeProps('gateway');
+    var ipRangeProps = this.composeProps('ip_ranges', true);
+    var gatewayProps = this.composeProps('gateway');
     return (
       <div className={'forms-box ' + networkName}>
         <h3 className='networks'>{i18n('network.' + networkName)}</h3>
@@ -1298,10 +1298,10 @@ var NovaParameters = React.createClass({
     ]
   },
   render() {
-    var networkConfiguration = this.props.cluster.get('networkConfiguration'),
-      networkingParameters = networkConfiguration.get('networking_parameters'),
-      manager = networkingParameters.get('net_manager'),
-      fixedNetworkSizeValues = _.map(_.range(3, 12), _.partial(Math.pow, 2));
+    var networkConfiguration = this.props.cluster.get('networkConfiguration');
+    var networkingParameters = networkConfiguration.get('networking_parameters');
+    var manager = networkingParameters.get('net_manager');
+    var fixedNetworkSizeValues = _.map(_.range(3, 12), _.partial(Math.pow, 2));
     return (
       <div className='forms-box nova-config' key='nova-config'>
         <h3 className='networks'>{i18n(parametersNS + 'nova_configuration')}</h3>
@@ -1355,8 +1355,8 @@ var NetworkingL2Parameters = React.createClass({
     ]
   },
   render() {
-    var networkParameters = this.props.cluster.get('networkConfiguration').get('networking_parameters'),
-      idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id';
+    var networkParameters = this.props.cluster.get('networkConfiguration').get('networking_parameters');
+    var idRangePrefix = networkParameters.get('segmentation_type') == 'vlan' ? 'vlan' : 'gre_id';
     return (
       <div className='forms-box' key='neutron-l2'>
         <h3 className='networks'>{i18n(parametersNS + 'l2_configuration')}</h3>
@@ -1442,8 +1442,8 @@ var NetworkingL3Parameters = React.createClass({
 
 var NetworkSettings = React.createClass({
   onChange(groupName, settingName, value) {
-    var settings = this.props.cluster.get('settings'),
-      name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
+    var settings = this.props.cluster.get('settings');
+    var name = settings.makePath(groupName, settingName, settings.getValueAttribute(settingName));
     this.props.settingsForChecks.set(name, value);
     // FIXME: the following hacks cause we can't pass {validate: true} option to set method
     // this form of validation isn't supported in Backbone DeepModel
@@ -1455,11 +1455,11 @@ var NetworkSettings = React.createClass({
     return this.props.cluster.get('settings').checkRestrictions(this.props.configModels, action, setting);
   },
   render() {
-    var cluster = this.props.cluster,
-      settings = cluster.get('settings'),
-      locked = this.props.locked || !!cluster.task({group: ['deployment', 'network'], active: true}),
-      lockedCluster = !cluster.isAvailableForSettingsChanges(),
-      allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+    var cluster = this.props.cluster;
+    var settings = cluster.get('settings');
+    var locked = this.props.locked || !!cluster.task({group: ['deployment', 'network'], active: true});
+    var lockedCluster = !cluster.isAvailableForSettingsChanges();
+    var allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
     return (
       <div className='forms-box network'>
         {
@@ -1477,15 +1477,15 @@ var NetworkSettings = React.createClass({
             )
             .map(
               (sectionName) => {
-                var section = settings.get(sectionName),
-                  settingsToDisplay = _.compact(_.map(section, (setting, settingName) => {
-                    if (
-                      (section.metadata.group || setting.group == 'network') &&
-                      settingName != 'metadata' &&
-                      setting.type != 'hidden' &&
-                      !this.checkRestrictions('hide', setting).result
-                    ) return settingName;
-                  }));
+                var section = settings.get(sectionName);
+                var settingsToDisplay = _.compact(_.map(section, (setting, settingName) => {
+                  if (
+                    (section.metadata.group || setting.group == 'network') &&
+                    settingName != 'metadata' &&
+                    setting.type != 'hidden' &&
+                    !this.checkRestrictions('hide', setting).result
+                  ) return settingName;
+                }));
                 if (_.isEmpty(settingsToDisplay) && !settings.isPlugin(section)) return null;
                 return <SettingSection
                   {... _.pick(this.props, 'cluster', 'initialAttributes', 'settingsForChecks', 'configModels')}
@@ -1518,8 +1518,8 @@ var NetworkVerificationResult = React.createClass({
     return 'success';
   },
   render() {
-    var task = this.props.task,
-      ns = networkTabNS + 'verify_networks.';
+    var task = this.props.task;
+    var ns = networkTabNS + 'verify_networks.';
 
     if (this.props.hideVerificationResult) task = null;
     return (

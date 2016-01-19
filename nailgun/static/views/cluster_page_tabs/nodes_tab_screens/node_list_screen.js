@@ -103,16 +103,15 @@ NodeListScreen = React.createClass({
     };
   },
   getInitialState() {
-    var cluster = this.props.cluster,
-      nodes = this.props.nodes,
-      uiSettings = (cluster || this.props.fuelSettings).get('ui_settings');
+    var {cluster, nodes} = this.props;
+    var uiSettings = (cluster || this.props.fuelSettings).get('ui_settings');
 
     var availableFilters = this.props.filters.map((name) => {
-        var filter = new Filter(name, [], false);
-        filter.updateLimits(nodes, true);
-        return filter;
-      }),
-      activeFilters = cluster && this.props.mode == 'add' ?
+      var filter = new Filter(name, [], false);
+      filter.updateLimits(nodes, true);
+      return filter;
+    });
+    var activeFilters = cluster && this.props.mode == 'add' ?
         Filter.fromObject(this.props.defaultFilters, false)
       :
         _.union(
@@ -121,18 +120,18 @@ NodeListScreen = React.createClass({
         );
     _.invoke(activeFilters, 'updateLimits', nodes, false);
 
-    var availableSorters = this.props.sorters.map((name) => new Sorter(name, 'asc', false)),
-      activeSorters = cluster && this.props.mode == 'add' ?
-        _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false))
-      :
-        _.union(
-          _.map(uiSettings.sort, _.partial(Sorter.fromObject, _, false)),
-          _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
-        );
+    var availableSorters = this.props.sorters.map((name) => new Sorter(name, 'asc', false));
+    var activeSorters = cluster && this.props.mode == 'add' ?
+      _.map(this.props.defaultSorting, _.partial(Sorter.fromObject, _, false))
+    :
+      _.union(
+        _.map(uiSettings.sort, _.partial(Sorter.fromObject, _, false)),
+        _.map(uiSettings.sort_by_labels, _.partial(Sorter.fromObject, _, true))
+      );
 
-    var search = cluster && this.props.mode == 'add' ? '' : uiSettings.search,
-      viewMode = uiSettings.view_mode,
-      isLabelsPanelOpen = false;
+    var search = cluster && this.props.mode == 'add' ? '' : uiSettings.search;
+    var viewMode = uiSettings.view_mode;
+    var isLabelsPanelOpen = false;
 
     var states = {search, activeSorters, activeFilters, availableSorters, availableFilters, viewMode, isLabelsPanelOpen};
 
@@ -140,9 +139,9 @@ NodeListScreen = React.createClass({
     if (!cluster) return states;
 
     // additonal Nodes tab states (Cluster page)
-    var roles = cluster.get('roles').pluck('name'),
-      selectedRoles = nodes.length ? _.filter(roles, (role) => !nodes.any((node) => !node.hasRole(role))) : [],
-      indeterminateRoles = nodes.length ? _.filter(roles, (role) => !_.contains(selectedRoles, role) && nodes.any((node) => node.hasRole(role))) : [];
+    var roles = cluster.get('roles').pluck('name');
+    var selectedRoles = nodes.length ? _.filter(roles, (role) => !nodes.any((node) => !node.hasRole(role))) : [];
+    var indeterminateRoles = nodes.length ? _.filter(roles, (role) => !_.contains(selectedRoles, role) && nodes.any((node) => node.hasRole(role))) : [];
 
     var configModels = {
       cluster: cluster,
@@ -214,18 +213,18 @@ NodeListScreen = React.createClass({
     this.props.nodes.off('change:pending_roles', this.checkRoleAssignment, this);
   },
   processRoleLimits() {
-    var cluster = this.props.cluster,
-      maxNumberOfNodes = [],
-      processedRoleLimits = {};
+    var cluster = this.props.cluster;
+    var maxNumberOfNodes = [];
+    var processedRoleLimits = {};
 
-    var selectedNodes = this.props.nodes.filter((node) => this.props.selectedNodeIds[node.id]),
-      clusterNodes = this.props.cluster.get('nodes').filter((node) => !_.contains(this.props.selectedNodeIds, node.id)),
-      nodesForLimitCheck = new models.Nodes(_.union(selectedNodes, clusterNodes));
+    var selectedNodes = this.props.nodes.filter((node) => this.props.selectedNodeIds[node.id]);
+    var clusterNodes = this.props.cluster.get('nodes').filter((node) => !_.contains(this.props.selectedNodeIds, node.id));
+    var nodesForLimitCheck = new models.Nodes(_.union(selectedNodes, clusterNodes));
 
     cluster.get('roles').each((role) => {
       if ((role.get('limits') || {}).max) {
-        var roleName = role.get('name'),
-          isRoleAlreadyAssigned = nodesForLimitCheck.any((node) => node.hasRole(roleName));
+        var roleName = role.get('name');
+        var isRoleAlreadyAssigned = nodesForLimitCheck.any((node) => node.hasRole(roleName));
         processedRoleLimits[roleName] = role.checkLimits(this.state.configModels, nodesForLimitCheck, !isRoleAlreadyAssigned, ['max']);
       }
     });
@@ -305,8 +304,8 @@ NodeListScreen = React.createClass({
   },
   getFilterOptions(filter) {
     if (filter.isLabel) {
-      var values = _.uniq(this.props.nodes.getLabelValues(filter.name)),
-        ns = 'cluster_page.nodes_tab.node_management_panel.';
+      var values = _.uniq(this.props.nodes.getLabelValues(filter.name));
+      var ns = 'cluster_page.nodes_tab.node_management_panel.';
       return values.map((value) => {
         return {
           name: value,
@@ -395,8 +394,8 @@ NodeListScreen = React.createClass({
     }
   },
   changeUISettings(newSettings) {
-    var uiSettings = (this.props.cluster || this.props.fuelSettings).get('ui_settings'),
-      options = {patch: true, wait: true, validate: false};
+    var uiSettings = (this.props.cluster || this.props.fuelSettings).get('ui_settings');
+    var options = {patch: true, wait: true, validate: false};
     _.extend(uiSettings, newSettings);
     if (this.props.cluster) {
       this.props.cluster.save({ui_settings: uiSettings}, options);
@@ -418,14 +417,14 @@ NodeListScreen = React.createClass({
     return _.chain(this.props.nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
   },
   render() {
-    var cluster = this.props.cluster,
-      locked = !!cluster && !!cluster.task({group: 'deployment', active: true}),
-      nodes = this.props.nodes,
-      processedRoleData = cluster ? this.processRoleLimits() : {};
+    var cluster = this.props.cluster;
+    var locked = !!cluster && !!cluster.task({group: 'deployment', active: true});
+    var nodes = this.props.nodes;
+    var processedRoleData = cluster ? this.processRoleLimits() : {};
 
     // labels to manage in labels panel
-    var selectedNodes = new models.Nodes(this.props.nodes.filter((node) => this.props.selectedNodeIds[node.id])),
-      selectedNodeLabels = _.chain(selectedNodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
+    var selectedNodes = new models.Nodes(this.props.nodes.filter((node) => this.props.selectedNodeIds[node.id]));
+    var selectedNodeLabels = _.chain(selectedNodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
 
     // filter nodes
     var filteredNodes = nodes.filter((node) => {
@@ -906,7 +905,8 @@ ManagementPanel = React.createClass({
   render() {
     var ns = 'cluster_page.nodes_tab.node_management_panel.';
 
-    var disksConflict, interfaceConflict;
+    var disksConflict, interfaceConflict, inactiveSorters, canResetSorters,
+      inactiveFilters, appliedFilters;
     if (this.props.mode == 'list' && this.props.nodes.length) {
       disksConflict = !this.props.nodes.areDisksConfigurable();
       interfaceConflict = !this.props.nodes.areInterfacesConfigurable();
@@ -921,8 +921,6 @@ ManagementPanel = React.createClass({
       return classes;
     };
 
-    var inactiveSorters, canResetSorters;
-    var inactiveFilters, appliedFilters;
     if (this.props.mode != 'edit') {
       var checkSorter = (sorter, isLabel) => !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
       inactiveSorters = _.union(_.filter(this.props.availableSorters, _.partial(checkSorter, _, false)), _.filter(this.props.labelSorters, _.partial(checkSorter, _, true)))
@@ -1277,8 +1275,8 @@ NodeLabelsPanel = React.createClass({
   mixins: [unsavedChangesMixin],
   getInitialState() {
     var labels = _.map(this.props.labels, (label) => {
-      var labelValues = this.props.nodes.getLabelValues(label),
-        definedLabelValues = _.reject(labelValues, _.isUndefined);
+      var labelValues = this.props.nodes.getLabelValues(label);
+      var definedLabelValues = _.reject(labelValues, _.isUndefined);
       return {
         key: label,
         values: _.uniq(definedLabelValues),
@@ -1312,24 +1310,24 @@ NodeLabelsPanel = React.createClass({
     this.setState({labels: labels});
   },
   changeLabelKey(index, oldKey, newKey) {
-    var labels = this.state.labels,
-      labelData = labels[index];
+    var labels = this.state.labels;
+    var labelData = labels[index];
     labelData.key = newKey;
     if (!labelData.indeterminate) labelData.checked = true;
     this.validateLabels(labels);
     this.setState({labels: labels});
   },
   changeLabelState(index, key, checked) {
-    var labels = this.state.labels,
-      labelData = labels[index];
+    var labels = this.state.labels;
+    var labelData = labels[index];
     labelData.checked = checked;
     labelData.indeterminate = false;
     this.validateLabels(labels);
     this.setState({labels: labels});
   },
   changeLabelValue(index, key, value) {
-    var labels = this.state.labels,
-      labelData = labels[index];
+    var labels = this.state.labels;
+    var labelData = labels[index];
     labelData.values = [value || null];
     if (!labelData.indeterminate) labelData.checked = true;
     this.validateLabels(labels);
@@ -1376,8 +1374,8 @@ NodeLabelsPanel = React.createClass({
             delete nodeLabels[oldLabel];
           }
 
-          var nodeHasLabel = !_.isUndefined(nodeLabels[oldLabel]),
-            label = labelData.key;
+          var nodeHasLabel = !_.isUndefined(nodeLabels[oldLabel]);
+          var label = labelData.key;
           // rename label
           if ((labelData.checked || labelData.indeterminate) && nodeHasLabel) {
             var labelValue = nodeLabels[oldLabel];
@@ -1534,17 +1532,17 @@ RolePanel = React.createClass({
     });
   },
   processRestrictions(role, models) {
-    var name = role.get('name'),
-      restrictionsCheck = role.checkRestrictions(models, 'disable'),
-      roleLimitsCheckResults = this.props.processedRoleLimits[name],
-      roles = this.props.cluster.get('roles'),
-      conflicts = _.chain(this.props.selectedRoles)
-        .union(this.props.indeterminateRoles)
-        .map((role) => roles.find({name: role}).conflicts)
-        .flatten()
-        .uniq()
-        .value(),
-      messages = [];
+    var name = role.get('name');
+    var restrictionsCheck = role.checkRestrictions(models, 'disable');
+    var roleLimitsCheckResults = this.props.processedRoleLimits[name];
+    var roles = this.props.cluster.get('roles');
+    var conflicts = _.chain(this.props.selectedRoles)
+      .union(this.props.indeterminateRoles)
+      .map((role) => roles.find({name: role}).conflicts)
+      .flatten()
+      .uniq()
+      .value();
+    var messages = [];
 
     if (restrictionsCheck.result && restrictionsCheck.message) messages.push(restrictionsCheck.message);
     if (roleLimitsCheckResults && !roleLimitsCheckResults.valid && roleLimitsCheckResults.message) messages.push(roleLimitsCheckResults.message);
@@ -1561,8 +1559,8 @@ RolePanel = React.createClass({
         <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
         {this.props.cluster.get('roles').map((role) => {
           if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
-            var name = role.get('name'),
-              processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.props.configModels) : {};
+            var name = role.get('name');
+            var processedRestrictions = this.props.nodes.length ? this.processRestrictions(role, this.props.configModels) : {};
             return (
               <Input
                 key={name}
@@ -1625,17 +1623,17 @@ NodeList = React.createClass({
       });
     };
 
-    var labelNs = 'cluster_page.nodes_tab.node_management_panel.labels.',
-      getLabelValue = (node, label) => {
-        var labelValue = node.getLabel(label);
-        return labelValue === false ?
-            i18n(labelNs + 'not_assigned_label', {label: label})
+    var labelNs = 'cluster_page.nodes_tab.node_management_panel.labels.';
+    var getLabelValue = (node, label) => {
+      var labelValue = node.getLabel(label);
+      return labelValue === false ?
+          i18n(labelNs + 'not_assigned_label', {label: label})
+        :
+          _.isNull(labelValue) ?
+            i18n(labelNs + 'not_specified_label', {label: label})
           :
-            _.isNull(labelValue) ?
-              i18n(labelNs + 'not_specified_label', {label: label})
-            :
-              label + ' "' + labelValue + '"';
-      };
+            label + ' "' + labelValue + '"';
+    };
 
     var groupingMethod = (node) => {
       return _.compact(_.map(this.props.activeSorters, (sorter) => {
@@ -1643,9 +1641,9 @@ NodeList = React.createClass({
 
         if (sorter.isLabel) return getLabelValue(node, sorter.name);
 
-        var result,
-          ns = 'cluster_page.nodes_tab.node.',
-          cluster = this.props.cluster || this.props.clusters.get(node.get('cluster'));
+        var result;
+        var ns = 'cluster_page.nodes_tab.node.';
+        var cluster = this.props.cluster || this.props.clusters.get(node.get('cluster'));
         switch (sorter.name) {
           case 'roles':
             result = node.getRolesSummary(this.props.roles) || i18n(ns + 'no_roles');
@@ -1707,11 +1705,12 @@ NodeList = React.createClass({
     return groups.sort((group1, group2) => {
       var result;
       _.each(this.props.activeSorters, (sorter) => {
-        var node1 = group1[1][0], node2 = group2[1][0];
+        var node1 = group1[1][0];
+        var node2 = group2[1][0];
 
         if (sorter.isLabel) {
-          var node1Label = node1.getLabel(sorter.name),
-            node2Label = node2.getLabel(sorter.name);
+          var node1Label = node1.getLabel(sorter.name);
+          var node2Label = node2.getLabel(sorter.name);
           if (node1Label && node2Label) {
             result = utils.natsort(node1Label, node2Label, {insensitive: true});
           } else {
@@ -1720,9 +1719,9 @@ NodeList = React.createClass({
         } else {
           switch (sorter.name) {
             case 'roles':
-              var roles1 = node1.sortedRoles(preferredRolesOrder),
-                roles2 = node2.sortedRoles(preferredRolesOrder),
-                order;
+              var roles1 = node1.sortedRoles(preferredRolesOrder);
+              var roles2 = node2.sortedRoles(preferredRolesOrder);
+              var order;
               if (!roles1.length && !roles2.length) result = 0;
               else if (!roles1.length) result = 1;
               else if (!roles2.length) result = -1;
@@ -1743,14 +1742,14 @@ NodeList = React.createClass({
               result = utils.natsort(composeNodeDiskSizesLabel(node1), composeNodeDiskSizesLabel(node2));
               break;
             case 'group_id':
-              var nodeGroup1 = node1.get('group_id'),
-                nodeGroup2 = node2.get('group_id');
+              var nodeGroup1 = node1.get('group_id');
+              var nodeGroup2 = node2.get('group_id');
               result = nodeGroup1 == nodeGroup2 ? 0 :
                 !nodeGroup1 ? 1 : !nodeGroup2 ? -1 : nodeGroup1 - nodeGroup2;
               break;
             case 'cluster':
-              var cluster1 = node1.get('cluster'),
-                cluster2 = node2.get('cluster');
+              var cluster1 = node1.get('cluster');
+              var cluster2 = node2.get('cluster');
               result = cluster1 == cluster2 ? 0 :
                 !cluster1 ? 1 : !cluster2 ? -1 : utils.natsort(this.props.clusters.get(cluster1).get('name'), this.props.clusters.get(cluster2).get('name'));
               break;
@@ -1769,10 +1768,10 @@ NodeList = React.createClass({
     });
   },
   render() {
-    var groups = this.groupNodes(),
-      rolesWithLimitReached = _.keys(_.omit(this.props.processedRoleLimits, (roleLimit, roleName) => {
-        return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
-      }));
+    var groups = this.groupNodes();
+    var rolesWithLimitReached = _.keys(_.omit(this.props.processedRoleLimits, (roleLimit, roleName) => {
+      return roleLimit.valid || !_.contains(this.props.selectedRoles, roleName);
+    }));
     return (
       <div className={utils.classNames({'node-list row': true, compact: this.props.viewMode == 'compact'})}>
         {groups.length > 1 &&
@@ -1812,10 +1811,10 @@ NodeList = React.createClass({
 NodeGroup = React.createClass({
   mixins: [SelectAllMixin],
   render() {
-    var availableNodes = this.props.nodes.filter((node) => node.isSelectable()),
-      nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, (node) => {
-        return _.any(this.props.rolesWithLimitReached, (role) => !node.hasRole(role));
-      }), 'id');
+    var availableNodes = this.props.nodes.filter((node) => node.isSelectable());
+    var nodesWithRestrictionsIds = _.pluck(_.filter(availableNodes, (node) => {
+      return _.any(this.props.rolesWithLimitReached, (role) => !node.hasRole(role));
+    }), 'id');
     return (
       <div className='nodes-group'>
         <div className='row node-group-header'>

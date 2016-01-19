@@ -17,7 +17,6 @@
     complexity: 0
     eqeqeq: 0
     no-script-url: 0
-    one-var: [0, {uninitialized: always, initialized: never}]
     max-len: [0, 120]
 
     # extra rules

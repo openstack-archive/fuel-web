@@ -19,8 +19,8 @@ import models from 'models';
 suite('Test models', () => {
   suite('Test Task model', () => {
     test('Test extendStatuses method', () => {
-      var task = new models.Task(),
-        filters, result;
+      var task = new models.Task();
+      var filters, result;
 
       filters = {status: []};
       result = ['running', 'pending', 'ready', 'error'];
@@ -60,9 +60,9 @@ suite('Test models', () => {
     });
 
     test('Test extendGroups method', () => {
-      var task = new models.Task(),
-        allTaskNames = _.flatten(_.values(task.groups)),
-        filters, result;
+      var task = new models.Task();
+      var allTaskNames = _.flatten(_.values(task.groups));
+      var filters, result;
 
       filters = {name: []};
       result = allTaskNames;

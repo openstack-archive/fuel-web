@@ -25,11 +25,9 @@ define([
   'use strict';
 
   registerSuite(function() {
-    var common,
-      clusterPage,
-      clusterName,
-      nodesAmount = 3,
-      applyButtonSelector = 'button.btn-apply';
+    var common, clusterPage, clusterName;
+    var nodesAmount = 3;
+    var applyButtonSelector = 'button.btn-apply';
 
     return {
       name: 'Cluster page',

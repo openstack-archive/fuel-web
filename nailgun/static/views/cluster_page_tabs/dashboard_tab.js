@@ -48,10 +48,10 @@ var DashboardTab = React.createClass({
     return this.props.cluster.get('nodes').fetch();
   },
   render() {
-    var cluster = this.props.cluster,
-      nodes = cluster.get('nodes'),
-      release = cluster.get('release'),
-      runningDeploymentTask = cluster.task({group: 'deployment', active: true});
+    var cluster = this.props.cluster;
+    var nodes = cluster.get('nodes');
+    var release = cluster.get('release');
+    var runningDeploymentTask = cluster.task({group: 'deployment', active: true});
 
     var dashboardLinks = [{
       url: '/',
@@ -156,9 +156,9 @@ var DashboardLink = React.createClass({
     return 'http://' + this.props.cluster.get('networkConfiguration').get('public_vip') + url;
   },
   render() {
-    var isSSLEnabled = this.props.cluster.get('settings').get('public_ssl.horizon.value'),
-      isURLRelative = !(/^(?:https?:)?\/\//.test(this.props.url)),
-      url = isURLRelative ? this.processRelativeURL(this.props.url) : this.props.url;
+    var isSSLEnabled = this.props.cluster.get('settings').get('public_ssl.horizon.value');
+    var isURLRelative = !(/^(?:https?:)?\/\//.test(this.props.url));
+    var url = isURLRelative ? this.processRelativeURL(this.props.url) : this.props.url;
     return (
       <div className={'link-block ' + this.props.className}>
         <div className='title'>
@@ -180,11 +180,11 @@ var DeploymentInProgressControl = React.createClass({
     Dialog.show({cluster: this.props.cluster});
   },
   render() {
-    var task = this.props.task,
-      taskName = task.get('name'),
-      isInfiniteTask = task.isInfinite(),
-      taskProgress = task.get('progress'),
-      showStopButton = task.match({name: 'deploy'});
+    var task = this.props.task;
+    var taskName = task.get('name');
+    var isInfiniteTask = task.isInfinite();
+    var taskProgress = task.get('progress');
+    var showStopButton = task.match({name: 'deploy'});
     return (
       <div className='row'>
         <div className='dashboard-block clearfix'>
@@ -236,17 +236,17 @@ var DeploymentResult = React.createClass({
   render() {
     var task = this.props.cluster.task({group: 'deployment', active: false});
     if (!task) return null;
-    var error = task.match({status: 'error'}),
-      delimited = task.escape('message').split('\n\n'),
-      summary = delimited.shift(),
-      details = delimited.join('\n\n'),
-      warning = task.match({name: ['reset_environment', 'stop_deployment']}),
-      classes = {
-        alert: true,
-        'alert-warning': warning,
-        'alert-danger': !warning && error,
-        'alert-success': !warning && !error
-      };
+    var error = task.match({status: 'error'});
+    var delimited = task.escape('message').split('\n\n');
+    var summary = delimited.shift();
+    var details = delimited.join('\n\n');
+    var warning = task.match({name: ['reset_environment', 'stop_deployment']});
+    var classes = {
+      alert: true,
+      'alert-warning': warning,
+      'alert-danger': !warning && error,
+      'alert-success': !warning && !error
+    };
     return (
       <div className={utils.classNames(classes)}>
         <button className='close' onClick={this.dismissTaskResult}>&times;</button>
@@ -381,8 +381,8 @@ var DeployReadinessBlock = React.createClass({
     },
     // check cluster settings
     function(cluster) {
-      var configModels = this.getConfigModels(),
-        areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
+      var configModels = this.getConfigModels();
+      var areSettingsInvalid = !cluster.get('settings').isValid({models: configModels});
       return areSettingsInvalid &&
         {blocker: [
           <span key='invalid_settings'>
@@ -396,20 +396,20 @@ var DeployReadinessBlock = React.createClass({
     },
     // check node amount restrictions according to their roles
     function(cluster) {
-      var configModels = this.getConfigModels(),
-        roleModels = cluster.get('roles'),
-        validRoleModels = roleModels.filter((role) => !role.checkRestrictions(configModels).result),
-        limitValidations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))])),
-        limitRecommendations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true, ['recommended'])]));
+      var configModels = this.getConfigModels();
+      var roleModels = cluster.get('roles');
+      var validRoleModels = roleModels.filter((role) => !role.checkRestrictions(configModels).result);
+      var limitValidations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))]));
+      var limitRecommendations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true, ['recommended'])]));
       return {
         blocker: roleModels.map((role) => {
-          var name = role.get('name'),
-            limits = limitValidations[name];
+          var name = role.get('name');
+          var limits = limitValidations[name];
           return limits && !limits.valid && limits.message;
         }),
         warning: roleModels.map((role) => {
-          var name = role.get('name'),
-            recommendation = limitRecommendations[name];
+          var name = role.get('name');
+          var recommendation = limitRecommendations[name];
           return recommendation && !recommendation.valid && recommendation.message;
         })
       };
@@ -417,19 +417,19 @@ var DeployReadinessBlock = React.createClass({
     // check cluster network configuration
     function(cluster) {
       if (this.props.nodeNetworkGroups.where({cluster_id: cluster.id}).length > 1) return null;
-      var networkVerificationTask = cluster.task('verify_networks'),
-        makeComponent = (text, isError) => {
-          var span = (
-            <span key='invalid_networks'>
-              {text}
-              {' ' + i18n(this.ns + 'get_more_info') + ' '}
-              <a href={'#cluster/' + this.props.cluster.id + '/network'}>
-                {i18n(this.ns + 'networks_link')}
-              </a>.
-            </span>
-          );
-          return isError ? {error: [span]} : {warning: [span]};
-        };
+      var networkVerificationTask = cluster.task('verify_networks');
+      var makeComponent = (text, isError) => {
+        var span = (
+          <span key='invalid_networks'>
+            {text}
+            {' ' + i18n(this.ns + 'get_more_info') + ' '}
+            <a href={'#cluster/' + this.props.cluster.id + '/network'}>
+              {i18n(this.ns + 'networks_link')}
+            </a>.
+          </span>
+        );
+        return isError ? {error: [span]} : {warning: [span]};
+      };
       if (_.isUndefined(networkVerificationTask)) {
         return makeComponent(i18n(this.ns + 'verification_not_performed'));
       } else if (networkVerificationTask.match({status: 'error'})) {
@@ -457,11 +457,11 @@ var DeployReadinessBlock = React.createClass({
     );
   },
   render() {
-    var cluster = this.props.cluster,
-      nodes = cluster.get('nodes'),
-      alerts = this.validate(cluster),
-      isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length,
-      isVMsProvisioningAvailable = nodes.any((node) => node.get('pending_addition') && node.hasRole('virt'));
+    var cluster = this.props.cluster;
+    var nodes = cluster.get('nodes');
+    var alerts = this.validate(cluster);
+    var isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length;
+    var isVMsProvisioningAvailable = nodes.any((node) => node.get('pending_addition') && node.hasRole('virt'));
 
     return (
       <div className='row'>
@@ -543,16 +543,16 @@ var WarningsBlock = React.createClass({
 var ClusterInfo = React.createClass({
   mixins: [renamingMixin('clustername')],
   getClusterValue(fieldName) {
-    var cluster = this.props.cluster,
-      settings = cluster.get('settings');
+    var cluster = this.props.cluster;
+    var settings = cluster.get('settings');
     switch (fieldName) {
       case 'status':
         return i18n('cluster.status.' + cluster.get('status'));
       case 'openstack_release':
         return cluster.get('release').get('name');
       case 'compute':
-        var libvirtSettings = settings.get('common').libvirt_type,
-          computeLabel = _.find(libvirtSettings.values, {data: libvirtSettings.value}).label;
+        var libvirtSettings = settings.get('common').libvirt_type;
+        var computeLabel = _.find(libvirtSettings.values, {data: libvirtSettings.value}).label;
         if (settings.get('common').use_vcenter.value) {
           return computeLabel + ' ' + i18n(namespace + 'and_vcenter');
         }
@@ -596,10 +596,10 @@ var ClusterInfo = React.createClass({
     );
   },
   renderClusterCapacity() {
-    var cores = 0,
-      hdds = 0,
-      ram = 0,
-      ns = namespace + 'cluster_info_fields.';
+    var cores = 0;
+    var hdds = 0;
+    var ram = 0;
+    var ns = namespace + 'cluster_info_fields.';
 
     this.props.cluster.get('nodes').each((node) => {
       cores += node.resource('ht_cores');
@@ -681,10 +681,10 @@ var ClusterInfo = React.createClass({
     return result;
   },
   renderStatistics() {
-    var hasNodes = !!this.props.cluster.get('nodes').length,
-      fieldRoles = _.union(['total'], this.props.cluster.get('roles').pluck('name')),
-      fieldStatuses = ['offline', 'error', 'pending_addition', 'pending_deletion', 'ready', 'provisioned',
-        'provisioning', 'deploying', 'removing'];
+    var hasNodes = !!this.props.cluster.get('nodes').length;
+    var fieldRoles = _.union(['total'], this.props.cluster.get('roles').pluck('name'));
+    var fieldStatuses = ['offline', 'error', 'pending_addition', 'pending_deletion', 'ready', 'provisioned',
+      'provisioning', 'deploying', 'removing'];
     return (
       <div className='row statistics-block'>
         <div className='title'>{i18n(namespace + 'cluster_info_fields.statistics')}</div>
@@ -791,8 +791,8 @@ var AddNodesButton = React.createClass({
 var RenameEnvironmentAction = React.createClass({
   applyAction(e) {
     e.preventDefault();
-    var cluster = this.props.cluster,
-      name = this.state.name;
+    var cluster = this.props.cluster;
+    var name = this.state.name;
     if (name != cluster.get('name')) {
       var deferred = cluster.save({name: name}, {patch: true, wait: true});
       if (deferred) {
@@ -942,10 +942,10 @@ var DeleteEnvironmentAction = React.createClass({
 
 var InstructionElement = React.createClass({
   render() {
-    var link = utils.composeDocumentationLink(this.props.link),
-      classes = {
-        instruction: true
-      };
+    var link = utils.composeDocumentationLink(this.props.link);
+    var classes = {
+      instruction: true
+    };
     classes[this.props.wrapperClass] = !!this.props.wrapperClass;
     return (
       <div className={utils.classNames(classes)}>

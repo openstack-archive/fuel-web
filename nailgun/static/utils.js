@@ -201,17 +201,14 @@ var utils = {
         if (_.any(range)) {
           var error = {};
 
-          if (!utils.validateIP(range[0])) {
-            error.start = warnings.INVALID_IP;
-          } else if (cidr && !utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
-            error.start = warnings.DOES_NOT_MATCH_CIDR;
-          }
-
-          if (!utils.validateIP(range[1])) {
-            error.end = warnings.INVALID_IP;
-          } else if (cidr && !utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
-            error.end = warnings.DOES_NOT_MATCH_CIDR;
-          }
+          _.each(range, (ip, ipIndex) => {
+            var errorKey = ipIndex === 0 ? 'start' : 'end';
+            if (!utils.validateIP(ip)) {
+              error[errorKey] = warnings.INVALID_IP;
+            } else if (cidr && !utils.validateIpCorrespondsToCIDR(cidr, ip)) {
+              error[errorKey] = warnings.DOES_NOT_MATCH_CIDR;
+            }
+          });
 
           if (_.isEmpty(error)) {
             if (IP.toLong(range[0]) > IP.toLong(range[1])) {
@@ -224,9 +221,7 @@ var utils = {
                 error.start = error.end = warnings.IP_RANGES_INTERSECTION + intersection.join(' - ');
               }
             }
-          }
-
-          if (!_.isEmpty(error)) {
+          } else {
             ipRangesErrors.push(_.extend(error, {index: index}));
           }
         }

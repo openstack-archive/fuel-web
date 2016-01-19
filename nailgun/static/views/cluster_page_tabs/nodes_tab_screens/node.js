@@ -260,6 +260,112 @@ var Node = React.createClass({
       </ul>
     );
   },
+  renderCompactNode(options) {
+    var node = this.props.node;
+    return (
+      <div className='compact-node'>
+        <div className={utils.classNames(options.nodePanelClasses)}>
+          <label className='node-box'>
+            <div
+              className='node-box-inner clearfix'
+              onClick={options.isSelectable && _.partial(this.props.onNodeSelection, null, !this.props.checked)}
+            >
+              <div className='node-checkbox'>
+                {this.props.checked && <i className='glyphicon glyphicon-ok' />}
+              </div>
+              <div className='node-name'>
+                <p>{node.get('name') || node.get('mac')}</p>
+              </div>
+              <div className={utils.classNames(options.statusClasses)}>
+                {_.contains(['provisioning', 'deploying'], options.status) ?
+                  this.renderNodeProgress()
+                :
+                  this.renderStatusLabel(options.status)
+                }
+              </div>
+            </div>
+            <div className='node-hardware'>
+              <p>
+                <span>
+                  {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
+                </span> / <span>
+                  {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}
+                </span> / <span>
+                  {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}
+                </span>
+              </p>
+              <p className='btn btn-link' onClick={this.toggleExtendedNodePanel}>
+                {i18n(options.ns + 'more_info')}
+              </p>
+            </div>
+          </label>
+        </div>
+        {this.state.extendedView &&
+          <Popover className='node-popover' toggle={this.toggleExtendedNodePanel}>
+            <div>
+              <div className='node-name clearfix'>
+                {this.renderNodeCheckbox()}
+                <div className='name pull-left'>
+                  {this.renderNameControl()}
+                </div>
+              </div>
+              <div className='node-stats'>
+                {!!options.roles.length &&
+                  <div className='role-list'>
+                    <i className='glyphicon glyphicon-pushpin' />
+                    {this.renderRoleList(options.roles)}
+                  </div>
+                }
+                {!_.isEmpty(this.props.node.get('labels')) &&
+                  <div className='node-labels'>
+                    <i className='glyphicon glyphicon-tags pull-left' />
+                    {this.renderLabels()}
+                  </div>
+                }
+                <div className={utils.classNames(options.statusClasses)}>
+                  <i className='glyphicon glyphicon-time' />
+                  {_.contains(['provisioning', 'deploying'], options.status) ?
+                    <div>
+                      {this.renderStatusLabel(options.status)}
+                      <div className='node-buttons'>
+                        {this.renderLogsLink()}
+                      </div>
+                      {this.renderNodeProgress(options.status)}
+                    </div>
+                  :
+                    <div>
+                      {this.renderStatusLabel(options.status)}
+                      <div className='node-buttons'>
+                        {options.status == 'offline' && this.renderRemoveButton()}
+                        {[
+                          !!node.get('cluster') && this.renderLogsLink(),
+                          this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
+                            <button
+                              className='btn btn-discard'
+                              key='btn-discard'
+                              onClick={node.get('pending_deletion') ? this.discardNodeDeletion : this.showDeleteNodesDialog}
+                            >
+                              {i18n(options.ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))}
+                            </button>
+                        ]}
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              <div className='hardware-info clearfix'>
+                <div className={utils.classNames(options.logoClasses)} />
+                {this.renderNodeHardwareSummary()}
+              </div>
+              <div className='node-popover-buttons'>
+                <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>Details</button>
+              </div>
+            </div>
+          </Popover>
+        }
+      </div>
+    );
+  },
   toggleLabelsPopover(visible) {
     this.setState({
       labelsPopoverVisible: _.isBoolean(visible) ? visible : !this.state.labelsPopoverVisible
@@ -301,109 +407,7 @@ var Node = React.createClass({
     }[status];
     statusClasses[statusClass] = true;
 
-    if (this.props.viewMode == 'compact') return (
-      <div className='compact-node'>
-        <div className={utils.classNames(nodePanelClasses)}>
-          <label className='node-box'>
-            <div
-              className='node-box-inner clearfix'
-              onClick={isSelectable && _.partial(this.props.onNodeSelection, null, !this.props.checked)}
-            >
-              <div className='node-checkbox'>
-                {this.props.checked && <i className='glyphicon glyphicon-ok' />}
-              </div>
-              <div className='node-name'>
-                <p>{node.get('name') || node.get('mac')}</p>
-              </div>
-              <div className={utils.classNames(statusClasses)}>
-                {_.contains(['provisioning', 'deploying'], status) ?
-                  this.renderNodeProgress()
-                :
-                  this.renderStatusLabel(status)
-                }
-              </div>
-            </div>
-            <div className='node-hardware'>
-              <p>
-                <span>
-                  {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
-                </span> / <span>
-                  {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}
-                </span> / <span>
-                  {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}
-                </span>
-              </p>
-              <p className='btn btn-link' onClick={this.toggleExtendedNodePanel}>
-                {i18n(ns + 'more_info')}
-              </p>
-            </div>
-          </label>
-        </div>
-        {this.state.extendedView &&
-          <Popover className='node-popover' toggle={this.toggleExtendedNodePanel}>
-            <div>
-              <div className='node-name clearfix'>
-                {this.renderNodeCheckbox()}
-                <div className='name pull-left'>
-                  {this.renderNameControl()}
-                </div>
-              </div>
-              <div className='node-stats'>
-                {!!roles.length &&
-                  <div className='role-list'>
-                    <i className='glyphicon glyphicon-pushpin' />
-                    {this.renderRoleList(roles)}
-                  </div>
-                }
-                {!_.isEmpty(this.props.node.get('labels')) &&
-                  <div className='node-labels'>
-                    <i className='glyphicon glyphicon-tags pull-left' />
-                    {this.renderLabels()}
-                  </div>
-                }
-                <div className={utils.classNames(statusClasses)}>
-                  <i className='glyphicon glyphicon-time' />
-                  {_.contains(['provisioning', 'deploying'], status) ?
-                    <div>
-                      {this.renderStatusLabel(status)}
-                      <div className='node-buttons'>
-                        {this.renderLogsLink()}
-                      </div>
-                      {this.renderNodeProgress(status)}
-                    </div>
-                  :
-                    <div>
-                      {this.renderStatusLabel(status)}
-                      <div className='node-buttons'>
-                        {status == 'offline' && this.renderRemoveButton()}
-                        {[
-                          !!node.get('cluster') && this.renderLogsLink(),
-                          this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
-                            <button
-                              className='btn btn-discard'
-                              key='btn-discard'
-                              onClick={node.get('pending_deletion') ? this.discardNodeDeletion : this.showDeleteNodesDialog}
-                            >
-                              {i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))}
-                            </button>
-                        ]}
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-              <div className='hardware-info clearfix'>
-                <div className={utils.classNames(logoClasses)} />
-                {this.renderNodeHardwareSummary()}
-              </div>
-              <div className='node-popover-buttons'>
-                <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>Details</button>
-              </div>
-            </div>
-          </Popover>
-        }
-      </div>
-    );
+    if (this.props.viewMode == 'compact') return this.renderCompactNode({ns, isSelectable, status, roles, nodePanelClasses, logoClasses, statusClasses});
 
     return (
       <div className={utils.classNames(nodePanelClasses)}>

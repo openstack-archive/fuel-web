@@ -168,7 +168,18 @@ define([
           .clickByCssSelector('.subtab-link-default')
           .setInputValue('input[name=range-end_ip_ranges]', '172.16.0.2')
           .clickByCssSelector(applyButtonSelector)
-          .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears');
+          .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears')
+          .setInputValue('.public input[name=cidr]', 'blablabla')
+          .assertElementAppears('.public .has-error input[name=cidr]', 1000,
+            'Error class style is applied to invalid input field')
+          .assertElementExists('.subtab-link-default i.glyphicon-danger-sign',
+            'Warning tab icon appears')
+          .clickByCssSelector('.btn-revert-changes')
+          .waitForElementDeletion('.alert-danger.network-alert', 1000)
+          .assertElementNotExists('.subtab-link-default i.glyphicon-danger-sign',
+            'Warning tab icon disappears')
+          .assertElementNotExists('.public .has-error input[name=cidr]', 1000,
+            'Error class style is removed after reverting changes');
       },
       'Add ranges manipulations': function() {
         var rangeSelector = '.public .ip_ranges ';

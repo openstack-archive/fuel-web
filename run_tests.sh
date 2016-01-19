@@ -257,7 +257,7 @@ function run_ui_unit_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_ui_func_tests {
   local TESTS_DIR=$ROOT/nailgun/static/tests/functional
-  local TESTS=$TESTS_DIR/test_*.js
+  local TESTS=$TESTS_DIR/test_cluster_network.js
   local artifacts=$ARTIFACTS/ui_func
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config

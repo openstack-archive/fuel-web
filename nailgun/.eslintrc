@@ -14,7 +14,6 @@
     no-sync: 0 # it affects our browser code with Sync in function names, like "onModelSync"
 
     # to be fixed and enabled
-    complexity: 0
     eqeqeq: 0
     no-script-url: 0
     max-len: [0, 120]

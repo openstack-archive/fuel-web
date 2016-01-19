@@ -168,7 +168,13 @@ define([
           .clickByCssSelector('.subtab-link-default')
           .setInputValue('input[name=range-end_ip_ranges]', '172.16.0.2')
           .clickByCssSelector(applyButtonSelector)
-          .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears');
+          .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears')
+          .assertElementExists('.subtab-link-default i.glyphicon-danger-sign',
+            'Warning tab icon appears')
+          .clickByCssSelector('.btn-revert-changes')
+          .waitForElementDeletion('.alert-danger.network-alert', 1000)
+          .assertElementNotExists('.subtab-link-default i.glyphicon-danger-sign',
+            'Warning tab icon disappears');
       },
       'Add ranges manipulations': function() {
         var rangeSelector = '.public .ip_ranges ';

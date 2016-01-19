@@ -39,9 +39,9 @@ var Node = React.createClass({
     }
   },
   getNodeLogsLink() {
-    var status = this.props.node.get('status'),
-      error = this.props.node.get('error_type'),
-      options = {type: 'remote', node: this.props.node.id};
+    var status = this.props.node.get('status');
+    var error = this.props.node.get('error_type');
+    var options = {type: 'remote', node: this.props.node.id};
     if (status == 'discover') {
       options.source = 'bootstrap/messages';
     } else if (status == 'provisioning' || status == 'provisioned' || (status == 'error' && error == 'provision')) {
@@ -70,8 +70,8 @@ var Node = React.createClass({
     e.preventDefault();
     if (this.state.actionInProgress) return;
     this.setState({actionInProgress: true});
-    var node = new models.Node(this.props.node.attributes),
-      data = {pending_deletion: false};
+    var node = new models.Node(this.props.node.attributes);
+    var data = {pending_deletion: false};
     node.save(data, {patch: true})
       .done(() => {
         this.props.cluster.fetchRelated('nodes').done(() => {
@@ -179,9 +179,9 @@ var Node = React.createClass({
     );
   },
   renderNodeHardwareSummary() {
-    var htCores = this.props.node.resource('ht_cores'),
-      hdd = this.props.node.resource('hdd'),
-      ram = this.props.node.resource('ram');
+    var htCores = this.props.node.resource('ht_cores');
+    var hdd = this.props.node.resource('hdd');
+    var ram = this.props.node.resource('ram');
     return (
       <div className='node-hardware'>
         <span>{i18n('node_details.cpu')}: {this.props.node.resource('cores') || '0'} ({_.isUndefined(htCores) ? '?' : htCores})</span>
@@ -266,11 +266,11 @@ var Node = React.createClass({
     });
   },
   render() {
-    var ns = 'cluster_page.nodes_tab.node.',
-      node = this.props.node,
-      isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
-      status = node.getStatusSummary(),
-      roles = this.props.cluster ? node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
+    var ns = 'cluster_page.nodes_tab.node.';
+    var node = this.props.node;
+    var isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit';
+    var status = node.getStatusSummary();
+    var roles = this.props.cluster ? node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
 
     // compose classes
     var nodePanelClasses = {
@@ -281,24 +281,24 @@ var Node = React.createClass({
     };
     nodePanelClasses[status] = status;
 
-    var manufacturer = node.get('manufacturer') || '',
-      logoClasses = {
-        'manufacturer-logo': true
-      };
+    var manufacturer = node.get('manufacturer') || '';
+    var logoClasses = {
+      'manufacturer-logo': true
+    };
     logoClasses[manufacturer.toLowerCase()] = manufacturer;
 
     var statusClasses = {
-        'node-status': true
-      },
-      statusClass = {
-        pending_addition: 'text-success',
-        pending_deletion: 'text-warning',
-        error: 'text-danger',
-        ready: 'text-info',
-        provisioning: 'text-info',
-        deploying: 'text-success',
-        provisioned: 'text-info'
-      }[status];
+      'node-status': true
+    };
+    var statusClass = {
+      pending_addition: 'text-success',
+      pending_deletion: 'text-warning',
+      error: 'text-danger',
+      ready: 'text-info',
+      provisioning: 'text-info',
+      deploying: 'text-success',
+      provisioned: 'text-info'
+    }[status];
     statusClasses[statusClass] = true;
 
     if (this.props.viewMode == 'compact') return (

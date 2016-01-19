@@ -58,8 +58,8 @@ var collectionMethods = [
 
 _.each(collectionMethods, (method) => {
   collectionMixin[method] = function() {
-    var args = _.toArray(arguments),
-      source = args[0];
+    var args = _.toArray(arguments);
+    var source = args[0];
 
     if (_.isPlainObject(source)) {
       args[0] = (model) => _.isMatch(model.attributes, source);
@@ -147,22 +147,21 @@ var restrictionMixin = models.restrictionMixin = {
       return ret;
     };
 
-    var checkedLimitTypes = {},
-      name = this.get('name'),
-      limits = this.expandedLimits[name] || {},
-      overrides = limits.overrides || [],
-      limitValues = {
-        max: evaluateExpressionHelper(limits.max, models).value,
-        min: evaluateExpressionHelper(limits.min, models).value,
-        recommended: evaluateExpressionHelper(limits.recommended, models).value
-      },
-      count = nodes.nodesAfterDeploymentWithRole(name).length,
-      messages,
-      label = this.get('label');
+    var checkedLimitTypes = {};
+    var name = this.get('name');
+    var limits = this.expandedLimits[name] || {};
+    var overrides = limits.overrides || [];
+    var limitValues = {
+      max: evaluateExpressionHelper(limits.max, models).value,
+      min: evaluateExpressionHelper(limits.min, models).value,
+      recommended: evaluateExpressionHelper(limits.recommended, models).value
+    };
+    var count = nodes.nodesAfterDeploymentWithRole(name).length;
+    var messages;
+    var label = this.get('label');
 
     var checkOneLimit = (obj, limitType) => {
-      var limitValue,
-        comparator;
+      var limitValue, comparator;
 
       if (_.isUndefined(obj[limitType])) {
         return;
@@ -277,8 +276,8 @@ models.Roles = BaseCollection.extend(restrictionMixin).extend({
     this.each((role) => {
       role.expandLimits(role.get('limits'));
 
-      var roleConflicts = role.get('conflicts'),
-        roleName = role.get('name');
+      var roleConflicts = role.get('conflicts');
+      var roleName = role.get('name');
 
       if (roleConflicts == '*') {
         role.conflicts = _.map(this.reject({name: roleName}), (role) => role.get('name'));
@@ -503,8 +502,8 @@ models.Nodes = BaseCollection.extend({
   },
   areDisksConfigurable() {
     if (!this.length) return false;
-    var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles')),
-      disks = this.at(0).resource('disks');
+    var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles'));
+    var disks = this.at(0).resource('disks');
     return !this.any((node) => {
       var roleConflict = _.difference(roles, _.union(node.get('roles'), node.get('pending_roles'))).length;
       return roleConflict || !_.isEqual(disks, node.resource('disks'));
@@ -543,9 +542,9 @@ models.Task = BaseModel.extend({
     return _.intersection(names, _.flatten(_.values(_.pick(this.groups, groups))));
   },
   extendStatuses(filters) {
-    var activeTaskStatuses = ['running', 'pending'],
-      completedTaskStatuses = ['ready', 'error'],
-      statuses = utils.composeList(filters.status);
+    var activeTaskStatuses = ['running', 'pending'];
+    var completedTaskStatuses = ['ready', 'error'];
+    var statuses = utils.composeList(filters.status);
     if (_.isEmpty(statuses)) {
       statuses = _.union(activeTaskStatuses, completedTaskStatuses);
     }
@@ -659,9 +658,9 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
     this.once('change', this.mergePluginSettings, this);
   },
   validate(attrs, options) {
-    var errors = {},
-      models = options ? options.models : {},
-      checkRestrictions = (setting) => this.checkRestrictions(models, null, setting);
+    var errors = {};
+    var models = options ? options.models : {};
+    var checkRestrictions = (setting) => this.checkRestrictions(models, null, setting);
     _.each(attrs, (group, groupName) => {
       if ((group.metadata || {}).enabled === false || checkRestrictions(group.metadata).result) return;
       _.each(group, (setting, settingName) => {
@@ -689,8 +688,8 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
   },
   hasChanges(initialAttributes, models) {
     return _.any(this.attributes, (section, sectionName) => {
-      var metadata = section.metadata,
-        result = false;
+      var metadata = section.metadata;
+      var result = false;
       if (metadata) {
         if (this.checkRestrictions(models, null, metadata).result) return result;
         if (!_.isUndefined(metadata.enabled)) {
@@ -773,8 +772,8 @@ models.Volume = BaseModel.extend({
   constructorName: 'Volume',
   urlRoot: '/api/volumes/',
   getMinimalSize(minimum) {
-    var currentDisk = this.collection.disk,
-      groupAllocatedSpace = 0;
+    var currentDisk = this.collection.disk;
+    var groupAllocatedSpace = 0;
     if (currentDisk && currentDisk.collection)
       groupAllocatedSpace = currentDisk.collection.reduce((sum, disk) => {
         return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');
@@ -782,10 +781,10 @@ models.Volume = BaseModel.extend({
     return minimum - groupAllocatedSpace;
   },
   getMaxSize() {
-    var volumes = this.collection.disk.get('volumes'),
-      diskAllocatedSpace = volumes.reduce((total, volume) => {
-        return this.get('name') == volume.get('name') ? total : total + volume.get('size');
-      }, 0);
+    var volumes = this.collection.disk.get('volumes');
+    var diskAllocatedSpace = volumes.reduce((total, volume) => {
+      return this.get('name') == volume.get('name') ? total : total + volume.get('size');
+    }, 0);
     return this.collection.disk.get('size') - diskAllocatedSpace;
   },
   validate(attrs, options) {
@@ -937,15 +936,15 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
     return false;
   },
   validate(attrs) {
-    var errors = {},
-      networkingParametersErrors = {},
-      ns = 'cluster_page.network_tab.validation.',
-      networks = attrs.networks,
-      networkParameters = attrs.networking_parameters,
-      nodeNetworkGroupsErrors = {},
-      nodeNetworkGroups = app.nodeNetworkGroups,
-      novaNetManager = networkParameters.get('net_manager'),
-      floatingRangesErrors;
+    var errors = {};
+    var networkingParametersErrors = {};
+    var ns = 'cluster_page.network_tab.validation.';
+    var networks = attrs.networks;
+    var networkParameters = attrs.networking_parameters;
+    var nodeNetworkGroupsErrors = {};
+    var nodeNetworkGroups = app.nodeNetworkGroups;
+    var novaNetManager = networkParameters.get('net_manager');
+    var floatingRangesErrors;
 
     nodeNetworkGroups.map((nodeNetworkGroup) => {
       var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
@@ -982,8 +981,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
             nodeNetworkGroupErrors[network.id] = networkErrors;
           }
           if (network.get('name') == 'baremetal') {
-            var baremetalCidrError = _.has(nodeNetworkGroupErrors[network.id], 'cidr'),
-              baremetalGateway = networkParameters.get('baremetal_gateway');
+            var baremetalCidrError = _.has(nodeNetworkGroupErrors[network.id], 'cidr');
+            var baremetalGateway = networkParameters.get('baremetal_gateway');
             if (!utils.validateIP(baremetalGateway)) {
               networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
             } else if (!baremetalCidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
@@ -1040,7 +1039,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
       var idRangeAttr = segmentation == 'vlan' ? 'vlan_range' : 'gre_id_range';
       var maxId = segmentation == 'vlan' ? 4094 : 65535;
       var idRange = networkParameters.get(idRangeAttr);
-      var idStart = Number(idRange[0]), idEnd = Number(idRange[1]);
+      var idStart = Number(idRange[0]);
+      var idEnd = Number(idRange[1]);
       if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {
         idRangeErrors[0] = i18n(ns + 'invalid_id_start');
       } else if (!utils.isNaturalNumber(idEnd) || idEnd < 2 || idEnd > maxId) {
@@ -1078,30 +1078,30 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
         }
       });
 
-      var floatingRanges = networkParameters.get('floating_ranges'),
-        networkToCheckFloatingRange = networks.find((network) => {
-          if (!network.get('meta').floating_range_var) return false;
-          var cidrError = false;
-          try {
-            cidrError = !!errors.networks[network.get('group_id')][network.id].cidr;
-          } catch (error) {}
-          if (cidrError) return false;
-          return utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][0]) &&
-            utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][1]);
-        });
+      var floatingRanges = networkParameters.get('floating_ranges');
+      var networkToCheckFloatingRange = networks.find((network) => {
+        if (!network.get('meta').floating_range_var) return false;
+        var cidrError = false;
+        try {
+          cidrError = !!errors.networks[network.get('group_id')][network.id].cidr;
+        } catch (error) {}
+        if (cidrError) return false;
+        return utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][0]) &&
+          utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][1]);
+      });
 
       var networkToCheckFloatingRangeData = networkToCheckFloatingRange ? {
-          cidr: networkToCheckFloatingRange.get('cidr'),
-          network: _.capitalize(networkToCheckFloatingRange.get('name')),
-          nodeNetworkGroup: nodeNetworkGroups.get(networkToCheckFloatingRange.get('group_id')).get('name')
-        } : {},
-        networkToCheckFloatingRangeIPRanges = networkToCheckFloatingRange ? _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
-          var ipRangeError = false;
-          try {
-            ipRangeError = !_.all(range) || !!_.find(errors.networks[networkToCheckFloatingRange.get('group_id')][networkToCheckFloatingRange.id].ip_ranges, {index: index});
-          } catch (error) {}
-          return !ipRangeError;
-        }) : [];
+        cidr: networkToCheckFloatingRange.get('cidr'),
+        network: _.capitalize(networkToCheckFloatingRange.get('name')),
+        nodeNetworkGroup: nodeNetworkGroups.get(networkToCheckFloatingRange.get('group_id')).get('name')
+      } : {};
+      var networkToCheckFloatingRangeIPRanges = networkToCheckFloatingRange ? _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
+        var ipRangeError = false;
+        try {
+          ipRangeError = !_.all(range) || !!_.find(errors.networks[networkToCheckFloatingRange.get('group_id')][networkToCheckFloatingRange.id].ip_ranges, {index: index});
+        } catch (error) {}
+        return !ipRangeError;
+      }) : [];
 
       floatingRangesErrors = utils.validateIPRanges(
         floatingRanges,

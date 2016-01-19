@@ -171,8 +171,8 @@ export var dialogMixin = {
 
 var registrationResponseErrorMixin = {
   showResponseErrors(response, form) {
-    var jsonObj,
-      error = '';
+    var jsonObj;
+    var error = '';
     try {
       jsonObj = JSON.parse(response.responseText);
       error = jsonObj.message;
@@ -499,8 +499,8 @@ export var RemoveClusterDialog = React.createClass({
     this.setState({confirmation: true});
   },
   getText() {
-    var ns = 'dialog.remove_cluster.',
-      runningTask = this.props.cluster.task({active: true});
+    var ns = 'dialog.remove_cluster.';
+    var runningTask = this.props.cluster.task({active: true});
     if (runningTask) {
       if (runningTask.match({name: 'stop_deployment'})) {
         return i18n(ns + 'stop_deployment_is_running');
@@ -770,15 +770,15 @@ export var ShowNodeInfoDialog = React.createClass({
     }
   },
   renderBody() {
-    var node = this.props.node,
-      meta = node.get('meta');
+    var node = this.props.node;
+    var meta = node.get('meta');
     if (!meta) return <ProgressBar />;
-    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'],
-      groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group)),
-      sortOrder = {
-        disks: ['name', 'model', 'size'],
-        interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
-      };
+    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
+    var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
+    var sortOrder = {
+      disks: ['name', 'model', 'size'],
+      interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
+    };
     if (this.state.VMsConf) groups.push('config');
 
     return (
@@ -830,8 +830,8 @@ export var ShowNodeInfoDialog = React.createClass({
         </div>
         <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>
           {_.map(groups, (group, groupIndex) => {
-            var groupEntries = meta[group],
-              subEntries = [];
+            var groupEntries = meta[group];
+            var subEntries = [];
             if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name');
             if (_.isPlainObject(groupEntries)) subEntries = _.find(_.values(groupEntries), _.isArray);
             return (
@@ -1034,9 +1034,9 @@ export var DeleteNodesDialog = React.createClass({
     return {title: i18n('dialog.delete_nodes.title')};
   },
   renderBody() {
-    var ns = 'dialog.delete_nodes.',
-      notDeployedNodesAmount = this.props.nodes.reject({status: 'ready'}).length,
-      deployedNodesAmount = this.props.nodes.length - notDeployedNodesAmount;
+    var ns = 'dialog.delete_nodes.';
+    var notDeployedNodesAmount = this.props.nodes.reject({status: 'ready'}).length;
+    var deployedNodesAmount = this.props.nodes.length - notDeployedNodesAmount;
     return (
       <div className='text-danger'>
         {this.renderImportantLabel()}
@@ -1114,9 +1114,9 @@ export var ChangePasswordDialog = React.createClass({
     return null;
   },
   renderBody() {
-    var ns = 'dialog.change_password.',
-      fields = ['currentPassword', 'newPassword', 'confirmationPassword'],
-      translationKeys = ['current_password', 'new_password', 'confirm_new_password'];
+    var ns = 'dialog.change_password.';
+    var fields = ['currentPassword', 'newPassword', 'confirmationPassword'];
+    var translationKeys = ['current_password', 'new_password', 'confirm_new_password'];
     return (
       <div className='forms-box'>
         {_.map(fields, (name, index) => {
@@ -1223,8 +1223,8 @@ export var RegistrationDialog = React.createClass({
       });
   },
   onChange(inputName, value) {
-    var registrationForm = this.props.registrationForm,
-      name = registrationForm.makePath('credentials', inputName, 'value');
+    var registrationForm = this.props.registrationForm;
+    var name = registrationForm.makePath('credentials', inputName, 'value');
     if (registrationForm.validationError) delete registrationForm.validationError['credentials.' + inputName];
     registrationForm.set(name, value);
   },
@@ -1241,8 +1241,8 @@ export var RegistrationDialog = React.createClass({
     return (<span>{i18n('dialog.registration.i_agree')} <a href={link} target='_blank'>{i18n('dialog.registration.terms_and_conditions')}</a></span>);
   },
   validateRegistrationForm() {
-    var registrationForm = this.props.registrationForm,
-      isValid = registrationForm.isValid();
+    var registrationForm = this.props.registrationForm;
+    var isValid = registrationForm.isValid();
     if (!registrationForm.attributes.credentials.agree.value) {
       if (!registrationForm.validationError) registrationForm.validationError = {};
       registrationForm.validationError['credentials.agree'] = i18n('dialog.registration.agree_error');
@@ -1288,14 +1288,14 @@ export var RegistrationDialog = React.createClass({
   renderBody() {
     var registrationForm = this.props.registrationForm;
     if (this.state.loading) return <ProgressBar />;
-    var fieldsList = registrationForm.attributes.credentials,
-      actionInProgress = this.state.actionInProgress,
-      error = this.state.error,
-      sortedFields = _.chain(_.keys(fieldsList))
-        .without('metadata')
-        .sortBy((inputName) => fieldsList[inputName].weight)
-        .value(),
-      halfWidthField = ['first_name', 'last_name', 'company', 'phone', 'country', 'region'];
+    var fieldsList = registrationForm.attributes.credentials;
+    var actionInProgress = this.state.actionInProgress;
+    var error = this.state.error;
+    var sortedFields = _.chain(_.keys(fieldsList))
+      .without('metadata')
+      .sortBy((inputName) => fieldsList[inputName].weight)
+      .value();
+    var halfWidthField = ['first_name', 'last_name', 'company', 'phone', 'country', 'region'];
     return (
       <div className='registration-form tracking'>
         {actionInProgress && <ProgressBar />}
@@ -1312,14 +1312,14 @@ export var RegistrationDialog = React.createClass({
         }
         <form className='form-inline row'>
           {_.map(sortedFields, (inputName) => {
-            var input = fieldsList[inputName],
-              path = 'credentials.' + inputName,
-              inputError = (registrationForm.validationError || {})[path],
-              classes = {
-                'col-md-12': !_.contains(halfWidthField, inputName),
-                'col-md-6': _.contains(halfWidthField, inputName),
-                'text-center': inputName == 'agree'
-              };
+            var input = fieldsList[inputName];
+            var path = 'credentials.' + inputName;
+            var inputError = (registrationForm.validationError || {})[path];
+            var classes = {
+              'col-md-12': !_.contains(halfWidthField, inputName),
+              'col-md-6': _.contains(halfWidthField, inputName),
+              'text-center': inputName == 'agree'
+            };
             return <Input
               ref={inputName}
               key={inputName}
@@ -1405,13 +1405,13 @@ export var RetrievePasswordDialog = React.createClass({
     this.setState({passwordSent: true});
   },
   renderBody() {
-    var ns = 'dialog.retrieve_password.',
-      remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
+    var ns = 'dialog.retrieve_password.';
+    var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
     if (this.state.loading) return <ProgressBar />;
-    var error = this.state.error,
-      actionInProgress = this.state.actionInProgress,
-      input = (remoteRetrievePasswordForm.get('credentials') || {}).email,
-      inputError = remoteRetrievePasswordForm ? (remoteRetrievePasswordForm.validationError || {})['credentials.email'] : null;
+    var error = this.state.error;
+    var actionInProgress = this.state.actionInProgress;
+    var input = (remoteRetrievePasswordForm.get('credentials') || {}).email;
+    var inputError = remoteRetrievePasswordForm ? (remoteRetrievePasswordForm.validationError || {})['credentials.email'] : null;
     return (
       <div className='retrieve-password-content'>
         {!this.state.passwordSent ?

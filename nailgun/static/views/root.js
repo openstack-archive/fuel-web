@@ -47,8 +47,8 @@ var RootComponent = React.createClass({
     return this.refs.page;
   },
   updateTitle() {
-    var Page = this.state.Page,
-      title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
+    var Page = this.state.Page;
+    var title = _.isFunction(Page.title) ? Page.title(this.state.pageOptions) : Page.title;
     document.title = i18n('common.title') + (title ? ' - ' + title : '');
   },
   componentDidUpdate() {

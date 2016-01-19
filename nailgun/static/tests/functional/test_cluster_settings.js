@@ -136,8 +136,8 @@ define([
           .assertElementNotExists('.settings-tab .nav-pills > li.active i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
       },
       'Test repositories custom control': function() {
-        var repoAmount,
-          self = this;
+        var repoAmount;
+        var self = this;
         return this.remote
           .clickLinkByText('General')
           // get amount of default repositories

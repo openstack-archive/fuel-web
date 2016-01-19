@@ -63,9 +63,9 @@ var CapacityPage = React.createClass({
 
 var LicenseUsage = React.createClass({
   render() {
-    var capacityReport = this.props.capacityLog.get('report'),
-      tableClassName = 'capacity-audit-table',
-      headClassName = 'name';
+    var capacityReport = this.props.capacityLog.get('report');
+    var tableClassName = 'capacity-audit-table';
+    var headClassName = 'name';
     return (
       <div>
         <h3>{i18n('capacity_page.license_usage')}</h3>

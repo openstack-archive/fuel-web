@@ -101,11 +101,11 @@ var PluginsPage = React.createClass({
     );
   },
   render() {
-    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
-      links = {
-        catalog: isMirantisIso ? 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' : 'http://stackalytics.com/report/driverlog?project_id=openstack%2Ffuel',
-        documentation: utils.composeDocumentationLink('plugin-dev.html')
-      };
+    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
+    var links = {
+      catalog: isMirantisIso ? 'https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/' : 'http://stackalytics.com/report/driverlog?project_id=openstack%2Ffuel',
+      documentation: utils.composeDocumentationLink('plugin-dev.html')
+    };
     return (
       <div className='plugins-page'>
         <div className='page-title'>

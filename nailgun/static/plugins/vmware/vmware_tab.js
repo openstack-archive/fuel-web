@@ -36,8 +36,8 @@ var Field = React.createClass({
     _.defer(() => dispatcher.trigger('vcenter_model_update'));
   },
   render() {
-    var metadata = this.props.metadata,
-      value = this.props.model.get(metadata.name);
+    var metadata = this.props.metadata;
+    var value = this.props.model.get(metadata.name);
     return (
       <Input
         {... _.pick(metadata, 'name', 'type', 'label', 'description')}
@@ -156,9 +156,9 @@ var NovaCompute = React.createClass({
 
 var AvailabilityZone = React.createClass({
   addNovaCompute(current) {
-    var collection = this.props.model.get('nova_computes'),
-      index = collection.indexOf(current),
-      newItem = current.clone();
+    var collection = this.props.model.get('nova_computes');
+    var index = collection.indexOf(current);
+    var newItem = current.clone();
     var targetNode = _.cloneDeep(newItem.get('target_node'));
     if (this.props.isLocked) {
       targetNode.current = {id: 'invalid'};
@@ -175,18 +175,18 @@ var AvailabilityZone = React.createClass({
     _.defer(() => dispatcher.trigger('vcenter_model_update'));
   },
   renderFields() {
-    var model = this.props.model,
-      meta = model.get('metadata');
+    var model = this.props.model;
+    var meta = model.get('metadata');
     meta = _.filter(meta, VmWareModels.isRegularField);
     return (
       <FieldGroup model={model} disabled={this.props.isLocked || this.props.disabled}/>
     );
   },
   renderComputes(actions) {
-    var novaComputes = this.props.model.get('nova_computes'),
-      isSingleInstance = novaComputes.length == 1,
-      disabled = actions.disable.nova_computes,
-      cluster = this.props.cluster;
+    var novaComputes = this.props.model.get('nova_computes');
+    var isSingleInstance = novaComputes.length == 1;
+    var disabled = actions.disable.nova_computes;
+    var cluster = this.props.cluster;
 
     return (
       <div className='col-xs-offset-1'>
@@ -375,17 +375,17 @@ var VmWareTab = React.createClass({
       return null;
     }
 
-    var model = this.state.model,
-      currentJson = JSON.stringify(this.model.toJSON()),
-      editable = this.props.cluster.isAvailableForSettingsChanges(),
-      hide = this.actions.hide || {},
-      disable = this.actions.disable || {};
+    var model = this.state.model;
+    var currentJson = JSON.stringify(this.model.toJSON());
+    var editable = this.props.cluster.isAvailableForSettingsChanges();
+    var hide = this.actions.hide || {};
+    var disable = this.actions.disable || {};
 
     model.isValid();
     var hasChanges = this.detectChanges(this.json, currentJson);
     var hasDefaultsChanges = this.detectChanges(this.defaultsJson, currentJson);
-    var saveDisabled = !hasChanges || !this.isSavingPossible(),
-      defaultsDisabled = !hasDefaultsChanges;
+    var saveDisabled = !hasChanges || !this.isSavingPossible();
+    var defaultsDisabled = !hasDefaultsChanges;
 
     return (
       <div className='row'>

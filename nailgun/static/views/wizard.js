@@ -154,8 +154,8 @@ var ClusterWizardPanesMixin = {
       var isCompatible = true;
       var warnings = [];
       allComponents.each((testedComponent) => {
-        var type = testedComponent.get('type'),
-          isInStopList = _.find(stopList, (component) => component.id == testedComponent.id);
+        var type = testedComponent.get('type');
+        var isInStopList = _.find(stopList, (component) => component.id == testedComponent.id);
         if (component.id == testedComponent.id || !_.contains(types, type) || isInStopList) {
           // ignore self or forward compatibilities
           return;
@@ -180,8 +180,8 @@ var ClusterWizardPanesMixin = {
       var isDisabled = false;
       var warnings = [];
       _.each(incompatibles, (incompatible) => {
-        var type = incompatible.component.get('type'),
-          isInStopList = _.find(stopList, (component) => component.id == incompatible.component.id);
+        var type = incompatible.component.get('type');
+        var isInStopList = _.find(stopList, (component) => component.id == incompatible.component.id);
         if (!_.contains(types, type) || isInStopList) {
           // ignore forward incompatibilities
           return;
@@ -277,16 +277,16 @@ var NameAndRelease = React.createClass({
     return true;
   },
   render() {
-    var releases = this.props.releases,
-      name = this.props.wizard.get('name'),
-      nameError = this.props.wizard.get('name_error'),
-      release = this.props.wizard.get('release');
+    var releases = this.props.releases;
+    var name = this.props.wizard.get('name');
+    var nameError = this.props.wizard.get('name_error');
+    var release = this.props.wizard.get('release');
 
     if (this.props.loading) {
       return null;
     }
-    var os = release.get('operating_system'),
-      connectivityAlert = i18n('dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert');
+    var os = release.get('operating_system');
+    var connectivityAlert = i18n('dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert');
     return (
       <div className='create-cluster-form name-and-release'>
         <Input
@@ -334,8 +334,8 @@ var Compute = React.createClass({
     vCenterPath: 'hypervisor:vmware',
     vCenterNetworkBackends: ['network:neutron:ml2:nsx', 'network:neutron:ml2:dvs'],
     hasErrors(wizard) {
-      var allComponents = wizard.get('components'),
-        components = allComponents.getComponentsByType(this.componentType, {sorted: true});
+      var allComponents = wizard.get('components');
+      var components = allComponents.getComponentsByType(this.componentType, {sorted: true});
       return !_.any(components, (component) => component.get('enabled'));
     }
   },
@@ -379,8 +379,8 @@ var Network = React.createClass({
     title: i18n('dialog.create_cluster_wizard.network.title'),
     ml2CorePath: 'network:neutron:core:ml2',
     hasErrors(wizard) {
-      var allComponents = wizard.get('components'),
-        components = allComponents.getComponentsByType(this.componentType, {sorted: true});
+      var allComponents = wizard.get('components');
+      var components = allComponents.getComponentsByType(this.componentType, {sorted: true});
       var ml2core = _.find(components, (component) => component.id == this.ml2CorePath);
       if (ml2core && ml2core.get('enabled')) {
         var ml2 = _.filter(components, (component) => component.isML2Driver());

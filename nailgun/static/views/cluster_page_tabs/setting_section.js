@@ -23,10 +23,10 @@ import customControls from 'views/custom_controls';
 
 var SettingSection = React.createClass({
   processRestrictions(setting, settingName) {
-    var result = false,
-      restrictionsCheck = this.props.checkRestrictions('disable', setting),
-      messagesCheck = this.props.checkRestrictions('none', setting),
-      messages = _.compact([restrictionsCheck.message, messagesCheck.message]);
+    var result = false;
+    var restrictionsCheck = this.props.checkRestrictions('disable', setting);
+    var messagesCheck = this.props.checkRestrictions('none', setting);
+    var messages = _.compact([restrictionsCheck.message, messagesCheck.message]);
 
     // FIXME: hack for #1442475 to lock images_ceph in env with controllers
     if (settingName == 'images_ceph') {
@@ -42,9 +42,9 @@ var SettingSection = React.createClass({
     };
   },
   checkDependencies(sectionName, settingName) {
-    var messages = [],
-      dependentRoles = this.checkDependentRoles(sectionName, settingName),
-      dependentSettings = this.checkDependentSettings(sectionName, settingName);
+    var messages = [];
+    var dependentRoles = this.checkDependentRoles(sectionName, settingName);
+    var dependentSettings = this.checkDependentSettings(sectionName, settingName);
 
     if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
     if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
@@ -71,13 +71,13 @@ var SettingSection = React.createClass({
   },
   checkDependentRoles(sectionName, settingName) {
     if (!this.props.allocatedRoles.length) return [];
-    var path = this.props.makePath(sectionName, settingName),
-      setting = this.props.settings.get(path);
+    var path = this.props.makePath(sectionName, settingName);
+    var setting = this.props.settings.get(path);
     if (!this.areCalculationsPossible(setting)) return [];
-    var valueAttribute = this.props.getValueAttribute(settingName),
-      valuesToCheck = this.getValuesToCheck(setting, valueAttribute),
-      pathToCheck = this.props.makePath(path, valueAttribute),
-      roles = this.props.cluster.get('roles');
+    var valueAttribute = this.props.getValueAttribute(settingName);
+    var valuesToCheck = this.getValuesToCheck(setting, valueAttribute);
+    var pathToCheck = this.props.makePath(path, valueAttribute);
+    var roles = this.props.cluster.get('roles');
     return _.compact(this.props.allocatedRoles.map((roleName) => {
       var role = roles.findWhere({name: roleName});
       if (_.any(role.get('restrictions'), (restriction) => {
@@ -89,8 +89,8 @@ var SettingSection = React.createClass({
     }));
   },
   checkDependentSettings(sectionName, settingName) {
-    var path = this.props.makePath(sectionName, settingName),
-      currentSetting = this.props.settings.get(path);
+    var path = this.props.makePath(sectionName, settingName);
+    var currentSetting = this.props.settings.get(path);
     if (!this.areCalculationsPossible(currentSetting)) return [];
     var dependentRestrictions = {};
     var addDependentRestrictions = (setting, label) => {
@@ -121,10 +121,10 @@ var SettingSection = React.createClass({
     });
     // evaluate dependencies
     if (!_.isEmpty(dependentRestrictions)) {
-      var valueAttribute = this.props.getValueAttribute(settingName),
-        pathToCheck = this.props.makePath(path, valueAttribute),
-        valuesToCheck = this.getValuesToCheck(currentSetting, valueAttribute),
-        checkValues = _.partial(this.checkValues, valuesToCheck, pathToCheck, currentSetting[valueAttribute]);
+      var valueAttribute = this.props.getValueAttribute(settingName);
+      var pathToCheck = this.props.makePath(path, valueAttribute);
+      var valuesToCheck = this.getValuesToCheck(currentSetting, valueAttribute);
+      var checkValues = _.partial(this.checkValues, valuesToCheck, pathToCheck, currentSetting[valueAttribute]);
       return _.compact(_.map(dependentRestrictions, (restrictions, label) => {
         if (_.any(restrictions, checkValues)) return label;
       }));
@@ -166,17 +166,17 @@ var SettingSection = React.createClass({
     }
   },
   render() {
-    var {settings, sectionName} = this.props,
-      section = settings.get(sectionName),
-      isPlugin = settings.isPlugin(section),
-      metadata = section.metadata,
-      sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => section[settingName].weight),
-      processedGroupRestrictions = this.processRestrictions(metadata),
-      processedGroupDependencies = this.checkDependencies(sectionName, 'metadata'),
-      isGroupAlwaysEditable = isPlugin ? _.any(metadata.versions, (version) => version.metadata.always_editable) : metadata.always_editable,
-      isGroupDisabled = this.props.locked || (this.props.lockedCluster && !isGroupAlwaysEditable) || processedGroupRestrictions.result,
-      showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable,
-      groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
+    var {settings, sectionName} = this.props;
+    var section = settings.get(sectionName);
+    var isPlugin = settings.isPlugin(section);
+    var metadata = section.metadata;
+    var sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => section[settingName].weight);
+    var processedGroupRestrictions = this.processRestrictions(metadata);
+    var processedGroupDependencies = this.checkDependencies(sectionName, 'metadata');
+    var isGroupAlwaysEditable = isPlugin ? _.any(metadata.versions, (version) => version.metadata.always_editable) : metadata.always_editable;
+    var isGroupDisabled = this.props.locked || (this.props.lockedCluster && !isGroupAlwaysEditable) || processedGroupRestrictions.result;
+    var showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable;
+    var groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
 
     return (
       <div className={'setting-section setting-section-' + sectionName}>
@@ -215,15 +215,15 @@ var SettingSection = React.createClass({
             </div>
           }
           {_.map(sortedSettings, (settingName) => {
-            var setting = section[settingName],
-              settingKey = settingName + (isPlugin ? '-' + metadata.chosen_id : ''),
-              path = this.props.makePath(sectionName, settingName),
-              error = (settings.validationError || {})[path],
-              processedSettingRestrictions = this.processRestrictions(setting, settingName),
-              processedSettingDependencies = this.checkDependencies(sectionName, settingName),
-              isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result,
-              showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled),
-              settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
+            var setting = section[settingName];
+            var settingKey = settingName + (isPlugin ? '-' + metadata.chosen_id : '');
+            var path = this.props.makePath(sectionName, settingName);
+            var error = (settings.validationError || {})[path];
+            var processedSettingRestrictions = this.processRestrictions(setting, settingName);
+            var processedSettingDependencies = this.checkDependencies(sectionName, settingName);
+            var isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result;
+            var showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled);
+            var settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
 
             // support of custom controls
             var CustomControl = customControls[setting.type];

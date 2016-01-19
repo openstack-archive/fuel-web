@@ -215,8 +215,8 @@ VmWareModels.VCenter = BaseModel.extend({
     if (!response.editable || !response.editable.metadata || !response.editable.value) {
       return;
     }
-    var metadata = response.editable.metadata || [],
-      value = response.editable.value || {};
+    var metadata = response.editable.metadata || [];
+    var value = response.editable.value || {};
 
     // Availability Zone(s)
     var azMetadata = _.find(metadata, {name: 'availability_zones'});

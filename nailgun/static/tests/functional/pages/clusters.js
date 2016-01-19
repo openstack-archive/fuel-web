@@ -28,10 +28,10 @@ define([
   ClustersPage.prototype = {
     constructor: ClustersPage,
     createCluster: function(clusterName, stepsMethods) {
-      var self = this,
-        stepMethod = function(stepName) {
-          return _.bind(_.get(stepsMethods, stepName, _.noop), self);
-        };
+      var self = this;
+      var stepMethod = function(stepName) {
+        return _.bind(_.get(stepsMethods, stepName, _.noop), self);
+      };
       return this.remote
         .clickByCssSelector('.create-cluster')
         .then(function() {

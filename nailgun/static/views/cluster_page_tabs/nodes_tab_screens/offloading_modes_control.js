@@ -38,14 +38,14 @@ var OffloadingModesControl = React.createClass({
   },
   checkModes(mode, sub) {
     var changedState = sub.reduce((state, childMode) => {
-        if (!_.isEmpty(childMode.sub)) {
-          this.checkModes(childMode, childMode.sub);
-        }
-        return (state === 0 || state === childMode.state) ? childMode.state : -1;
-      },
-      0
-      ),
-      oldState;
+      if (!_.isEmpty(childMode.sub)) {
+        this.checkModes(childMode, childMode.sub);
+      }
+      return (state === 0 || state === childMode.state) ? childMode.state : -1;
+    },
+    0
+    );
+    var oldState;
 
     if (mode && mode.state != changedState) {
       oldState = mode.state;
@@ -53,10 +53,9 @@ var OffloadingModesControl = React.createClass({
     }
   },
   findMode(name, modes) {
-    var result,
-      mode,
-      index = 0,
-      modesLength = modes.length;
+    var result, mode;
+    var index = 0;
+    var modesLength = modes.length;
     for (; index < modesLength; index++) {
       mode = modes[index];
       if (mode.name == name) {
@@ -71,8 +70,8 @@ var OffloadingModesControl = React.createClass({
     return result;
   },
   onModeStateChange(name, state) {
-    var modes = _.cloneDeep(this.props.interface.get('offloading_modes') || []),
-      mode = this.findMode(name, modes);
+    var modes = _.cloneDeep(this.props.interface.get('offloading_modes') || []);
+    var mode = this.findMode(name, modes);
 
     return () => {
       if (mode) {
@@ -87,19 +86,19 @@ var OffloadingModesControl = React.createClass({
   },
   makeOffloadingModesExcerpt() {
     var states = {
-        true: i18n(ns + 'offloading_enabled'),
-        false: i18n(ns + 'offloading_disabled'),
-        null: i18n(ns + 'offloading_default')
-      },
-      ifcModes = this.props.interface.get('offloading_modes');
+      true: i18n(ns + 'offloading_enabled'),
+      false: i18n(ns + 'offloading_disabled'),
+      null: i18n(ns + 'offloading_default')
+    };
+    var ifcModes = this.props.interface.get('offloading_modes');
 
     if (_.uniq(_.pluck(ifcModes, 'state')).length == 1) {
       return states[ifcModes[0].state];
     }
 
-    var lastState,
-      added = 0,
-      excerpt = [];
+    var lastState;
+    var added = 0;
+    var excerpt = [];
     _.each(ifcModes,
         (mode) => {
           if (!_.isNull(mode.state) && mode.state !== lastState) {
@@ -144,8 +143,8 @@ var OffloadingModesControl = React.createClass({
     });
   },
   render() {
-    var modes = [],
-      ifcModes = this.props.interface.get('offloading_modes');
+    var modes = [];
+    var ifcModes = this.props.interface.get('offloading_modes');
     if (ifcModes) {
       modes.push({
         name: i18n(ns + 'all_modes'),

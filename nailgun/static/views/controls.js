@@ -92,8 +92,8 @@ export var Input = React.createClass({
     }
   },
   readFile() {
-    var reader = new FileReader(),
-      input = this.getInputDOMNode();
+    var reader = new FileReader();
+    var input = this.getInputDOMNode();
 
     if (input.files.length) {
       reader.onload = () => this.saveFile(input.value.replace(/^.*[\\\/]/g, ''), reader.result);
@@ -127,14 +127,14 @@ export var Input = React.createClass({
     } else {
       props.onChange = this.props.debounce ? this.debouncedChange : this.onChange;
     }
-    var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input',
-      input = <Tag {...this.props} {...props}>{this.props.children}</Tag>,
-      isCheckboxOrRadio = this.isCheckboxOrRadio(),
-      inputWrapperClasses = {
-        'input-group': this.props.toggleable,
-        'custom-tumbler': isCheckboxOrRadio,
-        textarea: this.props.type == 'textarea'
-      };
+    var Tag = _.contains(['select', 'textarea'], this.props.type) ? this.props.type : 'input';
+    var input = <Tag {...this.props} {...props}>{this.props.children}</Tag>;
+    var isCheckboxOrRadio = this.isCheckboxOrRadio();
+    var inputWrapperClasses = {
+      'input-group': this.props.toggleable,
+      'custom-tumbler': isCheckboxOrRadio,
+      textarea: this.props.type == 'textarea'
+    };
     if (this.props.type == 'file') {
       input = <form ref='form'>{input}</form>;
     }
@@ -186,13 +186,13 @@ export var Input = React.createClass({
     return <span key='description' className='help-block'>{text}</span>;
   },
   renderWrapper(children) {
-    var isCheckboxOrRadio = this.isCheckboxOrRadio(),
-      classes = {
-        'form-group': !isCheckboxOrRadio,
-        'checkbox-group': isCheckboxOrRadio,
-        'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
-        disabled: this.props.disabled
-      };
+    var isCheckboxOrRadio = this.isCheckboxOrRadio();
+    var classes = {
+      'form-group': !isCheckboxOrRadio,
+      'checkbox-group': isCheckboxOrRadio,
+      'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error),
+      disabled: this.props.disabled
+    };
     classes[this.props.wrapperClassName] = this.props.wrapperClassName;
     return (<div className={utils.classNames(classes)}>{children}</div>);
   },

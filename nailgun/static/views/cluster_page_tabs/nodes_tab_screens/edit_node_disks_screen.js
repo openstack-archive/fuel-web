@@ -111,8 +111,8 @@ var EditNodeDisksScreen = React.createClass({
       });
   },
   getDiskMetaData(disk) {
-    var result,
-      disksMetaData = this.props.nodes.at(0).get('meta').disks;
+    var result;
+    var disksMetaData = this.props.nodes.at(0).get('meta').disks;
     // try to find disk metadata by matching "extra" field
     // if at least one entry presents both in disk and metadata entry,
     // this metadata entry is for our disk
@@ -127,12 +127,12 @@ var EditNodeDisksScreen = React.createClass({
     return result;
   },
   getVolumesInfo(disk) {
-    var volumes = {},
-      unallocatedWidth = 100;
+    var volumes = {};
+    var unallocatedWidth = 100;
     disk.get('volumes').each((volume) => {
-      var size = volume.get('size') || 0,
-        width = this.getVolumeWidth(disk, size),
-        name = volume.get('name');
+      var size = volume.get('size') || 0;
+      var width = this.getVolumeWidth(disk, size);
+      var name = volume.get('name');
       unallocatedWidth -= width;
       volumes[name] = {
         size: size,
@@ -160,10 +160,10 @@ var EditNodeDisksScreen = React.createClass({
     return !this.state.actionInProgress && this.hasChanges() && !this.hasErrors();
   },
   render() {
-    var hasChanges = this.hasChanges(),
-      locked = this.isLocked(),
-      loadDefaultsDisabled = !!this.state.actionInProgress,
-      revertChangesDisabled = !!this.state.actionInProgress || !hasChanges;
+    var hasChanges = this.hasChanges();
+    var locked = this.isLocked();
+    var loadDefaultsDisabled = !!this.state.actionInProgress;
+    var revertChangesDisabled = !!this.state.actionInProgress || !hasChanges;
     return (
       <div className='edit-node-disks-screen'>
         <div className='row'>
@@ -220,8 +220,8 @@ var NodeDisk = React.createClass({
       .on('hide.bs.collapse', this.setState.bind(this, {collapsed: false}, null));
   },
   updateDisk(name, value) {
-    var size = parseInt(value, 10) || 0,
-      volumeInfo = this.props.volumesInfo[name];
+    var size = parseInt(value, 10) || 0;
+    var volumeInfo = this.props.volumesInfo[name];
     if (size > volumeInfo.max) {
       size = volumeInfo.max;
     }
@@ -232,15 +232,15 @@ var NodeDisk = React.createClass({
     $(ReactDOM.findDOMNode(this.refs[name])).collapse('toggle');
   },
   render() {
-    var disk = this.props.disk,
-      volumesInfo = this.props.volumesInfo,
-      diskMetaData = this.props.diskMetaData,
-      requiredDiskSize = _.sum(disk.get('volumes').map((volume) => {
-        return volume.getMinimalSize(this.props.volumes.findWhere({name: volume.get('name')}).get('min_size'));
-      })),
-      diskError = disk.get('size') < requiredDiskSize,
-      sortOrder = ['name', 'model', 'size'],
-      ns = 'cluster_page.nodes_tab.configure_disks.';
+    var disk = this.props.disk;
+    var volumesInfo = this.props.volumesInfo;
+    var diskMetaData = this.props.diskMetaData;
+    var requiredDiskSize = _.sum(disk.get('volumes').map((volume) => {
+      return volume.getMinimalSize(this.props.volumes.findWhere({name: volume.get('name')}).get('min_size'));
+    }));
+    var diskError = disk.get('size') < requiredDiskSize;
+    var sortOrder = ['name', 'model', 'size'];
+    var ns = 'cluster_page.nodes_tab.configure_disks.';
 
     return (
       <div className='col-xs-12 disk-box' data-disk={disk.id} key={this.props.key}>
@@ -308,11 +308,11 @@ var NodeDisk = React.createClass({
             <h5>{i18n(ns + 'volume_groups')}</h5>
             <div className='form-horizontal disk-utility-box'>
               {this.props.volumes.map((volume, index) => {
-                var volumeName = volume.get('name'),
-                  value = volumesInfo[volumeName].size,
-                  currentMaxSize = volumesInfo[volumeName].max,
-                  currentMinSize = _.max([volumesInfo[volumeName].min, 0]),
-                  validationError = volumesInfo[volumeName].error;
+                var volumeName = volume.get('name');
+                var value = volumesInfo[volumeName].size;
+                var currentMaxSize = volumesInfo[volumeName].max;
+                var currentMinSize = _.max([volumesInfo[volumeName].min, 0]);
+                var validationError = volumesInfo[volumeName].error;
 
                 var props = {
                   name: volumeName,

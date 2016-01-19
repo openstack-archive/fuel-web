@@ -55,7 +55,8 @@ define([
     },
     waitForCssSelector: function(cssSelector, timeout) {
       return new this.constructor(this, function() {
-        var self = this, currentTimeout;
+        var self = this;
+        var currentTimeout;
         return this.parent
           .getFindTimeout()
           .then(function(value) {
@@ -75,7 +76,8 @@ define([
     },
     waitForElementDeletion: function(cssSelector, timeout) {
       return new this.constructor(this, function() {
-        var self = this, currentTimeout;
+        var self = this;
+        var currentTimeout;
         return this.parent
           .getFindTimeout()
           .then(function(value) {
@@ -137,8 +139,7 @@ define([
 
         return this.parent.executeAsync(function(dragFrom, dragTo, done) {
           var dragAndDrop = (function() {
-            var dispatchEvent;
-            var createEvent;
+            var dispatchEvent, createEvent;
 
             // Setup methods to call the proper event creation and dispatch functions for the current platform.
             if (document.createEvent) {
@@ -494,11 +495,11 @@ define([
     }
   });
 
-  var serverHost = '127.0.0.1',
-    serverPort = process.env.NAILGUN_PORT || 5544,
-    serverUrl = 'http://' + serverHost + ':' + serverPort,
-    username = 'admin',
-    password = 'admin';
+  var serverHost = '127.0.0.1';
+  var serverPort = process.env.NAILGUN_PORT || 5544;
+  var serverUrl = 'http://' + serverHost + ':' + serverPort;
+  var username = 'admin';
+  var password = 'admin';
 
   return {
     username: username,

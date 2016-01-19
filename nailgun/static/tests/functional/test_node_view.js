@@ -26,12 +26,8 @@ define([
   'use strict';
 
   registerSuite(function() {
-    var common,
-      node,
-      modal,
-      clusterPage,
-      clusterName,
-      nodeNewName = 'Node new name';
+    var common, node, modal, clusterPage, clusterName;
+    var nodeNewName = 'Node new name';
 
     return {
       name: 'Node view tests',

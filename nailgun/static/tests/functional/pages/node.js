@@ -41,8 +41,8 @@ define([
         .waitForCssSelector('.node-popover', 1000);
     },
     openNodePopup: function(fromExtendedView) {
-      var self = this,
-        cssSelector = fromExtendedView ? '.node-popover' : '.node';
+      var self = this;
+      var cssSelector = fromExtendedView ? '.node-popover' : '.node';
       return this.remote
         .findByCssSelector(cssSelector)
           .clickByCssSelector('.node-settings')
@@ -52,8 +52,8 @@ define([
         });
     },
     discardNode: function(fromExtendedView) {
-      var self = this,
-        cssSelector = fromExtendedView ? '.node-popover' : '.node';
+      var self = this;
+      var cssSelector = fromExtendedView ? '.node-popover' : '.node';
       return this.remote
         .findByCssSelector(cssSelector)
           .clickByCssSelector('.btn-discard')

@@ -300,20 +300,20 @@ var NotificationsPopover = React.createClass({
     return {unreadNotificationsIds: []};
   },
   renderNotification(notification) {
-    var topic = notification.get('topic'),
-      nodeId = notification.get('node_id'),
-      notificationClasses = {
-        notification: true,
-        'text-danger': topic == 'error',
-        'text-warning': topic == 'warning',
-        clickable: nodeId,
-        unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
-      },
-      iconClass = {
-        error: 'glyphicon-exclamation-sign',
-        warning: 'glyphicon-warning-sign',
-        discover: 'glyphicon-bell'
-      }[topic] || 'glyphicon-info-sign';
+    var topic = notification.get('topic');
+    var nodeId = notification.get('node_id');
+    var notificationClasses = {
+      notification: true,
+      'text-danger': topic == 'error',
+      'text-warning': topic == 'warning',
+      clickable: nodeId,
+      unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
+    };
+    var iconClass = {
+      error: 'glyphicon-exclamation-sign',
+      warning: 'glyphicon-warning-sign',
+      discover: 'glyphicon-bell'
+    }[topic] || 'glyphicon-info-sign';
     return (
       <div key={notification.id} className={utils.classNames(notificationClasses)}>
         <i className={'glyphicon ' + iconClass}></i>

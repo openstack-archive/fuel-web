@@ -25,12 +25,9 @@ define([
   'use strict';
 
   registerSuite(function() {
-    var common,
-      clusterPage,
-      settingsPage,
-      dashboardPage,
-      clusterName = 'Plugin UI tests',
-      zabbixSectionSelector = '.setting-section-zabbix_monitoring ';
+    var common, clusterPage, settingsPage, dashboardPage;
+    var clusterName = 'Plugin UI tests';
+    var zabbixSectionSelector = '.setting-section-zabbix_monitoring ';
 
     return {
       name: 'Plugin UI tests',
@@ -62,9 +59,8 @@ define([
           });
       },
       'Check plugin in not deployed environment': function() {
-        var self = this,
-          zabbixInitialVersion,
-          zabbixTextInputValue;
+        var self = this;
+        var zabbixInitialVersion, zabbixTextInputValue;
         return this.remote
           .assertElementEnabled(zabbixSectionSelector + 'h3 input[type=checkbox]', 'Plugin is changeable')
           .assertElementNotSelected(zabbixSectionSelector + 'h3 input[type=checkbox]', 'Plugin is not actvated')
@@ -104,8 +100,8 @@ define([
       },
       'Check plugin in deployed environment': function() {
         this.timeout = 100000;
-        var self = this,
-          zabbixInitialVersion;
+        var self = this;
+        var zabbixInitialVersion;
         return this.remote
           .then(function() {
             return common.addNodesToCluster(1, ['Controller']);

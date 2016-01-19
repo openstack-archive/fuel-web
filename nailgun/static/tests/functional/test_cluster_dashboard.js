@@ -55,10 +55,10 @@ define([
           });
       },
       'Renaming cluster works': function() {
-        var initialName = clusterName,
-          newName = clusterName + '!!!',
-          renameInputSelector = '.rename-block input[type=text]',
-          nameSelector = '.cluster-info-value.name .btn-link';
+        var initialName = clusterName;
+        var newName = clusterName + '!!!';
+        var renameInputSelector = '.rename-block input[type=text]';
+        var nameSelector = '.cluster-info-value.name .btn-link';
         return this.remote
           .then(function() {
             return dashboardPage.startClusterRenaming();
@@ -172,13 +172,13 @@ define([
       },
       'Test statistics update': function() {
         this.timeout = 120000;
-        var controllerNodes = 3,
-          storageCinderNodes = 1,
-          computeNodes = 2,
-          operatingSystemNodes = 1,
-          virtualNodes = 1,
-          valueSelector = '.statistics-block .cluster-info-value',
-          total = controllerNodes + storageCinderNodes + computeNodes + operatingSystemNodes + virtualNodes;
+        var controllerNodes = 3;
+        var storageCinderNodes = 1;
+        var computeNodes = 2;
+        var operatingSystemNodes = 1;
+        var virtualNodes = 1;
+        var valueSelector = '.statistics-block .cluster-info-value';
+        var total = controllerNodes + storageCinderNodes + computeNodes + operatingSystemNodes + virtualNodes;
         return this.remote
           .then(function() {
             return common.addNodesToCluster(controllerNodes, ['Controller']);

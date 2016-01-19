@@ -80,8 +80,8 @@ export default {
     this.saveSettings(currentAttributes).done(this.setConnected);
   },
   showResponseErrors(response) {
-    var jsonObj,
-      error = '';
+    var jsonObj;
+    var error = '';
     try {
       jsonObj = JSON.parse(response.responseText);
       error = jsonObj.message;
@@ -127,11 +127,11 @@ export default {
     return i18n(key + '_community');
   },
   renderInput(settingName, wrapperClassName, disabledState) {
-    var model = this.props.statistics || this.props.tracking,
-      setting = model.get(model.makePath('statistics', settingName));
+    var model = this.props.statistics || this.props.tracking;
+    var setting = model.get(model.makePath('statistics', settingName));
     if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
-    var error = this.getError(model, settingName),
-      disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result || disabledState;
+    var error = this.getError(model, settingName);
+    var disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result || disabledState;
     return <Input
       key={settingName}
       type={setting.type}
@@ -159,42 +159,42 @@ export default {
     );
   },
   renderIntro() {
-    var ns = 'statistics.',
-      isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis'),
-      lists = {
-        actions: [
-          'operation_type',
-          'operation_time',
-          'actual_time',
-          'network_verification',
-          'ostf_results'
-        ],
-        settings: [
-          'envronments_amount',
-          'distribution',
-          'network_type',
-          'kernel_parameters',
-          'admin_network_parameters',
-          'pxe_parameters',
-          'dns_parameters',
-          'storage_options',
-          'related_projects',
-          'modified_settings',
-          'networking_configuration'
-        ],
-        node_settings: [
-          'deployed_nodes_amount',
-          'deployed_roles',
-          'disk_layout',
-          'interfaces_configuration'
-        ],
-        system_info: [
-          'hypervisor',
-          'hardware_info',
-          'fuel_version',
-          'openstack_version'
-        ]
-      };
+    var ns = 'statistics.';
+    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
+    var lists = {
+      actions: [
+        'operation_type',
+        'operation_time',
+        'actual_time',
+        'network_verification',
+        'ostf_results'
+      ],
+      settings: [
+        'envronments_amount',
+        'distribution',
+        'network_type',
+        'kernel_parameters',
+        'admin_network_parameters',
+        'pxe_parameters',
+        'dns_parameters',
+        'storage_options',
+        'related_projects',
+        'modified_settings',
+        'networking_configuration'
+      ],
+      node_settings: [
+        'deployed_nodes_amount',
+        'deployed_roles',
+        'disk_layout',
+        'interfaces_configuration'
+      ],
+      system_info: [
+        'hypervisor',
+        'hardware_info',
+        'fuel_version',
+        'openstack_version'
+      ]
+    };
     return (
       <div>
         <div className='statistics-text-box'>
@@ -221,8 +221,8 @@ export default {
   },
   clearRegistrationForm() {
     if (!this.state.isConnected) {
-      var tracking = this.props.tracking,
-        initialData = this.props.settings.get('tracking');
+      var tracking = this.props.tracking;
+      var initialData = this.props.settings.get('tracking');
       _.each(tracking.get('tracking'), (data, name) => {
         var path = tracking.makePath('tracking', name, 'value');
         tracking.set(path, initialData[name].value);
@@ -231,11 +231,11 @@ export default {
     }
   },
   renderRegistrationForm(model, disabled, error, showProgressBar) {
-    var tracking = model.get('tracking'),
-      sortedFields = _.chain(_.keys(tracking))
-        .without('metadata')
-        .sortBy((inputName) => tracking[inputName].weight)
-        .value();
+    var tracking = model.get('tracking');
+    var sortedFields = _.chain(_.keys(tracking))
+      .without('metadata')
+      .sortBy((inputName) => tracking[inputName].weight)
+      .value();
     return (
       <div>
         {error &&

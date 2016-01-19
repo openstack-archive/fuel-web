@@ -221,6 +221,64 @@ var Range = React.createClass({
       </div>
     );
   },
+  renderExtendableRanges(options) {
+    var {error, attributeName, ranges, verificationError} = options;
+    return _.map(ranges, (range, index) => {
+      var rangeError = _.findWhere(error, {index: index}) || {};
+      return (
+        <div className='range-row clearfix' key={index}>
+          <Input
+            {...this.getRangeProps()}
+            error={(rangeError.start || verificationError) ? '' : null}
+            value={range[0]}
+            onChange={_.partialRight(this.onRangeChange, attributeName, index)}
+            ref={'start' + index}
+            inputClassName='start'
+            placeholder={rangeError.start ? '' : this.props.placeholder}
+          />
+          <Input
+            {...this.getRangeProps(true)}
+            error={rangeError.end ? '' : null}
+            value={range[1]}
+            onChange={_.partialRight(this.onRangeChange, attributeName, index)}
+            onFocus={_.partial(this.autoCompleteIPRange, rangeError && rangeError.start, range[0])}
+            disabled={this.props.disabled || !!this.props.autoIncreaseWith}
+            placeholder={rangeError.end ? '' : this.props.placeholder}
+            extraContent={!this.props.hiddenControls && this.renderRangeControls(attributeName, index, ranges.length)}
+          />
+          <div className='validation-error text-danger pull-left'>
+            <span className='help-inline'>
+              {rangeError.start || rangeError.end}
+            </span>
+          </div>
+        </div>
+      );
+    });
+  },
+  renderRanges(options) {
+    var {error, ranges, startInputError, endInputError} = options;
+    return (
+      <div className='range-row clearfix'>
+        <Input
+          {...this.getRangeProps()}
+          value={ranges[0]}
+          error={startInputError ? '' : null}
+          inputClassName='start'
+        />
+        <Input
+          {...this.getRangeProps(true)}
+          disabled={this.props.disabled || !!this.props.autoIncreaseWith}
+          value={ranges[1]}
+          error={endInputError ? '' : null}
+        />
+        {error && (startInputError || endInputError) &&
+          <div className='validation-error text-danger pull-left'>
+            <span className='help-inline'>{startInputError || endInputError}</span>
+          </div>
+        }
+      </div>
+    );
+  },
   render() {
     var error = this.props.error || null;
     var attributeName = this.props.name;
@@ -248,57 +306,9 @@ var Range = React.createClass({
         <div className='col-xs-12'>
           <label>{this.props.label}</label>
           {this.props.extendable ?
-            _.map(ranges, (range, index) => {
-              var rangeError = _.findWhere(error, {index: index}) || {};
-              return (
-                <div className='range-row clearfix' key={index}>
-                  <Input
-                    {...this.getRangeProps()}
-                    error={(rangeError.start || verificationError) ? '' : null}
-                    value={range[0]}
-                    onChange={_.partialRight(this.onRangeChange, attributeName, index)}
-                    ref={'start' + index}
-                    inputClassName='start'
-                    placeholder={rangeError.start ? '' : this.props.placeholder}
-                  />
-                  <Input
-                    {...this.getRangeProps(true)}
-                    error={rangeError.end ? '' : null}
-                    value={range[1]}
-                    onChange={_.partialRight(this.onRangeChange, attributeName, index)}
-                    onFocus={_.partial(this.autoCompleteIPRange, rangeError && rangeError.start, range[0])}
-                    disabled={this.props.disabled || !!this.props.autoIncreaseWith}
-                    placeholder={rangeError.end ? '' : this.props.placeholder}
-                    extraContent={!this.props.hiddenControls && this.renderRangeControls(attributeName, index, ranges.length)}
-                  />
-                  <div className='validation-error text-danger pull-left'>
-                    <span className='help-inline'>
-                      {rangeError.start || rangeError.end}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
+            this.renderExtendableRanges({error, attributeName, ranges, verificationError})
           :
-            <div className='range-row clearfix'>
-              <Input
-                {...this.getRangeProps()}
-                value={ranges[0]}
-                error={startInputError ? '' : null}
-                inputClassName='start'
-              />
-              <Input
-                {...this.getRangeProps(true)}
-                disabled={this.props.disabled || !!this.props.autoIncreaseWith}
-                value={ranges[1]}
-                error={endInputError ? '' : null}
-              />
-              {error && (startInputError || endInputError) &&
-                <div className='validation-error text-danger pull-left'>
-                  <span className='help-inline'>{startInputError || endInputError}</span>
-                </div>
-              }
-            </div>
+            this.renderRanges({error, ranges, startInputError, endInputError})
           }
         </div>
       </div>

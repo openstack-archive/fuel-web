@@ -586,6 +586,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         revertChanges: function() {
             this.loadInitialConfiguration();
             this.loadInitialSettings();
+            this.props.cluster.get('networkConfiguration').isValid();
             this.setState({
                 hideVerificationResult: true,
                 key: _.now()

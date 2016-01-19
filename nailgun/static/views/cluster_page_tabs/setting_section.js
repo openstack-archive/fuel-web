@@ -165,6 +165,76 @@ var SettingSection = React.createClass({
       if (pluginMetadata.chosen_id !== initialVersion) this.onPluginVersionChange(pluginName, initialVersion);
     }
   },
+  renderTitle(options) {
+    var {metadata, sectionName, isGroupDisabled, processedGroupDependencies, showSettingGroupWarning, groupWarning, isPlugin} = options;
+    return metadata.toggleable ?
+      <Input
+        type='checkbox'
+        name='metadata'
+        label={metadata.label || sectionName}
+        defaultChecked={metadata.enabled}
+        disabled={isGroupDisabled || processedGroupDependencies.result}
+        tooltipText={showSettingGroupWarning && groupWarning}
+        onChange={isPlugin ? _.partial(this.togglePlugin, sectionName) : this.props.onChange}
+      />
+    :
+      <span className={'subtab-group-' + sectionName}>{sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>;
+  },
+  renderCustomControl(options) {
+    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning, CustomControl, path} = options;
+    return <CustomControl
+      {...setting}
+      {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
+      key={settingKey}
+      path={path}
+      error={error}
+      disabled={isSettingDisabled}
+      tooltipText={showSettingWarning && settingWarning}
+    />;
+  },
+  renderRadioGroup(options) {
+    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning, settingName} = options;
+    var values = _.chain(_.cloneDeep(setting.values))
+      .map((value) => {
+        var processedValueRestrictions = this.props.checkRestrictions('disable', value);
+        if (!this.props.checkRestrictions('hide', value).result) {
+          value.disabled = isSettingDisabled || processedValueRestrictions.result;
+          value.defaultChecked = value.data == setting.value;
+          value.tooltipText = showSettingWarning && processedValueRestrictions.message;
+          return value;
+        }
+      })
+      .compact()
+      .value();
+    if (setting.type == 'radio') return <RadioGroup {...this.props}
+      key={settingKey}
+      name={settingName}
+      label={setting.label}
+      values={values}
+      error={error}
+      tooltipText={showSettingWarning && settingWarning}
+    />;
+  },
+  renderInput(options) {
+    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning, settingName} = options;
+    var settingDescription = setting.description &&
+      <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
+    return <Input
+      {... _.pick(setting, 'type', 'label')}
+      key={settingKey}
+      name={settingName}
+      description={settingDescription}
+      children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
+      debounce={setting.type == 'text' || setting.type == 'password' || setting.type == 'textarea'}
+      defaultValue={setting.value}
+      defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
+      toggleable={setting.type == 'password'}
+      error={error}
+      disabled={isSettingDisabled}
+      tooltipText={showSettingWarning && settingWarning}
+      onChange={this.props.onChange}
+    />;
+  },
   render() {
     var {settings, sectionName} = this.props;
     var section = settings.get(sectionName);
@@ -181,19 +251,7 @@ var SettingSection = React.createClass({
     return (
       <div className={'setting-section setting-section-' + sectionName}>
         <h3>
-          {metadata.toggleable ?
-            <Input
-              type='checkbox'
-              name='metadata'
-              label={metadata.label || sectionName}
-              defaultChecked={metadata.enabled}
-              disabled={isGroupDisabled || processedGroupDependencies.result}
-              tooltipText={showSettingGroupWarning && groupWarning}
-              onChange={isPlugin ? _.partial(this.togglePlugin, sectionName) : this.props.onChange}
-            />
-          :
-            <span className={'subtab-group-' + sectionName}>{sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>
-          }
+          {this.renderTitle({metadata, sectionName, isGroupDisabled, processedGroupDependencies, showSettingGroupWarning, groupWarning, isPlugin})}
         </h3>
         <div>
           {isPlugin &&
@@ -225,60 +283,15 @@ var SettingSection = React.createClass({
             var showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled);
             var settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
 
+            var renderOptions = {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning};
+
             // support of custom controls
             var CustomControl = customControls[setting.type];
-            if (CustomControl) {
-              return <CustomControl
-                {...setting}
-                {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
-                key={settingKey}
-                path={path}
-                error={error}
-                disabled={isSettingDisabled}
-                tooltipText={showSettingWarning && settingWarning}
-              />;
-            }
+            if (CustomControl) return this.renderCustomControl(_.extend(renderOptions, {CustomControl, path}));
 
-            if (setting.values) {
-              var values = _.chain(_.cloneDeep(setting.values))
-                .map((value) => {
-                  var processedValueRestrictions = this.props.checkRestrictions('disable', value);
-                  if (!this.props.checkRestrictions('hide', value).result) {
-                    value.disabled = isSettingDisabled || processedValueRestrictions.result;
-                    value.defaultChecked = value.data == setting.value;
-                    value.tooltipText = showSettingWarning && processedValueRestrictions.message;
-                    return value;
-                  }
-                })
-                .compact()
-                .value();
-              if (setting.type == 'radio') return <RadioGroup {...this.props}
-                key={settingKey}
-                name={settingName}
-                label={setting.label}
-                values={values}
-                error={error}
-                tooltipText={showSettingWarning && settingWarning}
-              />;
-            }
+            if (setting.values) return this.renderRadioGroup(_.extend(renderOptions, {settingName}));
 
-            var settingDescription = setting.description &&
-              <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
-            return <Input
-              {... _.pick(setting, 'type', 'label')}
-              key={settingKey}
-              name={settingName}
-              description={settingDescription}
-              children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
-              debounce={setting.type == 'text' || setting.type == 'password' || setting.type == 'textarea'}
-              defaultValue={setting.value}
-              defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
-              toggleable={setting.type == 'password'}
-              error={error}
-              disabled={isSettingDisabled}
-              tooltipText={showSettingWarning && settingWarning}
-              onChange={this.props.onChange}
-            />;
+            return this.renderInput(_.extend(renderOptions, {settingName}));
           })}
         </div>
       </div>

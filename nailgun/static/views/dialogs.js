@@ -769,18 +769,9 @@ export var ShowNodeInfoDialog = React.createClass({
       ReactDOM.findDOMNode(this).focus();
     }
   },
-  renderBody() {
+  renderNodeDetailsPopup(options) {
     var node = this.props.node;
-    var meta = node.get('meta');
-    if (!meta) return <ProgressBar />;
-    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
-    var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
-    var sortOrder = {
-      disks: ['name', 'model', 'size'],
-      interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
-    };
-    if (this.state.VMsConf) groups.push('config');
-
+    var {meta, groups, sortOrder} = options;
     return (
       <div className='node-details-popup'>
         <div className='row'>
@@ -909,6 +900,20 @@ export var ShowNodeInfoDialog = React.createClass({
         </div>
       </div>
     );
+  },
+  renderBody() {
+    var node = this.props.node;
+    var meta = node.get('meta');
+    if (!meta) return <ProgressBar />;
+    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
+    var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
+    var sortOrder = {
+      disks: ['name', 'model', 'size'],
+      interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
+    };
+    if (this.state.VMsConf) groups.push('config');
+
+    return this.renderNodeDetailsPopup({meta, groups, sortOrder});
   },
   renderFooter() {
     return (

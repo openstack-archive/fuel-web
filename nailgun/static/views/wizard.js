@@ -337,8 +337,11 @@ var Compute = React.createClass({
       return !_.any(components, (component) => component.get('enabled'));
     }
   },
-  render() {
+  updateRestrictions() {
     this.processRestrictions(this.components, ['hypervisor']);
+  },
+  render() {
+    this.updateRestrictions();
     return (
       <div className='wizard-compute-pane'>
         <ComponentCheckboxGroup
@@ -373,6 +376,16 @@ var Network = React.createClass({
       return false;
     }
   },
+  updateRestrictions() {
+    var monolithic = _.filter(this.components, (component) => !component.isML2Driver());
+    this.processRestrictions(monolithic, this.constructor.panesForRestrictions);
+    this.processCompatible(this.props.allComponents, monolithic, this.constructor.panesForRestrictions, monolithic);
+    this.selectActiveComponent(monolithic);
+
+    var ml2 = _.filter(this.components, (component) => component.isML2Driver());
+    this.processRestrictions(ml2, this.constructor.panesForRestrictions);
+    this.processCompatible(this.props.allComponents, ml2, this.constructor.panesForRestrictions);
+  },
   onChange(name, value) {
     this.props.onChange(name, value);
     // reset all ml2 drivers if ml2 core unselected
@@ -387,13 +400,6 @@ var Network = React.createClass({
   },
   renderMonolithicDriverControls() {
     var monolithic = _.filter(this.components, (component) => !component.isML2Driver());
-    var hasMl2 = _.any(this.components, (component) => component.isML2Driver());
-    if (!hasMl2) {
-      monolithic = _.filter(monolithic, (component) => component.id != this.constructor.ml2CorePath);
-    }
-    this.processRestrictions(monolithic, this.constructor.panesForRestrictions);
-    this.processCompatible(this.props.allComponents, monolithic, this.constructor.panesForRestrictions, monolithic);
-    this.selectActiveComponent(monolithic);
     return (
       <ComponentRadioGroup
         groupName='network'
@@ -404,8 +410,6 @@ var Network = React.createClass({
   },
   renderML2DriverControls() {
     var ml2 = _.filter(this.components, (component) => component.isML2Driver());
-    this.processRestrictions(ml2, this.constructor.panesForRestrictions);
-    this.processCompatible(this.props.allComponents, ml2, this.constructor.panesForRestrictions);
     return (
       <ComponentCheckboxGroup
         groupName='ml2'
@@ -415,6 +419,7 @@ var Network = React.createClass({
     );
   },
   render() {
+    this.updateRestrictions();
     return (
       <div className='wizard-network-pane'>
         {this.renderMonolithicDriverControls()}
@@ -437,11 +442,18 @@ var Storage = React.createClass({
     componentType: 'storage',
     title: i18n('dialog.create_cluster_wizard.storage.title')
   },
+  updateRestrictions() {
+    var components = this.components;
+    _.each(['block', 'object', 'image', 'ephemeral'], (subtype) => {
+      var sectionComponents = _.filter(components, (component) => component.get('subtype') == subtype);
+      var isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
+      this.processRestrictions(sectionComponents, this.constructor.panesForRestrictions, (isRadio ? sectionComponents : []));
+      this.processCompatible(this.props.allComponents, sectionComponents, this.constructor.panesForRestrictions, isRadio ? sectionComponents : []);
+    });
+  },
   renderSection(components, type) {
     var sectionComponents = _.filter(components, (component) => component.get('subtype') == type);
     var isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
-    this.processRestrictions(sectionComponents, this.constructor.panesForRestrictions, (isRadio ? sectionComponents : []));
-    this.processCompatible(this.props.allComponents, sectionComponents, this.constructor.panesForRestrictions, isRadio ? sectionComponents : []);
     return (
       React.createElement((isRadio ? ComponentRadioGroup : ComponentCheckboxGroup), {
         groupName: type,
@@ -451,8 +463,7 @@ var Storage = React.createClass({
     );
   },
   render() {
-    this.processRestrictions(this.components, this.constructor.panesForRestrictions);
-    this.processCompatible(this.props.allComponents, this.components, this.constructor.panesForRestrictions);
+    this.updateRestrictions();
     return (
       <div className='wizard-storage-pane'>
         <div className='row'>
@@ -488,9 +499,12 @@ var AdditionalServices = React.createClass({
     componentType: 'additional_service',
     title: i18n('dialog.create_cluster_wizard.additional.title')
   },
-  render() {
+  updateRestrictions() {
     this.processRestrictions(this.components, this.constructor.panesForRestrictions);
     this.processCompatible(this.props.allComponents, this.components, this.constructor.panesForRestrictions);
+  },
+  render() {
+    this.updateRestrictions();
     return (
       <div className='wizard-compute-pane'>
         <ComponentCheckboxGroup
@@ -574,6 +588,9 @@ var CreateClusterWizard = React.createClass({
     return panesTypes;
   },
   updateState(nextState) {
+    if (this.refs.pane && this.refs.pane.updateRestrictions) {
+      this.refs.pane.updateRestrictions();
+    }
     var numberOfPanes = this.getEnabledPanes().length;
     var nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex : this.state.activePaneIndex;
     var pane = clusterWizardPanes[nextActivePaneIndex];

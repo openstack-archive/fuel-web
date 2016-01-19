@@ -260,48 +260,8 @@ var Node = React.createClass({
       </ul>
     );
   },
-  toggleLabelsPopover(visible) {
-    this.setState({
-      labelsPopoverVisible: _.isBoolean(visible) ? visible : !this.state.labelsPopoverVisible
-    });
-  },
-  render() {
-    var ns = 'cluster_page.nodes_tab.node.',
-      node = this.props.node,
-      isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
-      status = node.getStatusSummary(),
-      roles = this.props.cluster ? node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
-
-    // compose classes
-    var nodePanelClasses = {
-      node: true,
-      selected: this.props.checked,
-      'col-xs-12': this.props.viewMode != 'compact',
-      unavailable: !isSelectable
-    };
-    nodePanelClasses[status] = status;
-
-    var manufacturer = node.get('manufacturer') || '',
-      logoClasses = {
-        'manufacturer-logo': true
-      };
-    logoClasses[manufacturer.toLowerCase()] = manufacturer;
-
-    var statusClasses = {
-        'node-status': true
-      },
-      statusClass = {
-        pending_addition: 'text-success',
-        pending_deletion: 'text-warning',
-        error: 'text-danger',
-        ready: 'text-info',
-        provisioning: 'text-info',
-        deploying: 'text-success',
-        provisioned: 'text-info'
-      }[status];
-    statusClasses[statusClass] = true;
-
-    if (this.props.viewMode == 'compact') return (
+  renderCompactNode(node, nodePanelClasses, isSelectable, status, roles, statusClasses, ns, logoClasses) {
+    return (
       <div className='compact-node'>
         <div className={utils.classNames(nodePanelClasses)}>
           <label className='node-box'>
@@ -404,6 +364,49 @@ var Node = React.createClass({
         }
       </div>
     );
+  },
+  toggleLabelsPopover(visible) {
+    this.setState({
+      labelsPopoverVisible: _.isBoolean(visible) ? visible : !this.state.labelsPopoverVisible
+    });
+  },
+  render() {
+    var ns = 'cluster_page.nodes_tab.node.',
+      node = this.props.node,
+      isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit',
+      status = node.getStatusSummary(),
+      roles = this.props.cluster ? node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
+
+    // compose classes
+    var nodePanelClasses = {
+      node: true,
+      selected: this.props.checked,
+      'col-xs-12': this.props.viewMode != 'compact',
+      unavailable: !isSelectable
+    };
+    nodePanelClasses[status] = status;
+
+    var manufacturer = node.get('manufacturer') || '',
+      logoClasses = {
+        'manufacturer-logo': true
+      };
+    logoClasses[manufacturer.toLowerCase()] = manufacturer;
+
+    var statusClasses = {
+        'node-status': true
+      },
+      statusClass = {
+        pending_addition: 'text-success',
+        pending_deletion: 'text-warning',
+        error: 'text-danger',
+        ready: 'text-info',
+        provisioning: 'text-info',
+        deploying: 'text-success',
+        provisioned: 'text-info'
+      }[status];
+    statusClasses[statusClass] = true;
+
+    if (this.props.viewMode == 'compact') this.renderCompactNode(ns, node, isSelectable, status, roles, nodePanelClasses, logoClasses, statusClasses);
 
     return (
       <div className={utils.classNames(nodePanelClasses)}>

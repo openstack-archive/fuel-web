@@ -416,6 +416,29 @@ NodeListScreen = React.createClass({
   getNodeLabels() {
     return _.chain(this.props.nodes.pluck('labels')).flatten().map(_.keys).flatten().uniq().value();
   },
+  getFilterResults(filter, node) {
+    var result;
+    switch (filter.name) {
+      case 'roles':
+        result = _.any(filter.values, (role) => node.hasRole(role));
+        break;
+      case 'status':
+        result = _.contains(filter.values, node.getStatusSummary());
+        break;
+      case 'manufacturer':
+      case 'cluster':
+      case 'group_id':
+        result = _.contains(filter.values, node.get(filter.name));
+        break;
+      default:
+        // handle number ranges
+        var currentValue = node.resource(filter.name);
+        if (filter.name == 'hdd' || filter.name == 'ram') currentValue = currentValue / Math.pow(1024, 3);
+        result = currentValue >= filter.values[0] && (_.isUndefined(filter.values[1]) || currentValue <= filter.values[1]);
+        break;
+    }
+    return result;
+  },
   render() {
     var cluster = this.props.cluster;
     var locked = !!cluster && !!cluster.task({group: 'deployment', active: true});
@@ -444,27 +467,7 @@ NodeListScreen = React.createClass({
           return _.contains(filter.values, node.getLabel(filter.name));
         }
 
-        var result;
-        switch (filter.name) {
-          case 'roles':
-            result = _.any(filter.values, (role) => node.hasRole(role));
-            break;
-          case 'status':
-            result = _.contains(filter.values, node.getStatusSummary());
-            break;
-          case 'manufacturer':
-          case 'cluster':
-          case 'group_id':
-            result = _.contains(filter.values, node.get(filter.name));
-            break;
-          default:
-            // handle number ranges
-            var currentValue = node.resource(filter.name);
-            if (filter.name == 'hdd' || filter.name == 'ram') currentValue = currentValue / Math.pow(1024, 3);
-            result = currentValue >= filter.values[0] && (_.isUndefined(filter.values[1]) || currentValue <= filter.values[1]);
-            break;
-        }
-        return result;
+        return this.getFilterResults(filter, node);
       });
     });
 
@@ -1641,47 +1644,47 @@ NodeList = React.createClass({
 
         if (sorter.isLabel) return getLabelValue(node, sorter.name);
 
-        var result;
         var ns = 'cluster_page.nodes_tab.node.';
         var cluster = this.props.cluster || this.props.clusters.get(node.get('cluster'));
-        switch (sorter.name) {
-          case 'roles':
-            result = node.getRolesSummary(this.props.roles) || i18n(ns + 'no_roles');
-            break;
-          case 'status':
-            result = i18n(ns + 'status.' + node.getStatusSummary(), {
+        var groupsMap = {
+          roles: () => {
+            return node.getRolesSummary(this.props.roles) || i18n(ns + 'no_roles');
+          },
+          status: () => {
+            return i18n(ns + 'status.' + node.getStatusSummary(), {
               os: cluster && cluster.get('release').get('operating_system') || 'OS'
             });
-            break;
-          case 'manufacturer':
-            result = node.get('manufacturer') || i18n('common.not_specified');
-            break;
-          case 'group_id':
+          },
+          manufacturer: () => {
+            return node.get('manufacturer') || i18n('common.not_specified');
+          },
+          group_id: () => {
             var nodeNetworkGroup = this.props.nodeNetworkGroups.get(node.get('group_id'));
-            result = nodeNetworkGroup && i18n(ns + 'node_network_group', {
+            return nodeNetworkGroup && i18n(ns + 'node_network_group', {
               group: nodeNetworkGroup.get('name') + (this.props.cluster ? '' : ' (' + cluster.get('name') + ')')
             }) || i18n(ns + 'no_node_network_group');
-            break;
-          case 'cluster':
-            result = cluster && i18n(ns + 'cluster', {cluster: cluster.get('name')})
+          },
+          cluster: () => {
+            return cluster && i18n(ns + 'cluster', {cluster: cluster.get('name')})
               || i18n(ns + 'unallocated');
-            break;
-          case 'hdd':
-            result = i18n('node_details.total_hdd', {total: utils.showDiskSize(node.resource('hdd'))});
-            break;
-          case 'disks':
-            result = composeNodeDiskSizesLabel(node);
-            break;
-          case 'ram':
-            result = i18n('node_details.total_ram', {total: utils.showMemorySize(node.resource('ram'))});
-            break;
-          case 'interfaces':
-            result = i18n('node_details.interfaces_amount', {count: node.resource('interfaces')});
-            break;
-          default:
-            result = i18n('node_details.' + sorter.name, {count: node.resource(sorter.name)});
-        }
-        return result;
+          },
+          hdd: () => {
+            return i18n('node_details.total_hdd', {total: utils.showDiskSize(node.resource('hdd'))});
+          },
+          disks: () => {
+            return composeNodeDiskSizesLabel(node);
+          },
+          ram: () => {
+            return i18n('node_details.total_ram', {total: utils.showMemorySize(node.resource('ram'))});
+          },
+          interfaces: () => {
+            return i18n('node_details.interfaces_amount', {count: node.resource('interfaces')});
+          },
+          default: () => {
+            return i18n('node_details.' + sorter.name, {count: node.resource(sorter.name)});
+          }
+        };
+        return groupsMap[sorter.name] ? groupsMap[sorter.name]() : groupsMap.default();
       })).join('; ');
     };
     var groups = _.pairs(_.groupBy(this.props.nodes, groupingMethod));
@@ -1717,8 +1720,8 @@ NodeList = React.createClass({
             result = node1Label === node2Label ? 0 : _.isString(node1Label) ? -1 : _.isNull(node1Label) ? -1 : 1;
           }
         } else {
-          switch (sorter.name) {
-            case 'roles':
+          var rolesMap = {
+            roles: () => {
               var roles1 = node1.sortedRoles(preferredRolesOrder);
               var roles2 = node2.sortedRoles(preferredRolesOrder);
               var order;
@@ -1731,32 +1734,34 @@ NodeList = React.createClass({
                 }
                 result = order || roles1.length - roles2.length;
               }
-              break;
-            case 'status':
+            },
+            status: () => {
               result = _.indexOf(this.props.statusesToFilter, node1.getStatusSummary()) - _.indexOf(this.props.statusesToFilter, node2.getStatusSummary());
-              break;
-            case 'manufacturer':
+            },
+            manufacturer: () => {
               result = utils.compare(node1, node2, {attr: sorter.name});
-              break;
-            case 'disks':
+            },
+            disks: () => {
               result = utils.natsort(composeNodeDiskSizesLabel(node1), composeNodeDiskSizesLabel(node2));
-              break;
-            case 'group_id':
+            },
+            group_id: () => {
               var nodeGroup1 = node1.get('group_id');
               var nodeGroup2 = node2.get('group_id');
               result = nodeGroup1 == nodeGroup2 ? 0 :
                 !nodeGroup1 ? 1 : !nodeGroup2 ? -1 : nodeGroup1 - nodeGroup2;
-              break;
-            case 'cluster':
+            },
+            cluster: () => {
               var cluster1 = node1.get('cluster');
               var cluster2 = node2.get('cluster');
               result = cluster1 == cluster2 ? 0 :
                 !cluster1 ? 1 : !cluster2 ? -1 : utils.natsort(this.props.clusters.get(cluster1).get('name'), this.props.clusters.get(cluster2).get('name'));
-              break;
-            default:
+            },
+            default: () => {
               result = node1.resource(sorter.name) - node2.resource(sorter.name);
-              break;
-          }
+            }
+          };
+          if (rolesMap[sorter.name]) rolesMap[sorter.name]();
+          else rolesMap.default();
         }
 
         if (sorter.order == 'desc') {

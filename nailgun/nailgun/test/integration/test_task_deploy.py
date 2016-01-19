@@ -174,5 +174,6 @@ class TestTaskDeploy(BaseIntegrationTest):
         deploy_tasks = rpc_cast.call_args[0][1]['args']['deployment_tasks']
         self.assertItemsEqual(
             ["deploy_legacy"],
-            (task["id"] for task in deploy_tasks[compute.uid])
+            (task["id"] for task in deploy_tasks[compute.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
         )

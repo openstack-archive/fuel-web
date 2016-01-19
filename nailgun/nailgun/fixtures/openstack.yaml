@@ -1969,27 +1969,33 @@
                 priority: null
               - type: "deb"
                 name: "mos"
-                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.0-for-UCA-test/"
                 suite: "mos9.0"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-updates"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.0-for-UCA-test/"
                 suite: "mos9.0-updates"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-security"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.0-for-UCA-test/"
                 suite: "mos9.0-security"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-holdback"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.0-for-UCA-test/"
                 suite: "mos9.0-holdback"
                 section: "main restricted"
+                priority: 1100
+              - type: "deb"
+                name: "UCA-mitaka"
+                uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
+                suite: "trusty-updates/mitaka"
+                section: "main"
                 priority: 1100
               - type: "deb"
                 name: "Auxiliary"

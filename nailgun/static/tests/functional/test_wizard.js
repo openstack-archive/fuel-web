@@ -67,8 +67,17 @@ define([
           .assertElementsExist('.wizard-step.available', 5, 'All steps are available at the end')
           .clickLinkByText('Compute')
           .clickByCssSelector('input[name=hypervisor\\:qemu]')
-          .assertElementExists('.wizard-step.available', 1,
+          .assertElementExists('.wizard-step.available',
             'Only one step is available after changing hypervisor');
+      },
+      'Test Compute pane: next button is disabled by when no hypervisor selected': function() {
+        return this.remote
+          .pressKeys('\uE007')
+          .clickByCssSelector('input[name=hypervisor\\:vmware]')
+          .clickByCssSelector('input[name=hypervisor\\:qemu]')
+          .assertElementExists('.wizard-compute-pane .alert',
+            'There should be the warning when no hypervisors selected')
+          .assertElementExists('.next-pane-btn.disabled', 'Next button should be disabled');
       }
     };
   });

@@ -931,13 +931,14 @@ class NetworkManager(object):
             if 'offloading_modes' in iface:
                 current_iface.offloading_modes = \
                     iface['offloading_modes']
+
         map(db().delete, bond_interfaces_db)
-        db().commit()
+        db().flush()
 
         for bond in bond_interfaces:
             bond_db = NodeBondInterface()
             bond_db.node_id = node_db.id
-            db().add(bond_db)
+
             bond_db.name = bond['name']
             if bond.get('bond_properties', {}).get('mode'):
                 bond_db.mode = bond['bond_properties']['mode']
@@ -946,8 +947,6 @@ class NetworkManager(object):
             bond_db.mac = bond.get('mac')
             bond_db.bond_properties = bond.get('bond_properties', {})
             bond_db.interface_properties = bond.get('interface_properties', {})
-            db().commit()
-            db().refresh(bond_db)
 
             # Add new network assignment.
             map(bond_db.assigned_networks_list.append,
@@ -965,8 +964,11 @@ class NetworkManager(object):
 
             bond_db.offloading_modes = bond.get('offloading_modes', {})
 
-            db().commit()
+            db().add(bond_db)
+            db().flush()
+            db().refresh(bond_db)
 
+        db().refresh(node_db)
         return node_db.id
 
     @classmethod

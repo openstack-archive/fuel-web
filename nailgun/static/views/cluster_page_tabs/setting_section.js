@@ -29,7 +29,7 @@ var SettingSection = React.createClass({
     var messages = _.compact([restrictionsCheck.message, messagesCheck.message]);
 
     // FIXME: hack for #1442475 to lock images_ceph in env with controllers
-    if (settingName == 'images_ceph') {
+    if (settingName === 'images_ceph') {
       if (_.contains(_.flatten(this.props.cluster.get('nodes').pluck('pending_roles')), 'controller')) {
         result = true;
         messages.push(i18n('cluster_page.settings_tab.images_ceph_warning'));
@@ -95,7 +95,7 @@ var SettingSection = React.createClass({
     var dependentRestrictions = {};
     var addDependentRestrictions = (setting, label) => {
       var result = _.filter(_.map(setting.restrictions, utils.expandRestriction),
-          (restriction) => restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path)
+          (restriction) => restriction.action === 'disable' && _.contains(restriction.condition, 'settings:' + path)
         );
       if (result.length) {
         dependentRestrictions[label] = result.concat(dependentRestrictions[label] || []);
@@ -108,10 +108,10 @@ var SettingSection = React.createClass({
       _.each(section, (setting, settingName) => {
         // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
         if (!this.areCalculationsPossible(setting) ||
-          this.props.makePath(sectionName, settingName) == path ||
+          this.props.makePath(sectionName, settingName) === path ||
           this.props.checkRestrictions('hide', setting).result
         ) return;
-        if (setting[this.props.getValueAttribute(settingName)] == true) {
+        if (setting[this.props.getValueAttribute(settingName)] === true) {
           addDependentRestrictions(setting, setting.label);
         } else {
           var activeOption = _.find(setting.values, {data: setting.value});
@@ -155,7 +155,7 @@ var SettingSection = React.createClass({
     var pluginMetadata = this.props.settings.get(pluginName).metadata;
     if (enabled) {
       // check for editable plugin version
-      var chosenVersionData = _.find(pluginMetadata.versions, (version) => version.metadata.plugin_id == pluginMetadata.chosen_id);
+      var chosenVersionData = _.find(pluginMetadata.versions, (version) => version.metadata.plugin_id === pluginMetadata.chosen_id);
       if (this.props.lockedCluster && !chosenVersionData.metadata.always_editable) {
         var editableVersion = _.find(pluginMetadata.versions, (version) => version.metadata.always_editable).metadata.plugin_id;
         this.onPluginVersionChange(pluginName, editableVersion);
@@ -192,7 +192,7 @@ var SettingSection = React.createClass({
               onChange={isPlugin ? _.partial(this.togglePlugin, sectionName) : this.props.onChange}
             />
           :
-            <span className={'subtab-group-' + sectionName}>{sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>
+            <span className={'subtab-group-' + sectionName}>{sectionName === 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>
           }
         </h3>
         <div>
@@ -206,7 +206,7 @@ var SettingSection = React.createClass({
                   return {
                     data: version.metadata.plugin_id,
                     label: version.metadata.plugin_version,
-                    defaultChecked: version.metadata.plugin_id == metadata.chosen_id,
+                    defaultChecked: version.metadata.plugin_id === metadata.chosen_id,
                     disabled: this.props.locked || (this.props.lockedCluster && !version.metadata.always_editable) || processedGroupRestrictions.result || (metadata.toggleable && !metadata.enabled)
                   };
                 }, this)}
@@ -245,14 +245,14 @@ var SettingSection = React.createClass({
                   var processedValueRestrictions = this.props.checkRestrictions('disable', value);
                   if (!this.props.checkRestrictions('hide', value).result) {
                     value.disabled = isSettingDisabled || processedValueRestrictions.result;
-                    value.defaultChecked = value.data == setting.value;
+                    value.defaultChecked = value.data === setting.value;
                     value.tooltipText = showSettingWarning && processedValueRestrictions.message;
                     return value;
                   }
                 })
                 .compact()
                 .value();
-              if (setting.type == 'radio') return <RadioGroup {...this.props}
+              if (setting.type === 'radio') return <RadioGroup {...this.props}
                 key={settingKey}
                 name={settingName}
                 label={setting.label}
@@ -269,11 +269,11 @@ var SettingSection = React.createClass({
               key={settingKey}
               name={settingName}
               description={settingDescription}
-              children={setting.type == 'select' ? this.composeOptions(setting.values) : null}
-              debounce={setting.type == 'text' || setting.type == 'password' || setting.type == 'textarea'}
+              children={setting.type === 'select' ? this.composeOptions(setting.values) : null}
+              debounce={setting.type === 'text' || setting.type === 'password' || setting.type === 'textarea'}
               defaultValue={setting.value}
               defaultChecked={_.isBoolean(setting.value) ? setting.value : false}
-              toggleable={setting.type == 'password'}
+              toggleable={setting.type === 'password'}
               error={error}
               disabled={isSettingDisabled}
               tooltipText={showSettingWarning && settingWarning}

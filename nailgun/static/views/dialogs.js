@@ -852,7 +852,7 @@ export var ShowNodeInfoDialog = React.createClass({
                           return (
                             <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
                               {_.map(utils.sortEntryProperties(entry, sortOrder[group]), (propertyName) => {
-                                if (!_.isObject(entry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
+                                if (!_.isPlainObject(entry[propertyName]) && !_.isArray(entry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
                               })}
                             </div>
                           );
@@ -862,7 +862,7 @@ export var ShowNodeInfoDialog = React.createClass({
                     {_.isPlainObject(groupEntries) &&
                       <div>
                         {_.map(groupEntries, (propertyValue, propertyName) => {
-                          if (!_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
+                          if (!_.isPlainObject(propertyValue) && !_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
                         })}
                         {!_.isEmpty(subEntries) &&
                           <div>
@@ -870,7 +870,7 @@ export var ShowNodeInfoDialog = React.createClass({
                               return (
                                 <div className='nested-object' key={'subentries_' + groupIndex + subentrysIndex}>
                                   {_.map(utils.sortEntryProperties(subentry), (propertyName) => {
-                                    return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
+                                    if (!_.isPlainObject(subentry[propertyName]) && !_.isArray(subentry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
                                   })}
                                 </div>
                               );

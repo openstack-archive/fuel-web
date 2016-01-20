@@ -15,7 +15,7 @@
 #    under the License.
 
 import os.path
-import urllib
+import six.moves.urllib.parse as urlparse
 
 from web.httpserver import StaticApp
 
@@ -29,7 +29,7 @@ class NailgunStaticApp(StaticApp):
         path = path.split('?', 1)[0].split('#', 1)[0]
         if path.startswith("/static/"):
             path = path[7:]
-        path = os.path.normpath(urllib.unquote(path))
+        path = os.path.normpath(urlparse.unquote(path))
         words = path.split('/')
         words = filter(None, words)
 
@@ -60,7 +60,7 @@ class StaticMiddleware(object):
             return self.app(environ, start_response)
 
     def normpath(self, path):
-        path2 = os.path.normpath(urllib.unquote(path))
+        path2 = os.path.normpath(urlparse.unquote(path))
         if path.endswith("/"):
             path2 += "/"
         return path2

@@ -15,19 +15,19 @@
 #    under the License.
 
 from datetime import datetime
+import yaml
 
 from oslo_db.sqlalchemy import models
-
 from sqlalchemy import Column
 from sqlalchemy import DateTime
-from sqlalchemy import Integer
-
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy import Integer
 from sqlalchemy.orm.base import object_state
 
 from nailgun.db import deadlock_detector as dd
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models import mutable as nailgun_mutable
 from nailgun.settings import settings
 
 
@@ -58,3 +58,24 @@ class CapacityLog(Base):
     id = Column(Integer, primary_key=True)
     report = Column(MutableDict.as_mutable(JSON))
     datetime = Column(DateTime, default=lambda: datetime.now())
+
+
+# For serialization of custom objects into yaml we need to add
+# appropriate representers. yaml library gets the first
+# class name from the object MRO and search it in the registered
+# representer list. Thus we are adding representers for Mutable
+# objects into yaml.
+yaml.SafeDumper.add_representer(
+    nailgun_mutable.MutableDict,
+    yaml.representer.SafeRepresenter.represent_dict
+)
+
+yaml.SafeDumper.add_representer(
+    MutableDict,
+    yaml.representer.SafeRepresenter.represent_dict
+)
+
+yaml.SafeDumper.add_representer(
+    nailgun_mutable.MutableList,
+    yaml.representer.SafeRepresenter.represent_list
+)

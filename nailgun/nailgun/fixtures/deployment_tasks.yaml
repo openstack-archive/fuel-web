@@ -184,3 +184,18 @@
     puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/globals/globals.pp
     puppet_modules: /etc/puppet/modules
     timeout: 3600
+
+- id: save_cluster_configuration_master
+  type: upload_file
+  role: master
+  requires: [pre_deployment_start]
+  parameters:
+    path: /var/lib/fuel/configuration/{CLUSTER_ID}/common_attributes.yaml
+
+- id: save_cluster_configuration
+  type: upload_file
+  role: '*'
+  requires: [save_cluster_configuration_master]
+  required_for: [pre_deployment_end]
+  parameters:
+    path: /var/lib/fuel/configuration/common_attributes.yaml

@@ -435,6 +435,31 @@ class UploadConfiguration(GenericRolesHook):
                     [node.uid], path=path, data=yaml.safe_dump(data))
 
 
+class SaveClusterConfigurationMaster(GenericRolesHook):
+    """Saves cluster common attributes data to the master node."""
+
+    identity = 'save_cluster_configuration_master'
+
+    def serialize(self):
+        serializer = deployment_serializers.get_serializer_for_cluster(
+            self.cluster)()
+        path = self.task['parameters']['path'].format(
+            CLUSTER_ID=self.cluster.id)
+        data = serializer.get_common_attrs(self.cluster)
+        uids = self.get_uids()
+        if uids:
+            yield templates.make_upload_task(
+                uids, path=path,
+                data=yaml.safe_dump(data)
+            )
+
+
+class SaveClusterConfiguration(SaveClusterConfigurationMaster):
+    """Saves cluster common attributes data to all nodes."""
+
+    identity = 'save_cluster_configuration'
+
+
 class TaskSerializers(object):
     """Class serves as fabric for different types of task serializers."""
 
@@ -442,7 +467,9 @@ class TaskSerializers(object):
                          UploadNodesInfo, UpdateHosts, GenerateKeys,
                          GenerateHaproxyKeys, CopyHaproxyKeys,
                          GenerateCephKeys, CopyCephKeys, IronicUploadImages,
-                         IronicCopyBootstrapKey, UploadConfiguration]
+                         IronicCopyBootstrapKey, UploadConfiguration,
+                         SaveClusterConfigurationMaster,
+                         SaveClusterConfiguration]
     deploy_serializers = [PuppetHook, CreateVMsOnCompute]
 
     def __init__(self, stage_serializers=None, deploy_serializers=None):

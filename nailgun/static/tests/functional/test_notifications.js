@@ -38,14 +38,18 @@ define([
       },
       'Notification Page': function() {
         return this.remote
-          .assertElementDisplayed('.notifications-icon .badge', 'Badge notification indicator is shown in navigation')
+          .assertElementDisplayed('.notifications-icon .badge',
+            'Badge notification indicator is shown in navigation')
           // Go to Notification page
           .clickByCssSelector('.notifications-icon')
           .clickLinkByText('View all')
           .assertElementAppears('.notifications-page', 2000, 'Notification page is rendered')
-          .assertElementExists('.notifications-page .notification', 'There is the start notification on the page')
-          .assertElementTextEquals('.notification-group .title', 'Today', 'Notification group has "Today" label')
-          .assertElementNotDisplayed('.notifications-icon .badge', 'Badge notification indicator is hidden');
+          .assertElementExists('.notifications-page .notification',
+            'There is the start notification on the page')
+          .assertElementTextEquals('.notification-group .title', 'Today',
+            'Notification group has "Today" label')
+          .assertElementNotDisplayed('.notifications-icon .badge',
+            'Badge notification indicator is hidden');
       },
       'Notification badge behaviour': function() {
         var clusterName = common.pickRandomName('Test Cluster');
@@ -61,9 +65,11 @@ define([
           .then(function() {
             return common.removeCluster(clusterName);
           })
-          .assertElementAppears('.notifications-icon .badge.visible', 3000, 'New notification appear after the cluster removal')
+          .assertElementAppears('.notifications-icon .badge.visible', 3000,
+            'New notification appear after the cluster removal')
           .clickByCssSelector('.notifications-icon')
-          .assertElementAppears('.notifications-popover .notification.clickable', 20000, 'Discovered node notification uploaded')
+          .assertElementAppears('.notifications-popover .notification.clickable', 20000,
+            'Discovered node notification uploaded')
           // Check if Node Information dialog is shown
           .clickByCssSelector('.notifications-popover .notification.clickable p')
           .then(function() {

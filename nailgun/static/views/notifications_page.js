@@ -110,7 +110,12 @@ Notification = React.createClass({
         <div className='notification-time'>{this.props.notification.get('time')}</div>
         <div className='notification-type'><i className={'glyphicon ' + iconClass} /></div>
         <div className='notification-message'>
-          <span className={this.props.notification.get('node_id') && 'btn btn-link'} dangerouslySetInnerHTML={{__html: utils.urlify(this.props.notification.escape('message'))}}></span>
+          <span
+            className={this.props.notification.get('node_id') && 'btn btn-link'}
+            dangerouslySetInnerHTML={{
+              __html: utils.urlify(this.props.notification.escape('message'))
+            }}
+          />
         </div>
       </div>
     );

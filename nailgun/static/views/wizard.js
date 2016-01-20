@@ -111,7 +111,10 @@ var ComponentRadioGroup = React.createClass({
 var ClusterWizardPanesMixin = {
   componentWillMount() {
     if (this.props.allComponents) {
-      this.components = this.props.allComponents.getComponentsByType(this.constructor.componentType, {sorted: true});
+      this.components = this.props.allComponents.getComponentsByType(
+        this.constructor.componentType,
+        {sorted: true}
+      );
       this.processRestrictions(this.components);
     }
   },
@@ -167,7 +170,8 @@ var ClusterWizardPanesMixin = {
       });
       component.set({
         isCompatible: isCompatible,
-        warnings: isCompatible ? i18n('dialog.create_cluster_wizard.compatible') : i18n('dialog.create_cluster_wizard.incompatible_list') + warnings.join(', '),
+        warnings: isCompatible ? i18n('dialog.create_cluster_wizard.compatible') :
+          i18n('dialog.create_cluster_wizard.incompatible_list') + warnings.join(', '),
         availability: (isCompatible ? 'compatible' : 'available')
       });
     });
@@ -181,7 +185,10 @@ var ClusterWizardPanesMixin = {
       var warnings = [];
       _.each(incompatibles, (incompatible) => {
         var type = incompatible.component.get('type');
-        var isInStopList = _.find(stopList, (component) => component.id == incompatible.component.id);
+        var isInStopList = _.find(
+          stopList,
+          (component) => component.id == incompatible.component.id
+        );
         if (!_.contains(types, type) || isInStopList) {
           // ignore forward incompatibilities
           return;
@@ -261,10 +268,15 @@ var NameAndRelease = React.createClass({
   },
   isValid() {
     var wizard = this.props.wizard;
-    var [name, cluster, clusters] = [wizard.get('name'), wizard.get('cluster'), wizard.get('clusters')];
+    var [name, cluster, clusters] = [
+      wizard.get('name'),
+      wizard.get('cluster'),
+      wizard.get('clusters')
+    ];
     // test cluster name is already taken
     if (clusters.findWhere({name: name})) {
-      var error = i18n('dialog.create_cluster_wizard.name_release.existing_environment', {name: name});
+      var error = i18n('dialog.create_cluster_wizard.name_release.existing_environment',
+        {name: name});
       wizard.set({name_error: error});
       return false;
     }
@@ -286,7 +298,9 @@ var NameAndRelease = React.createClass({
       return null;
     }
     var os = release.get('operating_system');
-    var connectivityAlert = i18n('dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert');
+    var connectivityAlert = i18n(
+      'dialog.create_cluster_wizard.name_release.' + os + '_connectivity_alert'
+    );
     return (
       <div className='create-cluster-form name-and-release'>
         <Input
@@ -345,7 +359,9 @@ var Compute = React.createClass({
       return _.contains(this.constructor.vCenterNetworkBackends, component.id);
     });
     if (!hasCompatibleBackends) {
-      var vCenter = _.find(allComponents.models, (component) => component.id == this.constructor.vCenterPath);
+      var vCenter = _.find(allComponents.models, (component) => {
+        return component.id == this.constructor.vCenterPath;
+      });
       vCenter.set({
         disabled: true,
         warnings: i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')
@@ -363,7 +379,9 @@ var Compute = React.createClass({
           onChange={this.props.onChange}
         />
         {this.constructor.hasErrors(this.props.wizard) &&
-          <div className='alert alert-warning'>{i18n('dialog.create_cluster_wizard.compute.empty_choice')}</div>
+          <div className='alert alert-warning'>
+            {i18n('dialog.create_cluster_wizard.compute.empty_choice')}
+          </div>
         }
       </div>
     );
@@ -405,10 +423,17 @@ var Network = React.createClass({
     var monolithic = _.filter(this.components, (component) => !component.isML2Driver());
     var hasMl2 = _.any(this.components, (component) => component.isML2Driver());
     if (!hasMl2) {
-      monolithic = _.filter(monolithic, (component) => component.id != this.constructor.ml2CorePath);
+      monolithic = _.filter(monolithic, (component) => {
+        return component.id != this.constructor.ml2CorePath;
+      });
     }
     this.processRestrictions(monolithic, this.constructor.panesForRestrictions);
-    this.processCompatible(this.props.allComponents, monolithic, this.constructor.panesForRestrictions, monolithic);
+    this.processCompatible(
+      this.props.allComponents,
+      monolithic,
+      this.constructor.panesForRestrictions,
+      monolithic
+    );
     this.selectActiveComponent(monolithic);
     return (
       <ComponentRadioGroup
@@ -438,7 +463,9 @@ var Network = React.createClass({
           {this.renderML2DriverControls()}
         </div>
         {this.constructor.hasErrors(this.props.wizard) &&
-          <div className='alert alert-warning'>{i18n('dialog.create_cluster_wizard.network.ml2_empty_choice')}</div>
+          <div className='alert alert-warning'>
+            {i18n('dialog.create_cluster_wizard.network.ml2_empty_choice')}
+          </div>
         }
       </div>
     );
@@ -456,8 +483,17 @@ var Storage = React.createClass({
   renderSection(components, type) {
     var sectionComponents = _.filter(components, (component) => component.get('subtype') == type);
     var isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
-    this.processRestrictions(sectionComponents, this.constructor.panesForRestrictions, (isRadio ? sectionComponents : []));
-    this.processCompatible(this.props.allComponents, sectionComponents, this.constructor.panesForRestrictions, isRadio ? sectionComponents : []);
+    this.processRestrictions(
+      sectionComponents,
+      this.constructor.panesForRestrictions,
+      (isRadio ? sectionComponents : [])
+    );
+    this.processCompatible(
+      this.props.allComponents,
+      sectionComponents,
+      this.constructor.panesForRestrictions,
+      isRadio ? sectionComponents : []
+    );
     return (
       React.createElement((isRadio ? ComponentRadioGroup : ComponentCheckboxGroup), {
         groupName: type,
@@ -468,7 +504,11 @@ var Storage = React.createClass({
   },
   render() {
     this.processRestrictions(this.components, this.constructor.panesForRestrictions);
-    this.processCompatible(this.props.allComponents, this.components, this.constructor.panesForRestrictions);
+    this.processCompatible(
+      this.props.allComponents,
+      this.components,
+      this.constructor.panesForRestrictions
+    );
     return (
       <div className='wizard-storage-pane'>
         <div className='row'>
@@ -506,7 +546,11 @@ var AdditionalServices = React.createClass({
   },
   render() {
     this.processRestrictions(this.components, this.constructor.panesForRestrictions);
-    this.processCompatible(this.props.allComponents, this.components, this.constructor.panesForRestrictions);
+    this.processCompatible(
+      this.props.allComponents,
+      this.components,
+      this.constructor.panesForRestrictions
+    );
     return (
       <div className='wizard-compute-pane'>
         <ComponentCheckboxGroup
@@ -591,7 +635,8 @@ var CreateClusterWizard = React.createClass({
   },
   updateState(nextState) {
     var numberOfPanes = this.getEnabledPanes().length;
-    var nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex : this.state.activePaneIndex;
+    var nextActivePaneIndex = _.isNumber(nextState.activePaneIndex) ? nextState.activePaneIndex :
+      this.state.activePaneIndex;
     var pane = clusterWizardPanes[nextActivePaneIndex];
     var paneHasErrors = _.isFunction(pane.hasErrors) ? pane.hasErrors(this.wizard) : false;
 
@@ -714,7 +759,10 @@ var CreateClusterWizard = React.createClass({
         break;
       default:
         maxAvailablePaneIndex = this.state.activePaneIndex;
-        var panesToRestore = this.getListOfTypesToRestore(this.state.activePaneIndex, this.state.maxAvailablePaneIndex);
+        var panesToRestore = this.getListOfTypesToRestore(
+          this.state.activePaneIndex,
+          this.state.maxAvailablePaneIndex
+        );
         if (panesToRestore.length > 0) {
           this.components.restoreDefaultValues(panesToRestore);
         }
@@ -790,11 +838,17 @@ var CreateClusterWizard = React.createClass({
     var actionInProgress = this.state.actionInProgress;
     return (
       <div className='wizard-footer'>
-        <button className={utils.classNames('btn btn-default pull-left', {disabled: actionInProgress})} data-dismiss='modal'>
+        <button
+          className={utils.classNames('btn btn-default pull-left', {disabled: actionInProgress})}
+          data-dismiss='modal'
+        >
           {i18n('common.cancel_button')}
         </button>
         <button
-          className={utils.classNames('btn btn-default prev-pane-btn', {disabled: !this.state.previousEnabled || actionInProgress})}
+          className={utils.classNames(
+            'btn btn-default prev-pane-btn',
+            {disabled: !this.state.previousEnabled || actionInProgress}
+          )}
           onClick={this.prevPane}
         >
           <i className='glyphicon glyphicon-arrow-left' aria-hidden='true'></i>
@@ -803,7 +857,10 @@ var CreateClusterWizard = React.createClass({
         </button>
         {this.state.nextVisible &&
           <button
-            className={utils.classNames('btn btn-default btn-success next-pane-btn', {disabled: !this.state.nextEnabled || actionInProgress})}
+            className={utils.classNames(
+              'btn btn-default btn-success next-pane-btn',
+              {disabled: !this.state.nextEnabled || actionInProgress}
+            )}
             onClick={this.nextPane}
           >
             <span>{i18n('dialog.create_cluster_wizard.next')}</span>
@@ -813,7 +870,10 @@ var CreateClusterWizard = React.createClass({
         }
         {this.state.createVisible &&
           <button
-            className={utils.classNames('btn btn-default btn-success finish-btn', {disabled: actionInProgress})}
+            className={utils.classNames(
+              'btn btn-default btn-success finish-btn',
+              {disabled: actionInProgress}
+            )}
             onClick={this.saveCluster}
             autoFocus
           >

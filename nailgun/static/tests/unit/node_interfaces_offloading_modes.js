@@ -13,17 +13,20 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  **/
-import OffloadingModes from 'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control';
+import OffloadingModes from
+  'views/cluster_page_tabs/nodes_tab_screens/offloading_modes_control';
 
 var offloadingModesConrol, TestMode22, TestMode31, fakeOffloadingModes;
 var fakeInterface = {
   offloading_modes: fakeOffloadingModes,
   get(key) {
-    assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to get data');
+    assert.equal(key, 'offloading_modes',
+      '"offloading_modes" interface property should be used to get data');
     return fakeOffloadingModes;
   },
   set(key, value) {
-    assert.equal(key, 'offloading_modes', '"offloading_modes" interface property should be used to set data');
+    assert.equal(key, 'offloading_modes',
+      '"offloading_modes" interface property should be used to set data');
     fakeOffloadingModes = value;
   }
 };
@@ -70,18 +73,21 @@ suite('Offloadning Modes control', () => {
   test('Set submodes states logic', () => {
     var mode = offloadingModesConrol.findMode('TestName1', fakeOffloadingModes);
     offloadingModesConrol.setModeState(mode, false);
-    assert.strictEqual(TestMode31.state, false, 'Parent state changing leads to all child modes states changing');
+    assert.strictEqual(TestMode31.state, false,
+      'Parent state changing leads to all child modes states changing');
   });
   test('Disabled reversed logic', () => {
     var mode = offloadingModesConrol.findMode('TestName2', fakeOffloadingModes);
     offloadingModesConrol.setModeState(TestMode22, true);
     offloadingModesConrol.checkModes(null, fakeOffloadingModes);
-    assert.strictEqual(mode.state, null, 'Parent state changing leads to all child modes states changing');
+    assert.strictEqual(mode.state, null,
+      'Parent state changing leads to all child modes states changing');
   });
   test('All Modes option logic', () => {
     var enableAllModes = offloadingModesConrol.onModeStateChange('All Modes', true);
     enableAllModes();
     var mode = offloadingModesConrol.findMode('TestName2', fakeOffloadingModes);
-    assert.strictEqual(mode.state, true, 'All Modes option state changing leads to all parent modes states changing');
+    assert.strictEqual(mode.state, true,
+      'All Modes option state changing leads to all parent modes states changing');
   });
 });

@@ -21,14 +21,18 @@ import ReactDOM from 'react-dom';
 import utils from 'utils';
 import dispatcher from 'dispatcher';
 import {Input, ProgressBar, Tooltip} from 'views/controls';
-import {DiscardNodeChangesDialog, DeployChangesDialog, ProvisionVMsDialog, RemoveClusterDialog, ResetEnvironmentDialog, StopDeploymentDialog} from 'views/dialogs';
+import {
+  DiscardNodeChangesDialog, DeployChangesDialog, ProvisionVMsDialog,
+  RemoveClusterDialog, ResetEnvironmentDialog, StopDeploymentDialog
+} from 'views/dialogs';
 import {backboneMixin, pollingMixin, renamingMixin} from 'component_mixins';
 
 var namespace = 'cluster_page.dashboard_tab.';
 
 var DashboardTab = React.createClass({
   mixins: [
-    // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
+    // this is needed to somehow handle the case when verification
+    // is in progress and user pressed Deploy
     backboneMixin({
       modelOrCollection: (props) => props.cluster.get('tasks'),
       renderOn: 'update change'
@@ -254,9 +258,13 @@ var DeploymentResult = React.createClass({
         <br />
         <span dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
         <div className={utils.classNames({'task-result-details': true, hidden: !details})}>
-          <pre className='collapse result-details' dangerouslySetInnerHTML={{__html: utils.urlify(details)}} />
+          <pre
+            className='collapse result-details'
+            dangerouslySetInnerHTML={{__html: utils.urlify(details)}}
+          />
           <button className='btn-link' data-toggle='collapse' data-target='.result-details'>
-            {this.state.collapsed ? i18n('cluster_page.hide_details_button') : i18n('cluster_page.show_details_button')}
+            {this.state.collapsed ? i18n('cluster_page.hide_details_button') :
+              i18n('cluster_page.show_details_button')}
           </button>
         </div>
       </div>
@@ -288,14 +296,29 @@ var DocumentationLinks = React.createClass({
         <div className='documentation col-xs-12'>
           {isMirantisIso ?
             [
-              this.renderDocumentationLinks('https://www.mirantis.com/openstack-documentation/', 'mos_documentation'),
-              this.renderDocumentationLinks(utils.composeDocumentationLink('plugin-dev.html#plugin-dev'), 'plugin_documentation'),
-              this.renderDocumentationLinks('https://software.mirantis.com/mirantis-openstack-technical-bulletins/', 'technical_bulletins')
+              this.renderDocumentationLinks(
+                'https://www.mirantis.com/openstack-documentation/',
+                'mos_documentation'
+              ),
+              this.renderDocumentationLinks(
+                utils.composeDocumentationLink('plugin-dev.html#plugin-dev'),
+                'plugin_documentation'
+              ),
+              this.renderDocumentationLinks(
+                'https://software.mirantis.com/mirantis-openstack-technical-bulletins/',
+                'technical_bulletins'
+              )
             ]
           :
             [
-              this.renderDocumentationLinks('http://docs.openstack.org/', 'openstack_documentation'),
-              this.renderDocumentationLinks('https://wiki.openstack.org/wiki/Fuel/Plugins', 'plugin_documentation')
+              this.renderDocumentationLinks(
+                'http://docs.openstack.org/',
+                'openstack_documentation'
+              ),
+              this.renderDocumentationLinks(
+                'https://wiki.openstack.org/wiki/Fuel/Plugins',
+                'plugin_documentation'
+              )
             ]
           }
         </div>
@@ -308,7 +331,8 @@ var DocumentationLinks = React.createClass({
 // it should be refactored to provide proper logics separation and decoupling
 var DeployReadinessBlock = React.createClass({
   mixins: [
-    // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
+    // this is needed to somehow handle the case when verification
+    // is in progress and user pressed Deploy
     backboneMixin({
       modelOrCollection(props) {
         return props.cluster.get('tasks');
@@ -332,7 +356,8 @@ var DeployReadinessBlock = React.createClass({
   validate(cluster) {
     return _.reduce(
       this.validations,
-      (accumulator, validator) => _.merge(accumulator, validator.call(this, cluster), (a, b) => a.concat(_.compact(b))),
+      (accumulator, validator) => _.merge(accumulator, validator.call(this, cluster), (a, b) =>
+        a.concat(_.compact(b))),
       {blocker: [], error: [], warning: []}
     );
   },
@@ -398,9 +423,16 @@ var DeployReadinessBlock = React.createClass({
     function(cluster) {
       var configModels = this.getConfigModels();
       var roleModels = cluster.get('roles');
-      var validRoleModels = roleModels.filter((role) => !role.checkRestrictions(configModels).result);
-      var limitValidations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))]));
-      var limitRecommendations = _.zipObject(validRoleModels.map((role) => [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true, ['recommended'])]));
+      var validRoleModels = roleModels.filter((role) => {
+        return !role.checkRestrictions(configModels).result;
+      });
+      var limitValidations = _.zipObject(validRoleModels.map((role) => {
+        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))];
+      }));
+      var limitRecommendations = _.zipObject(validRoleModels.map((role) => {
+        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true,
+          ['recommended'])];
+      }));
       return {
         blocker: roleModels.map((role) => {
           var name = role.get('name');
@@ -461,7 +493,9 @@ var DeployReadinessBlock = React.createClass({
     var nodes = cluster.get('nodes');
     var alerts = this.validate(cluster);
     var isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length;
-    var isVMsProvisioningAvailable = nodes.any((node) => node.get('pending_addition') && node.hasRole('virt'));
+    var isVMsProvisioningAvailable = nodes.any((node) => {
+      return node.get('pending_addition') && node.hasRole('virt');
+    });
 
     return (
       <div className='row'>
@@ -471,9 +505,18 @@ var DeployReadinessBlock = React.createClass({
               <div>
                 <h4>{i18n(namespace + 'changes_header')}</h4>
                 <ul>
-                  {this.renderChangedNodesAmount(nodes.where({pending_addition: true}), 'added_node')}
-                  {this.renderChangedNodesAmount(nodes.where({status: 'provisioned'}), 'provisioned_node')}
-                  {this.renderChangedNodesAmount(nodes.where({pending_deletion: true}), 'deleted_node')}
+                  {this.renderChangedNodesAmount(
+                    nodes.where({pending_addition: true}),
+                    'added_node'
+                  )}
+                  {this.renderChangedNodesAmount(
+                    nodes.where({status: 'provisioned'}),
+                    'provisioned_node'
+                  )}
+                  {this.renderChangedNodesAmount(
+                    nodes.where({pending_deletion: true}),
+                    'deleted_node'
+                  )}
                 </ul>
               </div>
             }
@@ -489,7 +532,10 @@ var DeployReadinessBlock = React.createClass({
               <button
                 className={utils.classNames({
                   'btn btn-primary deploy-btn': true,
-                  'btn-warning': _.isEmpty(alerts.blocker) && (!_.isEmpty(alerts.error) || !_.isEmpty(alerts.warning))
+                  'btn-warning': (
+                    _.isEmpty(alerts.blocker) &&
+                    (!_.isEmpty(alerts.error) || !_.isEmpty(alerts.warning))
+                  )
                 })}
                 onClick={_.partial(this.showDialog, DeployChangesDialog)}
                 disabled={!isDeploymentPossible}
@@ -652,7 +698,8 @@ var ClusterInfo = React.createClass({
   },
   renderLegend(fieldsData, isRole) {
     var result = _.map(fieldsData, (field) => {
-      var numberOfNodes = isRole ? this.getNumberOfNodesWithRole(field) : this.getNumberOfNodesWithStatus(field);
+      var numberOfNodes = isRole ? this.getNumberOfNodesWithRole(field) :
+        this.getNumberOfNodesWithStatus(field);
       return numberOfNodes ?
         <div key={field}>
           <div className='col-xs-10'>
@@ -683,8 +730,10 @@ var ClusterInfo = React.createClass({
   renderStatistics() {
     var hasNodes = !!this.props.cluster.get('nodes').length;
     var fieldRoles = _.union(['total'], this.props.cluster.get('roles').pluck('name'));
-    var fieldStatuses = ['offline', 'error', 'pending_addition', 'pending_deletion', 'ready', 'provisioned',
-      'provisioning', 'deploying', 'removing'];
+    var fieldStatuses = [
+      'offline', 'error', 'pending_addition', 'pending_deletion', 'ready',
+      'provisioned', 'provisioning', 'deploying', 'removing'
+    ];
     return (
       <div className='row statistics-block'>
         <div className='title'>{i18n(namespace + 'cluster_info_fields.statistics')}</div>
@@ -905,7 +954,8 @@ var ResetEnvironmentAction = React.createClass({
         <Tooltip
           key='reset-tooltip'
           placement='right'
-          text={!isLocked ? i18n(namespace + 'reset_environment_warning') : i18n(namespace + this.getDescriptionKey())}
+          text={!isLocked ? i18n(namespace + 'reset_environment_warning') :
+            i18n(namespace + this.getDescriptionKey())}
         >
           <i className='glyphicon glyphicon-info-sign' />
         </Tooltip>

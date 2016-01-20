@@ -67,9 +67,11 @@ var LogsTab = React.createClass({
   },
   showLogs(params) {
     this.stopPolling();
-    var logOptions = this.props.selectedLogs.type == 'remote' ? _.extend({}, this.props.selectedLogs) : _.omit(this.props.selectedLogs, 'node');
+    var logOptions = this.props.selectedLogs.type == 'remote' ?
+      _.extend({}, this.props.selectedLogs) : _.omit(this.props.selectedLogs, 'node');
     logOptions.level = logOptions.level.toLowerCase();
-    app.navigate('#cluster/' + this.props.cluster.id + '/logs/' + utils.serializeTabOptions(logOptions), {trigger: false, replace: true});
+    app.navigate('#cluster/' + this.props.cluster.id + '/logs/' +
+      utils.serializeTabOptions(logOptions), {trigger: false, replace: true});
     params = params || {};
     this.fetchLogs(params)
       .done((data) => {
@@ -131,7 +133,8 @@ var LogsTab = React.createClass({
 });
 
 var LogFilterBar = React.createClass({
-  // PureRenderMixin added for prevention the rerender LogFilterBar (because of polling) in Mozilla browser
+  // PureRenderMixin added for prevention the rerender LogFilterBar
+  // (because of polling) in Mozilla browser
   mixins: [PureRenderMixin],
   getInitialState() {
     return _.extend({}, this.props.selectedLogs, {
@@ -150,9 +153,13 @@ var LogFilterBar = React.createClass({
     :
       this.sources.fetch();
     this.sources.deferred.done(() => {
-      var filteredSources = this.sources.filter((source) => source.get('remote') == (type != 'local'));
-      var chosenSource = _.findWhere(filteredSources, {id: this.state.source}) || _.first(filteredSources);
-      var chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.level) ? this.state.level : _.first(chosenSource.get('levels')) : null;
+      var filteredSources = this.sources.filter((source) => {
+        return source.get('remote') == (type != 'local');
+      });
+      var chosenSource = _.findWhere(filteredSources, {id: this.state.source}) ||
+        _.first(filteredSources);
+      var chosenLevelId = chosenSource ? _.contains(chosenSource.get('levels'), this.state.level) ?
+        this.state.level : _.first(chosenSource.get('levels')) : null;
       this.setState({
         type: type,
         sources: this.sources,
@@ -168,7 +175,8 @@ var LogFilterBar = React.createClass({
         type: type,
         sources: {},
         sourcesLoadingState: 'fail',
-        sourcesLoadingError: utils.getResponseText(response, i18n('cluster_page.logs_tab.source_alert')),
+        sourcesLoadingError: utils.getResponseText(response,
+          i18n('cluster_page.logs_tab.source_alert')),
         locked: false
       });
     });
@@ -310,7 +318,8 @@ var LogFilterBar = React.createClass({
     </div>;
   },
   renderSourceSelect() {
-    var sourceOptions = this.state.type == 'local' ? this.getLocalSources() : this.getRemoteSources();
+    var sourceOptions = this.state.type == 'local' ? this.getLocalSources() :
+      this.getRemoteSources();
     return <div className='col-md-2 col-sm-3'>
       <Input
         type='select'
@@ -397,7 +406,13 @@ var LogsTable = React.createClass({
                   <span>{i18n('cluster_page.logs_tab.bottom_text')}</span>:
                   {
                     [100, 500, 1000, 5000].map((count) => {
-                      return <button className='btn btn-link show-more-entries' onClick={_.bind(this.handleShowMoreClick, this, count)} key={count}>{count}</button>;
+                      return <button
+                        key={count}
+                        className='btn btn-link show-more-entries'
+                        onClick={_.bind(this.handleShowMoreClick, this, count)}
+                      >
+                        {count}
+                      </button>;
                     })
                   }
                 </div>

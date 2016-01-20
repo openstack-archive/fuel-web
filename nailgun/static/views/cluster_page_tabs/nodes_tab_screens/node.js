@@ -397,7 +397,9 @@ var Node = React.createClass({
                 {this.renderNodeHardwareSummary()}
               </div>
               <div className='node-popover-buttons'>
-                <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>Details</button>
+                <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>
+                  {i18n(ns + 'details')}
+                </button>
               </div>
             </div>
           </Popover>

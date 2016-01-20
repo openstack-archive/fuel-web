@@ -522,7 +522,8 @@
                         "no_node_network_group": "Node network group not specified",
                         "no_roles": "No roles assigned",
                         "cluster": "Environment \"__cluster__\"",
-                        "unallocated": "Unallocated"
+                        "unallocated": "Unallocated",
+                        "details": "Details"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",

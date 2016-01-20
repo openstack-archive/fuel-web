@@ -70,11 +70,13 @@ class Router extends Backbone.Router {
       var specialRoutes = [
         {name: 'login', condition: () => {
           var result = app.version.get('auth_required') && !app.user.get('authenticated');
-          if (result && currentUrl != 'login' && currentUrl != 'logout') this.returnUrl = currentUrl;
+          if (result && currentUrl != 'login' && currentUrl != 'logout')
+            this.returnUrl = currentUrl;
           return result;
         }},
         {name: 'welcome', condition: (previousUrl) => {
-          return previousUrl != 'logout' && !app.fuelSettings.get('statistics.user_choice_saved.value');
+          return previousUrl != 'logout' && !app.fuelSettings
+            .get('statistics.user_choice_saved.value');
         }}
       ];
       _.each(specialRoutes, (route) => {
@@ -153,7 +155,8 @@ class App {
   constructor() {
     this.initialized = false;
 
-    // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
+    // this is needed for IE,
+    // which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
     $.ajaxSetup({cache: false});
 
     this.router = new Router();
@@ -217,10 +220,11 @@ class App {
   }
 
   loadPage(Page, options = []) {
-    return (Page.fetchData ? Page.fetchData(...options) : $.Deferred().resolve()).done((pageOptions) => {
-      if (!this.rootComponent) this.renderLayout();
-      this.setPage(Page, pageOptions);
-    });
+    return (Page.fetchData ? Page.fetchData(...options) : $.Deferred().resolve())
+      .done((pageOptions) => {
+        if (!this.rootComponent) this.renderLayout();
+        this.setPage(Page, pageOptions);
+      });
   }
 
   setPage(Page, options) {

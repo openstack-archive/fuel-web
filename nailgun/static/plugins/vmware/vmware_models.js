@@ -36,67 +36,69 @@ function testRegex(regexText, value) {
   return regexCache[regexText].test(value);
 }
 
-var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixin).extend(models.restrictionMixin).extend({
-  constructorName: 'BaseModel',
-  cacheFor: 60 * 1000,
-  toJSON() {
-    return _.omit(this.attributes, 'metadata');
-  },
-  validate() {
-    var result = {};
-    _.each(this.attributes.metadata, (field) => {
-      if (!VmWareModels.isRegularField(field) || field.type == 'checkbox') {
-        return;
-      }
-      var isDisabled = this.checkRestrictions(restrictionModels, undefined, field);
-      if (isDisabled.result) {
-        return;
-      }
-      var value = this.get(field.name);
-      if (field.regex) {
-        if (!testRegex(field.regex.source, value)) {
-          result[field.name] = field.regex.error;
+var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixin)
+  .extend(models.restrictionMixin).extend({
+    constructorName: 'BaseModel',
+    cacheFor: 60 * 1000,
+    toJSON() {
+      return _.omit(this.attributes, 'metadata');
+    },
+    validate() {
+      var result = {};
+      _.each(this.attributes.metadata, (field) => {
+        if (!VmWareModels.isRegularField(field) || field.type == 'checkbox') {
+          return;
         }
-      }
-    });
-    return _.isEmpty(result) ? null : result;
-  },
-  testRestrictions() {
-    var results = {
-      hide: {},
-      disable: {}
-    };
-    var metadata = this.get('metadata');
-    _.each(metadata, (field) => {
-      var disableResult = this.checkRestrictions(restrictionModels, undefined, field);
-      results.disable[field.name] = disableResult;
+        var isDisabled = this.checkRestrictions(restrictionModels, undefined, field);
+        if (isDisabled.result) {
+          return;
+        }
+        var value = this.get(field.name);
+        if (field.regex) {
+          if (!testRegex(field.regex.source, value)) {
+            result[field.name] = field.regex.error;
+          }
+        }
+      });
+      return _.isEmpty(result) ? null : result;
+    },
+    testRestrictions() {
+      var results = {
+        hide: {},
+        disable: {}
+      };
+      var metadata = this.get('metadata');
+      _.each(metadata, (field) => {
+        var disableResult = this.checkRestrictions(restrictionModels, undefined, field);
+        results.disable[field.name] = disableResult;
 
-      var hideResult = this.checkRestrictions(restrictionModels, 'hide', field);
-      results.hide[field.name] = hideResult;
-    });
-    return results;
-  }
-});
+        var hideResult = this.checkRestrictions(restrictionModels, 'hide', field);
+        results.hide[field.name] = hideResult;
+      });
+      return results;
+    }
+  });
 
-var BaseCollection = Backbone.Collection.extend(models.superMixin).extend(models.cacheMixin).extend({
-  constructorName: 'BaseCollection',
-  model: BaseModel,
-  cacheFor: 60 * 1000,
-  isValid() {
-    this.validationError = this.validate();
-    return this.validationError;
-  },
-  validate() {
-    var errors = _.compact(this.models.map((model) => {
-      model.isValid();
-      return model.validationError;
-    }));
-    return _.isEmpty(errors) ? null : errors;
-  },
-  testRestrictions() {
-    _.invoke(this.models, 'testRestrictions', restrictionModels);
-  }
-});
+var BaseCollection =
+  Backbone.Collection.extend(models.superMixin).extend(models.cacheMixin).extend({
+    constructorName: 'BaseCollection',
+    model: BaseModel,
+    cacheFor: 60 * 1000,
+    isValid() {
+      this.validationError = this.validate();
+      return this.validationError;
+    },
+    validate() {
+      var errors = _.compact(this.models.map((model) => {
+        model.isValid();
+        return model.validationError;
+      }));
+      return _.isEmpty(errors) ? null : errors;
+    },
+    testRestrictions() {
+      _.invoke(this.models, 'testRestrictions', restrictionModels);
+    }
+  });
 
 VmWareModels.NovaCompute = BaseModel.extend({
   constructorName: 'NovaCompute',
@@ -209,7 +211,8 @@ VmWareModels.Glance = BaseModel.extend({constructorName: 'Glance'});
 VmWareModels.VCenter = BaseModel.extend({
   constructorName: 'VCenter',
   url() {
-    return '/api/v1/clusters/' + this.id + '/vmware_attributes' + (this.loadDefaults ? '/defaults' : '');
+    return '/api/v1/clusters/' + this.id + '/vmware_attributes' + (this.loadDefaults ?
+      '/defaults' : '');
   },
   parse(response) {
     if (!response.editable || !response.editable.metadata || !response.editable.value) {
@@ -289,7 +292,8 @@ VmWareModels.VCenter = BaseModel.extend({
       });
     });
     var unassignedNodes = restrictionModels.cluster.get('nodes').filter((node) => {
-      return _.contains(node.get('pending_roles'), 'compute-vmware') && !assignedNodes[node.get('hostname')];
+      return _.contains(node.get('pending_roles'), 'compute-vmware') &&
+        !assignedNodes[node.get('hostname')];
     });
     if (unassignedNodes.length > 0) {
       errors.unassigned_nodes = unassignedNodes;

@@ -23,7 +23,8 @@ define([
   'tests/functional/pages/cluster',
   'tests/functional/pages/modal',
   'tests/functional/pages/dashboard'
-], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow, DashboardPage) {
+], function(_, registerSuite, assert, Common, NetworksPage, ClusterPage, ModalWindow,
+  DashboardPage) {
   'use strict';
 
   registerSuite(function() {
@@ -75,7 +76,8 @@ define([
         var rangeSelector = '.public .ip_ranges ';
         return this.remote
           .clickByCssSelector(rangeSelector + '.ip-ranges-add')
-          .assertElementsExist(rangeSelector + '.ip-ranges-delete', 2, 'Remove ranges controls appear')
+          .assertElementsExist(rangeSelector + '.ip-ranges-delete', 2,
+            'Remove ranges controls appear')
           .clickByCssSelector(networksPage.applyButtonSelector)
           .assertElementsExist(rangeSelector + '.range-row',
               'Empty range row is removed after saving changes')
@@ -106,7 +108,8 @@ define([
           .then(function() {
             return clusterPage.goToTab('Networks');
           })
-          .assertElementNotExists('.private', 'Private Network is not visible for vlan segmentation type')
+          .assertElementNotExists('.private',
+            'Private Network is not visible for vlan segmentation type')
           .assertElementTextEquals('.segmentation-type', '(Neutron with VLAN segmentation)',
               'Segmentation type is correct for VLAN segmentation');
       },
@@ -167,7 +170,8 @@ define([
           .then(function() {
             return modal.waitToOpen();
           })
-          .assertElementContainsText('h4.modal-title', 'Add New Node Network Group', 'Add New Node Network Group modal expected')
+          .assertElementContainsText('h4.modal-title', 'Add New Node Network Group',
+            'Add New Node Network Group modal expected')
           .setInputValue('[name=node-network-group-name]', 'Node_Network_Group_1')
           .then(function() {
             return modal.clickFooterButton('Add Group');
@@ -175,9 +179,11 @@ define([
           .then(function() {
             return modal.waitToClose();
           })
-          .assertElementAppears('.node-network-groups-list', 2000, 'Node network groups title appears')
+          .assertElementAppears('.node-network-groups-list', 2000,
+            'Node network groups title appears')
           .assertElementDisplayed('.subtab-link-Node_Network_Group_1', 'New subtab is shown')
-          .assertElementTextEquals('.network-group-name .btn-link', 'Node_Network_Group_1', 'New Node Network group title is shown');
+          .assertElementTextEquals('.network-group-name .btn-link', 'Node_Network_Group_1',
+            'New Node Network group title is shown');
       },
       'Verification is disabled for multirack': function() {
         return this.remote
@@ -196,26 +202,30 @@ define([
             // Enter
             .type('\uE007')
             .end()
-          .assertElementDisplayed('.subtab-link-Node_Network_Group_2', 'Node network group was successfully renamed');
+          .assertElementDisplayed('.subtab-link-Node_Network_Group_2',
+            'Node network group was successfully renamed');
       },
       'Node network group deletion': function() {
         return this.remote
           .clickByCssSelector('.subtab-link-default')
-          .assertElementNotExists('.glyphicon-remove', 'It is not possible to delete default node network group')
+          .assertElementNotExists('.glyphicon-remove',
+            'It is not possible to delete default node network group')
           .clickByCssSelector('.subtab-link-Node_Network_Group_2')
           .assertElementAppears('.glyphicon-remove', 1000, 'Remove icon is shown')
           .clickByCssSelector('.glyphicon-remove')
           .then(function() {
             return modal.waitToOpen();
           })
-          .assertElementContainsText('h4.modal-title', 'Remove Node Network Group', 'Remove Node Network Group modal expected')
+          .assertElementContainsText('h4.modal-title', 'Remove Node Network Group',
+            'Remove Node Network Group modal expected')
           .then(function() {
             return modal.clickFooterButton('Delete');
           })
           .then(function() {
             return modal.waitToClose();
           })
-          .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000, 'Node network groups title disappears');
+          .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000,
+            'Node network groups title disappears');
       },
       'Node network group renaming in deployed environment': function() {
         this.timeout = 100000;
@@ -234,9 +244,11 @@ define([
             return clusterPage.goToTab('Networks');
           })
           .clickByCssSelector('.subtab-link-default')
-          .assertElementNotExists('.glyphicon-pencil', 'Renaming of a node network group is fobidden in deployed environment')
+          .assertElementNotExists('.glyphicon-pencil',
+            'Renaming of a node network group is fobidden in deployed environment')
           .clickByCssSelector('.network-group-name .name')
-          .assertElementNotExists('.network-group-name input[type=text]', 'Renaming is not started on a node network group name click')
+          .assertElementNotExists('.network-group-name input[type=text]',
+            'Renaming is not started on a node network group name click')
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })

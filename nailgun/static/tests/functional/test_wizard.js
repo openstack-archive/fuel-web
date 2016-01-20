@@ -52,7 +52,8 @@ define([
       },
       'Test steps manipulations': function() {
         return this.remote
-          .assertElementExists('.wizard-step.active', 'There is only one active and available step at the beginning')
+          .assertElementExists('.wizard-step.active',
+            'There is only one active and available step at the beginning')
           // Compute
           .pressKeys('\uE007')
           // Network

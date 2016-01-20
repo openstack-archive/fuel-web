@@ -88,9 +88,13 @@ define([
                 });
             })
             .end()
-          .assertElementExists(sdaDisk + ' .disk-visual [data-volume=image] .close-btn', 'Button Close for Image Storage volume is present')
-          .assertElementNotExists(sdaDisk + ' .disk-visual [data-volume=os] .close-btn', 'Button Close for Base system volume is not present')
-          .assertElementExists(sdaDisk + ' .disk-details [data-volume=os] .volume-group-notice.text-info', 'Notice about "Minimal size" is present');
+          .assertElementExists(sdaDisk + ' .disk-visual [data-volume=image] .close-btn',
+            'Button Close for Image Storage volume is present')
+          .assertElementNotExists(sdaDisk + ' .disk-visual [data-volume=os] .close-btn',
+            'Button Close for Base system volume is not present')
+          .assertElementExists(sdaDisk +
+            ' .disk-details [data-volume=os] .volume-group-notice.text-info',
+            'Notice about "Minimal size" is present');
       },
       'Testing Apply and Load Defaults buttons behaviour': function() {
         return this.remote
@@ -101,7 +105,8 @@ define([
           .assertElementDisappears('.btn-load-defaults:disabled', 2000, 'Wait for changes applied')
           .clickByCssSelector(loadDefaultsButtonSelector)
           .assertElementDisappears('.btn-load-defaults:disabled', 2000, 'Wait for defaults loaded')
-          .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', initialImageSize, 'Image Storage size restored to default')
+          .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value',
+            initialImageSize, 'Image Storage size restored to default')
           .assertElementEnabled(cancelButtonSelector, 'Cancel button is enabled')
           .assertElementEnabled(applyButtonSelector, 'Apply button is enabled')
           .clickByCssSelector(applyButtonSelector);
@@ -113,7 +118,8 @@ define([
             .then(function(element) {
               return element.getSize()
                 .then(function(sizes) {
-                  assert.isTrue(sizes.width > 0, 'Expected positive width for Image Storage visual');
+                  assert.isTrue(sizes.width > 0,
+                    'Expected positive width for Image Storage visual');
                 });
             })
             .end()
@@ -128,18 +134,21 @@ define([
                 });
             })
             .end()
-          .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', 0, 'Image Storage volume was removed successfully')
+          .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', 0,
+            'Image Storage volume was removed successfully')
           .findByCssSelector(sdaDisk + ' .disk-visual [data-volume=unallocated]')
             // check that there is unallocated space after Image Storage removal
             .then(function(element) {
               return element.getSize()
                 .then(function(sizes) {
-                  assert.isTrue(sizes.width > 0, 'There is unallocated space after Image Storage removal');
+                  assert.isTrue(sizes.width > 0,
+                    'There is unallocated space after Image Storage removal');
                 });
             })
             .end()
           .clickByCssSelector(cancelButtonSelector)
-          .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value', initialImageSize, 'Image Storage volume control contains correct value')
+          .assertElementPropertyEquals(sdaDisk + ' input[type=number][name=image]', 'value',
+            initialImageSize, 'Image Storage volume control contains correct value')
           .assertElementDisabled(applyButtonSelector, 'Apply button is disabled');
       },
       'Test volume size validation': function() {
@@ -148,8 +157,11 @@ define([
           .setInputValue(sdaDisk + ' input[type=number][name=image]', '5')
           // set Base OS volume size lower than required
           .setInputValue(sdaDisk + ' input[type=number][name=os]', '5')
-          .assertElementExists(sdaDisk + ' .disk-details [data-volume=os] .volume-group-notice.text-danger', 'Validation error exists if volume size is less than required.')
-          .assertElementDisabled(applyButtonSelector, 'Apply button is disabled in case of validation error')
+          .assertElementExists(sdaDisk +
+            ' .disk-details [data-volume=os] .volume-group-notice.text-danger',
+            'Validation error exists if volume size is less than required.')
+          .assertElementDisabled(applyButtonSelector,
+            'Apply button is disabled in case of validation error')
           .clickByCssSelector(cancelButtonSelector);
       }
     };

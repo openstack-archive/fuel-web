@@ -52,7 +52,8 @@ var SettingsTab = React.createClass({
       configModels: {
         cluster: this.props.cluster,
         settings: settings,
-        networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters'),
+        networking_parameters: this.props.cluster.get('networkConfiguration')
+          .get('networking_parameters'),
         version: app.version,
         release: this.props.cluster.get('release'),
         default: settings
@@ -69,7 +70,8 @@ var SettingsTab = React.createClass({
     this.loadInitialSettings();
   },
   hasChanges() {
-    return this.props.cluster.get('settings').hasChanges(this.state.initialAttributes, this.state.configModels);
+    return this.props.cluster.get('settings').hasChanges(this.state.initialAttributes,
+      this.state.configModels);
   },
   applyChanges() {
     if (!this.isSavingPossible()) return $.Deferred().reject();
@@ -110,14 +112,16 @@ var SettingsTab = React.createClass({
     var settings = this.props.cluster.get('settings');
     var lockedCluster = !this.props.cluster.isAvailableForSettingsChanges();
     var defaultSettings = new models.Settings();
-    var deferred = defaultSettings.fetch({url: _.result(this.props.cluster, 'url') + '/attributes/defaults'});
+    var deferred = defaultSettings.fetch({url: _.result(this.props.cluster, 'url') +
+      '/attributes/defaults'});
 
     if (deferred) {
       this.setState({actionInProgress: true});
       deferred
         .done(() => {
           _.each(settings.attributes, (section, sectionName) => {
-            if ((!lockedCluster || section.metadata.always_editable) && section.metadata.group != 'network') {
+            if ((!lockedCluster || section.metadata.always_editable) &&
+              section.metadata.group != 'network') {
               _.each(section, (setting, settingName) => {
                 // do not update hidden settings (hack for #1442143),
                 // the same for settings with group network
@@ -164,11 +168,13 @@ var SettingsTab = React.createClass({
     settings.isValid({models: this.state.configModels});
   },
   checkRestrictions(action, setting) {
-    return this.props.cluster.get('settings').checkRestrictions(this.state.configModels, action, setting);
+    return this.props.cluster.get('settings').checkRestrictions(this.state.configModels,
+      action, setting);
   },
   isSavingPossible() {
     var settings = this.props.cluster.get('settings');
-    var locked = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment', active: true});
+    var locked = this.state.actionInProgress || !!this.props.cluster.task({group: 'deployment',
+        active: true});
     // network settings are shown on Networks tab, so they should not block
     // saving of changes on Settings tab
     var areSettingsValid = !_.any(_.keys(settings.validationError), (settingPath) => {
@@ -184,9 +190,11 @@ var SettingsTab = React.createClass({
     var settingsGroupList = settings.getGroupList();
     var locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true});
     var lockedCluster = !cluster.isAvailableForSettingsChanges();
-    var someSettingsEditable = _.any(settings.attributes, (group) => group.metadata.always_editable);
+    var someSettingsEditable = _.any(settings.attributes,
+      (group) => group.metadata.always_editable);
     var hasChanges = this.hasChanges();
-    var allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'), cluster.get('nodes').pluck('pending_roles'))));
+    var allocatedRoles = _.uniq(_.flatten(_.union(cluster.get('nodes').pluck('roles'),
+      cluster.get('nodes').pluck('pending_roles'))));
     var classes = {
       row: true,
       'changes-locked': lockedCluster
@@ -237,7 +245,8 @@ var SettingsTab = React.createClass({
               return (settings.validationError || {})[settings.makePath(sectionName, settingName)];
             });
             if (!_.isEmpty(pickedSettings)) {
-              groupedSettings[calculatedGroup][sectionName] = {settings: pickedSettings, invalid: hasErrors};
+              groupedSettings[calculatedGroup][sectionName] = {settings: pickedSettings,
+                invalid: hasErrors};
             }
           });
         }
@@ -261,7 +270,8 @@ var SettingsTab = React.createClass({
         {_.map(groupedSettings, (selectedGroup, groupName) => {
           if (groupName != this.props.activeSettingsSectionName) return null;
 
-          var sortedSections = _.sortBy(_.keys(selectedGroup), (name) => settings.get(name + '.metadata.weight'));
+          var sortedSections = _.sortBy(_.keys(selectedGroup), (name) => settings.get(name +
+            '.metadata.weight'));
           return (
             <div className={'col-xs-10 forms-box ' + groupName} key={groupName}>
               {_.map(sortedSections, (sectionName) => {
@@ -295,13 +305,16 @@ var SettingsTab = React.createClass({
         <div className='col-xs-12 page-buttons content-elements'>
           <div className='well clearfix'>
             <div className='btn-group pull-right'>
-              <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults} disabled={locked || (lockedCluster && !someSettingsEditable)}>
+              <button className='btn btn-default btn-load-defaults' onClick={this.loadDefaults}
+                disabled={locked || (lockedCluster && !someSettingsEditable)}>
                 {i18n('common.load_defaults_button')}
               </button>
-              <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={locked || !hasChanges}>
+              <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges}
+                disabled={locked || !hasChanges}>
                 {i18n('common.cancel_changes_button')}
               </button>
-              <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={!this.isSavingPossible()}>
+              <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges}
+                disabled={!this.isSavingPossible()}>
                 {i18n('common.save_settings_button')}
               </button>
             </div>
@@ -316,7 +329,8 @@ var SettingSubtabs = React.createClass({
   render() {
     return (
       <div className='col-xs-2'>
-        <CSSTransitionGroup component='ul' transitionName='subtab-item' className='nav nav-pills nav-stacked'>
+        <CSSTransitionGroup component='ul' transitionName='subtab-item'
+          className='nav nav-pills nav-stacked'>
         {
           this.props.settingsGroupList.map((groupName) => {
             if (!this.props.groupedSettings[groupName]) return null;
@@ -326,7 +340,8 @@ var SettingSubtabs = React.createClass({
               <li
                 key={groupName}
                 role='presentation'
-                className={utils.classNames({active: groupName == this.props.activeSettingsSectionName})}
+                className={utils.classNames({active:
+                  groupName == this.props.activeSettingsSectionName})}
                 onClick={_.partial(this.props.setActiveSettingsGroupName, groupName)}
               >
                 <a className={'subtab-link-' + groupName}>

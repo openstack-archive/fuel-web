@@ -30,7 +30,8 @@ var SettingSection = React.createClass({
 
     // FIXME: hack for #1442475 to lock images_ceph in env with controllers
     if (settingName == 'images_ceph') {
-      if (_.contains(_.flatten(this.props.cluster.get('nodes').pluck('pending_roles')), 'controller')) {
+      if (_.contains(_.flatten(this.props.cluster.get('nodes').pluck('pending_roles')),
+          'controller')) {
         result = true;
         messages.push(i18n('cluster_page.settings_tab.images_ceph_warning'));
       }
@@ -46,8 +47,14 @@ var SettingSection = React.createClass({
     var dependentRoles = this.checkDependentRoles(sectionName, settingName);
     var dependentSettings = this.checkDependentSettings(sectionName, settingName);
 
-    if (dependentRoles.length) messages.push(i18n('cluster_page.settings_tab.dependent_role_warning', {roles: dependentRoles.join(', '), count: dependentRoles.length}));
-    if (dependentSettings.length) messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', '), count: dependentSettings.length}));
+    if (dependentRoles.length) {
+      messages.push(i18n('cluster_page.settings_tab.dependent_role_warning',
+        {roles: dependentRoles.join(', '), count: dependentRoles.length}));
+    }
+    if (dependentSettings.length) {
+      messages.push(i18n('cluster_page.settings_tab.dependent_settings_warning',
+        {settings: dependentSettings.join(', '), count: dependentSettings.length}));
+    }
 
     return {
       result: !!dependentRoles.length || !!dependentSettings.length,
@@ -58,13 +65,15 @@ var SettingSection = React.createClass({
     return setting.toggleable || _.contains(['checkbox', 'radio'], setting.type);
   },
   getValuesToCheck(setting, valueAttribute) {
-    return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) : [!setting[valueAttribute]];
+    return setting.values ? _.without(_.pluck(setting.values, 'data'), setting[valueAttribute]) :
+      [!setting[valueAttribute]];
   },
   checkValues(values, path, currentValue, restriction) {
     var extraModels = {settings: this.props.settingsForChecks};
     var result = _.all(values, (value) => {
       this.props.settingsForChecks.set(path, value);
-      return new Expression(restriction.condition, this.props.configModels, restriction).evaluate(extraModels);
+      return new Expression(restriction.condition,
+        this.props.configModels, restriction).evaluate(extraModels);
     });
     this.props.settingsForChecks.set(path, currentValue);
     return result;
@@ -82,7 +91,9 @@ var SettingSection = React.createClass({
       var role = roles.findWhere({name: roleName});
       if (_.any(role.get('restrictions'), (restriction) => {
         restriction = utils.expandRestriction(restriction);
-        if (_.contains(restriction.condition, 'settings:' + path) && !(new Expression(restriction.condition, this.props.configModels, restriction).evaluate())) {
+        if (_.contains(restriction.condition, 'settings:' + path) &&
+          !(new Expression(restriction.condition,
+            this.props.configModels, restriction).evaluate())) {
           return this.checkValues(valuesToCheck, pathToCheck, setting[valueAttribute], restriction);
         }
       })) return role.get('label');
@@ -95,7 +106,10 @@ var SettingSection = React.createClass({
     var dependentRestrictions = {};
     var addDependentRestrictions = (setting, label) => {
       var result = _.filter(_.map(setting.restrictions, utils.expandRestriction),
-          (restriction) => restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + path)
+          (restriction) => {
+            return restriction.action == 'disable' &&
+              _.contains(restriction.condition, 'settings:' + path);
+          }
         );
       if (result.length) {
         dependentRestrictions[label] = result.concat(dependentRestrictions[label] || []);
@@ -106,7 +120,8 @@ var SettingSection = React.createClass({
       // don't take into account hidden dependent settings
       if (this.props.checkRestrictions('hide', section.metadata).result) return;
       _.each(section, (setting, settingName) => {
-        // we support dependecies on checkboxes, toggleable setting groups, dropdowns and radio groups
+        // we support dependecies on checkboxes,
+        // toggleable setting groups, dropdowns and radio groups
         if (!this.areCalculationsPossible(setting) ||
           this.props.makePath(sectionName, settingName) == path ||
           this.props.checkRestrictions('hide', setting).result
@@ -124,7 +139,8 @@ var SettingSection = React.createClass({
       var valueAttribute = this.props.getValueAttribute(settingName);
       var pathToCheck = this.props.makePath(path, valueAttribute);
       var valuesToCheck = this.getValuesToCheck(currentSetting, valueAttribute);
-      var checkValues = _.partial(this.checkValues, valuesToCheck, pathToCheck, currentSetting[valueAttribute]);
+      var checkValues = _.partial(this.checkValues, valuesToCheck, pathToCheck,
+        currentSetting[valueAttribute]);
       return _.compact(_.map(dependentRestrictions, (restrictions, label) => {
         if (_.any(restrictions, checkValues)) return label;
       }));
@@ -155,18 +171,25 @@ var SettingSection = React.createClass({
     var pluginMetadata = this.props.settings.get(pluginName).metadata;
     if (enabled) {
       // check for editable plugin version
-      var chosenVersionData = _.find(pluginMetadata.versions, (version) => version.metadata.plugin_id == pluginMetadata.chosen_id);
+      var chosenVersionData = _.find(pluginMetadata.versions, (version) => {
+        return version.metadata.plugin_id == pluginMetadata.chosen_id;
+      });
       if (this.props.lockedCluster && !chosenVersionData.metadata.always_editable) {
-        var editableVersion = _.find(pluginMetadata.versions, (version) => version.metadata.always_editable).metadata.plugin_id;
+        var editableVersion = _.find(pluginMetadata.versions, (version) => {
+          return version.metadata.always_editable;
+        }).metadata.plugin_id;
         this.onPluginVersionChange(pluginName, editableVersion);
       }
     } else {
       var initialVersion = this.props.initialAttributes[pluginName].metadata.chosen_id;
-      if (pluginMetadata.chosen_id !== initialVersion) this.onPluginVersionChange(pluginName, initialVersion);
+      if (pluginMetadata.chosen_id !== initialVersion) {
+        this.onPluginVersionChange(pluginName, initialVersion);
+      }
     }
   },
   renderTitle(options) {
-    var {metadata, sectionName, isGroupDisabled, processedGroupDependencies, showSettingGroupWarning, groupWarning, isPlugin} = options;
+    var {metadata, sectionName, isGroupDisabled, processedGroupDependencies,
+      showSettingGroupWarning, groupWarning, isPlugin} = options;
     return metadata.toggleable ?
       <Input
         type='checkbox'
@@ -178,10 +201,18 @@ var SettingSection = React.createClass({
         onChange={isPlugin ? _.partial(this.togglePlugin, sectionName) : this.props.onChange}
       />
     :
-      <span className={'subtab-group-' + sectionName}>{sectionName == 'common' ? i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName}</span>;
+      <span
+        className={'subtab-group-' + sectionName}
+      >
+        {
+          sectionName == 'common' ?
+          i18n('cluster_page.settings_tab.groups.common') : metadata.label || sectionName
+        }
+      </span>;
   },
   renderCustomControl(options) {
-    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning, CustomControl, path} = options;
+    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning,
+      CustomControl, path} = options;
     return <CustomControl
       {...setting}
       {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
@@ -193,7 +224,8 @@ var SettingSection = React.createClass({
     />;
   },
   renderRadioGroup(options) {
-    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning, settingName} = options;
+    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning,
+      settingName} = options;
     var values = _.chain(_.cloneDeep(setting.values))
       .map((value) => {
         var processedValueRestrictions = this.props.checkRestrictions('disable', value);
@@ -218,7 +250,8 @@ var SettingSection = React.createClass({
     );
   },
   renderInput(options) {
-    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning, settingName} = options;
+    var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning,
+      settingName} = options;
     var settingDescription = setting.description &&
       <span dangerouslySetInnerHTML={{__html: utils.urlify(_.escape(setting.description))}} />;
     return <Input
@@ -242,18 +275,25 @@ var SettingSection = React.createClass({
     var section = settings.get(sectionName);
     var isPlugin = settings.isPlugin(section);
     var metadata = section.metadata;
-    var sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => section[settingName].weight);
+    var sortedSettings = _.sortBy(this.props.settingsToDisplay, (settingName) => {
+      return section[settingName].weight;
+    });
     var processedGroupRestrictions = this.processRestrictions(metadata);
     var processedGroupDependencies = this.checkDependencies(sectionName, 'metadata');
-    var isGroupAlwaysEditable = isPlugin ? _.any(metadata.versions, (version) => version.metadata.always_editable) : metadata.always_editable;
-    var isGroupDisabled = this.props.locked || (this.props.lockedCluster && !isGroupAlwaysEditable) || processedGroupRestrictions.result;
+    var isGroupAlwaysEditable = isPlugin ? _.any(metadata.versions, (version) => {
+      return version.metadata.always_editable;
+    }) : metadata.always_editable;
+    var isGroupDisabled = this.props.locked ||
+      (this.props.lockedCluster && !isGroupAlwaysEditable) || processedGroupRestrictions.result;
     var showSettingGroupWarning = !this.props.lockedCluster || metadata.always_editable;
-    var groupWarning = _.compact([processedGroupRestrictions.message, processedGroupDependencies.message]).join(' ');
+    var groupWarning = _.compact([processedGroupRestrictions.message,
+      processedGroupDependencies.message]).join(' ');
 
     return (
       <div className={'setting-section setting-section-' + sectionName}>
         <h3>
-          {this.renderTitle({metadata, sectionName, isGroupDisabled, processedGroupDependencies, showSettingGroupWarning, groupWarning, isPlugin})}
+          {this.renderTitle({metadata, sectionName, isGroupDisabled, processedGroupDependencies,
+            showSettingGroupWarning, groupWarning, isPlugin})}
         </h3>
         <div>
           {isPlugin &&
@@ -267,7 +307,9 @@ var SettingSection = React.createClass({
                     data: version.metadata.plugin_id,
                     label: version.metadata.plugin_version,
                     defaultChecked: version.metadata.plugin_id == metadata.chosen_id,
-                    disabled: this.props.locked || (this.props.lockedCluster && !version.metadata.always_editable) || processedGroupRestrictions.result || (metadata.toggleable && !metadata.enabled)
+                    disabled: this.props.locked || (this.props.lockedCluster &&
+                      !version.metadata.always_editable) || processedGroupRestrictions.result ||
+                      (metadata.toggleable && !metadata.enabled)
                   };
                 }, this)}
                 onChange={this.onPluginVersionChange}
@@ -281,11 +323,16 @@ var SettingSection = React.createClass({
             var error = (settings.validationError || {})[path];
             var processedSettingRestrictions = this.processRestrictions(setting, settingName);
             var processedSettingDependencies = this.checkDependencies(sectionName, settingName);
-            var isSettingDisabled = isGroupDisabled || (metadata.toggleable && !metadata.enabled) || processedSettingRestrictions.result || processedSettingDependencies.result;
-            var showSettingWarning = showSettingGroupWarning && !isGroupDisabled && (!metadata.toggleable || metadata.enabled);
-            var settingWarning = _.compact([processedSettingRestrictions.message, processedSettingDependencies.message]).join(' ');
+            var isSettingDisabled = isGroupDisabled ||
+              (metadata.toggleable && !metadata.enabled) ||
+              processedSettingRestrictions.result || processedSettingDependencies.result;
+            var showSettingWarning = showSettingGroupWarning && !isGroupDisabled &&
+              (!metadata.toggleable || metadata.enabled);
+            var settingWarning = _.compact([processedSettingRestrictions.message,
+              processedSettingDependencies.message]).join(' ');
 
-            var renderOptions = {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning};
+            var renderOptions = {setting, settingKey, error, isSettingDisabled,
+              showSettingWarning, settingWarning};
 
             // support of custom controls
             var CustomControl = customControls[setting.type];

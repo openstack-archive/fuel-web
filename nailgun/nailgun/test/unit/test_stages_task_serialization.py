@@ -466,6 +466,59 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         serialized = list(task.serialize())
         self.assertEqual(len(serialized), 0)
 
+    def test_save_cluster_configuration(self):
+        objects.Cluster.prepare_for_deployment(self.cluster)
+        path_template = '/path/{CLUSTER_ID}/file.yaml'
+        task_config = {
+            'id': 'save_cluster_configuration',
+            'type': 'upload_file',
+            'role': consts.TASK_ROLES.master,
+            'parameters': {
+                'path': path_template
+            }
+        }
+
+        task = tasks_serializer.SaveClusterConfiguration(
+            task_config, self.cluster, self.nodes)
+        serialized = list(task.serialize())
+        self.assertEqual(len(serialized), 1)
+        task_actual = serialized[0]
+        self.assertEqual(path_template.format(CLUSTER_ID=self.cluster.id),
+                         task_actual['parameters']['path'])
+        self.assertEqual([consts.TASK_ROLES.master], task_actual['uids'])
+
+    def test_copy_cluster_configuration(self):
+        objects.Cluster.prepare_for_deployment(self.cluster)
+        src_path_template = '/path/{CLUSTER_ID}/file.yaml'
+        dst_path = '/path/file.yaml'
+        task_config = {
+            'id': 'copy_cluster_configuration',
+            'type': 'copy_files',
+            'role': consts.TASK_ROLES.all,
+            'parameters': {
+                'files': [
+                    {'src': src_path_template, 'dst': dst_path}
+                ],
+                'permissions': '0600',
+                'dir_permissions': '0700'
+            }
+        }
+
+        task = tasks_serializer.CopyClusterConfiguration(
+            task_config, self.cluster, self.nodes)
+        serialized = list(task.serialize())
+        self.assertEqual(len(serialized), 1)
+        task_actual = serialized[0]
+        self.assertEqual(task_actual['type'],
+                         consts.ORCHESTRATOR_TASK_TYPES.copy_files)
+        files = list()
+        files.append({
+            'src': src_path_template.format(CLUSTER_ID=self.cluster.id),
+            'dst': dst_path
+        })
+        self.assertItemsEqual(files, task_actual['parameters']['files'])
+        self.assertItemsEqual(self.all_uids, task_actual['uids'])
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
 
@@ -516,13 +569,33 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
           parameters:
             cmd: shorted_command
             timeout: 180
+
+        - id: save_cluster_configuration
+          type: upload_file
+          role: 'master'
+          requires: [pre_deployment_start]
+          parameters:
+            path: /path/{CLUSTER_ID}/file.yaml
+
+        - id: copy_cluster_configuration
+          type: copy_files
+          role: '*'
+          requires: [save_cluster_configuration]
+          required_for: [pre_deployment]
+          parameters:
+            files:
+              - src: /path/{CLUSTER_ID}/file.yaml
+                dst: /path/file.yaml
+            permissions: 0600
+            dir_permissions: 0700
         """)
 
     def test_tasks_serialized_correctly(self):
+        objects.Cluster.prepare_for_deployment(self.cluster)
+
         self.graph = deployment_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
-        self.assertEqual(len(tasks), 20)
         tasks_tests = [('shell', ['master']),
                        ('shell', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),
@@ -541,8 +614,12 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
                        ('upload_file', sorted(self.all_uids)),
                        ('upload_file', sorted(self.all_uids)),
                        ('copy_files', sorted(self.all_uids)),
+                       ('upload_file', [consts.TASK_ROLES.master]),
+                       ('copy_files', sorted(self.all_uids)),
                        ('sync', sorted(self.all_uids)),
                        ('shell', sorted(self.all_uids))]
+
+        self.assertEqual(len(tasks), len(tasks_tests))
         tasks_output = []
         for task in tasks:
             tasks_output.append((task['type'], sorted(task['uids'])))

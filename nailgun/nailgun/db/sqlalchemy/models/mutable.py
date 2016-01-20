@@ -15,6 +15,7 @@
 #    under the License.
 
 import copy
+import yaml
 
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.ext.mutable import MutableDict as MutableDictBase
@@ -47,7 +48,12 @@ class MutableDict(MutableDictBase):
         return result
 
 
-class MutableList(Mutable, list):
+# Registering MutableDict representer for yaml safe dumper
+yaml.SafeDumper.add_representer(
+    MutableDict, yaml.representer.SafeRepresenter.represent_dict)
+
+
+class MutableList(list, Mutable):
     # TODO(fzhadaev): delete this class after it will be
     #                 implemented in sqlalchemy lib.
     # https://bitbucket.org/zzzeek/sqlalchemy/issues/3297
@@ -194,3 +200,8 @@ class MutableList(Mutable, list):
         clone = MutableList()
         clone.__setstate__((_deepcopy(x, memo) for x in self))
         return clone
+
+
+# Registering MutableList representer for yaml safe dumper
+yaml.SafeDumper.add_representer(
+    MutableList, yaml.representer.SafeRepresenter.represent_list)

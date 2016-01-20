@@ -15,6 +15,7 @@
 #    under the License.
 
 import copy
+import yaml
 
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.ext.mutable import MutableDict as MutableDictBase
@@ -45,6 +46,11 @@ class MutableDict(MutableDictBase):
         result = dict.popitem(self)
         self.changed()
         return result
+
+
+# Registering MutableDict representer for yaml safe dumper
+yaml.SafeDumper.add_representer(
+    MutableDict, yaml.representer.SafeRepresenter.represent_dict)
 
 
 class MutableList(Mutable, list):
@@ -194,3 +200,8 @@ class MutableList(Mutable, list):
         clone = MutableList()
         clone.__setstate__((_deepcopy(x, memo) for x in self))
         return clone
+
+
+# Registering MutableList representer for yaml safe dumper
+yaml.SafeDumper.add_representer(
+    MutableList, yaml.representer.SafeRepresenter.represent_list)

@@ -80,13 +80,20 @@ var WelcomePage = React.createClass({
                     <div className='happy-cloud'>
                       <div className='cloud-smile' />
                       <div className='row'>
-                        <div className='col-xs-8 col-xs-offset-2'>{i18n(ns + 'register.welcome_phrase.thanks')}{username ? ' ' + username : ''}, {i18n(ns + 'register.welcome_phrase.content')}</div>
+                        <div className='col-xs-8 col-xs-offset-2'>
+                          {i18n(ns + 'register.welcome_phrase.thanks')}
+                          {username ? ' ' + username : ''},
+                          {i18n(ns + 'register.welcome_phrase.content')}
+                        </div>
                       </div>
                     </div>
                   :
                     <div>
-                      <p className='register_installation'>{i18n(ns + 'register.register_installation')}</p>
-                      {this.renderRegistrationForm(this.props.tracking, disabled, this.state.error, this.state.actionInProgress && !this.state.locked)}
+                      <p className='register_installation'>
+                        {i18n(ns + 'register.register_installation')}
+                      </p>
+                      {this.renderRegistrationForm(this.props.tracking, disabled, this.state.error,
+                        this.state.actionInProgress && !this.state.locked)}
                     </div>
                   }
                 </div>
@@ -96,7 +103,9 @@ var WelcomePage = React.createClass({
               {this.renderInput('send_user_info', 'welcome-checkbox-box', disabled)}
               <div>
                 <div className='notice'>{i18n(ns + 'privacy_policy')}</div>
-                <div><a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a></div>
+                <div>
+                  <a href={privacyPolicyLink} target='_blank'>{i18n(ns + 'privacy_policy_link')}</a>
+                </div>
               </div>
             </div>
           :

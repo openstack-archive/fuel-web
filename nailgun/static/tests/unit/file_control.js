@@ -36,7 +36,8 @@ suite('File Control', () => {
     var initialState = input.getInitialState();
 
     assert.equal(input.props.type, 'file', 'Input type should be equal to file');
-    assert.equal(initialState.fileName, 'certificate.crt', 'Default file name must correspond to provided one');
+    assert.equal(initialState.fileName, 'certificate.crt',
+      'Default file name must correspond to provided one');
     assert.equal(initialState.content, 'CERTIFICATE', 'Content should be equal to the default');
   });
 
@@ -48,7 +49,8 @@ suite('File Control', () => {
     });
 
     input.pickFile();
-    assert.ok(clickSpy.calledOnce, 'When icon clicked input control should be clicked too to open select file dialog');
+    assert.ok(clickSpy.calledOnce,
+      'When icon clicked input control should be clicked too to open select file dialog');
   });
 
   test('File fetching', () => {

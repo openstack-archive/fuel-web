@@ -69,7 +69,8 @@ var EditNodeDisksScreen = React.createClass({
     this.setState({initialDisks: _.cloneDeep(this.props.nodes.at(0).disks.toJSON())});
   },
   hasChanges() {
-    return !this.isLocked() && !_.isEqual(_.pluck(this.props.disks.toJSON(), 'volumes'), _.pluck(this.state.initialDisks, 'volumes'));
+    return !this.isLocked() && !_.isEqual(_.pluck(this.props.disks.toJSON(), 'volumes'),
+        _.pluck(this.state.initialDisks, 'volumes'));
   },
   loadDefaults() {
     this.setState({actionInProgress: true});
@@ -168,7 +169,9 @@ var EditNodeDisksScreen = React.createClass({
       <div className='edit-node-disks-screen'>
         <div className='row'>
           <div className='title'>
-            {i18n('cluster_page.nodes_tab.configure_disks.' + (locked ? 'read_only_' : '') + 'title', {count: this.props.nodes.length, name: this.props.nodes.length && this.props.nodes.at(0).get('name')})}
+            {i18n('cluster_page.nodes_tab.configure_disks.' + (locked ? 'read_only_' : '') +
+              'title', {count: this.props.nodes.length, name: this.props.nodes.length &&
+              this.props.nodes.at(0).get('name')})}
           </div>
           <div className='col-xs-12 node-disks'>
             {this.props.disks.length ?
@@ -184,22 +187,44 @@ var EditNodeDisksScreen = React.createClass({
               })
             :
               <div className='alert alert-warning'>
-                {i18n('cluster_page.nodes_tab.configure_disks.no_disks', {count: this.props.nodes.length})}
+                {i18n('cluster_page.nodes_tab.configure_disks.no_disks',
+                  {count: this.props.nodes.length})}
               </div>
             }
           </div>
           <div className='col-xs-12 page-buttons content-elements'>
             <div className='well clearfix'>
               <div className='btn-group'>
-                <a className='btn btn-default' href={'#cluster/' + this.props.cluster.id + '/nodes'} disabled={this.state.actionInProgress}>
+                <a className='btn btn-default'
+                  href={'#cluster/' + this.props.cluster.id + '/nodes'}
+                  disabled={this.state.actionInProgress}
+                >
                   {i18n('cluster_page.nodes_tab.back_to_nodes_button')}
                 </a>
               </div>
               {!locked && !!this.props.disks.length &&
                 <div className='btn-group pull-right'>
-                  <button className='btn btn-default btn-defaults' onClick={this.loadDefaults} disabled={loadDefaultsDisabled}>{i18n('common.load_defaults_button')}</button>
-                  <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={revertChangesDisabled}>{i18n('common.cancel_changes_button')}</button>
-                  <button className='btn btn-success btn-apply' onClick={this.applyChanges} disabled={!this.isSavingPossible()}>{i18n('common.apply_button')}</button>
+                  <button
+                    className='btn btn-default btn-defaults'
+                    onClick={this.loadDefaults}
+                    disabled={loadDefaultsDisabled}
+                  >
+                    {i18n('common.load_defaults_button')}
+                  </button>
+                  <button
+                    className='btn btn-default btn-revert-changes'
+                    onClick={this.revertChanges}
+                    disabled={revertChangesDisabled}
+                  >
+                    {i18n('common.cancel_changes_button')}
+                  </button>
+                  <button
+                    className='btn btn-success btn-apply'
+                    onClick={this.applyChanges}
+                    disabled={!this.isSavingPossible()}
+                  >
+                    {i18n('common.apply_button')}
+                  </button>
                 </div>
               }
             </div>
@@ -225,7 +250,8 @@ var NodeDisk = React.createClass({
     if (size > volumeInfo.max) {
       size = volumeInfo.max;
     }
-    this.props.disk.get('volumes').findWhere({name: name}).set({size: size}).isValid({minimum: volumeInfo.min});
+    this.props.disk.get('volumes').findWhere({name: name}).set({size: size})
+      .isValid({minimum: volumeInfo.min});
     this.props.disk.trigger('change', this.props.disk);
   },
   toggleDisk(name) {
@@ -236,7 +262,8 @@ var NodeDisk = React.createClass({
     var volumesInfo = this.props.volumesInfo;
     var diskMetaData = this.props.diskMetaData;
     var requiredDiskSize = _.sum(disk.get('volumes').map((volume) => {
-      return volume.getMinimalSize(this.props.volumes.findWhere({name: volume.get('name')}).get('min_size'));
+      return volume
+        .getMinimalSize(this.props.volumes.findWhere({name: volume.get('name')}).get('min_size'));
     }));
     var diskError = disk.get('size') < requiredDiskSize;
     var sortOrder = ['name', 'model', 'size'];
@@ -263,26 +290,44 @@ var NodeDisk = React.createClass({
                 data-volume={volumeName}
                 style={{width: volumesInfo[volumeName].width + '%'}}
               >
-                <div className='text-center toggle' onClick={_.partial(this.toggleDisk, disk.get('name'))}>
+                <div
+                  className='text-center toggle'
+                  onClick={_.partial(this.toggleDisk, disk.get('name'))}
+                >
                   <div>{volume.get('label')}</div>
                   <div className='volume-group-size'>
                     {utils.showDiskSize(volumesInfo[volumeName].size, 2)}
                   </div>
                 </div>
                 {!this.props.disabled && volumesInfo[volumeName].min <= 0 && this.state.collapsed &&
-                  <div className='close-btn' onClick={_.partial(this.updateDisk, volumeName, 0)}>&times;</div>
+                  <div
+                    className='close-btn'
+                    onClick={_.partial(this.updateDisk, volumeName, 0)}
+                  >
+                    &times;
+                  </div>
                 }
               </div>
             );
           })}
-          <div className='volume-group pull-left' data-volume='unallocated' style={{width: volumesInfo.unallocated.width + '%'}}>
-            <div className='text-center toggle' onClick={_.partial(this.toggleDisk, disk.get('name'))}>
+          <div
+            className='volume-group pull-left'
+            data-volume='unallocated'
+            style={{width: volumesInfo.unallocated.width + '%'}}
+          >
+            <div
+              className='text-center toggle'
+              onClick={_.partial(this.toggleDisk, disk.get('name'))}
+            >
               <div className='volume-group-name'>{i18n(ns + 'unallocated')}</div>
-              <div className='volume-group-size'>{utils.showDiskSize(volumesInfo.unallocated.size, 2)}</div>
+              <div className='volume-group-size'>
+                {utils.showDiskSize(volumesInfo.unallocated.size, 2)}
+              </div>
             </div>
           </div>
         </div>
-        <div className='row collapse disk-details' id={disk.get('name')} key='diskDetails' ref={disk.get('name')}>
+        <div className='row collapse disk-details' id={disk.get('name')} key='diskDetails'
+          ref={disk.get('name')}>
           <div className='col-xs-5'>
             {diskMetaData &&
               <div>
@@ -294,7 +339,10 @@ var NodeDisk = React.createClass({
                         <label className='col-xs-2'>{propertyName.replace(/_/g, ' ')}</label>
                         <div className='col-xs-10'>
                           <p className='form-control-static'>
-                            {propertyName == 'size' ? utils.showDiskSize(diskMetaData[propertyName]) : diskMetaData[propertyName]}
+                            {propertyName == 'size' ?
+                              utils.showDiskSize(diskMetaData[propertyName]) :
+                              diskMetaData[propertyName]
+                            }
                           </p>
                         </div>
                       </div>
@@ -325,7 +373,12 @@ var NodeDisk = React.createClass({
                   <div key={'edit_' + volumeName} data-volume={volumeName}>
                     <div className='form-group volume-group row'>
                       <label className='col-xs-4 volume-group-label'>
-                        <span ref={'volume-group-flag ' + volumeName} className={'volume-type-' + (index + 1)}> &nbsp; </span>
+                        <span
+                          ref={'volume-group-flag ' + volumeName}
+                          className={'volume-type-' + (index + 1)}
+                        >
+                          &nbsp;
+                        </span>
                         {volume.get('label')}
                       </label>
                       <div className='col-xs-4 volume-group-range'>
@@ -343,10 +396,14 @@ var NodeDisk = React.createClass({
                         error={validationError && ''}
                         value={value}
                       />
-                      <div className='col-xs-1 volume-group-size-label'>{i18n('common.size.mb')}</div>
+                      <div className='col-xs-1 volume-group-size-label'>
+                        {i18n('common.size.mb')}
+                      </div>
                     </div>
                     {!!value && value == currentMinSize &&
-                      <div className='volume-group-notice text-info'>{i18n(ns + 'minimum_reached')}</div>
+                      <div className='volume-group-notice text-info'>
+                        {i18n(ns + 'minimum_reached')}
+                      </div>
                     }
                     {validationError &&
                       <div className='volume-group-notice text-danger'>{validationError}</div>
@@ -355,7 +412,9 @@ var NodeDisk = React.createClass({
                 );
               })}
               {diskError &&
-                <div className='volume-group-notice text-danger'>{i18n(ns + 'not_enough_space')}</div>
+                <div className='volume-group-notice text-danger'>
+                  {i18n(ns + 'not_enough_space')}
+                </div>
               }
             </div>
           </div>

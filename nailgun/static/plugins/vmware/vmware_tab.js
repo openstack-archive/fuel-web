@@ -236,7 +236,13 @@ var AvailabilityZones = React.createClass({
           }
         </h3>
         {this.props.collection.map((model) => {
-          return <AvailabilityZone key={model.cid} model={model} disabled={this.props.disabled} cluster={this.props.cluster} isLocked={this.props.isLocked}/>;
+          return <AvailabilityZone
+            key={model.cid}
+            model={model}
+            disabled={this.props.disabled}
+            cluster={this.props.cluster}
+            isLocked={this.props.isLocked}
+          />;
         })}
       </div>
     );
@@ -310,7 +316,8 @@ var VmWareTab = React.createClass({
     this.model.setModels({
       cluster: this.props.cluster,
       settings: this.props.cluster.get('settings'),
-      networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters')
+      networking_parameters: this.props.cluster.get('networkConfiguration')
+        .get('networking_parameters')
     });
 
     this.onModelSync(); // eslint-disable-line no-sync
@@ -419,13 +426,25 @@ var VmWareTab = React.createClass({
         <div className='col-xs-12 page-buttons content-elements'>
           <div className='well clearfix'>
             <div className='btn-group pull-right'>
-              <button className='btn btn-default btn-load-defaults' onClick={this.onLoadDefaults} disabled={!editable || defaultsDisabled}>
+              <button
+                className='btn btn-default btn-load-defaults'
+                onClick={this.onLoadDefaults}
+                disabled={!editable || defaultsDisabled}
+              >
                 {i18n('vmware.reset_to_defaults')}
               </button>
-              <button className='btn btn-default btn-revert-changes' onClick={this.revertChanges} disabled={!hasChanges}>
+              <button
+                className='btn btn-default btn-revert-changes'
+                onClick={this.revertChanges}
+                disabled={!hasChanges}
+              >
                 {i18n('vmware.cancel')}
               </button>
-              <button className='btn btn-success btn-apply-changes' onClick={this.applyChanges} disabled={saveDisabled}>
+              <button
+                className='btn btn-success btn-apply-changes'
+                onClick={this.applyChanges}
+                disabled={saveDisabled}
+              >
                 {i18n('vmware.apply')}
               </button>
             </div>

@@ -86,8 +86,10 @@ define([
           .then(function() {
             return dashboardPage.setClusterName(initialName);
           })
-          .assertElementAppears('.rename-block.has-error', 1000, 'Error style for duplicate name is applied')
-          .assertElementTextEquals('.rename-block .text-danger', 'Environment with this name already exists',
+          .assertElementAppears('.rename-block.has-error', 1000,
+            'Error style for duplicate name is applied')
+          .assertElementTextEquals('.rename-block .text-danger',
+            'Environment with this name already exists',
             'Duplicate name error text appears'
           )
           .findByCssSelector(renameInputSelector)
@@ -129,7 +131,8 @@ define([
             return clusterPage.goToTab('Dashboard');
           })
           .assertElementContainsText('.warnings-block',
-              'Please verify your network settings before deployment', 'Network verification warning is shown')
+            'Please verify your network settings before deployment',
+            'Network verification warning is shown')
           .then(function() {
             return dashboardPage.discardChanges();
           });
@@ -143,7 +146,8 @@ define([
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
-          .assertElementDisabled(dashboardPage.deployButtonSelector, 'No deployment should be possible without controller nodes added')
+          .assertElementDisabled(dashboardPage.deployButtonSelector,
+            'No deployment should be possible without controller nodes added')
           .assertElementExists('div.instruction.invalid', 'Invalid configuration message is shown')
           .assertElementContainsText('.environment-alerts ul.text-danger li',
               'At least 1 Controller nodes are required (0 selected currently).',
@@ -178,7 +182,8 @@ define([
         var operatingSystemNodes = 1;
         var virtualNodes = 1;
         var valueSelector = '.statistics-block .cluster-info-value';
-        var total = controllerNodes + storageCinderNodes + computeNodes + operatingSystemNodes + virtualNodes;
+        var total = controllerNodes + storageCinderNodes + computeNodes + operatingSystemNodes +
+          virtualNodes;
         return this.remote
           .then(function() {
             return common.addNodesToCluster(controllerNodes, ['Controller']);
@@ -201,11 +206,13 @@ define([
           .assertElementTextEquals(valueSelector + '.total', total,
               'The number of Total nodes in statistics is updated according to added nodes')
           .assertElementTextEquals(valueSelector + '.controller', controllerNodes,
-              'The number of controllerNodes nodes in statistics is updated according to added nodes')
+              'The number of controllerNodes nodes in statistics is updated according to ' +
+              'added nodes')
           .assertElementTextEquals(valueSelector + '.compute', computeNodes,
               'The number of Compute nodes in statistics is updated according to added nodes')
           .assertElementTextEquals(valueSelector + '.base-os', operatingSystemNodes,
-              'The number of Operating Systems nodes in statistics is updated according to added nodes')
+              'The number of Operating Systems nodes in statistics is updated according to ' +
+              'added nodes')
           .assertElementTextEquals(valueSelector + '.virt', virtualNodes,
               'The number of Virtual nodes in statistics is updated according to added nodes')
           .assertElementTextEquals(valueSelector + '.offline', 1,
@@ -213,7 +220,8 @@ define([
           .assertElementTextEquals(valueSelector + '.error', 1,
               'The number of Error nodes in statistics is updated according to added nodes')
           .assertElementTextEquals(valueSelector + '.pending_addition', total,
-              'The number of Pending Addition nodes in statistics is updated according to added nodes')
+              'The number of Pending Addition nodes in statistics is updated according to ' +
+              'added nodes')
           .then(function() {
             return dashboardPage.discardChanges();
           });
@@ -232,8 +240,10 @@ define([
           .then(function() {
             return dashboardPage.startDeployment();
           })
-          .assertElementDisappears('.dashboard-block .progress', 60000, 'Progress bar disappears after deployment')
-          .assertElementAppears('.dashboard-tab .alert strong', 1000, 'Error message is shown when adding error node')
+          .assertElementDisappears('.dashboard-block .progress', 60000,
+            'Progress bar disappears after deployment')
+          .assertElementAppears('.dashboard-tab .alert strong', 1000,
+            'Error message is shown when adding error node')
           .assertElementTextEquals('.dashboard-tab .alert strong', 'Error',
               'Deployment failed in case of adding offline nodes')
           .then(function() {

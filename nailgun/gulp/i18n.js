@@ -26,12 +26,15 @@ function validate(translations, locales) {
   });
 
   function compareLocales(locale1, locale2) {
-    return _.without.apply(null, [processedTranslations[locale1]].concat(processedTranslations[locale2]));
+    return _.without.apply(null, [processedTranslations[locale1]]
+      .concat(processedTranslations[locale2]));
   }
 
   _.each(_.without(locales, baseLocale), function(locale) {
-    gutil.log(gutil.colors.red('The list of keys present in', baseLocale, 'but absent in', locale, ':\n') + compareLocales(baseLocale, locale).join('\n'));
-    gutil.log(gutil.colors.red('The list of keys missing in', baseLocale, ':\n') + compareLocales(locale, baseLocale).join('\n'));
+    gutil.log(gutil.colors.red('The list of keys present in',
+      baseLocale, 'but absent in', locale, ':\n') + compareLocales(baseLocale, locale).join('\n'));
+    gutil.log(gutil.colors.red('The list of keys missing in', baseLocale, ':\n') +
+      compareLocales(locale, baseLocale).join('\n'));
   });
 }
 

@@ -125,7 +125,8 @@ define([
           var dragAndDrop = (function() {
             var dispatchEvent, createEvent;
 
-            // Setup methods to call the proper event creation and dispatch functions for the current platform.
+            // Setup methods to call the proper event creation and
+            // dispatch functions for the current platform.
             if (document.createEvent) {
               dispatchEvent = function(element, eventName, event) {
                 element.dispatchEvent(event);
@@ -215,8 +216,8 @@ define([
 
               try {
                 event = createEvent('MouseEvent');
-                event.initMouseEvent(eventName, true, true, window, 0, screenX, screenY, clientX, clientY,
-                  false, false, false, false, 0, null);
+                event.initMouseEvent(eventName, true, true, window, 0, screenX, screenY, clientX,
+                  clientY, false, false, false, false, 0, null);
               } catch (error) {
                 event = createCustomEvent(eventName, screenX, screenY, clientX, clientY);
               }
@@ -230,7 +231,8 @@ define([
 
             function simulateEvent(element, eventName, dragStartEvent, options) {
               var dataTransfer = dragStartEvent ? dragStartEvent.dataTransfer : null;
-              var createEvent = eventName.indexOf('mouse') !== -1 ? createMouseEvent : createDragEvent;
+              var createEvent = eventName.indexOf('mouse') !== -1 ? createMouseEvent :
+                createDragEvent;
               var event = createEvent(eventName, options, dataTransfer);
               return dispatchEvent(element, eventName, event);
             }

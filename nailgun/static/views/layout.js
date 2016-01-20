@@ -52,7 +52,8 @@ export var Navbar = React.createClass({
     return this.props.user.get('authenticated');
   },
   fetchData() {
-    return $.when(this.props.statistics.fetch(), this.props.notifications.fetch({limit: this.props.notificationsDisplayCount}));
+    return $.when(this.props.statistics.fetch(),
+      this.props.notifications.fetch({limit: this.props.notificationsDisplayCount}));
   },
   updateNodeStats() {
     return this.props.statistics.fetch();
@@ -91,7 +92,8 @@ export var Navbar = React.createClass({
   },
   render() {
     var unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
-    var authenticationEnabled = this.props.version.get('auth_required') && this.props.user.get('authenticated');
+    var authenticationEnabled = this.props.version.get('auth_required') &&
+      this.props.user.get('authenticated');
     return (
       <div className='navigation-box'>
         <div className='navbar-bg'></div>
@@ -104,7 +106,11 @@ export var Navbar = React.createClass({
               <ul className='nav navbar-nav pull-left'>
                 {_.map(this.props.elements, (element) => {
                   return (
-                    <li className={utils.classNames({active: this.props.activeElement == element.url.slice(1)})} key={element.label}>
+                    <li
+                      className={utils.classNames({active:
+                        this.props.activeElement == element.url.slice(1)})}
+                      key={element.label}
+                    >
                       <a href={element.url}>
                         {i18n('navbar.' + element.label, {defaultValue: element.label})}
                       </a>
@@ -128,7 +134,8 @@ export var Navbar = React.createClass({
                 </li>
                 <li
                   key='statistics-icon'
-                  className={'statistics-icon ' + (this.props.statistics.get('unallocated') ? '' : 'no-unallocated')}
+                  className={'statistics-icon ' + (this.props.statistics.get('unallocated') ? '' :
+                    'no-unallocated')}
                   onClick={this.togglePopover('statistics')}
                 >
                   {!!this.props.statistics.get('unallocated') &&
@@ -148,7 +155,9 @@ export var Navbar = React.createClass({
                   className='notifications-icon'
                   onClick={this.togglePopover('notifications')}
                 >
-                  <span className={utils.classNames({badge: true, visible: unreadNotificationsCount})}>
+                  <span
+                    className={utils.classNames({badge: true, visible: unreadNotificationsCount})}
+                  >
                     {unreadNotificationsCount}
                   </span>
                 </li>
@@ -258,7 +267,10 @@ var UserPopover = React.createClass({
         <div className='username'>{i18n('common.username')}:</div>
         <h3 className='name'>{this.props.user.get('username')}</h3>
         <div className='clearfix'>
-          <button className='btn btn-default btn-sm pull-left' onClick={this.showChangePasswordDialog}>
+          <button
+            className='btn btn-default btn-sm pull-left'
+            onClick={this.showChangePasswordDialog}
+          >
             <i className='glyphicon glyphicon-user'></i>
             {i18n('common.change_password')}
           </button>
@@ -281,7 +293,8 @@ var NotificationsPopover = React.createClass({
     ShowNodeInfoDialog.show({node: node});
   },
   markAsRead() {
-    var notificationsToMark = new models.Notifications(this.props.notifications.where({status: 'unread'}));
+    var notificationsToMark = new models.Notifications(this.props.notifications.where({status:
+      'unread'}));
     if (notificationsToMark.length) {
       this.setState({unreadNotificationsIds: notificationsToMark.pluck('id')});
       notificationsToMark.toJSON = function() {
@@ -307,7 +320,8 @@ var NotificationsPopover = React.createClass({
       'text-danger': topic == 'error',
       'text-warning': topic == 'warning',
       clickable: nodeId,
-      unread: notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id)
+      unread: notification.get('status') == 'unread' ||
+        _.contains(this.state.unreadNotificationsIds, notification.id)
     };
     var iconClass = {
       error: 'glyphicon-exclamation-sign',
@@ -347,7 +361,11 @@ export var Footer = React.createClass({
     return (
       <div className='footer'>
         {_.contains(version.get('feature_groups'), 'mirantis') && [
-          <a key='logo' className='mirantis-logo-white' href='http://www.mirantis.com/' target='_blank'></a>,
+          <a
+            key='logo'
+            className='mirantis-logo-white'
+            href='http://www.mirantis.com/'
+            target='_blank'></a>,
           <div key='copyright'>{i18n('common.copyright')}</div>
         ]}
         <div key='version'>{i18n('common.version')}: {version.get('release')}</div>
@@ -365,7 +383,8 @@ export var Breadcrumbs = React.createClass({
   },
   getBreadcrumbsPath() {
     var page = this.props.Page;
-    return _.isFunction(page.breadcrumbsPath) ? page.breadcrumbsPath(this.props.pageOptions) : page.breadcrumbsPath;
+    return _.isFunction(page.breadcrumbsPath) ? page.breadcrumbsPath(this.props.pageOptions) :
+      page.breadcrumbsPath;
   },
   refresh() {
     this.setState({path: this.getBreadcrumbsPath()});

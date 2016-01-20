@@ -56,7 +56,8 @@ define([
       },
       'Settings tab is rendered correctly': function() {
         return this.remote
-          .assertElementNotExists('.nav .subtab-link-network', 'Subtab for Network settings is not presented in navigation')
+          .assertElementNotExists('.nav .subtab-link-network',
+            'Subtab for Network settings is not presented in navigation')
           .assertElementEnabled('.btn-load-defaults', 'Load defaults button is enabled')
           .assertElementDisabled('.btn-revert-changes', 'Cancel Changes button is disabled')
           .assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled');
@@ -65,10 +66,12 @@ define([
         return this.remote
           // introduce change
           .clickByCssSelector('input[type=checkbox]')
-          .assertElementAppears('.btn-apply-changes:not(:disabled)', 200, 'Save Settings button is enabled if there are changes')
+          .assertElementAppears('.btn-apply-changes:not(:disabled)', 200,
+            'Save Settings button is enabled if there are changes')
           // reset the change
           .clickByCssSelector('input[type=checkbox]')
-          .assertElementAppears('.btn-apply-changes:disabled', 200, 'Save Settings button is disabled if there are no changes');
+          .assertElementAppears('.btn-apply-changes:disabled', 200,
+            'Save Settings button is disabled if there are no changes');
       },
       'Check Cancel Changes button': function() {
         return this.remote
@@ -86,7 +89,8 @@ define([
           })
           // reset changes
           .clickByCssSelector('.btn-revert-changes')
-          .assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled after changes were cancelled');
+          .assertElementDisabled('.btn-apply-changes',
+            'Save Settings button is disabled after changes were cancelled');
       },
       'Check changes saving': function() {
         return this.remote
@@ -97,7 +101,8 @@ define([
           .then(function() {
             return settingsPage.waitForRequestCompleted();
           })
-          .assertElementDisabled('.btn-revert-changes', 'Cancel Changes button is disabled after changes were saved successfully');
+          .assertElementDisabled('.btn-revert-changes',
+            'Cancel Changes button is disabled after changes were saved successfully');
       },
       'Check loading of defaults': function() {
         return this.remote
@@ -106,12 +111,15 @@ define([
           .then(function() {
             return settingsPage.waitForRequestCompleted();
           })
-          .assertElementEnabled('.btn-apply-changes', 'Save Settings button is enabled after defaults were loaded')
-          .assertElementEnabled('.btn-revert-changes', 'Cancel Changes button is enabled after defaults were loaded')
+          .assertElementEnabled('.btn-apply-changes',
+            'Save Settings button is enabled after defaults were loaded')
+          .assertElementEnabled('.btn-revert-changes',
+            'Cancel Changes button is enabled after defaults were loaded')
           // revert the change
           .clickByCssSelector('.btn-revert-changes');
       },
-      'The choice of subgroup is preserved when user navigates through the cluster tabs': function() {
+      'The choice of subgroup is preserved when user navigates through the cluster tabs':
+      function() {
         return this.remote
           .clickLinkByText('Logging')
           .then(function() {
@@ -120,20 +128,26 @@ define([
           .then(function() {
             return clusterPage.goToTab('Settings');
           })
-          .assertElementExists('.nav-pills li.active a.subtab-link-logging', 'The choice of subgroup is preserved when user navigates through the cluster tabs');
+          .assertElementExists('.nav-pills li.active a.subtab-link-logging',
+            'The choice of subgroup is preserved when user navigates through the cluster tabs');
       },
       'The page reacts on invalid input': function() {
         return this.remote
           .clickLinkByText('General')
           // "nova" is forbidden username
           .setInputValue('[type=text][name=user]', 'nova')
-          .assertElementAppears('.setting-section .form-group.has-error', 200, 'Invalid field marked as error')
-          .assertElementExists('.settings-tab .nav-pills > li.active i.glyphicon-danger-sign', 'Subgroup with invalid field marked as invalid')
-          .assertElementDisabled('.btn-apply-changes', 'Save Settings button is disabled in case of validation error')
+          .assertElementAppears('.setting-section .form-group.has-error', 200,
+            'Invalid field marked as error')
+          .assertElementExists('.settings-tab .nav-pills > li.active i.glyphicon-danger-sign',
+            'Subgroup with invalid field marked as invalid')
+          .assertElementDisabled('.btn-apply-changes',
+            'Save Settings button is disabled in case of validation error')
           // revert the change
           .clickByCssSelector('.btn-revert-changes')
-          .assertElementNotExists('.setting-section .form-group.has-error', 'Validation error is cleared after resetting changes')
-          .assertElementNotExists('.settings-tab .nav-pills > li.active i.glyphicon-danger-sign', 'Subgroup menu has default layout after resetting changes');
+          .assertElementNotExists('.setting-section .form-group.has-error',
+            'Validation error is cleared after resetting changes')
+          .assertElementNotExists('.settings-tab .nav-pills > li.active i.glyphicon-danger-sign',
+            'Subgroup menu has default layout after resetting changes');
       },
       'Test repositories custom control': function() {
         var repoAmount;
@@ -146,18 +160,22 @@ define([
               repoAmount = elements.length;
             })
             .end()
-          .assertElementNotExists('.repos .form-inline:nth-of-type(1) .btn-link', 'The first repo can not be deleted')
+          .assertElementNotExists('.repos .form-inline:nth-of-type(1) .btn-link',
+            'The first repo can not be deleted')
           // delete some repo
           .clickByCssSelector('.repos .form-inline .btn-link')
           .then(function() {
-            return self.remote.assertElementsExist('.repos .form-inline', repoAmount - 1, 'Repo was deleted');
+            return self.remote.assertElementsExist('.repos .form-inline', repoAmount - 1,
+              'Repo was deleted');
           })
           // add new repo
           .clickByCssSelector('.btn-add-repo')
           .then(function() {
-            return self.remote.assertElementsExist('.repos .form-inline', repoAmount, 'New repo placeholder was added');
+            return self.remote.assertElementsExist('.repos .form-inline', repoAmount,
+              'New repo placeholder was added');
           })
-          .assertElementExists('.repos .form-inline .repo-name.has-error', 'Empty repo marked as invalid')
+          .assertElementExists('.repos .form-inline .repo-name.has-error',
+            'Empty repo marked as invalid')
           // revert the change
           .clickByCssSelector('.btn-revert-changes');
       }

@@ -48,7 +48,8 @@ define([
           .assertElementExists('.capacity-audit', 'Capacity Audit block is present')
           .assertElementExists('.tracking', 'Statistics block is present')
           .assertElementSelected(sendStatisticsCheckbox, 'Save Staticstics checkbox is checked')
-          .assertElementDisabled(saveStatisticsSettingsButton, '"Save changes" button is disabled until statistics checkbox uncheck');
+          .assertElementDisabled(saveStatisticsSettingsButton,
+            '"Save changes" button is disabled until statistics checkbox uncheck');
       },
       'Diagnostic snapshot link generation': function() {
         return this.remote
@@ -59,9 +60,12 @@ define([
         return this.remote
           // Uncheck "Send usage statistics" checkbox
           .clickByCssSelector(sendStatisticsCheckbox)
-          .assertElementEnabled(saveStatisticsSettingsButton, '"Save changes" button is enabled after changing "Send usage statistics" checkbox value')
+          .assertElementEnabled(saveStatisticsSettingsButton,
+            '"Save changes" button is enabled after changing "Send usage statistics" ' +
+            'checkbox value')
           .clickByCssSelector(saveStatisticsSettingsButton)
-          .assertElementDisabled(saveStatisticsSettingsButton, '"Save changes" button is disabled after saving changes');
+          .assertElementDisabled(saveStatisticsSettingsButton,
+            '"Save changes" button is disabled after saving changes');
       },
       'Discard changes': function() {
         return this.remote
@@ -87,7 +91,8 @@ define([
           .assertElementAppears('.clusters-page', 1000, 'Redirecting to Environments')
           // Go back to Support Page and ...
           .clickLinkByText('Support')
-          .assertElementSelected(sendStatisticsCheckbox, 'Changes saved successfully and save staticstics checkbox is checked')
+          .assertElementSelected(sendStatisticsCheckbox,
+            'Changes saved successfully and save staticstics checkbox is checked')
           // Uncheck the "Send usage statistics" checkbox value
           .clickByCssSelector(sendStatisticsCheckbox)
           // Go to another page with not saved changes
@@ -105,7 +110,8 @@ define([
           .assertElementAppears('.clusters-page', 1000, 'Redirecting to Environments')
           // Go back to Support Page and ...
           .clickLinkByText('Support')
-          .assertElementSelected(sendStatisticsCheckbox, 'Changes was not saved and save staticstics checkbox is checked')
+          .assertElementSelected(sendStatisticsCheckbox,
+            'Changes was not saved and save staticstics checkbox is checked')
           // Uncheck the "Send usage statistics" checkbox value
           .clickByCssSelector(sendStatisticsCheckbox)
           // Go to another page with not saved changes
@@ -120,7 +126,8 @@ define([
           .then(function() {
             return modal.waitToClose();
           })
-          .assertElementNotSelected(sendStatisticsCheckbox, 'We are still on the Support page, and checkbox is unchecked');
+          .assertElementNotSelected(sendStatisticsCheckbox,
+            'We are still on the Support page, and checkbox is unchecked');
       }
     };
   });

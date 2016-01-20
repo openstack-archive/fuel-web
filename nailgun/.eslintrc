@@ -13,7 +13,6 @@
 
     # to be fixed and enabled
     eqeqeq: 0
-    max-len: [0, 120]
 
     # extra rules
     no-unexpected-multiline: 2

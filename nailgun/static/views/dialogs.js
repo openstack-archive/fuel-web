@@ -67,14 +67,16 @@ export var dialogMixin = {
         }
         return result;
       } else {
-        return ReactDOM.render(React.createElement(this, dialogOptions), $('#modal-container')[0]).getResult();
+        return ReactDOM.render(React.createElement(this, dialogOptions), $('#modal-container')[0])
+          .getResult();
       }
     }
   },
   updateProps(partialProps) {
     var props;
     props = _.extend({}, this.props, partialProps);
-    ReactDOM.render(React.createElement(this.constructor, props), ReactDOM.findDOMNode(this).parentNode);
+    ReactDOM.render(React.createElement(this.constructor, props), ReactDOM.findDOMNode(this)
+      .parentNode);
   },
   getInitialState() {
     return {
@@ -118,7 +120,8 @@ export var dialogMixin = {
     if (e.target.tagName == 'A' && !e.target.target && e.target.href) this.close();
   },
   closeOnEscapeKey(e) {
-    if (this.props.keyboard !== false && this.props.closeable !== false && e.key == 'Escape') this.close();
+    if (this.props.keyboard !== false && this.props.closeable !== false &&
+      e.key == 'Escape') this.close();
     if (_.isFunction(this.onKeyDown)) this.onKeyDown(e);
   },
   showError(response, message) {
@@ -137,7 +140,11 @@ export var dialogMixin = {
     var classes = {'modal fade': true};
     classes[this.props.modalClass] = this.props.modalClass;
     return (
-      <div className={utils.classNames(classes)} tabIndex='-1' onClick={this.closeOnLinkClick} onKeyDown={this.closeOnEscapeKey}>
+      <div
+        className={utils.classNames(classes)}
+        tabIndex='-1' onClick={this.closeOnLinkClick}
+        onKeyDown={this.closeOnEscapeKey}
+      >
         <div className='modal-dialog'>
           <div className='modal-content'>
             <div className='modal-header'>
@@ -146,7 +153,9 @@ export var dialogMixin = {
                   <span aria-hidden='true'>&times;</span>
                 </button>
               }
-              <h4 className='modal-title'>{this.props.title || this.state.title || (this.props.error ? i18n('dialog.error_dialog.title') : '')}</h4>
+              <h4 className='modal-title'>{this.props.title || this.state.title ||
+                (this.props.error ? i18n('dialog.error_dialog.title') : '')}
+              </h4>
             </div>
             <div className='modal-body'>
               {this.props.error ?
@@ -159,7 +168,9 @@ export var dialogMixin = {
               {this.renderFooter && !this.props.error ?
                 this.renderFooter()
               :
-                <button className='btn btn-default' onClick={this.close}>{i18n('common.close_button')}</button>
+                <button className='btn btn-default' onClick={this.close}>
+                  {i18n('common.close_button')}
+                </button>
               }
             </div>
           </div>
@@ -219,7 +230,9 @@ export var NailgunUnavailabilityDialog = React.createClass({
     this.startCountdown();
   },
   componentDidMount() {
-    $(ReactDOM.findDOMNode(this)).on('shown.bs.modal', () => $(ReactDOM.findDOMNode(this.refs['retry-button'])).focus());
+    $(ReactDOM.findDOMNode(this)).on('shown.bs.modal', () => {
+      return $(ReactDOM.findDOMNode(this.refs['retry-button'])).focus();
+    });
   },
   startCountdown() {
     this.activeTimeout = _.delay(this.countdown, 1000);
@@ -242,7 +255,8 @@ export var NailgunUnavailabilityDialog = React.createClass({
   reinitializeUI() {
     app.initialize().then(this.close, () => {
       var {retryDelayIntervals} = this.props;
-      var nextDelay = retryDelayIntervals[retryDelayIntervals.indexOf(this.state.currentDelayInterval) + 1] || _.last(retryDelayIntervals);
+      var nextDelay = retryDelayIntervals[retryDelayIntervals
+          .indexOf(this.state.currentDelayInterval) + 1] || _.last(retryDelayIntervals);
       _.defer(() => this.setState({
         actionInProgress: false,
         currentDelay: nextDelay,
@@ -266,7 +280,8 @@ export var NailgunUnavailabilityDialog = React.createClass({
           {i18n('dialog.nailgun_unavailability.unavailability_message')}
           {' '}
           {this.state.currentDelay ?
-            i18n('dialog.nailgun_unavailability.retry_delay_message', {count: this.state.currentDelay})
+            i18n('dialog.nailgun_unavailability.retry_delay_message',
+              {count: this.state.currentDelay})
           :
             i18n('dialog.nailgun_unavailability.retrying')
           }
@@ -315,7 +330,8 @@ export var DiscardNodeChangesDialog = React.createClass({
     Backbone.sync('update', nodes)
       .then(() => this.props.cluster.fetchRelated('nodes'))
       .done(() => {
-        dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+        dispatcher
+          .trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
         this.state.result.resolve();
         this.close();
       })
@@ -333,8 +349,22 @@ export var DiscardNodeChangesDialog = React.createClass({
   },
   renderFooter() {
     return ([
-      <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
-      <button key='discard' className='btn btn-danger' disabled={this.state.actionInProgress} onClick={this.discardNodeChanges}>{i18n('dialog.discard_changes.discard_button')}</button>
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
+      <button
+        key='discard'
+        className='btn btn-danger'
+        disabled={this.state.actionInProgress}
+        onClick={this.discardNodeChanges}
+      >
+        {i18n('dialog.discard_changes.discard_button')}
+      </button>
     ]);
   }
 });
@@ -342,7 +372,8 @@ export var DiscardNodeChangesDialog = React.createClass({
 export var DeployChangesDialog = React.createClass({
   mixins: [
     dialogMixin,
-    // this is needed to somehow handle the case when verification is in progress and user pressed Deploy
+    // this is needed to somehow handle the case when
+    // verification is in progress and user pressed Deploy
     backboneMixin({
       modelOrCollection(props) {
         return props.cluster.get('tasks');
@@ -400,7 +431,14 @@ export var DeployChangesDialog = React.createClass({
   },
   renderFooter() {
     return ([
-      <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
       <button key='deploy'
         className='btn start-deployment-btn btn-success'
         disabled={this.state.actionInProgress || this.state.isInvalid}
@@ -435,8 +473,22 @@ export var ProvisionVMsDialog = React.createClass({
   },
   renderFooter() {
     return ([
-      <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
-      <button key='provision' className='btn btn-success' disabled={this.state.actionInProgress} onClick={this.startProvisioning}>{i18n('common.start_button')}</button>
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
+      <button
+        key='provision'
+        className='btn btn-success'
+        disabled={this.state.actionInProgress}
+        onClick={this.startProvisioning}
+      >
+        {i18n('common.start_button')}
+      </button>
     ]);
   }
 });
@@ -455,21 +507,38 @@ export var StopDeploymentDialog = React.createClass({
         dispatcher.trigger('deploymentTaskStarted');
       })
       .fail((response) => {
-        this.showError(response, i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
+        this.showError(response,
+          i18n('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning'));
       });
   },
   renderBody() {
     return (
       <div className='text-danger'>
         {this.renderImportantLabel()}
-        {i18n('dialog.stop_deployment.' + (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ? 'provisioning_warning' : 'text'))}
+        {i18n('dialog.stop_deployment.' +
+          (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ?
+            'provisioning_warning' : 'text'))}
       </div>
     );
   },
   renderFooter() {
     return ([
-      <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
-      <button key='deploy' className='btn stop-deployment-btn btn-danger' disabled={this.state.actionInProgress} onClick={this.stopDeployment}>{i18n('common.stop_button')}</button>
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
+      <button
+        key='deploy'
+        className='btn stop-deployment-btn btn-danger'
+        disabled={this.state.actionInProgress}
+        onClick={this.stopDeployment}
+      >
+        {i18n('common.stop_button')}
+      </button>
     ]);
   }
 });
@@ -537,12 +606,21 @@ export var RemoveClusterDialog = React.createClass({
   },
   renderFooter() {
     return ([
-      <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>{i18n('common.cancel_button')}</button>,
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
       <button
         key='remove'
         className='btn btn-danger remove-cluster-btn'
-        disabled={this.state.actionInProgress || this.state.confirmation && _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
-        onClick={this.props.cluster.get('status') == 'new' || this.state.confirmation ? this.removeCluster : this.showConfirmationForm}
+        disabled={this.state.actionInProgress || this.state.confirmation &&
+         _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
+        onClick={this.props.cluster.get('status') == 'new' || this.state.confirmation ?
+         this.removeCluster : this.showConfirmationForm}
       >
         {i18n('common.delete_button')}
       </button>
@@ -602,11 +680,19 @@ export var ResetEnvironmentDialog = React.createClass({
   },
   renderFooter() {
     return ([
-      <button key='cancel' className='btn btn-default' disabled={this.state.actionInProgress} onClick={this.close}>{i18n('common.cancel_button')}</button>,
+      <button
+        key='cancel'
+        className='btn btn-default'
+        disabled={this.state.actionInProgress}
+        onClick={this.close}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
       <button
         key='reset'
         className='btn btn-danger reset-environment-btn'
-        disabled={this.state.actionInProgress || this.state.confirmation && _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
+        disabled={this.state.actionInProgress || this.state.confirmation &&
+         _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
         onClick={this.state.confirmation ? this.resetEnvironment : this.showConfirmationForm}
       >
         {i18n('common.reset_button')}
@@ -634,7 +720,8 @@ export var ShowNodeInfoDialog = React.createClass({
   },
   goToConfigurationScreen(url) {
     this.close();
-    app.navigate('#cluster/' + this.props.node.get('cluster') + '/nodes/' + url + '/' + utils.serializeTabOptions({nodes: this.props.node.id}), {trigger: true});
+    app.navigate('#cluster/' + this.props.node.get('cluster') + '/nodes/' + url + '/' +
+      utils.serializeTabOptions({nodes: this.props.node.id}), {trigger: true});
   },
   showSummary(meta, group) {
     var summary = '';
@@ -647,21 +734,27 @@ export var ShowNodeInfoDialog = React.createClass({
           if (_.isArray(meta.memory.devices) && meta.memory.devices.length) {
             var sizes = _.countBy(_.pluck(meta.memory.devices, 'size'), utils.showMemorySize);
             summary = _.map(_.keys(sizes).sort(), (size) => sizes[size] + ' x ' + size).join(', ');
-            summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' + i18n('dialog.show_node.total');
-          } else summary = utils.showMemorySize(meta.memory.total) + ' ' + i18n('dialog.show_node.total');
+            summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' +
+              i18n('dialog.show_node.total');
+          } else summary = utils.showMemorySize(meta.memory.total) + ' ' +
+            i18n('dialog.show_node.total');
           break;
         case 'disks':
           summary = meta.disks.length + ' ';
           summary += i18n('dialog.show_node.drive', {count: meta.disks.length});
-          summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), (sum, n) => sum + n, 0)) + ' ' + i18n('dialog.show_node.total');
+          summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), (sum, n) =>
+            sum + n, 0)) + ' ' + i18n('dialog.show_node.total');
           break;
         case 'cpu':
           var frequencies = _.countBy(_.pluck(meta.cpu.spec, 'frequency'), utils.showFrequency);
-          summary = _.map(_.keys(frequencies).sort(), (frequency) => frequencies[frequency] + ' x ' + frequency).join(', ');
+          summary = _.map(_.keys(frequencies).sort(), (frequency) => frequencies[frequency] +
+          ' x ' + frequency).join(', ');
           break;
         case 'interfaces':
-          var bandwidths = _.countBy(_.pluck(meta.interfaces, 'current_speed'), utils.showBandwidth);
-          summary = _.map(_.keys(bandwidths).sort(), (bandwidth) => bandwidths[bandwidth] + ' x ' + bandwidth).join(', ');
+          var bandwidths = _.countBy(_.pluck(meta.interfaces, 'current_speed'),
+            utils.showBandwidth);
+          summary = _.map(_.keys(bandwidths).sort(), (bandwidth) => bandwidths[bandwidth] +
+          ' x ' + bandwidth).join(', ');
           break;
       }
     } catch (ignore) {}
@@ -714,8 +807,10 @@ export var ShowNodeInfoDialog = React.createClass({
   },
   assignAccordionEvents() {
     $('.panel-collapse', ReactDOM.findDOMNode(this))
-      .on('show.bs.collapse', (e) => $(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-plus').addClass('glyphicon-minus'))
-      .on('hide.bs.collapse', (e) => $(e.currentTarget).siblings('.panel-heading').find('i').removeClass('glyphicon-minus').addClass('glyphicon-plus'))
+      .on('show.bs.collapse', (e) => $(e.currentTarget).siblings('.panel-heading').find('i')
+        .removeClass('glyphicon-plus').addClass('glyphicon-minus'))
+      .on('hide.bs.collapse', (e) => $(e.currentTarget).siblings('.panel-heading').find('i')
+        .removeClass('glyphicon-minus').addClass('glyphicon-plus'))
       .on('hidden.bs.collapse', (e) => e.stopPropagation());
   },
   toggle(groupIndex) {
@@ -777,7 +872,8 @@ export var ShowNodeInfoDialog = React.createClass({
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
     var sortOrder = {
       disks: ['name', 'model', 'size'],
-      interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed', 'driver', 'bus_info']
+      interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed',
+        'driver', 'bus_info']
     };
     if (this.state.VMsConf) groups.push('config');
 
@@ -787,17 +883,26 @@ export var ShowNodeInfoDialog = React.createClass({
           <div className='col-xs-5'><div className='node-image-outline' /></div>
           <div className='col-xs-7 node-summary'>
             {this.props.cluster &&
-              <div><strong>{i18n('dialog.show_node.cluster')}: </strong>{this.props.cluster.get('name')}</div>
+              <div><strong>{i18n('dialog.show_node.cluster')}: </strong>
+                {this.props.cluster.get('name')}
+              </div>
             }
-            <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>{node.get('manufacturer') || i18n('common.not_available')}</div>
+            <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>
+              {node.get('manufacturer') || i18n('common.not_available')}
+            </div>
             {this.props.nodeNetworkGroup &&
               <div>
                 <strong>{i18n('dialog.show_node.node_network_group')}: </strong>
                 {this.props.nodeNetworkGroup.get('name')}
               </div>
             }
-            <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>{node.get('mac') || i18n('common.not_available')}</div>
-            <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>{(node.get('meta').system || {}).fqdn || node.get('fqdn') || i18n('common.not_available')}</div>
+            <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>
+              {node.get('mac') || i18n('common.not_available')}
+            </div>
+            <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>
+              {(node.get('meta').system || {}).fqdn || node.get('fqdn') ||
+                i18n('common.not_available')}
+            </div>
             <div className='change-hostname'>
               <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
               {this.state.isRenaming ?
@@ -832,28 +937,52 @@ export var ShowNodeInfoDialog = React.createClass({
           {_.map(groups, (group, groupIndex) => {
             var groupEntries = meta[group];
             var subEntries = [];
-            if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name');
-            if (_.isPlainObject(groupEntries)) subEntries = _.find(_.values(groupEntries), _.isArray);
+            if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries,
+              'name');
+            if (_.isPlainObject(groupEntries)) subEntries = _.find(_.values(groupEntries),
+              _.isArray);
             return (
               <div className='panel panel-default' key={group}>
-                <div className='panel-heading' role='tab' id={'heading' + group} onClick={this.toggle.bind(this, groupIndex)}>
+                <div
+                  className='panel-heading'
+                  role='tab'
+                  id={'heading' + group}
+                  onClick={this.toggle.bind(this, groupIndex)}
+                >
                   <div className='panel-title'>
-                    <div data-parent='#accordion' aria-expanded='true' aria-controls={'body' + group}>
-                      <strong>{i18n('node_details.' + group, {defaultValue: group})}</strong> {this.showSummary(meta, group)}
+                    <div
+                      data-parent='#accordion'
+                      aria-expanded='true'
+                      aria-controls={'body' + group}
+                    >
+                      <strong>{i18n('node_details.' + group, {defaultValue: group})}</strong>
+                        {this.showSummary(meta, group)}
                       <i className='glyphicon glyphicon-plus pull-right' />
                     </div>
                   </div>
                 </div>
-                <div className='panel-collapse collapse' role='tabpanel' aria-labelledby={'heading' + group} ref={'togglable_' + groupIndex}>
+                <div
+                  className='panel-collapse collapse'
+                  role='tabpanel'
+                  aria-labelledby={'heading' + group}
+                  ref={'togglable_' + groupIndex}
+                >
                   <div className='panel-body enable-selection'>
                     {_.isArray(groupEntries) &&
                       <div>
                         {_.map(groupEntries, (entry, entryIndex) => {
                           return (
                             <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
-                              {_.map(utils.sortEntryProperties(entry, sortOrder[group]), (propertyName) => {
-                                if (!_.isPlainObject(entry[propertyName]) && !_.isArray(entry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
-                              })}
+                              {_.map(utils.sortEntryProperties(entry, sortOrder[group]),
+                                (propertyName) => {
+                                  if (!_.isPlainObject(entry[propertyName]) &&
+                                    !_.isArray(entry[propertyName])) {
+                                    return this.renderNodeInfo(propertyName,
+                                      this.showPropertyValue(group, propertyName,
+                                        entry[propertyName]));
+                                  }
+                                }
+                              )}
                             </div>
                           );
                         })}
@@ -862,15 +991,22 @@ export var ShowNodeInfoDialog = React.createClass({
                     {_.isPlainObject(groupEntries) &&
                       <div>
                         {_.map(groupEntries, (propertyValue, propertyName) => {
-                          if (!_.isPlainObject(propertyValue) && !_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
+                          if (!_.isPlainObject(propertyValue) && !_.isArray(propertyValue) &&
+                            !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName,
+                              this.showPropertyValue(group, propertyName, propertyValue));
                         })}
                         {!_.isEmpty(subEntries) &&
                           <div>
                             {_.map(subEntries, (subentry, subentrysIndex) => {
                               return (
-                                <div className='nested-object' key={'subentries_' + groupIndex + subentrysIndex}>
+                                <div
+                                  className='nested-object'
+                                  key={'subentries_' + groupIndex + subentrysIndex}
+                                >
                                   {_.map(utils.sortEntryProperties(subentry), (propertyName) => {
-                                    if (!_.isPlainObject(subentry[propertyName]) && !_.isArray(subentry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
+                                    return this.renderNodeInfo(propertyName,
+                                      this.showPropertyValue(group, propertyName,
+                                        subentry[propertyName]));
                                   })}
                                 </div>
                               );
@@ -879,7 +1015,8 @@ export var ShowNodeInfoDialog = React.createClass({
                         }
                       </div>
                     }
-                    {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries) && !_.isUndefined(groupEntries)) &&
+                    {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries) &&
+                      !_.isUndefined(groupEntries)) &&
                       <div>{groupEntries}</div>
                     }
                     {group == 'config' &&
@@ -895,7 +1032,8 @@ export var ShowNodeInfoDialog = React.createClass({
                         <button
                           className='btn btn-success'
                           onClick={this.saveVMsConf}
-                          disabled={this.state.VMsConfValidationError || this.state.actionInProgress}
+                          disabled={this.state.VMsConfValidationError ||
+                            this.state.actionInProgress}
                         >
                           {i18n('common.save_settings_button')}
                         </button>
@@ -915,16 +1053,29 @@ export var ShowNodeInfoDialog = React.createClass({
       <div>
         {this.props.renderActionButtons && this.props.node.get('cluster') &&
           <div className='btn-group' role='group'>
-            <button className='btn btn-default btn-edit-disks' onClick={_.partial(this.goToConfigurationScreen, 'disks')}>
-              {i18n('dialog.show_node.disk_configuration' + (this.props.node.areDisksConfigurable() ? '_action' : ''))}
+            <button
+              className='btn btn-default btn-edit-disks'
+              onClick={_.partial(this.goToConfigurationScreen, 'disks')}
+            >
+              {i18n('dialog.show_node.disk_configuration' +
+                (this.props.node.areDisksConfigurable() ? '_action' : ''))}
             </button>
-            <button className='btn btn-default btn-edit-networks' onClick={_.partial(this.goToConfigurationScreen, 'interfaces')}>
-              {i18n('dialog.show_node.network_configuration' + (this.props.node.areInterfacesConfigurable() ? '_action' : ''))}
+            <button
+              className='btn btn-default btn-edit-networks'
+              onClick={_.partial(this.goToConfigurationScreen, 'interfaces')}
+            >
+              {i18n('dialog.show_node.network_configuration' +
+                (this.props.node.areInterfacesConfigurable() ? '_action' : ''))}
             </button>
           </div>
         }
         <div className='btn-group' role='group'>
-          <button className='btn btn-default' onClick={this.close}>{i18n('common.close_button')}</button>
+          <button
+            className='btn btn-default'
+            onClick={this.close}
+          >
+            {i18n('common.close_button')}
+          </button>
         </div>
       </div>
     );
@@ -932,7 +1083,9 @@ export var ShowNodeInfoDialog = React.createClass({
   renderNodeInfo(name, value) {
     return (
       <div key={name + value} className='node-details-row'>
-        <label>{i18n('dialog.show_node.' + name, {defaultValue: this.showPropertyName(name)})}</label>
+        <label>
+          {i18n('dialog.show_node.' + name, {defaultValue: this.showPropertyName(name)})}
+        </label>
         {value}
       </div>
     );
@@ -1042,7 +1195,8 @@ export var DeleteNodesDialog = React.createClass({
         {this.renderImportantLabel()}
         {i18n(ns + 'common_message', {count: this.props.nodes.length})}
         <br/>
-        {!!notDeployedNodesAmount && i18n(ns + 'not_deployed_nodes_message', {count: notDeployedNodesAmount})}
+        {!!notDeployedNodesAmount && i18n(ns + 'not_deployed_nodes_message',
+          {count: notDeployedNodesAmount})}
         {' '}
         {!!deployedNodesAmount && i18n(ns + 'deployed_nodes_message', {count: deployedNodesAmount})}
       </div>
@@ -1050,8 +1204,18 @@ export var DeleteNodesDialog = React.createClass({
   },
   renderFooter() {
     return [
-      <button key='cancel' className='btn btn-default' onClick={this.close}>{i18n('common.cancel_button')}</button>,
-      <button key='delete' className='btn btn-danger btn-delete' onClick={this.deleteNodes} disabled={this.state.actionInProgress}>{i18n('common.delete_button')}</button>
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}>{i18n('common.cancel_button')}
+      </button>,
+      <button
+        key='delete'
+        className='btn btn-danger btn-delete'
+        onClick={this.deleteNodes} disabled={this.state.actionInProgress}
+      >
+          {i18n('common.delete_button')}
+      </button>
     ];
   },
   deleteNodes() {
@@ -1075,12 +1239,14 @@ export var DeleteNodesDialog = React.createClass({
         return this.props.cluster.fetchRelated('nodes');
       })
       .done(() => {
-        dispatcher.trigger('updateNodeStats networkConfigurationUpdated labelsConfigurationUpdated');
+        dispatcher.trigger('updateNodeStats networkConfigurationUpdated ' +
+          'labelsConfigurationUpdated');
         this.state.result.resolve();
         this.close();
       })
       .fail((response) => {
-        this.showError(response, i18n('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning'));
+        this.showError(response, i18n('cluster_page.nodes_tab.node_deletion_error.' +
+          'node_deletion_warning'));
       });
   }
 });
@@ -1106,7 +1272,8 @@ export var ChangePasswordDialog = React.createClass({
   },
   getError(name) {
     var ns = 'dialog.change_password.';
-    if (name == 'currentPassword' && this.state.validationError) return i18n(ns + 'wrong_current_password');
+    if (name == 'currentPassword' && this.state.validationError) return i18n(ns +
+      'wrong_current_password');
     if (this.state.newPassword != this.state.confirmationPassword) {
       if (name == 'confirmationPassword') return i18n(ns + 'new_password_mismatch');
       if (name == 'newPassword') return '';
@@ -1140,7 +1307,12 @@ export var ChangePasswordDialog = React.createClass({
   },
   renderFooter() {
     return [
-      <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
         {i18n('common.cancel_button')}
       </button>,
       <button key='apply' className='btn btn-success' onClick={this.changePassword}
@@ -1177,7 +1349,8 @@ export var ChangePasswordDialog = React.createClass({
       this.setState({actionInProgress: true});
       keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
         .done(() => {
-          dispatcher.trigger(this.state.newPassword == keystoneClient.DEFAULT_PASSWORD ? 'showDefaultPasswordWarning' : 'hideDefaultPasswordWarning');
+          dispatcher.trigger(this.state.newPassword == keystoneClient.DEFAULT_PASSWORD ?
+            'showDefaultPasswordWarning' : 'hideDefaultPasswordWarning');
           app.user.set({token: keystoneClient.token});
           this.close();
         })
@@ -1225,7 +1398,8 @@ export var RegistrationDialog = React.createClass({
   onChange(inputName, value) {
     var registrationForm = this.props.registrationForm;
     var name = registrationForm.makePath('credentials', inputName, 'value');
-    if (registrationForm.validationError) delete registrationForm.validationError['credentials.' + inputName];
+    if (registrationForm.validationError) delete registrationForm.validationError['credentials.' +
+      inputName];
     registrationForm.set(name, value);
   },
   composeOptions(values) {
@@ -1238,14 +1412,21 @@ export var RegistrationDialog = React.createClass({
     });
   },
   getAgreementLink(link) {
-    return (<span>{i18n('dialog.registration.i_agree')} <a href={link} target='_blank'>{i18n('dialog.registration.terms_and_conditions')}</a></span>);
+    return (
+      <span>
+        {i18n('dialog.registration.i_agree')}
+        <a href={link} target='_blank'>
+          {i18n('dialog.registration.terms_and_conditions')}
+        </a>
+      </span>);
   },
   validateRegistrationForm() {
     var registrationForm = this.props.registrationForm;
     var isValid = registrationForm.isValid();
     if (!registrationForm.attributes.credentials.agree.value) {
       if (!registrationForm.validationError) registrationForm.validationError = {};
-      registrationForm.validationError['credentials.agree'] = i18n('dialog.registration.agree_error');
+      registrationForm.validationError['credentials.agree'] =
+        i18n('dialog.registration.agree_error');
       isValid = false;
     }
     this.setState({
@@ -1263,7 +1444,8 @@ export var RegistrationDialog = React.createClass({
 
         var collector = (path) => {
           return (name) => {
-            this.props.settings.set(this.props.settings.makePath(path, name, 'value'), response[name]);
+            this.props.settings.set(this.props.settings.makePath(path, name, 'value'),
+              response[name]);
           };
         };
         _.each(['company', 'name', 'email'], collector('statistics'));
@@ -1346,7 +1528,12 @@ export var RegistrationDialog = React.createClass({
       </button>
     ];
     if (!this.state.loading) buttons.push(
-      <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.connectionError} onClick={this.validateRegistrationForm}>
+      <button
+        key='apply'
+        className='btn btn-success'
+        disabled={this.state.actionInProgress || this.state.connectionError}
+        onClick={this.validateRegistrationForm}
+      >
         {i18n('welcome_page.register.create_account')}
       </button>
     );
@@ -1386,7 +1573,8 @@ export var RetrievePasswordDialog = React.createClass({
   },
   onChange(inputName, value) {
     var remoteRetrievePasswordForm = this.props.remoteRetrievePasswordForm;
-    if (remoteRetrievePasswordForm.validationError) delete remoteRetrievePasswordForm.validationError['credentials.email'];
+    if (remoteRetrievePasswordForm.validationError) delete remoteRetrievePasswordForm
+      .validationError['credentials.email'];
     remoteRetrievePasswordForm.set('credentials.email.value', value);
   },
   retrievePassword() {
@@ -1411,7 +1599,8 @@ export var RetrievePasswordDialog = React.createClass({
     var error = this.state.error;
     var actionInProgress = this.state.actionInProgress;
     var input = (remoteRetrievePasswordForm.get('credentials') || {}).email;
-    var inputError = remoteRetrievePasswordForm ? (remoteRetrievePasswordForm.validationError || {})['credentials.email'] : null;
+    var inputError = remoteRetrievePasswordForm ? (remoteRetrievePasswordForm.validationError ||
+      {})['credentials.email'] : null;
     return (
       <div className='retrieve-password-content'>
         {!this.state.passwordSent ?
@@ -1457,7 +1646,12 @@ export var RetrievePasswordDialog = React.createClass({
       </button>
     ];
     if (!this.state.loading) buttons.push(
-      <button key='apply' className='btn btn-success' disabled={this.state.actionInProgress || this.state.connectionError} onClick={this.retrievePassword}>
+      <button
+        key='apply'
+        className='btn btn-success'
+        disabled={this.state.actionInProgress || this.state.connectionError}
+        onClick={this.retrievePassword}
+      >
         {i18n('dialog.retrieve_password.send_new_password')}
       </button>
     );
@@ -1498,10 +1692,20 @@ export var CreateNodeNetworkGroupDialog = React.createClass({
   },
   renderFooter() {
     return [
-      <button key='cancel' className='btn btn-default' onClick={this.close} disabled={this.state.actionInProgress}>
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
         {i18n('common.cancel_button')}
       </button>,
-      <button key='apply' className='btn btn-success' onClick={this.createNodeNetworkGroup} disabled={this.state.actionInProgress || this.state.error}>
+      <button
+        key='apply'
+        className='btn btn-success'
+        onClick={this.createNodeNetworkGroup}
+        disabled={this.state.actionInProgress || this.state.error}
+      >
         {i18n(this.props.ns + 'add')}
       </button>
     ];
@@ -1556,7 +1760,8 @@ export var RemoveNodeNetworkGroupDialog = React.createClass({
       <div>
         <div className='text-danger'>
           {this.renderImportantLabel()}
-          {this.props.showUnsavedChangesWarning && (i18n('dialog.remove_node_network_group.unsaved_changes_alert') + ' ')}
+          {this.props.showUnsavedChangesWarning &&
+            (i18n('dialog.remove_node_network_group.unsaved_changes_alert') + ' ')}
           {i18n('dialog.remove_node_network_group.confirmation')}
         </div>
       </div>

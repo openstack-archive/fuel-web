@@ -18,6 +18,7 @@ from copy import copy
 from copy import deepcopy
 from mock import Mock
 from mock import patch
+import yaml
 
 from nailgun.db.sqlalchemy.models.mutable import Mutable
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
@@ -177,6 +178,9 @@ class TestMutableDict(TestMutableDictBase):
     def test_popitem(self):
         self._check('popitem')
         self._check_failure(KeyError, 'popitem')
+
+    def test_yaml_safe_dump(self):
+        yaml.safe_dump(self.mutable_obj)
 
 
 @patch('nailgun.db.sqlalchemy.models.mutable.MutableDict.changed')
@@ -381,6 +385,9 @@ class TestMutableListIntegration(TestMutableListBase):
         lst[0] = 'new_element'
         self.assertEqual(clone[0][0], 'element1')
         self.assertEqual(self.mutable_obj[0][0], 'new_element')
+
+    def test_yaml_safe_dump(self, _):
+        yaml.safe_dump(self.mutable_obj)
 
 
 class TestComplexDataStructures(BaseUnitTest):

@@ -86,6 +86,7 @@ define([
           }
           return true;
         })
+        .end()
         .waitForCssSelector('.dashboard-tab', 1000);
     }
   };

@@ -84,7 +84,7 @@ define([
             .assertElementAppears(searchInputSelector, 200, 'Search input appears on the page')
             .setInputValue(searchInputSelector, 'Super')
             // need to wait debounced search input
-            .sleep(200)
+            .sleep(300)
             .assertElementsExist('.node-list .node', 3, 'Search was successfull')
             .clickByCssSelector('.page-title')
             .assertElementNotExists(searchButtonSelector, 'Active search control remains open when clicking outside the input')

@@ -336,6 +336,18 @@ LOGS:
     <<: *install_log_group
     path: "bootstrap/fuel-agent.log"
 # Bootstrap node logs.
+  - id: 'bootstrap/agent'
+    name: "agent"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *bootstrap_log_group
+    path: 'bootstrap/agent.log'
+  - id: 'bootstrap/auth'
+    name: "auth"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *bootstrap_log_group
+    path: 'bootstrap/auth.log'
   - id: 'bootstrap/dmesg'
     name: "dmesg"
     <<: *remote_log_type
@@ -360,12 +372,12 @@ LOGS:
     <<: *remote_syslog_log_format
     <<: *bootstrap_log_group
     path: 'bootstrap/mcollective.log'
-  - id: 'bootstrap/agent'
-    name: "agent"
+  - id: 'bootstrap/syslog'
+    name: "syslog"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *bootstrap_log_group
-    path: 'bootstrap/agent.log'
+    path: 'bootstrap/syslog.log'
 # Openstack logs
   - id: 'os/nova-api'
     name: "nova-api"

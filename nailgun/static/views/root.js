@@ -68,10 +68,18 @@ var RootComponent = React.createClass({
       <div id='content-wrapper'>
         <div className={utils.classNames(layoutClasses)}>
           {!Page.hiddenLayout && [
-            <Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement} {...this.props} />,
+            <Navbar key='navbar' ref='navbar' activeElement={Page.navbarActiveElement}
+              {...this.props}
+            />,
             <Breadcrumbs key='breadcrumbs' ref='breadcrumbs' {...this.state} />,
-            showDefaultPasswordWarning && <DefaultPasswordWarning key='password-warning' close={this.hideDefaultPasswordWarning} />,
-            fuelSettings.get('bootstrap.error.value') && <BootstrapError key='bootstrap-error' text={fuelSettings.get('bootstrap.error.value')} />
+            showDefaultPasswordWarning &&
+              <DefaultPasswordWarning key='password-warning'
+                close={this.hideDefaultPasswordWarning}
+              />,
+            fuelSettings.get('bootstrap.error.value') &&
+              <BootstrapError key='bootstrap-error'
+                text={fuelSettings.get('bootstrap.error.value')}
+              />
           ]}
           <div id='content'>
             <Page ref='page' {...this.state.pageOptions} />

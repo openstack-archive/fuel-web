@@ -26,12 +26,14 @@ import {ErrorDialog} from 'views/dialogs';
 import models from 'models';
 
 var utils = {
+  /*eslint-disable max-len*/
   regexes: {
     url: /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?[\w\/_\-\.&%]*)?(#[\w\/_\-\.&%]*)?)?)?)/,
     ip: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
     mac: /^([0-9a-f]{1,2}[\.:-]){5}([0-9a-f]{1,2})$/,
     cidr: /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/
   },
+  /*eslint-enable max-len*/
   serializeTabOptions(options) {
     return _.map(options, (value, key) => key + ':' + value).join(';');
   },
@@ -55,14 +57,16 @@ var utils = {
     return '<a target="_blank" href="' + url + '">' + url + '</a>';
   },
   urlify(text) {
-    return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'), utils.composeLink);
+    return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'),
+      utils.composeLink);
   },
   composeList(value) {
     return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
   },
   // FIXME(vkramskikh): moved here from healthcheck_tab to make testable
   highlightTestStep(text, step) {
-    return text.replace(new RegExp('(^|\\s*)(' + step + '\\.[\\s\\S]*?)(\\s*\\d+\\.|$)'), '$1<b>$2</b>$3');
+    return text.replace(new RegExp('(^|\\s*)(' + step + '\\.[\\s\\S]*?)(\\s*\\d+\\.|$)'),
+      '$1<b>$2</b>$3');
   },
   classNames: classNames,
   parseModelPath(path, models) {
@@ -129,7 +133,8 @@ var utils = {
         break;
       }
     }
-    return (result ? result.toFixed(1) : result) + ' ' + i18n('common.size.' + unit, {count: result});
+    return (result ? result.toFixed(1) : result) + ' ' + i18n('common.size.' + unit,
+        {count: result});
   },
   showMemorySize(bytes) {
     return utils.showSize(bytes, 1024);
@@ -142,7 +147,8 @@ var utils = {
     return Math.pow(2, 32 - parseInt(_.last(cidr.split('/')), 10));
   },
   formatNumber(n) {
-    return String(n).replace(/\d/g, (c, i, a) => i > 0 && c !== '.' && (a.length - i) % 3 === 0 ? ',' + c : c);
+    return String(n).replace(/\d/g, (c, i, a) => i > 0 && c !== '.' &&
+      (a.length - i) % 3 === 0 ? ',' + c : c);
   },
   floor(n, decimals) {
     return Math.floor(n * Math.pow(10, decimals)) / Math.pow(10, decimals);
@@ -152,7 +158,8 @@ var utils = {
   },
   validateVlan(vlan, forbiddenVlans, field, disallowNullValue) {
     var error = {};
-    if ((_.isNull(vlan) && disallowNullValue) || (!_.isNull(vlan) && (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094))) {
+    if ((_.isNull(vlan) && disallowNullValue) || (!_.isNull(vlan) &&
+        (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094))) {
       error[field] = i18n('cluster_page.network_tab.validation.invalid_vlan');
       return error;
     }
@@ -221,7 +228,8 @@ var utils = {
             } else if (existingRanges.length) {
               var intersection = utils.checkIPRangesIntersection(range, existingRanges);
               if (intersection) {
-                error.start = error.end = warnings.IP_RANGES_INTERSECTION + intersection.join(' - ');
+                error.start = error.end = warnings.IP_RANGES_INTERSECTION +
+                  intersection.join(' - ');
               }
             }
           }
@@ -243,13 +251,15 @@ var utils = {
   checkIPRangesIntersection([startIP, endIP], existingRanges) {
     var startIPInt = IP.toLong(startIP);
     var endIPInt = IP.toLong(endIP);
-    return _.find(existingRanges, ([ip1, ip2]) => IP.toLong(ip2) >= startIPInt && IP.toLong(ip1) <= endIPInt);
+    return _.find(existingRanges, ([ip1, ip2]) => IP.toLong(ip2) >= startIPInt &&
+      IP.toLong(ip1) <= endIPInt);
   },
   validateIpCorrespondsToCIDR(cidr, ip) {
     if (!cidr) return true;
     var networkData = IP.cidrSubnet(cidr);
     var ipInt = IP.toLong(ip);
-    return ipInt >= IP.toLong(networkData.firstAddress) && ipInt <= IP.toLong(networkData.lastAddress);
+    return ipInt >= IP.toLong(networkData.firstAddress) &&
+      ipInt <= IP.toLong(networkData.lastAddress);
   },
   validateVlanRange(vlanStart, vlanEnd, vlan) {
     return vlan >= vlanStart && vlan <= vlanEnd;

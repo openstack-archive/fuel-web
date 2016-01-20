@@ -95,14 +95,14 @@ var HealthcheckTabContent = React.createClass({
     return {
       actionInProgress: false,
       credentialsVisible: null,
-      credentials: _.transform(this.props.cluster.get('settings').get('access'), (result, value, key) => {
-        result[key] = value.value;
-      })
+      credentials: _.transform(this.props.cluster.get('settings').get('access'),
+        (result, value, key) => result[key] = value.value)
     };
   },
   isLocked() {
     var cluster = this.props.cluster;
-    return cluster.get('status') != 'operational' || !!cluster.task({group: 'deployment', active: true});
+    return cluster.get('status') != 'operational' || !!cluster.task({group: 'deployment',
+      active: true});
   },
   getNumberOfCheckedTests() {
     return this.props.tests.where({checked: true}).length;
@@ -248,14 +248,17 @@ var HealthcheckTabContent = React.createClass({
         }
         <div>
           {(this.props.cluster.get('status') == 'new') &&
-            <div className='alert alert-warning'>{i18n('cluster_page.healthcheck_tab.deploy_alert')}</div>
+            <div className='alert alert-warning'>
+              {i18n('cluster_page.healthcheck_tab.deploy_alert')}
+            </div>
           }
           <div key='testsets'>
             {this.props.testsets.map((testset) => {
               return <TestSet
                 key={testset.id}
                 testset={testset}
-                testrun={this.props.testruns.findWhere({testset: testset.id}) || new models.TestRun({testset: testset.id})}
+                testrun={this.props.testruns.findWhere({testset: testset.id}) ||
+                 new models.TestRun({testset: testset.id})}
                 tests={new Backbone.Collection(this.props.tests.where({testset: testset.id}))}
                 disabled={disabledState || hasRunningTests}
               />;
@@ -312,7 +315,8 @@ var TestSet = React.createClass({
     this.props.tests.invoke('on', 'change:checked', this.updateTestsetCheckbox, this);
   },
   updateTestsetCheckbox() {
-    this.props.testset.set('checked', this.props.tests.where({checked: true}).length == this.props.tests.length);
+    this.props.testset.set('checked', this.props.tests.where({checked: true}).length ==
+      this.props.tests.length);
   },
   render() {
     var classes = {
@@ -434,7 +438,8 @@ var Test = React.createClass({
         </td>
         <td className='healthcheck-col-status'>
           <div className={currentStatusClassName}>
-            {iconClasses[status] ? <i className={iconClasses[status]} /> : String.fromCharCode(0x2014)}
+            {iconClasses[status] ? <i className={iconClasses[status]} /> :
+              String.fromCharCode(0x2014)}
           </div>
         </td>
       </tr>

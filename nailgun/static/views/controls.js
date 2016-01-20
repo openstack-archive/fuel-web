@@ -30,7 +30,8 @@ import {outerClickMixin} from 'component_mixins';
 
 export var Input = React.createClass({
   propTypes: {
-    type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio', 'select', 'hidden', 'number', 'range', 'file']).isRequired,
+    type: React.PropTypes.oneOf(['text', 'password', 'textarea', 'checkbox', 'radio',
+      'select', 'hidden', 'number', 'range', 'file']).isRequired,
     name: React.PropTypes.node,
     label: React.PropTypes.node,
     debounce: React.PropTypes.bool,
@@ -147,19 +148,25 @@ export var Input = React.createClass({
               className='form-control file-name'
               type='text'
               placeholder={i18n('file.placeholder')}
-              value={this.state.fileName && '[' + utils.showSize(this.state.content.length) + '] ' + this.state.fileName}
+              value={this.state.fileName && '[' + utils.showSize(this.state.content.length) + '] ' +
+               this.state.fileName}
               onClick={this.pickFile}
               disabled={this.props.disabled}
               readOnly
             />
-            <div className='input-group-addon' onClick={this.state.fileName ? this.removeFile : this.pickFile}>
-              <i className={this.state.fileName && !this.props.disabled ? 'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'} />
+            <div className='input-group-addon' onClick={this.state.fileName ? this.removeFile :
+             this.pickFile}>
+              <i className={this.state.fileName && !this.props.disabled ?
+                'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'}
+              />
             </div>
           </div>
         }
         {this.props.toggleable &&
           <div className='input-group-addon' onClick={this.togglePassword}>
-            <i className={this.state.visible ? 'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'} />
+            <i className={this.state.visible ? 'glyphicon glyphicon-eye-close' :
+              'glyphicon glyphicon-eye-open'}
+            />
           </div>
         }
         {isCheckboxOrRadio && <span>&nbsp;</span>}
@@ -182,7 +189,8 @@ export var Input = React.createClass({
     );
   },
   renderDescription() {
-    var text = !_.isUndefined(this.props.error) && !_.isNull(this.props.error) ? this.props.error : this.props.description || '';
+    var text = !_.isUndefined(this.props.error) && !_.isNull(this.props.error) ? this.props.error :
+      this.props.description || '';
     return <span key='description' className='help-block'>{text}</span>;
   },
   renderWrapper(children) {
@@ -372,7 +380,8 @@ export var Tooltip = React.createClass({
     $(ReactDOM.findDOMNode(this.refs.tooltip)).tooltip('destroy');
   },
   render() {
-    if (!this.props.wrap) return React.cloneElement(React.Children.only(this.props.children), {ref: 'tooltip'});
+    if (!this.props.wrap) return React.cloneElement(React.Children.only(this.props.children),
+      {ref: 'tooltip'});
     return (
       <div className={this.props.wrapperClassName} ref='tooltip'>
         {this.props.children}

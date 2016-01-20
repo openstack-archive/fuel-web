@@ -90,7 +90,8 @@ export class ModelPathWrapper {
     var result = this.modelPath.get();
     if (_.isUndefined(result)) {
       if (expression.strict) {
-        throw new TypeError('Value of ' + this.modelPathText + ' is undefined. Set options.strict to false to allow undefined values.');
+        throw new TypeError('Value of ' + this.modelPathText +
+          ' is undefined. Set options.strict to false to allow undefined values.');
       }
       result = null;
     }

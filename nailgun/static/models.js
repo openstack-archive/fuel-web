@@ -72,11 +72,13 @@ _.each(collectionMethods, (method) => {
 });
 
 var BaseModel = models.BaseModel = Backbone.Model.extend(superMixin);
-var BaseCollection = models.BaseCollection = Backbone.Collection.extend(collectionMixin).extend(superMixin);
+var BaseCollection = models.BaseCollection = Backbone.Collection.extend(collectionMixin)
+  .extend(superMixin);
 
 var cacheMixin = {
   fetch(options) {
-    if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {
+    if (this.cacheFor && options && options.cache && this.lastSyncTime &&
+      (this.cacheFor > (new Date() - this.lastSyncTime))) {
       return $.Deferred().resolve();
     }
     return this._super('fetch', arguments);
@@ -98,7 +100,8 @@ models.cacheMixin = cacheMixin;
 
 var restrictionMixin = models.restrictionMixin = {
   checkRestrictions(models, action, setting) {
-    var restrictions = _.map(setting ? setting.restrictions : this.get('restrictions'), utils.expandRestriction);
+    var restrictions = _.map(setting ? setting.restrictions :
+      this.get('restrictions'), utils.expandRestriction);
     if (action) {
       restrictions = _.where(restrictions, {action: action});
     }
@@ -125,7 +128,8 @@ var restrictionMixin = models.restrictionMixin = {
      *      and validate current model checking the possibility of adding/removing node
      *      So if max = 1 and we have 1 node then:
      *        - the model is valid as is (return true) -- case for checkLimitIsReached = true
-     *        - there can be no more nodes added (return false) -- case for checkLimitIsReached = false
+     *        - there can be no more nodes added (return false)
+     *        -- case for checkLimitIsReached = false
      *  limitType -- array of limit types to check. Possible choices are 'min', 'max', 'recommended'
     **/
 
@@ -177,14 +181,16 @@ var restrictionMixin = models.restrictionMixin = {
           comparator = (a, b) => a < b;
       }
       limitValue = parseInt(evaluateExpressionHelper(obj[limitType], models).value, 10);
-      // Update limitValue with overrides, this way at the end we have a flattened limitValues with overrides having priority
+      // Update limitValue with overrides, this way at the end we have a flattened limitValues with
+      // overrides having priority
       limitValues[limitType] = limitValue;
       checkedLimitTypes[limitType] = true;
       if (comparator(count, limitValue)) {
         return {
           type: limitType,
           value: limitValue,
-          message: obj.message || i18n('common.role_limits.' + limitType, {limitValue: limitValue, count: count, roleName: label})
+          message: obj.message || i18n('common.role_limits.' + limitType,
+            {limitValue: limitValue, count: count, roleName: label})
         };
       }
     };
@@ -291,7 +297,8 @@ models.Roles = BaseCollection.extend(restrictionMixin).extend({
 
       _.each(role.conflicts, (conflictRoleName) => {
         var conflictingRole = this.findWhere({name: conflictRoleName});
-        if (conflictingRole) conflictingRole.conflicts = _.uniq(_.union(conflictingRole.conflicts || [], [roleName]));
+        if (conflictingRole) conflictingRole.conflicts = _.uniq(_.union(conflictingRole.conflicts ||
+          [], [roleName]));
       });
     });
   }
@@ -343,7 +350,8 @@ models.Cluster = BaseModel.extend({
     return this.get('tasks') && this.get('tasks').filterTasks(filters);
   },
   needsRedeployment() {
-    return this.get('nodes').any({pending_addition: false, status: 'error'}) && this.get('status') != 'update_error';
+    return this.get('nodes').any({pending_addition: false, status: 'error'}) &&
+      this.get('status') != 'update_error';
   },
   fetchRelated(related, options) {
     return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
@@ -354,7 +362,8 @@ models.Cluster = BaseModel.extend({
   isDeploymentPossible() {
     var nodes = this.get('nodes');
     return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
-      (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', active: true});
+      (nodes.hasChanges() || this.needsRedeployment()) &&
+      !this.task({group: 'deployment', active: true});
   }
 });
 
@@ -388,7 +397,8 @@ models.Node = BaseModel.extend({
       } else if (resourceName == 'ht_cores') {
         resource = this.get('meta').cpu.total;
       } else if (resourceName == 'hdd') {
-        resource = _.reduce(this.get('meta').disks, (hdd, disk) => _.isNumber(disk.size) ? hdd + disk.size : hdd, 0);
+        resource = _.reduce(this.get('meta').disks, (hdd, disk) => _.isNumber(disk.size) ?
+          hdd + disk.size : hdd, 0);
       } else if (resourceName == 'ram') {
         resource = this.get('meta').memory.total;
       } else if (resourceName == 'disks') {
@@ -412,7 +422,8 @@ models.Node = BaseModel.extend({
     return this.get('status') != 'removing';
   },
   hasRole(role, onlyDeployedRoles) {
-    var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
+    var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'),
+      this.get('pending_roles'));
     return _.contains(roles, role);
   },
   hasChanges() {
@@ -505,7 +516,8 @@ models.Nodes = BaseCollection.extend({
     var roles = _.union(this.at(0).get('roles'), this.at(0).get('pending_roles'));
     var disks = this.at(0).resource('disks');
     return !this.any((node) => {
-      var roleConflict = _.difference(roles, _.union(node.get('roles'), node.get('pending_roles'))).length;
+      var roleConflict = _.difference(roles, _.union(node.get('roles'),
+        node.get('pending_roles'))).length;
       return roleConflict || !_.isEqual(disks, node.resource('disks'));
     });
   },
@@ -556,10 +568,12 @@ models.Task = BaseModel.extend({
   match(filters) {
     filters = filters || {};
     if (!_.isEmpty(filters)) {
-      if ((filters.group || filters.name) && !_.contains(this.extendGroups(filters), this.get('name'))) {
+      if ((filters.group || filters.name) && !_.contains(this.extendGroups(filters),
+          this.get('name'))) {
         return false;
       }
-      if ((filters.status || _.isBoolean(filters.active)) && !_.contains(this.extendStatuses(filters), this.get('status'))) {
+      if ((filters.status || _.isBoolean(filters.active)) &&
+        !_.contains(this.extendStatuses(filters), this.get('status'))) {
         return false;
       }
     }
@@ -607,121 +621,130 @@ models.Notifications = BaseCollection.extend({
   }
 });
 
-models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).extend(restrictionMixin).extend({
-  constructorName: 'Settings',
-  urlRoot: '/api/clusters/',
-  root: 'editable',
-  cacheFor: 60 * 1000,
-  groupList: ['general', 'security', 'compute', 'network', 'storage', 'logging', 'openstack_services', 'other'],
-  isNew() {
-    return false;
-  },
-  isPlugin(section) {
-    return (section.metadata || {}).class == 'plugin';
-  },
-  parse(response) {
-    return response[this.root];
-  },
-  mergePluginSettings() {
-    _.each(this.attributes, (section, sectionName) => {
-      if (this.isPlugin(section)) {
-        var chosenVersionData = section.metadata.versions.find(
-            (version) => version.metadata.plugin_id == section.metadata.chosen_id
-          );
-        // merge metadata of a chosen plugin version
-        _.extend(section.metadata, _.omit(chosenVersionData.metadata, 'plugin_id', 'plugin_version'));
-        // merge settings of a chosen plugin version
-        this.attributes[sectionName] = _.extend(_.pick(section, 'metadata'), _.omit(chosenVersionData, 'metadata'));
-      }
-    }, this);
-  },
-  toJSON() {
-    var settings = this._super('toJSON', arguments);
-    if (!this.root) return settings;
+models.Settings =
+  Backbone.DeepModel.extend(superMixin).extend(cacheMixin).extend(restrictionMixin).extend({
+    constructorName: 'Settings',
+    urlRoot: '/api/clusters/',
+    root: 'editable',
+    cacheFor: 60 * 1000,
+    groupList: ['general', 'security', 'compute', 'network', 'storage', 'logging',
+      'openstack_services', 'other'],
+    isNew() {
+      return false;
+    },
+    isPlugin(section) {
+      return (section.metadata || {}).class == 'plugin';
+    },
+    parse(response) {
+      return response[this.root];
+    },
+    mergePluginSettings() {
+      _.each(this.attributes, (section, sectionName) => {
+        if (this.isPlugin(section)) {
+          var chosenVersionData = section.metadata.versions.find(
+              (version) => version.metadata.plugin_id == section.metadata.chosen_id
+            );
+          // merge metadata of a chosen plugin version
+          _.extend(section.metadata, _.omit(chosenVersionData.metadata, 'plugin_id',
+            'plugin_version'));
+          // merge settings of a chosen plugin version
+          this.attributes[sectionName] = _.extend(_.pick(section, 'metadata'),
+            _.omit(chosenVersionData, 'metadata'));
+        }
+      }, this);
+    },
+    toJSON() {
+      var settings = this._super('toJSON', arguments);
+      if (!this.root) return settings;
 
-    // update plugin settings
-    _.each(settings, (section, sectionName) => {
-      if (this.isPlugin(section)) {
-        var chosenVersionData = section.metadata.versions.find(
-            (version) => version.metadata.plugin_id == section.metadata.chosen_id
-          );
-        section.metadata = _.omit(section.metadata, _.without(_.keys(chosenVersionData.metadata), 'plugin_id', 'plugin_version'));
-        _.each(section, (setting, settingName) => {
-          if (settingName != 'metadata') chosenVersionData[settingName].value = setting.value;
-        });
-        settings[sectionName] = _.pick(section, 'metadata');
-      }
-    });
-    return {[this.root]: settings};
-  },
-  initialize() {
-    this.once('change', this.mergePluginSettings, this);
-  },
-  validate(attrs, options) {
-    var errors = {};
-    var models = options ? options.models : {};
-    var checkRestrictions = (setting) => this.checkRestrictions(models, null, setting);
-    _.each(attrs, (group, groupName) => {
-      if ((group.metadata || {}).enabled === false || checkRestrictions(group.metadata).result) return;
-      _.each(group, (setting, settingName) => {
-        if (checkRestrictions(setting).result) return;
-        var path = this.makePath(groupName, settingName);
-        // support of custom controls
-        var CustomControl = customControls[setting.type];
-        if (CustomControl) {
-          var error = CustomControl.validate(setting, models);
-          if (error) errors[path] = error;
-          return;
+      // update plugin settings
+      _.each(settings, (section, sectionName) => {
+        if (this.isPlugin(section)) {
+          var chosenVersionData = section.metadata.versions.find(
+              (version) => version.metadata.plugin_id == section.metadata.chosen_id
+            );
+          section.metadata = _.omit(section.metadata, _.without(_.keys(chosenVersionData.metadata),
+            'plugin_id', 'plugin_version'));
+          _.each(section, (setting, settingName) => {
+            if (settingName != 'metadata') chosenVersionData[settingName].value = setting.value;
+          });
+          settings[sectionName] = _.pick(section, 'metadata');
         }
+      });
+      return {[this.root]: settings};
+    },
+    initialize() {
+      this.once('change', this.mergePluginSettings, this);
+    },
+    validate(attrs, options) {
+      var errors = {};
+      var models = options ? options.models : {};
+      var checkRestrictions = (setting) => this.checkRestrictions(models, null, setting);
+      _.each(attrs, (group, groupName) => {
+        if ((group.metadata || {}).enabled === false ||
+          checkRestrictions(group.metadata).result) return;
+        _.each(group, (setting, settingName) => {
+          if (checkRestrictions(setting).result) return;
+          var path = this.makePath(groupName, settingName);
+          // support of custom controls
+          var CustomControl = customControls[setting.type];
+          if (CustomControl) {
+            var error = CustomControl.validate(setting, models);
+            if (error) errors[path] = error;
+            return;
+          }
 
-        if (!(setting.regex || {}).source) return;
-        if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
-      });
-    });
-    return _.isEmpty(errors) ? null : errors;
-  },
-  makePath(...args) {
-    return args.join('.');
-  },
-  getValueAttribute(settingName) {
-    return settingName == 'metadata' ? 'enabled' : 'value';
-  },
-  hasChanges(initialAttributes, models) {
-    return _.any(this.attributes, (section, sectionName) => {
-      var metadata = section.metadata;
-      var result = false;
-      if (metadata) {
-        if (this.checkRestrictions(models, null, metadata).result) return result;
-        if (!_.isUndefined(metadata.enabled)) {
-          result = metadata.enabled != initialAttributes[sectionName].metadata.enabled;
-        }
-        if (!result && this.isPlugin(section)) {
-          result = metadata.chosen_id != initialAttributes[sectionName].metadata.chosen_id;
-        }
-      }
-      return result || (metadata || {}).enabled !== false && _.any(section, (setting, settingName) => {
-        if (this.checkRestrictions(models, null, setting).result) return false;
-        return !_.isEqual(setting.value, (initialAttributes[sectionName][settingName] || {}).value);
-      });
-    });
-  },
-  sanitizeGroup(group) {
-    return _.contains(this.groupList, group) ? group : 'other';
-  },
-  getGroupList() {
-    var groups = [];
-    _.each(this.attributes, (section) => {
-      if (section.metadata.group) {
-        groups.push(this.sanitizeGroup(section.metadata.group));
-      } else {
-        _.each(section, (setting, settingName) => {
-          if (settingName != 'metadata') groups.push(this.sanitizeGroup(setting.group));
+          if (!(setting.regex || {}).source) return;
+          if (!setting.value
+            .match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
         });
-      }
-    });
-    return _.intersection(this.groupList, groups);
-  }
-});
+      });
+      return _.isEmpty(errors) ? null : errors;
+    },
+    makePath(...args) {
+      return args.join('.');
+    },
+    getValueAttribute(settingName) {
+      return settingName == 'metadata' ? 'enabled' : 'value';
+    },
+    hasChanges(initialAttributes, models) {
+      return _.any(this.attributes, (section, sectionName) => {
+        var metadata = section.metadata;
+        var result = false;
+        if (metadata) {
+          if (this.checkRestrictions(models, null, metadata).result) return result;
+          if (!_.isUndefined(metadata.enabled)) {
+            result = metadata.enabled != initialAttributes[sectionName].metadata.enabled;
+          }
+          if (!result && this.isPlugin(section)) {
+            result = metadata.chosen_id != initialAttributes[sectionName].metadata.chosen_id;
+          }
+        }
+        return result || (metadata || {}).enabled !== false &&
+            _.any(section, (setting, settingName) => {
+              if (this.checkRestrictions(models, null, setting).result) return false;
+              return !_.isEqual(setting.value, (initialAttributes[sectionName][settingName] ||
+                {}).value);
+            });
+      });
+    },
+    sanitizeGroup(group) {
+      return _.contains(this.groupList, group) ? group : 'other';
+    },
+    getGroupList() {
+      var groups = [];
+      _.each(this.attributes, (section) => {
+        if (section.metadata.group) {
+          groups.push(this.sanitizeGroup(section.metadata.group));
+        } else {
+          _.each(section, (setting, settingName) => {
+            if (settingName != 'metadata') groups.push(this.sanitizeGroup(setting.group));
+          });
+        }
+      });
+      return _.intersection(this.groupList, groups);
+    }
+  });
 
 models.FuelSettings = models.Settings.extend({
   constructorName: 'FuelSettings',
@@ -741,7 +764,8 @@ models.Disk = BaseModel.extend({
     return response;
   },
   toJSON(options) {
-    return _.extend(this.constructor.__super__.toJSON.call(this, options), {volumes: this.get('volumes').toJSON()});
+    return _.extend(this.constructor.__super__.toJSON.call(this, options),
+      {volumes: this.get('volumes').toJSON()});
   },
   getUnallocatedSpace(options) {
     options = options || {};
@@ -755,7 +779,8 @@ models.Disk = BaseModel.extend({
     var error;
     var unallocatedSpace = this.getUnallocatedSpace({volumes: attrs.volumes});
     if (unallocatedSpace < 0) {
-      error = i18n('cluster_page.nodes_tab.configure_disks.validation_error', {size: utils.formatNumber(unallocatedSpace * -1)});
+      error = i18n('cluster_page.nodes_tab.configure_disks.validation_error', {size:
+        utils.formatNumber(unallocatedSpace * -1)});
     }
     return error;
   }
@@ -776,7 +801,8 @@ models.Volume = BaseModel.extend({
     var groupAllocatedSpace = 0;
     if (currentDisk && currentDisk.collection)
       groupAllocatedSpace = currentDisk.collection.reduce((sum, disk) => {
-        return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');
+        return disk.id == currentDisk.id ? sum :
+          sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');
       }, 0);
     return minimum - groupAllocatedSpace;
   },
@@ -790,7 +816,8 @@ models.Volume = BaseModel.extend({
   validate(attrs, options) {
     var min = this.getMinimalSize(options.minimum);
     if (attrs.size < min) {
-      return i18n('cluster_page.nodes_tab.configure_disks.volume_error', {size: utils.formatNumber(min)});
+      return i18n('cluster_page.nodes_tab.configure_disks.volume_error',
+        {size: utils.formatNumber(min)});
     }
     return null;
   }
@@ -826,11 +853,14 @@ models.Interface = BaseModel.extend({
   },
   validate(attrs) {
     var errors = [];
-    var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork', attrs.networks));
-    var untaggedNetworks = networks.filter((network) => _.isNull(network.getVlanRange(attrs.networkingParameters)));
+    var networks = new models.Networks(this.get('assigned_networks')
+      .invoke('getFullNetwork', attrs.networks));
+    var untaggedNetworks = networks.filter((network) =>
+      _.isNull(network.getVlanRange(attrs.networkingParameters)));
     var ns = 'cluster_page.nodes_tab.configure_interfaces.validation.';
     // public and floating networks are allowed to be assigned to the same interface
-    var maxUntaggedNetworksCount = networks.any({name: 'public'}) && networks.any({name: 'floating'}) ? 2 : 1;
+    var maxUntaggedNetworksCount = networks.any({name: 'public'}) &&
+      networks.any({name: 'floating'}) ? 2 : 1;
     if (untaggedNetworks.length > maxUntaggedNetworksCount) {
       errors.push(i18n(ns + 'too_many_untagged_networks'));
     }
@@ -853,7 +883,8 @@ models.Interface = BaseModel.extend({
     if (
       _.any(vlanRanges,
         (currentRange) => _.any(vlanRanges,
-          (range) => !_.isEqual(currentRange, range) && range[1] >= currentRange[0] && range[0] <= currentRange[1]
+          (range) => !_.isEqual(currentRange, range) && range[1] >= currentRange[0] &&
+            range[0] <= currentRange[1]
         )
       )
     ) errors.push(i18n(ns + 'vlan_range_intersection'));
@@ -877,7 +908,8 @@ models.Interfaces = BaseCollection.extend({
   }
 });
 
-var networkPreferredOrder = ['public', 'floating', 'storage', 'management', 'private', 'fixed', 'baremetal'];
+var networkPreferredOrder = ['public', 'floating', 'storage', 'management', 'private',
+  'fixed', 'baremetal'];
 
 models.InterfaceNetwork = BaseModel.extend({
   constructorName: 'InterfaceNetwork',
@@ -899,8 +931,10 @@ models.Network = BaseModel.extend({
   getVlanRange(networkingParameters) {
     if (!this.get('meta').neutron_vlan_range) {
       var externalNetworkData = this.get('meta').ext_net_data;
-      var vlanStart = externalNetworkData ? networkingParameters.get(externalNetworkData[0]) : this.get('vlan_start');
-      return _.isNull(vlanStart) ? vlanStart : [vlanStart, externalNetworkData ? vlanStart + networkingParameters.get(externalNetworkData[1]) - 1 : vlanStart];
+      var vlanStart = externalNetworkData ? networkingParameters.get(externalNetworkData[0]) :
+        this.get('vlan_start');
+      return _.isNull(vlanStart) ? vlanStart : [vlanStart, externalNetworkData ?
+        vlanStart + networkingParameters.get(externalNetworkData[1]) - 1 : vlanStart];
     }
     return networkingParameters.get('vlan_range');
   }
@@ -923,7 +957,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
   cacheFor: 60 * 1000,
   parse(response) {
     response.networks = new models.Networks(response.networks);
-    response.networking_parameters = new models.NetworkingParameters(response.networking_parameters);
+    response.networking_parameters =
+      new models.NetworkingParameters(response.networking_parameters);
     return response;
   },
   toJSON() {
@@ -957,7 +992,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
           _.extend(networkErrors, utils.validateCidr(cidr));
           var cidrError = _.has(networkErrors, 'cidr');
           if (network.get('meta').notation == 'ip_ranges') {
-            var ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), cidrError ? null : cidr);
+            var ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), cidrError ?
+              null : cidr);
             if (ipRangesErrors.length) {
               networkErrors.ip_ranges = ipRangesErrors;
             }
@@ -965,7 +1001,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
           if (network.get('meta').use_gateway) {
             if (!utils.validateIP(network.get('gateway'))) {
               networkErrors.gateway = i18n(ns + 'invalid_gateway');
-            } else if (!cidrError && !utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
+            } else if (!cidrError &&
+                !utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
               networkErrors.gateway = i18n(ns + 'gateway_does_not_match_cidr');
             }
           }
@@ -976,7 +1013,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
               return net.id != network.id ? net.get('vlan_start') : null;
             });
           }
-          _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
+          _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans,
+            'vlan_start'));
           if (!_.isEmpty(networkErrors)) {
             nodeNetworkGroupErrors[network.id] = networkErrors;
           }
@@ -985,10 +1023,14 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
             var baremetalGateway = networkParameters.get('baremetal_gateway');
             if (!utils.validateIP(baremetalGateway)) {
               networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
-            } else if (!baremetalCidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
-              networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
+            } else if (!baremetalCidrError &&
+                !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
+              networkingParametersErrors.baremetal_gateway = i18n(ns +
+                'gateway_does_not_match_cidr');
             }
-            var baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], baremetalCidrError ? null : cidr);
+            var baremetalRangeErrors = utils
+              .validateIPRanges([networkParameters.get('baremetal_range')], baremetalCidrError ?
+                null : cidr);
             if (baremetalRangeErrors.length) {
               var [{start, end}] = baremetalRangeErrors;
               networkingParametersErrors.baremetal_range = [start, end];
@@ -1007,13 +1049,15 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
 
     // validate networking parameters
     if (novaNetManager) {
-      networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(networkParameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
+      networkingParametersErrors = _.extend(networkingParametersErrors,
+        utils.validateCidr(networkParameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
       var fixedAmount = networkParameters.get('fixed_networks_amount');
       var fixedVlan = networkParameters.get('fixed_networks_vlan_start');
       if (!utils.isNaturalNumber(parseInt(fixedAmount, 10))) {
         networkingParametersErrors.fixed_networks_amount = i18n(ns + 'invalid_amount');
       }
-      var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
+      var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'),
+        'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
       _.extend(networkingParametersErrors, vlanErrors);
       if (_.isEmpty(vlanErrors)) {
         if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
@@ -1064,7 +1108,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
         networkingParametersErrors.base_mac = i18n(ns + 'invalid_mac');
       }
       var cidr = networkParameters.get('internal_cidr');
-      networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(cidr, 'internal_cidr'));
+      networkingParametersErrors = _.extend(networkingParametersErrors,
+        utils.validateCidr(cidr, 'internal_cidr'));
       var gateway = networkParameters.get('internal_gateway');
       if (!utils.validateIP(gateway)) {
         networkingParametersErrors.internal_gateway = i18n(ns + 'invalid_gateway');
@@ -1093,22 +1138,27 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
       var networkToCheckFloatingRangeData = networkToCheckFloatingRange ? {
         cidr: networkToCheckFloatingRange.get('cidr'),
         network: _.capitalize(networkToCheckFloatingRange.get('name')),
-        nodeNetworkGroup: nodeNetworkGroups.get(networkToCheckFloatingRange.get('group_id')).get('name')
+        nodeNetworkGroup:
+          nodeNetworkGroups.get(networkToCheckFloatingRange.get('group_id')).get('name')
       } : {};
-      var networkToCheckFloatingRangeIPRanges = networkToCheckFloatingRange ? _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
-        var ipRangeError = false;
-        try {
-          ipRangeError = !_.all(range) || !!_.find(errors.networks[networkToCheckFloatingRange.get('group_id')][networkToCheckFloatingRange.id].ip_ranges, {index: index});
-        } catch (error) {}
-        return !ipRangeError;
-      }) : [];
+      var networkToCheckFloatingRangeIPRanges = networkToCheckFloatingRange ?
+        _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
+          var ipRangeError = false;
+          try {
+            ipRangeError = !_.all(range) ||
+              !!_.find(errors.networks[networkToCheckFloatingRange
+                .get('group_id')][networkToCheckFloatingRange.id].ip_ranges, {index: index});
+          } catch (error) {}
+          return !ipRangeError;
+        }) : [];
 
       floatingRangesErrors = utils.validateIPRanges(
         floatingRanges,
         networkToCheckFloatingRangeData.cidr,
         networkToCheckFloatingRangeIPRanges,
         {
-          IP_RANGES_INTERSECTION: i18n(ns + 'floating_and_public_ip_ranges_intersection', networkToCheckFloatingRangeData),
+          IP_RANGES_INTERSECTION: i18n(ns + 'floating_and_public_ip_ranges_intersection',
+            networkToCheckFloatingRangeData),
           IP_RANGE_IS_NOT_IN_PUBLIC_CIDR: i18n(ns + 'floating_range_is_not_in_public_cidr')
         }
       );
@@ -1261,7 +1311,8 @@ models.WizardModel = Backbone.DeepModel.extend({
     var errors = [];
     _.each(options.config, (attributeConfig, attribute) => {
       if (!(attributeConfig.regex && attributeConfig.regex.source)) return;
-      var hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), (restriction) => {
+      var hasNoSatisfiedRestrictions = _.every(_.reject(attributeConfig.restrictions,
+        {action: 'none'}), (restriction) => {
         // this probably will be changed when other controls need validation
         return !utils.evaluateExpression(restriction.condition, {default: this}).value;
       });
@@ -1284,14 +1335,16 @@ models.WizardModel = Backbone.DeepModel.extend({
 
 models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
   constructorName: 'MirantisCredentials',
-  baseUrl: 'https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
+  baseUrl: 'https://software.mirantis.com/wp-content/themes/' +
+  'mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
   validate(attrs) {
     var errors = {};
     _.each(attrs, (group, groupName) => {
       _.each(group, (setting, settingName) => {
         var path = this.makePath(groupName, settingName);
         if (!setting.regex || !setting.regex.source) return;
-        if (!setting.value.match(new RegExp(setting.regex.source))) errors[path] = setting.regex.error;
+        if (!setting.value.match(new RegExp(setting.regex
+            .source))) errors[path] = setting.regex.error;
       });
     });
     return _.isEmpty(errors) ? null : errors;
@@ -1408,7 +1461,8 @@ models.ComponentModel = BaseModel.extend({
     var expandProperty = (propertyName, components) => {
       var expandedComponents = [];
       _.each(this.get(propertyName), (patternDescription) => {
-        var patternName = _.isString(patternDescription) ? patternDescription : patternDescription.name;
+        var patternName = _.isString(patternDescription) ? patternDescription :
+          patternDescription.name;
         var pattern = new ComponentPattern(patternName);
         components.each((component) => {
           if (pattern.match(component.id)) {

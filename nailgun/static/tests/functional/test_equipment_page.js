@@ -69,18 +69,25 @@ define([
       'Check action buttons': function() {
         return this.remote
           .assertElementNotExists('.node .btn-discard', 'No discard changes button on a node')
-          .assertElementExists('.node.offline .node-remove-button', 'Removing of offline nodes is available on the page')
+          .assertElementExists('.node.offline .node-remove-button', 'Removing of offline nodes ' +
+            'is available on the page')
           .clickByCssSelector('.node.pending_addition > label')
-          .assertElementNotExists('.control-buttons-box .btn', 'No management buttons for selected node')
-          .assertElementExists('.node-list-management-buttons .btn-labels:not(:disabled)', 'Nodes can be labelled on the page')
-          .assertElementsExist('.node.pending_addition .btn-view-logs', 4, 'View logs button is presented for assigned to any environment nodes')
-          .assertElementNotExists('.node:not(.pending_addition) .btn-view-logs', 'View logs button is not presented for unallocated nodes')
+          .assertElementNotExists('.control-buttons-box .btn', 'No management buttons for ' +
+            'selected node')
+          .assertElementExists('.node-list-management-buttons .btn-labels:not(:disabled)',
+            'Nodes can be labelled on the page')
+          .assertElementsExist('.node.pending_addition .btn-view-logs', 4,
+            'View logs button is presented for assigned to any environment nodes')
+          .assertElementNotExists('.node:not(.pending_addition) .btn-view-logs',
+            'View logs button is not presented for unallocated nodes')
           .clickByCssSelector('.node .node-settings')
           .then(function() {
             return modal.waitToOpen();
           })
-          .assertElementNotExists('.btn-edit-disks', 'No disks configuration buttons in node pop-up')
-          .assertElementNotExists('.btn-edit-networks', 'No interfaces configuration buttons in node pop-up')
+          .assertElementNotExists('.btn-edit-disks',
+            'No disks configuration buttons in node pop-up')
+          .assertElementNotExists('.btn-edit-networks',
+            'No interfaces configuration buttons in node pop-up')
           .then(function() {
             return modal.close();
           })
@@ -88,7 +95,8 @@ define([
           .then(function() {
             return node.openCompactNodeExtendedView();
           })
-          .assertElementNotExists('.node-popover .node-buttons .btn:not(.btn-view-logs)', 'No action buttons in node extended view in compact mode');
+          .assertElementNotExists('.node-popover .node-buttons .btn:not(.btn-view-logs)',
+            'No action buttons in node extended view in compact mode');
       }
     };
   });

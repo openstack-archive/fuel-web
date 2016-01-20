@@ -40,7 +40,8 @@ customControls.custom_repo_configuration = React.createClass({
           error.uri = i18n(ns + 'invalid_repo');
         }
         var priority = repo.priority;
-        if (_.isNaN(priority) || !_.isNull(priority) && (!(priority == _.parseInt(priority, 10)) || os == 'CentOS' && (priority < 1 || priority > 99))) {
+        if (_.isNaN(priority) || !_.isNull(priority) && (!(priority == _.parseInt(priority, 10)) ||
+          os == 'CentOS' && (priority < 1 || priority > 99))) {
           error.priority = i18n(ns + 'invalid_priority');
         }
         return _.isEmpty(error) ? null : error;
@@ -48,7 +49,8 @@ customControls.custom_repo_configuration = React.createClass({
       return _.compact(errors).length ? errors : null;
     },
     repoToString(repo, os) {
-      var repoData = _.compact(this.defaultProps.repoAttributes[os].map((attribute) => repo[attribute]));
+      var repoData = _.compact(this.defaultProps.repoAttributes[os]
+        .map((attribute) => repo[attribute]));
       if (!repoData.length) return ''; // in case of new repo
       return repoData.join(' ');
     }
@@ -58,10 +60,12 @@ customControls.custom_repo_configuration = React.createClass({
   },
   getDefaultProps() {
     return {
+      /* eslint-disable max-len */
       repoRegexes: {
         Ubuntu: /^(deb|deb-src)\s+(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s+([\w\-.\/]+)(?:\s+([\w\-.\/\s]+))?$/i,
         CentOS: /^(\w+:\/\/[\w\-.\/]+(?::\d+)?[\w\-.\/]+)\s*$/i
       },
+      /* eslint-enable max-len */
       repoAttributes: {
         Ubuntu: ['type', 'uri', 'suite', 'section'],
         CentOS: ['uri']
@@ -130,7 +134,9 @@ customControls.custom_repo_configuration = React.createClass({
     return (
       <div className='repos' key={this.state.key}>
         {this.props.description &&
-          <span className='help-block' dangerouslySetInnerHTML={{__html: utils.urlify(utils.linebreaks(_.escape(this.props.description)))}} />
+          <span className='help-block' dangerouslySetInnerHTML={{__html:
+            utils.urlify(utils.linebreaks(_.escape(this.props.description)))}}
+          />
         }
         {this.props.value.map((repo, index) => {
           var error = (this.props.error || {})[index];
@@ -162,7 +168,8 @@ customControls.custom_repo_configuration = React.createClass({
               <Input
                 {...props}
                 defaultValue={repo.priority}
-                error={error && (error.priority ? (error.name || error.uri) ? '' : error.priority : null)}
+                error={error && (error.priority ? (error.name || error.uri) ?
+                  '' : error.priority : null)}
                 wrapperClassName='repo-priority'
                 onChange={this.changeRepos.bind(this, 'change_priority')}
                 extraContent={index > 0 && this.renderDeleteButton(index)}
@@ -174,7 +181,9 @@ customControls.custom_repo_configuration = React.createClass({
           );
         })}
         <div className='buttons'>
-          <button key='addExtraRepo' className='btn btn-default btn-add-repo' onClick={this.changeRepos.bind(this, 'add')} disabled={this.props.disabled}>
+          <button key='addExtraRepo' className='btn btn-default btn-add-repo'
+            onClick={this.changeRepos.bind(this, 'add')} disabled={this.props.disabled}
+          >
             {i18n(ns + 'add_repo_button')}
           </button>
         </div>

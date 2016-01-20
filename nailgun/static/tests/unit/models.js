@@ -24,39 +24,48 @@ suite('Test models', () => {
 
       filters = {status: []};
       result = ['running', 'pending', 'ready', 'error'];
-      assert.deepEqual(task.extendStatuses(filters), result, 'All task statuses are acceptable if "status" filter not specified');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        'All task statuses are acceptable if "status" filter not specified');
 
       filters = {status: 'ready'};
       result = ['ready'];
-      assert.deepEqual(task.extendStatuses(filters), result, '"status" filter can have string as a value');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        '"status" filter can have string as a value');
 
       filters = {status: ['ready', 'running']};
       result = ['ready', 'running'];
-      assert.deepEqual(task.extendStatuses(filters), result, '"status" filter can have list of strings as a value');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        '"status" filter can have list of strings as a value');
 
       filters = {status: ['ready'], active: true};
       result = [];
-      assert.deepEqual(task.extendStatuses(filters), result, '"status" and "active" filters are not intersected');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        '"status" and "active" filters are not intersected');
 
       filters = {status: ['running'], active: true};
       result = ['running'];
-      assert.deepEqual(task.extendStatuses(filters), result, '"status" and "active" filters have intersection');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        '"status" and "active" filters have intersection');
 
       filters = {status: ['running'], active: false};
       result = [];
-      assert.deepEqual(task.extendStatuses(filters), result, '"status" and "active" filters are not intersected');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        '"status" and "active" filters are not intersected');
 
       filters = {status: ['ready', 'running'], active: false};
       result = ['ready'];
-      assert.deepEqual(task.extendStatuses(filters), result, '"status" and "active" filters have intersection');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        '"status" and "active" filters have intersection');
 
       filters = {active: true};
       result = ['running', 'pending'];
-      assert.deepEqual(task.extendStatuses(filters), result, 'True value of "active" filter parsed correctly');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        'True value of "active" filter parsed correctly');
 
       filters = {active: false};
       result = ['ready', 'error'];
-      assert.deepEqual(task.extendStatuses(filters), result, 'False value of \'active\' filter parsed correctly');
+      assert.deepEqual(task.extendStatuses(filters), result,
+        'False value of \'active\' filter parsed correctly');
     });
 
     test('Test extendGroups method', () => {
@@ -66,39 +75,48 @@ suite('Test models', () => {
 
       filters = {name: []};
       result = allTaskNames;
-      assert.deepEqual(task.extendGroups(filters), result, 'All task names are acceptable if "name" filter not specified');
+      assert.deepEqual(task.extendGroups(filters), result,
+        'All task names are acceptable if "name" filter not specified');
 
       filters = {group: []};
       result = allTaskNames;
-      assert.deepEqual(task.extendGroups(filters), result, 'All task names are acceptable if "group" filter not specified');
+      assert.deepEqual(task.extendGroups(filters), result,
+        'All task names are acceptable if "group" filter not specified');
 
       filters = {name: 'deploy'};
       result = ['deploy'];
-      assert.deepEqual(task.extendGroups(filters), result, '"name" filter can have string as a value');
+      assert.deepEqual(task.extendGroups(filters), result,
+        '"name" filter can have string as a value');
 
       filters = {name: 'dump'};
       result = ['dump'];
-      assert.deepEqual(task.extendGroups(filters), result, 'Tasks, that are not related to any task group, handled properly');
+      assert.deepEqual(task.extendGroups(filters), result,
+        'Tasks, that are not related to any task group, handled properly');
 
       filters = {name: ['deploy', 'check_networks']};
       result = ['deploy', 'check_networks'];
-      assert.deepEqual(task.extendGroups(filters), result, '"name" filter can have list of strings as a value');
+      assert.deepEqual(task.extendGroups(filters), result,
+        '"name" filter can have list of strings as a value');
 
       filters = {group: 'deployment'};
       result = task.groups.deployment;
-      assert.deepEqual(task.extendGroups(filters), result, '"group" filter can have string as a value');
+      assert.deepEqual(task.extendGroups(filters), result,
+        '"group" filter can have string as a value');
 
       filters = {group: ['deployment', 'network']};
       result = allTaskNames;
-      assert.deepEqual(task.extendGroups(filters), result, '"group" filter can have list of strings as a value');
+      assert.deepEqual(task.extendGroups(filters), result,
+        '"group" filter can have list of strings as a value');
 
       filters = {name: 'deploy', group: 'deployment'};
       result = ['deploy'];
-      assert.deepEqual(task.extendGroups(filters), result, '"name" and "group" filters have intersection');
+      assert.deepEqual(task.extendGroups(filters), result,
+        '"name" and "group" filters have intersection');
 
       filters = {name: 'deploy', group: 'network'};
       result = [];
-      assert.deepEqual(task.extendGroups(filters), result, '"name" and "group" filters are not intersected');
+      assert.deepEqual(task.extendGroups(filters), result,
+        '"name" and "group" filters are not intersected');
     });
   });
 });

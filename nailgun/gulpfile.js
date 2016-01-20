@@ -77,7 +77,8 @@ gulp.task('selenium', ['selenium:fetch'], function(cb) {
       if (err) throw err;
       child.on('exit', function() {
         if (seleniumProcess) {
-          gutil.log(gutil.colors.yellow('Selenium process died unexpectedly. Probably port', port, 'is already in use.'));
+          gutil.log(gutil.colors.yellow('Selenium process died unexpectedly. Probably port',
+            port, 'is already in use.'));
         }
       });
       ['exit', 'uncaughtException', 'SIGTERM', 'SIGINT'].forEach(function(event) {
@@ -124,7 +125,8 @@ function runIntern(params) {
   };
 }
 
-gulp.task('intern:functional', runIntern({functionalSuites: argv.suites || 'static/tests/functional/**/test_*.js'}));
+gulp.task('intern:functional', runIntern({functionalSuites: argv.suites ||
+  'static/tests/functional/**/test_*.js'}));
 
 gulp.task('unit-tests', function(cb) {
   runSequence('selenium', 'karma', function(err) {
@@ -158,7 +160,8 @@ gulp.task('license', function(cb) {
     _.each(data, function(moduleInfo) {
       var name = moduleInfo.name;
       var version = moduleInfo.version;
-      var license = _.pluck(moduleInfo.licenseSources.package.sources, 'license').join(', ') || 'unknown';
+      var license = _.pluck(moduleInfo.licenseSources.package.sources, 'license').join(', ') ||
+        'unknown';
       var licenseOk = license.match(licenseRegexp);
       if (!licenseOk) errors.push({libraryName: name, license: license});
       gutil.log(
@@ -257,10 +260,11 @@ gulp.task('dev-server', function() {
     ]
   };
   _.extend(options, config.output);
-  new WebpackDevServer(webpack(config), options).listen(devServerPort, devServerHost, function(err) {
-    if (err) throw err;
-    gutil.log('Development server started at ' + devServerUrl);
-  });
+  new WebpackDevServer(webpack(config), options).listen(devServerPort, devServerHost,
+    function(err) {
+      if (err) throw err;
+      gutil.log('Development server started at ' + devServerUrl);
+    });
 });
 
 gulp.task('build', function(cb) {
@@ -298,7 +302,8 @@ gulp.task('build', function(cb) {
   rimraf.sync(config.output.path);
 
   var compiler = webpack(config);
-  var run = config.watch ? compiler.watch.bind(compiler, config.watchOptions) : compiler.run.bind(compiler);
+  var run = config.watch ? compiler.watch.bind(compiler, config.watchOptions) :
+    compiler.run.bind(compiler);
 
   run(function(err, stats) {
     if (err) return cb(err);

@@ -24,7 +24,8 @@ var AddNodesScreen = React.createClass({
     fetchData(options) {
       var nodes = new models.Nodes();
       nodes.fetch = function(options) {
-        return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
+        return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}},
+          options));
       };
       return $.when(nodes.fetch(), options.cluster.get('roles').fetch(),
         options.cluster.get('settings').fetch({cache: true})).then(() => ({nodes: nodes}));

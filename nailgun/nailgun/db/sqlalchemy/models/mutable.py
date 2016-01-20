@@ -16,8 +16,10 @@
 
 import copy
 import six
+import yaml
 
 from sqlalchemy.ext.mutable import Mutable as MutableBase
+from sqlalchemy.ext.mutable import MutableDict as MutableDictBase
 
 
 class Mutable(MutableBase):
@@ -185,6 +187,16 @@ class MutableDict(Mutable, dict):
         return MutableDict({k: _deepcopy(v, memo) for k, v in self.items()})
 
 
+# Registering MutableDict representer for yaml safe dumper
+yaml.SafeDumper.add_representer(
+    MutableDict, yaml.representer.SafeRepresenter.represent_dict)
+
+# Registering sqlalchemy.ext.mutable.MutableDict representer for yaml
+# safe dumper
+yaml.SafeDumper.add_representer(
+    MutableDictBase, yaml.representer.SafeRepresenter.represent_dict)
+
+
 class MutableList(Mutable, list):
     @classmethod
     def coerce(cls, key, value):
@@ -298,3 +310,8 @@ class MutableList(Mutable, list):
     def __deepcopy__(self, memo, _deepcopy=copy.deepcopy):
         """Recursive copy each element."""
         return MutableList((_deepcopy(x, memo) for x in self))
+
+
+# Registering MutableList representer for yaml safe dumper
+yaml.SafeDumper.add_representer(
+    MutableList, yaml.representer.SafeRepresenter.represent_list)

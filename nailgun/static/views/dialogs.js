@@ -844,7 +844,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                                         return (
                                                             <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
                                                                 {_.map(utils.sortEntryProperties(entry, sortOrder[group]), function(propertyName) {
-                                                                    if (!_.isObject(entry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
+                                                                    if (!_.isPlainObject(entry[propertyName]) && !_.isArray(entry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, entry[propertyName]));
                                                                 }, this)}
                                                             </div>
                                                         );
@@ -854,7 +854,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                             {_.isPlainObject(groupEntries) &&
                                                 <div>
                                                     {_.map(groupEntries, function(propertyValue, propertyName) {
-                                                        if (!_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
+                                                        if (!_.isPlainObject(propertyValue) && !_.isArray(propertyValue) && !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, propertyValue));
                                                     }, this)}
                                                     {!_.isEmpty(subEntries) &&
                                                         <div>
@@ -862,7 +862,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, controls, compo
                                                                 return (
                                                                     <div className='nested-object' key={'subentries_' + groupIndex + subentrysIndex}>
                                                                         {_.map(utils.sortEntryProperties(subentry), function(propertyName) {
-                                                                            return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
+                                                                          if (!_.isPlainObject(subentry[propertyName]) && !_.isArray(subentry[propertyName])) return this.renderNodeInfo(propertyName, this.showPropertyValue(group, propertyName, subentry[propertyName]));
                                                                         }, this)}
                                                                     </div>
                                                                 );

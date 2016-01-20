@@ -62,9 +62,12 @@ define([
         var self = this;
         var zabbixInitialVersion, zabbixTextInputValue;
         return this.remote
-          .assertElementEnabled(zabbixSectionSelector + 'h3 input[type=checkbox]', 'Plugin is changeable')
-          .assertElementNotSelected(zabbixSectionSelector + 'h3 input[type=checkbox]', 'Plugin is not actvated')
-          .assertElementNotExists(zabbixSectionSelector + '> div input:not(:disabled)', 'Inactive plugin attributes can not be changes')
+          .assertElementEnabled(zabbixSectionSelector + 'h3 input[type=checkbox]',
+            'Plugin is changeable')
+          .assertElementNotSelected(zabbixSectionSelector + 'h3 input[type=checkbox]',
+            'Plugin is not actvated')
+          .assertElementNotExists(zabbixSectionSelector + '> div input:not(:disabled)',
+            'Inactive plugin attributes can not be changes')
           // activate plugin
           .clickByCssSelector(zabbixSectionSelector + 'h3 input[type=checkbox]')
           // save changes
@@ -85,9 +88,12 @@ define([
               })
             .end()
           // change plugin version
-          .clickByCssSelector(zabbixSectionSelector + '.plugin-versions input[type=radio]:not(:checked)')
-          .assertElementPropertyNotEquals(zabbixSectionSelector + '[name=zabbix_text_1]', 'value', zabbixTextInputValue, 'Plugin version was changed')
-          .assertElementExists('.subtab-link-other .glyphicon-danger-sign', 'Plugin atributes validation works')
+          .clickByCssSelector(zabbixSectionSelector +
+            '.plugin-versions input[type=radio]:not(:checked)')
+          .assertElementPropertyNotEquals(zabbixSectionSelector + '[name=zabbix_text_1]', 'value',
+            zabbixTextInputValue, 'Plugin version was changed')
+          .assertElementExists('.subtab-link-other .glyphicon-danger-sign',
+            'Plugin atributes validation works')
           // fix validation error
           .setInputValue(zabbixSectionSelector + '[name=zabbix_text_with_regex]', 'aa-aa')
           .waitForElementDeletion('.subtab-link-other .glyphicon-danger-sign', 1000)
@@ -95,7 +101,9 @@ define([
           // reset plugin version change
           .clickByCssSelector('.btn-revert-changes')
           .then(function() {
-            return self.remote.assertElementPropertyEquals(zabbixSectionSelector + '.plugin-versions input[type=radio]:checked', 'value', zabbixInitialVersion, 'Plugin version change can be reset');
+            return self.remote.assertElementPropertyEquals(zabbixSectionSelector +
+                '.plugin-versions input[type=radio]:checked', 'value', zabbixInitialVersion,
+                'Plugin version change can be reset');
           });
       },
       'Check plugin in deployed environment': function() {
@@ -124,8 +132,12 @@ define([
             .end()
           // activate plugin
           .clickByCssSelector(zabbixSectionSelector + 'h3 input[type=checkbox]')
-          .assertElementExists(zabbixSectionSelector + '.plugin-versions input[type=radio]:not(:disabled)', 'Some plugin versions are hotluggable')
-          .assertElementPropertyNotEquals(zabbixSectionSelector + '.plugin-versions input[type=radio]:checked', 'value', zabbixInitialVersion, 'Plugin hotpluggable version is automatically chosen')
+          .assertElementExists(zabbixSectionSelector +
+            '.plugin-versions input[type=radio]:not(:disabled)',
+            'Some plugin versions are hotluggable')
+          .assertElementPropertyNotEquals(zabbixSectionSelector +
+            '.plugin-versions input[type=radio]:checked', 'value', zabbixInitialVersion,
+            'Plugin hotpluggable version is automatically chosen')
           // fix validation error
           .setInputValue(zabbixSectionSelector + '[name=zabbix_text_with_regex]', 'aa-aa')
           .waitForElementDeletion('.subtab-link-other .glyphicon-danger-sign', 1000)
@@ -133,7 +145,9 @@ define([
           // deactivate plugin
           .clickByCssSelector(zabbixSectionSelector + 'h3 input[type=checkbox]')
           .then(function() {
-            return self.remote.assertElementPropertyEquals(zabbixSectionSelector + '.plugin-versions input[type=radio]:checked', 'value', zabbixInitialVersion, 'Initial plugin version is set for deactivated plugin');
+            return self.remote.assertElementPropertyEquals(zabbixSectionSelector +
+                '.plugin-versions input[type=radio]:checked', 'value', zabbixInitialVersion,
+                'Initial plugin version is set for deactivated plugin');
           })
           .assertElementDisabled('.btn-apply-changes', 'The change as reset successfully');
       },
@@ -144,12 +158,16 @@ define([
           .clickByCssSelector(loggingSectionSelector + 'h3 input[type=checkbox]')
           // activate Zabbix plugin
           .clickByCssSelector(zabbixSectionSelector + 'h3 input[type=checkbox]')
-          .assertElementEnabled(loggingSectionSelector + '[name=logging_text]', 'No conflict with default Zabix plugin version')
+          .assertElementEnabled(loggingSectionSelector + '[name=logging_text]',
+            'No conflict with default Zabix plugin version')
           // change Zabbix plugin version
-          .clickByCssSelector(zabbixSectionSelector + '.plugin-versions input[type=radio]:not(:checked)')
-          .assertElementNotSelected(zabbixSectionSelector + '[name=zabbix_checkbox]', 'Zabbix checkbox is not activated')
+          .clickByCssSelector(zabbixSectionSelector +
+            '.plugin-versions input[type=radio]:not(:checked)')
+          .assertElementNotSelected(zabbixSectionSelector + '[name=zabbix_checkbox]',
+            'Zabbix checkbox is not activated')
           .clickByCssSelector(zabbixSectionSelector + '[name=zabbix_checkbox]')
-          .assertElementDisabled(loggingSectionSelector + '[name=logging_text]', 'Conflict with Zabbix checkbox')
+          .assertElementDisabled(loggingSectionSelector + '[name=logging_text]',
+            'Conflict with Zabbix checkbox')
           // reset changes
           .clickByCssSelector('.btn-revert-changes');
       }

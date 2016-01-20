@@ -57,7 +57,8 @@ define([
           .clickByCssSelector('.node input[type=checkbox]')
           .assertElementExists('.node.selected', 'Node gets selected upon clicking')
           .assertElementExists('button.btn-delete-nodes:not(:disabled)', 'Delete Nodes and ...')
-          .assertElementExists('button.btn-edit-roles:not(:disabled)', '... Edit Roles buttons appear upon node selection')
+          .assertElementExists('button.btn-edit-roles:not(:disabled)',
+            '... Edit Roles buttons appear upon node selection')
           .then(function() {
             return node.renameNode(nodeNewName);
           })
@@ -82,9 +83,11 @@ define([
           .then(function() {
             return node.openNodePopup();
           })
-          .assertElementTextEquals('.modal-header h4.modal-title', nodeNewName, 'Node pop-up has updated node name')
+          .assertElementTextEquals('.modal-header h4.modal-title', nodeNewName,
+            'Node pop-up has updated node name')
           .assertElementExists('.modal .btn-edit-disks', 'Disks can be configured for cluster node')
-          .assertElementExists('.modal .btn-edit-networks', 'Interfaces can be configured for cluster node')
+          .assertElementExists('.modal .btn-edit-networks',
+            'Interfaces can be configured for cluster node')
           .clickByCssSelector('.change-hostname .btn-link')
           // change the hostname
           .findByCssSelector('.change-hostname [type=text]')
@@ -92,8 +95,10 @@ define([
             .type(newHostname)
             .pressKeys('\uE007')
             .end()
-          .assertElementDisappears('.change-hostname [type=text]', 2000, 'Hostname input disappears after submit')
-          .assertElementTextEquals('span.node-hostname', newHostname, 'Node hostname has been updated')
+          .assertElementDisappears('.change-hostname [type=text]', 2000,
+            'Hostname input disappears after submit')
+          .assertElementTextEquals('span.node-hostname', newHostname,
+            'Node hostname has been updated')
           .then(function() {
             return modal.close();
           });
@@ -107,8 +112,10 @@ define([
             .assertElementExists('i.glyphicon-ok', 'Self node is selectable')
             .end()
           .clickByCssSelector('.compact-node .node-name p')
-          .assertElementNotExists('.compact-node .node-name-input', 'Node can not be renamed from compact panel')
-          .assertElementNotExists('.compact-node .role-list', 'Role list is not shown on node compact panel');
+          .assertElementNotExists('.compact-node .node-name-input',
+            'Node can not be renamed from compact panel')
+          .assertElementNotExists('.compact-node .role-list',
+            'Role list is not shown on node compact panel');
       },
       'Compact node extended view': function() {
         var newName = 'Node new new name';
@@ -117,7 +124,8 @@ define([
             return node.openCompactNodeExtendedView();
           })
           .clickByCssSelector('.node-popover .node-name input[type=checkbox]')
-          .assertElementExists('.compact-node .node-checkbox i.glyphicon-ok', 'Node compact panel is checked')
+          .assertElementExists('.compact-node .node-checkbox i.glyphicon-ok',
+            'Node compact panel is checked')
           .then(function() {
             return node.openNodePopup(true);
           })
@@ -131,12 +139,14 @@ define([
           })
           .findByCssSelector('.node-popover')
             .assertElementExists('.role-list', 'Role list is shown in cluster node extended view')
-            .assertElementExists('.node-buttons', 'Cluster node action buttons are presented in extended view')
+            .assertElementExists('.node-buttons',
+            'Cluster node action buttons are presented in extended view')
             .end()
           .then(function() {
             return node.renameNode(newName, true);
           })
-          .assertElementTextEquals('.node-popover .name p', newName, 'Node name has been updated from extended view')
+          .assertElementTextEquals('.node-popover .name p', newName,
+            'Node name has been updated from extended view')
           .then(function() {
             return node.discardNode(true);
           })
@@ -152,13 +162,17 @@ define([
           .then(function() {
             return node.openCompactNodeExtendedView();
           })
-          .assertElementNotExists('.node-popover .role-list', 'Unallocated node does not have roles assigned')
-          .assertElementNotExists('.node-popover .node-buttons .btn', 'There are no action buttons in unallocated node extended view')
+          .assertElementNotExists('.node-popover .role-list',
+            'Unallocated node does not have roles assigned')
+          .assertElementNotExists('.node-popover .node-buttons .btn',
+            'There are no action buttons in unallocated node extended view')
           .then(function() {
             return node.openNodePopup(true);
           })
-          .assertElementNotExists('.modal .btn-edit-disks', 'Disks can not be configured for unallocated node')
-          .assertElementNotExists('.modal .btn-edit-networks', 'Interfaces can not be configured for unallocated node')
+          .assertElementNotExists('.modal .btn-edit-disks',
+            'Disks can not be configured for unallocated node')
+          .assertElementNotExists('.modal .btn-edit-networks',
+            'Interfaces can not be configured for unallocated node')
           .then(function() {
             return modal.close();
           });

@@ -109,7 +109,8 @@ export default {
     }
   },
   checkRestrictions(name, action = 'disable') {
-    return this.props.settings.checkRestrictions(this.configModels, action, this.props.settings.get('statistics').name);
+    return this.props.settings.checkRestrictions(this.configModels, action,
+      this.props.settings.get('statistics').name);
   },
   componentWillMount() {
     var model = this.props.statistics || this.props.tracking;
@@ -129,9 +130,11 @@ export default {
   renderInput(settingName, wrapperClassName, disabledState) {
     var model = this.props.statistics || this.props.tracking;
     var setting = model.get(model.makePath('statistics', settingName));
-    if (this.checkRestrictions('metadata', 'hide').result || this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
+    if (this.checkRestrictions('metadata', 'hide').result ||
+      this.checkRestrictions(settingName, 'hide').result || setting.type == 'hidden') return null;
     var error = this.getError(model, settingName);
-    var disabled = this.checkRestrictions('metadata').result || this.checkRestrictions(settingName).result || disabledState;
+    var disabled = this.checkRestrictions('metadata').result ||
+      this.checkRestrictions(settingName).result || disabledState;
     return <Input
       key={settingName}
       type={setting.type}
@@ -198,8 +201,13 @@ export default {
     return (
       <div>
         <div className='statistics-text-box'>
-          <div className={utils.classNames({notice: isMirantisIso})}>{this.getText(ns + 'help_to_improve')}</div>
-          <button className='btn-link' data-toggle='collapse' data-target='.statistics-disclaimer-box'>{i18n(ns + 'learn_whats_collected')}</button>
+          <div className={utils.classNames({notice: isMirantisIso})}>
+            {this.getText(ns + 'help_to_improve')}
+          </div>
+          <button className='btn-link' data-toggle='collapse'
+            data-target='.statistics-disclaimer-box'>
+            {i18n(ns + 'learn_whats_collected')}
+          </button>
           <div className='collapse statistics-disclaimer-box'>
             <p>{i18n(ns + 'statistics_includes_full')}</p>
             {_.map(lists, this.renderList)}
@@ -258,10 +266,12 @@ export default {
             />;
           })}
           <div className='links-container'>
-            <button className='btn btn-link create-account pull-left' onClick={this.showRegistrationDialog}>
+            <button className='btn btn-link create-account pull-left'
+              onClick={this.showRegistrationDialog}>
               {i18n('welcome_page.register.create_account')}
             </button>
-            <button className='btn btn-link retrive-password pull-right' onClick={this.showRetrievePasswordDialog}>
+            <button className='btn btn-link retrive-password pull-right'
+              onClick={this.showRetrievePasswordDialog}>
               {i18n('welcome_page.register.retrieve_password')}
             </button>
           </div>

@@ -58,7 +58,8 @@ ClustersPage = React.createClass({
 ClusterList = React.createClass({
   mixins: [backboneMixin('clusters')],
   createCluster() {
-    CreateClusterWizard.show({clusters: this.props.clusters, modalClass: 'wizard', backdrop: 'static'});
+    CreateClusterWizard.show({clusters: this.props.clusters, modalClass: 'wizard',
+      backdrop: 'static'});
   },
   render() {
     return (
@@ -126,7 +127,8 @@ Cluster = React.createClass({
     var cluster = this.props.cluster;
     var status = cluster.get('status');
     var nodes = cluster.get('nodes');
-    var isClusterDeleting = !!cluster.task({name: 'cluster_deletion', active: true}) || !!cluster.task({name: 'cluster_deletion', status: 'ready'});
+    var isClusterDeleting = !!cluster.task({name: 'cluster_deletion', active: true}) ||
+      !!cluster.task({name: 'cluster_deletion', status: 'ready'});
     var deploymentTask = cluster.task({group: 'deployment', active: true});
     var Tag = isClusterDeleting ? 'div' : 'a';
     return (
@@ -140,15 +142,29 @@ Cluster = React.createClass({
         >
           <div className='name'>{cluster.get('name')}</div>
           <div className='tech-info'>
-            <div key='nodes-title' className='item'>{i18n('clusters_page.cluster_hardware_nodes')}</div>
+            <div key='nodes-title' className='item'>
+              {i18n('clusters_page.cluster_hardware_nodes')}
+            </div>
             <div key='nodes-value' className='value'>{nodes.length}</div>
             {!!nodes.length && [
-              <div key='cpu-title' className='item'>{i18n('clusters_page.cluster_hardware_cpu')}</div>,
-              <div key='cpu-value' className='value'>{nodes.resources('cores')} ({nodes.resources('ht_cores')})</div>,
-              <div key='hdd-title' className='item'>{i18n('clusters_page.cluster_hardware_hdd')}</div>,
-              <div key='hdd-value' className='value'>{nodes.resources('hdd') ? utils.showDiskSize(nodes.resources('hdd')) : '?GB'}</div>,
-              <div key='ram-title' className='item'>{i18n('clusters_page.cluster_hardware_ram')}</div>,
-              <div key='ram-value' className='value'>{nodes.resources('ram') ? utils.showMemorySize(nodes.resources('ram')) : '?GB'}</div>
+              <div key='cpu-title' className='item'>
+                {i18n('clusters_page.cluster_hardware_cpu')}
+              </div>,
+              <div key='cpu-value' className='value'>
+                {nodes.resources('cores')} ({nodes.resources('ht_cores')})
+              </div>,
+              <div key='hdd-title' className='item'>
+                {i18n('clusters_page.cluster_hardware_hdd')}
+              </div>,
+              <div key='hdd-value' className='value'>
+                {nodes.resources('hdd') ? utils.showDiskSize(nodes.resources('hdd')) : '?GB'}
+              </div>,
+              <div key='ram-title' className='item'>
+                {i18n('clusters_page.cluster_hardware_ram')}
+              </div>,
+              <div key='ram-value' className='value'>
+                {nodes.resources('ram') ? utils.showMemorySize(nodes.resources('ram')) : '?GB'}
+              </div>
             ]}
           </div>
           <div className='status text-info'>
@@ -157,9 +173,11 @@ Cluster = React.createClass({
                 <div
                   className={utils.classNames({
                     'progress-bar': true,
-                    'progress-bar-warning': _.contains(['stop_deployment', 'reset_environment'], deploymentTask.get('name'))
+                    'progress-bar-warning': _.contains(['stop_deployment', 'reset_environment'],
+                      deploymentTask.get('name'))
                   })}
-                  style={{width: (deploymentTask.get('progress') > 3 ? deploymentTask.get('progress') : 3) + '%'}}
+                  style={{width: (deploymentTask.get('progress') > 3 ?
+                    deploymentTask.get('progress') : 3) + '%'}}
                 ></div>
               </div>
             :

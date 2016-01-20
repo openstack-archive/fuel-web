@@ -44,12 +44,15 @@ var Node = React.createClass({
     var options = {type: 'remote', node: this.props.node.id};
     if (status == 'discover') {
       options.source = 'bootstrap/messages';
-    } else if (status == 'provisioning' || status == 'provisioned' || (status == 'error' && error == 'provision')) {
+    } else if (status == 'provisioning' || status == 'provisioned' ||
+      (status == 'error' && error == 'provision')) {
       options.source = 'install/fuel-agent';
-    } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
+    } else if (status == 'deploying' || status == 'ready' ||
+      (status == 'error' && error == 'deploy')) {
       options.source = 'install/puppet';
     }
-    return '#cluster/' + this.props.node.get('cluster') + '/logs/' + utils.serializeTabOptions(options);
+    return '#cluster/' + this.props.node.get('cluster') + '/logs/' +
+      utils.serializeTabOptions(options);
   },
   applyNewNodeName(newName) {
     if (newName && newName != this.props.node.get('name')) {
@@ -100,7 +103,8 @@ var Node = React.createClass({
           .sync('delete', this.props.node)
           .then(
             (task) => {
-              dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications labelsConfigurationUpdated');
+              dispatcher.trigger('networkConfigurationUpdated updateNodeStats ' +
+                'updateNotifications labelsConfigurationUpdated');
               if (task.status == 'ready') {
                 // Do not send the 'DELETE' request again, just get rid
                 // of this node.
@@ -129,7 +133,8 @@ var Node = React.createClass({
     });
   },
   toggleExtendedNodePanel() {
-    var states = this.state.extendedView ? {extendedView: false, isRenaming: false} : {extendedView: true};
+    var states = this.state.extendedView ? {extendedView: false, isRenaming: false} :
+      {extendedView: true};
     this.setState(states);
   },
   renderNameControl() {
@@ -159,7 +164,8 @@ var Node = React.createClass({
     return (
       <span>
         {i18n('cluster_page.nodes_tab.node.status.' + status, {
-          os: this.props.cluster && this.props.cluster.get('release').get('operating_system') || 'OS'
+          os: this.props.cluster && this.props.cluster.get('release').get('operating_system') ||
+            'OS'
         })}
       </span>
     );
@@ -174,7 +180,12 @@ var Node = React.createClass({
             {': ' + nodeProgress + '%'}
           </div>
         }
-        <div className='progress-bar' role='progressbar' style={{width: _.max([nodeProgress, 3]) + '%'}}></div>
+        <div
+          className='progress-bar'
+          role='progressbar'
+          style={{width: _.max([nodeProgress, 3]) + '%'}}
+        >
+        </div>
       </div>
     );
   },
@@ -184,16 +195,31 @@ var Node = React.createClass({
     var ram = this.props.node.resource('ram');
     return (
       <div className='node-hardware'>
-        <span>{i18n('node_details.cpu')}: {this.props.node.resource('cores') || '0'} ({_.isUndefined(htCores) ? '?' : htCores})</span>
-        <span>{i18n('node_details.hdd')}: {_.isUndefined(hdd) ? '?' + i18n('common.size.gb') : utils.showDiskSize(hdd)}</span>
-        <span>{i18n('node_details.ram')}: {_.isUndefined(ram) ? '?' + i18n('common.size.gb') : utils.showMemorySize(ram)}</span>
+        <span>
+          {i18n('node_details.cpu')}:
+          {this.props.node.resource('cores') || '0'} ({_.isUndefined(htCores) ? '?' : htCores})
+        </span>
+        <span>
+          {i18n('node_details.hdd')}:
+          {_.isUndefined(hdd) ? '?' + i18n('common.size.gb') : utils.showDiskSize(hdd)}
+        </span>
+        <span>
+          {i18n('node_details.ram')}:
+          {_.isUndefined(ram) ? '?' + i18n('common.size.gb') : utils.showMemorySize(ram)}
+        </span>
       </div>
     );
   },
   renderLogsLink(iconRepresentation) {
     return (
-      <Tooltip key='logs' text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}>
-        <a className={'btn-view-logs ' + (iconRepresentation ? 'icon icon-logs' : 'btn')} href={this.getNodeLogsLink()}>
+      <Tooltip
+        key='logs'
+        text={iconRepresentation ? i18n('cluster_page.nodes_tab.node.view_logs') : null}
+      >
+        <a
+          className={'btn-view-logs ' + (iconRepresentation ? 'icon icon-logs' : 'btn')}
+          href={this.getNodeLogsLink()}
+        >
           {!iconRepresentation && i18n('cluster_page.nodes_tab.node.view_logs')}
         </a>
       </Tooltip>
@@ -270,7 +296,8 @@ var Node = React.createClass({
     var node = this.props.node;
     var isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit';
     var status = node.getStatusSummary();
-    var roles = this.props.cluster ? node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
+    var roles = this.props.cluster ?
+      node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
 
     // compose classes
     var nodePanelClasses = {
@@ -307,7 +334,8 @@ var Node = React.createClass({
           <label className='node-box'>
             <div
               className='node-box-inner clearfix'
-              onClick={isSelectable && _.partial(this.props.onNodeSelection, null, !this.props.checked)}
+              onClick={isSelectable &&
+                _.partial(this.props.onNodeSelection, null, !this.props.checked)}
             >
               <div className='node-checkbox'>
                 {this.props.checked && <i className='glyphicon glyphicon-ok' />}
@@ -328,9 +356,11 @@ var Node = React.createClass({
                 <span>
                   {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
                 </span> / <span>
-                  {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' + i18n('common.size.gb')}
+                  {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) :
+                    '?' + i18n('common.size.gb')}
                 </span> / <span>
-                  {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) : '?' + i18n('common.size.gb')}
+                  {node.resource('ram') ? utils.showMemorySize(node.resource('ram')) :
+                    '?' + i18n('common.size.gb')}
                 </span>
               </p>
               <p className='btn btn-link' onClick={this.toggleExtendedNodePanel}>
@@ -378,13 +408,16 @@ var Node = React.createClass({
                         {status == 'offline' && this.renderRemoveButton()}
                         {[
                           !!node.get('cluster') && this.renderLogsLink(),
-                          this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
+                          this.props.renderActionButtons && node.hasChanges() &&
+                          !this.props.locked &&
                             <button
                               className='btn btn-discard'
                               key='btn-discard'
-                              onClick={node.get('pending_deletion') ? this.discardNodeDeletion : this.showDeleteNodesDialog}
+                              onClick={node.get('pending_deletion') ? this.discardNodeDeletion :
+                               this.showDeleteNodesDialog}
                             >
-                              {i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))}
+                                {i18n(ns + (node.get('pending_deletion') ?
+                                  'discard_deletion' : 'delete_node'))}
                             </button>
                         ]}
                       </div>
@@ -439,11 +472,13 @@ var Node = React.createClass({
               this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
                 <Tooltip
                   key={'pending_addition_' + node.id}
-                  text={i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))}
+                  text={i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' :
+                    'delete_node'))}
                 >
                   <div
                     className='icon btn-discard'
-                    onClick={node.get('pending_deletion') ? this.discardNodeDeletion : this.showDeleteNodesDialog}
+                    onClick={node.get('pending_deletion') ? this.discardNodeDeletion :
+                      this.showDeleteNodesDialog}
                   />
                 </Tooltip>
             ]}

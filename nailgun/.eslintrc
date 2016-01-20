@@ -16,8 +16,7 @@
     # to be fixed and enabled
     complexity: 0
     eqeqeq: 0
-    max-len: [0, 120]
-
+    
     # extra rules
     no-unexpected-multiline: 2
     dot-location: [2, property]

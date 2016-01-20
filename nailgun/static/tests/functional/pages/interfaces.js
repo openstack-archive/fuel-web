@@ -133,7 +133,8 @@ define([
           return bondElement
             .findAllByCssSelector('.ifc-name')
               .then(function(ifcNamesElements) {
-                assert.equal(ifcNamesElements.length, ifcsNames.length, 'Unexpected number of interfaces in bond');
+                assert.equal(ifcNamesElements.length, ifcsNames.length,
+                  'Unexpected number of interfaces in bond');
 
                 return ifcNamesElements.forEach(
                   function(ifcNameElement) {

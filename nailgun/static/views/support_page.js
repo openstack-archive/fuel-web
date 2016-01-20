@@ -46,17 +46,33 @@ var SupportPage = React.createClass({
   render() {
     var elements = [
       <DocumentationLink key='DocumentationLink' />,
-      <DiagnosticSnapshot key='DiagnosticSnapshot' tasks={this.props.tasks} task={this.props.tasks.findTask({name: 'dump'})} />,
+      <DiagnosticSnapshot
+        key='DiagnosticSnapshot'
+        tasks={this.props.tasks}
+        task={this.props.tasks.findTask({name: 'dump'})}
+      />,
       <CapacityAudit key='CapacityAudit' />
     ];
     if (_.contains(app.version.get('feature_groups'), 'mirantis')) {
       elements.unshift(
-        <RegistrationInfo key='RegistrationInfo' settings={this.props.settings} tracking={this.props.tracking}/>,
-        <StatisticsSettings key='StatisticsSettings' settings={this.props.settings} statistics={this.props.statistics}/>,
+        <RegistrationInfo
+          key='RegistrationInfo'
+          settings={this.props.settings}
+          tracking={this.props.tracking}
+        />,
+        <StatisticsSettings
+          key='StatisticsSettings'
+          settings={this.props.settings}
+          statistics={this.props.statistics}
+        />,
         <SupportContacts key='SupportContacts' />
       );
     } else {
-      elements.push(<StatisticsSettings key='StatisticsSettings' settings={this.props.settings} statistics={this.props.statistics}/>);
+      elements.push(<StatisticsSettings
+        key='StatisticsSettings'
+        settings={this.props.settings}
+        statistics={this.props.statistics}
+      />);
     }
     return (
       <div className='support-page'>
@@ -92,7 +108,8 @@ var SupportPageElement = React.createClass({
 
 var DocumentationLink = React.createClass({
   render() {
-    var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ? 'mirantis' : 'community') + '_';
+    var ns = 'support_page.' + (_.contains(app.version.get('feature_groups'), 'mirantis') ?
+        'mirantis' : 'community') + '_';
     return (
       <SupportPageElement
         className='img-documentation-link'
@@ -100,7 +117,11 @@ var DocumentationLink = React.createClass({
         text={i18n(ns + 'text')}
       >
         <p>
-          <a className='btn btn-default documentation-link' href='https://www.mirantis.com/openstack-documentation/' target='_blank'>
+          <a
+            className='btn btn-default documentation-link'
+            href='https://www.mirantis.com/openstack-documentation/'
+            target='_blank'
+          >
             {i18n('support_page.documentation_link')}
           </a>
         </p>
@@ -124,12 +145,18 @@ var RegistrationInfo = React.createClass({
         >
           <div className='registeredData enable-selection'>
             {_.map(['name', 'email', 'company'], (value) => {
-              return <div key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b> {this.props.tracking.get('statistics')[value].value}</div>;
+              return <div key={value}><b>{i18n('statistics.setting_labels.' + value)}:</b>
+                {this.props.tracking.get('statistics')[value].value}
+              </div>;
             })}
-            <div><b>{i18n('support_page.master_node_uuid')}:</b> {this.props.tracking.get('master_node_uid')}</div>
+            <div><b>{i18n('support_page.master_node_uuid')}:</b>
+              {this.props.tracking.get('master_node_uid')}
+            </div>
           </div>
           <p>
-            <a className='btn btn-default' href='https://software.mirantis.com/account/' target='_blank'>
+            <a className='btn btn-default' href='https://software.mirantis.com/account/'
+              target='_blank'
+            >
               {i18n('support_page.manage_account')}
             </a>
           </p>
@@ -142,9 +169,14 @@ var RegistrationInfo = React.createClass({
         text={i18n('support_page.register_fuel_content')}
       >
         <div className='tracking'>
-          {this.renderRegistrationForm(this.props.tracking, this.state.actionInProgress, this.state.error, this.state.actionInProgress)}
+          {this.renderRegistrationForm(this.props.tracking, this.state.actionInProgress,
+            this.state.error, this.state.actionInProgress)}
           <p>
-            <button className='btn btn-default' onClick={this.connectToMirantis} disabled={this.state.actionInProgress} target='_blank'>
+            <button
+              className='btn btn-default'
+              onClick={this.connectToMirantis}
+              disabled={this.state.actionInProgress} target='_blank'
+            >
               {i18n('support_page.register_fuel_title')}
             </button>
           </p>
@@ -212,9 +244,14 @@ var SupportContacts = React.createClass({
         title={i18n('support_page.contact_support')}
         text={i18n('support_page.contact_text')}
       >
-        <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
+        <p>{i18n('support_page.irc_text')} <strong>#fuel</strong> on
+          <a href='http://freenode.net' target='_blank'>freenode.net</a>.</p>
         <p>
-          <a className='btn btn-default' href='http://support.mirantis.com/requests/new' target='_blank'>
+          <a
+            className='btn btn-default'
+            href='http://support.mirantis.com/requests/new'
+            target='_blank'
+          >
             {i18n('support_page.contact_support')}
           </a>
         </p>
@@ -244,7 +281,8 @@ var DiagnosticSnapshot = React.createClass({
   },
   downloadLogs() {
     this.setState({generating: true});
-    (new models.LogsPackage()).save({}, {method: 'PUT'}).always(_.bind(this.props.tasks.fetch, this.props.tasks));
+    (new models.LogsPackage()).save({}, {method: 'PUT'}).always(_.bind(this.props.tasks.fetch,
+      this.props.tasks));
   },
   componentDidUpdate() {
     this.startPolling();
@@ -260,7 +298,8 @@ var DiagnosticSnapshot = React.createClass({
       >
         <p className='snapshot'>
           <button className='btn btn-default' disabled={generating} onClick={this.downloadLogs}>
-            {generating ? i18n('support_page.gen_logs_snapshot_text') : i18n('support_page.gen_diagnostic_snapshot_text')}
+            {generating ? i18n('support_page.gen_logs_snapshot_text') :
+              i18n('support_page.gen_diagnostic_snapshot_text')}
           </button>
           {' '}
           {!generating && task &&

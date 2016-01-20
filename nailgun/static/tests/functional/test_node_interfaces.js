@@ -68,7 +68,8 @@ define([
           .then(function() {
             return interfacesPage.assignNetworkToInterface('Public', 'eth0');
           })
-          .assertElementExists('div.ifc-error', 'Untagged networks can not be assigned to the same interface message should appear');
+          .assertElementExists('div.ifc-error',
+            'Untagged networks can not be assigned to the same interface message should appear');
       },
       'Bond interfaces with different speeds': function() {
         return this.remote
@@ -78,7 +79,8 @@ define([
           .then(function() {
             return interfacesPage.selectInterface('eth3');
           })
-          .assertElementExists('div.alert.alert-warning', 'Interfaces with different speeds bonding not recommended message should appear')
+          .assertElementExists('div.alert.alert-warning',
+            'Interfaces with different speeds bonding not recommended message should appear')
           .assertElementEnabled('.btn-bond', 'Bonding button should still be enabled');
       },
       'Interfaces bonding': function() {
@@ -137,7 +139,9 @@ define([
             return interfacesPage.selectInterface('bond1');
           })
           .assertElementDisabled('.btn-bond', 'Making sure bond button is disabled')
-          .assertElementContainsText('.alert.alert-warning', ' network interface is already bonded with other network interfaces.', 'Warning message should appear when intended to bond bonds');
+          .assertElementContainsText('.alert.alert-warning',
+            ' network interface is already bonded with other network interfaces.',
+            'Warning message should appear when intended to bond bonds');
       }
     };
   });

@@ -29,7 +29,8 @@ class KeystoneClient {
   authenticate(username, password, options = {}) {
     if (this.tokenUpdateRequest) return this.tokenUpdateRequest;
 
-    if (!options.force && this.tokenUpdateTime && (this.cacheTokenFor > (new Date() - this.tokenUpdateTime))) {
+    if (!options.force && this.tokenUpdateTime &&
+      (this.cacheTokenFor > (new Date() - this.tokenUpdateTime))) {
       return $.Deferred().resolve();
     }
     var data = {auth: {}};

@@ -45,7 +45,7 @@ var BaseModel = Backbone.Model.extend(models.superMixin).extend(models.cacheMixi
   validate() {
     var result = {};
     _.each(this.attributes.metadata, (field) => {
-      if (!VmWareModels.isRegularField(field) || field.type == 'checkbox') {
+      if (!VmWareModels.isRegularField(field) || field.type === 'checkbox') {
         return;
       }
       var isDisabled = this.checkRestrictions(restrictionModels, undefined, field);
@@ -102,7 +102,7 @@ VmWareModels.NovaCompute = BaseModel.extend({
   constructorName: 'NovaCompute',
   checkEmptyTargetNode() {
     var targetNode = this.get('target_node');
-    if (targetNode.current && targetNode.current.id == 'invalid') {
+    if (targetNode.current && targetNode.current.id === 'invalid') {
       this.validationError = this.validationError || {};
       this.validationError.target_node = i18n('vmware.invalid_target_node');
     }
@@ -123,7 +123,7 @@ VmWareModels.NovaCompute = BaseModel.extend({
 
     var targetNode = this.get('target_node') || {};
     if (targetNode.current) {
-      if (targetNode.current.id && targetNode.current.id != 'controllers' &&
+      if (targetNode.current.id && targetNode.current.id !== 'controllers' &&
         keys.target_node && keys.target_node[targetNode.current.id]) {
         this.validationError = this.validationError || {};
         this.validationError.target_node = i18n('vmware.duplicate_value');

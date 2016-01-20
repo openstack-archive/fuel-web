@@ -30,7 +30,7 @@ define([
       return this.remote
         .waitForCssSelector(this.modalSelector, 2000)
         .then(pollUntil(function(modalSelector) {
-          return window.$(modalSelector).css('opacity') == 1 || null;
+          return window.$(modalSelector).css('opacity') === '1' || null;
         }, [this.modalSelector], 3000));
     },
     checkTitle: function(expectedTitle) {
@@ -52,7 +52,7 @@ define([
             return buttons.reduce(function(result, button) {
               return button.getVisibleText()
                 .then(function(buttonTitle) {
-                  if (buttonTitle == buttonText)
+                  if (buttonTitle === buttonText)
                     return button.isEnabled()
                       .then(function(isEnabled) {
                         if (isEnabled) {

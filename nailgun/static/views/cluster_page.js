@@ -55,24 +55,15 @@ var ClusterPage = React.createClass({
   statics: {
     navbarActiveElement: 'clusters',
     breadcrumbsPath(pageOptions) {
-      var cluster = pageOptions.cluster;
-      var tabOptions = pageOptions.tabOptions[0];
-      var addScreenBreadcrumb = tabOptions && tabOptions.match(/^(?!list$)\w+$/);
+      var {activeTab, cluster} = pageOptions;
       var breadcrumbs = [
         ['home', '#'],
         ['environments', '#clusters'],
-        [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}],
-        [
-          i18n('cluster_page.tabs.' + pageOptions.activeTab),
-          '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab,
-          {active: !addScreenBreadcrumb}
-        ]
+        [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}]
       ];
-      if (addScreenBreadcrumb) {
-        breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null,
-          {active: true}]);
-      }
-      return breadcrumbs;
+      return breadcrumbs.concat(
+          _.find(this.getTabs(), {url: activeTab}).tab.breadcrumbsPath(pageOptions)
+        );
     },
     title(pageOptions) {
       return pageOptions.cluster.get('name');
@@ -157,15 +148,9 @@ var ClusterPage = React.createClass({
               $.Deferred().resolve();
           });
       }
-      return promise.then((data) => {
-        return {
-          cluster: cluster,
-          nodeNetworkGroups: nodeNetworkGroups,
-          activeTab: activeTab,
-          tabOptions: tabOptions,
-          tabData: data
-        };
-      });
+      return promise.then(
+        (tabData) => ({cluster, nodeNetworkGroups, activeTab, tabOptions, tabData})
+      );
     }
   },
   getDefaultProps() {
@@ -174,12 +159,14 @@ var ClusterPage = React.createClass({
     };
   },
   getInitialState() {
-    return {
-      activeSettingsSectionName: this.pickDefaultSettingGroup(),
-      activeNetworkSectionName: this.props.nodeNetworkGroups.find({is_default: true}).get('name'),
-      selectedNodeIds: {},
-      selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
+    var tabs = this.constructor.getTabs();
+    var states = {
+      selectedNodeIds: {}
     };
+    _.each(tabs, (tabData) => {
+      if (tabData.tab.checkSubroute) _.extend(states, tabData.tab.checkSubroute(this.props));
+    });
+    return states;
   },
   removeFinishedNetworkTasks(callback) {
     var request = this.removeFinishedTasks(this.props.cluster.tasks({group: 'network'}));
@@ -229,45 +216,22 @@ var ClusterPage = React.createClass({
     this.props.cluster.on('change:release_id', () => {
       var release = new models.Release({id: this.props.cluster.get('release_id')});
       release.fetch().done(() => {
-        this.props.cluster.set({release: release});
+        this.props.cluster.set({release});
       });
     });
-    this.updateLogSettings();
   },
   componentWillReceiveProps(newProps) {
-    this.updateLogSettings(newProps);
-  },
-  updateLogSettings(props) {
-    props = props || this.props;
-    // FIXME: the following logs-related logic should be moved to Logs tab code
-    // to keep parent component tightly coupled to its children
-    if (props.activeTab === 'logs') {
-      var selectedLogs;
-      if (props.tabOptions[0]) {
-        selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
-        selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() :
-          props.defaultLogLevel;
-        this.setState({selectedLogs: selectedLogs});
-      }
+    var tab = _.find(this.constructor.getTabs(), {url: newProps.activeTab}).tab;
+    if (tab.checkSubroute) {
+      this.setState(tab.checkSubroute(newProps));
     }
   },
   changeLogSelection(selectedLogs) {
-    this.setState({selectedLogs: selectedLogs});
+    this.setState({selectedLogs});
   },
   getAvailableTabs(cluster) {
     return _.filter(this.constructor.getTabs(),
       (tabData) => !tabData.tab.isVisible || tabData.tab.isVisible(cluster));
-  },
-  pickDefaultSettingGroup() {
-    return _.first(this.props.cluster.get('settings').getGroupList());
-  },
-  setActiveSettingsGroupName(value) {
-    if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
-    this.setState({activeSettingsSectionName: value});
-  },
-
-  setActiveNetworkSectionName(name) {
-    this.setState({activeNetworkSectionName: name});
   },
   selectNodes(ids, checked) {
     if (ids && ids.length) {
@@ -288,6 +252,11 @@ var ClusterPage = React.createClass({
     var cluster = this.props.cluster;
     var availableTabs = this.getAvailableTabs(cluster);
     var tabUrls = _.pluck(availableTabs, 'url');
+    var subroutes = {
+      settings: this.state.activeSettingsSectionName,
+      network: this.state.activeNetworkSectionName,
+      logs: utils.serializeTabOptions(this.state.selectedLogs)
+    };
     var tab = _.find(availableTabs, {url: this.props.activeTab});
     if (!tab) return null;
     var Tab = tab.tab;
@@ -306,20 +275,22 @@ var ClusterPage = React.createClass({
         </div>
         <div className='tabs-box'>
           <div className='tabs'>
-            {tabUrls.map((url) => {
+            {tabUrls.map((tabUrl) => {
+              var url = '#cluster/' + cluster.id + '/' + tabUrl +
+                (subroutes[tabUrl] ? '/' + subroutes[tabUrl] : '');
               return (
                 <a
-                  key={url}
+                  key={tabUrl}
                   className={
-                    url + ' ' + utils.classNames({
+                    tabUrl + ' ' + utils.classNames({
                       'cluster-tab': true,
-                      active: this.props.activeTab === url
+                      active: this.props.activeTab === tabUrl
                     })
                   }
-                  href={'#cluster/' + cluster.id + '/' + url}
+                  href={url}
                 >
-                  <div className='icon'></div>
-                  <div className='label'>{i18n('cluster_page.tabs.' + url)}</div>
+                  <div className='icon' />
+                  <div className='label'>{i18n('cluster_page.tabs.' + tabUrl)}</div>
                 </a>
               );
             })}
@@ -328,13 +299,8 @@ var ClusterPage = React.createClass({
         <div key={tab.url + cluster.id} className={'content-box tab-content ' + tab.url + '-tab'}>
           <Tab
             ref='tab'
-            cluster={cluster}
-            nodeNetworkGroups={this.props.nodeNetworkGroups}
-            tabOptions={this.props.tabOptions}
-            setActiveSettingsGroupName={this.setActiveSettingsGroupName}
-            setActiveNetworkSectionName={this.setActiveNetworkSectionName}
-            selectNodes={this.selectNodes}
-            changeLogSelection={this.changeLogSelection}
+            {... _.pick(this, 'selectNodes', 'changeLogSelection')}
+            {... _.pick(this.props, 'cluster', 'nodeNetworkGroups', 'tabOptions')}
             {...this.state}
             {...this.props.tabData}
           />

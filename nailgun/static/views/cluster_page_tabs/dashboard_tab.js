@@ -48,6 +48,13 @@ var DashboardTab = React.createClass({
     backboneMixin('cluster', 'change'),
     pollingMixin(20, true)
   ],
+  statics: {
+    breadcrumbsPath() {
+      return [
+        [i18n('cluster_page.tabs.dashboard'), null, {active: true}]
+      ];
+    }
+  },
   fetchData() {
     return this.props.cluster.get('nodes').fetch();
   },

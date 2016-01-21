@@ -28,6 +28,19 @@ var LogsTab = React.createClass({
   mixins: [
     pollingMixin(5)
   ],
+  statics: {
+    checkSubroute(tabOptions, subrouteOptions) {
+      if (tabOptions[0]) {
+        var selectedLogs = utils.deserializeTabOptions(_.compact(tabOptions).join('/'));
+        selectedLogs.level = selectedLogs.level ?
+            selectedLogs.level.toUpperCase()
+          :
+            subrouteOptions.defaultLogLevel;
+        return {selectedLogs: selectedLogs};
+      }
+      return {};
+    }
+  },
   shouldDataBeFetched() {
     return this.state.to && this.state.logsEntries;
   },

@@ -56,6 +56,20 @@ define([
       },
       'Settings tab is rendered correctly': function() {
         return this.remote
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'settings/storage',
+                'Subtab url exists in the page location string'
+              );
+            })
+          .clickLinkByText('Security')
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(url, 'settings/security', 'Settings tab subtabs are routable');
+            })
+          .clickLinkByText('Storage')
           .assertElementNotExists('.nav .subtab-link-network',
             'Subtab for Network settings is not presented in navigation')
           .assertElementEnabled('.btn-load-defaults', 'Load defaults button is enabled')

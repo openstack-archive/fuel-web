@@ -44,6 +44,9 @@ var SettingsTab = React.createClass({
     fetchData(options) {
       return $.when(options.cluster.get('settings').fetch({cache: true}),
         options.cluster.get('networkConfiguration').fetch({cache: true})).then(() => ({}));
+    },
+    getSubtabs(options) {
+      return options.cluster.get('settings').getGroupList();
     }
   },
   getInitialState() {
@@ -249,6 +252,7 @@ var SettingsTab = React.createClass({
       <div key={this.state.key} className={utils.classNames(classes)}>
         <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
         <SettingSubtabs
+          cluster={cluster}
           settings={settings}
           settingsGroupList={settingsGroupList}
           groupedSettings={groupedSettings}
@@ -326,10 +330,14 @@ var SettingSubtabs = React.createClass({
               <li
                 key={groupName}
                 role='presentation'
-                className={utils.classNames({active: groupName == this.props.activeSettingsSectionName})}
-                onClick={_.partial(this.props.setActiveSettingsGroupName, groupName)}
+                className={utils.classNames({
+                  active: groupName == this.props.activeSettingsSectionName
+                })}
               >
-                <a className={'subtab-link-' + groupName}>
+                <a
+                  className={'subtab-link-' + groupName}
+                  href={'#cluster/' + this.props.cluster.id + '/settings/' + groupName}
+                >
                   {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
                   {i18n('cluster_page.settings_tab.groups.' + groupName, {defaultValue: groupName})}
                 </a>

@@ -582,6 +582,7 @@ var NetworkTab = React.createClass({
   revertChanges() {
     this.loadInitialConfiguration();
     this.loadInitialSettings();
+    this.props.cluster.get('networkConfiguration').isValid();
     this.setState({
       hideVerificationResult: true,
       key: _.now()

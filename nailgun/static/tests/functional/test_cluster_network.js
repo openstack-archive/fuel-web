@@ -30,7 +30,6 @@ define([
       clusterName,
       dashboardPage;
     var applyButtonSelector = '.apply-btn';
-
     return {
       name: 'Networks page Neutron tests',
       setup: function() {
@@ -38,7 +37,6 @@ define([
         clusterPage = new ClusterPage(this.remote);
         clusterName = common.pickRandomName('Test Cluster');
         dashboardPage = new DashboardPage(this.remote);
-
         return this.remote
           .then(function() {
             return common.getIn();
@@ -72,7 +70,23 @@ define([
       },
       'Network Tab is rendered correctly': function() {
         return this.remote
-          .assertElementsExist('.network-tab h3', 4, 'All networks are present');
+          .assertElementsExist('.network-tab h3', 4, 'All networks are present')
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'network/group/1',
+                'Subtab url exists in the page location string'
+              );
+            })
+          .clickLinkByText('Neutron L2')
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(url, 'neutron_l2', 'Networks tab subtabs are routable');
+            })
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end();
       },
       'Testing cluster networks: Save button interactions': function() {
         var self = this;
@@ -98,7 +112,9 @@ define([
       },
       'Testing cluster networks: network notation change': function() {
         return this.remote
-          .clickByCssSelector('.subtab-link-default')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
           .assertElementAppears('.storage', 2000, 'Storage network is shown')
           .assertElementSelected('.storage .cidr input[type=checkbox]',
             'Storage network has "cidr" notation by default')
@@ -126,7 +142,9 @@ define([
           .assertElementTextEquals('.alert-warning',
             'At least two online nodes are required to verify environment network configuration',
             'Not enough nodes warning is shown')
-          .clickByCssSelector('.subtab-link-default')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
           .then(function() {
             // Adding 2 controllers
             return common.addNodesToCluster(2, ['Controller']);
@@ -141,7 +159,9 @@ define([
           .assertElementAppears('.alert-danger.network-alert', 'Address intersection',
             'Verification result is shown in case of address intersection')
           // Testing cluster networks: verification task deletion
-          .clickByCssSelector('.subtab-link-default')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
           .setInputValue('.public input[name=gateway]', '172.16.0.5')
           .clickByCssSelector('.subtab-link-network_verification')
           .assertElementNotExists('.page-control-box .alert',
@@ -152,19 +172,21 @@ define([
           .assertElementAppears('.alert-success', 6000, 'Success verification message appears')
           .assertElementContainsText('.alert-success', 'Verification succeeded',
             'Success verification message appears with proper text')
-          .clickByCssSelector('.btn-revert-changes')
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
           .then(function() {
             return dashboardPage.discardChanges();
-          }) .then(function() {
+          })
+          .then(function() {
             return clusterPage.goToTab('Networks');
           });
       },
       'Check VlanID field validation': function() {
         return this.remote
-          .clickByCssSelector('.subtab-link-default')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
           .assertElementAppears('.management', 2000, 'Management network appears')
           .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
           .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
@@ -173,21 +195,29 @@ define([
       },
       'Testing cluster networks: data validation on invalid settings': function() {
         return this.remote
-          .clickByCssSelector('.subtab-link-default')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
           .setInputValue('input[name=range-end_ip_ranges]', '172.16.0.2')
           .clickByCssSelector(applyButtonSelector)
           .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears')
           .setInputValue('.public input[name=cidr]', 'blablabla')
           .assertElementAppears('.public .has-error input[name=cidr]', 1000,
             'Error class style is applied to invalid input field')
-          .assertElementExists('.subtab-link-default i.glyphicon-danger-sign',
-            'Warning tab icon appears')
+          .assertElementsExist(
+            '#network-subtabs i.glyphicon-danger-sign',
+            2,
+            'Warning tab icons appear for public network and floating ranges setting')
+          .assertElementExists('.add-nodegroup-btn .glyphicon-danger-sign', 1000,
+            'Warning icon for Add Node Network Group appears')
           .clickByCssSelector('.btn-revert-changes')
           .waitForElementDeletion('.alert-danger.network-alert', 1000)
-          .assertElementNotExists('.subtab-link-default i.glyphicon-danger-sign',
+          .assertElementNotExists('#network-subtabs i.glyphicon-danger-sign',
             'Warning tab icon disappears')
           .assertElementNotExists('.public .has-error input[name=cidr]', 1000,
-            'Error class style is removed after reverting changes');
+            'Error class style is removed after reverting changes')
+          .assertElementNotExists('.add-nodegroup-btn .glyphicon-danger-sign', 1000,
+            'Warning icon for Add Node Network Group disappears');
       },
       'Add ranges manipulations': function() {
         var rangeSelector = '.public .ip_ranges ';
@@ -211,7 +241,9 @@ define([
       },
       'Segmentation types differences': function() {
         return this.remote
-          .clickByCssSelector('.subtab-link-default')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
           // Tunneling segmentation tests
           .assertElementExists('.private',
             'Private Network is visible for tunneling segmentation type')
@@ -229,20 +261,6 @@ define([
             'Private Network is not visible for vlan segmentation type')
           .assertElementTextEquals('.segmentation-type', '(Neutron with VLAN segmentation)',
             'Segmentation type is correct for VLAN segmentation');
-      },
-      'Junk input in ip fields': function() {
-        return this.remote
-          .clickByCssSelector('.subtab-link-default')
-          .setInputValue('.public input[name=cidr]', 'blablabla')
-          .assertElementAppears('.public .has-error input[name=cidr]', 1000,
-            'Error class is applied for invalid cidr')
-          .assertElementAppears('.subtab-link-default .subtab-icon.glyphicon-danger-sign', 1000,
-            'Warning icon for node network group appears')
-          .assertElementAppears('.add-nodegroup-btn .glyphicon-danger-sign', 1000,
-            'Warning icon for add node network group appears')
-          .setInputValue('.public input[name=range-start_ip_ranges]', 'blablabla')
-          .assertElementAppears('.public .has-error input[name=range-start_ip_ranges]', 1000,
-            'Error class is applied for invalid range start');
       },
       'Other settings validation error': function() {
         return this.remote
@@ -296,11 +314,16 @@ define([
           .then(function() {
             return modal.waitToClose();
           })
-          .assertElementAppears('.node-network-groups-list', 2000,
-            'Node network groups title appears')
-          .assertElementDisplayed('.subtab-link-Node_Network_Group_1', 'New subtab is shown')
-          .assertElementTextEquals('.network-group-name .btn-link', 'Node_Network_Group_1',
-            'New Node Network group title is shown');
+          .assertElementDisappears(
+            '.network-group-name .explanation',
+            3000,
+            'New subtab is shown'
+          )
+          .assertElementTextEquals(
+            '.network-group-name .btn-link',
+            'Node_Network_Group_1',
+            'New Node Network group title is shown'
+          );
       },
       'Verification is disabled for multirack': function() {
         return this.remote
@@ -310,7 +333,7 @@ define([
       },
       'Node network group renaming': function() {
         return this.remote
-          .clickByCssSelector('.subtab-link-Node_Network_Group_1')
+          .clickLinkByText('Node_Network_Group_1')
           .clickByCssSelector('.glyphicon-pencil')
           .waitForCssSelector('.network-group-name input[type=text]', 2000)
           .findByCssSelector('.node-group-renaming input[type=text]')
@@ -319,15 +342,20 @@ define([
             // Enter
             .type('\uE007')
             .end()
-          .assertElementDisplayed('.subtab-link-Node_Network_Group_2',
-            'Node network group was successfully renamed');
+          // check the node network group was successfully renamed
+          .clickLinkByText('Node_Network_Group_2');
       },
       'Node network group deletion': function() {
         return this.remote
-          .clickByCssSelector('.subtab-link-default')
-          .assertElementNotExists('.glyphicon-remove',
-            'It is not possible to delete default node network group')
-          .clickByCssSelector('.subtab-link-Node_Network_Group_2')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
+          .assertElementDisappears(
+            '.glyphicon-remove',
+            3000,
+            'It is not possible to delete default node network group'
+          )
+          .clickLinkByText('Node_Network_Group_2')
           .assertElementAppears('.glyphicon-remove', 1000, 'Remove icon is shown')
           .clickByCssSelector('.glyphicon-remove')
           .then(function() {
@@ -341,8 +369,11 @@ define([
           .then(function() {
             return modal.waitToClose();
           })
-          .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000,
-            'Node network groups title disappears');
+          .assertElementAppears(
+            '.network-group-name .explanation',
+            3000,
+            'Node network group was successfully removed'
+          );
       },
       'Node network group renaming in deployed environment': function() {
         this.timeout = 100000;
@@ -360,7 +391,9 @@ define([
           .then(function() {
             return clusterPage.goToTab('Networks');
           })
-          .clickByCssSelector('.subtab-link-default')
+          .findByCssSelector('ul.node_network_groups')
+            .clickLinkByText('default')
+            .end()
           .assertElementNotExists('.glyphicon-pencil',
             'Renaming of a node network group is fobidden in deployed environment')
           .clickByCssSelector('.network-group-name .name')

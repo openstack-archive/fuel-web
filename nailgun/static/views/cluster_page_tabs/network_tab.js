@@ -30,7 +30,6 @@ import CSSTransitionGroup from 'react-addons-transition-group';
 
 var parametersNS = 'cluster_page.network_tab.networking_parameters.';
 var networkTabNS = 'cluster_page.network_tab.';
-var defaultNetworkSubtabs = ['neutron_l2', 'neutron_l3', 'network_settings', 'network_verification', 'nova_configuration'];
 
 var NetworkModelManipulationMixin = {
   setValue(attribute, value, options) {
@@ -538,6 +537,19 @@ var NetworkTab = React.createClass({
         cluster.get('settings').fetch({cache: true}),
         cluster.get('networkConfiguration').fetch({cache: true})
       ).then(() => ({}));
+    },
+    getSubtabs(options) {
+      return _.map(options.nodeNetworkGroups.where({cluster_id: options.cluster.id}), (nodeNetworkGroup) => String(nodeNetworkGroup.id))
+        .concat(options.cluster.get('net_provider') == 'nova_network' ? ['nova_configuration'] : ['neutron_l2', 'neutron_l3'])
+        .concat(['network_settings', 'network_verification']);
+    },
+    checkSubroute(tabOptions, subrouteOptions) {
+      var subtab = tabOptions[0];
+      var subtabs = this.getSubtabs(subrouteOptions);
+      if (subtabs && (!subtab || !_.contains(subtabs, subtab))) {
+        app.navigate('cluster/' + subrouteOptions.cluster.id + '/network/' + _.first(subtabs), {trigger: true, replace: true});
+      }
+      return {activeNetworkSectionName: subtab};
     }
   },
   getInitialState() {
@@ -810,13 +822,12 @@ var NetworkTab = React.createClass({
     return fieldsWithVerificationErrors;
   },
   removeNodeNetworkGroup() {
-    var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
+    var nodeNetworkGroup = this.nodeNetworkGroups.get(this.props.activeNetworkSectionName);
     RemoveNodeNetworkGroupDialog
       .show({
         showUnsavedChangesWarning: this.hasChanges()
       })
       .done(() => {
-        this.props.setActiveNetworkSectionName(this.nodeNetworkGroups.find({is_default: true}).get('name'));
         return nodeNetworkGroup
           .destroy({wait: true})
           .then(
@@ -826,7 +837,11 @@ var NetworkTab = React.createClass({
               response: response
             })
           )
-          .then(this.updateInitialConfiguration);
+          .then(() => {
+            this.updateInitialConfiguration();
+            var defaultSubtabId = _.first(this.constructor.getSubtabs(_.pick(this.props, 'cluster', 'nodeNetworkGroups')));
+            app.navigate('#cluster/' + this.props.cluster.id + '/network/' + defaultSubtabId, {trigger: true, replace: true});
+          });
       });
   },
   addNodeNetworkGroup(hasChanges) {
@@ -844,14 +859,17 @@ var NetworkTab = React.createClass({
       })
       .done(() => {
         this.setState({hideVerificationResult: true});
+        var newNodeNetworkGroup;
         return this.nodeNetworkGroups.fetch()
           .then(() => {
-            var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+            newNodeNetworkGroup = this.nodeNetworkGroups.last();
             this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
-            this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
             return this.props.cluster.get('networkConfiguration').fetch();
           })
-          .then(this.updateInitialConfiguration);
+          .then(() => {
+            this.updateInitialConfiguration();
+            app.navigate('#cluster/' + this.props.cluster.id + '/network/' + newNodeNetworkGroup.id, {trigger: true, replace: true});
+          });
       });
   },
   render() {
@@ -894,7 +912,7 @@ var NetworkTab = React.createClass({
       isMultiRack ||
       notEnoughOnlineNodesForVerification;
 
-    var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName});
+    var currentNodeNetworkGroup = nodeNetworkGroups.get(activeNetworkSectionName);
     var nodeNetworkGroupProps = {
       cluster: cluster,
       locked: isLocked,
@@ -946,8 +964,8 @@ var NetworkTab = React.createClass({
           <div className='row'>
             <NetworkSubtabs
               cluster={cluster}
+              subtabs={this.constructor.getSubtabs({cluster, nodeNetworkGroups})}
               validationError={validationError}
-              setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
               nodeNetworkGroups={nodeNetworkGroups}
               activeGroupName={activeNetworkSectionName}
               isMultiRack={isMultiRack}
@@ -955,14 +973,13 @@ var NetworkTab = React.createClass({
               showVerificationResult={!this.state.hideVerificationResult}
             />
             <div className='col-xs-10'>
-              {!_.contains(defaultNetworkSubtabs, activeNetworkSectionName) &&
+              {currentNodeNetworkGroup &&
                 <NodeNetworkGroup
                   {...nodeNetworkGroupProps}
                   nodeNetworkGroups={nodeNetworkGroups}
                   nodeNetworkGroup={currentNodeNetworkGroup}
                   networks={networks.where({group_id: currentNodeNetworkGroup.id})}
                   removeNodeNetworkGroup={this.removeNodeNetworkGroup}
-                  setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
                 />
               }
               {activeNetworkSectionName == 'network_settings' &&
@@ -1025,14 +1042,12 @@ var NetworkTab = React.createClass({
 
 var NodeNetworkGroup = React.createClass({
   render() {
-    var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors, validationError} = this.props;
+    var {cluster, networks, nodeNetworkGroup, verificationErrors, validationError} = this.props;
     return (
       <div>
         <NodeNetworkGroupTitle
-          nodeNetworkGroups={nodeNetworkGroups}
+          {... _.pick(this.props, 'cluster', 'nodeNetworkGroups', 'removeNodeNetworkGroup')}
           currentNodeNetworkGroup={nodeNetworkGroup}
-          removeNodeNetworkGroup={this.props.removeNodeNetworkGroup}
-          setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
           isRenamingPossible={cluster.isAvailableForSettingsChanges()}
           isDeletionPossible={!cluster.task({group: ['deployment', 'network'], active: true})}
         />
@@ -1055,77 +1070,55 @@ var NodeNetworkGroup = React.createClass({
 });
 
 var NetworkSubtabs = React.createClass({
-  renderClickablePills(sections, isNetworkGroupPill) {
-    var {cluster, nodeNetworkGroups, validationError} = this.props;
-    var isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
-
-    var networkParametersErrors = (validationError || {}).networking_parameters;
-    var networksErrors = (validationError || {}).networks;
-
-    return (sections.map((groupName) => {
-      var tabLabel = groupName;
-      var isActive = groupName == this.props.activeGroupName;
-      var isInvalid;
-
-      // is one of predefined sections selected (networking_parameters)
-      if (groupName == 'neutron_l2') {
-        isInvalid = !!_.intersection(NetworkingL2Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
-      } else if (groupName == 'neutron_l3') {
-        isInvalid = !!_.intersection(NetworkingL3Parameters.renderedParameters, _.keys(networkParametersErrors)).length;
-      } else if (groupName == 'nova_configuration') {
-        isInvalid = !!_.intersection(NovaParameters.renderedParameters, _.keys(networkParametersErrors)).length;
-      } else if (groupName == 'network_settings') {
-        var settings = cluster.get('settings');
-        isInvalid = _.any(_.keys(settings.validationError), (settingPath) => {
-          var settingSection = settingPath.split('.')[0];
-          return settings.get(settingSection).metadata.group == 'network' ||
-            settings.get(settingPath).group == 'network';
-        });
-      }
-
-      if (isNetworkGroupPill) {
-        isInvalid = networksErrors && (isNovaEnvironment || !!networksErrors[nodeNetworkGroups.findWhere({name: groupName}).id]);
-      } else {
-        tabLabel = i18n(networkTabNS + 'tabs.' + groupName);
-      }
-
-      if (groupName == 'network_verification') {
-        tabLabel = i18n(networkTabNS + 'tabs.connectivity_check');
-        isInvalid = this.props.showVerificationResult && cluster.task({
-          name: 'verify_networks',
-          status: 'error'
-        });
-      }
-
+  renderClickablePills(subtabs) {
+    return subtabs.map((subtab) => {
       return (
         <li
-          key={groupName}
+          key={subtab.label}
           role='presentation'
           className={utils.classNames({
-            active: isActive,
-            warning: this.props.isMultiRack && groupName == 'network_verification'
+            active: String(subtab.url) === this.props.activeGroupName,
+            warning: this.props.isMultiRack && subtab.url == 'network_verification'
           })}
-          onClick={_.partial(this.props.setActiveNetworkSectionName, groupName)}
         >
-          <a className={'subtab-link-' + groupName}>
-            {isInvalid && <i className='subtab-icon glyphicon-danger-sign' />}
-            {tabLabel}
+          <a
+            className={'no-leave-check subtab-link-' + subtab.label}
+            href={'#cluster/' + this.props.cluster.id + '/network/' + subtab.url}
+          >
+            {subtab.isInvalid && <i className='subtab-icon glyphicon-danger-sign' />}
+            {subtab.label}
           </a>
         </li>
       );
-    }));
+    });
+  },
+  getNetworkSettingsError(sectionName) {
+    var errors = (this.props.validationError || {}).networking_parameters;
+    if (sectionName == 'neutron_l2') {
+      return !!_.intersection(NetworkingL2Parameters.renderedParameters, _.keys(errors)).length;
+    }
+    if (sectionName == 'neutron_l3') {
+      return !!_.intersection(NetworkingL3Parameters.renderedParameters, _.keys(errors)).length;
+    }
+    if (sectionName == 'nova_configuration') {
+      return !!_.intersection(NovaParameters.renderedParameters, _.keys(errors)).length;
+    }
+    if (sectionName == 'network_settings') {
+      var settings = this.props.cluster.get('settings');
+      return _.any(_.keys(settings.validationError), (settingPath) => {
+        var settingSection = settingPath.split('.')[0];
+        return settings.get(settingSection).metadata.group == 'network' ||
+          settings.get(settingPath).group == 'network';
+      });
+    }
+    return false;
   },
   render() {
-    var {nodeNetworkGroups} = this.props;
-    var settingsSections = [];
-    var nodeGroupSections = nodeNetworkGroups.pluck('name');
-
-    if (this.props.cluster.get('net_provider') == 'nova_network') {
-      settingsSections.push('nova_configuration');
-    } else {
-      settingsSections = settingsSections.concat(['neutron_l2', 'neutron_l3']);
-    }
-    settingsSections.push('network_settings');
+    var {cluster, nodeNetworkGroups, subtabs, showVerificationResult, validationError} = this.props;
+    // FIXME: it is still subtab list hardcode here
+    // it would be good to relay on getSubtabs method only
+    var verificationSectionName = 'network_verification';
+    var networkSettingsSectionNames = _.difference(subtabs, nodeNetworkGroups.pluck('id').map(String), [verificationSectionName]);
 
     return (
       <div className='col-xs-2'>
@@ -1141,15 +1134,33 @@ var NetworkSubtabs = React.createClass({
           <li className='group-title' key='group1'>
             {i18n(networkTabNS + 'tabs.node_network_groups')}
           </li>
-          {this.renderClickablePills(nodeGroupSections, true)}
+          {this.renderClickablePills(nodeNetworkGroups.map((nodeNetworkGroup) => {
+            return {
+              url: nodeNetworkGroup.id,
+              label: nodeNetworkGroup.get('name'),
+              isInvalid: !!((validationError || {}).networks || {})[nodeNetworkGroup.id]
+            };
+          }))}
           <li className='group-title' key='group2'>
             {i18n(networkTabNS + 'tabs.settings')}
           </li>
-          {this.renderClickablePills(settingsSections)}
+          {this.renderClickablePills(_.map(networkSettingsSectionNames, (sectionName) => {
+            return {
+              url: sectionName,
+              label: i18n(networkTabNS + 'tabs.' + sectionName),
+              isInvalid: this.getNetworkSettingsError(sectionName)
+            };
+          }))}
           <li className='group-title' key='group3'>
             {i18n(networkTabNS + 'tabs.network_verification')}
           </li>
-          {this.renderClickablePills(['network_verification'])}
+          {this.renderClickablePills([
+            {
+              url: verificationSectionName,
+              label: i18n(networkTabNS + 'tabs.connectivity_check'),
+              isInvalid: showVerificationResult && !!cluster.task({name: 'verify_networks', status: 'error'})
+            }
+          ])}
         </CSSTransitionGroup>
       </div>
     );
@@ -1185,10 +1196,7 @@ var NodeNetworkGroupTitle = React.createClass({
               });
               element.focus();
             })
-            .done(() => {
-              this.endRenaming();
-              this.props.setActiveNetworkSectionName(newName, true);
-            });
+            .done(this.endRenaming);
         }
       } else {
         this.endRenaming();

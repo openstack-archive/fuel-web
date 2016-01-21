@@ -28,6 +28,27 @@ var LogsTab = React.createClass({
   mixins: [
     pollingMixin(5)
   ],
+  statics: {
+    breadcrumbsPath() {
+      return [
+        [i18n('cluster_page.tabs.logs'), null, {active: true}]
+      ];
+    },
+    checkSubroute(tabProps) {
+      var {activeTab, tabOptions, defaultLogLevel} = tabProps;
+      if (activeTab === 'logs' && tabOptions[0]) {
+        var selectedLogs = utils.deserializeTabOptions(_.compact(tabOptions).join('/'));
+        selectedLogs.level = selectedLogs.level ?
+            selectedLogs.level.toUpperCase()
+          :
+            defaultLogLevel;
+        return {selectedLogs};
+      }
+      return {
+        selectedLogs: {type: 'local', node: null, source: 'app', level: defaultLogLevel}
+      };
+    }
+  },
   shouldDataBeFetched() {
     return this.state.to && this.state.logsEntries;
   },

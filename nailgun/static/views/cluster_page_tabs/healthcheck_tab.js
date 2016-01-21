@@ -32,6 +32,11 @@ var HealthCheckTab = React.createClass({
     backboneMixin('cluster', 'change:status')
   ],
   statics: {
+    breadcrumbsPath() {
+      return [
+        [i18n('cluster_page.tabs.healthcheck'), null, {active: true}]
+      ];
+    },
     fetchData(options) {
       if (!options.cluster.get('ostf')) {
         var ostf = {};

@@ -744,16 +744,17 @@
                         "ip_end_is_out_of_ip_range": "The IP end value is out of the selected IP range",
                         "invalid_name": "Invalid network name"
                     },
-                    "tabs": {
+                    "subtabs": {
                         "nova_configuration": "Nova Configuration",
                         "neutron_l2": "Neutron L2",
                         "neutron_l3": "Neutron L3",
                         "network_settings": "Other",
-                        "network_verification": "Network Verification",
-                        "node_network_groups": "Node network groups",
-                        "settings": "Settings",
-                        "networks": "Default Networks",
-                        "connectivity_check": "Connectivity Check"
+                        "network_verification": "Connectivity Check",
+                        "groups": {
+                            "node_network_groups": "Node network groups",
+                            "settings": "Settings",
+                            "network_verification": "Network Verification"
+                        }
                     },
                     "floating_net": "Floating Network Parameters",
                     "internal_net": "Internal Network Parameters",

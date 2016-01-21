@@ -41,9 +41,32 @@ var SettingsTab = React.createClass({
     unsavedChangesMixin
   ],
   statics: {
+    breadcrumbsPath() {
+      return [
+        [i18n('cluster_page.tabs.settings'), null, {active: true}]
+      ];
+    },
     fetchData(options) {
       return $.when(options.cluster.get('settings').fetch({cache: true}),
         options.cluster.get('networkConfiguration').fetch({cache: true})).then(() => ({}));
+    },
+    getSubtabs(options) {
+      return options.cluster.get('settings').getGroupList();
+    },
+    checkSubroute(tabProps) {
+      var {activeTab, cluster, tabOptions} = tabProps;
+      var subtabs = this.getSubtabs(tabProps);
+      if (activeTab === 'settings') {
+        var subroute = tabOptions[0];
+        if (!subroute || !_.contains(subtabs, subroute)) {
+          app.navigate(
+            'cluster/' + cluster.id + '/settings/' + subtabs[0],
+            {trigger: true, replace: true}
+          );
+        }
+        return {activeSettingsSectionName: subroute};
+      }
+      return {activeSettingsSectionName: subtabs[0]};
     }
   },
   getInitialState() {
@@ -194,7 +217,7 @@ var SettingsTab = React.createClass({
   render() {
     var cluster = this.props.cluster;
     var settings = cluster.get('settings');
-    var settingsGroupList = settings.getGroupList();
+    var settingsGroupList = this.constructor.getSubtabs({cluster});
     var locked = this.state.actionInProgress || !!cluster.task({group: 'deployment', active: true});
     var lockedCluster = !cluster.isAvailableForSettingsChanges();
     var someSettingsEditable = _.any(
@@ -271,6 +294,7 @@ var SettingsTab = React.createClass({
       <div key={this.state.key} className={utils.classNames(classes)}>
         <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
         <SettingSubtabs
+          cluster={cluster}
           settings={settings}
           settingsGroupList={settingsGroupList}
           groupedSettings={groupedSettings}
@@ -369,9 +393,11 @@ var SettingSubtabs = React.createClass({
                 className={utils.classNames({
                   active: groupName === this.props.activeSettingsSectionName
                 })}
-                onClick={_.partial(this.props.setActiveSettingsGroupName, groupName)}
               >
-                <a className={'subtab-link-' + groupName}>
+                <a
+                  className={'no-leave-check subtab-link-' + groupName}
+                  href={'#cluster/' + this.props.cluster.id + '/settings/' + groupName}
+                >
                   {hasErrors && <i className='subtab-icon glyphicon-danger-sign'/>}
                   {i18n('cluster_page.settings_tab.groups.' + groupName, {defaultValue: groupName})}
                 </a>

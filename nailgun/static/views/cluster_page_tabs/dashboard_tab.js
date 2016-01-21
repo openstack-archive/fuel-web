@@ -48,6 +48,13 @@ var DashboardTab = React.createClass({
     backboneMixin('cluster', 'change'),
     pollingMixin(20, true)
   ],
+  statics: {
+    breadcrumbsPath() {
+      return [
+        [i18n('cluster_page.tabs.dashboard'), null, {active: true}]
+      ];
+    }
+  },
   fetchData() {
     return this.props.cluster.get('nodes').fetch();
   },
@@ -457,7 +464,7 @@ var DeployReadinessBlock = React.createClass({
           <span key='invalid_networks'>
             {text}
             {' ' + i18n(this.ns + 'get_more_info') + ' '}
-            <a href={'#cluster/' + this.props.cluster.id + '/network'}>
+            <a href={'#cluster/' + cluster.id + '/network/network_verification'}>
               {i18n(this.ns + 'networks_link')}
             </a>.
           </span>

@@ -16,6 +16,7 @@
 
 import $ from 'jquery';
 import _ from 'underscore';
+import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {ProgressBar} from 'views/controls';
@@ -28,6 +29,28 @@ import EditNodeInterfacesScreen from
 import ReactTransitionGroup from 'react-addons-transition-group';
 
 var NodesTab = React.createClass({
+  statics: {
+    breadcrumbsPath(pageOptions) {
+      var subroute = pageOptions.tabOptions[0];
+      var breadcrumbs = [
+        [
+          i18n('cluster_page.tabs.nodes'),
+          '#cluster/' + pageOptions.cluster.id + '/nodes',
+          {active: !subroute}
+        ]
+      ];
+      if (subroute) {
+        return breadcrumbs.concat([
+          [
+            i18n('cluster_page.nodes_tab.breadcrumbs.' + subroute, {defaultValue: subroute}),
+            null,
+            {active: true}
+          ]
+        ]);
+      }
+      return breadcrumbs;
+    }
+  },
   getInitialState() {
     var screen = this.getScreen();
     return {

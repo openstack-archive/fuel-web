@@ -21,6 +21,8 @@ from nailgun import consts
 from nailgun.orchestrator.plugins_serializers import \
     BasePluginDeploymentHooksSerializer
 from nailgun.orchestrator.plugins_serializers import \
+    PluginsPostDeploymentHooksSerializer
+from nailgun.orchestrator.plugins_serializers import \
     PluginsPreDeploymentHooksSerializer
 from nailgun.test import base
 from nailgun.utils.role_resolver import NullResolver
@@ -69,6 +71,23 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
             raw_result[1]['parameters']['puppet_modules'],
             'modules')
         self.assertEqual(raw_result[2]['parameters']['cmd'], 'test2')
+
+    @mock.patch('nailgun.logger.logger.warn')
+    def test_ignoring_unsupported_deployment_tasks(self, m_warn):
+        stage = 'pre_deployment'
+        role = 'controller'
+
+        plugin = mock.Mock()
+        plugin.full_name = 'plugin_name'
+        plugin.tasks = [
+            {'type': 'unsupported', 'role': role, 'id': '1', 'stage': stage,
+             'parameters': {'cmd': 'test1', 'cwd': '/', 'timeout': 15}}]
+
+        self.assertItemsEqual(
+            self.hook.deployment_tasks([plugin], stage), list())
+        m_warn.assert_called_once_with(
+            'Task is skipped %s, because its type '
+            'is not supported', plugin.tasks[0])
 
     def test_support_reboot_type_task(self):
         stage = 'pre_deployment'
@@ -179,24 +198,29 @@ class TestTasksDeploymentOrder(base.BaseTestCase):
              'pre_deployment/100'])
 
 
-class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
-
+class TestPluginsDeploymentEnvironment(base.BaseTestCase):
     def setUp(self):
-        super(TestPluginsPreDeploymentHooksSerializer, self).setUp()
+        super(TestPluginsDeploymentEnvironment, self).setUp()
         self.cluster = mock.Mock()
-        self.cluster.release.operating_system = 'ubuntu'
+        self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         self.nodes = [
             {'id': 1, 'role': 'controller'},
             {'id': 2, 'role': 'compute'}
         ]
-        self.hook = PluginsPreDeploymentHooksSerializer(
-            self.cluster,
-            self.nodes,
-            role_resolver=NullResolver([x['id'] for x in self.nodes])
-        )
 
         plugin = mock.Mock(tasks=[], deployment_tasks=[])
         self.plugins = [plugin]
+
+
+class TestPluginsPreDeploymentHooksSerializer(
+        TestPluginsDeploymentEnvironment):
+
+    def setUp(self):
+        super(TestPluginsPreDeploymentHooksSerializer, self).setUp()
+        self.hook = PluginsPreDeploymentHooksSerializer(
+            self.cluster,
+            self.nodes,
+            role_resolver=NullResolver([x['id'] for x in self.nodes]))
 
     @mock.patch(
         'nailgun.orchestrator.plugins_serializers.'
@@ -220,3 +244,54 @@ class TestPluginsPreDeploymentHooksSerializer(base.BaseTestCase):
             map(lambda t: t['task_type'], tasks),
             ['ubuntu_sources_task',
              'apt_update_task'])
+
+    @mock.patch('nailgun.plugins.manager.PluginManager.'
+                'get_cluster_plugins_with_tasks', return_value=[])
+    @mock.patch('nailgun.orchestrator.plugins_serializers.'
+                'PluginsPreDeploymentHooksSerializer.create_repositories')
+    @mock.patch('nailgun.orchestrator.plugins_serializers.'
+                'PluginsPreDeploymentHooksSerializer.sync_scripts')
+    def test_serialize_begin_tasks(self,
+                                   m_sync_scripts,
+                                   m_create_repositories,
+                                   m_get_cluster_plugins_with_tasks):
+        self.hook.serialize_begin_tasks()
+        m_get_cluster_plugins_with_tasks.assert_called_once_with(self.cluster)
+        m_create_repositories.assert_called_once_with([])
+        m_sync_scripts.assert_called_once_with([])
+
+    @mock.patch('nailgun.plugins.manager.PluginManager.'
+                'get_cluster_plugins_with_tasks', return_value=[])
+    @mock.patch('nailgun.orchestrator.plugins_serializers.'
+                'PluginsPreDeploymentHooksSerializer.deployment_tasks')
+    def test_serialize_end_tasks(self,
+                                 m_deployment_tasks,
+                                 m_get_cluster_plugins_with_tasks):
+        self.hook.serialize_end_tasks()
+        m_get_cluster_plugins_with_tasks.assert_called_once_with(self.cluster)
+        m_deployment_tasks.assert_called_once_with([])
+
+
+class TestPluginsPostDeploymentHooksSerializer(
+        TestPluginsDeploymentEnvironment):
+
+    def setUp(self):
+        super(TestPluginsPostDeploymentHooksSerializer, self).setUp()
+        self.hook = PluginsPostDeploymentHooksSerializer(
+            self.cluster,
+            self.nodes,
+            role_resolver=NullResolver([x['id'] for x in self.nodes]))
+
+    def test_serialize_begin_tasks(self):
+        self.assertItemsEqual(self.hook.serialize_begin_tasks(), list())
+
+    @mock.patch('nailgun.plugins.manager.PluginManager.'
+                'get_cluster_plugins_with_tasks', return_value=[])
+    @mock.patch('nailgun.orchestrator.plugins_serializers.'
+                'PluginsPostDeploymentHooksSerializer.deployment_tasks')
+    def test_serialize_end_tasks(self,
+                                 m_deployment_tasks,
+                                 m_get_cluster_plugins_with_tasks):
+        self.hook.serialize_end_tasks()
+        m_get_cluster_plugins_with_tasks.assert_called_once_with(self.cluster)
+        m_deployment_tasks.assert_called_once_with([])

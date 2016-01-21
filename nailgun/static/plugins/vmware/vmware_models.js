@@ -213,7 +213,7 @@ VmWareModels.VCenter = BaseModel.extend({
   },
   parse(response) {
     if (!response.editable || !response.editable.metadata || !response.editable.value) {
-      return;
+      return null;
     }
     var metadata = response.editable.metadata || [];
     var value = response.editable.value || {};

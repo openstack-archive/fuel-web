@@ -1640,7 +1640,7 @@ NodeList = React.createClass({
 
     var groupingMethod = (node) => {
       return _.compact(_.map(this.props.activeSorters, (sorter) => {
-        if (_.contains(uniqValueSorters, sorter.name)) return;
+        if (_.contains(uniqValueSorters, sorter.name)) return null;
 
         if (sorter.isLabel) return getLabelValue(node, sorter.name);
 

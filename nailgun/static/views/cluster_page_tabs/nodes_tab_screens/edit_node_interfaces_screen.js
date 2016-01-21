@@ -751,14 +751,16 @@ var NodeInterface = React.createClass({
                   {assignedNetworks.length ?
                     assignedNetworks.map((interfaceNetwork) => {
                       var network = interfaceNetwork.getFullNetwork(networks);
-                      if (!network) return;
-                      return <DraggableNetwork
-                        key={'network-' + network.id}
-                        {... _.pick(this.props, ['locked', 'interface'])}
-                        networkingParameters={networkingParameters}
-                        interfaceNetwork={interfaceNetwork}
-                        network={network}
-                      />;
+                      if (!network) return null;
+                      return (
+                        <DraggableNetwork
+                          key={'network-' + network.id}
+                          {... _.pick(this.props, ['locked', 'interface'])}
+                          networkingParameters={networkingParameters}
+                          interfaceNetwork={interfaceNetwork}
+                          network={network}
+                        />
+                      );
                     })
                   :
                     i18n(ns + 'drag_and_drop_description')

@@ -164,7 +164,7 @@ var restrictionMixin = models.restrictionMixin = {
       var limitValue, comparator;
 
       if (_.isUndefined(obj[limitType])) {
-        return;
+        return null;
       }
       switch (limitType) {
         case 'min':
@@ -205,7 +205,7 @@ var restrictionMixin = models.restrictionMixin = {
     messages = messages.concat(_.chain(limitTypes)
       .map((limitType) => {
         if (checkedLimitTypes[limitType]) {
-          return;
+          return null;
         }
         return checkOneLimit(limitValues, limitType);
       })
@@ -1376,12 +1376,11 @@ class ComponentPattern {
     }
     var matched = true;
     _.each(this.parts, (part, index) => {
-      if (part == '*') {
-        return;
-      }
-      if (part != componentParts[index]) {
-        matched = false;
-        return matched;
+      if (part != '*') {
+        if (part != componentParts[index]) {
+          matched = false;
+          return matched;
+        }
       }
     });
     return matched;

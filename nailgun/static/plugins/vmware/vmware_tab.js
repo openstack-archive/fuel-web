@@ -302,7 +302,7 @@ var VmWareTab = React.createClass({
   componentDidMount() {
     this.clusterId = this.props.cluster.id;
     this.model = this.props.cluster.get('vcenter');
-    this.model.on('sync', this.onModelSync, this);
+    this.model.on('sync', this.onModelSync, this); // eslint-disable-line no-sync
     this.defaultModel = this.props.cluster.get('vcenter_defaults');
     this.defaultsJson = JSON.stringify(this.defaultModel.toJSON());
     this.setState({model: this.model, defaultModel: this.defaultModel});
@@ -313,7 +313,7 @@ var VmWareTab = React.createClass({
       networking_parameters: this.props.cluster.get('networkConfiguration').get('networking_parameters')
     });
 
-    this.onModelSync();
+    this.onModelSync(); // eslint-disable-line no-sync
     dispatcher.on('vcenter_model_update', () => {
       if (this.isMounted()) {
         this.forceUpdate();

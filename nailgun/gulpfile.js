@@ -39,9 +39,12 @@ var jison = require('gulp-jison');
 
 var validateTranslations = require('./gulp/i18n').validate;
 gulp.task('i18n:validate', function() {
-  var tranlations = JSON.parse(fs.readFileSync('static/translations/core.json'));
-  var locales = argv.locales ? argv.locales.split(',') : null;
-  validateTranslations(tranlations, locales);
+  fs.readFile('static/translations/core.json', function(err, data) {
+    if (err) throw err;
+    var tranlations = JSON.parse(data);
+    var locales = argv.locales ? argv.locales.split(',') : null;
+    validateTranslations(tranlations, locales);
+  });
 });
 
 var seleniumProcess = null;

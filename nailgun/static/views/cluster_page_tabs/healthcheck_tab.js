@@ -86,7 +86,9 @@ var HealthcheckTabContent = React.createClass({
     pollingMixin(3)
   ],
   shouldDataBeFetched() {
-    return this.props.testruns.any({status: 'running'});
+    var hasRunningTests = this.props.testruns.any({status: 'running'});
+    this.setState({actionInProgress: hasRunningTests});
+    return hasRunningTests;
   },
   fetchData() {
     return this.props.testruns.fetch();
@@ -192,7 +194,6 @@ var HealthcheckTabContent = React.createClass({
         );
       };
       Backbone.sync('update', testruns).done(() => {
-        this.setState({actionInProgress: false});
         this.startPolling(true);
       });
     }
@@ -222,7 +223,7 @@ var HealthcheckTabContent = React.createClass({
               >
                 {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
               </button>)
-              :
+            :
               (<button className='btn btn-success run-tests-btn pull-right'
                 disabled={!this.getNumberOfCheckedTests() || this.state.actionInProgress}
                 onClick={this.runTests}

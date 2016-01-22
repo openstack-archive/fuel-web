@@ -47,6 +47,7 @@ class ReleaseCollectionHandler(CollectionHandler):
 
         :http: * 200 (OK)
         """
+        # Release has custom implementation of comparison method
         q = sorted(self.collection.all(), reverse=True)
         return self.collection.to_json(q)
 

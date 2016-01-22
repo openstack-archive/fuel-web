@@ -26,6 +26,7 @@ import operator
 from oslo_serialization import jsonutils
 
 from sqlalchemy import and_, not_
+from sqlalchemy import inspection
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Query
 
@@ -210,18 +211,27 @@ class NailgunCollection(object):
         return iterable
 
     @classmethod
-    def order_by(cls, iterable, order_by):
+    def order_by(cls, iterable, order_by=None):
         """Order given iterable by specified order_by.
 
         :param order_by: tuple of model fields names or single field name for
             ORDER BY criterion to SQLAlchemy query. If name starts with '-'
             desc ordering applies, else asc.
+            if order_by is None, items will be sorted ascending order by
+            primary keys.
         :type order_by: tuple of strings or string
         """
-        if iterable is None or not order_by:
+        if iterable is None or (order_by is not None and not order_by):
             return iterable
+        elif order_by is None:
+            primary_keys = inspection.inspect(cls.single.model).primary_key
+            # FIXME(sslypushenko) Multiple primary keys should be supported
+            # Add such support, after sort by multiple field will be fixed
+            order_by = (primary_keys[0].name,)
+
         if not isinstance(order_by, (list, tuple)):
             order_by = (order_by,)
+
         if cls._is_query(iterable):
             return cls._query_order_by(iterable, order_by)
         else:
@@ -395,7 +405,8 @@ class NailgunCollection(object):
         :param fields: exact fields to serialize
         :returns: collection of objects as a list of dicts
         """
-        use_iterable = iterable or cls.all()
+
+        use_iterable = iterable or cls.order_by(cls.all())
         return map(
             lambda o: cls.single.to_dict(o, fields=fields),
             use_iterable

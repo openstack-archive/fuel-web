@@ -89,8 +89,8 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
         """
         self.get_object_or_404(objects.Cluster, cluster_id)
         return self.collection.to_json(
-            self.collection.get_by_cluster_id(cluster_id)
-        )
+            self.collection.order_by(
+                self.collection.get_by_cluster_id(cluster_id)))
 
     @content
     def POST(self, cluster_id):

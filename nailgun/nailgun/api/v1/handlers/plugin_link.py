@@ -96,8 +96,8 @@ class PluginLinkCollectionHandler(base.CollectionHandler):
         """
         self.get_object_or_404(objects.Plugin, plugin_id)
         return self.collection.to_json(
-            self.collection.get_by_plugin_id(plugin_id)
-        )
+            self.collection.order_by(
+                self.collection.get_by_plugin_id(plugin_id)))
 
     @content
     def POST(self, plugin_id):

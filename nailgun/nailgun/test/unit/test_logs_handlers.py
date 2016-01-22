@@ -402,6 +402,7 @@ class TestLogs(BaseIntegrationTest):
             }
         },
         'target': '/path/to/save',
+        'target_symlink': '/path/to/symlink',
         'lastdump': '/path/to/latest',
         'timestamp': True,
         'compression_level': 3,
@@ -435,6 +436,7 @@ class TestLogs(BaseIntegrationTest):
                 },
             },
             'target': '/path/to/save',
+            'target_symlink': '/path/to/symlink',
             'lastdump': '/path/to/latest',
             'timestamp': True,
             'compression_level': 3,

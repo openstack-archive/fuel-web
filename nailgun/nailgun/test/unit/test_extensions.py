@@ -44,6 +44,12 @@ class TestBaseExtension(BaseTestCase):
 
         self.extension = Extension()
 
+    def test_extension_render(self):
+        self.assertItemsEqual(
+            self.extension.render().keys(),
+            ('name', 'provides', 'description', 'version')
+        )
+
     def test_alembic_table_version(self):
         self.assertEqual(
             self.extension.alembic_table_version(),

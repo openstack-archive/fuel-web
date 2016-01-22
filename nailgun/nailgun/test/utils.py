@@ -46,6 +46,8 @@ def make_mock_extensions(names=('ex1', 'ex2')):
         ex_m = mock.MagicMock()
         ex_m.name = name
         ex_m.provides = ['method_call']
+        ex_m.description = "Example description of {}".format(name)
+        ex_m.version = '.'.join(random_string(3, string.digits))
         mocks.append(ex_m)
 
     return mocks

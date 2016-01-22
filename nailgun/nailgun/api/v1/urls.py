@@ -44,6 +44,8 @@ from nailgun.api.v1.handlers.cluster_plugin_link \
 from nailgun.api.v1.handlers.cluster_plugin_link \
     import ClusterPluginLinkHandler
 
+from nailgun.api.v1.handlers.extension import ExtensionHandler
+
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
 from nailgun.api.v1.handlers.logs import LogPackageHandler
@@ -232,6 +234,8 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/plugin_links/(?P<obj_id>\d+)/?$',
     ClusterPluginLinkHandler,
 
+    r'/extensions/?$',
+    ExtensionHandler,
     r'/clusters/(?P<cluster_id>\d+)/extensions/?$',
     ClusterExtensionsHandler,
 

@@ -185,3 +185,12 @@ class BaseExtension(object):
     @classmethod
     def on_cluster_delete(cls, cluster):
         """Callback which gets executed when cluster is deleted"""
+
+    @classmethod
+    def render(cls):
+        return {
+            "name": cls.name,
+            "version": cls.version,
+            "description": cls.description,
+            "provides": cls.provides,
+        }

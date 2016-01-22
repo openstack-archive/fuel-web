@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mirantis, Inc.
+ * Copyright 2016 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -312,6 +312,8 @@ define([
         return this.remote
           .clickByCssSelector('.subtab-link-default')
           .assertElementNotExists('.glyphicon-remove', 'It is not possible to delete default node network group')
+          .assertElementContainsText('span.explanation',
+            'This node network group uses a shared admin network and cannot be deleted', 'True message presents')
           .clickByCssSelector('.subtab-link-Node_Network_Group_2')
           .assertElementAppears('.glyphicon-remove', 1000, 'Remove icon is shown')
           .clickByCssSelector('.glyphicon-remove')
@@ -325,7 +327,8 @@ define([
           .then(function() {
             return modal.waitToClose();
           })
-          .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000, 'Node network groups title disappears');
+          .assertElementDisappears('.subtab-link-Node_Network_Group_2', 2000, 'Node network groups title disappears')
+          .assertElementTextEquals('.network-group-name .btn-link', 'default', 'Node network group name "link" disappers');
       },
       'Node network group renaming in deployed environment': function() {
         this.timeout = 100000;
@@ -343,6 +346,24 @@ define([
           .then(function() {
             return clusterPage.goToTab('Networks');
           })
+          // User can add and cannot raname new network group after deployment
+          .clickByCssSelector('.add-nodegroup-btn')
+          .then(function() {
+            return modal.waitToOpen();
+          })
+          .assertElementContainsText('h4.modal-title', 'Add New Node Network Group', 'Add New Node Network Group modal expected')
+          .setInputValue('[name=node-network-group-name]', 'Network_Group_1')
+          .then(function() {
+            return modal.clickFooterButton('Add Group');
+          })
+          .then(function() {
+            return modal.waitToClose();
+          })
+          .assertElementAppears('.node-network-groups-list', 2000, 'Node network groups title appears')
+          .assertElementDisplayed('.subtab-link-Network_Group_1', 'New subtab is shown')
+          .assertElementTextEquals('.network-group-name .btn-link', 'Network_Group_1', 'New Node Network group title is shown')
+          .assertElementNotExists('.glyphicon-pencil', 'It is not possible to rename new node network group after deployment')
+          // User cannot rename default network group after deployment
           .clickByCssSelector('.subtab-link-default')
           .assertElementNotExists('.glyphicon-pencil', 'Renaming of a node network group is fobidden in deployed environment')
           .clickByCssSelector('.network-group-name .name')

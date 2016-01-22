@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mirantis, Inc.
+ * Copyright 2016 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -78,6 +78,11 @@ function(_, assert, Helpers, pollUntil, LoginPage, WelcomePage, ClusterPage, Clu
       var self = this;
       return this.remote
         .clickLinkByText('Environments')
+        .waitForCssSelector('.clusters-page', 2000)
+        // Discard unsaved changes and continue cluster deletion
+        .catch(function() {
+          self.remote.clickByCssSelector('button.btn-danger');
+        })
         .waitForCssSelector('.clusters-page', 2000)
         .then(function() {
           return self.clustersPage.goToEnvironment(clusterName);

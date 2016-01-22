@@ -113,7 +113,7 @@ class RoleCollectionHandler(base.CollectionHandler):
     @content
     def GET(self, release_id):
         release = self.get_object_or_404(objects.Release, release_id)
-        role_names = six.iterkeys(release.roles_metadata)
+        role_names = sorted(six.iterkeys(release.roles_metadata))
         return [RoleSerializer.serialize_from_release(release, name)
                 for name in role_names]
 

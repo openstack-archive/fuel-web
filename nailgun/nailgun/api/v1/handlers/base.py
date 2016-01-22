@@ -433,7 +433,7 @@ class CollectionHandler(BaseHandler):
         :http: * 200 (OK)
         """
         q = self.collection.eager(None, self.eager)
-        return self.collection.to_json(q)
+        return self.collection.to_json(self.collection.order_by(q))
 
     @content
     def POST(self):

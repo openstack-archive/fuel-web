@@ -217,12 +217,13 @@ var HealthcheckTabContent = React.createClass({
             </div>
             {hasRunningTests ?
               (<button className='btn btn-danger stop-tests-btn pull-right'
-                disabled={this.state.actionInProgress}
+                disabled={this.state.actionInProgress &&
+                  !this.props.testruns.any({status: 'finished'})}
                 onClick={this.stopTests}
               >
                 {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
               </button>)
-              :
+            :
               (<button className='btn btn-success run-tests-btn pull-right'
                 disabled={!this.getNumberOfCheckedTests() || this.state.actionInProgress}
                 onClick={this.runTests}

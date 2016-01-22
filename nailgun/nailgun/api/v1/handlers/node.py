@@ -94,7 +94,7 @@ class NodeCollectionHandler(CollectionHandler):
         elif cluster_id:
             nodes = nodes.filter_by(cluster_id=cluster_id)
 
-        return self.collection.to_json(nodes)
+        return self.collection.to_json(self.collection.order_by(nodes))
 
     @content
     def PUT(self):

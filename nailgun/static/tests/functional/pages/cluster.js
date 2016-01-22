@@ -36,7 +36,7 @@ define([
           .clickLinkByText(tabName)
           .end()
         .then(pollUntil(function(textToFind) {
-          return window.$('.cluster-tab.active').text() == textToFind || null;
+          return window.$('.cluster-tab.active').text() === textToFind || null;
         }, [tabName], 3000));
     },
     removeCluster: function(clusterName) {
@@ -84,7 +84,7 @@ define([
                   if (index >= 0) {
                     role.click();
                     assignRoles.splice(index, 1);
-                    return assignRoles.length == 0;
+                    return assignRoles.length === 0;
                   }
                 });
             },

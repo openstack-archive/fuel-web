@@ -12,7 +12,6 @@
     no-process-env: 0 # we use it in a few places and are ok with it
 
     # to be fixed and enabled
-    eqeqeq: 0
     max-len: [0, 120]
 
     # extra rules

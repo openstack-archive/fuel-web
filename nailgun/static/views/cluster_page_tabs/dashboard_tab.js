@@ -61,7 +61,7 @@ var DashboardTab = React.createClass({
 
     return (
       <div className='wrapper'>
-        {release.get('state') == 'unavailable' &&
+        {release.get('state') === 'unavailable' &&
           <div className='alert alert-warning'>
             {i18n('cluster_page.unavailable_release', {name: release.get('name')})}
           </div>
@@ -77,7 +77,7 @@ var DashboardTab = React.createClass({
           [
             cluster.task({group: 'deployment', active: false}) &&
               <DeploymentResult key='task-result' cluster={cluster} />,
-            cluster.get('status') == 'operational' &&
+            cluster.get('status') === 'operational' &&
               <DashboardLinks key='plugin-links' cluster={cluster} links={dashboardLinks} />,
             (nodes.hasChanges() || cluster.needsRedeployment()) &&
               <DeployReadinessBlock
@@ -127,7 +127,7 @@ var DashboardLinks = React.createClass({
         <div className='dashboard-block links-block clearfix'>
           <div className='col-xs-12'>
             {links.map((link, index) => {
-              if (index % 2 == 0) return (
+              if (index % 2 === 0) return (
                 <div className='row' key={link.url}>
                   {this.renderLink(link)}
                   {index + 1 < links.length && this.renderLink(links[index + 1])}
@@ -518,10 +518,10 @@ var WarningsBlock = React.createClass({
   ns: 'dialog.display_changes.',
   render() {
     if (_.isEmpty(this.props.alerts)) return null;
-    var className = this.props.severity == 'warning' ? 'warning' : 'danger';
+    var className = this.props.severity === 'warning' ? 'warning' : 'danger';
     return (
       <div className='warnings-block'>
-        {this.props.severity == 'blocker' &&
+        {this.props.severity === 'blocker' &&
           <InstructionElement
             description='deployment_cannot_be_started'
             explanation='for_more_information_roles'
@@ -559,7 +559,7 @@ var ClusterInfo = React.createClass({
         return computeLabel;
       case 'network':
         var networkingParameters = cluster.get('networkConfiguration').get('networking_parameters');
-        if (cluster.get('net_provider') == 'nova_network') {
+        if (cluster.get('net_provider') === 'nova_network') {
           return i18n(namespace + 'nova_with') + ' ' + networkingParameters.get('net_manager');
         }
         return (i18n('common.network.neutron_' + networkingParameters.get('segmentation_type')));
@@ -585,7 +585,7 @@ var ClusterInfo = React.createClass({
               <div className={utils.classNames({
                 'cluster-info-value': true,
                 [field]: true,
-                'text-danger': field == 'status' && value == i18n('cluster.status.error')
+                'text-danger': field === 'status' && value === i18n('cluster.status.error')
               })}>
                 {_.isArray(value) ? value.map((line) => <p key={line}>{line}</p>) : <p>{value}</p>}
               </div>
@@ -630,7 +630,7 @@ var ClusterInfo = React.createClass({
   getNumberOfNodesWithRole(field) {
     var nodes = this.props.cluster.get('nodes');
     if (!nodes.length) return 0;
-    if (field == 'total') return nodes.length;
+    if (field === 'total') return nodes.length;
     return _.filter(nodes.invoke('hasRole', field)).length;
   },
   getNumberOfNodesWithStatus(field) {
@@ -657,10 +657,10 @@ var ClusterInfo = React.createClass({
         <div key={field}>
           <div className='col-xs-10'>
             <div className='cluster-info-title'>
-              {isRole && field != 'total' ?
+              {isRole && field !== 'total' ?
                 this.props.cluster.get('roles').find({name: field}).get('label')
               :
-                field == 'total' ?
+                field === 'total' ?
                   i18n(namespace + 'cluster_info_fields.total')
                 :
                   i18n('cluster_page.nodes_tab.node.status.' + field,
@@ -745,7 +745,7 @@ var ClusterInfo = React.createClass({
                 }
               </div>
               {this.renderClusterInfoFields()}
-              {(cluster.get('status') == 'operational') &&
+              {(cluster.get('status') === 'operational') &&
                 <div className='col-xs-12 go-to-healthcheck'>
                   {i18n(namespace + 'healthcheck')}
                   <a href={'#cluster/' + cluster.id + '/healthcheck'}>
@@ -793,13 +793,13 @@ var RenameEnvironmentAction = React.createClass({
     e.preventDefault();
     var cluster = this.props.cluster;
     var name = this.state.name;
-    if (name != cluster.get('name')) {
+    if (name !== cluster.get('name')) {
       var deferred = cluster.save({name: name}, {patch: true, wait: true});
       if (deferred) {
         this.setState({disabled: true});
         deferred
           .fail((response) => {
-            if (response.status == 409) {
+            if (response.status === 409) {
               this.setState({error: utils.getResponseText(response)});
             } else {
               utils.showErrorDialog({
@@ -836,11 +836,11 @@ var RenameEnvironmentAction = React.createClass({
     });
   },
   handleKeyDown(e) {
-    if (e.key == 'Enter') {
+    if (e.key === 'Enter') {
       e.preventDefault();
       this.applyAction(e);
     }
-    if (e.key == 'Escape') {
+    if (e.key === 'Escape') {
       e.preventDefault();
       this.props.endRenaming();
     }
@@ -884,7 +884,7 @@ var ResetEnvironmentAction = React.createClass({
       if (this.props.task.match({name: 'reset_environment'})) return 'repeated_reset_disabled';
       return 'reset_disabled_for_deploying_cluster';
     }
-    if (this.props.cluster.get('status') == 'new') return 'no_changes_to_reset';
+    if (this.props.cluster.get('status') === 'new') return 'no_changes_to_reset';
     return 'reset_environment_description';
   },
   applyAction(e) {
@@ -892,7 +892,7 @@ var ResetEnvironmentAction = React.createClass({
     ResetEnvironmentDialog.show({cluster: this.props.cluster});
   },
   render() {
-    var isLocked = this.props.cluster.get('status') == 'new' || !!this.props.task;
+    var isLocked = this.props.cluster.get('status') === 'new' || !!this.props.task;
     return (
       <div className='pull-right reset-environment'>
         <button

@@ -42,17 +42,17 @@ var Node = React.createClass({
     var status = this.props.node.get('status');
     var error = this.props.node.get('error_type');
     var options = {type: 'remote', node: this.props.node.id};
-    if (status == 'discover') {
+    if (status === 'discover') {
       options.source = 'bootstrap/messages';
-    } else if (status == 'provisioning' || status == 'provisioned' || (status == 'error' && error == 'provision')) {
+    } else if (status === 'provisioning' || status === 'provisioned' || (status === 'error' && error === 'provision')) {
       options.source = 'install/fuel-agent';
-    } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
+    } else if (status === 'deploying' || status === 'ready' || (status === 'error' && error === 'deploy')) {
       options.source = 'install/puppet';
     }
     return '#cluster/' + this.props.node.get('cluster') + '/logs/' + utils.serializeTabOptions(options);
   },
   applyNewNodeName(newName) {
-    if (newName && newName != this.props.node.get('name')) {
+    if (newName && newName !== this.props.node.get('name')) {
       this.setState({actionInProgress: true});
       this.props.node.save({name: newName}, {patch: true, wait: true}).always(this.endRenaming);
     } else {
@@ -60,9 +60,9 @@ var Node = React.createClass({
     }
   },
   onNodeNameInputKeydown(e) {
-    if (e.key == 'Enter') {
+    if (e.key === 'Enter') {
       this.applyNewNodeName(this.refs.name.getInputDOMNode().value);
-    } else if (e.key == 'Escape') {
+    } else if (e.key === 'Escape') {
       this.endRenaming();
     }
   },
@@ -87,7 +87,7 @@ var Node = React.createClass({
   },
   removeNode(e) {
     e.preventDefault();
-    if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
+    if (this.props.viewMode === 'compact') this.toggleExtendedNodePanel();
     RemoveOfflineNodeDialog
       .show()
       .done(() => {
@@ -101,7 +101,7 @@ var Node = React.createClass({
           .then(
             (task) => {
               dispatcher.trigger('networkConfigurationUpdated updateNodeStats updateNotifications labelsConfigurationUpdated');
-              if (task.status == 'ready') {
+              if (task.status === 'ready') {
                 // Do not send the 'DELETE' request again, just get rid
                 // of this node.
                 this.props.node.trigger('destroy', this.props.node);
@@ -205,8 +205,8 @@ var Node = React.createClass({
         type='checkbox'
         name={this.props.node.id}
         checked={this.props.checked}
-        disabled={this.props.locked || !this.props.node.isSelectable() || this.props.mode == 'edit'}
-        onChange={this.props.mode != 'edit' ? this.props.onNodeSelection : _.noop}
+        disabled={this.props.locked || !this.props.node.isSelectable() || this.props.mode === 'edit'}
+        onChange={this.props.mode !== 'edit' ? this.props.onNodeSelection : _.noop}
         wrapperClassName='pull-left'
       />
     );
@@ -236,7 +236,7 @@ var Node = React.createClass({
   },
   showDeleteNodesDialog(e) {
     e.preventDefault();
-    if (this.props.viewMode == 'compact') this.toggleExtendedNodePanel();
+    if (this.props.viewMode === 'compact') this.toggleExtendedNodePanel();
     DeleteNodesDialog
       .show({
         nodes: new models.Nodes(this.props.node),
@@ -337,7 +337,7 @@ var Node = React.createClass({
                     <div>
                       {this.renderStatusLabel(status)}
                       <div className='node-buttons'>
-                        {status == 'offline' && this.renderRemoveButton()}
+                        {status === 'offline' && this.renderRemoveButton()}
                         {[
                           !!node.get('cluster') && this.renderLogsLink(),
                           this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
@@ -419,7 +419,7 @@ var Node = React.createClass({
             :
               <div>
                 {this.renderStatusLabel(status)}
-                {status == 'offline' && this.renderRemoveButton()}
+                {status === 'offline' && this.renderRemoveButton()}
               </div>
             }
           </div>
@@ -437,7 +437,7 @@ var Node = React.createClass({
   render() {
     var ns = 'cluster_page.nodes_tab.node.';
     var node = this.props.node;
-    var isSelectable = node.isSelectable() && !this.props.locked && this.props.mode != 'edit';
+    var isSelectable = node.isSelectable() && !this.props.locked && this.props.mode !== 'edit';
     var status = node.getStatusSummary();
     var roles = this.props.cluster ? node.sortedRoles(this.props.cluster.get('roles').pluck('name')) : [];
 
@@ -445,7 +445,7 @@ var Node = React.createClass({
     var nodePanelClasses = {
       node: true,
       selected: this.props.checked,
-      'col-xs-12': this.props.viewMode != 'compact',
+      'col-xs-12': this.props.viewMode !== 'compact',
       unavailable: !isSelectable
     };
     nodePanelClasses[status] = status;
@@ -470,7 +470,7 @@ var Node = React.createClass({
     }[status];
     statusClasses[statusClass] = true;
 
-    var renderMethod = this.props.viewMode == 'compact' ? this.renderCompactNode : this.renderStandardNode;
+    var renderMethod = this.props.viewMode === 'compact' ? this.renderCompactNode : this.renderStandardNode;
 
     return renderMethod({ns, status, roles, nodePanelClasses, logoClasses, statusClasses, isSelectable});
   }

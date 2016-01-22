@@ -36,7 +36,7 @@ define([
                     return ifcDiv
                       .getVisibleText()
                         .then(function(currentIfcName) {
-                          return _.trim(currentIfcName) == ifcName ? ifcElement : result;
+                          return _.trim(currentIfcName) === ifcName ? ifcElement : result;
                         });
                   });
             }, null);
@@ -53,7 +53,7 @@ define([
                     return ifcNameElement
                       .getVisibleText()
                         .then(function(foundIfcName) {
-                          return ifcName == foundIfcName ? ifcElement : result;
+                          return ifcName === foundIfcName ? ifcElement : result;
                         });
                   });
             }, null);
@@ -82,7 +82,7 @@ define([
               return networkElement
                 .getVisibleText()
                   .then(function(currentNetworkName) {
-                    return currentNetworkName == networkName ? networkElement : result;
+                    return currentNetworkName === networkName ? networkElement : result;
                   });
             }, null);
           })

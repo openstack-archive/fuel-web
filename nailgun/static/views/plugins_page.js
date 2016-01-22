@@ -55,7 +55,7 @@ var PluginsPage = React.createClass({
   },
   processPluginData(plugin, attribute) {
     var data = plugin.get(attribute);
-    if (attribute == 'releases') {
+    if (attribute === 'releases') {
       return _.map(_.groupBy(data, 'os'), (osReleases, osName) =>
         <div key={osName}>
           {i18n('plugins_page.' + osName) + ': '}
@@ -63,10 +63,10 @@ var PluginsPage = React.createClass({
         </div>
       );
     }
-    if (attribute == 'homepage') {
+    if (attribute === 'homepage') {
       return <span dangerouslySetInnerHTML={{__html: utils.composeLink(data)}} />;
     }
-    if (attribute == 'links') {
+    if (attribute === 'links') {
       return data.map((link) =>
         <div key={link.get('url')} className='plugin-link'>
           <a href={link.get('url')} target='_blank'>{link.get('title')}</a>

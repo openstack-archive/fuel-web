@@ -224,7 +224,7 @@ var restrictionMixin = models.restrictionMixin = {
         .filter({type: limitType})
         .sortBy('value')
         .value();
-      if (limitType != 'max') {
+      if (limitType !== 'max') {
         message = message.reverse();
       }
       if (message[0]) {
@@ -279,7 +279,7 @@ models.Roles = BaseCollection.extend(restrictionMixin).extend({
       var roleConflicts = role.get('conflicts');
       var roleName = role.get('name');
 
-      if (roleConflicts == '*') {
+      if (roleConflicts === '*') {
         role.conflicts = _.map(this.reject({name: roleName}), (role) => role.get('name'));
       } else {
         role.conflicts = _.chain(role.conflicts)
@@ -326,7 +326,7 @@ models.Cluster = BaseModel.extend({
   },
   validate(attrs) {
     var errors = {};
-    if (!_.trim(attrs.name) || _.trim(attrs.name).length == 0) {
+    if (!_.trim(attrs.name) || _.trim(attrs.name).length === 0) {
       errors.name = 'Environment name cannot be empty';
     }
     if (!attrs.release) {
@@ -343,7 +343,7 @@ models.Cluster = BaseModel.extend({
     return this.get('tasks') && this.get('tasks').filterTasks(filters);
   },
   needsRedeployment() {
-    return this.get('nodes').any({pending_addition: false, status: 'error'}) && this.get('status') != 'update_error';
+    return this.get('nodes').any({pending_addition: false, status: 'error'}) && this.get('status') !== 'update_error';
   },
   fetchRelated(related, options) {
     return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
@@ -353,7 +353,7 @@ models.Cluster = BaseModel.extend({
   },
   isDeploymentPossible() {
     var nodes = this.get('nodes');
-    return this.get('release').get('state') != 'unavailable' && !!nodes.length &&
+    return this.get('release').get('state') !== 'unavailable' && !!nodes.length &&
       (nodes.hasChanges() || this.needsRedeployment()) && !this.task({group: 'deployment', active: true});
   }
 });
@@ -383,19 +383,19 @@ models.Node = BaseModel.extend({
   resource(resourceName) {
     var resource = 0;
     try {
-      if (resourceName == 'cores') {
+      if (resourceName === 'cores') {
         resource = this.get('meta').cpu.real;
-      } else if (resourceName == 'ht_cores') {
+      } else if (resourceName === 'ht_cores') {
         resource = this.get('meta').cpu.total;
-      } else if (resourceName == 'hdd') {
+      } else if (resourceName === 'hdd') {
         resource = _.reduce(this.get('meta').disks, (hdd, disk) => _.isNumber(disk.size) ? hdd + disk.size : hdd, 0);
-      } else if (resourceName == 'ram') {
+      } else if (resourceName === 'ram') {
         resource = this.get('meta').memory.total;
-      } else if (resourceName == 'disks') {
+      } else if (resourceName === 'disks') {
         resource = _.pluck(this.get('meta').disks, 'size').sort((a, b) => a - b);
-      } else if (resourceName == 'disks_amount') {
+      } else if (resourceName === 'disks_amount') {
         resource = this.get('meta').disks.length;
-      } else if (resourceName == 'interfaces') {
+      } else if (resourceName === 'interfaces') {
         resource = this.get('meta').interfaces.length;
       }
     } catch (ignore) {}
@@ -409,7 +409,7 @@ models.Node = BaseModel.extend({
   isSelectable() {
     // forbid removing node from adding to environments
     // and useless management of roles, disks, interfaces, etc.
-    return this.get('status') != 'removing';
+    return this.get('status') !== 'removing';
   },
   hasRole(role, onlyDeployedRoles) {
     var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
@@ -422,11 +422,11 @@ models.Node = BaseModel.extend({
   },
   areDisksConfigurable() {
     var status = this.get('status');
-    return status == 'discover' || status == 'error';
+    return status === 'discover' || status === 'error';
   },
   areInterfacesConfigurable() {
     var status = this.get('status');
-    return status == 'discover' || status == 'error' || status == 'provisioned';
+    return status === 'discover' || status === 'error' || status === 'provisioned';
   },
   getRolesSummary(releaseRoles) {
     return _.map(this.sortedRoles(releaseRoles.pluck('name')), (role) => {
@@ -511,7 +511,7 @@ models.Nodes = BaseCollection.extend({
   },
   areInterfacesConfigurable() {
     if (!this.length) return false;
-    return _.uniq(this.invoke('resource', 'interfaces')).length == 1;
+    return _.uniq(this.invoke('resource', 'interfaces')).length === 1;
   }
 });
 
@@ -617,7 +617,7 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
     return false;
   },
   isPlugin(section) {
-    return (section.metadata || {}).class == 'plugin';
+    return (section.metadata || {}).class === 'plugin';
   },
   parse(response) {
     return response[this.root];
@@ -626,7 +626,7 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
     _.each(this.attributes, (section, sectionName) => {
       if (this.isPlugin(section)) {
         var chosenVersionData = section.metadata.versions.find(
-            (version) => version.metadata.plugin_id == section.metadata.chosen_id
+            (version) => version.metadata.plugin_id === section.metadata.chosen_id
           );
         // merge metadata of a chosen plugin version
         _.extend(section.metadata, _.omit(chosenVersionData.metadata, 'plugin_id', 'plugin_version'));
@@ -643,11 +643,11 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
     _.each(settings, (section, sectionName) => {
       if (this.isPlugin(section)) {
         var chosenVersionData = section.metadata.versions.find(
-            (version) => version.metadata.plugin_id == section.metadata.chosen_id
+            (version) => version.metadata.plugin_id === section.metadata.chosen_id
           );
         section.metadata = _.omit(section.metadata, _.without(_.keys(chosenVersionData.metadata), 'plugin_id', 'plugin_version'));
         _.each(section, (setting, settingName) => {
-          if (settingName != 'metadata') chosenVersionData[settingName].value = setting.value;
+          if (settingName !== 'metadata') chosenVersionData[settingName].value = setting.value;
         });
         settings[sectionName] = _.pick(section, 'metadata');
       }
@@ -684,7 +684,7 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
     return args.join('.');
   },
   getValueAttribute(settingName) {
-    return settingName == 'metadata' ? 'enabled' : 'value';
+    return settingName === 'metadata' ? 'enabled' : 'value';
   },
   hasChanges(initialAttributes, models) {
     return _.any(this.attributes, (section, sectionName) => {
@@ -693,10 +693,10 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
       if (metadata) {
         if (this.checkRestrictions(models, null, metadata).result) return result;
         if (!_.isUndefined(metadata.enabled)) {
-          result = metadata.enabled != initialAttributes[sectionName].metadata.enabled;
+          result = metadata.enabled !== initialAttributes[sectionName].metadata.enabled;
         }
         if (!result && this.isPlugin(section)) {
-          result = metadata.chosen_id != initialAttributes[sectionName].metadata.chosen_id;
+          result = metadata.chosen_id !== initialAttributes[sectionName].metadata.chosen_id;
         }
       }
       return result || (metadata || {}).enabled !== false && _.any(section, (setting, settingName) => {
@@ -715,7 +715,7 @@ models.Settings = Backbone.DeepModel.extend(superMixin).extend(cacheMixin).exten
         groups.push(this.sanitizeGroup(section.metadata.group));
       } else {
         _.each(section, (setting, settingName) => {
-          if (settingName != 'metadata') groups.push(this.sanitizeGroup(setting.group));
+          if (settingName !== 'metadata') groups.push(this.sanitizeGroup(setting.group));
         });
       }
     });
@@ -747,7 +747,7 @@ models.Disk = BaseModel.extend({
     options = options || {};
     var volumes = options.volumes || this.get('volumes');
     var allocatedSpace = volumes.reduce((sum, volume) => {
-      return volume.get('name') == options.skip ? sum : sum + volume.get('size');
+      return volume.get('name') === options.skip ? sum : sum + volume.get('size');
     }, 0);
     return this.get('size') - allocatedSpace;
   },
@@ -776,14 +776,14 @@ models.Volume = BaseModel.extend({
     var groupAllocatedSpace = 0;
     if (currentDisk && currentDisk.collection)
       groupAllocatedSpace = currentDisk.collection.reduce((sum, disk) => {
-        return disk.id == currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');
+        return disk.id === currentDisk.id ? sum : sum + disk.get('volumes').findWhere({name: this.get('name')}).get('size');
       }, 0);
     return minimum - groupAllocatedSpace;
   },
   getMaxSize() {
     var volumes = this.collection.disk.get('volumes');
     var diskAllocatedSpace = volumes.reduce((total, volume) => {
-      return this.get('name') == volume.get('name') ? total : total + volume.get('size');
+      return this.get('name') === volume.get('name') ? total : total + volume.get('size');
     }, 0);
     return this.collection.disk.get('size') - diskAllocatedSpace;
   },
@@ -815,7 +815,7 @@ models.Interface = BaseModel.extend({
     }), 'checked');
   },
   isBond() {
-    return this.get('type') == 'bond';
+    return this.get('type') === 'bond';
   },
   getSlaveInterfaces() {
     if (!this.isBond()) return [this];
@@ -956,7 +956,7 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
           var cidr = network.get('cidr');
           _.extend(networkErrors, utils.validateCidr(cidr));
           var cidrError = _.has(networkErrors, 'cidr');
-          if (network.get('meta').notation == 'ip_ranges') {
+          if (network.get('meta').notation === 'ip_ranges') {
             var ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), cidrError ? null : cidr);
             if (ipRangesErrors.length) {
               networkErrors.ip_ranges = ipRangesErrors;
@@ -973,14 +973,14 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
           var forbiddenVlans = [];
           if (novaNetManager) {
             forbiddenVlans = currentNetworks.map((net) => {
-              return net.id != network.id ? net.get('vlan_start') : null;
+              return net.id !== network.id ? net.get('vlan_start') : null;
             });
           }
           _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
           if (!_.isEmpty(networkErrors)) {
             nodeNetworkGroupErrors[network.id] = networkErrors;
           }
-          if (network.get('name') == 'baremetal') {
+          if (network.get('name') === 'baremetal') {
             var baremetalCidrError = _.has(nodeNetworkGroupErrors[network.id], 'cidr');
             var baremetalGateway = networkParameters.get('baremetal_gateway');
             if (!utils.validateIP(baremetalGateway)) {
@@ -1013,7 +1013,7 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
       if (!utils.isNaturalNumber(parseInt(fixedAmount, 10))) {
         networkingParametersErrors.fixed_networks_amount = i18n(ns + 'invalid_amount');
       }
-      var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
+      var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager === 'VlanManager');
       _.extend(networkingParametersErrors, vlanErrors);
       if (_.isEmpty(vlanErrors)) {
         if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
@@ -1036,8 +1036,8 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
     } else {
       var idRangeErrors = ['', ''];
       var segmentation = networkParameters.get('segmentation_type');
-      var idRangeAttr = segmentation == 'vlan' ? 'vlan_range' : 'gre_id_range';
-      var maxId = segmentation == 'vlan' ? 4094 : 65535;
+      var idRangeAttr = segmentation === 'vlan' ? 'vlan_range' : 'gre_id_range';
+      var maxId = segmentation === 'vlan' ? 4094 : 65535;
       var idRange = networkParameters.get(idRangeAttr);
       var idStart = Number(idRange[0]);
       var idEnd = Number(idRange[1]);
@@ -1047,9 +1047,9 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
         idRangeErrors[1] = i18n(ns + 'invalid_id_end');
       } else if (idStart > idEnd) {
         idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'invalid_id_range');
-      } else if (idStart == idEnd) {
+      } else if (idStart === idEnd) {
         idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'not_enough_id');
-      } else if (segmentation == 'vlan') {
+      } else if (segmentation === 'vlan') {
         _.each(_.compact(networks.pluck('vlan_start')), (vlan) => {
           if (utils.validateVlanRange(idStart, idEnd, vlan)) {
             idRangeErrors[0] = i18n(ns + 'vlan_intersection');
@@ -1367,7 +1367,7 @@ class ComponentPattern {
   }
   match(componentName) {
     if (!this.hasWildcard) {
-      return this.pattern == componentName;
+      return this.pattern === componentName;
     }
 
     var componentParts = componentName.split(':');
@@ -1376,8 +1376,8 @@ class ComponentPattern {
     }
     var matched = true;
     _.each(this.parts, (part, index) => {
-      if (part != '*') {
-        if (part != componentParts[index]) {
+      if (part !== '*') {
+        if (part !== componentParts[index]) {
           matched = false;
           return matched;
         }

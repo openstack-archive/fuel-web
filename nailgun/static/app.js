@@ -179,7 +179,7 @@ class App {
     return this.version.fetch()
       .then(() => {
         this.user.set({authenticated: !this.version.get('auth_required')});
-        this.patchBackboneSync();
+        this.overrideBackboneSyncMethod();
         if (this.version.get('auth_required')) {
           _.extend(this.keystoneClient, this.user.pick('token'));
           return this.keystoneClient.authenticate()
@@ -243,9 +243,9 @@ class App {
     _.defer(() => this.navigate('login', {trigger: true, replace: true}));
   }
 
-  patchBackboneSync() {
-    var originalSync = Backbone.sync;
-    if (originalSync.patched) return;
+  overrideBackboneSyncMethod() {
+    var originalSyncMethod = Backbone.sync;
+    if (originalSyncMethod.patched) return;
     Backbone.sync = function(method, model, options = {}) {
       // our server doesn't support PATCH, so use PUT instead
       if (method == 'patch') {
@@ -258,7 +258,7 @@ class App {
           .then(() => {
             options.headers = options.headers || {};
             options.headers['X-Auth-Token'] = app.keystoneClient.token;
-            return originalSync.call(this, method, model, options);
+            return originalSyncMethod.call(this, method, model, options);
           })
           .fail((response) => {
             if (response && response.status == 401) {
@@ -266,7 +266,7 @@ class App {
             }
           });
       }
-      return originalSync.call(this, method, model, options);
+      return originalSyncMethod.call(this, method, model, options);
     };
     Backbone.sync.patched = true;
   }

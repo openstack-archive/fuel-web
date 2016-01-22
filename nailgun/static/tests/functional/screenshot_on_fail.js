@@ -30,8 +30,10 @@ define(['intern/dojo/node!fs'], function(fs) {
           var filename = testOrSuite.id + ' - ' + new Date().toTimeString();
           filename = filename.replace(/[\s\*\?\\\/]/g, '_');
           filename = targetDir + '/' + filename + '.png';
-          fs.writeFileSync(filename, buffer);
-          console.log('Saved screenshot to', filename); // eslint-disable-line no-console
+          fs.writeFile(filename, buffer, function(err) {
+            if (err) throw err;
+            console.log('Saved screenshot to', filename); // eslint-disable-line no-console
+          });
         });
       }
     },

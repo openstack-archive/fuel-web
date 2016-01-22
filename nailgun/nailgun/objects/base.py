@@ -386,16 +386,25 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def to_list(cls, iterable=None, fields=None):
+    def to_list(cls, iterable=None, fields=None, order_by='*'):
         """Serialize iterable to list of dicts
 
         In case if iterable=None serializes all object instances
 
         :param iterable: iterable (SQLAlchemy query)
         :param fields: exact fields to serialize
+        :param order_by: field
         :returns: collection of objects as a list of dicts
         """
+
+        # If order_by has a default value, try to guess primary field
+        # In most cases it will be 'id' filed
+        if order_by == '*':
+            order_by = next(iter(cls.single.serializer.fields), None)
+
         use_iterable = iterable or cls.all()
+        if order_by:
+            use_iterable = cls.order_by(use_iterable, order_by)
         return map(
             lambda o: cls.single.to_dict(o, fields=fields),
             use_iterable

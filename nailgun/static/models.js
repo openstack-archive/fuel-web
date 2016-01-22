@@ -935,6 +935,25 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
   isNew() {
     return false;
   },
+  validateNetworkIpRanges(network, cidr) {
+    if (network.get('meta').notation == 'ip_ranges') {
+      var errors = utils.validateIPRanges(network.get('ip_ranges'), cidr);
+      return errors.length ? {ip_ranges: errors} : null;
+    }
+    return null;
+  },
+  validateNetworkGateway(network, cidr) {
+    if (network.get('meta').use_gateway) {
+      if (!utils.validateIP(network.get('gateway'))) {
+        return {gateway: i18n('cluster_page.network_tab.validation.invalid_gateway')};
+      }
+      if (cidr && !utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
+        return {gateway: i18n('cluster_page.network_tab.validation.gateway_does_not_match_cidr')};
+      }
+      return null;
+    }
+    return null;
+  },
   validate(attrs) {
     var errors = {};
     var networkingParametersErrors = {};
@@ -947,55 +966,43 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
     var floatingRangesErrors;
 
     nodeNetworkGroups.map((nodeNetworkGroup) => {
-      var currentNetworks = new models.Networks(networks.where({group_id: nodeNetworkGroup.id}));
+      var networksToCheck = new models.Networks(networks.filter((network) => {
+        return network.get('group_id') === nodeNetworkGroup.id && network.get('meta').configurable;
+      }));
       var nodeNetworkGroupErrors = {};
-      // validate networks
-      currentNetworks.each((network) => {
+      networksToCheck.each((network) => {
         var networkErrors = {};
-        if (network.get('meta').configurable) {
-          var cidr = network.get('cidr');
-          _.extend(networkErrors, utils.validateCidr(cidr));
-          var cidrError = _.has(networkErrors, 'cidr');
-          if (network.get('meta').notation == 'ip_ranges') {
-            var ipRangesErrors = utils.validateIPRanges(network.get('ip_ranges'), cidrError ? null : cidr);
-            if (ipRangesErrors.length) {
-              networkErrors.ip_ranges = ipRangesErrors;
-            }
+
+        var cidr = network.get('cidr');
+        _.extend(networkErrors, utils.validateCidr(cidr));
+        var cidrError = _.has(networkErrors, 'cidr');
+        _.extend(networkErrors, this.validateNetworkIpRanges(network, cidrError ? null : cidr));
+        _.extend(networkErrors, this.validateNetworkGateway(network, cidrError ? null : cidr));
+        //FIXME (morale): same VLAN IDs are not permitted for nova-network for now
+        var forbiddenVlans = novaNetManager ? networksToCheck.map((net) => {
+          return net.id != network.id ? net.get('vlan_start') : null;
+        }) : [];
+        _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
+
+        if (!_.isEmpty(networkErrors)) {
+          nodeNetworkGroupErrors[network.id] = networkErrors;
+        }
+
+        if (network.get('name') == 'baremetal') {
+          var baremetalGateway = networkParameters.get('baremetal_gateway');
+          if (!utils.validateIP(baremetalGateway)) {
+            networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
+          } else if (!cidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
+            networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
           }
-          if (network.get('meta').use_gateway) {
-            if (!utils.validateIP(network.get('gateway'))) {
-              networkErrors.gateway = i18n(ns + 'invalid_gateway');
-            } else if (!cidrError && !utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
-              networkErrors.gateway = i18n(ns + 'gateway_does_not_match_cidr');
-            }
-          }
-          //FIXME (morale): same VLAN IDs are not permitted for nova-network for now
-          var forbiddenVlans = [];
-          if (novaNetManager) {
-            forbiddenVlans = currentNetworks.map((net) => {
-              return net.id != network.id ? net.get('vlan_start') : null;
-            });
-          }
-          _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
-          if (!_.isEmpty(networkErrors)) {
-            nodeNetworkGroupErrors[network.id] = networkErrors;
-          }
-          if (network.get('name') == 'baremetal') {
-            var baremetalCidrError = _.has(nodeNetworkGroupErrors[network.id], 'cidr');
-            var baremetalGateway = networkParameters.get('baremetal_gateway');
-            if (!utils.validateIP(baremetalGateway)) {
-              networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
-            } else if (!baremetalCidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
-              networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
-            }
-            var baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], baremetalCidrError ? null : cidr);
-            if (baremetalRangeErrors.length) {
-              var [{start, end}] = baremetalRangeErrors;
-              networkingParametersErrors.baremetal_range = [start, end];
-            }
+          var baremetalRangeErrors = utils.validateIPRanges([networkParameters.get('baremetal_range')], cidrError ? null : cidr);
+          if (baremetalRangeErrors.length) {
+            var [{start, end}] = baremetalRangeErrors;
+            networkingParametersErrors.baremetal_range = [start, end];
           }
         }
       }, this);
+
       if (!_.isEmpty(nodeNetworkGroupErrors)) {
         nodeNetworkGroupsErrors[nodeNetworkGroup.id] = nodeNetworkGroupErrors;
       }

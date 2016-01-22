@@ -79,6 +79,11 @@ function(_, assert, Helpers, pollUntil, LoginPage, WelcomePage, ClusterPage, Clu
       return this.remote
         .clickLinkByText('Environments')
         .waitForCssSelector('.clusters-page', 2000)
+        // Discard unsaved changes and continue cluster deletion
+        .catch(function() {
+          self.remote.clickByCssSelector('button.btn-danger');
+        })
+        .waitForCssSelector('.clusters-page', 2000)
         .then(function() {
           return self.clustersPage.goToEnvironment(clusterName);
         })

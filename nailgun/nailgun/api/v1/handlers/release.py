@@ -47,7 +47,11 @@ class ReleaseCollectionHandler(CollectionHandler):
 
         :http: * 200 (OK)
         """
-        q = sorted(self.collection.all(), reverse=True)
+        q = sorted(
+            self.collection.order_by(
+                self.collection.all(),
+                ('version', 'operating_system')),
+            reverse=True)
         return self.collection.to_json(q)
 
 

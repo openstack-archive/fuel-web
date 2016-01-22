@@ -26,6 +26,7 @@ import operator
 from oslo_serialization import jsonutils
 
 from sqlalchemy import and_, not_
+from sqlalchemy import inspection
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Query
 
@@ -43,6 +44,10 @@ class NailgunObject(object):
 
     #: SQLAlchemy model for object
     model = None
+
+    @classmethod
+    def primary_field(cls):
+        return (inspection.inspect(cls.model).primary_key[0].name,)
 
     @classmethod
     def get_by_uid(cls, uid, fail_if_not_found=False, lock_for_update=False):
@@ -210,7 +215,7 @@ class NailgunCollection(object):
         return iterable
 
     @classmethod
-    def order_by(cls, iterable, order_by):
+    def order_by(cls, iterable, order_by=None):
         """Order given iterable by specified order_by.
 
         :param order_by: tuple of model fields names or single field name for
@@ -218,6 +223,8 @@ class NailgunCollection(object):
             desc ordering applies, else asc.
         :type order_by: tuple of strings or string
         """
+        if order_by is None:
+            order_by = cls.single.primary_field()
         if iterable is None or not order_by:
             return iterable
         if not isinstance(order_by, (list, tuple)):
@@ -393,9 +400,11 @@ class NailgunCollection(object):
 
         :param iterable: iterable (SQLAlchemy query)
         :param fields: exact fields to serialize
+        :param order_by: field
         :returns: collection of objects as a list of dicts
         """
-        use_iterable = iterable or cls.all()
+
+        use_iterable = iterable or cls.order_by(cls.all())
         return map(
             lambda o: cls.single.to_dict(o, fields=fields),
             use_iterable

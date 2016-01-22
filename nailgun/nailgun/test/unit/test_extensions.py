@@ -50,8 +50,12 @@ class BaseExtensionCase(BaseTestCase):
 
         self.extension = Extension()
 
-
-class TestBaseExtension(BaseExtensionCase):
+    def test_extension_to_dict(self):
+        serialized = self.extension.to_dict()
+        self.assertEqual('ext_name', serialized['name'])
+        self.assertEqual('1.0.0', serialized['version'])
+        self.assertEqual('ext description', serialized['description'])
+        self.assertEqual([], serialized['provides'])
 
     def test_alembic_table_version(self):
         self.assertEqual(

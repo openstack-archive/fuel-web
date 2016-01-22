@@ -248,3 +248,12 @@ class BaseExtension(object):
     def on_before_provisioning_serialization(cls, cluster, nodes,
                                              ignore_customized):
         """Callback which gets executed before provisioning serialization"""
+
+    @classmethod
+    def to_dict(cls):
+        return {
+            "name": cls.name,
+            "version": cls.version,
+            "description": cls.description,
+            "provides": cls.provides,
+        }

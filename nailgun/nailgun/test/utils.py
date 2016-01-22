@@ -40,12 +40,14 @@ def random_string(lenght, charset=None):
 def make_mock_extensions(names=('ex1', 'ex2')):
     mocks = []
     for name in names:
-        # NOTE(eli): since 'name' is reserved world
+        # NOTE(eli): since 'name' is reserved word
         # for mock constructor, we should assign
         # name explicitly
         ex_m = mock.MagicMock()
         ex_m.name = name
         ex_m.provides = ['method_call']
+        ex_m.description = "Example description of {}".format(name)
+        ex_m.version = '.'.join(random_string(3, string.digits))
         mocks.append(ex_m)
 
     return mocks

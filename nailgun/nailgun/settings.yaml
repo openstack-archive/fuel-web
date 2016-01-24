@@ -46,11 +46,11 @@ DATABASE:
 # Config updates for admin network do not apply on any environment,
 # changes should be made in database if required
 ADMIN_NETWORK:
-  cidr: "10.20.0.0/24"
+  cidr: "10.20.0.0/16"
   mac: "52:54:00:15:b9:60"
-  size: "256"
-  first: "10.20.0.129"
-  last: "10.20.0.254"
+  size: "2000"
+  first: "10.20.0.10"
+  last: "10.20.254.254"
   gateway: "10.20.0.1"
 
 # Check timeouts for offline-online nodes detection

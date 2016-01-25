@@ -36,7 +36,7 @@ class NetworkConfigurationSerializer(BasicSerializer):
         return data_dict
 
     @classmethod
-    def serialize_net_groups_and_vips(cls, cluster, allocate=False):
+    def serialize_net_groups_and_vips(cls, cluster):
         result = {}
         net_manager = objects.Cluster.get_network_manager(cluster)
         nets = cluster.network_groups + [net_manager.get_admin_network_group()]
@@ -45,11 +45,9 @@ class NetworkConfigurationSerializer(BasicSerializer):
             cls.serialize_network_group,
             nets
         )
-
         if cluster.is_ha_mode:
             result.update(
-                net_manager.assign_vips_for_net_groups_for_api(cluster,
-                                                               allocate))
+                net_manager.assign_vips_for_net_groups_for_api(cluster))
 
         return result
 
@@ -73,9 +71,8 @@ class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
     )
 
     @classmethod
-    def serialize_for_cluster(cls, cluster, allocate_vips=False):
-        result = cls.serialize_net_groups_and_vips(cluster,
-                                                   allocate=allocate_vips)
+    def serialize_for_cluster(cls, cluster):
+        result = cls.serialize_net_groups_and_vips(cluster)
         result['networking_parameters'] = cls.serialize_network_params(
             cluster)
         return result
@@ -107,7 +104,7 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
         return BasicSerializer.serialize(cluster.network_config, fields)
 
     @classmethod
-    def serialize_for_cluster(cls, cluster, allocate_vips=False):
-        result = cls.serialize_net_groups_and_vips(cluster, allocate_vips)
+    def serialize_for_cluster(cls, cluster):
+        result = cls.serialize_net_groups_and_vips(cluster)
         result['networking_parameters'] = cls.serialize_network_params(cluster)
         return result

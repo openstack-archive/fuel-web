@@ -111,6 +111,14 @@
                     "private": "The private network facilitates communication between each tenant's VMs. Private network address spaces are not a part of the public network address space; fixed IPs of virtual instances cannot be accessed directly from the rest of the public network.",
                     "baremetal": "A separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes.",
                     "fuelweb_admin": "The Fuel Master node uses the Admin (PXE) network to provision and orchestrate the OpenStack environment providing DNS, DHCP, and gateway services to a node before that node is provisioned."
+                },
+                "requirements": {
+                    "public": "Public and Floating IP ranges must share the same CIDR\nEach controller node requires one IP address from the Public IP range.\nAdditionally, an OpenStack environment requires two IP addresses to use as virtual IP addresses and one IP address for the default gateway.\nIf you have enabled Neutron DVR and plan to use floating IP address, allocate one IP address for each compute node.\nFor more information on the Public IP requirements, see Plugin documentation.",
+                    "storage": "This is an internal network, therefore, assign a private IP address range.",
+                    "management": "This is an internal network, therefore, assign a private IP address range.",
+                    "internal": "For security reasons, isolate this network from the Private and Public networks.",
+                    "floating": "Each defined tenant, including the Admin tenant, requires one IP address from the Floating range. This IP address goes to the virtual interface of the tenant's virtual router.\nEach VM instance connected to the external network requires one IP address from the Floating IP range.\nFloating IP address range should not intersect with Public Network address range",
+                    "l2_configuration": "One unique VLAN ID is required for each tenant network."
                 }
             },
             "login_page": {

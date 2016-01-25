@@ -182,6 +182,11 @@ class NailgunReceiver(object):
 
             nm = objects.Cluster.get_network_manager(cluster)
             admin_nets = nm.get_admin_networks()
+            objects.Task.delete(task)
+            for task_ in cluster.tasks:
+                if task_ != task:
+                    objects.Task.delete(task_, hard=True)
+
             objects.Cluster.delete(cluster)
             if admin_nets != nm.get_admin_networks():
                 # import it here due to cyclic dependencies problem

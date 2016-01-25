@@ -19,7 +19,6 @@ Handlers dealing with network configurations
 """
 
 import six
-import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
@@ -67,21 +66,14 @@ class ProviderHandler(BaseHandler):
             raise self.http(403, "Network configuration cannot be changed "
                                  "during deployment and after upgrade.")
 
-    def _raise_error_task(self, cluster, task_name, exc):
-        # set task status to error and update its corresponding data
-        task = Task(
-            name=task_name,
-            cluster=cluster,
-            status=consts.TASK_STATUSES.error,
-            progress=100,
-            message=six.text_type(exc)
-        )
-        db().add(task)
-        db().commit()
+    def _get_cluster_and_validated_network_data(self, cluster_id):
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.check_net_provider(cluster)
 
-        logger.exception('Error in network configuration')
-
-        self.raise_task(task)
+        data = self.checked_data(
+            self.validator.validate_networks_data,
+            cluster=cluster, networks_required=False)
+        return cluster, data
 
     @content
     def GET(self, cluster_id):
@@ -116,14 +108,10 @@ class ProviderHandler(BaseHandler):
                * 404 (cluster not found in db)
                * 409 (previous dsnmasq setup is not finished yet)
         """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
+        cluster, data = self._get_cluster_and_validated_network_data(
+            cluster_id)
 
         self.check_if_network_configuration_locked(cluster)
-
-        data = self.checked_data(
-            self.validator.validate_networks_data,
-            data=web.data(), cluster=cluster, networks_required=False)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
@@ -235,14 +223,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
-
-        try:
-            data = self.validator.validate_networks_data(web.data(), cluster)
-        except Exception as exc:
-            self._raise_error_task(
-                cluster, consts.TASK_NAMES.verify_networks, exc)
+        cluster, data = self._get_cluster_and_validated_network_data(
+            cluster_id)
 
         vlan_ids = [{
             'name': n['name'],

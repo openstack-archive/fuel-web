@@ -1331,7 +1331,9 @@ define([
             if (!newName) {
                 return i18n('cluster_page.network_tab.node_network_group_empty_name');
             }
-            if ((this.collection || options.nodeNetworkGroups).any({name: newName})) {
+            var currentNodeNetworkGroupCollection = (this.collection || options.nodeNetworkGroups)
+                .where({cluster_id: this.get('cluster_id')});
+            if (_.any(currentNodeNetworkGroupCollection, {name: newName})) {
                 return i18n('cluster_page.network_tab.node_network_group_duplicate_error');
             }
             return null;

@@ -62,6 +62,7 @@ class NailgunReceiver(object):
         error_msg = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
+        cluster_id = kwargs.get('cluster_id')
         if status in [consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error]:
             progress = 100
 
@@ -72,10 +73,11 @@ class NailgunReceiver(object):
             lock_for_update=True
         )
 
+        cluster_id = cluster_id or task.cluster_id
         # locking cluster
-        if task.cluster_id is not None:
+        if cluster_id is not None:
             objects.Cluster.get_by_uid(
-                task.cluster_id,
+                cluster_id,
                 fail_if_not_found=True,
                 lock_for_update=True
             )
@@ -163,12 +165,13 @@ class NailgunReceiver(object):
             jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
+        cluster_id = kwargs.get('cluster_id')
 
         # in remove_nodes_resp method all objects are already locked
         cls.remove_nodes_resp(**kwargs)
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-        cluster = task.cluster
+        cluster = objects.Cluster.get_by_uid(cluster_id)
 
         if task.status in ('ready',):
             logger.debug("Removing environment itself")

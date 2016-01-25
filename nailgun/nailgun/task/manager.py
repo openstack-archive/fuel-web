@@ -1047,12 +1047,13 @@ class ClusterDeletionManager(TaskManager):
 
         logger.debug("Creating cluster deletion task")
         task = Task(name=consts.TASK_NAMES.cluster_deletion,
-                    cluster=self.cluster)
+                    cluster=None)
         db().add(task)
         db().commit()
         self._call_silently(
             task,
-            tasks.ClusterDeletionTask
+            tasks.ClusterDeletionTask,
+            cluster=self.cluster
         )
         return task
 

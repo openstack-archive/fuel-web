@@ -39,13 +39,16 @@ define([
         mainDIV = 'div.management ';
       } else if (networkName === 'Baremetal') {
         mainDIV = 'div.baremetal ';
+      } else if (networkName === 'Private') {
+        mainDIV = 'div.private ';
       } else {
         throw new Error('Invalid input value. Check networkName: "' + networkName +
           '" parameter and restart test.');
       }
 
       // Generic components
-      chain = chain.assertElementDisabled('button.apply-btn', '"Save Settings" button is disabled')
+      chain = chain.clickByCssSelector('.subtab-link-default')
+      .assertElementDisabled('button.apply-btn', '"Save Settings" button is disabled')
       .assertElementDisabled('button.btn-revert-changes', '"Cancel Changes" button is disabled')
       .assertElementNotExists('div.has-error', 'No Network errors are observed')
       // CIDR
@@ -148,9 +151,131 @@ define([
           // VLAN
           .assertElementPropertyEquals(mainDIV + 'div.vlan_start input[type="text"]', 'value',
             '101', networkName + ' "Use VLAN tagging" textfield has default value');
+        } else if (networkName === 'Private') {
+          // CIDR
+          chain = chain.assertElementPropertyEquals(mainDIV + 'div.cidr input[type="text"]', 'value',
+            '192.168.2.0/24', networkName + ' "CIDR" textfield has default value')
+          // IP Ranges
+          .assertElementPropertyEquals(mainDIV + 'div.ip_ranges input[name*="range-start"]', 'value',
+            '192.168.2.1', networkName + ' "Start IP Range" textfield  has default value')
+          .assertElementPropertyEquals(mainDIV + 'div.ip_ranges input[name*="range-end"]', 'value',
+            '192.168.2.254', networkName + ' "End IP Range" textfield has default value')
+          // VLAN
+          .assertElementPropertyEquals(mainDIV + 'div.vlan_start input[type="text"]', 'value',
+            '103', networkName + ' "Use VLAN tagging" textfield has default value');
         }
       }
       return chain;
+    },
+    checkNetrworkSettingsSegment: function(neutronType) {
+      var chain = this.remote;
+
+      // Check Neutron L2 subtab
+      chain = chain.clickByCssSelector('.subtab-link-neutron_l2')
+      .assertElementExists('li.active a.subtab-link-neutron_l2', '"Neutron L2" subtab is selected')
+      .assertElementTextEquals('h3.networks', 'Neutron L2 Configuration', '"Neutron L2" subtab is opened');
+      if (neutronType === 'VLAN') {
+        chain = chain.assertElementContainsText('div.network-description',
+          'Neutron supports different types of network segmentation such as VLAN, GRE, VXLAN etc. This section is ' +
+          'specific to VLAN segmentation related parameters such as VLAN ID ranges for tenant separation and the ' +
+          'Base MAC address', '"Neutron L2" description is correct')
+        .assertElementEnabled('input[name="range-start_vlan_range"]', '"VLAN ID range" start textfield exists')
+        .assertElementEnabled('input[name="range-end_vlan_range"]', '"VLAN ID range" end textfield exists');
+      } else {
+        chain = chain.assertElementContainsText('div.network-description',
+          'Neutron supports different types of network segmentation such as VLAN, GRE, VXLAN etc. This section is ' +
+          'specific to a tunneling segmentation related parameters such as Tunnel ID ranges for tenant separation and ' +
+          'the Base MAC address', '"Neutron L2" description is correct')
+        .assertElementEnabled('input[name="range-start_gre_id_range"]', '"Tunnel ID range" start textfield exists')
+        .assertElementEnabled('input[name="range-end_gre_id_range"]', '"Tunnel ID range" end textfield exists');
+      }
+      chain = chain.assertElementEnabled('input[name="base_mac"]', '"Base MAC address" textfield exists')
+      // Check Neutron L3 subtab
+      .clickByCssSelector('.subtab-link-neutron_l3')
+      .assertElementExists('li.active a.subtab-link-neutron_l3', '"Neutron L3" subtab is selected')
+      .findByCssSelector('div[data-reactid$="$floating-net"]')
+        .assertElementTextEquals('h3', 'Floating Network Parameters', 'True subgroup name is observed')
+        .assertElementContainsText('div.network-description',
+          'This network is used to assign Floating IPs to tenant VMs', 'True subgroup description is observed')
+        .assertElementEnabled('input[name^="range-start"]', '"Floating IP range" start textfield exists')
+        .assertElementEnabled('input[name^="range-end"]', '"Floating IP range" end textfield exists')
+        .assertElementEnabled('input[name="floating_name"]', '"Floating network name" textfield exists')
+        .end()
+      .findByCssSelector('div[data-reactid$="$internal-net"]')
+        .assertElementTextEquals('h3', 'Internal Network Parameters', 'True subgroup name is observed')
+        .assertElementContainsText('div.network-description',
+          'The Internal network connects all OpenStack nodes in the environment. All components of an OpenStack ' +
+          'environment communicate with each other using this network', 'True subgroup description is observed')
+        .assertElementEnabled('input[name="internal_cidr"]', '"Internal network CIDR" textfield exists')
+        .assertElementEnabled('input[name="internal_gateway"]', '"Internal network gateway" textfield exists')
+        .assertElementEnabled('input[name="internal_name"]', '"Internal network name" textfield exists')
+        .end()
+      .findByCssSelector('div[data-reactid$="$dns-nameservers"]')
+        .assertElementTextEquals('h3', 'Guest OS DNS Servers', 'True subgroup name is observed')
+        .assertElementContainsText('div.network-description', 'This setting is used to specify the upstream name ' +
+          'servers for the environment. These servers will be used to forward DNS queries for external DNS names ' +
+          'to DNS servers outside the environment', 'True subgroup description is observed')
+        .assertElementEnabled('div[data-reactid$="$dns_nameservers0"] input[name="dns_nameservers"]',
+          '"Guest OS DNS Servers" textfield #1 exists')
+        .assertElementEnabled('div[data-reactid$="$dns_nameservers1"] input[name="dns_nameservers"]',
+          '"Guest OS DNS Servers" textfield #2 exists')
+        .end()
+      // Check Other subtab
+      .clickByCssSelector('.subtab-link-network_settings')
+      .assertElementExists('li.active a.subtab-link-network_settings', '"Other" subtab is selected')
+      .assertElementTextEquals('span.subtab-group-public_network_assignment', 'Public network assignment',
+        'True subgroup name is observed')
+      .assertElementEnabled('input[name="assign_to_all_nodes"]',
+        '"Assign public network to all nodes" checkbox exists')
+      .assertElementTextEquals('span.subtab-group-neutron_advanced_configuration', 'Neutron Advanced Configuration',
+        'True subgroup name is observed')
+      .assertElementEnabled('input[name="neutron_l3_ha"]', '"Neutron L3 HA" checkbox exists');
+      if (neutronType === 'VLAN') {
+        chain = chain.assertElementEnabled('input[name="neutron_dvr"]', '"Neutron DVR" checkbox exists');
+      } else {
+        chain = chain.assertElementDisabled('input[name="neutron_dvr"]', '"Neutron DVR" checkbox exists')
+        .assertElementEnabled('input[name="neutron_l2_pop"]', '"Neutron L2 population" checkbox exists');
+      }
+      chain = chain.assertElementTextEquals('span.subtab-group-external_dns', 'Host OS DNS Servers',
+        'True subgroup name is observed')
+      .assertElementEnabled('input[name="dns_list"]', '"DNS list" textfield exists')
+      .assertElementTextEquals('span.subtab-group-external_ntp', 'Host OS NTP Servers',
+        'True subgroup name is observed')
+      .assertElementEnabled('input[name="ntp_list"]', '"NTP server list" textfield exists');
+      return chain;
+    },
+    checkNetrworkVerificationSegment: function() {
+      return this.remote
+        .clickByCssSelector('.subtab-link-network_verification')
+        .assertElementExists('li.active .subtab-link-network_verification', '"Connectivity Check" subtab is selected')
+        .assertElementTextEquals('h3', 'Connectivity Check', '"Connectivity Check" subtab is opened')
+        // Check default picture router scheme
+        .findByCssSelector('div.verification-network-placeholder')
+          .assertElementExists('div.verification-router', 'Main router picture is observed')
+          .assertElementExists('div.connect-1', 'Connection line picture for "left" node #1 is observed')
+          .assertElementExists('div.connect-2', 'Connection line picture for "center" node #2 is observed')
+          .assertElementExists('div.connect-3', 'Connection line picture for "right" node #3 is observed')
+          .assertElementExists('div.verification-node-1', '"Left" node #1 picture is observed')
+          .assertElementExists('div.verification-node-2', '"Center" node #2 picture is observed')
+          .assertElementExists('div.verification-node-3', '"Right" node #3 picture is observed')
+          .end()
+        // Check default verification description
+        .findByCssSelector('ol.verification-description')
+          .assertElementContainsText('li[data-reactid$="$0"]', 'Network verification checks the following',
+            'True "Verification description" header description is observed')
+          .assertElementContainsText('li[data-reactid$="$1"]', 'L2 connectivity checks between nodes in the ' +
+            'environment', 'True "Verification description" point #1 description is observed')
+          .assertElementContainsText('li[data-reactid$="$2"]', 'DHCP discover check on all nodes',
+            'True "Verification description" point #2 description is observed')
+          .assertElementContainsText('li[data-reactid$="$3"]', 'Repository connectivity check from the Fuel ' +
+            'Master node', 'True "Verification description" point #3 description is observed')
+          .assertElementContainsText('li[data-reactid$="$4"]', 'Repository connectivity check from the Fuel ' +
+            'Slave nodes through the public & admin (PXE) networks',
+            'True "Verification description" point #4 description is observed')
+          .end()
+        .assertElementExists('button.verify-networks-btn', '"Verify Networks" is disabled')
+        .assertElementExists('button.btn-revert-changes', '"Cancel Changes" button is disabled')
+        .assertElementExists('button.apply-btn', '"Save Settings" button is disabled');
     },
     checkIncorrectValueInput: function() {
       return this.remote

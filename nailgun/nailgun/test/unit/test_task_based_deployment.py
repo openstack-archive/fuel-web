@@ -355,23 +355,6 @@ class TestTaskSerializers(BaseTestCase):
             self.serializer.resolve_relation('task_1', node_ids, False)
         )
 
-    @mock.patch.object(task_based_deployment, 'logger')
-    def test_resolve_relation_warn_if_not_found(self, m_logger):
-        node_ids = ['1', '2', '3']
-        self.serializer.tasks_per_node = dict(
-            (node_id, ['task_{0}'.format(node_id)])
-            for node_id in node_ids
-        )
-        self.assertItemsEqual(
-            [],
-            self.serializer.resolve_relation('not_exists', node_ids, False)
-        )
-        m_logger.warning.assert_called_once_with(
-            "Dependency '%s' cannot be resolved: "
-            "no candidates in nodes '%s'.",
-            "not_exists", "1, 2, 3"
-        )
-
     def test_need_update_task(self):
         self.assertTrue(self.serializer.need_update_task(
             {}, {"id": "task1", "type": "puppet"}

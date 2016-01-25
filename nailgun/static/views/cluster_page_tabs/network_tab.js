@@ -24,7 +24,7 @@ import models from 'models';
 import dispatcher from 'dispatcher';
 import {CreateNodeNetworkGroupDialog, RemoveNodeNetworkGroupDialog} from 'views/dialogs';
 import {backboneMixin, dispatcherMixin, unsavedChangesMixin, renamingMixin} from 'component_mixins';
-import {Input, RadioGroup, Table} from 'views/controls';
+import {Input, RadioGroup, Table, Popover} from 'views/controls';
 import SettingSection from 'views/cluster_page_tabs/setting_section';
 import CSSTransitionGroup from 'react-addons-transition-group';
 
@@ -111,6 +111,32 @@ var NetworkInputsMixin = {
     if (attribute === 'fixed_networks_vlan_start') return [error];
 
     return error;
+  }
+};
+
+var RequirementListMixin = {
+  toggleRequirementsPopover(sectionName) {
+    this.setState({sectionWithOpenPopover: sectionName});
+  },
+  renderNetworkRequirementsPopover(sectionName) {
+    var requirements = utils.renderMultilineText(
+      i18n('network.requirements.' + sectionName, {defaultValue: ''})
+    );
+    if (_.isEmpty(requirements)) return null;
+    return (
+      <div
+        className='popover-container'
+        onMouseEnter={_.partial(this.toggleRequirementsPopover, sectionName)}
+        onMouseLeave={_.partial(this.toggleRequirementsPopover, null)}
+      >
+        <i className='glyphicon tooltip-icon glyphicon-question-sign' />
+        {this.state.sectionWithOpenPopover === sectionName &&
+          <Popover placement='right' className='requirements-popover'>
+            {requirements}
+          </Popover>
+        }
+      </div>
+    );
   }
 };
 
@@ -1343,8 +1369,12 @@ var NodeNetworkGroupTitle = React.createClass({
 var Network = React.createClass({
   mixins: [
     NetworkInputsMixin,
-    NetworkModelManipulationMixin
+    NetworkModelManipulationMixin,
+    RequirementListMixin
   ],
+  getInitialState() {
+    return {};
+  },
   autoUpdateParameters(cidr) {
     var useGateway = this.props.network.get('meta').use_gateway;
     if (useGateway) this.setValue('gateway', utils.getDefaultGatewayForCidr(cidr));
@@ -1364,9 +1394,13 @@ var Network = React.createClass({
 
     var ipRangeProps = this.composeProps('ip_ranges', true);
     var gatewayProps = this.composeProps('gateway');
+
     return (
       <div className={'forms-box ' + networkName}>
-        <h3 className='networks'>{i18n('network.' + networkName)}</h3>
+        <h3 className='networks'>
+          {i18n('network.' + networkName)}
+          {this.renderNetworkRequirementsPopover(networkName)}
+        </h3>
         <div className='network-description'>{i18n('network.descriptions.' + networkName)}</div>
         <CidrControl
           {... this.composeProps('cidr')}
@@ -1459,8 +1493,12 @@ var NovaParameters = React.createClass({
 var NetworkingL2Parameters = React.createClass({
   mixins: [
     NetworkInputsMixin,
-    NetworkModelManipulationMixin
+    NetworkModelManipulationMixin,
+    RequirementListMixin
   ],
+  getInitialState() {
+    return {};
+  },
   statics: {
     renderedParameters: [
       'vlan_range', 'gre_id_range', 'base_mac'
@@ -1472,7 +1510,12 @@ var NetworkingL2Parameters = React.createClass({
     var idRangePrefix = networkParameters.get('segmentation_type') === 'vlan' ? 'vlan' : 'gre_id';
     return (
       <div className='forms-box' key='neutron-l2'>
-        <h3 className='networks'>{i18n(parametersNS + 'l2_configuration')}</h3>
+        <h3 className='networks'>
+          {i18n(parametersNS + 'l2_configuration')}
+          {this.renderNetworkRequirementsPopover(
+            'l2_configuration_' + networkParameters.get('segmentation_type')
+          )}
+        </h3>
         <div className='network-description'>
           {
             i18n(networkTabNS + 'networking_parameters.l2_' +
@@ -1497,8 +1540,12 @@ var NetworkingL2Parameters = React.createClass({
 var NetworkingL3Parameters = React.createClass({
   mixins: [
     NetworkInputsMixin,
-    NetworkModelManipulationMixin
+    NetworkModelManipulationMixin,
+    RequirementListMixin
   ],
+  getInitialState() {
+    return {};
+  },
   statics: {
     renderedParameters: [
       'floating_ranges', 'internal_cidr', 'internal_gateway',
@@ -1513,6 +1560,7 @@ var NetworkingL3Parameters = React.createClass({
         <div className='forms-box' key='floating-net'>
           <h3>
             <span className='subtab-group-floating-net'>{i18n(networkTabNS + 'floating_net')}</span>
+            {this.renderNetworkRequirementsPopover('floating')}
           </h3>
           <div className='network-description'>{i18n('network.descriptions.floating')}</div>
           <Range
@@ -1525,6 +1573,7 @@ var NetworkingL3Parameters = React.createClass({
         <div className='forms-box' key='internal-net'>
           <h3>
             <span className='subtab-group-internal-net'>{i18n(networkTabNS + 'internal_net')}</span>
+            {this.renderNetworkRequirementsPopover('internal')}
           </h3>
           <div className='network-description'>{i18n('network.descriptions.internal')}</div>
           {this.renderInput('internal_cidr')}
@@ -1536,6 +1585,7 @@ var NetworkingL3Parameters = React.createClass({
             <h3>
               <span className='subtab-group-baremetal-net'>
                 {i18n(networkTabNS + 'baremetal_net')}
+                {this.renderNetworkRequirementsPopover('baremetal')}
               </span>
             </h3>
             <div className='network-description'>

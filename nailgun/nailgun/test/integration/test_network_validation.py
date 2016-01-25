@@ -88,11 +88,6 @@ class TestNetworkChecking(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         return resp.json_body
 
-    def verify_neutron_networks_w_error(self, nets):
-        task = self.env.launch_verify_networks(nets)
-        self.assertEqual(task['status'], consts.TASK_STATUSES.error)
-        return task
-
 
 class TestNovaHandlers(TestNetworkChecking):
 
@@ -837,3 +832,39 @@ class TestNeutronHandlersTun(TestNetworkChecking):
             NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
         self.assertEqual(len(ngs_created), len(self.nets['networks']))
+
+
+class TestNetworkConfigurationVerifyHandler(TestNetworkChecking):
+    def setUp(self):
+        super(TestNetworkConfigurationVerifyHandler, self).setUp()
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth1", "mac": "00:00:00:00:00:77"}])
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True,
+                 'meta': meta}
+            ]
+        )
+        self.cluster = self.env.clusters[0]
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.nets = resp.json_body
+
+    def test_verify_validation_error_vlan(self):
+        self.nets['networking_parameters']['vlan_range'] = [1000, 1000]
+
+        resp = self.env.launch_verify_networks(self.nets, expect_errors=True)
+        self.assertEqual(400, resp.status_int)
+        json = resp.json_body
+
+        self.assertEqual([u'errors', u'message'], json.keys())
+        self.assertEqual([], json['errors'])
+        self.assertIn("uniqueItem", json['message'])
+        self.assertIn("vlan_range", json['message'])
+        self.assertIn("[1000, 1000]", json['message'])

@@ -60,9 +60,9 @@ var LoginForm = React.createClass({
 
         var status = xhr && xhr.status;
         var error = 'login_error';
-        if (status == 401) {
+        if (status === 401) {
           error = 'credentials_error';
-        } else if (!status || String(status)[0] == '5') { // no status (connection refused) or 5xx error
+        } else if (!status || String(status)[0] === '5') { // no status (connection refused) or 5xx error
           error = 'keystone_unavailable_error';
         }
         this.setState({error: i18n('login_page.' + error)});
@@ -74,7 +74,7 @@ var LoginForm = React.createClass({
           token: keystoneClient.token
         });
 
-        if (password == keystoneClient.DEFAULT_PASSWORD) {
+        if (password === keystoneClient.DEFAULT_PASSWORD) {
           dispatcher.trigger('showDefaultPasswordWarning');
         }
 
@@ -115,7 +115,7 @@ var LoginForm = React.createClass({
       });
   },
   render() {
-    var httpsUsed = location.protocol == 'https:';
+    var httpsUsed = location.protocol === 'https:';
     var httpsPort = 8443;
     var httpsLink = 'https://' + location.hostname + ':' + httpsPort;
 

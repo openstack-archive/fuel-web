@@ -62,6 +62,7 @@ class NailgunReceiver(object):
         error_msg = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
+        cluster_id = kwargs.get('cluster_id')
         if status in [consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error]:
             progress = 100
 
@@ -72,10 +73,11 @@ class NailgunReceiver(object):
             lock_for_update=True
         )
 
+        cluster_id = cluster_id or task.cluster_id
         # locking cluster
-        if task.cluster_id is not None:
+        if cluster_id is not None:
             objects.Cluster.get_by_uid(
-                task.cluster_id,
+                cluster_id,
                 fail_if_not_found=True,
                 lock_for_update=True
             )
@@ -168,7 +170,8 @@ class NailgunReceiver(object):
         cls.remove_nodes_resp(**kwargs)
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-        cluster = task.cluster
+        cluster_id = kwargs.get('cluster_id') or task.cluster.id
+        cluster = objects.Cluster.get_by_uid(cluster_id)
 
         if task.status in ('ready',):
             logger.debug("Removing environment itself")
@@ -182,6 +185,7 @@ class NailgunReceiver(object):
 
             nm = objects.Cluster.get_network_manager(cluster)
             admin_nets = nm.get_admin_networks()
+            objects.Task.delete(task)
             objects.Cluster.delete(cluster)
             if admin_nets != nm.get_admin_networks():
                 # import it here due to cyclic dependencies problem

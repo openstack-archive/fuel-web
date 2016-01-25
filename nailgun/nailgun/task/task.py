@@ -513,8 +513,8 @@ class DeletionTask(object):
         return remaining_nodes
 
     @classmethod
-    def execute(cls, task, nodes=None, respond_to='remove_nodes_resp',
-                check_ceph=False):
+    def execute(cls, task, cluster=None, nodes=None,
+                respond_to='remove_nodes_resp', check_ceph=False):
         """Call remote Astute method to remove nodes from a cluster
 
         :param task: Task object
@@ -528,6 +528,7 @@ class DeletionTask(object):
         logger.debug("DeletionTask.execute(task=%s, nodes=%s)",
                      task.uuid, nodes)
         task_uuid = task.uuid
+        cluster = cluster or task.cluster
         logger.debug("Nodes deletion task is running")
 
         # TODO(ikalnitsky): remove this, let the flow always go through Astute
@@ -538,6 +539,7 @@ class DeletionTask(object):
             rcvr = rpc.receiver.NailgunReceiver()
             rcvr.remove_cluster_resp(
                 task_uuid=task_uuid,
+                cluster_id=cluster.id,
                 status=consts.TASK_STATUSES.ready,
                 progress=100
             )
@@ -549,9 +551,9 @@ class DeletionTask(object):
         # check if there's a Zabbix server in an environment
         # and if there is, remove hosts
         if (task.name != consts.TASK_NAMES.cluster_deletion
-                and ZabbixManager.get_zabbix_node(task.cluster)):
+                and ZabbixManager.get_zabbix_node(cluster)):
             zabbix_credentials = ZabbixManager.get_zabbix_credentials(
-                task.cluster
+                cluster
             )
             logger.debug("Removing nodes %s from zabbix", nodes_to_delete)
             try:
@@ -576,6 +578,7 @@ class DeletionTask(object):
             respond_to,
             {
                 'nodes': nodes_to_delete,
+                'cluster_id': cluster.id,
                 'check_ceph': check_ceph,
                 'engine': {
                     'url': settings.COBBLER_URL,
@@ -593,7 +596,7 @@ class DeletionTask(object):
         # /only fake tasks
 
         logger.debug("Calling rpc remove_nodes method with nodes %s",
-                     nodes_to_delete)
+                    nodes_to_delete)
         rpc.cast('naily', msg_delete)
 
     @classmethod
@@ -791,22 +794,23 @@ class RemoveIronicBootstrap(object):
 class ClusterDeletionTask(object):
 
     @classmethod
-    def execute(cls, task):
+    def execute(cls, task, cluster):
         logger.debug("Cluster deletion task is running")
-        attrs = objects.Attributes.merged_attrs_values(task.cluster.attributes)
+        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
         if attrs.get('provision'):
-            if (task.cluster.release.operating_system ==
+            if (cluster.release.operating_system ==
                     consts.RELEASE_OS.ubuntu and
                     attrs['provision']['method'] ==
                     consts.PROVISION_METHODS.image):
                 logger.debug("Delete IBP images task is running")
                 DeleteIBPImagesTask.execute(
-                    task.cluster, attrs['provision']['image_data'])
+                    cluster, attrs['provision']['image_data'])
         else:
             logger.debug("Skipping IBP images deletion task")
         DeletionTask.execute(
             task,
-            nodes=DeletionTask.get_task_nodes_for_cluster(task.cluster),
+            cluster=cluster,
+            nodes=DeletionTask.get_task_nodes_for_cluster(cluster),
             respond_to='remove_cluster_resp'
         )
 

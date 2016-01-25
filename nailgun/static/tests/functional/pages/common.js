@@ -86,7 +86,9 @@ function(_, assert, Helpers, pollUntil, LoginPage, WelcomePage, ClusterPage, Clu
           return self.clusterPage.removeCluster(clusterName);
         })
         .catch(function(e) {
-          if (!suppressErrors) throw new Error('Unable to delete cluster ' + clusterName + ': ' + e);
+          if (!suppressErrors) {
+            throw new Error('Unable to delete cluster ' + clusterName + ': ' + e);
+          }
         });
     },
     doesClusterExist: function(clusterName) {
@@ -115,7 +117,8 @@ function(_, assert, Helpers, pollUntil, LoginPage, WelcomePage, ClusterPage, Clu
         .clickByCssSelector('button.btn-add-nodes')
         .waitForCssSelector('.node', 3000)
         .then(pollUntil(function() {
-          return window.$('.node-list-management-buttons').is(':visible') && window.$('.role-panel').is(':visible') || null;
+          return window.$('.node-list-management-buttons').is(':visible') &&
+            window.$('.role-panel').is(':visible') || null;
         }, 3000))
         .then(function() {
           if (nodeNameFilter) return self.clusterPage.searchForNode(nodeNameFilter);

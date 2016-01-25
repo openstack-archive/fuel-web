@@ -25,19 +25,24 @@ suite('Test utils', () => {
     var serverUnavailableMessage = i18n('dialog.error_dialog.server_unavailable');
 
     response = {status: 500, responseText: 'Server error occured'};
-    assert.equal(getResponseText(response), serverErrorMessage, 'HTTP 500 is treated as a server error');
+    assert.equal(getResponseText(response), serverErrorMessage,
+      'HTTP 500 is treated as a server error');
 
     response = {status: 502, responseText: 'Bad gateway'};
-    assert.equal(getResponseText(response), serverUnavailableMessage, 'HTTP 502 is treated as server unavailability');
+    assert.equal(getResponseText(response), serverUnavailableMessage,
+      'HTTP 502 is treated as server unavailability');
 
     response = {status: 0, responseText: 'error'};
-    assert.equal(getResponseText(response), serverUnavailableMessage, 'XHR object with no status is treated as server unavailability');
+    assert.equal(getResponseText(response), serverUnavailableMessage,
+      'XHR object with no status is treated as server unavailability');
 
     response = {status: 400, responseText: 'Bad request'};
-    assert.equal(getResponseText(response), serverErrorMessage, 'HTTP 400 with plain text response is treated as a server error');
+    assert.equal(getResponseText(response), serverErrorMessage,
+      'HTTP 400 with plain text response is treated as a server error');
 
     response = {status: 400, responseText: JSON.stringify({message: '123'})};
-    assert.equal(getResponseText(response), '123', 'HTTP 400 with JSON response is treated correctly');
+    assert.equal(getResponseText(response), '123',
+      'HTTP 400 with JSON response is treated correctly');
   });
 
   test('Test comparison', () => {
@@ -67,15 +72,20 @@ suite('Test utils', () => {
 
     assert.equal(compare(model1, model1, {attr: 'number'}), 0, 'Number comparison a=b');
 
-    assert.equal(compare(model1, model2, {attr: 'boolean'}), -1, 'Boolean comparison true and false');
+    assert.equal(compare(model1, model2, {attr: 'boolean'}), -1,
+      'Boolean comparison true and false');
 
-    assert.equal(compare(model2, model1, {attr: 'boolean'}), 1, 'Boolean comparison false and true');
+    assert.equal(compare(model2, model1, {attr: 'boolean'}), 1,
+      'Boolean comparison false and true');
 
-    assert.equal(compare(model1, model1, {attr: 'boolean'}), 0, 'Boolean comparison true and true');
+    assert.equal(compare(model1, model1, {attr: 'boolean'}), 0,
+      'Boolean comparison true and true');
 
-    assert.equal(compare(model2, model2, {attr: 'boolean'}), 0, 'Boolean comparison false and false');
+    assert.equal(compare(model2, model2, {attr: 'boolean'}), 0,
+      'Boolean comparison false and false');
 
-    assert.equal(compare(model1, model2, {attr: 'booleanFlagWithNull'}), 0, 'Comparison null and false');
+    assert.equal(compare(model1, model2, {attr: 'booleanFlagWithNull'}), 0,
+      'Comparison null and false');
   });
 
   test('Test highlightTestStep', () => {
@@ -136,17 +146,22 @@ suite('Test utils', () => {
 
     assert.equal(getGateway('172.16.0.0/24'), '172.16.0.1', 'Getting default gateway for CIDR');
     assert.equal(getGateway('192.168.0.0/10'), '192.128.0.1', 'Getting default gateway for CIDR');
-    assert.equal(getGateway('172.16.0.0/31'), '', 'No gateway returned for inappropriate CIDR (network is too small)');
+    assert.equal(getGateway('172.16.0.0/31'), '',
+      'No gateway returned for inappropriate CIDR (network is too small)');
     assert.equal(getGateway('172.16.0.0/'), '', 'No gateway returned for invalid CIDR');
   });
 
   test('Test getDefaultIPRangeForCidr', () => {
     var getRange = utils.getDefaultIPRangeForCidr;
 
-    assert.deepEqual(getRange('172.16.0.0/24'), [['172.16.0.1', '172.16.0.254']], 'Getting default IP range for CIDR');
-    assert.deepEqual(getRange('192.168.0.0/10', true), [['192.128.0.2', '192.191.255.254']], 'Gateway address excluded from default IP range');
-    assert.deepEqual(getRange('172.16.0.0/31'), [['', '']], 'No IP range returned for inappropriate CIDR (network is too small)');
-    assert.deepEqual(getRange('172.16.0.0/', true), [['', '']], 'No IP range returned for invalid CIDR');
+    assert.deepEqual(getRange('172.16.0.0/24'), [['172.16.0.1', '172.16.0.254']],
+      'Getting default IP range for CIDR');
+    assert.deepEqual(getRange('192.168.0.0/10', true), [['192.128.0.2', '192.191.255.254']],
+      'Gateway address excluded from default IP range');
+    assert.deepEqual(getRange('172.16.0.0/31'), [['', '']],
+      'No IP range returned for inappropriate CIDR (network is too small)');
+    assert.deepEqual(getRange('172.16.0.0/', true), [['', '']],
+      'No IP range returned for invalid CIDR');
   });
 
   test('Test validateIpCorrespondsToCIDR', () => {
@@ -156,6 +171,7 @@ suite('Test utils', () => {
     assert.ok(validate('172.16.0.5/24', '172.16.0.2'), 'Check IP, that corresponds to CIDR');
     assert.notOk(validate('172.16.0.0/20', '172.16.15.255'), 'Check broadcast address');
     assert.notOk(validate('172.16.0.0/20', '172.16.0.0'), 'Check network address');
-    assert.notOk(validate('192.168.0.0/10', '192.231.255.254'), 'Check IP, that does not correspond to CIDR');
+    assert.notOk(validate('192.168.0.0/10', '192.231.255.254'),
+      'Check IP, that does not correspond to CIDR');
   });
 });

@@ -23,7 +23,8 @@ import ClusterNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/cluste
 import AddNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen';
 import EditNodesScreen from 'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen';
 import EditNodeDisksScreen from 'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen';
-import EditNodeInterfacesScreen from 'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen';
+import EditNodeInterfacesScreen from
+  'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen';
 import ReactTransitionGroup from 'react-addons-transition-group';
 
 var NodesTab = React.createClass({
@@ -65,7 +66,10 @@ var NodesTab = React.createClass({
         });
       })
       .fail(() => {
-        app.navigate('#cluster/' + this.props.cluster.id + '/nodes', {trigger: true, replace: true});
+        app.navigate(
+          '#cluster/' + this.props.cluster.id + '/nodes',
+          {trigger: true, replace: true}
+        );
       });
   },
   getScreen(props) {
@@ -111,7 +115,10 @@ var NodesTab = React.createClass({
         >
           <Screen
             {...this.state.screenData}
-            {... _.pick(this.props, 'cluster', 'nodeNetworkGroups', 'selectedNodeIds', 'selectNodes')}
+            {..._.pick(
+              this.props,
+              'cluster', 'nodeNetworkGroups', 'selectedNodeIds', 'selectNodes'
+            )}
             ref='screen'
             screenOptions={this.state.screenOptions}
           />

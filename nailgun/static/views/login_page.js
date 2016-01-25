@@ -62,7 +62,8 @@ var LoginForm = React.createClass({
         var error = 'login_error';
         if (status == 401) {
           error = 'credentials_error';
-        } else if (!status || String(status)[0] == '5') { // no status (connection refused) or 5xx error
+        // no status (connection refused) or 5xx error
+        } else if (!status || String(status)[0] == '5') {
           error = 'keystone_unavailable_error';
         }
         this.setState({error: i18n('login_page.' + error)});
@@ -126,7 +127,14 @@ var LoginForm = React.createClass({
             <i className='glyphicon glyphicon-user'></i>
           </label>
           <div className='col-xs-8'>
-            <input className='form-control input-sm' type='text' name='username' ref='username' placeholder={i18n('login_page.username')} onChange={this.onChange} />
+            <input
+              className='form-control input-sm'
+              type='text'
+              name='username'
+              ref='username'
+              placeholder={i18n('login_page.username')}
+              onChange={this.onChange}
+            />
           </div>
         </div>
         <div className='form-group'>
@@ -134,7 +142,14 @@ var LoginForm = React.createClass({
             <i className='glyphicon glyphicon-lock'></i>
           </label>
           <div className='col-xs-8'>
-            <input className='form-control input-sm' type='password' name='password' ref='password' placeholder={i18n('login_page.password')} onChange={this.onChange} />
+            <input
+              className='form-control input-sm'
+              type='password'
+              name='password'
+              ref='password'
+              placeholder={i18n('login_page.password')}
+              onChange={this.onChange}
+            />
           </div>
         </div>
         {!httpsUsed &&

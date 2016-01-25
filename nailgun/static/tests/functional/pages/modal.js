@@ -35,7 +35,8 @@ define([
     },
     checkTitle: function(expectedTitle) {
       return this.remote
-        .assertElementContainsText(this.modalSelector + ' h4.modal-title', expectedTitle, 'Unexpected modal window title');
+        .assertElementContainsText(this.modalSelector + ' h4.modal-title', expectedTitle,
+          'Unexpected modal window title');
     },
     close: function() {
       var self = this;

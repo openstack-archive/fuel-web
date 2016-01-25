@@ -62,10 +62,15 @@ var ClusterPage = React.createClass({
         ['home', '#'],
         ['environments', '#clusters'],
         [cluster.get('name'), '#cluster/' + cluster.get('id'), {skipTranslation: true}],
-        [i18n('cluster_page.tabs.' + pageOptions.activeTab), '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab, {active: !addScreenBreadcrumb}]
+        [
+          i18n('cluster_page.tabs.' + pageOptions.activeTab),
+          '#cluster/' + cluster.get('id') + '/' + pageOptions.activeTab,
+          {active: !addScreenBreadcrumb}
+        ]
       ];
       if (addScreenBreadcrumb) {
-        breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null, {active: true}]);
+        breadcrumbs.push([i18n('cluster_page.nodes_tab.breadcrumbs.' + tabOptions), null,
+          {active: true}]);
       }
       return breadcrumbs;
     },
@@ -94,7 +99,8 @@ var ClusterPage = React.createClass({
       if (currentClusterId == id) {
         // just another tab has been chosen, do not load cluster again
         cluster = app.page.props.cluster;
-        promise = tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
+        promise = tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) :
+          $.Deferred().resolve();
       } else {
         cluster = new models.Cluster({id: id});
 
@@ -111,7 +117,8 @@ var ClusterPage = React.createClass({
         cluster.set({pluginLinks: pluginLinks});
 
         cluster.get('nodes').fetch = function(options) {
-          return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
+          return this.constructor.__super__.fetch.call(this,
+            _.extend({data: {cluster_id: id}}, options));
         };
         promise = $.when(
             cluster.fetch(),
@@ -124,12 +131,16 @@ var ClusterPage = React.createClass({
           )
           .then(() => {
             var networkConfiguration = new models.NetworkConfiguration();
-            networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
+            networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' +
+              cluster.get('net_provider');
             cluster.set({
               networkConfiguration: networkConfiguration,
               release: new models.Release({id: cluster.get('release_id')})
             });
-            return $.when(cluster.get('networkConfiguration').fetch(), cluster.get('release').fetch());
+            return $.when(
+              cluster.get('networkConfiguration').fetch(),
+              cluster.get('release').fetch()
+            );
           })
           .then(() => {
             var useVcenter = cluster.get('settings').get('common.use_vcenter.value');
@@ -141,7 +152,8 @@ var ClusterPage = React.createClass({
             return vcenter.fetch();
           })
           .then(() => {
-            return tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) : $.Deferred().resolve();
+            return tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) :
+              $.Deferred().resolve();
           });
       }
       return promise.then((data) => {
@@ -232,7 +244,8 @@ var ClusterPage = React.createClass({
       var selectedLogs;
       if (props.tabOptions[0]) {
         selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
-        selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() : props.defaultLogLevel;
+        selectedLogs.level = selectedLogs.level ? selectedLogs.level.toUpperCase() :
+          props.defaultLogLevel;
         this.setState({selectedLogs: selectedLogs});
       }
     }
@@ -283,7 +296,11 @@ var ClusterPage = React.createClass({
         <div className='page-title'>
           <h1 className='title'>
             {cluster.get('name')}
-            <div className='title-node-count'>({i18n('common.node', {count: cluster.get('nodes').length})})</div>
+            <div
+              className='title-node-count'
+            >
+              ({i18n('common.node', {count: cluster.get('nodes').length})})
+            </div>
           </h1>
         </div>
         <div className='tabs-box'>
@@ -292,7 +309,12 @@ var ClusterPage = React.createClass({
               return (
                 <a
                   key={url}
-                  className={url + ' ' + utils.classNames({'cluster-tab': true, active: this.props.activeTab == url})}
+                  className={
+                    url + ' ' + utils.classNames({
+                      'cluster-tab': true,
+                      active: this.props.activeTab == url
+                    })
+                  }
                   href={'#cluster/' + cluster.id + '/' + url}
                 >
                   <div className='icon'></div>

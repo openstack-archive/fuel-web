@@ -68,7 +68,8 @@ suite('Expression', () => {
       ['"unknown-role" in release:roles', false],
       ['settings:common.libvirt_type.value', hypervisor],
       ['settings:common.libvirt_type.value == "' + hypervisor + '"', true],
-      ['cluster:mode == "ha_compact" and not (settings:common.libvirt_type.value != "' + hypervisor + '")', true],
+      ['cluster:mode == "ha_compact" and not (settings:common.libvirt_type.value != "' +
+        hypervisor + '")', true],
       // test nonexistent keys
       ['cluster:nonexistentkey', Error],
       ['cluster:nonexistentkey == null', true, false],
@@ -86,9 +87,11 @@ suite('Expression', () => {
     _.each(testCases, ([expression, result, strict]) => {
       var options = {strict};
       if (result === Error) {
-        assert.throws(_.partial(evaluate, expression, options), Error, '', expression + ' throws an error');
+        assert.throws(_.partial(evaluate, expression, options), Error, '',
+          expression + ' throws an error');
       } else {
-        assert.strictEqual(evaluate(expression, options), result, expression + ' evaluates correctly');
+        assert.strictEqual(evaluate(expression, options), result,
+          expression + ' evaluates correctly');
       }
     });
   });

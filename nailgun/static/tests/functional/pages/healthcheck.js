@@ -51,7 +51,8 @@ define([
                 duration: '20s',
                 message: null,
                 id: 'fuel_health.tests.check_disk',
-                description: 'Target component: Nova        Scenario: 1. Check outage on controller and compute nodes'
+                description: 'Target component: Nova        ' +
+                  'Scenario: 1. Check outage on controller and compute nodes'
               },
               {
                 status: null,
@@ -73,7 +74,8 @@ define([
                 duration: '30s.',
                 message: null,
                 id: 'fuel_health.tests.general',
-                description: 'Target component: Logging        Scenario:            1. Check logrotate cron job on all controller and compute nodes'
+                description: 'Target component: Logging        ' +
+                  'Scenario:     1. Check logrotate cron job on all controller and compute nodes'
               },
               {
                 status: null,
@@ -84,7 +86,8 @@ define([
                 duration: '1sec',
                 message: null,
                 id: 'fuel_health.tests.credentials',
-                description: 'Target component: Configuration        Scenario: 1. Check user can not ssh on master node with default credentials.            '
+                description: 'Target component: Configuration        ' +
+                  'Scenario: 1. Check user can not ssh on master node with default credentials.'
               },
               {
                 status: null,
@@ -95,7 +98,8 @@ define([
                 duration: '',
                 message: null,
                 id: 'fuel_health.tests.credentials_change',
-                description: 'Target component: Configuration        Scenario:      1. Check if default credentials for OpenStack cluster have changed.   '
+                description: 'Target component: Configuration   ' +
+                  'Scenario:  1. Check if default credentials for OpenStack cluster have changed.'
               },
               {
                 status: null,
@@ -117,7 +121,8 @@ define([
                 duration: '',
                 message: null,
                 id: 'fuel_health.tests.credentials_erros',
-                description: 'Target component: Configuration        Scenario:      1. Check if default credentials for OpenStack cluster have changed.   '
+                description: 'Target component: Configuration        ' +
+                  'Scenario:   1. Check if default credentials for OpenStack cluster have changed. '
               }]
             )
           ]);
@@ -154,7 +159,8 @@ define([
                 duration: '20s',
                 message: null,
                 id: 'fuel_health.tests.check_disk',
-                description: 'Target component: Nova        Scenario: 1. Check outage on controller and compute nodes'
+                description: 'Target component: Nova ' +
+                'Scenario: 1. Check outage on controller and compute nodes'
               },
               {
                 status: 'stopped',
@@ -176,7 +182,8 @@ define([
                 duration: '30s.',
                 message: 'Fast fail with message',
                 id: 'fuel_health.tests.general',
-                description: 'Target component: Logging        Scenario:            1. Check logrotate cron job on all controller and compute nodes'
+                description: 'Target component: Logging        ' +
+                  'Scenario:    1. Check logrotate cron job on all controller and compute nodes'
               },
               {
                 status: 'wait_running',
@@ -187,7 +194,8 @@ define([
                 duration: '1sec',
                 message: 'failure text message',
                 id: 'fuel_health.tests.credentials',
-                description: 'Target component: Configuration        Scenario: 1. Check user can not ssh on master node with default credentials.            '
+                description: 'Target component: Configuration ' +
+                  'Scenario: 1. Check user can not ssh on master node with default credentials.'
               },
               {
                 status: 'running',
@@ -198,7 +206,8 @@ define([
                 duration: '',
                 message: 'Error message',
                 id: 'fuel_health.tests.credentials_change',
-                description: '  Target component: Configuration        Scenario:      1. Check if default credentials for OpenStack cluster have changed.   '
+                description: '  Target component: Configuration        ' +
+                  'Scenario:   1. Check if default credentials for OpenStack cluster have changed.'
               },
               {
                 status: 'wait_running',
@@ -220,7 +229,8 @@ define([
                 duration: '',
                 message: null,
                 id: 'fuel_health.tests.credentials_erros',
-                description: 'Target component: Configuration        Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
+                description: 'Target component: Configuration        ' +
+                  'Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
               }]
             )
           ]);
@@ -244,7 +254,8 @@ define([
                     duration: '20s',
                     message: null,
                     id: 'fuel_health.tests.check_disk',
-                    description: 'Target component: Nova        Scenario: 1. Check outage on controller and compute nodes'
+                    description: 'Target component: Nova        ' +
+                      'Scenario: 1. Check outage on controller and compute nodes'
                   },
                   {
                     status: 'stopped',
@@ -266,7 +277,8 @@ define([
                     duration: '30s.',
                     message: 'Fast fail with message',
                     id: 'fuel_health.tests.general',
-                    description: 'Target component: Logging        Scenario:            1. Check logrotate cron job on all controller and compute nodes'
+                    description: 'Target component: Logging        ' +
+                      'Scenario: 1. Check logrotate cron job on all controller and compute nodes'
                   },
                   {
                     status: 'wait_running',
@@ -277,7 +289,8 @@ define([
                     duration: '1sec',
                     message: 'failure text message',
                     id: 'fuel_health.tests.credentials',
-                    description: 'Target component: Configuration        Scenario: 1. Check user can not ssh on master node with default credentials.            '
+                    description: 'Target component: Configuration        ' +
+                      'Scenario: 1. Check user can not ssh on master node with default credentials.'
                   },
                   {
                     status: 'running',
@@ -288,7 +301,9 @@ define([
                     duration: '',
                     message: 'Error message',
                     id: 'fuel_health.tests.credentials_change',
-                    description: '  Target component: Configuration        Scenario:      1. Check if default credentials for OpenStack cluster have changed.   '
+                    description: '  Target component: Configuration        ' +
+                      'Scenario:      ' +
+                      '1. Check if default credentials for OpenStack cluster have changed.'
                   },
                   {
                     status: 'wait_running',
@@ -310,7 +325,8 @@ define([
                     duration: '',
                     message: null,
                     id: 'fuel_health.tests.credentials_erros',
-                    description: 'Target component: Configuration        Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
+                    description: 'Target component: Configuration        ' +
+                      'Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
                   }
                 ]
               }]
@@ -345,7 +361,8 @@ define([
                 duration: '20s',
                 message: null,
                 id: 'fuel_health.tests.check_disk',
-                description: 'Target component: Nova        Scenario: 1. Check outage on controller and compute nodes'
+                description: 'Target component: Nova        ' +
+                  'Scenario: 1. Check outage on controller and compute nodes'
               },
               {
                 status: 'stopped',
@@ -367,7 +384,9 @@ define([
                 duration: '30s.',
                 message: 'Fast fail with message',
                 id: 'fuel_health.tests.general',
-                description: 'Target component: Logging        Scenario:            1. Check logrotate cron job on all controller and compute nodes'
+                description: 'Target component: Logging        ' +
+                  'Scenario:            ' +
+                  '1. Check logrotate cron job on all controller and compute nodes'
               },
               {
                 status: 'skipped',
@@ -378,7 +397,8 @@ define([
                 duration: '1sec',
                 message: 'failure text message',
                 id: 'fuel_health.tests.credentials',
-                description: 'Target component: Configuration        Scenario: 1. Check user can not ssh on master node with default credentials.            '
+                description: 'Target component: Configuration        ' +
+                  'Scenario: 1. Check user can not ssh on master node with default credentials.'
               },
               {
                 status: 'success',
@@ -389,7 +409,9 @@ define([
                 duration: '',
                 message: 'Error message',
                 id: 'fuel_health.tests.credentials_change',
-                description: '  Target component: Configuration        Scenario:      1. Check if default credentials for OpenStack cluster have changed.   '
+                description: '  Target component: Configuration        ' +
+                  'Scenario:      ' +
+                '1. Check if default credentials for OpenStack cluster have changed.   '
               },
               {
                 status: 'failure',
@@ -411,7 +433,8 @@ define([
                 duration: '',
                 message: null,
                 id: 'fuel_health.tests.credentials_erros',
-                description: 'Target component: Configuration        Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
+                description: 'Target component: Configuration        ' +
+                  'Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
               }
             ])
           ]);
@@ -435,7 +458,8 @@ define([
                     duration: '20s',
                     message: null,
                     id: 'fuel_health.tests.check_disk',
-                    description: 'Target component: Nova        Scenario: 1. Check outage on controller and compute nodes'
+                    description: 'Target component: Nova        ' +
+                      'Scenario: 1. Check outage on controller and compute nodes'
                   },
                   {
                     status: 'stopped',
@@ -457,7 +481,9 @@ define([
                     duration: '30s.',
                     message: 'Fast fail with message',
                     id: 'fuel_health.tests.general',
-                    description: 'Target component: Logging        Scenario:            1. Check logrotate cron job on all controller and compute nodes'
+                    description: 'Target component: Logging        ' +
+                      'Scenario:            ' +
+                      '1. Check logrotate cron job on all controller and compute nodes'
                   },
                   {
                     status: 'skipped',
@@ -468,7 +494,9 @@ define([
                     duration: '1sec',
                     message: 'failure text message',
                     id: 'fuel_health.tests.credentials',
-                    description: 'Target component: Configuration        Scenario: 1. Check user can not ssh on master node with default credentials.            '
+                    description: 'Target component: Configuration        ' +
+                      'Scenario: ' +
+                      '1. Check user can not ssh on master node with default credentials.         '
                   },
                   {
                     status: 'success',
@@ -479,7 +507,9 @@ define([
                     duration: '',
                     message: 'Error message',
                     id: 'fuel_health.tests.credentials_change',
-                    description: '  Target component: Configuration        Scenario:      1. Check if default credentials for OpenStack cluster have changed.   '
+                    description: '  Target component: Configuration        ' +
+                      'Scenario:      ' +
+                      '1. Check if default credentials for OpenStack cluster have changed.   '
                   },
                   {
                     status: 'failure',
@@ -501,7 +531,8 @@ define([
                     duration: '',
                     message: null,
                     id: 'fuel_health.tests.credentials_erros',
-                    description: 'Target component: Configuration        Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
+                    description: 'Target component: Configuration        ' +
+                      'Scenario:      1. Check if error credentials for OpenStack cluster not suit.'
                   }
                 ]
               }]

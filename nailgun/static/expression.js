@@ -43,7 +43,8 @@ class Expression {
   getCompiledExpression() {
     var cacheEntry = expressionCache[this.expressionText];
     if (!cacheEntry) {
-      cacheEntry = expressionCache[this.expressionText] = ExpressionParser.parse(this.expressionText);
+      cacheEntry = expressionCache[this.expressionText] =
+        ExpressionParser.parse(this.expressionText);
     }
     return cacheEntry;
   }

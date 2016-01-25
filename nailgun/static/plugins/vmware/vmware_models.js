@@ -210,7 +210,6 @@ var AvailabilityZones = BaseCollection.extend({
   model: AvailabilityZone
 });
 
-VmWareModels.Network = BaseModel.extend({constructorName: 'Network'});
 VmWareModels.Glance = BaseModel.extend({constructorName: 'Glance'});
 
 VmWareModels.VCenter = BaseModel.extend({
@@ -234,10 +233,6 @@ VmWareModels.VCenter = BaseModel.extend({
       return value;
     });
 
-    // Network
-    var networkMetadata = _.find(metadata, {name: 'network'});
-    var networkValue = _.extend(_.clone(value.network), {metadata: networkMetadata.fields});
-
     // Glance
     var glanceMetadata = _.find(metadata, {name: 'glance'});
     var glanceValue = _.extend(_.clone(value.glance), {metadata: glanceMetadata.fields});
@@ -245,12 +240,11 @@ VmWareModels.VCenter = BaseModel.extend({
     return {
       metadata: metadata,
       availability_zones: new AvailabilityZones(azValues),
-      network: new VmWareModels.Network(networkValue),
       glance: new VmWareModels.Glance(glanceValue)
     };
   },
   isFilled() {
-    var result = this.get('availability_zones') && this.get('network') && this.get('glance');
+    var result = this.get('availability_zones') && this.get('glance');
     return !!result;
   },
   toJSON() {
@@ -261,7 +255,6 @@ VmWareModels.VCenter = BaseModel.extend({
       editable: {
         value: {
           availability_zones: this.get('availability_zones').toJSON(),
-          network: this.get('network').toJSON(),
           glance: this.get('glance').toJSON()
         }
       }

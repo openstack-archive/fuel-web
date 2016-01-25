@@ -407,14 +407,6 @@ var VmWareTab = React.createClass({
             cluster={this.props.cluster}
           />
         }
-        {!hide.network.result &&
-          <GenericSection
-            model={model.get('network')}
-            title={i18n('vmware.network')}
-            disabled={!editable || disable.network.result}
-            tooltipText={disable.network.message}
-          />
-        }
         {!hide.glance.result &&
           <GenericSection
             model={model.get('glance')}

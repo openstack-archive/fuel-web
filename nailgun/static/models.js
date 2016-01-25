@@ -1340,7 +1340,10 @@ models.NodeNetworkGroup = BaseModel.extend({
     if (!newName) {
       return i18n('cluster_page.network_tab.node_network_group_empty_name');
     }
-    if ((this.collection || options.nodeNetworkGroups).any({name: newName})) {
+
+    if (_.any((this.collection || options.nodeNetworkGroups).where({
+      cluster_id: this.get('cluster_id')}), {name: newName})
+    ) {
       return i18n('cluster_page.network_tab.node_network_group_duplicate_error');
     }
     return null;

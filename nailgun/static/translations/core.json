@@ -111,6 +111,14 @@
                     "private": "The private network facilitates communication between each tenant's VMs. Private network address spaces are not a part of the public network address space; fixed IPs of virtual instances cannot be accessed directly from the rest of the public network.",
                     "baremetal": "A separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes.",
                     "fuelweb_admin": "The Fuel Master node uses the Admin (PXE) network to provision and orchestrate the OpenStack environment providing DNS, DHCP, and gateway services to a node before that node is provisioned."
+                },
+                "requirements": {
+                    "public": "Both Public and Floating IP ranges must share the same CIDR\nEach deployed Controller node requires one IP address from the Public IP range.\nTwo additional IP addresses for the environment's Virtual IPs and one for the default gateway are required.\nIf the Neutron DVR feature is enabled, it requires one additional IP address for each Compute node in case you plan to use Floating IPs in the deployment.\nIn addition please refer to the Plugin guides for Public IP requirements.",
+                    "storage": "This is an internal network and hence the address range should be private and not globally routable.",
+                    "management": "This is an internal network and hence the address range should be private and not globally routable.",
+                    "internal": "This network must be isolated from both the private and public networks for security reasons.",
+                    "floating": "Each defined tenant, including the Admin tenant, requires one IP address from the Floating range. This IP address goes to the virtual interface of the tenant's virtual router.\nEach VM instance connected to the external network requires one IP address from the Floating IP range.\nFloating IP address range should not intersect with Public Network address range",
+                    "l2_configuration": "One unique VLAN ID is required for each tenant network."
                 }
             },
             "login_page": {

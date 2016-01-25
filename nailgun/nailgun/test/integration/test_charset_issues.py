@@ -76,18 +76,18 @@ class TestCharsetIssues(BaseIntegrationTest):
             progress=50,
         )
 
-        self.app.delete(
+        resp = self.app.delete(
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
         task_delete = self.db.query(models.Task).filter_by(
-            cluster_id=cluster_id,
-            name="cluster_deletion"
+            uuid=resp.json['uuid']
         ).first()
         NailgunReceiver.remove_cluster_resp(
             task_uuid=task_delete.uuid,
+            cluster_id=cluster_id,
             status=consts.TASK_STATUSES.ready,
             progress=100,
         )

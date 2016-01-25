@@ -3769,6 +3769,31 @@ input[type=range] {
         display: none;
       }
     }
+    span {
+      position: relative;
+      .network-restrictions-popover {
+        display: block;
+        overflow: visible;
+        top: -6px;
+        left: 35px;
+        width: 450px;
+        max-width: 450px;
+        word-break: break-word;
+        .arrow {
+          top: 20px;
+          left: -11px;
+        }
+        .popover-content {
+          padding-right: 8px;
+          padding-bottom: 0;
+        }
+        ul {
+          width: 100%;
+          padding: 0;
+          margin: 0;
+        }
+      }
+    }
   }
   .plugin-versions {
     margin-bottom: 25px;

@@ -52,6 +52,12 @@ class TestTaskManagers(BaseIntegrationTest):
     def check_node_presence(self, nodes_count):
         return self.db.query(models.Node).count() == nodes_count
 
+    def check_cluster_deletion_task(self, task_):
+        self.assertEqual(task_.name, consts.TASK_NAMES.cluster_deletion)
+        self.assertEqual(task_.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(task_.progress, 100)
+        self.assertEqual(task_.cluster_id, None)
+
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
         cluster = self.env.create(
@@ -415,7 +421,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 1)
+
+        self.check_cluster_deletion_task(tasks[0])
 
     @fake_tasks()
     def test_deletion_cluster_task_manager(self):
@@ -455,7 +463,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 1)
+
+        self.check_cluster_deletion_task(tasks[0])
 
     @fake_tasks(tick_interval=10, tick_count=5)
     def test_deletion_clusters_one_by_one(self):
@@ -512,7 +522,10 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 2)
+
+        for task_ in tasks:
+            self.check_cluster_deletion_task(task_)
 
     @fake_tasks(recover_nodes=False)
     def test_deletion_during_deployment(self):
@@ -596,7 +609,13 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 1)
+
+        task = tasks[0]
+        self.assertEqual(task.name, 'cluster_deletion')
+        self.assertEqual(task.status, 'ready')
+        self.assertEqual(task.progress, 100)
+        self.assertEqual(task.cluster_id, None)
 
     @fake_tasks()
     def test_no_node_no_cry(self):
@@ -629,7 +648,7 @@ class TestTaskManagers(BaseIntegrationTest):
         manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
-        nodes = mdeletion_execute.call_args[0][1]
+        nodes = mdeletion_execute.call_args[1]['nodes']
         # unfortunately assertItemsEqual does not recurse into dicts
         self.assertItemsEqual(
             nodes['nodes_to_delete'],

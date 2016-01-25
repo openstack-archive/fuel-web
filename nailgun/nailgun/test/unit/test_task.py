@@ -42,9 +42,8 @@ class TestClusterDeletionTask(BaseTestCase):
                 'version': '2025-7.0',
             },
         )
-        self.fake_task = Task(name=consts.TASK_NAMES.cluster_deletion,
-                              cluster=self.env.clusters[0])
-        task.ClusterDeletionTask.execute(self.fake_task)
+        self.fake_task = Task(name=consts.TASK_NAMES.cluster_deletion)
+        task.ClusterDeletionTask.execute(self.fake_task, self.env.clusters[0])
 
     @mock.patch('nailgun.task.task.DeletionTask', autospec=True)
     @mock.patch.object(task.DeleteIBPImagesTask, 'execute')

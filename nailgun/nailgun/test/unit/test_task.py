@@ -42,9 +42,8 @@ class TestClusterDeletionTask(BaseTestCase):
                 'version': '2025-7.0',
             },
         )
-        self.fake_task = Task(name=consts.TASK_NAMES.cluster_deletion,
-                              cluster=self.env.clusters[0])
-        task.ClusterDeletionTask.execute(self.fake_task)
+        self.fake_task = Task(name=consts.TASK_NAMES.cluster_deletion)
+        task.ClusterDeletionTask.execute(self.fake_task, self.env.clusters[0])
 
     @mock.patch('nailgun.task.task.DeletionTask', autospec=True)
     @mock.patch.object(task.DeleteIBPImagesTask, 'execute')
@@ -88,7 +87,7 @@ class TestClusterDeletionTask(BaseTestCase):
         self.assertTrue(mock_del.execute.called)
         self.assertTrue(mock_img_task.called)
         fake_attrs = objects.Attributes.merged_attrs_values(
-            self.fake_task.cluster.attributes)
+            self.env.clusters[0].attributes)
         mock_img_task.assert_called_once_with(
             mock.ANY, fake_attrs['provision']['image_data'])
 

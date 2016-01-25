@@ -422,6 +422,7 @@ class FakeDeletionThread(FakeThread):
         receiver = NailgunReceiver
         kwargs = {
             'task_uuid': self.task_uuid,
+            'cluster_id': self.data['args']['cluster_id'],
             'nodes': self.data['args']['nodes'],
             'status': 'ready'
         }

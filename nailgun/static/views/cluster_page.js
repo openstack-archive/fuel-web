@@ -154,7 +154,9 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return promise.then(function(data) {
                     return {
                         cluster: cluster,
-                        nodeNetworkGroups: nodeNetworkGroups,
+                        nodeNetworkGroups: new models.NodeNetworkGroups(
+                            _.invoke(nodeNetworkGroups.where({cluster_id: cluster.id}), 'toJSON')
+                        ),
                         activeTab: activeTab,
                         tabOptions: tabOptions,
                         tabData: data

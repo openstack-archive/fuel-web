@@ -804,7 +804,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return fieldsWithVerificationErrors;
         },
         removeNodeNetworkGroup: function() {
-            var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
+            var nodeNetworkGroup = this.props.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
             dialogs.RemoveNodeNetworkGroupDialog
                 .show({
                     showUnsavedChangesWarning: this.hasChanges()
@@ -833,13 +833,13 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             dialogs.CreateNodeNetworkGroupDialog
                 .show({
                     clusterId: this.props.cluster.id,
-                    nodeNetworkGroups: this.nodeNetworkGroups
+                    nodeNetworkGroups: this.props.nodeNetworkGroups
                 })
                 .done(() => {
                     this.setState({hideVerificationResult: true});
-                    return this.nodeNetworkGroups.fetch()
+                    return this.props.nodeNetworkGroups.fetch()
                         .then(() => {
-                            var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+                            var newNodeNetworkGroup = this.props.nodeNetworkGroups.last();
                             this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
                             this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
                             return this.props.cluster.get('networkConfiguration').fetch();
@@ -850,7 +850,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         render: function() {
             var isLocked = this.isLocked(),
                 hasChanges = this.hasChanges(),
-                {activeNetworkSectionName, cluster} = this.props,
+                {activeNetworkSectionName, cluster, nodeNetworkGroups} = this.props,
                 networkConfiguration = this.props.cluster.get('networkConfiguration'),
                 networkingParameters = networkConfiguration.get('networking_parameters'),
                 manager = networkingParameters.get('net_manager'),
@@ -872,7 +872,6 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     row: true,
                     'changes-locked': isLocked
                 },
-                nodeNetworkGroups = this.nodeNetworkGroups = new models.NodeNetworkGroups(this.props.nodeNetworkGroups.where({cluster_id: cluster.id})),
                 isNovaEnvironment = cluster.get('net_provider') == 'nova_network',
                 networks = networkConfiguration.get('networks'),
                 isMultiRack = nodeNetworkGroups.length > 1,
@@ -894,14 +893,16 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 activeNetworkSectionName = _.first(nodeNetworkGroups.pluck('name'));
             }
 
-            var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}),
-                nodeNetworkGroupProps = {
-                    cluster: cluster,
-                    locked: isLocked,
-                    actionInProgress: this.state.actionInProgress,
-                    verificationErrors: this.getVerificationErrors(),
-                    validationError: validationError
-                };
+            var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}) ||
+                // this is needed to avoid undefined currentNodeNetworkGroup immediately after renaming
+                nodeNetworkGroups.first();
+            var nodeNetworkGroupProps = {
+                cluster: cluster,
+                locked: isLocked,
+                actionInProgress: this.state.actionInProgress,
+                verificationErrors: this.getVerificationErrors(),
+                validationError: validationError
+            };
 
             return (
                 <div className={utils.classNames(classes)}>

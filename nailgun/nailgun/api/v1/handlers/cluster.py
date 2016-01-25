@@ -60,17 +60,18 @@ class ClusterHandler(SingleHandler):
         """
         cluster = self.get_object_or_404(self.single, obj_id)
         task_manager = ClusterDeletionManager(cluster_id=cluster.id)
+        task = None
+        self.raise_task
         try:
             logger.debug('Trying to execute cluster deletion task')
-            task_manager.execute()
+            task = task_manager.execute()
         except Exception as e:
             logger.warn('Error while execution '
                         'cluster deletion task: %s' % str(e))
             logger.warn(traceback.format_exc())
             raise self.http(400, str(e))
 
-        raise self.http(202, '{}')
-
+        raise self.http(202, objects.Task.to_json(task))
 
 class ClusterCollectionHandler(CollectionHandler):
     """Cluster collection handler"""

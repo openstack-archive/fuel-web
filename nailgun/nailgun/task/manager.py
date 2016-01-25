@@ -429,7 +429,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             self._call_silently(
                 task_deletion,
                 tasks.DeletionTask,
-                tasks.DeletionTask.get_task_nodes_for_cluster(self.cluster),
+                nodes=tasks.DeletionTask.get_task_nodes_for_cluster(
+                    self.cluster),
                 check_ceph=True)
             db().commit()
 
@@ -1046,13 +1047,13 @@ class ClusterDeletionManager(TaskManager):
         db().add(self.cluster)
 
         logger.debug("Creating cluster deletion task")
-        task = Task(name=consts.TASK_NAMES.cluster_deletion,
-                    cluster=self.cluster)
+        task = Task(name=consts.TASK_NAMES.cluster_deletion)
         db().add(task)
         db().commit()
         self._call_silently(
             task,
-            tasks.ClusterDeletionTask
+            tasks.ClusterDeletionTask,
+            cluster=self.cluster
         )
         return task
 

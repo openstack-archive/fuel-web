@@ -53,6 +53,13 @@ class TestTaskManagers(BaseIntegrationTest):
     def check_node_presence(self, nodes_count):
         return self.db.query(models.Node).count() == nodes_count
 
+    def check_cluster_deletion_task(self, task_):
+        self.assertEqual(task_.name, consts.TASK_NAMES.cluster_deletion)
+        self.assertEqual(task_.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(task_.progress, 100)
+        self.assertEqual(task_.cluster_id, None)
+        self.assertNotEqual(task_.deleted_at, None)
+
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
         cluster = self.env.create(
@@ -406,9 +413,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        # (mihgen) there is cascade removal of task when cluster is removed
-        # may need a change for store-deployment-tasks-history blueprint
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 1)
+
+        self.check_cluster_deletion_task(tasks[0])
 
     @fake_tasks()
     def test_deletion_cluster_task_manager(self):
@@ -448,7 +455,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 1)
+
+        self.check_cluster_deletion_task(tasks[0])
 
     @fake_tasks(tick_interval=10, tick_count=5)
     def test_deletion_clusters_one_by_one(self):
@@ -505,7 +514,10 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 2)
+
+        for task_ in tasks:
+            self.check_cluster_deletion_task(task_)
 
     @fake_tasks(recover_nodes=False, fake_rpc=False)
     def test_deletion_during_deployment(self, mock_rpc):
@@ -528,18 +540,18 @@ class TestTaskManagers(BaseIntegrationTest):
             progress=50,
         )
 
-        self.app.delete(
+        resp = self.app.delete(
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
         task_delete = self.db.query(models.Task).filter_by(
-            cluster_id=cluster_id,
-            name="cluster_deletion"
+            uuid=resp.json_body['uuid'],
         ).first()
         NailgunReceiver.remove_cluster_resp(
             task_uuid=task_delete.uuid,
+            cluster_id=cluster_id,
             status=consts.TASK_STATUSES.ready,
             progress=100,
         )
@@ -597,7 +609,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
-        self.assertEqual(tasks, [])
+        self.assertEqual(len(tasks), 1)
+
+        self.check_cluster_deletion_task(tasks[0])
 
     @fake_tasks()
     def test_no_node_no_cry(self):
@@ -630,7 +644,7 @@ class TestTaskManagers(BaseIntegrationTest):
         manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
-        nodes = mdeletion_execute.call_args[0][1]
+        nodes = mdeletion_execute.call_args[1]['nodes']
         # unfortunately assertItemsEqual does not recurse into dicts
         self.assertItemsEqual(
             nodes['nodes_to_delete'],

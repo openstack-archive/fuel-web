@@ -83,6 +83,16 @@ class ProviderHandler(BaseHandler):
 
         self.raise_task(task)
 
+    def _get_cluster_and_validated_network_data(self, cluster_id):
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.check_net_provider(cluster)
+
+
+        data = self.checked_data(
+            self.validator.validate_networks_data,
+            data=web.data(), cluster=cluster, networks_required=False)
+        return cluster, data
+
     @content
     def GET(self, cluster_id):
         """:returns: JSONized network configuration for cluster.
@@ -116,14 +126,9 @@ class ProviderHandler(BaseHandler):
                * 404 (cluster not found in db)
                * 409 (previous dsnmasq setup is not finished yet)
         """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
+        cluster, data = self._get_cluster_and_validated_network_data(cluster_id)
 
         self.check_if_network_configuration_locked(cluster)
-
-        data = self.checked_data(
-            self.validator.validate_networks_data,
-            data=web.data(), cluster=cluster, networks_required=False)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
@@ -235,14 +240,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self.check_net_provider(cluster)
-
-        try:
-            data = self.validator.validate_networks_data(web.data(), cluster)
-        except Exception as exc:
-            self._raise_error_task(
-                cluster, consts.TASK_NAMES.verify_networks, exc)
+        cluster, data = self._get_cluster_and_validated_network_data(cluster_id)
 
         vlan_ids = [{
             'name': n['name'],

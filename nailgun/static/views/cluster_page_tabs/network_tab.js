@@ -24,7 +24,7 @@ import models from 'models';
 import dispatcher from 'dispatcher';
 import {CreateNodeNetworkGroupDialog, RemoveNodeNetworkGroupDialog} from 'views/dialogs';
 import {backboneMixin, dispatcherMixin, unsavedChangesMixin, renamingMixin} from 'component_mixins';
-import {Input, RadioGroup, Table} from 'views/controls';
+import {Input, RadioGroup, Table, Popover} from 'views/controls';
 import SettingSection from 'views/cluster_page_tabs/setting_section';
 import CSSTransitionGroup from 'react-addons-transition-group';
 
@@ -113,6 +113,35 @@ var NetworkInputsMixin = {
     return error;
   }
 };
+
+var NetworkRequirementsHelp = React.createClass({
+  getInitialState() {
+    return {};
+  },
+  toggleRequirementsPopover() {
+    this.setState({isPopoverVisible: !this.state.isPopoverVisible});
+  },
+  render() {
+    var requirements = utils.renderMultilineText(
+      i18n('network.requirements.' + this.props.sectionName, {defaultValue: ''})
+    );
+    if (_.isEmpty(requirements)) return null;
+    return (
+      <div
+        className='popover-container'
+        onMouseEnter={() => this.toggleRequirementsPopover()}
+        onMouseLeave={() => this.toggleRequirementsPopover()}
+      >
+        <i className='glyphicon tooltip-icon glyphicon-question-sign' />
+        {this.state.isPopoverVisible &&
+          <Popover placement='right' className='requirements-popover'>
+            {requirements}
+          </Popover>
+        }
+      </div>
+    );
+  }
+});
 
 var Range = React.createClass({
   mixins: [
@@ -1365,9 +1394,13 @@ var Network = React.createClass({
 
     var ipRangeProps = this.composeProps('ip_ranges', true);
     var gatewayProps = this.composeProps('gateway');
+
     return (
       <div className={'forms-box ' + networkName}>
-        <h3 className='networks'>{i18n('network.' + networkName)}</h3>
+        <h3 className='networks'>
+          {i18n('network.' + networkName)}
+          <NetworkRequirementsHelp sectionName={networkName} />
+        </h3>
         <div className='network-description'>{i18n('network.descriptions.' + networkName)}</div>
         <CidrControl
           {... this.composeProps('cidr')}
@@ -1473,7 +1506,12 @@ var NetworkingL2Parameters = React.createClass({
     var idRangePrefix = networkParameters.get('segmentation_type') === 'vlan' ? 'vlan' : 'gre_id';
     return (
       <div className='forms-box form-neutron-l2' key='neutron-l2'>
-        <h3 className='networks'>{i18n(parametersNS + 'l2_configuration')}</h3>
+        <h3 className='networks'>
+          {i18n(parametersNS + 'l2_configuration')}
+          <NetworkRequirementsHelp
+            sectionName={'l2_configuration_' + networkParameters.get('segmentation_type')}
+          />
+        </h3>
         <div className='network-description'>
           {
             i18n(networkTabNS + 'networking_parameters.l2_' +
@@ -1514,6 +1552,7 @@ var NetworkingL3Parameters = React.createClass({
         <div className='forms-box form-floating-network' key='floating-net'>
           <h3>
             <span className='subtab-group-floating-net'>{i18n(networkTabNS + 'floating_net')}</span>
+            <NetworkRequirementsHelp sectionName='floating' />
           </h3>
           <div className='network-description'>{i18n('network.descriptions.floating')}</div>
           <Range
@@ -1526,6 +1565,7 @@ var NetworkingL3Parameters = React.createClass({
         <div className='forms-box form-internal-network' key='internal-net'>
           <h3>
             <span className='subtab-group-internal-net'>{i18n(networkTabNS + 'internal_net')}</span>
+            <NetworkRequirementsHelp sectionName='internal' />
           </h3>
           <div className='network-description'>{i18n('network.descriptions.internal')}</div>
           {this.renderInput('internal_cidr')}
@@ -1537,6 +1577,7 @@ var NetworkingL3Parameters = React.createClass({
             <h3>
               <span className='subtab-group-baremetal-net'>
                 {i18n(networkTabNS + 'baremetal_net')}
+                <NetworkRequirementsHelp sectionName='baremetal' />
               </span>
             </h3>
             <div className='network-description'>
@@ -1555,6 +1596,7 @@ var NetworkingL3Parameters = React.createClass({
           <h3>
             <span className='subtab-group-dns-nameservers'>
               {i18n(networkTabNS + 'dns_nameservers')}
+              <NetworkRequirementsHelp sectionName='dns_nameservers' />
             </span>
           </h3>
           <div className='network-description'>

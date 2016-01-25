@@ -72,6 +72,7 @@ define([
             .end();
       },
       'Network Tab is rendered correctly': function() {
+        var self = this;
         return this.remote
           .assertElementsExist('.network-tab h3', 4, 'All networks are present')
           .getCurrentUrl()
@@ -82,6 +83,13 @@ define([
                 'Subtab url exists in the page location string'
               );
             })
+          .assertElementsExist('.popover-container i', 'Help propers are present')
+          .findByCssSelector('.public .popover-container i')
+            .then(function(element) {
+              return self.remote.moveMouseTo(element);
+            })
+            .end()
+          .waitForCssSelector('.requirements-popover', 1000)
           .clickLinkByText('Neutron L2')
           .getCurrentUrl()
             .then(function(url) {

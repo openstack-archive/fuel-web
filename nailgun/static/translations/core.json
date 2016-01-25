@@ -111,6 +111,35 @@
                     "private": "The private network facilitates communication between each tenant's VMs. Private network address spaces are not a part of the public network address space; fixed IPs of virtual instances cannot be accessed directly from the rest of the public network.",
                     "baremetal": "A separate network where baremetal nodes managed by OpenStack Ironic reside. This IP range is assigned to service OpenStack nodes.",
                     "fuelweb_admin": "The Fuel Master node uses the Admin (PXE) network to provision and orchestrate the OpenStack environment providing DNS, DHCP, and gateway services to a node before that node is provisioned."
+                },
+                "requirements": {
+                    "public": [
+                        "Public and Floating IP ranges must share the same CIDR",
+                        "Each controller node requires one IP address from the Public IP range.",
+                        "Additionally, an OpenStack environment requires two IP addresses to use as virtual IP addresses and one IP address for the default gateway.",
+                        "If you have enabled Neutron DVR and plan to use floating IP address, allocate one IP address for each compute node.",
+                        "For more information on the Public IP requirements, see Plugin documentation."
+                    ],
+                    "storage": "This is an internal network, therefore, assign a private IP address range.",
+                    "management": "This is an internal network, therefore, assign a private IP address range.",
+                    "private": "This settings is used to specify IP address range to be used for GRE tunneling.",
+                    "internal": "For security reasons, isolate this network from the Private and Public networks.",
+                    "fuelweb_admin": "For security reasons, isolate this network from the Private and Public networks.",
+                    "floating": [
+                        "Each defined tenant, including the Admin tenant, requires one IP address from the Floating range. This IP address goes to the virtual interface of the tenant's virtual router.",
+                        "Each VM instance connected to the external network requires one IP address from the Floating IP range.",
+                        "Floating IP address range should not intersect with Public Network address range."
+                    ],
+                    "dns_nameservers": "This settings is used to specify Name Servers of user’s preference if the default servers are not prefered.",
+                    "l2_configuration_vlan": "One unique VLAN ID is required for each tenant network.",
+                    "l2_configuration_tun": "One unique Tunnel ID is required for each tenant network.",
+                    "baremetal": [
+                        "Both Baremetal IP range and Ironic IP range must share the same CIDR.",
+                        "Baremetal IP range is for OpenStack service nodes (“controller” and “ironic” roles).",
+                        "Ironic IP range is allocation pool for Neutron flat network.",
+                        "Each deployed Controller node requires one IP address from the Baremetal IP range.",
+                        "One additional IP address is for the environment's Virtual IP."
+                    ]
                 }
             },
             "login_page": {

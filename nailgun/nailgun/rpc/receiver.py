@@ -174,6 +174,12 @@ class NailgunReceiver(object):
                 IPAddr.network.in_([n.id for n in cluster.network_groups])
             )
             map(db().delete, ips)
+
+            # We need to disconnect task from cluster as we don't want it to be
+            # cascade deleted when cluster will be removed.
+            task.cluster_id = None
+            db().add(task)
+
             db().flush()
 
             nm = objects.Cluster.get_network_manager(cluster)

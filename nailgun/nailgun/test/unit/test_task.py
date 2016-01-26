@@ -127,6 +127,7 @@ class TestDeleteIBPImagesTask(BaseTestCase):
         self.assertTrue(rm_cmd.startswith('rm -f'))
         self.assertIn('/fake/path/fake-boot.img', rm_cmd)
         self.assertIn('/fake/path/fake.img', rm_cmd)
+        self.assertIn('/fake/path/fake.yaml', rm_cmd)
 
 
 class TestHelperUpdateClusterStatus(BaseTestCase):

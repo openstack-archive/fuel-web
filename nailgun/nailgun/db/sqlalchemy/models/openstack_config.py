@@ -40,8 +40,16 @@ class OpenstackConfig(Base):
 
     # asaprykin: In case there will be global configuration
     # nullable should be set to 'True'
-    cluster_id = Column(Integer, ForeignKey('clusters.id'), nullable=False)
-    node_id = Column(Integer, ForeignKey('nodes.id'), nullable=True)
+    cluster_id = Column(
+        Integer,
+        ForeignKey('clusters.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete='SET NULL'),
+        nullable=True
+    )
     node_role = Column(String(consts.ROLE_NAME_MAX_SIZE), nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=datetime.now)

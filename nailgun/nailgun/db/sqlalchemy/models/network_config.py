@@ -55,7 +55,11 @@ class NeutronConfig(NetworkingConfig):
         'polymorphic_identity': 'neutron_config',
     }
 
-    id = Column(Integer, ForeignKey('networking_configs.id'), primary_key=True)
+    id = Column(
+        Integer,
+        ForeignKey('networking_configs.id', ondelete='CASCADE'),
+        primary_key=True
+    )
 
     vlan_range = Column(MutableList.as_mutable(JSON), default=[])
     gre_id_range = Column(MutableList.as_mutable(JSON), default=[])

@@ -26,7 +26,11 @@ from nailgun.db.sqlalchemy.models.base import Base
 class PluginLink(Base):
     __tablename__ = 'plugin_links'
     id = Column(Integer, primary_key=True)
-    plugin_id = Column(Integer, ForeignKey('plugins.id'), nullable=False)
+    plugin_id = Column(
+        Integer,
+        ForeignKey('plugins.id', ondelete='CASCADE'),
+        nullable=False
+    )
     title = Column(Text, nullable=False)
     url = Column(Text, nullable=False)
     description = Column(Text)

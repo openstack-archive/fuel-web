@@ -41,7 +41,7 @@ from nailgun.db.sqlalchemy.models.node import Node
 class ClusterChanges(Base):
     __tablename__ = 'cluster_changes'
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))
     name = Column(
         Enum(*consts.CLUSTER_CHANGES, name='possible_changes'),
@@ -164,7 +164,7 @@ class Cluster(Base):
 class Attributes(Base):
     __tablename__ = 'attributes'
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     editable = Column(JSON)
     generated = Column(JSON)
 
@@ -172,5 +172,5 @@ class Attributes(Base):
 class VmwareAttributes(Base):
     __tablename__ = 'vmware_attributes'
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     editable = Column(JSON)

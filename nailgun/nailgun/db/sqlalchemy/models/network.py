@@ -54,9 +54,13 @@ class NetworkGroup(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     # can be nullable only for fuelweb admin net
-    release = Column(Integer, ForeignKey('releases.id'))
+    release = Column(Integer, ForeignKey('releases.id', ondelete='CASCADE'))
     # can be nullable only for fuelweb admin net
-    group_id = Column(Integer, ForeignKey('nodegroups.id'), nullable=True)
+    group_id = Column(
+        Integer,
+        ForeignKey('nodegroups.id', ondelete='CASCADE'),
+        nullable=True
+    )
     vlan_start = Column(Integer)
     cidr = Column(psql.CIDR)
     gateway = Column(psql.INET)

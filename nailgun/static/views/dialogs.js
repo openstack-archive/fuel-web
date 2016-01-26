@@ -784,22 +784,24 @@ export var ShowNodeInfoDialog = React.createClass({
     return String(propertyName).replace(/_/g, ' ');
   },
   showPropertyValue(group, name, value) {
+    var valueFormatters = {
+      size: (value) => {
+        return group == 'disks' ?
+            utils.showDiskSize(value)
+          :
+            group == 'memory' ? utils.showMemorySize(value) : utils.showSize(value);
+      },
+      frequency: (value) => utils.showFrequency(value),
+      max_speed: (value) => utils.showBandwidth(value),
+      current_speed: (value) => utils.showBandwidth(value),
+      maximum_capacity: (value) => group == 'memory' ? utils.showMemorySize(value) : value,
+      total: (value) => group == 'memory' ? utils.showMemorySize(value) : value
+    };
     try {
-      if (group == 'memory' && (name == 'total' || name == 'maximum_capacity' || name == 'size')) {
-        value = utils.showMemorySize(value);
-      } else if (group == 'disks' && name == 'size') {
-        value = utils.showDiskSize(value);
-      } else if (name == 'size') {
-        value = utils.showSize(value);
-      } else if (name == 'frequency') {
-        value = utils.showFrequency(value);
-      } else if (name == 'max_speed' || name == 'current_speed') {
-        value = utils.showBandwidth(value);
-      } else if (_.isBoolean(value)) {
-        value = value ? i18n('common.true') : i18n('common.false');
-      }
+      value = valueFormatters[name](value);
     } catch (ignore) {}
-    return !_.isNumber(value) && _.isEmpty(value) ? '\u00A0' : value;
+    if (_.isBoolean(value)) return value ? i18n('common.true') : i18n('common.false');
+    return value === '' ? '\u00A0' : value;
   },
   componentDidUpdate() {
     this.assignAccordionEvents();

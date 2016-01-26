@@ -86,7 +86,9 @@ var HealthcheckTabContent = React.createClass({
     pollingMixin(3)
   ],
   shouldDataBeFetched() {
-    return this.props.testruns.any({status: 'running'});
+    var hasRunningTests = this.props.testruns.any({status: 'running'});
+    this.setState({stoppingTestsInvoked: !hasRunningTests});
+    return hasRunningTests;
   },
   fetchData() {
     return this.props.testruns.fetch();
@@ -184,7 +186,10 @@ var HealthcheckTabContent = React.createClass({
   stopTests() {
     var testruns = new models.TestRuns(this.getActiveTestRuns());
     if (testruns.length) {
-      this.setState({actionInProgress: true});
+      this.setState({
+        actionInProgress: true,
+        stoppingTestsInvoked: true
+      });
       testruns.invoke('set', {status: 'stopped'});
       testruns.toJSON = function() {
         return this.map((testrun) =>
@@ -217,12 +222,12 @@ var HealthcheckTabContent = React.createClass({
             </div>
             {hasRunningTests ?
               (<button className='btn btn-danger stop-tests-btn pull-right'
-                disabled={this.state.actionInProgress}
+                disabled={this.state.actionInProgress || this.state.stoppingTestsInvoked}
                 onClick={this.stopTests}
               >
                 {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
               </button>)
-              :
+            :
               (<button className='btn btn-success run-tests-btn pull-right'
                 disabled={!this.getNumberOfCheckedTests() || this.state.actionInProgress}
                 onClick={this.runTests}

@@ -19,6 +19,7 @@
         has_primary: true
         public_ip_required: true
         public_for_dvr_required: true
+        group: "base"
         limits:
           min: 1
           recommended: 3
@@ -31,14 +32,16 @@
         description: "A Compute node creates, manages, and terminates virtual machine instances."
         weight: 20
         public_for_dvr_required: true
+        group: "compute"
         limits:
           recommended: 1
         fault_tolerance: "2%"
       cinder:
         # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
-        name: "Storage - Cinder"
+        name: "Cinder"
         description: "Cinder provides scheduling of block storage resources, typically delivered over iSCSI and other compatible backend storage systems. Block storage can be used for database storage, expandable file systems, or to provide a server with access to raw block level devices."
         weight: 30
+        group: "storage"
         limits:
           recommended: 1
         restrictions:
@@ -48,11 +51,12 @@
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder"
       cinder-block-device:
-        name: 'Storage - Cinder Block Device'
+        name: 'Cinder Block Device'
         description: 'Host node for Cinder Block Devices'
         has_primary: false
         public_ip_required: false
         weight: 35
+        group: "storage"
         conflicts:
           - controller
           - cinder
@@ -64,18 +68,20 @@
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder Block Device"
       cinder-vmware:
-        name: "Storage - Cinder Proxy to VMware Datastore"
+        name: "Cinder Proxy to VMware Datastore"
         description: "Cinder-VMware provides scheduling of block storage resources delivered over VMware vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
         weight: 40
+        group: "storage"
         limits:
           recommended: 1
         restrictions:
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
       ceph-osd:
-        name: "Storage - Ceph OSD"
+        name: "Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
         weight: 50
+        group: "storage"
         limits:
             min: "settings:storage.osd_pool_size.value"
         restrictions:
@@ -87,6 +93,7 @@
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
         weight: 60
+        group: "other"
         conflicts:
           - compute
           - ceph-osd
@@ -109,10 +116,12 @@
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
         weight: 70
+        group: "other"
       virt:
         name: "Virtual"
         description: "ADVANCED: Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
         weight: 80
+        group: "compute"
         public_ip_required: true
         conflicts:
           - controller
@@ -124,6 +133,7 @@
         name: "Compute VMware"
         description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
         weight: 90
+        group: "compute"
         conflicts:
           - controller
           - compute
@@ -141,6 +151,7 @@
         name: "Ironic"
         description: "Ironic conductor"
         weight: 100
+        group: "compute"
         limits:
           min: 1
           recommended: 3
@@ -1193,7 +1204,7 @@
           volumes_lvm:
             value: true
             label: "Cinder LVM over iSCSI for volumes"
-            description: "It is recommended to have at least one Storage - Cinder LVM node."
+            description: "It is recommended to have at least one Cinder node."
             weight: 10
             type: "checkbox"
             restrictions:
@@ -1201,7 +1212,7 @@
           volumes_block_device:
             value: false
             label: "Cinder Block device driver"
-            description: "High performance block device storage. It is recommended to have at least one Storage - Cinder Block Device"
+            description: "High performance block device storage. It is recommended to have at least one Cinder Block Device"
             weight: 15
             type: "checkbox"
             restrictions:
@@ -1248,7 +1259,7 @@
           osd_pool_size:
             value: "3"
             label: "Ceph object replication factor"
-            description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes."
+            description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Ceph OSD' nodes."
             weight: 85
             type: "text"
             regex:

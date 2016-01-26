@@ -48,59 +48,99 @@ define([
           });
       },
       'Add Cluster Nodes': function() {
+        var self = this;
         return this.remote
-          .assertElementExists('.node-list .alert-warning',
-            'Node list shows warning if there are no nodes in environment')
+          .assertElementExists(
+            '.node-list .alert-warning',
+            'Node list shows warning if there are no nodes in environment'
+          )
           .clickByCssSelector('.btn-add-nodes')
           .assertElementsAppear('.node', 2000, 'Unallocated nodes loaded')
           .assertElementDisabled(applyButtonSelector,
             'Apply button is disabled until both roles and nodes chosen')
-          .assertElementDisabled('.role-panel [type=checkbox][name=mongo]',
-            'Unavailable role has locked checkbox')
-          .assertElementExists('.role-panel .mongo i.tooltip-icon',
-            'Unavailable role has warning tooltip')
+          .assertElementsExist('.role-panel .row', 4, 'Roles are splitted in groups')
+          .assertElementExists('.role-block.mongo.disabled', 'Unavailable role is locked')
+          .assertElementExists(
+            '.role-block.mongo i.glyphicon-warning-sign',
+            'Unavailable role has warning icon'
+          )
+          .findByCssSelector('.role-block.mongo')
+            .then(function(element) {
+              return self.remote.moveMouseTo(element);
+            })
+            .end()
+          // the following timeout as we have 0.5s transition time for role popover
+          .sleep(600)
+          .assertElementExists(
+            '.role-block.mongo .popover .text-warning',
+            'Role popover is opened and the role warning is shown in the popover'
+          )
           .then(function() {
-            return clusterPage.checkNodeRoles(['Controller', 'Storage - Cinder']);
+            return clusterPage.checkNodeRoles(['Controller', 'Cinder']);
           })
-          .assertElementDisabled('.role-panel [type=checkbox][name=compute]',
-            'Compute role can not be added together with selected roles')
-          .assertElementDisabled(applyButtonSelector,
-            'Apply button is disabled until both roles and nodes chosen')
+          .assertElementExists(
+            '.role-block.controller i.glyphicon-selected-role',
+            'Selected role has checkbox icon'
+          )
+          .assertElementExists(
+            '.role-block.compute.disabled',
+            'Compute role can not be added together with selected roles'
+          )
+          .assertElementDisabled(
+            applyButtonSelector,
+            'Apply button is disabled until both roles and nodes chosen'
+          )
           .then(function() {
             return clusterPage.checkNodes(nodesAmount);
           })
           .clickByCssSelector(applyButtonSelector)
           .waitForElementDeletion(applyButtonSelector, 2000)
           .assertElementAppears('.nodes-group', 2000, 'Cluster node list loaded')
-          .assertElementsExist('.node-list .node', nodesAmount, nodesAmount +
-            ' nodes were successfully added to the cluster')
+          .assertElementsExist(
+            '.node-list .node',
+            nodesAmount,
+            nodesAmount + ' nodes were successfully added to the cluster'
+          )
           .assertElementExists('.nodes-group', 'One node group is present');
       },
       'Edit cluster node roles': function() {
         return this.remote
           .then(function() {
-            return common.addNodesToCluster(1, ['Storage - Cinder']);
+            return common.addNodesToCluster(1, ['Cinder']);
           })
           .assertElementsExist('.nodes-group', 2, 'Two node groups are present')
           // select all nodes
           .clickByCssSelector('.select-all label')
           .clickByCssSelector('.btn-edit-roles')
-          .assertElementDisappears('.btn-edit-roles', 2000,
-            'Cluster nodes screen unmounted')
-          .assertElementNotExists('.node-box [type=checkbox]:not(:disabled)',
-            'Node selection is locked on Edit Roles screen')
-          .assertElementNotExists('[name=select-all]:not(:disabled)',
-            'Select All checkboxes are locked on Edit Roles screen')
-          .assertElementExists('.role-panel [type=checkbox][name=controller]:indeterminate',
-            'Controller role checkbox has indeterminate state')
+          .assertElementDisappears('.btn-edit-roles', 2000, 'Cluster nodes screen unmounted')
+          .assertElementNotExists(
+            '.node-box [type=checkbox]:not(:disabled)',
+            'Node selection is locked on Edit Roles screen'
+          )
+          .assertElementNotExists(
+            '[name=select-all]:not(:disabled)',
+            'Select All checkboxes are locked on Edit Roles screen'
+          )
+          .assertElementExists(
+            '.role-block.controller i.glyphicon-indeterminated-role',
+            'Controller role has indeterminate state'
+          )
+          // uncheck Cinder role
           .then(function() {
-            // uncheck Cinder role
-            return clusterPage.checkNodeRoles(['Storage - Cinder', 'Storage - Cinder']);
+            return clusterPage.checkNodeRoles(['Cinder']);
           })
+          .waitForCssSelector('.role-block.cinder i.glyphicon-selected-role')
+          .then(function() {
+            return clusterPage.checkNodeRoles(['Cinder']);
+          })
+          .waitForElementDeletion('.role-block.cinder i')
           .clickByCssSelector(applyButtonSelector)
-          .assertElementDisappears('.btn-apply', 2000, 'Role editing screen unmounted')
-          .assertElementsExist('.node-list .node', nodesAmount,
-            'One node was removed from cluster after editing roles');
+          .assertElementDisappears('.btn-apply', 3000, 'Role editing screen unmounted')
+          .assertElementsExist(
+            '.node-list .node',
+            nodesAmount,
+            'One node was removed from cluster after editing roles'
+          );
       },
       'Remove Cluster': function() {
         return this.remote

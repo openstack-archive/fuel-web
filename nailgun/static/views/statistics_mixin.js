@@ -16,6 +16,7 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import cx from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import {Input, ProgressBar} from 'views/controls';
@@ -208,7 +209,7 @@ export default {
     return (
       <div>
         <div className='statistics-text-box'>
-          <div className={utils.classNames({notice: isMirantisIso})}>
+          <div className={cx({notice: isMirantisIso})}>
             {this.getText(ns + 'help_to_improve')}
           </div>
           <button

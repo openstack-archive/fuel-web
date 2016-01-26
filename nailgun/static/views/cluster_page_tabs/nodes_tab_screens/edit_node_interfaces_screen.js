@@ -17,6 +17,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import Backbone from 'backbone';
 import React from 'react';
+import cx from 'classnames';
 import i18n from 'i18n';
 import utils from 'utils';
 import models from 'models';
@@ -696,14 +697,14 @@ var NodeInterface = React.createClass({
 
     return this.props.connectDropTarget(
       <div className='ifc-container'>
-        <div className={utils.classNames({
+        <div className={cx({
           'ifc-inner-container': true,
           nodrag: this.props.errors,
           over: this.props.isOver && this.props.canDrop
         })}>
           {ifc.isBond() &&
             <div className='bond-properties clearfix forms-box'>
-              <div className={utils.classNames({
+              <div className={cx({
                 'ifc-name pull-left': true,
                 'no-checkbox': !bondingPossible
               })}>
@@ -780,7 +781,7 @@ var NodeInterface = React.createClass({
                     >
                       <div className='ifc-connection pull-left'>
                         <div
-                          className={utils.classNames(connectionStatusClasses(slaveInterface))}
+                          className={cx(connectionStatusClasses(slaveInterface))}
                         />
                       </div>
                       <div className='ifc-info pull-left'>
@@ -910,7 +911,7 @@ var Network = React.createClass({
     var vlanRange = network.getVlanRange(networkingParameters);
 
     return this.props.connectDragSource(
-      <div className={utils.classNames(classes)}>
+      <div className={cx(classes)}>
         <div className='network-name'>
           {i18n(
             'network.' + interfaceNetwork.get('name'),

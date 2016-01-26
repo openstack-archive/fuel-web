@@ -19,6 +19,7 @@ import i18n from 'i18n';
 import Backbone from 'backbone';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import cx from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
@@ -307,7 +308,7 @@ var Range = React.createClass({
 
     wrapperClasses[this.props.wrapperClassName] = this.props.wrapperClassName;
     return (
-      <div className={utils.classNames(wrapperClasses)}>
+      <div className={cx(wrapperClasses)}>
         {!this.props.hiddenHeader &&
           <div className='range-row-header col-xs-12'>
             <div>{i18n(networkTabNS + 'range_start')}</div>
@@ -948,7 +949,7 @@ var NetworkTab = React.createClass({
     };
 
     return (
-      <div className={utils.classNames(classes)}>
+      <div className={cx(classes)}>
         <div className='col-xs-12'>
           <div className='row'>
             <div className='title col-xs-7'>
@@ -1164,7 +1165,7 @@ var NetworkSubtabs = React.createClass({
         <li
           key={groupName}
           role='presentation'
-          className={utils.classNames({
+          className={cx({
             active: isActive,
             warning: this.props.isMultiRack && groupName === 'network_verification'
           })}
@@ -1273,7 +1274,7 @@ var NodeNetworkGroupTitle = React.createClass({
       'no-rename': !isRenamingPossible
     };
     return (
-      <div className={utils.classNames(classes)} key={currentNodeNetworkGroup.id}>
+      <div className={cx(classes)} key={currentNodeNetworkGroup.id}>
         {this.state.isRenaming ?
           <Input
             type='text'

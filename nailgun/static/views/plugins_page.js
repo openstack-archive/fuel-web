@@ -18,6 +18,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import cx from 'classnames';
 import utils from 'utils';
 import models from 'models';
 
@@ -117,7 +118,7 @@ var PluginsPage = React.createClass({
           <div className='row'>
             <div className='col-xs-12'>
               {this.props.plugins.map(this.renderPlugin)}
-              <div className={utils.classNames({
+              <div className={cx({
                 'plugin-page-links': !!this.props.plugins.length,
                 'text-center': true
               })}>

@@ -18,6 +18,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import cx from 'classnames';
 import utils from 'utils';
 import dispatcher from 'dispatcher';
 import {Input, ProgressBar, Tooltip} from 'views/controls';
@@ -193,7 +194,7 @@ var DeploymentInProgressControl = React.createClass({
       <div className='row'>
         <div className='dashboard-block clearfix'>
           <div className='col-xs-12'>
-            <div className={utils.classNames({
+            <div className={cx({
               'deploy-process': true,
               [taskName]: true,
               'has-stop-control': showStopButton
@@ -252,12 +253,12 @@ var DeploymentResult = React.createClass({
       'alert-success': !warning && !error
     };
     return (
-      <div className={utils.classNames(classes)}>
+      <div className={cx(classes)}>
         <button className='close' onClick={this.dismissTaskResult}>&times;</button>
         <strong>{i18n('common.' + (error ? 'error' : 'success'))}</strong>
         <br />
         <span dangerouslySetInnerHTML={{__html: utils.urlify(summary)}} />
-        <div className={utils.classNames({'task-result-details': true, hidden: !details})}>
+        <div className={cx({'task-result-details': true, hidden: !details})}>
           <pre
             className='collapse result-details'
             dangerouslySetInnerHTML={{__html: utils.urlify(details)}}
@@ -530,7 +531,7 @@ var DeployReadinessBlock = React.createClass({
               </button>
             :
               <button
-                className={utils.classNames({
+                className={cx({
                   'btn btn-primary deploy-btn': true,
                   'btn-warning': (
                     _.isEmpty(alerts.blocker) &&
@@ -628,7 +629,7 @@ var ClusterInfo = React.createClass({
               </div>
             </div>
             <div className='col-xs-6'>
-              <div className={utils.classNames({
+              <div className={cx({
                 'cluster-info-value': true,
                 [field]: true,
                 'text-danger': field === 'status' && value === i18n('cluster.status.error')
@@ -900,12 +901,12 @@ var RenameEnvironmentAction = React.createClass({
       'has-error': !!this.state.error
     };
     return (
-      <div className={utils.classNames(classes)}>
+      <div className={cx(classes)}>
         <div className='action-body' onKeyDown={this.handleKeyDown}>
           <Input
             type='text'
             disabled={this.state.disabled}
-            className={utils.classNames({'form-control': true, error: this.state.error})}
+            className={cx({'form-control': true, error: this.state.error})}
             maxLength='50'
             onChange={this.onChange}
             defaultValue={this.state.name}
@@ -998,7 +999,7 @@ var InstructionElement = React.createClass({
     };
     classes[this.props.wrapperClass] = !!this.props.wrapperClass;
     return (
-      <div className={utils.classNames(classes)}>
+      <div className={cx(classes)}>
         {i18n(namespace + this.props.description) + ' '}
         <a href={link} target='_blank'>{i18n(namespace + this.props.linkTitle)}</a>
         {this.props.explanation ? ' ' + i18n(namespace + this.props.explanation) : '.'}

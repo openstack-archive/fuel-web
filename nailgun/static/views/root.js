@@ -18,7 +18,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import dispatcher from 'dispatcher';
-import utils from 'utils';
+import cx from 'classnames';
 import {dispatcherMixin} from 'component_mixins';
 import {Navbar, Breadcrumbs, DefaultPasswordWarning, BootstrapError, Footer} from 'views/layout';
 import {DragDropContext} from 'react-dnd';
@@ -66,7 +66,7 @@ var RootComponent = React.createClass({
 
     return (
       <div id='content-wrapper'>
-        <div className={utils.classNames(layoutClasses)}>
+        <div className={cx(layoutClasses)}>
           {!Page.hiddenLayout && [
             <Navbar
               key='navbar'

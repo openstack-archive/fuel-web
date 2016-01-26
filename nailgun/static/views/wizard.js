@@ -18,6 +18,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import cx from 'classnames';
 import Backbone from 'backbone';
 import models from 'models';
 import utils from 'utils';
@@ -796,7 +797,7 @@ var CreateClusterWizard = React.createClass({
             <ul className='wizard-step-nav-item nav nav-pills nav-stacked'>
               {
                 this.state.panes.map((pane, index) => {
-                  var classes = utils.classNames('wizard-step', {
+                  var classes = cx('wizard-step', {
                     disabled: index > this.state.maxAvailablePaneIndex,
                     available: index <= this.state.maxAvailablePaneIndex && index != activeIndex,
                     active: index == activeIndex
@@ -839,13 +840,13 @@ var CreateClusterWizard = React.createClass({
     return (
       <div className='wizard-footer'>
         <button
-          className={utils.classNames('btn btn-default pull-left', {disabled: actionInProgress})}
+          className={cx('btn btn-default pull-left', {disabled: actionInProgress})}
           data-dismiss='modal'
         >
           {i18n('common.cancel_button')}
         </button>
         <button
-          className={utils.classNames(
+          className={cx(
             'btn btn-default prev-pane-btn',
             {disabled: !this.state.previousEnabled || actionInProgress}
           )}
@@ -857,7 +858,7 @@ var CreateClusterWizard = React.createClass({
         </button>
         {this.state.nextVisible &&
           <button
-            className={utils.classNames(
+            className={cx(
               'btn btn-default btn-success next-pane-btn',
               {disabled: !this.state.nextEnabled || actionInProgress}
             )}
@@ -870,7 +871,7 @@ var CreateClusterWizard = React.createClass({
         }
         {this.state.createVisible &&
           <button
-            className={utils.classNames(
+            className={cx(
               'btn btn-default btn-success finish-btn',
               {disabled: actionInProgress}
             )}

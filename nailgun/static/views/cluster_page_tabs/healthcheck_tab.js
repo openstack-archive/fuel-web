@@ -18,6 +18,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import Backbone from 'backbone';
 import React from 'react';
+import cx from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import {Input} from 'views/controls';
@@ -326,7 +327,7 @@ var TestSet = React.createClass({
       disabled: this.props.disabled
     };
     return (
-      <table className={utils.classNames(classes)}>
+      <table className={cx(classes)}>
         <thead>
           <tr>
             <th>

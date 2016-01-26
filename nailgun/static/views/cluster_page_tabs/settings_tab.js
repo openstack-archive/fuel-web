@@ -17,6 +17,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import cx from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import {backboneMixin, unsavedChangesMixin} from 'component_mixins';
@@ -268,7 +269,7 @@ var SettingsTab = React.createClass({
     groupedSettings = _.omit(groupedSettings, _.isEmpty);
 
     return (
-      <div key={this.state.key} className={utils.classNames(classes)}>
+      <div key={this.state.key} className={cx(classes)}>
         <div className='title'>{i18n('cluster_page.settings_tab.title')}</div>
         <SettingSubtabs
           settings={settings}
@@ -366,7 +367,7 @@ var SettingSubtabs = React.createClass({
               <li
                 key={groupName}
                 role='presentation'
-                className={utils.classNames({
+                className={cx({
                   active: groupName === this.props.activeSettingsSectionName
                 })}
                 onClick={_.partial(this.props.setActiveSettingsGroupName, groupName)}

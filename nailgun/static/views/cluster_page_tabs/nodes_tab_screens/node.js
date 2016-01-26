@@ -17,6 +17,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import Backbone from 'backbone';
 import React from 'react';
+import cx from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
@@ -264,7 +265,7 @@ var Node = React.createClass({
           return (
             <li
               key={this.props.node.id + role}
-              className={utils.classNames({'text-success': !this.props.node.get('roles').length})}
+              className={cx({'text-success': !this.props.node.get('roles').length})}
             >
               {role}
             </li>
@@ -304,7 +305,7 @@ var Node = React.createClass({
     var {ns, status, roles, nodePanelClasses, logoClasses, statusClasses, isSelectable} = options;
     return (
       <div className='compact-node'>
-        <div className={utils.classNames(nodePanelClasses)}>
+        <div className={cx(nodePanelClasses)}>
           <label className='node-box'>
             <div
               className='node-box-inner clearfix'
@@ -318,7 +319,7 @@ var Node = React.createClass({
               <div className='node-name'>
                 <p>{node.get('name') || node.get('mac')}</p>
               </div>
-              <div className={utils.classNames(statusClasses)}>
+              <div className={cx(statusClasses)}>
                 {_.contains(['provisioning', 'deploying'], status) ?
                   this.renderNodeProgress()
                 :
@@ -368,7 +369,7 @@ var Node = React.createClass({
                     {this.renderLabels()}
                   </div>
                 }
-                <div className={utils.classNames(statusClasses)}>
+                <div className={cx(statusClasses)}>
                   <i className='glyphicon glyphicon-time' />
                   {_.contains(['provisioning', 'deploying'], status) ?
                     <div>
@@ -408,7 +409,7 @@ var Node = React.createClass({
                 </div>
               </div>
               <div className='hardware-info clearfix'>
-                <div className={utils.classNames(logoClasses)} />
+                <div className={cx(logoClasses)} />
                 {this.renderNodeHardwareSummary()}
               </div>
               <div className='node-popover-buttons'>
@@ -426,10 +427,10 @@ var Node = React.createClass({
     var node = this.props.node;
     var {ns, status, roles, nodePanelClasses, logoClasses, statusClasses} = options;
     return (
-      <div className={utils.classNames(nodePanelClasses)}>
+      <div className={cx(nodePanelClasses)}>
         <label className='node-box'>
           {this.renderNodeCheckbox()}
-          <div className={utils.classNames(logoClasses)} />
+          <div className={cx(logoClasses)} />
           <div className='node-name'>
             <div className='name'>
               {this.renderNameControl()}
@@ -470,7 +471,7 @@ var Node = React.createClass({
                 </Tooltip>
             ]}
           </div>
-          <div className={utils.classNames(statusClasses)}>
+          <div className={cx(statusClasses)}>
             {_.contains(['provisioning', 'deploying'], status) ?
               this.renderNodeProgress(status)
             :

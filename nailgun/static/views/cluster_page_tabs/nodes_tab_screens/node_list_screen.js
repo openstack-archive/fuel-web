@@ -19,6 +19,7 @@ import i18n from 'i18n';
 import Backbone from 'backbone';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import cx from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
@@ -660,7 +661,7 @@ MultiSelectControl = React.createClass({
     if (this.props.className) classNames[this.props.className] = true;
 
     return (
-      <div className={utils.classNames(classNames)} tabIndex='-1' onKeyDown={this.closeOnEscapeKey}>
+      <div className={cx(classNames)} tabIndex='-1' onKeyDown={this.closeOnEscapeKey}>
         <button
           className={'btn dropdown-toggle ' + ((this.props.dynamicValues && !this.props.isOpen) ?
             'btn-link' : 'btn-default')
@@ -759,7 +760,7 @@ NumberRangeControl = React.createClass({
     };
 
     return (
-      <div className={utils.classNames(classNames)} tabIndex='-1' onKeyDown={this.closeOnEscapeKey}>
+      <div className={cx(classNames)} tabIndex='-1' onKeyDown={this.closeOnEscapeKey}>
         <button className='btn btn-default dropdown-toggle' onClick={this.props.toggle}>
           {this.props.label + ': ' + _.uniq(this.props.values).join(' - ')}
           {' '}
@@ -1062,7 +1063,7 @@ ManagementPanel = React.createClass({
                   return (
                     <Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                       <label
-                        className={utils.classNames(
+                        className={cx(
                           managementButtonClasses(mode === this.props.viewMode, mode)
                         )}
                         onClick={mode !== this.props.viewMode &&
@@ -1071,7 +1072,7 @@ ManagementPanel = React.createClass({
                       >
                         <input type='radio' name='view_mode' value={mode} />
                         <i
-                          className={utils.classNames({
+                          className={cx({
                             glyphicon: true,
                             'glyphicon-th-list': mode === 'standard',
                             'glyphicon-th': mode === 'compact'
@@ -1088,7 +1089,7 @@ ManagementPanel = React.createClass({
                 <button
                   disabled={!this.props.nodes.length}
                   onClick={this.props.nodes.length && this.toggleLabelsPanel}
-                  className={utils.classNames(
+                  className={cx(
                     managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels')
                   )}
                 >
@@ -1099,7 +1100,7 @@ ManagementPanel = React.createClass({
                 <button
                   disabled={!this.props.screenNodes.length}
                   onClick={this.toggleSorters}
-                  className={utils.classNames(
+                  className={cx(
                     managementButtonClasses(this.state.areSortersVisible, 'btn-sorters')
                   )}
                 >
@@ -1110,7 +1111,7 @@ ManagementPanel = React.createClass({
                 <button
                   disabled={!this.props.screenNodes.length}
                   onClick={this.toggleFilters}
-                  className={utils.classNames(
+                  className={cx(
                     managementButtonClasses(this.state.areFiltersVisible, 'btn-filters')
                   )}
                 >
@@ -1122,7 +1123,7 @@ ManagementPanel = React.createClass({
                   <button
                     disabled={!this.props.screenNodes.length}
                     onClick={this.activateSearch}
-                    className={utils.classNames(managementButtonClasses(false, 'btn-search'))}
+                    className={cx(managementButtonClasses(false, 'btn-search'))}
                   >
                     <i className='glyphicon glyphicon-search' />
                   </button>
@@ -1264,7 +1265,7 @@ ManagementPanel = React.createClass({
                     return (
                       <div
                         key={'sort_by-' + sorter.name + (sorter.isLabel && '-label')}
-                        className={utils.classNames({
+                        className={cx({
                           'sorter-control pull-left': true,
                           ['sort-by-' + sorter.name + '-' + sorter.order]: !sorter.isLabel
                         })}
@@ -1275,7 +1276,7 @@ ManagementPanel = React.createClass({
                         >
                           {sorter.title}
                           <i
-                            className={utils.classNames({
+                            className={cx({
                               glyphicon: true,
                               'glyphicon-arrow-down': asc,
                               'glyphicon-arrow-up': !asc
@@ -1320,7 +1321,7 @@ ManagementPanel = React.createClass({
                       ref: filter.name,
                       name: filter.name,
                       values: filter.values,
-                      className: utils.classNames({
+                      className: cx({
                         'filter-control': true,
                         ['filter-by-' + filter.name]: !filter.isLabel
                       }),
@@ -1412,7 +1413,7 @@ ManagementPanel = React.createClass({
                             <span key={sorter.name + (sorter.isLabel && '-label')}>
                               {sorter.title}
                               <i
-                                className={utils.classNames({
+                                className={cx({
                                   glyphicon: true,
                                   'glyphicon-arrow-down': asc,
                                   'glyphicon-arrow-up': !asc
@@ -1617,7 +1618,7 @@ NodeLabelsPanel = React.createClass({
               var showControlLabels = index === 0;
               return (
                 <div
-                  className={utils.classNames({clearfix: true, 'has-label': showControlLabels})}
+                  className={cx({clearfix: true, 'has-label': showControlLabels})}
                   key={index}
                 >
                   <Input
@@ -1968,7 +1969,7 @@ NodeList = React.createClass({
       }
     ));
     return (
-      <div className={utils.classNames({
+      <div className={cx({
         'node-list row': true, compact: this.props.viewMode === 'compact'
       })}>
         {groups.length > 1 &&

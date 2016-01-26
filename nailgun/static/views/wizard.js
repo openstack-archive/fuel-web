@@ -346,7 +346,7 @@ var Compute = React.createClass({
     componentType: 'hypervisor',
     title: i18n('dialog.create_cluster_wizard.compute.title'),
     vCenterPath: 'hypervisor:vmware',
-    vCenterNetworkBackends: ['network:neutron:ml2:nsx', 'network:neutron:ml2:dvs'],
+    vCenterNetworkBackends: ['network:neutron:core:nsx', 'network:neutron:ml2:dvs'],
     hasErrors(wizard) {
       var allComponents = wizard.get('components');
       var components = allComponents.getComponentsByType(this.componentType, {sorted: true});

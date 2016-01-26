@@ -177,6 +177,7 @@ class NailgunCollection(object):
         to SQLAlchemy query. If name starts with '-' desc ordering applies,
         else asc.
         """
+        order_args = []
         for field_name in order_by:
             if field_name.startswith('-'):
                 field_name = field_name.lstrip('-')
@@ -185,7 +186,8 @@ class NailgunCollection(object):
                 ordering = 'asc'
             field = getattr(cls.single.model, field_name)
             o_func = getattr(field, ordering)
-            query = query.order_by(o_func())
+            order_args.append(o_func())
+        query = query.order_by(*order_args)
         return query
 
     @classmethod
@@ -196,17 +198,38 @@ class NailgunCollection(object):
         :param order_by: tuple of model fields names for sorting.
         If name starts with '-' desc ordering applies, else asc.
         """
-        for field_name in order_by:
-            if field_name.startswith('-'):
-                field_name = field_name.lstrip('-')
-                reverse = True
-            else:
-                reverse = False
-            iterable = sorted(
-                iterable,
-                key=lambda x: getattr(x, field_name),
-                reverse=reverse
-            )
+        class SortWrapper(object):
+
+            def __init__(self, wrapped, order_by):
+                self.wrapped = wrapped
+                self.order_by = []
+                for field_name in order_by:
+                    if field_name.startswith('-'):
+                        self.order_by.append({'name': field_name.lstrip('-'),
+                                              'asc': False})
+                    else:
+                        self.order_by.append({'name': field_name,
+                                              'asc': True})
+
+            def __lt__(self, other):
+                for field in self.order_by:
+                    if (getattr(self.wrapped, field['name']) <
+                            getattr(other.wrapped, field['name'])):
+                        return field['asc']
+                    elif (getattr(self.wrapped, field['name']) >
+                            getattr(other.wrapped, field['name'])):
+                        return not field['asc']
+                return False
+
+            def __eq__(self, other):
+                for field in self.order_by:
+                    if (getattr(self.wrapped, field['name']) !=
+                            getattr(other.wrapped, field['name'])):
+                        return False
+                return True
+
+        iterable = [item.wrapped for item in sorted(
+            (SortWrapper(item, order_by) for item in iterable))]
         return iterable
 
     @classmethod

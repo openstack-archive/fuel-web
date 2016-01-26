@@ -159,6 +159,13 @@ NODE_LIST_FILTERS = Enum(
     'group_id'
 )
 
+NODE_ROLE_CATEGORIES = Enum(
+    'base',
+    'compute',
+    'storage',
+    'other'
+)
+
 NETWORK_INTERFACE_TYPES = Enum(
     'ether',
     'bond'

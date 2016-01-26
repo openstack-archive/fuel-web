@@ -42,6 +42,54 @@ def prepare():
             'version': '2015.1-8.0',
             'operating_system': 'ubuntu',
             'state': 'available',
+            'roles': jsonutils.dumps([
+                'controller',
+                'compute',
+                'virt',
+                'compute-vmware',
+                'ironic',
+                'cinder',
+                'cinder-block-device',
+                'cinder-vmware',
+                'ceph-osd',
+                'mongo',
+                'base-os',
+            ]),
+            'roles_metadata': jsonutils.dumps({
+                'controller': {
+                    'name': 'Controller',
+                },
+                'compute': {
+                    'name': 'Compute',
+                },
+                'virt': {
+                    'name': 'Virtual',
+                },
+                'compute-vmware': {
+                    'name': 'Compute VMware',
+                },
+                'ironic': {
+                    'name': 'Ironic',
+                },
+                'cinder': {
+                    'name': 'Cinder',
+                },
+                'cinder-block-device': {
+                    'name': 'Cinder Block Device',
+                },
+                'cinder-vmware': {
+                    'name': 'Cinder Proxy to VMware Datastore',
+                },
+                'ceph-osd': {
+                    'name': 'Ceph OSD',
+                },
+                'mongo': {
+                    'name': 'Telemetry - MongoDB',
+                },
+                'base-os': {
+                    'name': 'Operating System',
+                }
+            }),
             'networks_metadata': jsonutils.dumps({
                 'neutron': {
                     'networks': [
@@ -299,3 +347,33 @@ class TestVipMigration(base.BaseAlembicMigrationTest):
             ),
             result
         )
+
+
+class TestNodeRolesMigration(base.BaseAlembicMigrationTest):
+    def test_category_is_injected_to_roles_meta(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.roles_metadata])
+        )
+        rel_row = result.fetchone()
+
+        roles_metadata = jsonutils.loads(rel_row[0])
+
+        role_categories = {
+            'controller': 'controller',
+            'compute': 'compute',
+            'virt': 'compute',
+            'compute-vmware': 'compute',
+            'ironic': 'compute',
+            'cinder': 'storage',
+            'cinder-block-device': 'storage',
+            'cinder-vmware': 'storage',
+            'ceph-osd': 'storage',
+            'mongo': 'other',
+            'base-os': 'other',
+        }
+
+        for role_name in roles_metadata:
+            role_category = roles_metadata[role_name].get('category')
+
+            if role_name in role_categories:
+                self.assertEquals(role_category, role_categories[role_name])

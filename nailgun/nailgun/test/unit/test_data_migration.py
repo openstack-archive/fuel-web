@@ -280,7 +280,7 @@ class TestDataMigration(BaseTestCase):
                 'storage': {
                     'volumes_lvm': {
                         'description': ('It is recommended to have at least '
-                                        'one Storage - Cinder LVM node.')
+                                        'one Cinder node.')
                     }
                 },
                 'common': {

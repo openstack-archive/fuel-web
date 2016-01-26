@@ -74,14 +74,14 @@ define([
     },
     checkNodeRoles: function(assignRoles) {
       return this.remote
-        .findAllByCssSelector('div.role-panel label')
+        .findAllByCssSelector('.role-panel .role-block')
         .then(function(roles) {
           return roles.reduce(
             function(result, role) {
               return role
                 .getVisibleText()
                 .then(function(label) {
-                  var index = assignRoles.indexOf(label.substr(1));
+                  var index = assignRoles.indexOf(label);
                   if (index >= 0) {
                     role.click();
                     assignRoles.splice(index, 1);

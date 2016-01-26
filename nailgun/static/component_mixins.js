@@ -106,7 +106,7 @@ export function pollingMixin(updateInterval, delayedStart) {
 
 export var outerClickMixin = {
   propTypes: {
-    toggle: React.PropTypes.func.isRequired
+    toggle: React.PropTypes.func
   },
   getInitialState() {
     return {
@@ -119,12 +119,16 @@ export var outerClickMixin = {
     }
   },
   componentDidMount() {
-    $('html').on(this.state.clickEventName, this.handleBodyClick);
-    Backbone.history.on('route', _.partial(this.props.toggle, false), this);
+    if (this.props.toggle) {
+      $('html').on(this.state.clickEventName, this.handleBodyClick);
+      Backbone.history.on('route', _.partial(this.props.toggle, false), this);
+    }
   },
   componentWillUnmount() {
-    $('html').off(this.state.clickEventName);
-    Backbone.history.off('route', null, this);
+    if (this.props.toggle) {
+      $('html').off(this.state.clickEventName);
+      Backbone.history.off('route', null, this);
+    }
   }
 };
 

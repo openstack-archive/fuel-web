@@ -122,6 +122,14 @@ class Cluster(Base):
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
 
+    # FIXME(aroma): remove this field once proper handling of stop deployment
+    # action will be introduced for ha cluster (redeployment is started)
+    # for all controllers in case addion node with the role added or
+    # existing removed). Related to the issue [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    once_deployed = Column(Boolean, nullable=False, default=False,
+                           server_default='false')
+
     @property
     def changes(self):
         return [

@@ -723,8 +723,9 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status,
-                          consts.CLUSTER_STATUSES.operational)
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.operational)
+        self.assertEqual(self.cluster.once_deployed, True)
 
     def test_update_vms_conf(self):
         kvm_node = self.cluster.nodes[0]

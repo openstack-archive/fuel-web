@@ -27,10 +27,31 @@ down_revision = '43b2cb64dae6'
 from alembic import op  # noqa
 import sqlalchemy as sa  # noqa
 
+from nailgun import consts
+
 
 def upgrade():
-    pass
+    upgrade_cluster_add_once_deployed()
 
 
 def downgrade():
-    pass
+    downgrade_cluster_remove_once_deployed()
+
+
+def upgrade_cluster_add_once_deployed():
+    op.add_column('clusters',
+                  sa.Column('once_deployed',
+                            sa.Boolean,
+                            default=False,
+                            server_default='false',
+                            nullable=False)
+                  )
+    update_query = sa.sql.text(
+        "UPDATE clusters SET once_deployed = true "
+        "WHERE status = :status")
+    op.get_bind().execute(update_query,
+                          status=consts.CLUSTER_STATUSES.operational)
+
+
+def downgrade_cluster_remove_once_deployed():
+    op.drop_column('clusters', 'once_deployed')

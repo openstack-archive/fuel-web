@@ -19,7 +19,7 @@ Base classes for objects and collections
 """
 
 import collections
-
+import functools
 from itertools import ifilter
 import operator
 
@@ -139,6 +139,17 @@ class NailgunObject(object):
             cls.to_dict(instance, fields=fields)
         )
 
+    @classmethod
+    def compare(cls, instance, other, order_by):
+        for field in order_by:
+            a = getattr(instance, field['name'])
+            b = getattr(other, field['name'])
+            if a < b:
+                return field['lt']
+            elif a > b:
+                return field['gt']
+        return 0
+
 
 class NailgunCollection(object):
     """Base class for object collections"""
@@ -177,6 +188,7 @@ class NailgunCollection(object):
         to SQLAlchemy query. If name starts with '-' desc ordering applies,
         else asc.
         """
+        order_args = []
         for field_name in order_by:
             if field_name.startswith('-'):
                 field_name = field_name.lstrip('-')
@@ -185,7 +197,8 @@ class NailgunCollection(object):
                 ordering = 'asc'
             field = getattr(cls.single.model, field_name)
             o_func = getattr(field, ordering)
-            query = query.order_by(o_func())
+            order_args.append(o_func())
+        query = query.order_by(*order_args)
         return query
 
     @classmethod
@@ -196,18 +209,19 @@ class NailgunCollection(object):
         :param order_by: tuple of model fields names for sorting.
         If name starts with '-' desc ordering applies, else asc.
         """
+        order_by_fields = []
         for field_name in order_by:
             if field_name.startswith('-'):
-                field_name = field_name.lstrip('-')
-                reverse = True
+                order_by_fields.append({'name': field_name.lstrip('-'),
+                                        'lt': 1, 'gt': -1})
             else:
-                reverse = False
-            iterable = sorted(
-                iterable,
-                key=lambda x: getattr(x, field_name),
-                reverse=reverse
-            )
-        return iterable
+                order_by_fields.append({'name': field_name,
+                                        'lt': -1, 'gt': 1})
+        # 'cmp' argument for 'sorted' function is removed in python3.
+        # Next code should work fine for both python2 and python3
+        key = functools.cmp_to_key(functools.partial(cls.single.compare,
+                                                     order_by=order_by_fields))
+        return sorted(iterable, key=key)
 
     @classmethod
     def order_by(cls, iterable, order_by):

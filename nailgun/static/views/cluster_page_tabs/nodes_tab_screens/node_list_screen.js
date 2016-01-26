@@ -1680,17 +1680,13 @@ NodeLabelsPanel = React.createClass({
 });
 
 RolePanel = React.createClass({
-  componentDidMount() {
-    this.updateIndeterminateRolesState();
+  getInitialState() {
+    return {
+      roleWithPopoverVisible: null
+    };
   },
   componentDidUpdate() {
-    this.updateIndeterminateRolesState();
     this.assignRoles();
-  },
-  updateIndeterminateRolesState() {
-    _.each(this.refs, (roleView, role) => {
-      roleView.getInputDOMNode().indeterminate = _.contains(this.props.indeterminateRoles, role);
-    });
   },
   assignRoles() {
     var roles = this.props.cluster.get('roles');
@@ -1709,9 +1705,9 @@ RolePanel = React.createClass({
       });
     });
   },
-  processRestrictions(role, models) {
+  processRestrictions(role) {
     var name = role.get('name');
-    var restrictionsCheck = role.checkRestrictions(models, 'disable');
+    var restrictionsCheck = role.checkRestrictions(this.props.configModels, 'disable');
     var roleLimitsCheckResults = this.props.processedRoleLimits[name];
     var roles = this.props.cluster.get('roles');
     var conflicts = _.chain(this.props.selectedRoles)
@@ -1738,32 +1734,74 @@ RolePanel = React.createClass({
       message: messages.join(' ')
     };
   },
+  toggleRolePopover(role) {
+    this.setState({roleWithPopoverVisible: role});
+  },
+  renderRole(role) {
+    if (role.checkRestrictions(this.props.configModels, 'hide').result) return null;
+
+    var name = role.get('name');
+    var selected = _.contains(this.props.selectedRoles, name);
+    var indeterminated = _.contains(this.props.indeterminateRoles, name);
+    var processedRestrictions = this.processRestrictions(role);
+    var disabled = !this.props.nodes.length || processedRestrictions.result;
+    return (
+      <div
+        key={name}
+        ref={name}
+        className={utils.classNames({
+          'role-block': true,
+          [name]: true,
+          selected: selected,
+          indeterminated: indeterminated,
+          disabled: disabled
+        })}
+        onClick={!disabled && _.partial(this.props.selectRoles, name, !selected)}
+        onMouseOver={_.partial(this.toggleRolePopover, name)}
+        onMouseOut={_.partial(this.toggleRolePopover, null)}
+      >
+        <div className='role'>
+          <i
+            className={utils.classNames({
+              glyphicon: true,
+              'glyphicon-warning-sign': !!processedRestrictions.message,
+              'glyphicon-selected-role': selected,
+              'glyphicon-indeterminated-role': indeterminated
+            })}
+          />
+          {role.get('label')}
+        </div>
+        {this.state.roleWithPopoverVisible === name &&
+          <Popover toggle={_.partial(this.toggleRolePopover, name)}>
+            <div>
+              {!!processedRestrictions.message &&
+                <div>
+                  <div className='text-warning'>{processedRestrictions.message}</div>
+                  <hr />
+                </div>
+              }
+              <div>{role.get('description')}</div>
+            </div>
+          </Popover>
+        }
+      </div>
+    );
+  },
   render() {
+    var groupedRoles = this.props.cluster.get('roles').groupBy((role) => {
+      if (role.checkRestrictions(this.props.configModels, 'disable').result) return 'unavailable';
+      var limits = role.get('limits');
+      if (limits && (limits.min || limits.recommended)) return 'required';
+      return 'not_required';
+    });
     return (
       <div className='well role-panel'>
         <h4>{i18n('cluster_page.nodes_tab.assign_roles')}</h4>
-        {this.props.cluster.get('roles').map((role) => {
-          if (!role.checkRestrictions(this.props.configModels, 'hide').result) {
-            var name = role.get('name');
-            var processedRestrictions = this.props.nodes.length ?
-              this.processRestrictions(role, this.props.configModels) : {};
-            return (
-              <Input
-                key={name}
-                ref={name}
-                type='checkbox'
-                name={name}
-                label={role.get('label')}
-                description={role.get('description')}
-                checked={_.contains(this.props.selectedRoles, name)}
-                disabled={!this.props.nodes.length || processedRestrictions.result}
-                tooltipText={!!this.props.nodes.length && processedRestrictions.message}
-                onChange={this.props.selectRoles}
-                wrapperClassName={name}
-              />
-            );
-          }
-        })}
+        {_.map(['required', 'not_required', 'unavailable'], (groupName) =>
+          <div key={groupName} className={groupName + ' roles-row clearfix'}>
+            {_.map(groupedRoles[groupName], this.renderRole, this)}
+          </div>
+        )}
       </div>
     );
   }

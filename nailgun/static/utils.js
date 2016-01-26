@@ -17,10 +17,8 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
-import classNames from 'classnames';
 import naturalSort from 'javascript-natural-sort';
 import Expression from 'expression';
-import ModelPath from 'expression/objects';
 import IP from 'ip';
 import {ErrorDialog} from 'views/dialogs';
 import models from 'models';
@@ -67,12 +65,6 @@ var utils = {
   highlightTestStep(text, step) {
     return text.replace(new RegExp('(^|\\s*)(' + step + '\\.[\\s\\S]*?)(\\s*\\d+\\.|$)'),
       '$1<b>$2</b>$3');
-  },
-  classNames: classNames,
-  parseModelPath(path, models) {
-    var modelPath = new ModelPath(path);
-    modelPath.setModel(models);
-    return modelPath;
   },
   evaluateExpression(expression, models, options) {
     var compiledExpression = new Expression(expression, models, options);

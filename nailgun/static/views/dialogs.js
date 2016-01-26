@@ -19,6 +19,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import classNames from 'classnames';
 import Backbone from 'backbone';
 import utils from 'utils';
 import models from 'models';
@@ -148,7 +149,7 @@ export var dialogMixin = {
     classes[this.props.modalClass] = this.props.modalClass;
     return (
       <div
-        className={utils.classNames(classes)}
+        className={classNames(classes)}
         tabIndex='-1'
         onClick={this.closeOnLinkClick}
         onKeyDown={this.closeOnEscapeKey}
@@ -1541,7 +1542,7 @@ export var RegistrationDialog = React.createClass({
               label={inputName != 'agree' ? input.label : this.getAgreementLink(input.description)}
               {... _.pick(input, 'type', 'value')}
               children={input.type == 'select' && this.composeOptions(input.values)}
-              wrapperClassName={utils.classNames(classes)}
+              wrapperClassName={classNames(classes)}
               onChange={this.onChange}
               error={inputError}
               disabled={actionInProgress || (inputName == 'region' && this.checkCountry())}

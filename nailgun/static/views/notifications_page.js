@@ -16,6 +16,7 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import classNames from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import {ShowNodeInfoDialog} from 'views/dialogs';
@@ -106,7 +107,7 @@ Notification = React.createClass({
       discover: 'glyphicon-bell'
     }[topic] || 'glyphicon-info-sign';
     return (
-      <div className={utils.classNames(notificationClasses)} onClick={this.onNotificationClick}>
+      <div className={classNames(notificationClasses)} onClick={this.onNotificationClick}>
         <div className='notification-time'>{this.props.notification.get('time')}</div>
         <div className='notification-type'><i className={'glyphicon ' + iconClass} /></div>
         <div className='notification-message'>

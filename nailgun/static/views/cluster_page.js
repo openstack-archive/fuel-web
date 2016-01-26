@@ -17,6 +17,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import classNames from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
@@ -310,7 +311,7 @@ var ClusterPage = React.createClass({
                 <a
                   key={url}
                   className={
-                    url + ' ' + utils.classNames({
+                    url + ' ' + classNames({
                       'cluster-tab': true,
                       active: this.props.activeTab == url
                     })

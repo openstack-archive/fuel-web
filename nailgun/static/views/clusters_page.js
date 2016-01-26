@@ -18,6 +18,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import classNames from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
@@ -137,7 +138,7 @@ Cluster = React.createClass({
     return (
       <div className='col-xs-3'>
         <Tag
-          className={utils.classNames({
+          className={classNames({
             clusterbox: true,
             'cluster-disabled': isClusterDeleting
           })}
@@ -174,7 +175,7 @@ Cluster = React.createClass({
             {deploymentTask ?
               <div className='progress'>
                 <div
-                  className={utils.classNames({
+                  className={classNames({
                     'progress-bar': true,
                     'progress-bar-warning': _.contains(
                       ['stop_deployment', 'reset_environment'],
@@ -187,7 +188,7 @@ Cluster = React.createClass({
                 ></div>
               </div>
             :
-              <span className={utils.classNames({
+              <span className={classNames({
                 'text-danger': status == 'error' || status == 'update_error',
                 'text-success': status == 'operational'
               })}>

@@ -25,6 +25,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import classNames from 'classnames';
 import utils from 'utils';
 import {outerClickMixin} from 'component_mixins';
 
@@ -123,7 +124,7 @@ export var Input = React.createClass({
       key: 'input',
       onFocus: this.props.selectOnFocus && this.handleFocus,
       type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
-      className: utils.classNames(classes)
+      className: classNames(classes)
     };
     if (this.props.type == 'file') {
       props.onChange = this.readFile;
@@ -142,7 +143,7 @@ export var Input = React.createClass({
       input = <form ref='form'>{input}</form>;
     }
     return (
-      <div key='input-group' className={utils.classNames(inputWrapperClasses)}>
+      <div key='input-group' className={classNames(inputWrapperClasses)}>
         {input}
         {this.props.type == 'file' &&
           <div className='input-group'>
@@ -194,7 +195,7 @@ export var Input = React.createClass({
         {this.props.label}
         {this.props.tooltipText &&
           <Tooltip text={this.props.tooltipText} placement={this.props.tooltipPlacement}>
-            <i className={utils.classNames('glyphicon tooltip-icon', this.props.tooltipIcon)} />
+            <i className={classNames('glyphicon tooltip-icon', this.props.tooltipIcon)} />
           </Tooltip>
         }
       </label>
@@ -214,7 +215,7 @@ export var Input = React.createClass({
       disabled: this.props.disabled
     };
     classes[this.props.wrapperClassName] = this.props.wrapperClassName;
-    return (<div className={utils.classNames(classes)}>{children}</div>);
+    return (<div className={classNames(classes)}>{children}</div>);
   },
   render() {
     if (this.props.type == 'hidden' && !this.props.description && !this.props.label) return null;
@@ -283,9 +284,9 @@ export var ProgressBar = React.createClass({
     };
 
     return (
-      <div className={utils.classNames(wrapperClasses)}>
+      <div className={classNames(wrapperClasses)}>
         <div
-          className={utils.classNames(progressClasses)}
+          className={classNames(progressClasses)}
           role='progressbar'
           style={{width: isInfinite ? '100%' : _.max([this.props.progress, 3]) + '%'}}
         >
@@ -306,13 +307,13 @@ export var Table = React.createClass({
     var tableClasses = {'table table-bordered': true, 'table-striped': !this.props.noStripes};
     tableClasses[this.props.tableClassName] = this.props.tableClassName;
     return (
-      <table className={utils.classNames(tableClasses)}>
+      <table className={classNames(tableClasses)}>
         <thead>
           <tr>
             {_.map(this.props.head, (column, index) => {
               var classes = {};
               classes[column.className] = column.className;
-              return <th key={index} className={utils.classNames(classes)}>{column.label}</th>;
+              return <th key={index} className={classNames(classes)}>{column.label}</th>;
             })}
           </tr>
         </thead>
@@ -344,7 +345,7 @@ export var Popover = React.createClass({
     classes[this.props.placement] = true;
     classes[this.props.className] = true;
     return (
-      <div className={utils.classNames(classes)}>
+      <div className={classNames(classes)}>
         <div className='arrow' />
         <div className='popover-content'>{this.props.children}</div>
       </div>

@@ -19,7 +19,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import utils from 'utils';
+import classNames from 'classnames';
 import dispatcher from 'dispatcher';
 
 var LoginPage = React.createClass({
@@ -167,7 +167,7 @@ var LoginForm = React.createClass({
           <div className='col-xs-12 text-center'>
             <button
               type='submit'
-              className={utils.classNames({
+              className={classNames({
                 'btn login-btn': true,
                 'btn-success': httpsUsed,
                 'btn-warning': !httpsUsed

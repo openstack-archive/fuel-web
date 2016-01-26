@@ -19,6 +19,7 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import Backbone from 'backbone';
 import React from 'react';
+import classNames from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import {backboneMixin, pollingMixin, dispatcherMixin} from 'component_mixins';
@@ -109,7 +110,7 @@ export var Navbar = React.createClass({
                 {_.map(this.props.elements, (element) => {
                   return (
                     <li
-                      className={utils.classNames({
+                      className={classNames({
                         active: this.props.activeElement == element.url.slice(1)
                       })}
                       key={element.label}
@@ -123,7 +124,7 @@ export var Navbar = React.createClass({
               </ul>
             </div>
             <div className='col-xs-4'>
-              <ul className={utils.classNames({
+              <ul className={classNames({
                 'nav navbar-icons pull-right': true,
                 'with-auth': authenticationEnabled,
                 'without-auth': !authenticationEnabled
@@ -161,7 +162,7 @@ export var Navbar = React.createClass({
                   onClick={this.togglePopover('notifications')}
                 >
                   <span
-                    className={utils.classNames({badge: true, visible: unreadNotificationsCount})}
+                    className={classNames({badge: true, visible: unreadNotificationsCount})}
                   >
                     {unreadNotificationsCount}
                   </span>
@@ -221,7 +222,7 @@ var LanguagePopover = React.createClass({
         <ul className='nav nav-pills nav-stacked'>
           {_.map(i18n.getAvailableLocales(), (locale) => {
             return (
-              <li key={locale} className={utils.classNames({active: locale == currentLocale})}>
+              <li key={locale} className={classNames({active: locale == currentLocale})}>
                 <a onClick={_.partial(this.changeLocale, locale)}>
                   {i18n.getLanguageName(locale)}
                 </a>
@@ -335,7 +336,7 @@ var NotificationsPopover = React.createClass({
       discover: 'glyphicon-bell'
     }[topic] || 'glyphicon-info-sign';
     return (
-      <div key={notification.id} className={utils.classNames(notificationClasses)}>
+      <div key={notification.id} className={classNames(notificationClasses)}>
         <i className={'glyphicon ' + iconClass}></i>
         <p
           dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}

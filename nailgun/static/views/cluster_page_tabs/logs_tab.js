@@ -17,6 +17,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import classNames from 'classnames';
 import utils from 'utils';
 import models from 'models';
 import {Input, ProgressBar} from 'views/controls';
@@ -264,7 +265,7 @@ var LogFilterBar = React.createClass({
     );
   },
   renderFilterButton(isRemote) {
-    return <div className={utils.classNames({
+    return <div className={classNames({
       'form-group': true,
       'col-md-4 col-sm-12': isRemote,
       'col-md-6 col-sm-3': !isRemote

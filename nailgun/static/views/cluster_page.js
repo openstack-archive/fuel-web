@@ -175,7 +175,10 @@ var ClusterPage = React.createClass({
   getInitialState() {
     return {
       activeSettingsSectionName: this.pickDefaultSettingGroup(),
-      activeNetworkSectionName: this.props.nodeNetworkGroups.find({is_default: true}).get('name'),
+      activeNetworkSectionName: this.props.nodeNetworkGroups.find({
+        is_default: true,
+        cluster_id: this.props.cluster.id
+      }).get('name'),
       selectedNodeIds: {},
       selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
     };
@@ -264,7 +267,6 @@ var ClusterPage = React.createClass({
     if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
     this.setState({activeSettingsSectionName: value});
   },
-
   setActiveNetworkSectionName(name) {
     this.setState({activeNetworkSectionName: name});
   },

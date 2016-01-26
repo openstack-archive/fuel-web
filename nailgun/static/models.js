@@ -274,6 +274,7 @@ models.Roles = BaseCollection.extend(restrictionMixin).extend({
   constructorName: 'Roles',
   comparator: 'weight',
   model: models.Role,
+  groups: ['base', 'compute', 'storage', 'other'],
   initialize() {
     this.processConflictsAndRestrictions();
     this.on('update', this.processConflictsAndRestrictions, this);

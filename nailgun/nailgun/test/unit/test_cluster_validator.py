@@ -13,11 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from mock import Mock
 from mock import patch
 from mock import PropertyMock
 from oslo_serialization import jsonutils
 
+from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun import consts
 from nailgun.errors import errors
@@ -214,3 +217,19 @@ class TestClusterValidator(BaseTestCase):
                                 ClusterValidator.validate_update,
                                 self.cluster_data,
                                 cluster_mock)
+
+
+class TestClusterStopDeploymentValidator(BaseTestCase):
+
+    def test_stop_deployment_failed_for_once_deployed_cluster(self):
+        cluster = self.env.create_cluster(api=False)
+
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['once_deployed'] = True
+        cluster.attributes.generated = generated_attrs
+
+        self.assertRaises(
+            errors.CannotBeStopped,
+            ClusterStopDeploymentValidator.validate,
+            cluster
+        )

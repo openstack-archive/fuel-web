@@ -15,6 +15,7 @@
 #    under the License.
 
 
+import copy
 from mock import patch
 
 from nailgun.test.base import BaseIntegrationTest
@@ -162,6 +163,15 @@ class TestTasksLogging(BaseIntegrationTest):
         self.env.wait_ready(deploy)
 
         self.simulate_running_deployment(deploy)
+
+        # set 'once_deployed' to false in order to
+        # get stop deploy task be executed on the cluster
+        cluster = self.env.clusters[0]
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['once_deployed'] = False
+        cluster.attributes.generated = generated_attrs
+        self.db.flush()
+
         self.env.stop_deployment()
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
@@ -282,6 +292,14 @@ class TestTasksLogging(BaseIntegrationTest):
         # after stop deployment
         deploy_uuid = deploy.uuid
         self.simulate_running_deployment(deploy)
+
+        # set 'once_deployed' to false in order to
+        # get stop deploy task be executed on the cluster
+        cluster = self.env.clusters[0]
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['once_deployed'] = False
+        cluster.attributes.generated = generated_attrs
+        self.db.flush()
 
         # Stopping deployment
         self.env.stop_deployment()

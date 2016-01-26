@@ -67,7 +67,7 @@ var LogsTab = React.createClass({
   },
   showLogs(params) {
     this.stopPolling();
-    var logOptions = this.props.selectedLogs.type == 'remote' ?
+    var logOptions = this.props.selectedLogs.type === 'remote' ?
       _.extend({}, this.props.selectedLogs) : _.omit(this.props.selectedLogs, 'node');
     logOptions.level = logOptions.level.toLowerCase();
     app.navigate('#cluster/' + this.props.cluster.id + '/logs/' +
@@ -113,12 +113,12 @@ var LogsTab = React.createClass({
             showLogs={this.showLogs}
             onShowButtonClick={this.onShowButtonClick}
           />
-          {this.state.loading == 'fail' &&
+          {this.state.loading === 'fail' &&
             <div className='logs-fetch-error alert alert-danger'>
               {this.state.loadingError}
             </div>
           }
-          {this.state.loading == 'loading' && <ProgressBar />}
+          {this.state.loading === 'loading' && <ProgressBar />}
           {this.state.logsEntries &&
             <LogsTable
               logsEntries={this.state.logsEntries}
@@ -148,13 +148,13 @@ var LogFilterBar = React.createClass({
     var nodes = this.props.nodes;
     var chosenNodeId = nodeId || (nodes.length ? nodes.first().id : null);
     this.sources = new models.LogSources();
-    this.sources.deferred = (type == 'remote' && chosenNodeId) ?
+    this.sources.deferred = (type === 'remote' && chosenNodeId) ?
       this.sources.fetch({url: '/api/logs/sources/nodes/' + chosenNodeId})
     :
       this.sources.fetch();
     this.sources.deferred.done(() => {
       var filteredSources = this.sources.filter((source) => {
-        return source.get('remote') == (type != 'local');
+        return source.get('remote') === (type !== 'local');
       });
       var chosenSource = _.findWhere(filteredSources, {id: this.state.source}) ||
         _.first(filteredSources);
@@ -164,7 +164,7 @@ var LogFilterBar = React.createClass({
         type: type,
         sources: this.sources,
         sourcesLoadingState: 'done',
-        node: chosenNodeId && type == 'remote' ? chosenNodeId : null,
+        node: chosenNodeId && type === 'remote' ? chosenNodeId : null,
         source: chosenSource ? chosenSource.id : null,
         level: chosenLevelId,
         locked: false
@@ -245,7 +245,7 @@ var LogFilterBar = React.createClass({
     this.props.onShowButtonClick();
   },
   render() {
-    var isRemote = this.state.type == 'remote';
+    var isRemote = this.state.type === 'remote';
     return (
       <div className='well well-sm'>
         <div className='sticker row'>
@@ -255,7 +255,7 @@ var LogFilterBar = React.createClass({
           {this.renderLevelSelect()}
           {this.renderFilterButton(isRemote)}
         </div>
-        {this.state.sourcesLoadingState == 'fail' &&
+        {this.state.sourcesLoadingState === 'fail' &&
           <div className='node-sources-error alert alert-danger'>
             {this.state.sourcesLoadingError}
           </div>
@@ -318,7 +318,7 @@ var LogFilterBar = React.createClass({
     </div>;
   },
   renderSourceSelect() {
-    var sourceOptions = this.state.type == 'local' ? this.getLocalSources() :
+    var sourceOptions = this.state.type === 'local' ? this.getLocalSources() :
       this.getRemoteSources();
     return <div className='col-md-2 col-sm-3'>
       <Input

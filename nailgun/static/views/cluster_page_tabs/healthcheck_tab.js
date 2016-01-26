@@ -101,7 +101,7 @@ var HealthcheckTabContent = React.createClass({
   },
   isLocked() {
     var cluster = this.props.cluster;
-    return cluster.get('status') != 'operational' || !!cluster.task({group: 'deployment',
+    return cluster.get('status') !== 'operational' || !!cluster.task({group: 'deployment',
       active: true});
   },
   getNumberOfCheckedTests() {
@@ -209,7 +209,7 @@ var HealthcheckTabContent = React.createClass({
                 type='checkbox'
                 name='selectAll'
                 onChange={this.handleSelectAllClick}
-                checked={this.getNumberOfCheckedTests() == this.props.tests.length}
+                checked={this.getNumberOfCheckedTests() === this.props.tests.length}
                 disabled={hasRunningTests}
                 label={i18n('common.select_all')}
                 wrapperClassName='select-all'
@@ -247,7 +247,7 @@ var HealthcheckTabContent = React.createClass({
           </div>
         }
         <div>
-          {(this.props.cluster.get('status') == 'new') &&
+          {(this.props.cluster.get('status') === 'new') &&
             <div className='alert alert-warning'>
               {i18n('cluster_page.healthcheck_tab.deploy_alert')}
             </div>
@@ -282,12 +282,12 @@ var HealthcheckCredentials = React.createClass({
           {_.map(inputFields, (name) => {
             return (<Input
               key={name}
-              type={(name == 'password') ? 'password' : 'text'}
+              type={(name === 'password') ? 'password' : 'text'}
               name={name}
               label={i18n('cluster_page.healthcheck_tab.' + name + '_label')}
               value={this.props.credentials[name]}
               onChange={this.props.onInputChange}
-              toggleable={name == 'password'}
+              toggleable={name === 'password'}
               description={i18n('cluster_page.healthcheck_tab.' + name + '_description')}
               disabled={this.props.disabled}
               inputClassName='col-xs-3'
@@ -317,7 +317,7 @@ var TestSet = React.createClass({
   updateTestsetCheckbox() {
     this.props.testset.set(
       'checked',
-      this.props.tests.where({checked: true}).length == this.props.tests.length
+      this.props.tests.where({checked: true}).length === this.props.tests.length
     );
   },
   render() {
@@ -432,7 +432,7 @@ var Test = React.createClass({
           <div className='healthcheck-duration'>{test.get('duration') || ''}</div>
         </td>
         <td className='healthcheck-col-duration'>
-          {(status != 'running' && result && _.isNumber(result.taken)) ?
+          {(status !== 'running' && result && _.isNumber(result.taken)) ?
             <div className='healthcheck-duration'>{result.taken.toFixed(1)}</div>
           :
             <div className='healthcheck-status healthcheck-status-unknown'>&mdash;</div>

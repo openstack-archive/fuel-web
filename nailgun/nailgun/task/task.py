@@ -585,13 +585,21 @@ class DeleteIBPImagesTask(object):
     @classmethod
     def message(cls, task, image_data):
         files = []
-        for image in six.itervalues(image_data):
+        for image in six.iteritems(image_data):
             files.append(
                 os.path.join(
                     settings.PROVISIONING_IMAGES_PATH,
-                    os.path.basename(
-                        six.moves.urllib.parse.urlsplit(image['uri']).path))
+                    os.path.basename(six.moves.urllib.parse.urlsplit(
+                        image[1]['uri']).path))
             )
+            if image[0] == '/':
+                root_image_name = os.path.basename(
+                    six.moves.urllib.parse.urlsplit(image[1]['uri']).path)
+                yaml_name = '{0}.{1}'.format(
+                    root_image_name.split('.')[0], 'yaml')
+                files.append(os.path.join(
+                    settings.PROVISIONING_IMAGES_PATH, yaml_name))
+
         task_params = {
             'parameters': {
                 'cmd': 'rm -f {0}'.format(' '.join(files)),

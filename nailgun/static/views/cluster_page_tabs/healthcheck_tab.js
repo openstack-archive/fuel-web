@@ -91,12 +91,18 @@ var HealthcheckTabContent = React.createClass({
   fetchData() {
     return this.props.testruns.fetch();
   },
+  componentDidUpdate() {
+    if (this.state.stoppingTestsInProgress) {
+      this.setState({stoppingTestsInProgress: this.props.testruns.any({status: 'running'})});
+    }
+  },
   getInitialState() {
     return {
       actionInProgress: false,
       credentialsVisible: null,
       credentials: _.transform(this.props.cluster.get('settings').get('access'),
-        (result, value, key) => result[key] = value.value)
+        (result, value, key) => result[key] = value.value),
+      stoppingTestsInProgress: false
     };
   },
   isLocked() {
@@ -184,7 +190,10 @@ var HealthcheckTabContent = React.createClass({
   stopTests() {
     var testruns = new models.TestRuns(this.getActiveTestRuns());
     if (testruns.length) {
-      this.setState({actionInProgress: true});
+      this.setState({
+        actionInProgress: true,
+        stoppingTestsInProgress: true
+      });
       testruns.invoke('set', {status: 'stopped'});
       testruns.toJSON = function() {
         return this.map((testrun) =>
@@ -217,12 +226,12 @@ var HealthcheckTabContent = React.createClass({
             </div>
             {hasRunningTests ?
               (<button className='btn btn-danger stop-tests-btn pull-right'
-                disabled={this.state.actionInProgress}
+                disabled={this.state.actionInProgress || this.state.stoppingTestsInProgress}
                 onClick={this.stopTests}
               >
                 {i18n('cluster_page.healthcheck_tab.stop_tests_button')}
               </button>)
-              :
+            :
               (<button className='btn btn-success run-tests-btn pull-right'
                 disabled={!this.getNumberOfCheckedTests() || this.state.actionInProgress}
                 onClick={this.runTests}

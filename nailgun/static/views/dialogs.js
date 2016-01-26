@@ -784,21 +784,21 @@ export var ShowNodeInfoDialog = React.createClass({
     return String(propertyName).replace(/_/g, ' ');
   },
   showPropertyValue(group, name, value) {
+    var valueFormatters = {
+      size: group === 'disks' ?
+          utils.showDiskSize
+        :
+          group === 'memory' ? utils.showMemorySize : utils.showSize,
+      frequency: utils.showFrequency,
+      max_speed: utils.showBandwidth,
+      current_speed: utils.showBandwidth,
+      maximum_capacity: group === 'memory' ? utils.showMemorySize : _.identity,
+      total: group === 'memory' ? utils.showMemorySize : _.identity
+    };
     try {
-      if (group == 'memory' && (name == 'total' || name == 'maximum_capacity' || name == 'size')) {
-        value = utils.showMemorySize(value);
-      } else if (group == 'disks' && name == 'size') {
-        value = utils.showDiskSize(value);
-      } else if (name == 'size') {
-        value = utils.showSize(value);
-      } else if (name == 'frequency') {
-        value = utils.showFrequency(value);
-      } else if (name == 'max_speed' || name == 'current_speed') {
-        value = utils.showBandwidth(value);
-      } else if (_.isBoolean(value)) {
-        value = value ? i18n('common.true') : i18n('common.false');
-      }
+      value = valueFormatters[name](value);
     } catch (ignore) {}
+    if (_.isBoolean(value)) return value ? i18n('common.true') : i18n('common.false');
     return !_.isNumber(value) && _.isEmpty(value) ? '\u00A0' : value;
   },
   componentDidUpdate() {

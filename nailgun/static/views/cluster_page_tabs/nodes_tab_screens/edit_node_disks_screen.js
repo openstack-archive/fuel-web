@@ -345,7 +345,7 @@ var NodeDisk = React.createClass({
                         <label className='col-xs-2'>{propertyName.replace(/_/g, ' ')}</label>
                         <div className='col-xs-10'>
                           <p className='form-control-static'>
-                            {propertyName == 'size' ?
+                            {propertyName === 'size' ?
                               utils.showDiskSize(diskMetaData[propertyName]) :
                               diskMetaData[propertyName]
                             }
@@ -406,7 +406,7 @@ var NodeDisk = React.createClass({
                         {i18n('common.size.mb')}
                       </div>
                     </div>
-                    {!!value && value == currentMinSize &&
+                    {!!value && value === currentMinSize &&
                       <div className='volume-group-notice text-info'>
                         {i18n(ns + 'minimum_reached')}
                       </div>

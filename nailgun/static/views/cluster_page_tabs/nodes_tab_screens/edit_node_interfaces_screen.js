@@ -109,11 +109,11 @@ var EditNodeInterfacesScreen = React.createClass({
       var interfacesData = this.interfacesToJSON(node.interfaces, true);
       return _.any(initialInterfacesData, (ifcData, index) => {
         return _.any(ifcData, (data, attribute) => {
-          if (attribute == 'slaves') {
+          if (attribute === 'slaves') {
             // bond 'slaves' attribute contains information about slave name only
             // but interface names can be different between nodes
             // and can not be used for the comparison
-            return data.length != (interfacesData[index].slaves || {}).length;
+            return data.length !== (interfacesData[index].slaves || {}).length;
           }
           return !_.isEqual(data, interfacesData[index][attribute]);
         });
@@ -190,7 +190,7 @@ var EditNodeInterfacesScreen = React.createClass({
         if (ifc.isBond()) {
           var bondProperties = ifc.get('bond_properties');
           ifc.set({bond_properties: _.extend(bondProperties, {type__:
-            this.getBondType() == 'linux' ? 'linux' : 'ovs'})});
+            this.getBondType() === 'linux' ? 'linux' : 'ovs'})});
         }
         if (ifc.get('offloading_modes')) {
           ifc.set({
@@ -271,7 +271,7 @@ var EditNodeInterfacesScreen = React.createClass({
       var bondMode = _.flatten(_.pluck(bondingProperties[this.getBondType()].mode, 'values'))[0];
       bonds = new models.Interface({
         type: 'bond',
-        name: this.props.interfaces.generateBondName(this.getBondType() ==
+        name: this.props.interfaces.generateBondName(this.getBondType() ===
           'linux' ? 'bond' : 'ovs-bond'),
         mode: bondMode,
         assigned_networks: new models.InterfaceNetworks(),
@@ -324,7 +324,7 @@ var EditNodeInterfacesScreen = React.createClass({
       var pxeInterface = this.props.interfaces.find((ifc) => {
         return ifc.get('pxe') && _.contains(slaveInterfaceNames, ifc.get('name'));
       });
-      if (!slaveInterfaceName || pxeInterface && pxeInterface.get('name') == slaveInterfaceName) {
+      if (!slaveInterfaceName || pxeInterface && pxeInterface.get('name') === slaveInterfaceName) {
         targetInterface = pxeInterface;
       }
     }
@@ -402,7 +402,7 @@ var EditNodeInterfacesScreen = React.createClass({
       return _.uniq(nodes.map((node) => {
         var nodeBondsCount = node.interfaces.filter((ifc) => ifc.isBond()).length;
         var nodeInterface = node.interfaces.at(ifcIndex + nodeBondsCount);
-        if (property == 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
+        if (property === 'current_speed') return utils.showBandwidth(nodeInterface.get(property));
         return nodeInterface.get(property);
       }));
     };
@@ -425,7 +425,7 @@ var EditNodeInterfacesScreen = React.createClass({
     var checkedInterfaces = interfaces.filter((ifc) => ifc.get('checked') && !ifc.isBond());
     var checkedBonds = interfaces.filter((ifc) => ifc.get('checked') && ifc.isBond());
     var creatingNewBond = checkedInterfaces.length >= 2 && !checkedBonds.length;
-    var addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length == 1;
+    var addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length === 1;
     var bondingPossible = creatingNewBond || addingInterfacesToExistingBond;
     var unbondingPossible = !checkedInterfaces.length && !!checkedBonds.length;
     var hasChanges = this.hasChanges();
@@ -561,7 +561,7 @@ var NodeInterface = React.createClass({
         targetInterface.trigger('change', targetInterface);
       },
       canDrop(props, monitor) {
-        return monitor.getItem().interfaceName != props.interface.get('name');
+        return monitor.getItem().interfaceName !== props.interface.get('name');
       }
     },
     collect(connect, monitor) {
@@ -664,7 +664,7 @@ var NodeInterface = React.createClass({
       var convertedValue = parseInt(value, 10);
       return _.isNaN(convertedValue) ? null : convertedValue;
     }
-    if (name == 'mtu') {
+    if (name === 'mtu') {
       value = convertToNullIfNaN(value);
     }
     var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
@@ -682,7 +682,7 @@ var NodeInterface = React.createClass({
     var slaveInterfaces = ifc.getSlaveInterfaces();
     var assignedNetworks = ifc.get('assigned_networks');
     var connectionStatusClasses = (slave) => {
-      var slaveDown = slave.get('state') == 'down';
+      var slaveDown = slave.get('state') === 'down';
       return {
         'ifc-connection-status': true,
         'ifc-online': !slaveDown,
@@ -784,14 +784,14 @@ var NodeInterface = React.createClass({
                         />
                       </div>
                       <div className='ifc-info pull-left'>
-                        {this.props.interfaceNames[index].length == 1 &&
+                        {this.props.interfaceNames[index].length === 1 &&
                           <div>
                             {i18n(ns + 'name')}:
                             {' '}
                             <span className='ifc-name'>{this.props.interfaceNames[index]}</span>
                           </div>
                         }
-                        {this.props.nodes.length == 1 &&
+                        {this.props.nodes.length === 1 &&
                           <div>{i18n(ns + 'mac')}: {slaveInterface.get('mac')}</div>
                         }
                         <div>

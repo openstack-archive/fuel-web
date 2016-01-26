@@ -265,6 +265,17 @@
   .icon-default-styles(-52px, -800px);
 }
 
+.glyphicon-selected-role {
+  .icon-default-styles(-12px, -852px);
+  width: 17px;
+  height: 16px;
+}
+
+.glyphicon-indeterminated-role {
+  .icon-default-styles(-13px, -892px);
+  height: 16px;
+}
+
 .discard-changes-icon {
   .icon-default-styles(-13px, -572px);
   &:hover {
@@ -2921,35 +2932,83 @@ input[type=range] {
 
 
 .role-panel {
-  .checkbox-group {
-    label {
+  h4 {
+    margin: 0px 0px 20px 0px;
+  }
+  h6 {
+    text-transform: capitalize;
+    margin-top: 17px;
+  }
+  .role-block {
+    @role-height: 46px;
+    float: left;
+    width: 23%;
+    height: 50px;
+    background-color: @white;
+    border: 2px solid @gray + 80%;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    .font-semibold;
+    &:not(:first-child) {
+      margin-left: 1%;
+    }
+    .role {
+      position: relative;
       width: 100%;
-      margin-bottom: 2px;
-      padding-top: 2px;
-      color: @base-text-color;
-      cursor: pointer;
-      .custom-tumbler {
-        top: -1px;
+      height: @role-height;
+      display: table-cell;
+      vertical-align: middle;
+      padding: 0px 16px;
+      line-height: 16px;
+      .break-word;
+      i {
+        display: block;
+        position: absolute;
+        top: 14px;
+        & + span {
+          display: inline-block;
+          margin-left: 24px;
+        }
       }
-      .glyphicon {
-        .text-warning;
-        position: relative;
-        top: -5px;
-        left: 5px;
+    }
+    .popover {
+      animation-name: bounceIn;
+      animation-duration: 0.5s;
+      animation-fill-mode: both;
+      animation-timing-function: step-end;
+      position: relative;
+      display: block;
+      color: @base-text-color;
+      font-size: @base-font-size - 2;
+      width: 100%;
+      hr {
+        margin: 10px 0;
+      }
+    }
+    &:not(.disabled):hover {
+      background-color: @gray + 100%;
+      border: 2px solid @gray + 60%;
+    }
+    &.selected, &.indeterminated {
+      background-color: @green;
+      border: 2px solid @green;
+      color: @white;
+      .font-semibold;
+      &:hover {
+        background-color: @green - 10%;
+        border: 2px solid @green - 10%;
       }
     }
     &.disabled {
-      label {
-        cursor: default;
-        color: @gray;
+      cursor: default;
+      .role {
+        opacity: 0.5;
       }
     }
-    .help-block {
-      color: @gray;
-      font-size: @base-font-size - 2;
-      margin-left: 28px;
-      margin-top: 0;
-    }
+  }
+  .row:last-child .role-block {
+    margin-bottom: 0;
   }
 }
 

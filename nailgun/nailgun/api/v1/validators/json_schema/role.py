@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
+
 from nailgun.api.v1.validators.json_schema import base_types
 
 VOLUME_ALLOCATION = {
@@ -95,6 +97,11 @@ ROLE_META_INFO = {
             "type": "array",
             "description": ("Specified roles will be updated if current role"
                             " added to cluster first time.")},
+        "category": {
+            "type": "string",
+            "enum": list(consts.NODE_ROLE_CATEGORIES),
+            "description": ("Name of role category which reflects the role"
+                            " purpose in cloud or deployment process")},
         "limits": LIMITS,
         "restrictions": base_types.RESTRICTIONS}}
 

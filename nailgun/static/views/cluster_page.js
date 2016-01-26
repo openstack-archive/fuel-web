@@ -175,7 +175,10 @@ var ClusterPage = React.createClass({
   getInitialState() {
     return {
       activeSettingsSectionName: this.pickDefaultSettingGroup(),
-      activeNetworkSectionName: this.props.nodeNetworkGroups.find({is_default: true}).get('name'),
+      activeNetworkSectionName: this.props.nodeNetworkGroups.find({
+        is_default: true,
+        cluster_id: this.props.cluster.id
+      }).get('name'),
       selectedNodeIds: {},
       selectedLogs: {type: 'local', node: null, source: 'app', level: this.props.defaultLogLevel}
     };
@@ -264,7 +267,6 @@ var ClusterPage = React.createClass({
     if (_.isUndefined(value)) value = this.pickDefaultSettingGroup();
     this.setState({activeSettingsSectionName: value});
   },
-
   setActiveNetworkSectionName(name) {
     this.setState({activeNetworkSectionName: name});
   },
@@ -290,6 +292,9 @@ var ClusterPage = React.createClass({
     var tab = _.find(availableTabs, {url: this.props.activeTab});
     if (!tab) return null;
     var Tab = tab.tab;
+    var currentNodeNetworkGroups = new models.NodeNetworkGroups(this.props.nodeNetworkGroups.where({
+      cluster_id: cluster.id
+    }));
 
     return (
       <div className='cluster-page' key={cluster.id}>
@@ -328,7 +333,7 @@ var ClusterPage = React.createClass({
           <Tab
             ref='tab'
             cluster={cluster}
-            nodeNetworkGroups={this.props.nodeNetworkGroups}
+            nodeNetworkGroups={currentNodeNetworkGroups}
             tabOptions={this.props.tabOptions}
             setActiveSettingsGroupName={this.setActiveSettingsGroupName}
             setActiveNetworkSectionName={this.setActiveNetworkSectionName}

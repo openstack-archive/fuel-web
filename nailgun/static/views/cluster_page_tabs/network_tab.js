@@ -938,7 +938,9 @@ var NetworkTab = React.createClass({
       isMultiRack ||
       notEnoughOnlineNodesForVerification;
 
-    var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName});
+    var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName}) ||
+      // this is needed to avoid undefined currentNodeNetworkGroup immediately after renaming
+      nodeNetworkGroups.first();
     var nodeNetworkGroupProps = {
       cluster: cluster,
       locked: isLocked,
@@ -946,7 +948,6 @@ var NetworkTab = React.createClass({
       verificationErrors: this.getVerificationErrors(),
       validationError: validationError
     };
-
     return (
       <div className={utils.classNames(classes)}>
         <div className='col-xs-12'>

@@ -22,6 +22,8 @@ import netaddr
 import six
 
 from nailgun import consts
+from nailgun.extensions.base import \
+    fire_callback_on_provisioning_data_serialization
 from nailgun.extensions import node_extension_call
 from nailgun.logger import logger
 from nailgun import objects
@@ -361,8 +363,11 @@ def serialize(cluster, nodes, ignore_customized=False):
     objects.Cluster.prepare_for_provisioning(cluster, nodes)
     serializer = get_serializer_for_cluster(cluster)
 
-    return serializer.serialize(
+    data = serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)
+    fire_callback_on_provisioning_data_serialization(data, cluster=cluster,
+                                                     nodes=nodes)
+    return data
 
 
 class ProvisioningSerializer70(ProvisioningSerializer61):

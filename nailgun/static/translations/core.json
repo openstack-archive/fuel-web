@@ -655,6 +655,7 @@
                     "range_start": "Start",
                     "range_end": "End",
                     "show_all_networks": "Show All Networks",
+                    "show_node_network_groups": "Show Network Groups",
                     "add_node_network_group": "Add New Node Network Group",
                     "add": "Add Group",
                     "node_network_group_name": "Name",
@@ -753,7 +754,8 @@
                         "groups": {
                             "node_network_groups": "Node network groups",
                             "settings": "Settings",
-                            "network_verification": "Network Verification"
+                            "network_verification": "Network Verification",
+                            "networks": "Networks"
                         }
                     },
                     "floating_net": "Floating Network Parameters",

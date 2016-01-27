@@ -779,10 +779,12 @@
                         "neutron_l3": "Neutron L3",
                         "network_settings": "Other",
                         "network_verification": "Connectivity Check",
+                        "all_networks": "All Networks",
                         "groups": {
                             "node_network_groups": "Node network groups",
                             "settings": "Settings",
-                            "network_verification": "Network Verification"
+                            "network_verification": "Network Verification",
+                            "networks": "Networks"
                         }
                     },
                     "floating_net": "Floating Network Parameters",

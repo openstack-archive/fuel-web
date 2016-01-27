@@ -589,30 +589,51 @@ var NetworkTab = React.createClass({
       ).then(() => ({}));
     },
     getSubtabs(options) {
-      return options.cluster.get('nodeNetworkGroups')
-      .map((nodeNetworkGroup) => 'group/' + nodeNetworkGroup.id)
-      .concat(
-        options.cluster.get('net_provider') === 'nova_network' ?
-          ['nova_configuration']
+      var {cluster, showAllNetworks} = options;
+      var nodeNetworkGroupSubtabs = showAllNetworks &&
+        cluster.get('nodeNetworkGroups').length !== 1 ?
+          ['group/all']
         :
-          ['neutron_l2', 'neutron_l3']
-      )
-      .concat(['network_settings', 'network_verification']);
+          cluster.get('nodeNetworkGroups')
+        .map((nodeNetworkGroup) => 'group/' + nodeNetworkGroup.id);
+      return nodeNetworkGroupSubtabs
+        .concat(
+          cluster.get('net_provider') === 'nova_network' ?
+            ['nova_configuration']
+          :
+            ['neutron_l2', 'neutron_l3']
+        )
+        .concat(['network_settings', 'network_verification']);
     },
     checkSubroute(tabProps) {
-      var {activeTab, cluster, tabOptions} = tabProps;
-      var subtabs = this.getSubtabs(tabProps);
+      var {activeTab, cluster, tabOptions, showAllNetworks = false} = tabProps;
+
+      // calculate showAllNetworks state
+      if (activeTab === 'network') {
+        if (!showAllNetworks && tabOptions[1] === 'all') {
+          showAllNetworks = true;
+        }
+        if (showAllNetworks && tabOptions[0] === 'group' && tabOptions[1] !== 'all') {
+          showAllNetworks = false;
+        }
+      }
+
+      // calculate activeNetworkSectionName state
+
+      var subtabs = this.getSubtabs(_.extend({}, tabProps, {showAllNetworks}));
       if (activeTab === 'network') {
         var subroute = _.compact(tabOptions).join('/');
+
+        // check if current subroute is valid
         if (!subroute || !_.contains(subtabs, subroute)) {
           app.navigate(
             'cluster/' + cluster.id + '/network/' + subtabs[0],
             {trigger: true, replace: true}
           );
         }
-        return {activeNetworkSectionName: subroute};
+        return {activeNetworkSectionName: subroute, showAllNetworks};
       }
-      return {activeNetworkSectionName: subtabs[0]};
+      return {activeNetworkSectionName: subtabs[0], showAllNetworks};
     }
   },
   getInitialState() {
@@ -916,10 +937,8 @@ var NetworkTab = React.createClass({
     }
     return fieldsWithVerificationErrors;
   },
-  removeNodeNetworkGroup() {
-    var nodeNetworkGroup = this.props.cluster.get('nodeNetworkGroups').get(
-      this.props.activeNetworkSectionName.split('/')[1]
-    );
+  removeNodeNetworkGroup(nodeNetworkGroup) {
+    var nodeNetworkGroups = this.props.cluster.get('nodeNetworkGroups');
     RemoveNodeNetworkGroupDialog
       .show({
         showUnsavedChangesWarning: this.hasChanges()
@@ -928,12 +947,13 @@ var NetworkTab = React.createClass({
         return nodeNetworkGroup
           .destroy({wait: true})
           .then(
-            () => this.props.cluster.get('networkConfiguration').fetch(),
+            () => nodeNetworkGroups.fetch(),
             (response) => utils.showErrorDialog({
               title: i18n(networkTabNS + 'node_network_group_deletion_error'),
               response: response
             })
           )
+          .then(() => this.props.cluster.get('networkConfiguration').fetch())
           .then(() => {
             this.updateInitialConfiguration();
             var defaultSubtab = this.constructor.getSubtabs(this.props)[0];
@@ -972,17 +992,19 @@ var NetworkTab = React.createClass({
           })
           .then(() => {
             this.updateInitialConfiguration();
-            app.navigate(
-              '#cluster/' + this.props.cluster.id + '/network/group/' + newNodeNetworkGroupId,
-              {trigger: true, replace: true}
-            );
+            if (!this.props.showAllNetworks) {
+              app.navigate(
+                '#cluster/' + this.props.cluster.id + '/network/group/' + newNodeNetworkGroupId,
+                {trigger: true, replace: true}
+              );
+            }
           });
       });
   },
   render() {
     var isLocked = this.isLocked();
     var hasChanges = this.hasChanges();
-    var {activeNetworkSectionName, cluster} = this.props;
+    var {activeNetworkSectionName, cluster, showAllNetworks} = this.props;
     var nodeNetworkGroups = cluster.get('nodeNetworkGroups');
     var networkConfiguration = this.props.cluster.get('networkConfiguration');
     var networkingParameters = networkConfiguration.get('networking_parameters');
@@ -1025,14 +1047,15 @@ var NetworkTab = React.createClass({
       locked: isLocked,
       actionInProgress: this.state.actionInProgress,
       verificationErrors: this.getVerificationErrors(),
-      validationError: validationError
+      validationError: validationError,
+      nodeNetworkGroups: nodeNetworkGroups,
+      removeNodeNetworkGroup: this.removeNodeNetworkGroup
     };
-
     return (
       <div className={utils.classNames(classes)}>
         <div className='col-xs-12'>
           <div className='row'>
-            <div className='title col-xs-7'>
+            <div className='title col-xs-6'>
               {i18n(networkTabNS + 'title')}
               {!isNovaEnvironment &&
                 <div className='forms-box segmentation-type'>
@@ -1041,20 +1064,44 @@ var NetworkTab = React.createClass({
                 </div>
               }
             </div>
-            <div className='col-xs-5 node-network-groups-controls'>
+            <div className='col-xs-6 node-network-groups-controls'>
               {!isNovaEnvironment &&
                 <button
                   key='add_node_group'
-                  className='btn btn-default add-nodegroup-btn pull-right'
+                  className='btn btn-success add-nodegroup-btn pull-right'
                   onClick={_.partial(this.addNodeNetworkGroup, hasChanges)}
                   disabled={
                     !!cluster.task({group: ['deployment', 'network'], active: true}) ||
                     this.state.actionInProgress
                   }
                 >
-                  {hasChanges && <i className='glyphicon glyphicon-danger-sign'/>}
+                  <i
+                    className={
+                      'glyphicon ' + (hasChanges ? 'glyphicon-danger-sign' : 'glyphicon-plus')
+                    }
+                  />
                   {i18n(networkTabNS + 'add_node_network_group')}
                 </button>
+              }
+              {isMultiRack &&
+                <a
+                  key='show_all'
+                  className='btn btn-default show-all-networks pull-right'
+                  role='button'
+                  href={'#cluster/' + cluster.id + '/network/group/' + (
+                    showAllNetworks ?
+                      nodeNetworkGroups.find({is_default: true}).id
+                    :
+                      'all'
+                    )
+                  }
+                >
+                  {showAllNetworks ?
+                    i18n(networkTabNS + 'show_node_network_groups')
+                  :
+                    i18n(networkTabNS + 'show_all_networks')
+                  }
+                </a>
               }
             </div>
           </div>
@@ -1074,22 +1121,33 @@ var NetworkTab = React.createClass({
           <div className='row'>
             <NetworkSubtabs
               cluster={cluster}
-              subtabs={this.constructor.getSubtabs({cluster, nodeNetworkGroups})}
+              subtabs={this.constructor.getSubtabs({
+                cluster, nodeNetworkGroups, showAllNetworks
+              })}
               validationError={validationError}
               nodeNetworkGroups={nodeNetworkGroups}
               activeGroupName={activeNetworkSectionName}
               isMultiRack={isMultiRack}
               hasChanges={hasChanges}
               showVerificationResult={!this.state.hideVerificationResult}
+              showAllNetworks={showAllNetworks}
             />
             <div className='col-xs-10'>
+              {activeNetworkSectionName === 'group/all' &&
+                nodeNetworkGroups.map((nodeNetworkGroup) => {
+                  return <NodeNetworkGroup
+                    key={nodeNetworkGroup.id}
+                    {...nodeNetworkGroupProps}
+                    nodeNetworkGroup={nodeNetworkGroup}
+                    networks={networks.where({group_id: nodeNetworkGroup.id})}
+                  />;
+                })
+              }
               {currentNodeNetworkGroup &&
                 <NodeNetworkGroup
                   {...nodeNetworkGroupProps}
-                  nodeNetworkGroups={nodeNetworkGroups}
                   nodeNetworkGroup={currentNodeNetworkGroup}
                   networks={networks.where({group_id: currentNodeNetworkGroup.id})}
-                  removeNodeNetworkGroup={this.removeNodeNetworkGroup}
                 />
               }
               {activeNetworkSectionName === 'network_settings' &&
@@ -1185,17 +1243,20 @@ var NodeNetworkGroup = React.createClass({
 var NetworkSubtabs = React.createClass({
   renderClickablePills(subtabs) {
     return subtabs.map((subtab) => {
+      var subTabId = subtab.url.split('/')[0] === 'group' && subtab.url.split('/')[1] ||
+        subtab.url.split('/')[0];
       return (
         <li
           key={subtab.label}
           role='presentation'
           className={utils.classNames({
             active: String(subtab.url) === this.props.activeGroupName,
-            warning: this.props.isMultiRack && subtab.url === 'network_verification'
+            warning: this.props.isMultiRack && subtab.url === 'network_verification',
+            [subTabId]: true
           })}
         >
           <a
-            className={'no-leave-check subtab-link-' + subtab.url}
+            className={'no-leave-check subtab-link-' + subTabId}
             href={'#cluster/' + this.props.cluster.id + '/network/' + subtab.url}
           >
             {subtab.isInvalid && <i className='subtab-icon glyphicon-danger-sign' />}
@@ -1238,14 +1299,15 @@ var NetworkSubtabs = React.createClass({
     return this.getNetworkSettingsError(subtab[0]);
   },
   render() {
+    var {showAllNetworks} = this.props;
     var nodeNetworkGroups = this.props.cluster.get('nodeNetworkGroups');
     var groupedSubtabs = _.groupBy(this.props.subtabs, (subtab) => {
       subtab = subtab.split('/');
       if (subtab[0] === 'group') return 'node_network_groups';
       if (subtab[0] === 'network_verification') return subtab[0];
+      if (showAllNetworks && subtab[0] === 'group') return 'networks';
       return 'settings';
     });
-
     return (
       <div className='col-xs-2'>
         <CSSTransitionGroup
@@ -1266,7 +1328,10 @@ var NetworkSubtabs = React.createClass({
                   return {
                     url: url,
                     label: groupName === 'node_network_groups' ?
-                        nodeNetworkGroups.get(url.split('/')[1]).get('name')
+                      showAllNetworks ?
+                          i18n(networkTabNS + 'subtabs.all_networks')
+                        :
+                          nodeNetworkGroups.get(url.split('/')[1]).get('name')
                       :
                         i18n(networkTabNS + 'subtabs.' + url),
                     isInvalid: this.getError(url)
@@ -1329,7 +1394,8 @@ var NodeNetworkGroupTitle = React.createClass({
     var {currentNodeNetworkGroup, isRenamingPossible, isDeletionPossible} = this.props;
     var classes = {
       'network-group-name': true,
-      'no-rename': !isRenamingPossible
+      'no-rename': !isRenamingPossible,
+      [currentNodeNetworkGroup.get('name')]: true
     };
     return (
       <div className={utils.classNames(classes)} key={currentNodeNetworkGroup.id}>
@@ -1362,7 +1428,7 @@ var NodeNetworkGroupTitle = React.createClass({
             !this.state.isRenaming &&
               <i
                 className='glyphicon glyphicon-remove'
-                onClick={this.props.removeNodeNetworkGroup}
+                onClick={() => this.props.removeNodeNetworkGroup(currentNodeNetworkGroup)}
               />
         )}
       </div>

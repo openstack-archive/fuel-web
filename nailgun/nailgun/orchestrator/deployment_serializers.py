@@ -27,6 +27,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.extensions import fire_callback_on_deployment_data_serialization
 from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
@@ -601,5 +602,15 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     objects.Cluster.prepare_for_deployment(cluster, cluster.nodes)
     serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 
-    return serializer.serialize(
+    data = serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)
+
+    if not any(bool(n.replaced_deployment_info) for n in nodes) \
+            or ignore_customized:
+        # NOTE(sbrzeczkowski): user can download the deployment data already
+        # changed by extension pipelines, then change it and upload it back.
+        # Thanks to that "if", the data won't be touched by pipelines again.
+        fire_callback_on_deployment_data_serialization(
+            data, cluster=cluster, nodes=nodes)
+
+    return data

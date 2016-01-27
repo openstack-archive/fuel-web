@@ -106,3 +106,13 @@ def fire_callback_on_node_collection_delete(node_ids):
 def fire_callback_on_cluster_delete(cluster):
     for extension in get_all_extensions():
         extension.on_cluster_delete(cluster)
+
+
+def fire_callback_on_deployment_data_serialization(data, **kwargs):
+    for extension in get_all_extensions():
+        extension.process_deployment(data, **kwargs)
+
+
+def fire_callback_on_provisioning_data_serialization(data, **kwargs):
+    for extension in get_all_extensions():
+        extension.process_provisioning(data, **kwargs)

@@ -53,14 +53,16 @@ define([
             return buttons.reduce(function(result, button) {
               return button.getVisibleText()
                 .then(function(buttonTitle) {
-                  if (buttonTitle === buttonText)
+                  if (buttonTitle === buttonText) {
                     return button.isEnabled()
                       .then(function(isEnabled) {
                         if (isEnabled) {
                           return button.click();
-                        } else
+                        } else {
                           throw Error('Unable to click disabled button "' + buttonText + '"');
+                        }
                       });
+                  }
                   return result;
                 });
             }, null);

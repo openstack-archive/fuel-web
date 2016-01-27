@@ -142,8 +142,9 @@ define([
                       .getVisibleText()
                         .then(function(name) {
                           name = _.trim(name);
-                          if (!_.contains(ifcsNames, name))
+                          if (!_.contains(ifcsNames, name)) {
                             throw new Error('Unexpected name in bond: ' + name);
+                          }
                         });
                   });
               });

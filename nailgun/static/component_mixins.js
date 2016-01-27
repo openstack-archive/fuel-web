@@ -38,8 +38,9 @@ export function dispatcherMixin(events, callback) {
 
 export var unsavedChangesMixin = {
   onBeforeunloadEvent() {
-    if (this.hasChanges()) return _.result(this, 'getStayMessage') ||
-      i18n('dialog.dismiss_settings.default_message');
+    if (this.hasChanges()) {
+      return _.result(this, 'getStayMessage') || i18n('dialog.dismiss_settings.default_message');
+    }
   },
   componentWillMount() {
     this.eventName = _.uniqueId('unsavedchanges');

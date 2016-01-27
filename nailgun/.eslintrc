@@ -5,11 +5,13 @@
     # disabled rules from openstack config
     no-empty: 0 # we use empty blocks with try-catch
     no-extra-parens: 0 # extra parens are preferred with JSX
-    curly: 0 # we're ok with one-line if
     operator-linebreak: 0 # disabled due to heavy use of ternary operator in JSX
     no-warning-comments: 0 # we're ok with FIXMEs
     no-undefined: 0 # we're ok with using undefined
     no-process-env: 0 # we use it in a few places and are ok with it
+
+    # overridden rules from openstack config
+    curly: [2, multi-line] # openstack config uses 'all' mode, but we're ok with braceless one-liners
 
     # extra rules
     no-unexpected-multiline: 2

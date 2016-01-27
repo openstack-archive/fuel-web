@@ -144,20 +144,22 @@ var Node = React.createClass({
     this.setState(states);
   },
   renderNameControl() {
-    if (this.state.isRenaming) return (
-      <Input
-        ref='name'
-        type='text'
-        name='node-name'
-        defaultValue={this.props.node.get('name')}
-        inputClassName='form-control node-name-input'
-        disabled={this.state.actionInProgress}
-        onKeyDown={this.onNodeNameInputKeydown}
-        maxLength='100'
-        selectOnFocus
-        autoFocus
-      />
-    );
+    if (this.state.isRenaming) {
+      return (
+        <Input
+          ref='name'
+          type='text'
+          name='node-name'
+          defaultValue={this.props.node.get('name')}
+          inputClassName='form-control node-name-input'
+          disabled={this.state.actionInProgress}
+          onKeyDown={this.onNodeNameInputKeydown}
+          maxLength='100'
+          selectOnFocus
+          autoFocus
+        />
+      );
+    }
     return (
       <Tooltip text={i18n('cluster_page.nodes_tab.node.edit_name')}>
         <p onClick={!this.state.actionInProgress && this.startRenaming}>

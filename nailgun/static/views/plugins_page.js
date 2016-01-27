@@ -88,15 +88,17 @@ var PluginsPage = React.createClass({
         </div>
         {_.map(this.props.details, (attribute) => {
           var data = this.processPluginData(plugin, attribute);
-          if (data.length) return (
-            <div className='row' key={attribute}>
-              <div className='col-xs-2 detail-title text-right'>
-                {i18n('plugins_page.' + attribute)}:
+          if (data.length) {
+            return (
+              <div className='row' key={attribute}>
+                <div className='col-xs-2 detail-title text-right'>
+                  {i18n('plugins_page.' + attribute)}:
+                </div>
+                <div className='col-xs-10'>{data}</div>
               </div>
-              <div className='col-xs-10'>{data}</div>
-            </div>
-          );
-        }, this)}
+            );
+          }
+        })}
       </div>
     );
   },

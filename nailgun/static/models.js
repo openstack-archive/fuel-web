@@ -805,11 +805,12 @@ models.Volume = BaseModel.extend({
   getMinimalSize(minimum) {
     var currentDisk = this.collection.disk;
     var groupAllocatedSpace = 0;
-    if (currentDisk && currentDisk.collection)
+    if (currentDisk && currentDisk.collection) {
       groupAllocatedSpace = currentDisk.collection.reduce((sum, disk) => {
         return disk.id === currentDisk.id ? sum : sum +
           disk.get('volumes').findWhere({name: this.get('name')}).get('size');
       }, 0);
+    }
     return minimum - groupAllocatedSpace;
   },
   getMaxSize() {

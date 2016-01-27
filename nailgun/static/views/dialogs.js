@@ -331,10 +331,12 @@ export var DiscardNodeChangesDialog = React.createClass({
   discardNodeChanges() {
     this.setState({actionInProgress: true});
     var nodes = new models.Nodes(this.props.nodes.map((node) => {
-      if (node.get('pending_deletion')) return {
-        id: node.id,
-        pending_deletion: false
-      };
+      if (node.get('pending_deletion')) {
+        return {
+          id: node.id,
+          pending_deletion: false
+        };
+      }
       return {
         id: node.id,
         cluster_id: null,
@@ -756,8 +758,10 @@ export var ShowNodeInfoDialog = React.createClass({
             summary = _.map(_.keys(sizes).sort(), (size) => sizes[size] + ' x ' + size).join(', ');
             summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' +
               i18n('dialog.show_node.total');
-          } else summary = utils.showMemorySize(meta.memory.total) + ' ' +
-            i18n('dialog.show_node.total');
+          } else {
+            summary = utils.showMemorySize(meta.memory.total) + ' ' +
+              i18n('dialog.show_node.total');
+          }
           break;
         case 'disks':
           summary = meta.disks.length + ' ';
@@ -1274,10 +1278,12 @@ export var DeleteNodesDialog = React.createClass({
     this.setState({actionInProgress: true});
     var nodes = new models.Nodes(this.props.nodes.map((node) => {
       // mark deployed node as pending deletion
-      if (node.get('status') === 'ready') return {
-        id: node.id,
-        pending_deletion: true
-      };
+      if (node.get('status') === 'ready') {
+        return {
+          id: node.id,
+          pending_deletion: true
+        };
+      }
       // remove not deployed node from cluster
       return {
         id: node.id,
@@ -1583,16 +1589,18 @@ export var RegistrationDialog = React.createClass({
         {i18n('common.cancel_button')}
       </button>
     ];
-    if (!this.state.loading) buttons.push(
-      <button
-        key='apply'
-        className='btn btn-success'
-        disabled={this.state.actionInProgress || this.state.connectionError}
-        onClick={this.validateRegistrationForm}
-      >
-        {i18n('welcome_page.register.create_account')}
-      </button>
-    );
+    if (!this.state.loading) {
+      buttons.push(
+        <button
+          key='apply'
+          className='btn btn-success'
+          disabled={this.state.actionInProgress || this.state.connectionError}
+          onClick={this.validateRegistrationForm}
+        >
+          {i18n('welcome_page.register.create_account')}
+        </button>
+      );
+    }
     return buttons;
   }
 });
@@ -1692,26 +1700,30 @@ export var RetrievePasswordDialog = React.createClass({
     );
   },
   renderFooter() {
-    if (this.state.passwordSent) return [
-      <button key='close' className='btn btn-default' onClick={this.close}>
-        {i18n('common.close_button')}
-      </button>
-    ];
+    if (this.state.passwordSent) {
+      return [
+        <button key='close' className='btn btn-default' onClick={this.close}>
+          {i18n('common.close_button')}
+        </button>
+      ];
+    }
     var buttons = [
       <button key='cancel' className='btn btn-default' onClick={this.close}>
         {i18n('common.cancel_button')}
       </button>
     ];
-    if (!this.state.loading) buttons.push(
-      <button
-        key='apply'
-        className='btn btn-success'
-        disabled={this.state.actionInProgress || this.state.connectionError}
-        onClick={this.retrievePassword}
-      >
-        {i18n('dialog.retrieve_password.send_new_password')}
-      </button>
-    );
+    if (!this.state.loading) {
+      buttons.push(
+        <button
+          key='apply'
+          className='btn btn-success'
+          disabled={this.state.actionInProgress || this.state.connectionError}
+          onClick={this.retrievePassword}
+        >
+          {i18n('dialog.retrieve_password.send_new_password')}
+        </button>
+      );
+    }
     return buttons;
   }
 });

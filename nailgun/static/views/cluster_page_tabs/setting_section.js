@@ -256,16 +256,18 @@ var SettingSection = React.createClass({
       })
       .compact()
       .value();
-    if (setting.type === 'radio') return (
-      <RadioGroup {...this.props}
-        key={settingKey}
-        name={settingName}
-        label={setting.label}
-        values={values}
-        error={error}
-        tooltipText={showSettingWarning && settingWarning}
-      />
-    );
+    if (setting.type === 'radio') {
+      return (
+        <RadioGroup {...this.props}
+          key={settingKey}
+          name={settingName}
+          label={setting.label}
+          values={values}
+          error={error}
+          tooltipText={showSettingWarning && settingWarning}
+        />
+      );
+    }
   },
   renderInput(options) {
     var {setting, settingKey, error, isSettingDisabled, showSettingWarning, settingWarning,

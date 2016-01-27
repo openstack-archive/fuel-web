@@ -706,6 +706,7 @@ def upgrade_master_node_ui_settings():
                 'filter_by_labels': {},
                 'sort_by_labels': [],
                 'search': '',
+                'show_all_node_groups': False
             },
         })
         connection.execute(q_update_master_node_settings,
@@ -792,3 +793,17 @@ def upgrade_nodegroups_parameters():
 
 def downgrade_nodegroups_parameters():
     op.drop_column('nodegroups', 'is_default')
+
+def upgrade_cluster_ui_settings():
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'ui_settings',
+            fields.JSON(),
+            server_default=jsonutils.dumps({
+                "show_all_node_groups": False
+            }),
+            nullable=False
+        )
+    )
+    op.drop_column('clusters', 'grouping')

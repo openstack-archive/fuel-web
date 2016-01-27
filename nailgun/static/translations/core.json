@@ -753,7 +753,8 @@
                         "node_network_groups": "Node network groups",
                         "settings": "Settings",
                         "networks": "Default Networks",
-                        "connectivity_check": "Connectivity Check"
+                        "connectivity_check": "Connectivity Check",
+                        "networks": "Networks"
                     },
                     "floating_net": "Floating Network Parameters",
                     "internal_net": "Internal Network Parameters",

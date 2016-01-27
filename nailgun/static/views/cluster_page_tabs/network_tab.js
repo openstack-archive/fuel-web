@@ -567,7 +567,8 @@ var NetworkTab = React.createClass({
       initialSettingsAttributes: _.cloneDeep(settings.attributes),
       settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
       initialConfiguration: _.cloneDeep(this.props.cluster.get('networkConfiguration').toJSON()),
-      hideVerificationResult: false
+      hideVerificationResult: false,
+      showAllNodeNetworkGroups: this.props.cluster.get('ui_settings').show_all_node_groups
     };
   },
   componentDidMount() {
@@ -897,6 +898,12 @@ var NetworkTab = React.createClass({
           .then(this.updateInitialConfiguration);
       });
   },
+  showAllNodeNetworkGroups(name, value) {
+    this.setState({showAllNodeNetworkGroups: value});
+    var uiSettings = this.props.cluster.get('ui_settings');
+    uiSettings.show_all_node_groups = value;
+    this.props.cluster.save({ui_settings: uiSettings}, {patch: true, wait: true});
+  },
   render() {
     var isLocked = this.isLocked();
     var hasChanges = this.hasChanges();
@@ -944,8 +951,13 @@ var NetworkTab = React.createClass({
       locked: isLocked,
       actionInProgress: this.state.actionInProgress,
       verificationErrors: this.getVerificationErrors(),
-      validationError: validationError
+      validationError: validationError,
+      nodeNetworkGroups: nodeNetworkGroups,
+      removeNodeNetworkGroup: this.removeNodeNetworkGroup,
+      setActiveNetworkSectionName: this.props.setActiveNetworkSectionName
     };
+    var isNodeNetworkGroupSectionSelected =
+      !_.contains(defaultNetworkSubtabs, activeNetworkSectionName);
 
     return (
       <div className={utils.classNames(classes)}>
@@ -975,6 +987,17 @@ var NetworkTab = React.createClass({
                   {i18n(networkTabNS + 'add_node_network_group')}
                 </button>
               }
+              {isMultiRack &&
+                <Input
+                  key='show_all'
+                  type='checkbox'
+                  name='show_all'
+                  label={i18n(networkTabNS + 'show_all_networks')}
+                  wrapperClassName='show-all-networks pull-left'
+                  onChange={this.showAllNodeNetworkGroups}
+                  checked={this.state.showAllNodeNetworkGroups}
+                />
+              }
             </div>
           </div>
         </div>
@@ -1000,17 +1023,26 @@ var NetworkTab = React.createClass({
               isMultiRack={isMultiRack}
               hasChanges={hasChanges}
               showVerificationResult={!this.state.hideVerificationResult}
+              showAllNodeNetworkGroups={this.state.showAllNodeNetworkGroups}
             />
             <div className='col-xs-10'>
-              {!_.contains(defaultNetworkSubtabs, activeNetworkSectionName) &&
-                <NodeNetworkGroup
-                  {...nodeNetworkGroupProps}
-                  nodeNetworkGroups={nodeNetworkGroups}
-                  nodeNetworkGroup={currentNodeNetworkGroup}
-                  networks={networks.where({group_id: currentNodeNetworkGroup.id})}
-                  removeNodeNetworkGroup={this.removeNodeNetworkGroup}
-                  setActiveNetworkSectionName={this.props.setActiveNetworkSectionName}
-                />
+              {isNodeNetworkGroupSectionSelected &&
+                (this.state.showAllNodeNetworkGroups ?
+                  nodeNetworkGroups.map((networkGroup) => {
+                    return <NodeNetworkGroup
+                      key={networkGroup.id}
+                      {...nodeNetworkGroupProps}
+                      nodeNetworkGroup={networkGroup}
+                      networks={networks.where({group_id: networkGroup.id})}
+                    />;
+                  })
+                :
+                  <NodeNetworkGroup
+                    {...nodeNetworkGroupProps}
+                    nodeNetworkGroup={currentNodeNetworkGroup}
+                    networks={networks.where({group_id: currentNodeNetworkGroup.id})}
+                  />
+                )
               }
               {activeNetworkSectionName === 'network_settings' &&
                 <NetworkSettings
@@ -1119,6 +1151,7 @@ var NetworkSubtabs = React.createClass({
       var tabLabel = groupName;
       var isActive = groupName === this.props.activeGroupName;
       var isInvalid;
+      var showAll = this.props.showAllNodeNetworkGroups;
 
       // is one of predefined sections selected (networking_parameters)
       if (groupName === 'neutron_l2') {
@@ -1145,11 +1178,16 @@ var NetworkSubtabs = React.createClass({
         });
       }
 
-      if (isNetworkGroupPill) {
+      if (isNetworkGroupPill && !showAll) {
         isInvalid = networksErrors && (isNovaEnvironment ||
           !!networksErrors[nodeNetworkGroups.findWhere({name: groupName}).id]);
       } else {
         tabLabel = i18n(networkTabNS + 'tabs.' + groupName);
+      }
+
+      if (showAll && groupName === 'networks') {
+        isInvalid = !_.isEmpty(networksErrors);
+        isActive = this.props.activeGroupName === nodeNetworkGroups.first().get('name');
       }
 
       if (groupName === 'network_verification') {
@@ -1187,6 +1225,9 @@ var NetworkSubtabs = React.createClass({
       settingsSections.push('nova_configuration');
     } else {
       settingsSections = settingsSections.concat(['neutron_l2', 'neutron_l3']);
+    }
+    if (this.props.showAllNodeNetworkGroups) {
+      nodeGroupSections = ['networks'];
     }
     settingsSections.push('network_settings');
 

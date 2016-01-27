@@ -523,6 +523,7 @@ class TestMasterNodeSettingsMigration(base.BaseAlembicMigrationTest):
         self.assertItemsEqual(ui_settings['filter_by_labels'], {})
         self.assertItemsEqual(ui_settings['sort_by_labels'], [])
         self.assertItemsEqual(ui_settings['search'], '')
+        self.assertItemsEqual(ui_settings['show_all_node_groups'], False)
 
     def test_master_node_settings_old_data_not_modified(self):
         settings = get_master_node_settings()

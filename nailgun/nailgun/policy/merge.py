@@ -51,6 +51,14 @@ class NetworkRoleMergePolicy(MergePolicy):
         :return: the patched VIPs
         """
         seen = dict((vip['name'], vip) for vip in target)
+
+        # This is a workaround for 8.0 release to allow
+        # moving controllers to different racks. Will be
+        # replaced by a different solution in 9.0
+        if len(patch) == 0:
+            return []
+        # END OF WORKAROUND
+
         for vip in patch:
             if vip['name'] in seen:
                 if vip != seen[vip['name']]:

@@ -65,8 +65,8 @@ class BasePluginDeploymentHooksSerializer(object):
             elif task['type'] == 'reboot':
                 make_task = templates.make_reboot_task
             else:
-                logger.warn('Task is skipped {0}, because its type is '
-                            'not supported').format(task)
+                logger.warn('Task is skipped %s, because its type is '
+                            'not supported', task)
 
             if make_task:
                 yield self._serialize_task(make_task(uids, task), task)
@@ -130,13 +130,15 @@ class BasePluginDeploymentHooksSerializer(object):
 
 class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
-    def serialize(self):
+    def serialize_begin_tasks(self):
         plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
         return itertools.chain(
             self.create_repositories(plugins),
-            self.sync_scripts(plugins),
-            self.deployment_tasks(plugins)
-        )
+            self.sync_scripts(plugins))
+
+    def serialize_end_tasks(self):
+        plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
+        return self.deployment_tasks(plugins)
 
     def _get_node_uids_for_plugin_tasks(self, plugin):
         # TODO(aroma): remove concatenation of tasks when unified way of
@@ -254,7 +256,10 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 class PluginsPostDeploymentHooksSerializer(
         BasePluginDeploymentHooksSerializer):
 
-    def serialize(self):
+    def serialize_begin_tasks(self):
+        return list()
+
+    def serialize_end_tasks(self):
         plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
         return self.deployment_tasks(plugins)
 

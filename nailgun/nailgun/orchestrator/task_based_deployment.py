@@ -61,7 +61,9 @@ class PluginTaskSerializer(StandartConfigRolesHook):
         serializer = self.serializer_class(
             self.cluster, self.nodes, role_resolver=self.role_resolver
         )
-        return serializer.serialize()
+        return itertools.chain(
+            serializer.serialize_begin_tasks(),
+            serializer.serialize_end_tasks())
 
 
 class PluginPreDeploymentSerializer(PluginTaskSerializer):

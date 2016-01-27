@@ -270,7 +270,7 @@ define([
         return this.remote
           .clickByCssSelector('.subtab-link-network_settings')
           .setInputValue('input[name=dns_list]', 'blablabla')
-          .assertElementAppears('.subtab-link-network_settings .glyphicon-danger-sign', 1000,
+          .assertElementAppears('.subtab-link-network_settings .glyphicon-danger-sign', 2000,
             'Warning icon for "Other" section appears');
       }
     };
@@ -331,6 +331,76 @@ define([
             'New Node Network group title is shown'
           );
       },
+      'Show all node network groups': function() {
+        return this.remote
+          .clickByCssSelector('.btn.show-all-networks')
+          .waitForCssSelector('.node_network_groups li.active.show-all', 2000)
+          .assertElementTextEquals(
+            '.node_network_groups li.active',
+            'Networks',
+            'Active pill is called "Networks"'
+          )
+          .assertElementsExist(
+            '.network-group-name',
+            2,
+            'Two node network group titles are shown'
+          )
+          .assertElementsExist('.forms-box.public', 2, 'Two Public networks are shown')
+          .assertElementsExist('.forms-box.storage', 2, 'Two Storage networks are shown')
+          .assertElementsExist('.forms-box.management', 2, 'Two Management networks are shown')
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'network/group/all',
+                'Subtab url is changed after clicking  "Show all networks"'
+              );
+            })
+          .assertElementTextEquals(
+            '.btn.show-all-networks',
+            'Show Node Network Groups',
+            'Button text is changed to "Show Network Groups"'
+          )
+          .then(function() {
+            return networkPage.addNodeNetworkGroup('temp');
+          })
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'network/group/all',
+                'Subtab url is not changed after adding new node network group'
+              );
+            })
+          .clickByCssSelector('.temp.network-group-name .glyphicon-remove')
+          .then(function() {
+            return modal.waitToOpen();
+          })
+          .then(function() {
+            return modal.clickFooterButton('Delete');
+          })
+          .then(function() {
+            return modal.waitToClose();
+          })
+          .waitForElementDeletion('.temp.network-group-name', 2000)
+          .clickByCssSelector('.btn.show-all-networks')
+          .assertElementsExist(
+            '.node_network_groups li',
+            3,
+            'Title and Node Network groups pills are shown after clicking "Show all networks"'
+          )
+          .assertElementsExist('.forms-box.public', 1, 'One Public network is shown')
+          .assertElementsExist('.forms-box.storage', 1, 'One Storage network is shown')
+          .assertElementsExist('.forms-box.management', 1, 'One Management network is shown')
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'network/group/2',
+                'Subtab url is changed after clicking  "Show all node groups"'
+              );
+            });
+      },
       'Verification is disabled for multirack': function() {
         return this.remote
           .clickByCssSelector('.subtab-link-network_verification')
@@ -340,6 +410,7 @@ define([
       'Node network group renaming': function() {
         this.timeout = 100000;
         return this.remote
+          .clickLinkByText('Node_Network_Group_1')
           .then(function() {
             return networkPage.renameNodeNetworkGroup(
               'Node_Network_Group_1',

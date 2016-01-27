@@ -226,7 +226,9 @@ var ClusterPage = React.createClass({
   componentWillReceiveProps(newProps) {
     var tab = _.find(this.constructor.getTabs(), {url: newProps.activeTab}).tab;
     if (tab.checkSubroute) {
-      this.setState(tab.checkSubroute(newProps));
+      this.setState(tab.checkSubroute(_.extend(_.clone(newProps), {
+        showAllNetworks: this.state.showAllNetworks
+      })));
     }
   },
   changeLogSelection(selectedLogs) {
@@ -250,6 +252,22 @@ var ClusterPage = React.createClass({
     } else {
       this.setState({selectedNodeIds: {}});
     }
+  },
+  toggleShowAllNetworks() {
+    var newShowAllState = !this.state.showAllNetworks;
+    var {cluster, tabOptions} = this.props;
+    this.setState({
+      showAllNetworks: newShowAllState
+    }, () => {
+      if (tabOptions[0] === 'group') {
+        var navigationUrl = '#cluster/' + cluster.id + '/network/group/';
+        navigationUrl += newShowAllState ?
+          'all'
+        :
+          cluster.get('nodeNetworkGroups').first().id;
+        app.navigate(navigationUrl, {trigger: true, replace: true});
+      }
+    });
   },
   render() {
     var cluster = this.props.cluster;
@@ -306,6 +324,7 @@ var ClusterPage = React.createClass({
             {... _.pick(this.props, 'cluster', 'tabOptions')}
             {...this.state}
             {...this.props.tabData}
+            toggleShowAllNetworks={this.toggleShowAllNetworks}
           />
         </div>
       </div>

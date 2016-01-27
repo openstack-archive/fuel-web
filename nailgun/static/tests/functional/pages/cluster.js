@@ -52,12 +52,13 @@ define([
         })
         .findAllByCssSelector('div.confirm-deletion-form input[type=text]')
           .then(function(confirmInputs) {
-            if (confirmInputs.length)
+            if (confirmInputs.length) {
               return confirmInputs[0]
                 .type(clusterName)
                 .then(function() {
                   return self.modal.clickFooterButton('Delete');
                 });
+            }
           })
           .end()
         .then(function() {
@@ -126,12 +127,13 @@ define([
         })
         .findAllByCssSelector('div.confirm-reset-form input[type=text]')
           .then(function(confirmationInputs) {
-            if (confirmationInputs.length)
+            if (confirmationInputs.length) {
               return confirmationInputs[0]
                 .type(clusterName)
                 .then(function() {
                   return self.modal.clickFooterButton('Reset');
                 });
+            }
           })
           .end()
         .then(function() {

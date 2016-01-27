@@ -1696,18 +1696,20 @@ RolePanel = React.createClass({
   assignRoles() {
     var roles = this.props.cluster.get('roles');
     this.props.nodes.each((node) => {
-      if (this.props.selectedNodeIds[node.id]) roles.each((role) => {
-        var roleName = role.get('name');
-        if (!node.hasRole(roleName, true)) {
-          var nodeRoles = node.get('pending_roles');
-          if (_.contains(this.props.selectedRoles, roleName)) {
-            nodeRoles = _.union(nodeRoles, [roleName]);
-          } else if (!_.contains(this.props.indeterminateRoles, roleName)) {
-            nodeRoles = _.without(nodeRoles, roleName);
+      if (this.props.selectedNodeIds[node.id]) {
+        roles.each((role) => {
+          var roleName = role.get('name');
+          if (!node.hasRole(roleName, true)) {
+            var nodeRoles = node.get('pending_roles');
+            if (_.contains(this.props.selectedRoles, roleName)) {
+              nodeRoles = _.union(nodeRoles, [roleName]);
+            } else if (!_.contains(this.props.indeterminateRoles, roleName)) {
+              nodeRoles = _.without(nodeRoles, roleName);
+            }
+            node.set({pending_roles: nodeRoles}, {assign: true});
           }
-          node.set({pending_roles: nodeRoles}, {assign: true});
-        }
-      });
+        });
+      }
     });
   },
   processRestrictions(role, models) {
@@ -1909,10 +1911,13 @@ NodeList = React.createClass({
               var roles1 = node1.sortedRoles(preferredRolesOrder);
               var roles2 = node2.sortedRoles(preferredRolesOrder);
               var order;
-              if (!roles1.length && !roles2.length) result = 0;
-              else if (!roles1.length) result = 1;
-              else if (!roles2.length) result = -1;
-              else {
+              if (!roles1.length && !roles2.length) {
+                result = 0;
+              } else if (!roles1.length) {
+                result = 1;
+              } else if (!roles2.length) {
+                result = -1;
+              } else {
                 while (!order && roles1.length && roles2.length) {
                   order = _.indexOf(preferredRolesOrder, roles1.shift()) -
                     _.indexOf(preferredRolesOrder, roles2.shift());

@@ -486,22 +486,24 @@ var EditNodeInterfacesScreen = React.createClass({
         <div className='ifc-list col-xs-12'>
           {interfaces.map((ifc, index) => {
             var ifcName = ifc.get('name');
-            if (!_.contains(slaveInterfaceNames, ifcName)) return (
-              <NodeInterfaceDropTarget {...this.props}
-                key={'interface-' + ifcName}
-                interface={ifc}
-                locked={locked}
-                bondingAvailable={bondingAvailable}
-                configurationTemplateExists={configurationTemplateExists}
-                errors={this.state.interfaceErrors[ifcName]}
-                validate={this.validate}
-                removeInterfaceFromBond={this.removeInterfaceFromBond}
-                bondingProperties={this.props.bondingConfig.properties}
-                bondType={this.getBondType()}
-                interfaceSpeeds={interfaceSpeeds[index]}
-                interfaceNames={interfaceNames[index]}
-              />
-            );
+            if (!_.contains(slaveInterfaceNames, ifcName)) {
+              return (
+                <NodeInterfaceDropTarget {...this.props}
+                  key={'interface-' + ifcName}
+                  interface={ifc}
+                  locked={locked}
+                  bondingAvailable={bondingAvailable}
+                  configurationTemplateExists={configurationTemplateExists}
+                  errors={this.state.interfaceErrors[ifcName]}
+                  validate={this.validate}
+                  removeInterfaceFromBond={this.removeInterfaceFromBond}
+                  bondingProperties={this.props.bondingConfig.properties}
+                  bondType={this.getBondType()}
+                  interfaceSpeeds={interfaceSpeeds[index]}
+                  interfaceNames={interfaceNames[index]}
+                />
+              );
+            }
           })}
         </div>
         <div className='col-xs-12 page-buttons content-elements'>

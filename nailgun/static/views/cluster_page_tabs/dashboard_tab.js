@@ -131,12 +131,14 @@ var DashboardLinks = React.createClass({
         <div className='dashboard-block links-block clearfix'>
           <div className='col-xs-12'>
             {links.map((link, index) => {
-              if (index % 2 === 0) return (
-                <div className='row' key={link.url}>
-                  {this.renderLink(link)}
-                  {index + 1 < links.length && this.renderLink(links[index + 1])}
-                </div>
-              );
+              if (index % 2 === 0) {
+                return (
+                  <div className='row' key={link.url}>
+                    {this.renderLink(link)}
+                    {index + 1 < links.length && this.renderLink(links[index + 1])}
+                  </div>
+                );
+              }
             }, this)}
           </div>
         </div>

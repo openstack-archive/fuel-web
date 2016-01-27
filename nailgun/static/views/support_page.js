@@ -136,7 +136,7 @@ var RegistrationInfo = React.createClass({
     backboneMixin('tracking', 'change invalid')
   ],
   render() {
-    if (this.state.isConnected)
+    if (this.state.isConnected) {
       return (
         <SupportPageElement
           className='img-register-fuel'
@@ -170,6 +170,7 @@ var RegistrationInfo = React.createClass({
           </p>
         </SupportPageElement>
       );
+    }
     return (
       <SupportPageElement
         className='img-register-fuel'

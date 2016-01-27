@@ -138,13 +138,15 @@ var ScreenTransitionWrapper = React.createClass({
     $(ReactDOM.findDOMNode(this)).fadeOut('fast', cb);
   },
   render() {
-    if (this.props.loading) return (
-      <div className='row'>
-        <div className='col-xs-12' style={{paddingTop: '40px'}}>
-          <ProgressBar />
+    if (this.props.loading) {
+      return (
+        <div className='row'>
+          <div className='col-xs-12' style={{paddingTop: '40px'}}>
+            <ProgressBar />
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
     return <div>{this.props.children}</div>;
   }
 });

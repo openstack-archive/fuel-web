@@ -25,6 +25,7 @@ import sqlalchemy as sa
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.extensions import fire_callback_on_deployment_data_serialization
 from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
@@ -594,6 +595,33 @@ def get_serializer_for_cluster(cluster):
     return serializers_map[latest_version][env_mode]
 
 
+def _execute_pipeline(data, cluster, nodes, ignore_customized):
+    "Executes pipelines depending on ignore_customized boolean."
+    if ignore_customized:
+        fire_callback_on_deployment_data_serialization(
+            data, cluster=cluster, nodes=nodes)
+
+    else:
+        nodes_without_customized = {n.uid: n for n in nodes
+                                    if not n.replaced_deployment_info}
+
+        def keyfunc(node):
+            return node['uid'] in nodes_without_customized
+
+        # not customized nodes
+        nodes_data_for_pipeline = list(six.moves.filter(keyfunc, data))
+
+        # NOTE(sbrzeczkowski): pipelines must be executed for nodes
+        # which don't have replaced_deployment_info specified
+        fire_callback_on_deployment_data_serialization(
+            nodes_data_for_pipeline, cluster=cluster,
+            nodes=nodes_without_customized.values())
+
+        # customized nodes
+        nodes_data_for_pipeline.extend(six.moves.filterfalse(keyfunc, data))
+        data[:] = nodes_data_for_pipeline
+
+
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode."""
     objects.Cluster.set_primary_roles(cluster, nodes)
@@ -601,5 +629,8 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     objects.Cluster.prepare_for_deployment(cluster, cluster.nodes)
     serializer = get_serializer_for_cluster(cluster)(orchestrator_graph)
 
-    return serializer.serialize(
+    data = serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)
+
+    _execute_pipeline(data, cluster, nodes, ignore_customized)
+    return data

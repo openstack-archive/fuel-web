@@ -104,6 +104,27 @@ def fire_callback_on_cluster_delete(cluster):
         extension.on_cluster_delete(cluster)
 
 
+def fire_callback_on_deployment_data_serialization(data, **kwargs):
+    for extension in get_all_extensions():
+        extension.process_deployment(data, **kwargs)
+
+
+def fire_callback_on_provisioning_data_serialization(data, **kwargs):
+    for extension in get_all_extensions():
+        extension.process_provisioning(data, **kwargs)
+
+
+class BaseExtensionPipeline(object):
+
+    @classmethod
+    def process_deployment(cls, deployment_data, **kwargs):
+        "Change the deployment_data here"
+
+    @classmethod
+    def process_provisioning(cls, provisioning_data, **kwargs):
+        "Change the provisioning_data here"
+
+
 @six.add_metaclass(abc.ABCMeta)
 class BaseExtension(object):
 
@@ -121,6 +142,17 @@ class BaseExtension(object):
     # This list is required for core and other extensions
     # to find extension with specific functionality.
     provides = []
+    data_pipelines = (BaseExtensionPipeline,)
+
+    @classmethod
+    def process_deployment(cls, deployment_data, **kwargs):
+        for pipeline in cls.data_pipelines:
+            pipeline.process_deployment(deployment_data, **kwargs)
+
+    @classmethod
+    def process_provisioning(cls, provisioning_data, **kwargs):
+        for pipeline in cls.data_pipelines:
+            pipeline.process_provisioning(provisioning_data, **kwargs)
 
     @classmethod
     def alembic_migrations_path(cls):

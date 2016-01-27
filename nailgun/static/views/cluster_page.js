@@ -40,6 +40,24 @@ var ClusterPage = React.createClass({
       modelOrCollection: (props) => props.cluster.get('tasks'),
       renderOn: 'update change'
     }),
+    //backboneMixin({
+    //  modelOrCollection(props) {
+    //    return props.cluster.get('nodeNetworkGroups');
+    //  },
+    //  renderOn: 'change update'
+    //}),
+    backboneMixin({
+      modelOrCollection(props) {
+        return props.cluster.get('networkConfiguration').get('networking_parameters');
+      },
+      renderOn: 'change'
+    }),
+    backboneMixin({
+      modelOrCollection(props) {
+        return props.cluster.get('networkConfiguration').get('networks');
+      },
+      renderOn: 'change reset update'
+    }),
     dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
     dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),
     dispatcherMixin('deploymentTaskStarted', function() {
@@ -227,7 +245,9 @@ var ClusterPage = React.createClass({
   componentWillReceiveProps(newProps) {
     var tab = _.find(this.constructor.getTabs(), {url: newProps.activeTab}).tab;
     if (tab.checkSubroute) {
-      this.setState(tab.checkSubroute(newProps));
+      this.setState(tab.checkSubroute(_.extend({}, newProps, {
+        showAllNetworks: this.state.showAllNetworks
+      })));
     }
   },
   changeLogSelection(selectedLogs) {

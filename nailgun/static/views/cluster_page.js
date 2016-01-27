@@ -89,6 +89,7 @@ var ClusterPage = React.createClass({
       ];
     },
     fetchData(id, activeTab, ...tabOptions) {
+      id = Number(id);
       var cluster, promise, currentClusterId;
       var nodeNetworkGroups = app.nodeNetworkGroups;
       var tab = _.find(this.getTabs(), {url: activeTab}).tab;
@@ -96,7 +97,7 @@ var ClusterPage = React.createClass({
         currentClusterId = app.page.props.cluster.id;
       } catch (ignore) {}
 
-      if (currentClusterId == id) {
+      if (currentClusterId === id) {
         // just another tab has been chosen, do not load cluster again
         cluster = app.page.props.cluster;
         promise = tab.fetchData ? tab.fetchData({cluster: cluster, tabOptions: tabOptions}) :
@@ -240,7 +241,7 @@ var ClusterPage = React.createClass({
     props = props || this.props;
     // FIXME: the following logs-related logic should be moved to Logs tab code
     // to keep parent component tightly coupled to its children
-    if (props.activeTab == 'logs') {
+    if (props.activeTab === 'logs') {
       var selectedLogs;
       if (props.tabOptions[0]) {
         selectedLogs = utils.deserializeTabOptions(_.compact(props.tabOptions).join('/'));
@@ -312,7 +313,7 @@ var ClusterPage = React.createClass({
                   className={
                     url + ' ' + utils.classNames({
                       'cluster-tab': true,
-                      active: this.props.activeTab == url
+                      active: this.props.activeTab === url
                     })
                   }
                   href={'#cluster/' + cluster.id + '/' + url}

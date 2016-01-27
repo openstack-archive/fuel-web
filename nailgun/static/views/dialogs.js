@@ -104,7 +104,7 @@ export var dialogMixin = {
     ));
   },
   rejectResult() {
-    if (this.state.result.state() == 'pending') this.state.result.reject();
+    if (this.state.result.state() === 'pending') this.state.result.reject();
   },
   componentWillUnmount() {
     Backbone.history.off(null, null, this);
@@ -121,13 +121,13 @@ export var dialogMixin = {
   },
   closeOnLinkClick(e) {
     // close dialogs on click of any internal link inside it
-    if (e.target.tagName == 'A' && !e.target.target && e.target.href) this.close();
+    if (e.target.tagName === 'A' && !e.target.target && e.target.href) this.close();
   },
   closeOnEscapeKey(e) {
     if (
       this.props.keyboard !== false &&
       this.props.closeable !== false &&
-      e.key == 'Escape'
+      e.key === 'Escape'
     ) this.close();
     if (_.isFunction(this.onKeyDown)) this.onKeyDown(e);
   },
@@ -612,7 +612,7 @@ export var RemoveClusterDialog = React.createClass({
             <Input
               type='text'
               disabled={this.state.actionInProgress}
-              onChange={(name, value) => this.setState({confirmationError: value != clusterName})}
+              onChange={(name, value) => this.setState({confirmationError: value !== clusterName})}
               onPaste={(e) => e.preventDefault()}
               autoFocus
             />
@@ -636,7 +636,7 @@ export var RemoveClusterDialog = React.createClass({
         className='btn btn-danger remove-cluster-btn'
         disabled={this.state.actionInProgress || this.state.confirmation &&
          _.isUndefined(this.state.confirmationError) || this.state.confirmationError}
-        onClick={this.props.cluster.get('status') == 'new' || this.state.confirmation ?
+        onClick={this.props.cluster.get('status') === 'new' || this.state.confirmation ?
          this.removeCluster : this.showConfirmationForm}
       >
         {i18n('common.delete_button')}
@@ -682,7 +682,7 @@ export var ResetEnvironmentDialog = React.createClass({
               name='name'
               disabled={this.state.actionInProgress}
               onChange={(name, value) => {
-                this.setState({confirmationError: value != clusterName});
+                this.setState({confirmationError: value !== clusterName});
               }}
               onPaste={(e) => e.preventDefault()}
               autoFocus
@@ -823,7 +823,7 @@ export var ShowNodeInfoDialog = React.createClass({
   },
   setDialogTitle() {
     var name = this.props.node && this.props.node.get('name');
-    if (name && name != this.state.title) this.setState({title: name});
+    if (name && name !== this.state.title) this.setState({title: name});
   },
   assignAccordionEvents() {
     $('.panel-collapse', ReactDOM.findDOMNode(this))
@@ -863,10 +863,10 @@ export var ShowNodeInfoDialog = React.createClass({
   },
   onHostnameInputKeydown(e) {
     this.setState({hostnameChangingError: null});
-    if (e.key == 'Enter') {
+    if (e.key === 'Enter') {
       this.setState({actionInProgress: true});
       var hostname = _.trim(this.refs.hostname.getInputDOMNode().value);
-      (hostname != this.props.node.get('hostname') ?
+      (hostname !== this.props.node.get('hostname') ?
         this.props.node.save({hostname: hostname}, {patch: true, wait: true}) :
         $.Deferred().resolve()
       )
@@ -878,7 +878,7 @@ export var ShowNodeInfoDialog = React.createClass({
         this.refs.hostname.getInputDOMNode().focus();
       })
       .done(this.endRenaming);
-    } else if (e.key == 'Escape') {
+    } else if (e.key === 'Escape') {
       this.endRenaming();
       e.stopPropagation();
       ReactDOM.findDOMNode(this).focus();
@@ -957,7 +957,7 @@ export var ShowNodeInfoDialog = React.createClass({
           {_.map(groups, (group, groupIndex) => {
             var groupEntries = meta[group];
             var subEntries = [];
-            if (group == 'interfaces' || group == 'disks') {
+            if (group === 'interfaces' || group === 'disks') {
               groupEntries = _.sortBy(groupEntries, 'name');
             }
             if (_.isPlainObject(groupEntries)) {
@@ -1047,7 +1047,7 @@ export var ShowNodeInfoDialog = React.createClass({
                       !_.isUndefined(groupEntries)) &&
                       <div>{groupEntries}</div>
                     }
-                    {group == 'config' &&
+                    {group === 'config' &&
                       <div className='vms-config'>
                         <Input
                           ref='vms-config'
@@ -1250,7 +1250,7 @@ export var DeleteNodesDialog = React.createClass({
     this.setState({actionInProgress: true});
     var nodes = new models.Nodes(this.props.nodes.map((node) => {
       // mark deployed node as pending deletion
-      if (node.get('status') == 'ready') return {
+      if (node.get('status') === 'ready') return {
         id: node.id,
         pending_deletion: true
       };
@@ -1300,12 +1300,12 @@ export var ChangePasswordDialog = React.createClass({
   },
   getError(name) {
     var ns = 'dialog.change_password.';
-    if (name == 'currentPassword' && this.state.validationError) {
+    if (name === 'currentPassword' && this.state.validationError) {
       return i18n(ns + 'wrong_current_password');
     }
-    if (this.state.newPassword != this.state.confirmationPassword) {
-      if (name == 'confirmationPassword') return i18n(ns + 'new_password_mismatch');
-      if (name == 'newPassword') return '';
+    if (this.state.newPassword !== this.state.confirmationPassword) {
+      if (name === 'confirmationPassword') return i18n(ns + 'new_password_mismatch');
+      if (name === 'newPassword') return '';
     }
     return null;
   },
@@ -1323,10 +1323,10 @@ export var ChangePasswordDialog = React.createClass({
             type='password'
             label={i18n(ns + translationKeys[index])}
             maxLength='50'
-            onChange={this.handleChange.bind(this, (name == 'currentPassword'))}
+            onChange={this.handleChange.bind(this, (name === 'currentPassword'))}
             onKeyDown={this.handleKeyDown}
             disabled={this.state.actionInProgress}
-            toggleable={name == 'currentPassword'}
+            toggleable={name === 'currentPassword'}
             defaultValue={this.state[name]}
             error={this.getError(name)}
           />;
@@ -1352,14 +1352,14 @@ export var ChangePasswordDialog = React.createClass({
   },
   isPasswordChangeAvailable() {
     return this.state.newPassword.length && !this.state.validationError &&
-      (this.state.newPassword == this.state.confirmationPassword);
+      (this.state.newPassword === this.state.confirmationPassword);
   },
   handleKeyDown(e) {
-    if (e.key == 'Enter') {
+    if (e.key === 'Enter') {
       e.preventDefault();
       this.changePassword();
     }
-    if (e.key == ' ') {
+    if (e.key === ' ') {
       e.preventDefault();
       return false;
     }
@@ -1378,7 +1378,7 @@ export var ChangePasswordDialog = React.createClass({
       this.setState({actionInProgress: true});
       keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
         .done(() => {
-          dispatcher.trigger(this.state.newPassword == keystoneClient.DEFAULT_PASSWORD ?
+          dispatcher.trigger(this.state.newPassword === keystoneClient.DEFAULT_PASSWORD ?
             'showDefaultPasswordWarning' : 'hideDefaultPasswordWarning');
           app.user.set({token: keystoneClient.token});
           this.close();
@@ -1497,7 +1497,7 @@ export var RegistrationDialog = React.createClass({
   },
   checkCountry() {
     var country = this.props.registrationForm.attributes.credentials.country.value;
-    return !(country == 'Canada' || country == 'United States' || country == 'us');
+    return !(country === 'Canada' || country === 'United States' || country === 'us');
   },
   renderBody() {
     var registrationForm = this.props.registrationForm;
@@ -1532,20 +1532,20 @@ export var RegistrationDialog = React.createClass({
             var classes = {
               'col-md-12': !_.contains(halfWidthField, inputName),
               'col-md-6': _.contains(halfWidthField, inputName),
-              'text-center': inputName == 'agree'
+              'text-center': inputName === 'agree'
             };
             return <Input
               ref={inputName}
               key={inputName}
               name={inputName}
-              label={inputName != 'agree' ? input.label : this.getAgreementLink(input.description)}
+              label={inputName !== 'agree' ? input.label : this.getAgreementLink(input.description)}
               {... _.pick(input, 'type', 'value')}
-              children={input.type == 'select' && this.composeOptions(input.values)}
+              children={input.type === 'select' && this.composeOptions(input.values)}
               wrapperClassName={utils.classNames(classes)}
               onChange={this.onChange}
               error={inputError}
-              disabled={actionInProgress || (inputName == 'region' && this.checkCountry())}
-              description={inputName != 'agree' && input.description}
+              disabled={actionInProgress || (inputName === 'region' && this.checkCountry())}
+              description={inputName !== 'agree' && input.description}
               maxLength='50'
             />;
           })}
@@ -1744,7 +1744,7 @@ export var CreateNodeNetworkGroupDialog = React.createClass({
     ];
   },
   onKeyDown(e) {
-    if (e.key == 'Enter') {
+    if (e.key === 'Enter') {
       e.preventDefault();
       this.createNodeNetworkGroup();
     }

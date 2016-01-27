@@ -66,7 +66,7 @@ export default {
     var currentAttributes = _.cloneDeep(this.props.settings.attributes);
     // Saving user contact data to Statistics section
     _.each(response, (value, name) => {
-      if (name != 'password') {
+      if (name !== 'password') {
         var path = this.props.settings.makePath('statistics', name, 'value');
         this.props.settings.set(path, value);
         this.props.tracking.set(path, value);
@@ -136,7 +136,7 @@ export default {
     if (
       this.checkRestrictions('metadata', 'hide').result ||
       this.checkRestrictions(settingName, 'hide').result ||
-      setting.type == 'hidden'
+      setting.type === 'hidden'
     ) return null;
     var error = this.getError(model, settingName);
     var disabled = this.checkRestrictions('metadata').result ||
@@ -150,7 +150,7 @@ export default {
       checked={!disabled && setting.value}
       value={setting.value}
       disabled={disabled}
-      inputClassName={setting.type == 'text' && 'input-xlarge'}
+      inputClassName={setting.type === 'text' && 'input-xlarge'}
       wrapperClassName={wrapperClassName}
       onChange={this.onCheckboxChange}
       error={error && i18n(error)}

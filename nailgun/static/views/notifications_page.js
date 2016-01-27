@@ -84,7 +84,7 @@ Notification = React.createClass({
     notification.save({status: 'read'});
   },
   onNotificationClick() {
-    if (this.props.notification.get('status') == 'unread') {
+    if (this.props.notification.get('status') === 'unread') {
       this.markAsRead();
     }
     var nodeId = this.props.notification.get('node_id');
@@ -96,9 +96,9 @@ Notification = React.createClass({
     var topic = this.props.notification.get('topic');
     var notificationClasses = {
       'col-xs-12 notification': true,
-      'text-danger': topic == 'error',
-      'text-warning': topic == 'warning',
-      unread: this.props.notification.get('status') == 'unread'
+      'text-danger': topic === 'error',
+      'text-warning': topic === 'warning',
+      unread: this.props.notification.get('status') === 'unread'
     };
     var iconClass = {
       error: 'glyphicon-exclamation-sign',

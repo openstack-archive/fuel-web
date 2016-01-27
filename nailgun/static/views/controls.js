@@ -65,7 +65,7 @@ export var Input = React.createClass({
     this.setState({visible: !this.state.visible});
   },
   isCheckboxOrRadio() {
-    return this.props.type == 'radio' || this.props.type == 'checkbox';
+    return this.props.type === 'radio' || this.props.type === 'checkbox';
   },
   getInputDOMNode() {
     return ReactDOM.findDOMNode(this.refs.input);
@@ -108,7 +108,7 @@ export var Input = React.createClass({
       var input = this.getInputDOMNode();
       return this.props.onChange(
         this.props.name,
-        this.props.type == 'checkbox' ? input.checked : input.value
+        this.props.type === 'checkbox' ? input.checked : input.value
       );
     }
   },
@@ -116,7 +116,7 @@ export var Input = React.createClass({
     e.target.select();
   },
   renderInput() {
-    var classes = {'form-control': this.props.type != 'range'};
+    var classes = {'form-control': this.props.type !== 'range'};
     classes[this.props.inputClassName] = this.props.inputClassName;
     var props = {
       ref: 'input',
@@ -125,7 +125,7 @@ export var Input = React.createClass({
       type: (this.props.toggleable && this.state.visible) ? 'text' : this.props.type,
       className: utils.classNames(classes)
     };
-    if (this.props.type == 'file') {
+    if (this.props.type === 'file') {
       props.onChange = this.readFile;
     } else {
       props.onChange = this.props.debounce ? this.debouncedChange : this.onChange;
@@ -136,15 +136,15 @@ export var Input = React.createClass({
     var inputWrapperClasses = {
       'input-group': this.props.toggleable,
       'custom-tumbler': isCheckboxOrRadio,
-      textarea: this.props.type == 'textarea'
+      textarea: this.props.type === 'textarea'
     };
-    if (this.props.type == 'file') {
+    if (this.props.type === 'file') {
       input = <form ref='form'>{input}</form>;
     }
     return (
       <div key='input-group' className={utils.classNames(inputWrapperClasses)}>
         {input}
-        {this.props.type == 'file' &&
+        {this.props.type === 'file' &&
           <div className='input-group'>
             <input
               className='form-control file-name'
@@ -217,7 +217,7 @@ export var Input = React.createClass({
     return (<div className={utils.classNames(classes)}>{children}</div>);
   },
   render() {
-    if (this.props.type == 'hidden' && !this.props.description && !this.props.label) return null;
+    if (this.props.type === 'hidden' && !this.props.description && !this.props.label) return null;
     return this.renderWrapper(this.isCheckboxOrRadio() ?
       [
         this.renderLabel(this.renderInput()),

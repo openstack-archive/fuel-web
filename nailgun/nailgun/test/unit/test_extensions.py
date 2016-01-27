@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import mock
 
 from nailgun.errors import errors
 from nailgun.extensions import BaseExtension
+from nailgun.extensions import BasePipeline
 from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.extensions import fire_callback_on_node_create
@@ -26,6 +28,9 @@ from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.extensions import get_extension
 from nailgun.extensions import node_extension_call
+from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator import provisioning_serializers
 from nailgun.test.base import BaseTestCase
 
 
@@ -60,9 +65,9 @@ class TestBaseExtension(BaseTestCase):
             'ext_name-1.0.0')
 
 
-def make_mock_extensions():
+def make_mock_extensions(names=('ex1', 'ex2')):
     mocks = []
-    for name in ['ex1', 'ex2']:
+    for name in names:
         # NOTE(eli): since 'name' is reserved world
         # for mock constructor, we should assign
         # name explicitly
@@ -193,3 +198,230 @@ class TestExtensionUtils(BaseTestCase):
 
         for ext in get_m.return_value:
             ext.on_cluster_delete.assert_called_once_with(cluster)
+
+
+class TestPipeline(TestBaseExtension):
+
+    def _create_cluster_with_extensions(self, nodes_kwargs=None):
+        if nodes_kwargs is None:
+            nodes_kwargs = [
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=nodes_kwargs)
+
+        cluster = self.env.clusters[0]
+        cluster.extensions = [self.extension.name, 'volume_manager']
+        self.db.flush()
+
+        return cluster
+
+    @mock.patch('nailgun.orchestrator.deployment_serializers.'
+                'fire_callback_on_deployment_data_serialization')
+    def test_deployment_serialization(self, mfire_callback):
+        cluster = self._create_cluster_with_extensions()
+        graph = deployment_graph.AstuteGraph(cluster)
+        deployment_serializers.serialize(graph, cluster, cluster.nodes)
+
+        self.assertTrue(mfire_callback.called)
+        self.assertEqual(mfire_callback.call_args[1], {
+            'cluster': cluster,
+            'nodes': cluster.nodes,
+        })
+
+    @mock.patch.object(deployment_graph.AstuteGraph, 'deploy_task_serialize')
+    def test_deployment_serialization_ignore_customized(self, _):
+        cluster = self._create_cluster_with_extensions()
+
+        data = [{"uid": n.uid} for n in cluster.nodes]
+        mserializer = mock.MagicMock()
+        mserializer.return_value = mock.MagicMock()
+        mserializer.return_value.serialize.return_value = data
+
+        with mock.patch(
+                'nailgun.orchestrator.deployment_serializers.'
+                'get_serializer_for_cluster',
+                return_value=mserializer):
+            with mock.patch('nailgun.orchestrator.deployment_serializers.'
+                            'fire_callback_on_deployment_data_serialization'
+                            ) as mfire_callback:
+
+                replaced_data = ["it's", "something"]
+                with mock.patch.object(
+                        cluster.nodes[0], 'replaced_deployment_info',
+                        new_callable=mock.Mock(return_value=replaced_data)):
+
+                    graph = deployment_graph.AstuteGraph(cluster)
+                    deployment_serializers.serialize(
+                        graph, cluster, cluster.nodes, ignore_customized=True)
+
+        mfire_callback.assert_called_once_with(data, cluster=cluster,
+                                               nodes=cluster.nodes)
+
+    @mock.patch.object(deployment_graph.AstuteGraph, 'deploy_task_serialize')
+    def test_deployment_serialization_ignore_customized_false(self, _):
+        cluster = self._create_cluster_with_extensions(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+
+        data = [{"uid": n.uid} for n in cluster.nodes]
+        expected_data = copy.deepcopy(data[1:])
+
+        def assert_equal_in_call_time(*args, **kwargs):
+            call_data = args[0]
+            assert call_data == expected_data
+            assert kwargs['cluster'] is cluster
+            assert sorted(kwargs['nodes']) == sorted(cluster.nodes[1:])
+
+        mserializer = mock.MagicMock()
+        mserializer.return_value = mock.MagicMock()
+        mserializer.return_value.serialize.return_value = data
+
+        with mock.patch(
+                'nailgun.orchestrator.deployment_serializers.'
+                'get_serializer_for_cluster',
+                return_value=mserializer):
+            with mock.patch(
+                    'nailgun.orchestrator.deployment_serializers.'
+                    'fire_callback_on_deployment_data_serialization',
+                    # NOTE(sbrzeczkowski) it must be tested in this way,
+                    # because args and kwargs are mutable in this case
+                    side_effect=assert_equal_in_call_time):
+
+                replaced_data = ["it's", "something"]
+                with mock.patch.object(
+                        cluster.nodes[0], 'replaced_deployment_info',
+                        new_callable=mock.Mock(return_value=replaced_data)):
+
+                    graph = deployment_graph.AstuteGraph(cluster)
+                    deployment_serializers.serialize(
+                        graph, cluster, cluster.nodes, ignore_customized=False)
+
+    def test_provisioning_serialization_ignore_customized(self):
+        cluster = self._create_cluster_with_extensions()
+
+        data = {"nodes": cluster.nodes}
+        mserializer = mock.MagicMock()
+        mserializer.serialize.return_value = data
+
+        with mock.patch(
+                'nailgun.orchestrator.provisioning_serializers.'
+                'get_serializer_for_cluster',
+                return_value=mserializer):
+            with mock.patch('nailgun.orchestrator.provisioning_serializers.'
+                            'fire_callback_on_provisioning_data_serialization'
+                            ) as mfire_callback:
+
+                replaced_data = {"it's": "something"}
+                with mock.patch.object(
+                        cluster.nodes[0], 'replaced_provisioning_info',
+                        new_callable=mock.Mock(return_value=replaced_data)):
+
+                    provisioning_serializers.serialize(
+                        cluster, cluster.nodes, ignore_customized=True)
+
+        mfire_callback.assert_called_once_with(data, cluster=cluster,
+                                               nodes=cluster.nodes)
+
+    def test_provisioning_serialization_ignore_customized_false(self):
+        cluster = self._create_cluster_with_extensions(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+
+        data = {"nodes": [{"uid": n.uid} for n in cluster.nodes]}
+        expected_data = copy.deepcopy(data["nodes"][1:])
+
+        def assert_equal_in_call_time(*args, **kwargs):
+            call_data = args[0]
+            assert call_data["nodes"] == expected_data
+            assert kwargs['cluster'] is cluster
+            assert sorted(kwargs['nodes']) == sorted(cluster.nodes[1:])
+
+        mserializer = mock.MagicMock()
+        mserializer.serialize.return_value = data
+
+        with mock.patch(
+                'nailgun.orchestrator.provisioning_serializers.'
+                'get_serializer_for_cluster',
+                return_value=mserializer):
+            with mock.patch(
+                    'nailgun.orchestrator.provisioning_serializers.'
+                    'fire_callback_on_provisioning_data_serialization',
+                    # NOTE(sbrzeczkowski) it must be tested in this way,
+                    # because args and kwargs are mutable in this case
+                    side_effect=assert_equal_in_call_time):
+
+                replaced_data = {"it's": "something"}
+                with mock.patch.object(
+                        cluster.nodes[0], 'replaced_provisioning_info',
+                        new_callable=mock.Mock(return_value=replaced_data)):
+
+                    provisioning_serializers.serialize(
+                        cluster, cluster.nodes, ignore_customized=False)
+
+    @mock.patch('nailgun.orchestrator.provisioning_serializers.'
+                'fire_callback_on_provisioning_data_serialization')
+    def test_provisioning_serialization(self, mfire_callback):
+        cluster = self._create_cluster_with_extensions()
+        provisioning_serializers.serialize(cluster, cluster.nodes)
+
+        self.assertTrue(mfire_callback.called)
+        self.assertEqual(mfire_callback.call_args[1], {
+            'cluster': cluster,
+            'nodes': cluster.nodes,
+        })
+
+    def test_pipeline_change_data(self):
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'roles': ['controller'], 'pending_addition': True}]
+        )
+        cluster = self.env.clusters[0]
+        cluster.extensions = [self.extension.name]
+        self.db.flush()
+
+        class PipelinePlus1(BasePipeline):
+
+            @classmethod
+            def process_provisioning(cls, data, **kwargs):
+                data['key'] += 1
+
+        class PipelinePlus2(BasePipeline):
+
+            @classmethod
+            def process_provisioning(cls, data, **kwargs):
+                data['key'] += 2
+
+        class Extension(BaseExtension):
+            name = 'ext_name'
+            version = '1.0.0'
+            description = 'ext description'
+            data_pipelines = (PipelinePlus1, PipelinePlus2)
+
+        extension = Extension()
+
+        data = {'key': 0, 'nodes': []}
+
+        mserializer = mock.MagicMock()
+        mserializer.serialize.return_value = data
+
+        with mock.patch('nailgun.extensions.manager.get_all_extensions',
+                        return_value=[extension]):
+            with mock.patch('nailgun.orchestrator.provisioning_serializers.'
+                            'get_serializer_for_cluster',
+                            return_value=mserializer):
+                provisioning_serializers.serialize(cluster, cluster.nodes)
+
+        self.assertEqual(data['key'], 3)

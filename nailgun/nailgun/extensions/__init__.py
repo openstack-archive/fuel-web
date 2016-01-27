@@ -15,6 +15,7 @@
 #    under the License.
 
 from nailgun.extensions.base import BaseExtension
+from nailgun.extensions.base import BaseExtensionPipeline
 from nailgun.extensions.manager import get_extension
 from nailgun.extensions.manager import get_all_extensions
 from nailgun.extensions.manager import node_extension_call
@@ -24,3 +25,7 @@ from nailgun.extensions.manager import fire_callback_on_node_create
 from nailgun.extensions.manager import fire_callback_on_node_update
 from nailgun.extensions.manager import fire_callback_on_node_reset
 from nailgun.extensions.manager import fire_callback_on_cluster_delete
+from nailgun.extensions.base import \
+    fire_callback_on_deployment_data_serialization
+from nailgun.extensions.base import \
+    fire_callback_on_provisioning_data_serialization

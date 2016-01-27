@@ -1623,7 +1623,8 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
                 "sort": [{"status": "asc"}],
                 "filter_by_labels": {},
                 "sort_by_labels": [],
-                "search": ""
+                "search": "",
+                "show_all_node_groups": False
             },
             "statistics": {
                 "send_anonymous_statistic": {

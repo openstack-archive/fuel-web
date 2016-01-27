@@ -80,7 +80,8 @@ class Cluster(Base):
             "sort": [{"roles": "asc"}],
             "filter_by_labels": {},
             "sort_by_labels": [],
-            "search": ""
+            "search": "",
+            "show_all_node_groups": False
         }),
     )
     name = Column(UnicodeText, unique=True, nullable=False)

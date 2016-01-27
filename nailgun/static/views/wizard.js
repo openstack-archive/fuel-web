@@ -490,10 +490,10 @@ var Storage = React.createClass({
     var components = this.components;
     _.each(['block', 'object', 'image', 'ephemeral'], (subtype) => {
       var sectionComponents = _.filter(components,
-          (component) => component.get('subtype') == subtype);
+          (component) => component.get('subtype') === subtype);
       var isRadio = this.areComponentsMutuallyExclusive(sectionComponents);
       this.processRestrictions(sectionComponents,
-          this.constructor.panesForRestrictions, (isRadio ? sectionComponents : []));
+          this.constructor.panesForRestrictions, isRadio ? sectionComponents : []);
       this.processCompatible(this.props.allComponents, sectionComponents,
           this.constructor.panesForRestrictions, isRadio ? sectionComponents : []);
     });

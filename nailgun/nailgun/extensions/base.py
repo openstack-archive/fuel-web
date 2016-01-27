@@ -21,6 +21,25 @@ import abc
 import six
 
 
+class BasePipeline(object):
+
+    @classmethod
+    def process_deployment(cls, deployment_data, **kwargs):
+        """Change the deployment_data.
+
+        :param deployment_data: serialized data
+        """
+        return deployment_data
+
+    @classmethod
+    def process_provisioning(cls, provisioning_data, **kwargs):
+        """Change the provisioning_data.
+
+        :param provisioning_data: serialized data
+        """
+        return provisioning_data
+
+
 @six.add_metaclass(abc.ABCMeta)
 class BaseExtension(object):
     """Base class for Nailgun extension
@@ -46,6 +65,7 @@ class BaseExtension(object):
 
     urls = []
     provides = []
+    data_pipelines = []
 
     @classmethod
     def alembic_migrations_path(cls):

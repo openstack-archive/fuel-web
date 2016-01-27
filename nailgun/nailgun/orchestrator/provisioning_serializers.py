@@ -22,6 +22,7 @@ import netaddr
 import six
 
 from nailgun import consts
+from nailgun.extensions import fire_callback_on_provisioning_data_serialization
 from nailgun.extensions import node_extension_call
 from nailgun.logger import logger
 from nailgun import objects
@@ -43,13 +44,15 @@ class ProvisioningSerializer(MellanoxMixin):
             cluster.attributes
         )
         serialized_nodes = []
-        keyfunc = lambda node: bool(node.replaced_provisioning_info)
-        for customized, node_group in groupby(nodes, keyfunc):
+        for customized, node_group in groupby(
+                nodes, lambda node: bool(node.replaced_provisioning_info)):
+
             if customized and not ignore_customized:
                 serialized_nodes.extend(cls.serialize_customized(node_group))
             else:
                 serialized_nodes.extend(
                     cls.serialize_nodes(cluster_attrs, node_group))
+
         serialized_info = (cluster.replaced_provisioning_info or
                            cls.serialize_cluster_info(cluster_attrs, nodes))
         serialized_info['fault_tolerance'] = cls.fault_tolerance(cluster,
@@ -366,14 +369,45 @@ def get_serializer_for_cluster(cluster):
     return ProvisioningSerializer90
 
 
+def _execute_pipeline(data, cluster, nodes, ignore_customized):
+    "Executes pipelines depending on ignore_customized boolean."
+    if ignore_customized:
+        return fire_callback_on_provisioning_data_serialization(
+            data, cluster=cluster, nodes=nodes)
+
+    nodes_without_customized = {n.uid: n for n in nodes
+                                if not n.replaced_provisioning_info}
+
+    def keyfunc(node):
+        return node['uid'] in nodes_without_customized
+
+    temp_nodes = data['nodes']
+
+    # not customized nodes
+    data['nodes'] = list(six.moves.filter(keyfunc, temp_nodes))
+
+    # NOTE(sbrzeczkowski): pipelines must be executed for nodes
+    # which don't have replaced_provisioning_info specified
+    updated_data = fire_callback_on_provisioning_data_serialization(
+        data, cluster=cluster,
+        nodes=list(six.itervalues(nodes_without_customized)))
+
+    # customized nodes
+    updated_data['nodes'].extend(six.moves.filterfalse(keyfunc, temp_nodes))
+
+    return updated_data
+
+
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""
 
     objects.Cluster.prepare_for_provisioning(cluster, nodes)
     serializer = get_serializer_for_cluster(cluster)
 
-    return serializer.serialize(
+    data = serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)
+
+    return _execute_pipeline(data, cluster, nodes, ignore_customized)
 
 
 class ProvisioningSerializer70(ProvisioningSerializer61):

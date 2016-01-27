@@ -22,6 +22,7 @@ import netaddr
 import six
 
 from nailgun import consts
+from nailgun.extensions import fire_callback_on_provisioning_data_serialization
 from nailgun.extensions import node_extension_call
 from nailgun.logger import logger
 from nailgun import objects
@@ -42,13 +43,15 @@ class ProvisioningSerializer(MellanoxMixin):
             cluster.attributes
         )
         serialized_nodes = []
-        keyfunc = lambda node: bool(node.replaced_provisioning_info)
-        for customized, node_group in groupby(nodes, keyfunc):
+        for customized, node_group in groupby(
+                nodes, lambda node: bool(node.replaced_provisioning_info)):
+
             if customized and not ignore_customized:
                 serialized_nodes.extend(cls.serialize_customized(node_group))
             else:
                 serialized_nodes.extend(
                     cls.serialize_nodes(cluster_attrs, node_group))
+
         serialized_info = (cluster.replaced_provisioning_info or
                            cls.serialize_cluster_info(cluster_attrs, nodes))
         serialized_info['fault_tolerance'] = cls.fault_tolerance(cluster,
@@ -369,8 +372,11 @@ def serialize(cluster, nodes, ignore_customized=False):
     objects.Cluster.prepare_for_provisioning(cluster, nodes)
     serializer = get_serializer_for_cluster(cluster)
 
-    return serializer.serialize(
+    data = serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)
+    fire_callback_on_provisioning_data_serialization(data, cluster=cluster,
+                                                     nodes=nodes)
+    return data
 
 
 class ProvisioningSerializer70(ProvisioningSerializer61):

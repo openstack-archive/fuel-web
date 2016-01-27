@@ -11,9 +11,6 @@
     no-undefined: 0 # we're ok with using undefined
     no-process-env: 0 # we use it in a few places and are ok with it
 
-    # to be fixed and enabled
-    eqeqeq: 0
-
     # extra rules
     no-unexpected-multiline: 2
     dot-location: [2, property]

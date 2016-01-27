@@ -316,7 +316,7 @@ gulp.task('build', function(cb) {
 
     if (stats.hasErrors()) return cb('Build failed');
 
-    if (targetDir != sourceDir) {
+    if (targetDir !== sourceDir) {
       var indexFilter = filter('index.html');
       gulp
         .src([

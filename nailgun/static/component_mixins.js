@@ -52,7 +52,7 @@ export var unsavedChangesMixin = {
   },
   onLeave(e) {
     var href = $(e.currentTarget).attr('href');
-    if (Backbone.history.getHash() != href.substr(1) && _.result(this, 'hasChanges')) {
+    if (Backbone.history.getHash() !== href.substr(1) && _.result(this, 'hasChanges')) {
       e.preventDefault();
 
       DiscardSettingsChangesDialog

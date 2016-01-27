@@ -70,24 +70,24 @@ class Router extends Backbone.Router {
       var specialRoutes = [
         {name: 'login', condition: () => {
           var result = app.version.get('auth_required') && !app.user.get('authenticated');
-          if (result && currentUrl != 'login' && currentUrl != 'logout') {
+          if (result && currentUrl !== 'login' && currentUrl !== 'logout') {
             this.returnUrl = currentUrl;
           }
           return result;
         }},
         {name: 'welcome', condition: (previousUrl) => {
-          return previousUrl != 'logout' &&
+          return previousUrl !== 'logout' &&
             !app.fuelSettings.get('statistics.user_choice_saved.value');
         }}
       ];
       _.each(specialRoutes, (route) => {
         if (route.condition(currentRouteName)) {
-          if (currentRouteName != route.name) {
+          if (currentRouteName !== route.name) {
             preventRouting = true;
             this.navigate(route.name, {trigger: true, replace: true});
           }
           return false;
-        } else if (currentRouteName == route.name) {
+        } else if (currentRouteName === route.name) {
           preventRouting = true;
           this.navigate('', {trigger: true});
           return false;
@@ -253,7 +253,7 @@ class App {
     if (originalSyncMethod.patched) return;
     Backbone.sync = function(method, model, options = {}) {
       // our server doesn't support PATCH, so use PUT instead
-      if (method == 'patch') {
+      if (method === 'patch') {
         method = 'update';
       }
       // add auth token to header if auth is enabled
@@ -266,7 +266,7 @@ class App {
             return originalSyncMethod.call(this, method, model, options);
           })
           .fail((response) => {
-            if (response && response.status == 401) {
+            if (response && response.status === 401) {
               app.logout();
             }
           });

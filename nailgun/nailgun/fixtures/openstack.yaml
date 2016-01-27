@@ -1946,11 +1946,11 @@
                 priority: null
               - type: "rpm"
                 name: "mos-updates"
-                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos6/updates/x86_64"
+                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos7-fuel/updates/x86_64"
                 priority: null
               - type: "rpm"
                 name: "mos-security"
-                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos6/security/x86_64"
+                uri: "http://mirror.fuel-infra.org/mos-repos/centos/mos{cluster.release.environment_version}-centos7-fuel/security/x86_64"
                 priority: null
               - type: "rpm"
                 name: "Auxiliary"

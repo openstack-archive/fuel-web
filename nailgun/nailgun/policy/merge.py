@@ -51,6 +51,10 @@ class NetworkRoleMergePolicy(MergePolicy):
         :return: the patched VIPs
         """
         seen = dict((vip['name'], vip) for vip in target)
+
+        if len(patch) == 0:
+            return []
+
         for vip in patch:
             if vip['name'] in seen:
                 if vip != seen[vip['name']]:

@@ -884,195 +884,219 @@ export var ShowNodeInfoDialog = React.createClass({
       ReactDOM.findDOMNode(this).focus();
     }
   },
-  renderBody() {
-    var node = this.props.node;
+  renderNodeSummary() {
+    var {cluster, node, nodeNetworkGroup} = this.props;
+    return (
+      <div className='node-summary'>
+        {cluster &&
+          <div><strong>{i18n('dialog.show_node.cluster')}: </strong>
+            {cluster.get('name')}
+          </div>
+        }
+        <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>
+          {node.get('manufacturer') || i18n('common.not_available')}
+        </div>
+        {nodeNetworkGroup &&
+          <div>
+            <strong>{i18n('dialog.show_node.node_network_group')}: </strong>
+            {nodeNetworkGroup.get('name')}
+          </div>
+        }
+        <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>
+          {node.get('mac') || i18n('common.not_available')}
+        </div>
+        <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>
+          {
+            (node.get('meta').system || {}).fqdn ||
+            node.get('fqdn') ||
+            i18n('common.not_available')
+          }
+        </div>
+        <div className='change-hostname'>
+          <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
+          {this.state.isRenaming ?
+            <Input
+              ref='hostname'
+              type='text'
+              defaultValue={node.get('hostname')}
+              inputClassName={'input-sm'}
+              error={this.state.hostnameChangingError}
+              disabled={this.state.actionInProgress}
+              onKeyDown={this.onHostnameInputKeydown}
+              selectOnFocus
+              autoFocus
+            />
+          :
+            <span>
+              <span className='node-hostname'>
+                {node.get('hostname') || i18n('common.not_available')}
+              </span>
+              {(node.get('pending_addition') || !node.get('cluster')) &&
+                <button
+                  className='btn-link glyphicon glyphicon-pencil'
+                  onClick={this.startHostnameRenaming}
+                />
+              }
+            </span>
+          }
+        </div>
+      </div>
+    );
+  },
+  renderNodeHardware() {
+    var {node} = this.props;
     var meta = node.get('meta');
-    if (!meta) return <ProgressBar />;
+
     var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
+    if (this.state.VMsConf) groups.push('config');
+
     var sortOrder = {
       disks: ['name', 'model', 'size'],
       interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed',
         'driver', 'bus_info']
     };
-    if (this.state.VMsConf) groups.push('config');
 
+    return (
+      <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>
+        {_.map(groups, (group, groupIndex) => {
+          var groupEntries = meta[group];
+          if (group === 'interfaces' || group === 'disks') {
+            groupEntries = _.sortBy(groupEntries, 'name');
+          }
+          var subEntries = _.isPlainObject(groupEntries) ?
+            _.find(_.values(groupEntries), _.isArray) : [];
+
+          return (
+            <div className='panel panel-default' key={group}>
+              <div
+                className='panel-heading'
+                role='tab'
+                id={'heading' + group}
+                onClick={this.toggle.bind(this, groupIndex)}
+              >
+                <div className='panel-title'>
+                  <div
+                    data-parent='#accordion'
+                    aria-expanded='true'
+                    aria-controls={'body' + group}
+                  >
+                    <strong>{i18n('node_details.' + group, {defaultValue: group})}</strong>
+                    {this.showSummary(meta, group)}
+                    <i className='glyphicon glyphicon-plus pull-right' />
+                  </div>
+                </div>
+              </div>
+              <div
+                className='panel-collapse collapse'
+                role='tabpanel'
+                aria-labelledby={'heading' + group}
+                ref={'togglable_' + groupIndex}
+              >
+                <div className='panel-body enable-selection'>
+                  {_.isArray(groupEntries) &&
+                    <div>
+                      {_.map(groupEntries, (entry, entryIndex) => {
+                        return (
+                          <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
+                            {_.map(utils.sortEntryProperties(entry, sortOrder[group]),
+                              (propertyName) => {
+                                if (
+                                  !_.isPlainObject(entry[propertyName]) &&
+                                  !_.isArray(entry[propertyName])
+                                ) {
+                                  return this.renderNodeInfo(
+                                    propertyName,
+                                    this.showPropertyValue(group, propertyName, entry[propertyName])
+                                  );
+                                }
+                              }
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  }
+                  {_.isPlainObject(groupEntries) &&
+                    <div>
+                      {_.map(groupEntries, (propertyValue, propertyName) => {
+                        if (
+                          !_.isPlainObject(propertyValue) &&
+                          !_.isArray(propertyValue) &&
+                          !_.isNumber(propertyName)
+                        ) {
+                          return this.renderNodeInfo(
+                            propertyName,
+                            this.showPropertyValue(group, propertyName, propertyValue)
+                          );
+                        }
+                      })}
+                      {!_.isEmpty(subEntries) &&
+                        <div>
+                          {_.map(subEntries, (subentry, subentrysIndex) => {
+                            return (
+                              <div
+                                className='nested-object'
+                                key={'subentries_' + groupIndex + subentrysIndex}
+                              >
+                                {_.map(utils.sortEntryProperties(subentry), (propertyName) => {
+                                  return this.renderNodeInfo(
+                                    propertyName,
+                                    this.showPropertyValue(
+                                      group, propertyName, subentry[propertyName]
+                                    )
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      }
+                    </div>
+                  }
+                  {
+                    !_.isPlainObject(groupEntries) &&
+                    !_.isArray(groupEntries) &&
+                    !_.isUndefined(groupEntries) &&
+                      <div>{groupEntries}</div>
+                  }
+                  {group === 'config' &&
+                    <div className='vms-config'>
+                      <Input
+                        ref='vms-config'
+                        type='textarea'
+                        label={i18n('node_details.vms_config_msg')}
+                        error={this.state.VMsConfValidationError}
+                        onChange={this.onVMsConfChange}
+                        defaultValue={this.state.VMsConf}
+                      />
+                      <button
+                        className='btn btn-success'
+                        onClick={this.saveVMsConf}
+                        disabled={this.state.VMsConfValidationError ||
+                          this.state.actionInProgress}
+                      >
+                        {i18n('common.save_settings_button')}
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  },
+  renderBody() {
+    if (!this.props.node.get('meta')) return <ProgressBar />;
     return (
       <div className='node-details-popup'>
         <div className='row'>
           <div className='col-xs-5'><div className='node-image-outline' /></div>
-          <div className='col-xs-7 node-summary'>
-            {this.props.cluster &&
-              <div><strong>{i18n('dialog.show_node.cluster')}: </strong>
-                {this.props.cluster.get('name')}
-              </div>
-            }
-            <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>
-              {node.get('manufacturer') || i18n('common.not_available')}
-            </div>
-            {this.props.nodeNetworkGroup &&
-              <div>
-                <strong>{i18n('dialog.show_node.node_network_group')}: </strong>
-                {this.props.nodeNetworkGroup.get('name')}
-              </div>
-            }
-            <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>
-              {node.get('mac') || i18n('common.not_available')}
-            </div>
-            <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>
-              {(node.get('meta').system || {}).fqdn || node.get('fqdn') ||
-                i18n('common.not_available')}
-            </div>
-            <div className='change-hostname'>
-              <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
-              {this.state.isRenaming ?
-                <Input
-                  ref='hostname'
-                  type='text'
-                  defaultValue={node.get('hostname')}
-                  inputClassName={'input-sm'}
-                  error={this.state.hostnameChangingError}
-                  disabled={this.state.actionInProgress}
-                  onKeyDown={this.onHostnameInputKeydown}
-                  selectOnFocus
-                  autoFocus
-                />
-              :
-                <span>
-                  <span className='node-hostname'>
-                    {node.get('hostname') || i18n('common.not_available')}
-                  </span>
-                  {(node.get('pending_addition') || !node.get('cluster')) &&
-                    <button
-                      className='btn-link glyphicon glyphicon-pencil'
-                      onClick={this.startHostnameRenaming}
-                    />
-                  }
-                </span>
-              }
-            </div>
-          </div>
+          <div className='col-xs-7'>{this.renderNodeSummary()}</div>
         </div>
-        <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>
-          {_.map(groups, (group, groupIndex) => {
-            var groupEntries = meta[group];
-            var subEntries = [];
-            if (group === 'interfaces' || group === 'disks') {
-              groupEntries = _.sortBy(groupEntries, 'name');
-            }
-            if (_.isPlainObject(groupEntries)) {
-              subEntries = _.find(_.values(groupEntries), _.isArray);
-            }
-            return (
-              <div className='panel panel-default' key={group}>
-                <div
-                  className='panel-heading'
-                  role='tab'
-                  id={'heading' + group}
-                  onClick={this.toggle.bind(this, groupIndex)}
-                >
-                  <div className='panel-title'>
-                    <div
-                      data-parent='#accordion'
-                      aria-expanded='true'
-                      aria-controls={'body' + group}
-                    >
-                      <strong>{i18n('node_details.' + group, {defaultValue: group})}</strong>
-                      {this.showSummary(meta, group)}
-                      <i className='glyphicon glyphicon-plus pull-right' />
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className='panel-collapse collapse'
-                  role='tabpanel'
-                  aria-labelledby={'heading' + group}
-                  ref={'togglable_' + groupIndex}
-                >
-                  <div className='panel-body enable-selection'>
-                    {_.isArray(groupEntries) &&
-                      <div>
-                        {_.map(groupEntries, (entry, entryIndex) => {
-                          return (
-                            <div className='nested-object' key={'entry_' + groupIndex + entryIndex}>
-                              {_.map(utils.sortEntryProperties(entry, sortOrder[group]),
-                                (propertyName) => {
-                                  if (!_.isPlainObject(entry[propertyName]) &&
-                                    !_.isArray(entry[propertyName])) {
-                                    return this.renderNodeInfo(
-                                      propertyName,
-                                      this.showPropertyValue(
-                                        group, propertyName, entry[propertyName]
-                                      )
-                                    );
-                                  }
-                                }
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    }
-                    {_.isPlainObject(groupEntries) &&
-                      <div>
-                        {_.map(groupEntries, (propertyValue, propertyName) => {
-                          if (!_.isPlainObject(propertyValue) && !_.isArray(propertyValue) &&
-                            !_.isNumber(propertyName)) return this.renderNodeInfo(propertyName,
-                              this.showPropertyValue(group, propertyName, propertyValue));
-                        })}
-                        {!_.isEmpty(subEntries) &&
-                          <div>
-                            {_.map(subEntries, (subentry, subentrysIndex) => {
-                              return (
-                                <div
-                                  className='nested-object'
-                                  key={'subentries_' + groupIndex + subentrysIndex}
-                                >
-                                  {_.map(utils.sortEntryProperties(subentry), (propertyName) => {
-                                    return this.renderNodeInfo(
-                                      propertyName,
-                                      this.showPropertyValue(
-                                        group, propertyName, subentry[propertyName]
-                                      )
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        }
-                      </div>
-                    }
-                    {(!_.isPlainObject(groupEntries) && !_.isArray(groupEntries) &&
-                      !_.isUndefined(groupEntries)) &&
-                      <div>{groupEntries}</div>
-                    }
-                    {group === 'config' &&
-                      <div className='vms-config'>
-                        <Input
-                          ref='vms-config'
-                          type='textarea'
-                          label={i18n('node_details.vms_config_msg')}
-                          error={this.state.VMsConfValidationError}
-                          onChange={this.onVMsConfChange}
-                          defaultValue={this.state.VMsConf}
-                        />
-                        <button
-                          className='btn btn-success'
-                          onClick={this.saveVMsConf}
-                          disabled={this.state.VMsConfValidationError ||
-                            this.state.actionInProgress}
-                        >
-                          {i18n('common.save_settings_button')}
-                        </button>
-                      </div>
-                    }
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {this.renderNodeHardware()}
       </div>
     );
   },

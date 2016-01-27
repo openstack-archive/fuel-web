@@ -40,9 +40,8 @@ define([
         })
         .then(function() {
           return self.modal.waitToClose();
-        });
-      // FIXME (morale): we need to add some verification here that
-      // creation of new node network group was successful
+        })
+        .waitForCssSelector('.network-group-name[data-name=' + name + ']', 2000);
     },
     renameNodeNetworkGroup: function(oldName, newName) {
       var self = this;
@@ -58,16 +57,29 @@ define([
           // Enter
           .type('\uE007')
           .end()
-        .findByLinkText(newName)
-          .end();
+        .waitForCssSelector('.network-group-name[data-name=' + newName + ']', 2000);
     },
     goToNodeNetworkGroup: function(name) {
       return this.remote
-        // FIXME (morale): we need to add some verification here that
-        // switch to other node network group was successful
         .findByCssSelector('ul.node_network_groups')
           .clickLinkByText(name)
-          .end();
+          .end()
+        .waitForCssSelector('.network-group-name[data-name=' + name + ']', 2000);
+    },
+    removeNodeNetworkGroup: function(name) {
+      var self = this;
+      return this.remote
+        .clickByCssSelector('.network-group-name[data-name=' + name + '] .glyphicon-remove')
+        .then(function() {
+          return self.modal.waitToOpen();
+        })
+        .then(function() {
+          return self.modal.clickFooterButton('Delete');
+        })
+        .then(function() {
+          return self.modal.waitToClose();
+        })
+        .waitForElementDeletion('.network-group-name[data-name=' + name + ']', 2000);
     }
   };
   return NetworkPage;

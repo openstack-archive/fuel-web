@@ -1400,6 +1400,8 @@
         puppet:
           manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
           modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"
+        deployed_before:
+          value: false
     wizard_metadata:
       Mode:
         metadata:

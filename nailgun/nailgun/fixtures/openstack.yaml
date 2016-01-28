@@ -1592,21 +1592,6 @@
                     label: "Target node"
                     description: "Target node for nova-compute service"
           -
-            name: "network"
-            type: "object"
-            restrictions:
-              - condition: "settings:common.use_vcenter.value == false"
-                action: "hide"
-            fields:
-              -
-                name: "esxi_vlan_interface"
-                type: "text"
-                label: "VLAN interface"
-                description: "VLAN interface"
-                regex:
-                  source: *non_empty_string
-                  error: "Invalid network interface"
-          -
             name: "glance"
             type: "object"
             restrictions:
@@ -1672,8 +1657,6 @@
                     current:
                       id: "controllers"
                       label: "controllers"
-          network:
-            esxi_vlan_interface: ""
           glance:
             vcenter_host: ""
             vcenter_username: ""

@@ -910,7 +910,6 @@ class NetworkManager(object):
         bond_interfaces = filter(is_bond, node_data['interfaces'])
 
         interfaces_db = node_db.nic_interfaces
-        bond_interfaces_db = node_db.bond_interfaces
         for iface in interfaces:
             current_iface = filter(
                 lambda i: i.id == iface['id'],
@@ -920,24 +919,24 @@ class NetworkManager(object):
             db().query(NetworkNICAssignment).filter_by(
                 interface_id=current_iface.id
             ).delete()
-            for net in iface['assigned_networks']:
-                net_assignment = NetworkNICAssignment()
-                net_assignment.network_id = net['id']
-                net_assignment.interface_id = current_iface.id
-                db().add(net_assignment)
+
+            net_ids = [net['id'] for net in iface['assigned_networks']]
+            ngs = db().query(NetworkGroup).filter(
+                NetworkGroup.id.in_(net_ids)).all()
+            current_iface.assigned_networks_list.extend(ngs)
+
             if 'interface_properties' in iface:
                 current_iface.interface_properties = \
                     iface['interface_properties']
             if 'offloading_modes' in iface:
                 current_iface.offloading_modes = \
                     iface['offloading_modes']
-        map(db().delete, bond_interfaces_db)
-        db().commit()
 
+        node_db.bond_interfaces = []
         for bond in bond_interfaces:
             bond_db = NodeBondInterface()
-            bond_db.node_id = node_db.id
-            db().add(bond_db)
+            bond_db.node = node_db
+
             bond_db.name = bond['name']
             if bond.get('bond_properties', {}).get('mode'):
                 bond_db.mode = bond['bond_properties']['mode']
@@ -946,13 +945,12 @@ class NetworkManager(object):
             bond_db.mac = bond.get('mac')
             bond_db.bond_properties = bond.get('bond_properties', {})
             bond_db.interface_properties = bond.get('interface_properties', {})
-            db().commit()
-            db().refresh(bond_db)
 
             # Add new network assignment.
-            map(bond_db.assigned_networks_list.append,
-                [db().query(NetworkGroup).get(ng['id']) for ng
-                 in bond['assigned_networks']])
+            net_ids = [net['id'] for net in bond['assigned_networks']]
+            ngs = db().query(NetworkGroup).filter(
+                NetworkGroup.id.in_(net_ids)).all()
+            bond_db.assigned_networks_list.extend(ngs)
             # Add new slaves.
             for nic in bond['slaves']:
                 bond_db.slaves.append(
@@ -965,8 +963,9 @@ class NetworkManager(object):
 
             bond_db.offloading_modes = bond.get('offloading_modes', {})
 
-            db().commit()
+            db().add(bond_db)
 
+        db().flush()
         return node_db.id
 
     @classmethod

@@ -308,7 +308,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             network_group_id=admin_net.id
         )
         self.db.add(mock_range)
-        self.db.commit()
+        self.db.flush()
 
         self.env.network_manager.assign_admin_ips(self.env.nodes)
 
@@ -424,7 +424,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             network_group_id=admin_net_id
         )
         self.db.add(mock_range)
-        self.db.commit()
+        self.db.flush()
 
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips([node])
@@ -446,7 +446,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             network_group_id=admin_net_id
         )
         self.db.add(mock_range)
-        self.db.commit()
+        self.db.flush()
 
         n1 = self.env.create_node()
         n2 = self.env.create_node()

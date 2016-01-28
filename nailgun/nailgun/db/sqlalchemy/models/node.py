@@ -105,10 +105,10 @@ class Node(Base):
                               uselist=False,
                               cascade="all,delete")
     nic_interfaces = relationship("NodeNICInterface", backref="node",
-                                  cascade="delete",
+                                  cascade="all, delete-orphan",
                                   order_by="NodeNICInterface.name")
     bond_interfaces = relationship("NodeBondInterface", backref="node",
-                                   cascade="delete",
+                                   cascade="all, delete-orphan",
                                    order_by="NodeBondInterface.name")
     # hash function from raw node agent request data - for caching purposes
     agent_checksum = Column(String(40), nullable=True)

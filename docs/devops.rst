@@ -16,7 +16,8 @@ and many other customizations with a few lines of code in system tests.
 
 After 6.0 release, fuel-devops was divided into 2.5.x and 2.9.x versions. Two
 separate versions of fuel-devops provide backward compatibility for system
-tests which have been refactored since the last major release. `How to migrate`_
+tests which have been refactored since the last major release. Look here
+`how to migrate`_ from older devops.
 
 For sources please refer to
 `fuel-devops repository on github <https://github.com/openstack/fuel-devops>`_.
@@ -26,73 +27,85 @@ For sources please refer to
 Installation
 -------------
 
-The installation procedure can be implemented via PyPI in Python virtual environment
-(suppose you are using *Ubuntu 12.04* or *Ubuntu 14.04*):
+The installation procedure can be implemented via PyPI in Python virtual
+environment (suppose you are using *Ubuntu 12.04* or *Ubuntu 14.04*):
 
 Before using it, please install the following required dependencies:
 
 .. code-block:: bash
 
-    sudo apt-get install git \
-    postgresql \
-    postgresql-server-dev-all \
+    sudo apt-get install --yes \
+    git \
     libyaml-dev \
     libffi-dev \
     python-dev \
-    python-libvirt \
     python-pip \
-    qemu-kvm \
-    qemu-utils \
+    qemu \
     libvirt-bin \
     libvirt-dev \
-    ubuntu-vm-builder \
-    bridge-utils
+    vlan \
+    bridge-utils \
+    genisoimage
 
     sudo apt-get update && sudo apt-get upgrade -y
 
 .. _DevOpsPyPIvenv:
 
-Devops installation in `virtualenv <http://virtualenv.readthedocs.org/en/latest/>`_
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Devops installation in `virtualenv <http://virtualenv.readthedocs.org/en/latest/virtualenv.html>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Install packages needed for building python eggs
 
 .. code-block:: bash
 
-    sudo apt-get install python-virtualenv libpq-dev libgmp-dev
+    sudo apt-get install --yes python-virtualenv libpq-dev libgmp-dev pkg-config
 
-2. In case you are using *Ubuntu 12.04* let's update pip and virtualenv, otherwise you can skip this step
+2. In case you are using *Ubuntu 12.04* let's update pip and virtualenv,
+   otherwise you can skip this step
 
 .. code-block:: bash
 
     sudo pip install pip virtualenv --upgrade
     hash -r
 
-4. Create virtualenv for the *devops* project
+3. In oder to store the path where your Python virtualenv will be located
+   create your working directory and use the following environment variable. If
+   it is not specified, it will use the current working directory:
 
 .. code-block:: bash
 
-    virtualenv --system-site-packages <path>/fuel-devops-venv
+     export WORKING_DIR=$HOME/working_dir
+     mkdir $HOME/working_dir
 
-.. note:: If you want to use different devops versions in the same time, you can create several different folders for each version, and then activate required virtual environment for each case.
-    For example: ::
-    virtualenv --system-site-packages <path>/fuel-devops-venv        # For fuel-devops 2.5.x
-    virtualenv --system-site-packages <path>/fuel-devops-venv-2.9    # For fuel-devops 2.9.x
+4. Create virtualenv for the *devops* project (e.g. ``fuel-devops-venv``).
+   Note: the related directory will be used for the ``VENV_PATH`` variable:
 
-<path> represents the path where your Python virtualenv will be located. (e.g. ~/venv). If it is not specified, it will use the current working directory.
+.. code-block:: bash
+
+     cd $WORKING_DIR
+     sudo apt-get install --yes python-virtualenv
+     virtualenv --system-site-packages fuel-devops-venv
+
+.. note:: If you want to use different devops versions in the same time, you
+ can create several different folders for each version, and then activate the
+ required virtual environment for each case.
+
+    For example::
+
+        virtualenv --system-site-packages fuel-devops-venv        # For fuel-devops 2.5.x
+        virtualenv --system-site-packages fuel-devops-venv-2.9    # For fuel-devops 2.9.x
 
 5. Activate virtualenv and install *devops* package using PyPI.
+In order to indentify the latest available versions you would like to install,
+visit `fuel-devops <https://github.com/openstack/fuel-devops/tags>`_ repo. For
+Fuel 6.0 and earlier, take the latest fuel-devops 2.5.x (e.g.
+fuel-devops.git@2.5.6). For Fuel 6.1 and later, use 2.9.x or newer (e.g.
+fuel-devops.git@2.9.11):
 
 .. code-block:: bash
 
-    source  <path>/fuel-devops-venv/bin/activate
-    pip install git+https://github.com/openstack/fuel-devops.git@<version> --upgrade
-
-where <version> is the specific version of fuel-devops you would like to
-install. For Fuel 6.0 and earlier, take the latest fuel-devops 2.5.x. For Fuel
-6.1 and later, use 2.9.x or newer. See more information on the latest available
-versions in `fuel-devops <https://github.com/openstack/fuel-devops/tags>`_
-repo.
+    . fuel-devops-venv/bin/activate
+    pip install git+https://github.com/openstack/fuel-devops.git@2.9.11 --upgrade
 
 setup.py in fuel-devops repository does everything required.
 
@@ -129,28 +142,77 @@ Create libvirt's pool
 Permissions to run KVM VMs with libvirt with current user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Give current user permissions to use libvirt (Do not forget to log out and log back in!)
+Give current user permissions to use libvirt: do not forget to log out and log
+back in.
 
 .. code-block:: bash
 
     sudo usermod $(whoami) -a -G libvirtd,sudo
 
-Configuring Postgresql database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Configuring database
+~~~~~~~~~~~~~~~~~~~~~
+
+You can configure PostgreSQL database or as an alternative SQLite.
+
+Configuring PostgreSQL
++++++++++++++++++++++++
+
+Install postgresql package:
+
+.. code-block:: bash
+
+    apt-get install --yes postgresql 
 
 Set local peers to be trusted by default, create user and db and load fixtures.
 
 .. code-block:: bash
 
+    pg_version=$(dpkg-query --show --showformat='${version;3}' postgresql)
+    pg_createcluster $pg_version main --start
     sudo sed -ir 's/peer/trust/' /etc/postgresql/9.*/main/pg_hba.conf
     sudo service postgresql restart
-    sudo -u postgres createuser -P <user> # see default <user> and <db> below
-    sudo -u postgres createdb <db> -O <user>
+
+* in **2.9.x version**, default <user> and <db> are **fuel_devops**
+
+  .. code-block:: bash
+
+      sudo -u postgres createuser -P fuel_devops
+      sudo -u postgres psql -c "CREATE ROLE fuel_devops WITH LOGIN PASSWORD 'fuel_devops'"
+      sudo -u postgres createdb fuel_devops -O fuel_devops
+
+* in **2.5.x version**, default <user> and <db> are **devops**
+
+  .. code-block:: bash
+
+      sudo -u postgres createuser -P devops
+      sudo -u postgres psql -c "CREATE ROLE devops WITH LOGIN PASSWORD 'devops'"
+      sudo -u postgres createdb devops -O devops
+
+Configuring SQLite3 database
++++++++++++++++++++++++++++++
+
+Install SQLite3 library:
+
+.. code-block:: bash
+
+    apt-get install --yes libsqlite3
+
+Export the path to the SQLite3 database as the database name:
+
+.. code-block:: bash
+
+    export DEVOPS_DB_NAME=$WORKING_DIR/fuel-devops
+    export DEVOPS_DB_ENGINE="django.db.backends.sqlite3
+
+Configuring Django
+~~~~~~~~~~~~~~~~~~~
+
+After the database setup, we can install the django tables and data:
+
+.. code-block:: bash
+
     django-admin.py syncdb --settings=devops.settings
     django-admin.py migrate devops --settings=devops.settings
-
-* in 2.5.x version, default <user> and <db> are **devops**
-* in 2.9.x version, default <user> and <db> are **fuel_devops**
 
 .. note:: Depending on your Linux distribution,
     `django-admin <http://django-admin-tools.readthedocs.org>`_ may refer
@@ -165,11 +227,13 @@ Set local peers to be trusted by default, create user and db and load fixtures.
 [Optional] Enabling `Nested Paging <http://en.wikipedia.org/wiki/Second_Level_Address_Translation>`_
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This option is enabled by default in the KVM kernel module
+The following section covers only Intel platform. This option is enabled by
+default in the KVM kernel module. If the file ``qemu-system-x86.conf`` does not
+exist, you have to create it.
 
 .. code-block:: bash
 
-    $ cat /etc/modprobe.d/qemu-system-x86.conf
+    cat /etc/modprobe.d/qemu-system-x86.conf
     options kvm_intel nested=1
 
 In order to be sure that this feature is enabled on your system,
@@ -177,6 +241,8 @@ please run:
 
 .. code-block:: bash
 
+    sudo apt-get install --yes cpu-checker
+    sudo modprobe kvm_intel
     sudo kvm-ok && cat /sys/module/kvm_intel/parameters/nested
 
 The result should be:
@@ -191,23 +257,55 @@ The result should be:
 Environment creation via Devops + Fuel_QA or Fuel_main
 -------------------------------------------------------
 
-Depending on the Fuel release, you may need a different repository. In case of
-6.0 or earlier, please use *fuel-main* repository. For 6.1 and later, the
-*fuel-qa* is required.
+Depending on the Fuel release, you may need a different repository.
 
 1. Clone GIT repository
 
+For 6.1 and later, the *fuel-qa* is required:
+
 .. code-block:: bash
 
-    git clone https://github.com/openstack/fuel-qa # fuel-main for 6.0 and earlier
+    git clone https://github.com/openstack/fuel-qa
     cd fuel-qa/
 
-2. Install requirements
+.. note:: It is recommended to use the stable branch related to the ISO version.
+ For instance, with FUEL v7.0 ISO:
+
+   .. code-block:: bash
+
+      git clone https://github.com/openstack/fuel-qa -b stable/7.0
+
+In case of 6.0 or earlier, please use *fuel-main* repository:
 
 .. code-block:: bash
 
-   source <path>/fuel-devops-venv/bin/activate
+    git clone https://github.com/openstack/fuel-main -b stable/6.0
+    cd fuel-main/
+
+
+2. Install requirements (follow :ref:`DevOpsPyPIvenv` section for the
+WORKING_DIR variable)
+
+.. code-block:: bash
+
+   . $WORKING_DIR/fuel-devops-venv/bin/activate
    pip install -r ./fuelweb_test/requirements.txt --upgrade
+
+.. note:: A certain version of fuel-devops is specified in the
+ ./fuelweb_test/requirements.txt , so it will overwrite the already installed
+ fuel-devops. For example, for fuel-master branch stable/6.0, there is:
+    
+    .. code-block:: bash
+
+       git+git://github.com/stackforge/fuel-devops.git@2.5.6
+
+ It is recommended to install the django tables and data after installing
+ fuel-qa requiremets:
+
+    .. code-block:: bash
+
+        django-admin.py syncdb --settings=devops.settings
+        django-admin.py migrate devops --settings=devops.settings
 
 3. Check :ref:`DevOpsConf` section
 
@@ -217,35 +315,40 @@ Download Fuel ISO from
 `Nightly builds <https://ci.fuel-infra.org/view/ISO/>`_
 or build it yourself (please, refer to :ref:`building-fuel-iso`)
 
-Next, you need to define several variables for the future environment
+Next, you need to define several variables for the future environment:
+ * the path where is located your iso (e.g. $WORKING_DIR/fuel-community-7.0.iso)
+ * the number of nodes instantiated for the environment (e.g. 5)
 
 .. code-block:: bash
 
-    export ISO_PATH=<path_to_iso>
-    export NODES_COUNT=<number_nodes>
+    export ISO_PATH=$WORKING_DIR/fuel-community-7.0.iso
+    export NODES_COUNT=5
 
 Optionally you can specify the name of your test environment (it will
 be used as a prefix for the domains and networks names created by
-libvirt, defaults is =fuel_system_test=)
+libvirt, defaults is ``fuel_system_test``).
 
 .. code-block:: bash
 
-    export ENV_NAME=<name_of_env>
+    export ENV_NAME=fuel_system_test
+    export VENV_PATH=$WORKING_DIR/fuel-devops-venv
 
-.. code-block:: bash
+If you want to use separated files for snapshots you need to set env variable
+and use the following required versions:
 
-    export VENV_PATH=<path>/fuel-devops-venv
+ * fuel-devops >= 2.9.17
+ * libvirtd >= 1.2.12
 
-If you want to use separated files for snapshots you need to use libvirtd in version >= 1.2.12
-and set env variable. This change will switch snapshots created by libvirt from internal
-to external mode.
+This change will switch snapshots created by libvirt from internal to external
+mode.
 
 .. code-block:: bash
 
     export SNAPSHOTS_EXTERNAL=true
 
-.. note:: External snapshots by default uses ~/.devops/snap directory to store memory dumps.
-   If you want to use other directory you can set SNAPSHOTS_EXTERNAL_DIR variable.
+.. note:: External snapshots by default uses ~/.devops/snap directory to store
+ memory dumps. If you want to use other directory you can set
+ SNAPSHOTS_EXTERNAL_DIR variable.
 
    .. code-block:: bash
 
@@ -311,7 +414,8 @@ To migrate from older devops, follow these steps:
 You must remove system-wide fuel-devops and switch to separate venvs with
 different versions of fuel-devops, for Fuel 6.0.x (and older) and 6.1 release.
 
-Repositories 'fuel-main' and 'fuel-qa', that contain system tests, must use different Python virtual environments, for example:
+Repositories 'fuel-main' and 'fuel-qa', that contain system tests, must use
+different Python virtual environments, for example:
 
 * ~/venv-nailgun-tests - used for 6.0.x and older releases. Contains version 2.5.x of fuel-devops
 * ~/venv-nailgun-tests-2.9 - used for 6.1 and above. Contains version 2.9.x of fuel-devops
@@ -324,7 +428,8 @@ By default, the network pool is configured as follows:
 * 10.108.0.0/16 for devops 2.5.x
 * 10.109.0.0/16 for 2.9.x
 
-Please check other settings in *devops.settings*, especially the connection settings to the database.
+Please check other settings in *devops.settings*, especially the connection
+settings to the database.
 
 Before using devops in Python venv, you need to `install system dependencies`_
 
@@ -369,13 +474,45 @@ To upgrade 6.1 jobs, follow these steps:
 
 * make a separate Python venv, for example in ~/venv-nailgun-tests-2.9
 * install `requirements <https://github.com/openstack/fuel-qa/blob/master/fuelweb_test/requirements.txt>`_ of system tests
-* if you are using system tests on CI, please configure your CI to use new Python venv, or export path to the new Python venv in the variable VENV_PATH:
-  export VENV_PATH=<path>/fuel-devops-venv-2.9
+* if you are using system tests on CI, please configure your CI to use new
+  Python venv, or export path to the new Python venv in the variable
+  ``VENV_PATH`` (follow :ref:`DevOpsPyPIvenv` section for the WORKING_DIR
+  variable):
+
+  .. code-block:: bash
+
+      export VENV_PATH=$WORKING_DIR/fuel-devops-venv-2.9
+
 
 Known issues
 ------------
+
 * Some versions of libvirt contain a bug that breaks QEMU virtual machine
   XML. You can see this when tests crush with a *libvirt: QEMU Driver error:
-  unsupported configuration: host doesn't support invariant TSC*. See: `Bug 1133155 <https://bugzilla.redhat.com/show_bug.cgi?id=1133155>`_.
+  unsupported configuration: host doesn't support invariant TSC*. See:
+  `Bug 1133155 <https://bugzilla.redhat.com/show_bug.cgi?id=1133155>`_.
 
   Workaround: upgrade libvirt to the latest version.
+
+* If the same version of fuel-devops is used with several different databases
+  (for example, with multiple sqlite3 databases, or with a separated database for
+  each devops in different python virtual environments), there will be a
+  collision between Libvirt bridge names and interfaces.
+
+  Workaround: use the same database for the same version of the fuel-devops.
+
+  - for **2.9.x**, export the following env variables:
+
+    .. code-block:: bash
+
+        export DEVOPS_DB_NAME=fuel_devops
+        export DEVOPS_DB_USER=fuel_devops
+        export DEVOPS_DB_PASSWORD=fuel_devops
+
+  - for **2.5.x**, edit the dict for variable ``DATABASES``:
+
+    .. code-block:: bash      
+
+       vim $WORKING_DIR/fuel-devops-venv/lib/python2.7/site-packages/devops/settings.py
+
+

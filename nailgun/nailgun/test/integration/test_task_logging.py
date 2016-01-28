@@ -15,6 +15,7 @@
 #    under the License.
 
 
+import copy
 from mock import patch
 
 from nailgun.test.base import BaseIntegrationTest
@@ -162,6 +163,19 @@ class TestTasksLogging(BaseIntegrationTest):
         self.env.wait_ready(deploy)
 
         self.simulate_running_deployment(deploy)
+
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        cluster = self.env.clusters[0]
+        # TODO(aroma): remove unnecessary copying when enhancement
+        # of Mutable types will be introduced for corresponding
+        # fields of ORM models
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['deployed_before']['value'] = False
+        cluster.attributes.generated = generated_attrs
+        self.db.flush()
+
         self.env.stop_deployment()
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
@@ -282,6 +296,18 @@ class TestTasksLogging(BaseIntegrationTest):
         # after stop deployment
         deploy_uuid = deploy.uuid
         self.simulate_running_deployment(deploy)
+
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        cluster = self.env.clusters[0]
+        # TODO(aroma): remove unnecessary copying when enhancement
+        # of Mutable types will be introduced for corresponding
+        # fields of ORM models
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['deployed_before']['value'] = False
+        cluster.attributes.generated = generated_attrs
+        self.db.flush()
 
         # Stopping deployment
         self.env.stop_deployment()

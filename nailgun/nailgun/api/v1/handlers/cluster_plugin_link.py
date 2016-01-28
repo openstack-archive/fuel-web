@@ -46,10 +46,10 @@ class ClusterPluginLinkHandler(base.SingleHandler):
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-
         data = self.checked_data(
             self.validator.validate_update,
-            instance=obj
+            instance=obj,
+            model=self.single.model
         )
         self.single.update(obj, data)
         return self.single.to_json(obj)
@@ -99,7 +99,9 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
         :http: * 201 (object successfully created)
                * 400 (invalid object data specified)
         """
-        data = self.checked_data()
+        data = self.checked_data(
+            model=self.collection.single.model
+        )
 
         try:
             new_obj = self.collection.create_with_cluster_id(data, cluster_id)

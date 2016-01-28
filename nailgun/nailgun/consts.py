@@ -456,7 +456,11 @@ TASK_ROLES = Enum(
 
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'
 
+# Task version from which cross-dependencies is used
 TASK_CROSS_DEPENDENCY = '2.0.0'
+
+# From which (major) plugins package version task based is strictly required
+TASK_DEPLOY_STRICT_FROM_VER = '5.0.0'
 
 IRONIC_BOOTSTRAP_PKGS = ('openssh-server',
                          'ntp',

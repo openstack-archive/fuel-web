@@ -13,7 +13,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 from nailgun import consts
 from nailgun.objects import ClusterPlugins
 from nailgun.objects import Plugin
@@ -27,7 +26,7 @@ class ExtraFunctions(base.BaseTestCase):
 
     def _create_test_plugins(self):
         plugin_ids = []
-        for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0']:
+        for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0', '4.0.0', '5.0.0']:
             plugin_data = self.env.get_default_plugin_metadata(
                 version=version,
                 name='multiversion_plugin')
@@ -79,7 +78,7 @@ class TestPluginCollection(ExtraFunctions):
         self.assertEqual(len(single_plugin), 1)
         self.assertEqual(len(multiversion_plugin), 1)
 
-        self.assertEqual(multiversion_plugin[0].version, '3.0.0')
+        self.assertEqual(multiversion_plugin[0].version, '5.0.0')
 
     def test_get_by_uids(self):
         plugin_ids = self._create_test_plugins()
@@ -105,7 +104,7 @@ class TestClusterPlugins(ExtraFunctions):
         cluster_plugins = self.db.execute(
             meta.tables['cluster_plugins'].select()
         ).fetchall()
-        self.assertEqual(len(cluster_plugins), 5)
+        self.assertEqual(len(cluster_plugins), 7)
 
     def test_set_plugin_attributes(self):
         meta = base.reflect_db_metadata()
@@ -128,14 +127,14 @@ class TestClusterPlugins(ExtraFunctions):
         cluster = self._create_test_cluster()
         number_of_connected_plugins_data_items =\
             ClusterPlugins.get_connected_plugins_data(cluster.id).count()
-        self.assertEqual(5, number_of_connected_plugins_data_items)
+        self.assertEqual(7, number_of_connected_plugins_data_items)
 
     def test_get_all_connected_plugins(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
         number_of_connected_plugins =\
             ClusterPlugins.get_connected_plugins(cluster).count()
-        self.assertEqual(5, number_of_connected_plugins)
+        self.assertEqual(7, number_of_connected_plugins)
 
     def test_get_connected_for_specific_plugins(self):
         plugin_ids = self._create_test_plugins()
@@ -143,7 +142,7 @@ class TestClusterPlugins(ExtraFunctions):
         number_of_connected_plugins =\
             ClusterPlugins.get_connected_plugins(
                 cluster, plugin_ids[1:]).count()
-        self.assertEqual(4, number_of_connected_plugins)
+        self.assertEqual(6, number_of_connected_plugins)
 
     def test_get_connected_clusters(self):
         plugin_id = self._create_test_plugins()[0]

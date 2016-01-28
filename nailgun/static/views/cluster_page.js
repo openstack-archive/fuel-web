@@ -40,6 +40,12 @@ var ClusterPage = React.createClass({
       modelOrCollection: (props) => props.cluster.get('tasks'),
       renderOn: 'update change'
     }),
+    backboneMixin({
+      modelOrCollection() {
+        return app.nodeNetworkGroups;
+      },
+      renderOn: 'change update'
+    }),
     dispatcherMixin('networkConfigurationUpdated', 'removeFinishedNetworkTasks'),
     dispatcherMixin('deploymentTasksUpdated', 'removeFinishedDeploymentTasks'),
     dispatcherMixin('deploymentTaskStarted', function() {
@@ -112,6 +118,7 @@ var ClusterPage = React.createClass({
           return this.constructor.__super__.fetch.call(this,
             _.extend({data: {cluster_id: id}}, options));
         };
+
         promise = $.when(
             cluster.fetch(),
             cluster.get('settings').fetch(),
@@ -149,7 +156,17 @@ var ClusterPage = React.createClass({
           });
       }
       return promise.then(
-        (tabData) => ({cluster, nodeNetworkGroups, activeTab, tabOptions, tabData})
+        (tabData) => {
+          return {
+            cluster,
+            nodeNetworkGroups: new models.NodeNetworkGroups(
+              _.invoke(nodeNetworkGroups.where({cluster_id: cluster.id}), 'toJSON')
+            ),
+            activeTab,
+            tabOptions,
+            tabData
+          };
+        }
       );
     }
   },

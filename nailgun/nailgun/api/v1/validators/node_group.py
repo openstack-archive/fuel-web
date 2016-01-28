@@ -106,8 +106,17 @@ class NodeGroupValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance):
         data = cls.validate_json(data)
+
         cls._validate_unique_name(
             data, objects.NodeGroup.model.id != instance.id)
+
         if 'is_default' in data:
             cls._validate_default_flag(data)
+
+        if 'cluster_id' in data and data['cluster_id'] != instance.cluster_id:
+            raise errors.NotAllowed(
+                "Node group cannot be assigned to other cluster "
+                "after creation."
+            )
+
         return data

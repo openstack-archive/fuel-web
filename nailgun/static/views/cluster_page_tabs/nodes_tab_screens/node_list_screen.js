@@ -1051,7 +1051,6 @@ ManagementPanel = React.createClass({
     }
 
     this.props.selectedNodeLabels.sort(_.partialRight(utils.natsort, {insensitive: true}));
-
     return (
       <div className='row'>
         <div className='sticker node-management-panel'>

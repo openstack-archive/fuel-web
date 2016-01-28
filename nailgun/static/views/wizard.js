@@ -721,7 +721,6 @@ var CreateClusterWizard = React.createClass({
         .done(() => {
           this.props.clusters.add(cluster);
           this.close();
-          app.nodeNetworkGroups.fetch();
           app.navigate('#cluster/' + this.cluster.id, {trigger: true});
         })
         .fail((response) => {

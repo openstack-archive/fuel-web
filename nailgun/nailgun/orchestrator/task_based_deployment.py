@@ -632,7 +632,7 @@ class TasksSerializer(object):
         :param task_ids: the selected  ids of tasks
         :return: function that check task
         """
-        if task_ids is None:
+        if not task_ids:
             return lambda _: True
 
         if not isinstance(task_ids, set):

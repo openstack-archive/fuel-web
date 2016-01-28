@@ -570,7 +570,6 @@ class TasksSerializer(object):
         :param node_ids: the ID of nodes where need to search
         :param is_required_for: means task from required_for section
         """
-        found = False
         match_policy = NameMatchingPolicy.create(name)
         for node_id in node_ids:
             applied_tasks = set()
@@ -578,7 +577,6 @@ class TasksSerializer(object):
                 if task_name == name:
                     # the simple case when name of current task
                     # is exact math to name of task that is search
-                    found = True
                     yield {"name": task_name, "node_id": node_id}
                     continue
 
@@ -589,7 +587,6 @@ class TasksSerializer(object):
                         not match_policy.match(original_task):
                     continue
 
-                found = True
                 applied_tasks.add(original_task)
                 if original_task is not task_name:
                     if is_required_for:
@@ -599,13 +596,6 @@ class TasksSerializer(object):
                     task_name = task_name_gen(original_task)
 
                 yield {"name": task_name, "node_id": node_id}
-
-        if not found:
-            logger.warning(
-                "Dependency '%s' cannot be resolved: "
-                "no candidates in nodes '%s'.",
-                name, ", ".join(six.moves.map(str, node_ids))
-            )
 
     @classmethod
     def need_update_task(cls, tasks, task):

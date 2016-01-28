@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import plugin_link
 
@@ -22,7 +21,7 @@ class PluginLinkValidator(BasicValidator):
     collection_schema = plugin_link.PLUGIN_LINKS_SCHEMA
 
     @classmethod
-    def validate(cls, data):
+    def validate(cls, data, model):
         parsed = super(PluginLinkValidator, cls).validate(data)
         cls.validate_schema(
             parsed,
@@ -31,14 +30,10 @@ class PluginLinkValidator(BasicValidator):
         return parsed
 
     @classmethod
-    def validate_update(cls, data, instance):
+    def validate_update(cls, data, instance, model):
         parsed = super(PluginLinkValidator, cls).validate(data)
         cls.validate_schema(
             parsed,
             plugin_link.PLUGIN_LINK_UPDATE_SCHEMA
         )
         return parsed
-
-    @classmethod
-    def validate_create(cls, data):
-        return cls.validate(data)

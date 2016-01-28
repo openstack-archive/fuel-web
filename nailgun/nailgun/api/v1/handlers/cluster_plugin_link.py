@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sqlalchemy as sa
+
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators import plugin_link
@@ -44,14 +46,19 @@ class ClusterPluginLinkHandler(base.SingleHandler):
         :http: * 200 (OK)
                * 400 (invalid object data specified)
                * 404 (object not found in db)
+               * 409 (url field duplicate conflict)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-
         data = self.checked_data(
             self.validator.validate_update,
-            instance=obj
+            instance=obj,
+            model=self.single.model
         )
-        self.single.update(obj, data)
+        # try:
+        try:
+            self.single.update(obj, data)
+        except sa.exc.IntegrityError as exc:
+            raise self.http(409, exc.message)
         return self.single.to_json(obj)
 
     def PATCH(self, cluster_id, obj_id):
@@ -60,6 +67,7 @@ class ClusterPluginLinkHandler(base.SingleHandler):
         :http: * 200 (OK)
                * 400 (invalid object data specified)
                * 404 (object not found in db)
+               * 409 (url field duplicate conflict)
         """
         return self.PUT(cluster_id, obj_id)
 
@@ -98,11 +106,16 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
 
         :http: * 201 (object successfully created)
                * 400 (invalid object data specified)
+               * 409 (url field duplicate conflict)
         """
-        data = self.checked_data()
+        data = self.checked_data(
+            model=self.collection.single.model
+        )
 
         try:
             new_obj = self.collection.create_with_cluster_id(data, cluster_id)
         except errors.CannotCreate as exc:
             raise self.http(400, exc.message)
+        except sa.exc.IntegrityError as exc:
+            raise self.http(409, exc.message)
         raise self.http(201, self.collection.single.to_json(new_obj))

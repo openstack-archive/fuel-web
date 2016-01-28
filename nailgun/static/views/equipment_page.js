@@ -34,13 +34,13 @@ EquipmentPage = React.createClass({
       var nodes = new models.Nodes();
       var clusters = new models.Clusters();
       var plugins = new models.Plugins();
-      var {releases, nodeNetworkGroups, fuelSettings} = app;
-
+      var nodeNetworkGroups = new models.NodeNetworkGroups();
+      var {releases, fuelSettings} = app;
       return $.when(
         nodes.fetch(),
         clusters.fetch(),
+        nodeNetworkGroups.fetch(),
         releases.fetch({cache: true}),
-        nodeNetworkGroups.fetch({cache: true}),
         fuelSettings.fetch({cache: true}),
         plugins.fetch()
       ).then(() => {

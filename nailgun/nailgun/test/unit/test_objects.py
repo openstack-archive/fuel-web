@@ -660,7 +660,10 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.operational)
+        self.assertTrue(
+            self.cluster.attributes.generated['deployed_before']['value'])
 
     def test_update_vms_conf(self):
         kvm_node = self.cluster.nodes[0]
@@ -910,6 +913,34 @@ class TestClusterObject(BaseTestCase):
         }
         network_role.update(kwargs)
         return network_role
+
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_set_deployed_before_flag(self):
+        self.cluster = self.env.clusters[0]
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that the flags is set to true if was false
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=True)
+        self.assertTrue(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that flag is set to false if was true
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that flag is not changed when same value is given
+        # and interaction w/ db is not performed
+        with mock.patch.object(self.db, 'flush') as m_flush:
+            objects.Cluster.set_deployed_before_flag(self.cluster,
+                                                     value=False)
+            self.assertFalse(
+                self.cluster.attributes.generated['deployed_before']['value'])
+
+            m_flush.assert_not_called()
 
     @mock.patch('nailgun.objects.cluster.fire_callback_on_cluster_delete')
     @mock.patch(

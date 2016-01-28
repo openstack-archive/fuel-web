@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -64,6 +64,25 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             self.link_data['description'],
             plugin_link.description
         )
+
+    def test_cluster_plugin_link_creation_fail_duplicate(self):
+        self.env.create_cluster_plugin_link(
+            cluster_id=self.cluster['id'],
+            url='http://uniq1.com'
+        )
+        resp = self.app.post(
+            reverse(
+                'ClusterPluginLinkCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
+            ),
+            params=jsonutils.dumps({
+                'title': 'My Plugin',
+                'url': 'http://uniq1.com'
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(409, resp.status_code)
 
     def test_cluster_plugin_link_fail_creation(self):
         resp = self.app.post(

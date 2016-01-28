@@ -571,7 +571,7 @@ NodeListScreen = React.createClass({
         <NodeList
           {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedRoles')}
           {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'selectedNodeIds',
-            'clusters', 'roles', 'nodeNetworkGroups')
+            'clusters', 'roles')
           }
           {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
           nodes={filteredNodes}
@@ -1844,7 +1844,8 @@ NodeList = React.createClass({
           }),
           manufacturer: () => node.get('manufacturer') || i18n('common.not_specified'),
           group_id: () => {
-            var nodeNetworkGroup = this.props.nodeNetworkGroups.get(node.get('group_id'));
+            var nodeNetworkGroup =
+              cluster.get('nodeNetworkGroups').get(node.get('group_id'));
             return nodeNetworkGroup && i18n(ns + 'node_network_group', {
               group: nodeNetworkGroup.get('name') +
                 (this.props.cluster ? '' : ' (' + cluster.get('name') + ')')
@@ -2034,7 +2035,7 @@ NodeGroup = React.createClass({
         <div className='row'>
           {this.props.nodes.map((node) => {
             return <Node
-              {... _.pick(this.props, 'mode', 'viewMode', 'nodeNetworkGroups')}
+              {... _.pick(this.props, 'mode', 'viewMode', 'cluster')}
               key={node.id}
               node={node}
               renderActionButtons={!!this.props.cluster}

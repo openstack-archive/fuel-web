@@ -723,8 +723,10 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status,
-                          consts.CLUSTER_STATUSES.operational)
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.operational)
+        self.assertTrue(
+            self.cluster.attributes.generated['deployed_before']['value'])
 
     def test_update_vms_conf(self):
         kvm_node = self.cluster.nodes[0]
@@ -983,6 +985,28 @@ class TestClusterObject(BaseTestCase):
         }
 
         return dict_merge(network_role, kwargs)
+
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_flip_deployed_before_flag(self):
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that the flags flips to true if was false
+        objects.Cluster.flip_deployed_before_flag(self.cluster, value=True)
+        self.assertTrue(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that flag flips to false if was true
+        objects.Cluster.flip_deployed_before_flag(self.cluster, value=False)
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that flag is not changed when same value is given
+        objects.Cluster.flip_deployed_before_flag(self.cluster, value=False)
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
 
     def test_network_defaults(self):
         cluster = objects.Cluster.get_by_uid(self.env.create(api=True)['id'])

@@ -392,6 +392,17 @@ define([
             .end();
       });
     },
+    assertElementNotContainsText: function(cssSelector, text, message) {
+      return new this.constructor(this, function() {
+        return this.parent
+          .findByCssSelector(cssSelector)
+            .getVisibleText()
+            .then(function(actualText) {
+              assert.notInclude(actualText, text, message);
+            })
+            .end();
+      });
+    },
     assertElementAttributeEquals: function(cssSelector, attribute, expectedText, message) {
       return new this.constructor(this, function() {
         return this.parent

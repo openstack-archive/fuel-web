@@ -21,6 +21,7 @@ import unittest2
 from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
+from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -420,6 +421,12 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
     def test_verify_networks_after_stop(self):
         self.cluster = self.env.clusters[0]
         self.env.launch_deployment()
+
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
+
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.assertEqual(self.cluster.status, "stopped")

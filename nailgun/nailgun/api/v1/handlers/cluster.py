@@ -31,6 +31,7 @@ from nailgun import objects
 from nailgun.api.v1.handlers.base import content_json
 
 from nailgun.api.v1.validators.cluster import AttributesValidator
+from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
@@ -90,6 +91,7 @@ class ClusterStopDeploymentHandler(DeferredTaskHandler):
     log_error = u"Error during execution of deployment " \
                 u"stopping task on environment '{env_id}': {error}"
     task_manager = StopDeploymentTaskManager
+    validator = ClusterStopDeploymentValidator
 
 
 class ClusterResetHandler(DeferredTaskHandler):

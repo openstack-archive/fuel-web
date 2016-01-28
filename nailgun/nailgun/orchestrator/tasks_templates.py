@@ -249,6 +249,7 @@ def generate_ironic_bootstrap_keys_task(uids, cid):
 def make_ironic_bootstrap_task(uids, cid):
     extra_conf_files = "/usr/share/ironic-fa-bootstrap-configs/"
     ssh_keys = "/var/lib/fuel/keys/{0}/ironic/ironic.pub".format(cid)
+    log_file = "/var/log/fuel-ironic-bootstrap-image-build.log"
 
     ironic_bootstrap_pkgs = ' '.join(
         "--package '{0}'".format(pkg) for pkg in consts.IRONIC_BOOTSTRAP_PKGS)
@@ -264,12 +265,14 @@ def make_ironic_bootstrap_task(uids, cid):
                 "--root-ssh-authorized-file {bootstrap_ssh_keys} "
                 "--output-dir {bootstrap_path} "
                 "--extra-dir {extra_conf_files} --no-compress "
-                '--no-default-extra-dirs --no-default-packages)').format(
+                '--no-default-extra-dirs --no-default-packages '
+                '--log-file {log_file})').format(
                     cid=cid,
                     extra_conf_files=extra_conf_files,
                     bootstrap_ssh_keys=ssh_keys,
                     ironic_bootstrap_pkgs=ironic_bootstrap_pkgs,
-                    bootstrap_path=bootstrap_path),
+                    bootstrap_path=bootstrap_path,
+                    log_file=log_file),
             'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
             'retries': 1}})
 

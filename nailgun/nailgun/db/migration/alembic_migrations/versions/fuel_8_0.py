@@ -578,7 +578,7 @@ def cluster_plugin_links_upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('cluster_id', sa.Integer(), nullable=False),
         sa.Column('title', sa.Text(), nullable=False),
-        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False, index=True),
         sa.Column('description', sa.Text()),
         sa.Column(
             'hidden',
@@ -587,7 +587,8 @@ def cluster_plugin_links_upgrade():
             server_default='false'
         ),
         sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
-        sa.PrimaryKeyConstraint('id')
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('url')
     )
     op.create_index('cluster_plugin_links_cluster_id_key',
                     'cluster_plugin_links', ['cluster_id'])
@@ -603,7 +604,7 @@ def plugin_links_upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('plugin_id', sa.Integer(), nullable=False),
         sa.Column('title', sa.Text(), nullable=False),
-        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False, index=True),
         sa.Column('description', sa.Text()),
         sa.Column(
             'hidden',
@@ -612,7 +613,8 @@ def plugin_links_upgrade():
             server_default='false'
         ),
         sa.ForeignKeyConstraint(['plugin_id'], ['plugins.id'], ),
-        sa.PrimaryKeyConstraint('id')
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('url')
     )
     op.create_index('plugin_links_plugin_id_key',
                     'plugin_links', ['plugin_id'])

@@ -32,6 +32,6 @@ class PluginLink(Base):
         nullable=False
     )
     title = Column(Text, nullable=False)
-    url = Column(Text, nullable=False)
+    url = Column(Text, nullable=False, index=True, unique=True)
     description = Column(Text)
     hidden = Column(Boolean, default=False)

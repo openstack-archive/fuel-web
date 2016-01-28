@@ -91,10 +91,7 @@ var DashboardTab = React.createClass({
             cluster.get('status') === 'operational' &&
               <DashboardLinks key='plugin-links' cluster={cluster} links={dashboardLinks} />,
             (nodes.hasChanges() || cluster.needsRedeployment()) &&
-              <DeployReadinessBlock
-                key='changes-to-deploy'
-                {... _.pick(this.props, 'cluster', 'nodeNetworkGroups')}
-              />,
+              <DeployReadinessBlock key='changes-to-deploy' cluster={this.props.cluster} />,
             !nodes.length && (
               <div className='row' key='new-cluster'>
                 <div className='dashboard-block clearfix'>
@@ -457,7 +454,7 @@ var DeployReadinessBlock = React.createClass({
     },
     // check cluster network configuration
     function(cluster) {
-      if (this.props.nodeNetworkGroups.where({cluster_id: cluster.id}).length > 1) return null;
+      if (this.props.cluster.get('nodeNetworkGroups').length > 1) return null;
       var networkVerificationTask = cluster.task('verify_networks');
       var makeComponent = (text, isError) => {
         var span = (

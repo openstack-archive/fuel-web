@@ -171,7 +171,6 @@ class App {
     this.statistics = new models.NodesStatistics();
     this.notifications = new models.Notifications();
     this.releases = new models.Releases();
-    this.nodeNetworkGroups = new models.NodeNetworkGroups();
   }
 
   initialize() {
@@ -192,10 +191,7 @@ class App {
         return $.Deferred().resolve();
       })
       .then(() => {
-        return $.when(
-          this.fuelSettings.fetch(),
-          this.nodeNetworkGroups.fetch()
-        );
+        return this.fuelSettings.fetch();
       })
       .then(null, () => {
         if (this.version.get('auth_required') && !this.user.get('authenticated')) {

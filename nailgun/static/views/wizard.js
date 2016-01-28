@@ -337,7 +337,7 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
             componentType: 'hypervisor',
             title: i18n('dialog.create_cluster_wizard.compute.title'),
             vCenterPath: 'hypervisor:vmware',
-            vCenterNetworkBackends: ['network:neutron:ml2:nsx', 'network:neutron:ml2:dvs'],
+            vCenterNetworkBackends: ['network:neutron:core:nsx', 'network:neutron:ml2:dvs'],
             hasErrors: function(wizard) {
                 var allComponents = wizard.get('components'),
                     components = allComponents.getComponentsByType(this.componentType, {sorted: true});

@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.errors import errors
 
@@ -125,3 +126,16 @@ class AttributesValidator(BasicValidator):
                 log_message=True
             )
         return d
+
+
+class ClusterStopDeploymentValidator(BaseDefferedTaskValidator):
+
+    @classmethod
+    def validate(cls, cluster):
+        super(ClusterStopDeploymentValidator, cls).validate(cluster)
+
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        if cluster.attributes.generated['deployed_before']['value']:
+            raise errors.CannotBeStopped()

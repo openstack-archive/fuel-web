@@ -13,9 +13,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import sqlalchemy as sa
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy.models import cluster_plugin_link \
     as cluster_plugin_link_db_model
+from nailgun.errors import errors
 from nailgun.objects.base import NailgunCollection
 from nailgun.objects.base import NailgunObject
 from nailgun.objects.serializers import plugin_link
@@ -25,6 +28,14 @@ class ClusterPluginLink(NailgunObject):
 
     model = cluster_plugin_link_db_model.ClusterPluginLink
     serializer = plugin_link.PluginLinkSerializer
+
+    @classmethod
+    def update(cls, instance, data):
+        try:
+            return super(ClusterPluginLink, cls).update(instance, data)
+        except sa.exc.IntegrityError as exc:
+            db.rollback()
+            raise errors.AlreadyExists(exc.message)
 
 
 class ClusterPluginLinkCollection(NailgunCollection):
@@ -41,4 +52,8 @@ class ClusterPluginLinkCollection(NailgunCollection):
     @classmethod
     def create_with_cluster_id(cls, data, cluster_id):
         data['cluster_id'] = cluster_id
-        return cls.create(data)
+        try:
+            return cls.create(data)
+        except sa.exc.IntegrityError as exc:
+            db.rollback()
+            raise errors.AlreadyExists(exc.message)

@@ -14,24 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import ForeignKey
-from sqlalchemy import Integer
-from sqlalchemy import Text
+import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models.base import Base
 
 
 class PluginLink(Base):
     __tablename__ = 'plugin_links'
-    id = Column(Integer, primary_key=True)
-    plugin_id = Column(
-        Integer,
-        ForeignKey('plugins.id', ondelete='CASCADE'),
+    id = sa.Column(sa.Integer, primary_key=True)
+    plugin_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey('plugins.id', ondelete='CASCADE'),
         nullable=False
     )
-    title = Column(Text, nullable=False)
-    url = Column(Text, nullable=False)
-    description = Column(Text)
-    hidden = Column(Boolean, default=False)
+    title = sa.Column(sa.Text, nullable=False)
+    url = sa.Column(sa.Text, nullable=False, unique=True)
+    description = sa.Column(sa.Text)
+    hidden = sa.Column(sa.Boolean, default=False)

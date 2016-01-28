@@ -367,7 +367,8 @@ class DeferredTaskHandler(BaseHandler):
             raise self.http(409, exc.message)
         except (
             errors.DeploymentNotRunning,
-            errors.WrongNodeStatus
+            errors.WrongNodeStatus,
+            errors.CannotBeStopped,
         ) as exc:
             raise self.http(400, exc.message)
         except Exception as exc:

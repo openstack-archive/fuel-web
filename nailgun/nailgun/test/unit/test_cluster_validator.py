@@ -18,8 +18,10 @@ from contextlib import nested
 from mock import Mock
 from mock import patch
 
+from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.errors import errors
+from nailgun import objects
 from nailgun.test.base import BaseTestCase
 
 
@@ -151,4 +153,38 @@ class TestClusterValidator(BaseTestCase):
             ClusterValidator._can_update_release(
                 pend_release, curr_release
             )
+        )
+
+
+class TestClusterStopDeploymentValidator(BaseTestCase):
+
+    def setUp(self):
+        super(TestClusterStopDeploymentValidator, self).setUp()
+        self.cluster = self.env.create_cluster(api=False)
+
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_stop_deployment_failed_for_once_deployed_cluster(self):
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=True)
+
+        self.assertRaises(
+            errors.CannotBeStopped,
+            ClusterStopDeploymentValidator.validate,
+            self.cluster
+        )
+
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_no_key_error_if_deployed_before_is_absent(self):
+        # 'deployed_before' is absent in attributes of clusters
+        # that was created before upgrading of master node to
+        # Fuel w/ versions >= 8.0
+
+        del self.cluster.attributes.generated['deployed_before']
+        self.assertNotRaises(
+            KeyError,
+            ClusterStopDeploymentValidator.validate,
+            self.cluster
         )

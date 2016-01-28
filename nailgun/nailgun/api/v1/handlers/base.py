@@ -20,6 +20,7 @@ from decorator import decorator
 from sqlalchemy import exc as sa_exc
 import web
 
+from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.db import db
 
@@ -332,7 +333,7 @@ class DeferredTaskHandler(BaseHandler):
     """Abstract Deferred Task Handler
     """
 
-    validator = BasicValidator
+    validator = BaseDefferedTaskValidator
     single = objects.Task
     log_message = u"Starting deferred task on environment '{env_id}'"
     log_error = u"Error during execution of deferred task " \
@@ -360,6 +361,7 @@ class DeferredTaskHandler(BaseHandler):
         logger.info(self.log_message.format(env_id=cluster_id))
 
         try:
+            self.validator.validate(cluster)
             task_manager = self.task_manager(cluster_id=cluster.id)
             task = task_manager.execute()
         except (
@@ -369,7 +371,8 @@ class DeferredTaskHandler(BaseHandler):
             raise self.http(409, exc.message)
         except (
             errors.DeploymentNotRunning,
-            errors.WrongNodeStatus
+            errors.WrongNodeStatus,
+            errors.CannotBeStopped,
         ) as exc:
             raise self.http(400, exc.message)
         except Exception as exc:

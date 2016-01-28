@@ -40,6 +40,7 @@ default_messages = {
     "DeploymentNotRunning": "Deployment is not running",
     "DeletionAlreadyStarted": "Environment removal already started",
     "StopAlreadyRunning": "Stopping deployment already initiated",
+    "CannotBeStopped": "Stop action is forbidden for the cluster",
     "FailedProvisioning": "Failed to start provisioning",
     "WrongNodeStatus": "Wrong node status",
     "NodeOffline": "Node is offline",

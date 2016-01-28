@@ -15,10 +15,18 @@
 #    under the License.
 
 import copy
+import datetime
+import hashlib
+import jsonschema
+import mock
+import six
+import uuid
+
 from itertools import cycle
 from itertools import ifilter
 
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import BaseTestCase
 from nailgun.test.base import reverse
 
 from nailgun.errors import errors
@@ -480,7 +488,10 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.operational)
+        self.assertTrue(
+            self.cluster.attributes.generated['deployed_before']['value'])
 
     def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
         for node in self.cluster.nodes:
@@ -673,3 +684,60 @@ class TestReleaseOrchestratorData(BaseIntegrationTest):
         self.assertEqual(
             instance.puppet_modules_source,
             'rsync://10.20.0.2:/puppet/manifests/')
+
+class TestClusterObject(BaseTestCase):
+
+    def setUp(self):
+        super(TestClusterObject, self).setUp()
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+                {'roles': ['cinder']}])
+
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_set_deployed_before_flag(self):
+        # for new clusters that are created by Fuel of version >= 8.0
+        # the flag is set to False by default
+        self.cluster = self.env.clusters[0]
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that the flags is set to true if was false
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=True)
+        self.assertTrue(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that flag is set to false if was true
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        # check that flag is not changed when same value is given
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_set_deployed_before_flag_if_it_is_not_in_generated(self):
+        # there will be no 'deployed_before' attribute present in
+        # existing clusters' attributes after master node upgrade to Fuel of
+        # versions >= 8.0 so it must be set in such case by the method under
+        # the test
+        self.cluster = self.env.clusters[0]
+
+        def check_flag_set(value):
+            del self.cluster.attributes.generated['deployed_before']
+            objects.Cluster.set_deployed_before_flag(self.cluster, value)
+            self.assertEqual(
+                self.cluster.attributes.generated['deployed_before']['value'],
+                value
+            )
+
+        for value in (True, False):
+            check_flag_set(value)

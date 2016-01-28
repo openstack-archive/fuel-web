@@ -892,6 +892,8 @@
           metadata:
             metadata_proxy_shared_secret:
               generator: "password"
+        deployed_before:
+          value: false
     wizard_metadata:
       Mode:
         mode:

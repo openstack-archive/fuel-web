@@ -19,15 +19,17 @@ define([
   'intern/chai!assert',
   'tests/functional/pages/common',
   'tests/functional/pages/cluster',
+  'tests/functional/pages/clusters',
   'tests/functional/pages/modal',
-  'tests/functional/pages/dashboard'
-], function(registerSuite, assert, Common, ClusterPage, ModalWindow, DashboardPage) {
+  'tests/functional/pages/dashboard',
+  'tests/functional/pages/network'
+], function(registerSuite, assert, Common, ClusterPage,
+    ClustersPage, ModalWindow, DashboardPage, NetworkPage) {
   'use strict';
 
   registerSuite(function() {
     var common,
       clusterPage,
-      clusterName,
       dashboardPage;
     var applyButtonSelector = '.apply-btn';
 
@@ -36,7 +38,6 @@ define([
       setup: function() {
         common = new Common(this.remote);
         clusterPage = new ClusterPage(this.remote);
-        clusterName = common.pickRandomName('Test Cluster');
         dashboardPage = new DashboardPage(this.remote);
 
         return this.remote
@@ -45,7 +46,7 @@ define([
           })
           .then(function() {
             return common.createCluster(
-              clusterName,
+              'Test Cluster #1',
               {
                 'Networking Setup': function() {
                   return this.remote
@@ -258,8 +259,9 @@ define([
     var common,
       clusterPage,
       dashboardPage,
-      clusterName,
-      modal;
+      modal,
+      networkPage,
+      clustersPage;
 
     return {
       name: 'Node network group tests',
@@ -267,15 +269,16 @@ define([
         common = new Common(this.remote);
         clusterPage = new ClusterPage(this.remote);
         dashboardPage = new DashboardPage(this.remote);
-        clusterName = common.pickRandomName('Test Cluster');
         modal = new ModalWindow(this.remote);
+        networkPage = new NetworkPage(this.remote);
+        clustersPage = new ClustersPage(this.remote);
 
         return this.remote
           .then(function() {
             return common.getIn();
           })
           .then(function() {
-            return common.createCluster(clusterName);
+            return clustersPage.goToEnvironment('Test vlan segmentation');
           })
           .then(function() {
             return clusterPage.goToTab('Networks');
@@ -310,17 +313,45 @@ define([
       },
       'Node network group renaming': function() {
         return this.remote
-          .clickByCssSelector('.subtab-link-Node_Network_Group_1')
-          .clickByCssSelector('.glyphicon-pencil')
-          .waitForCssSelector('.network-group-name input[type=text]', 2000)
-          .findByCssSelector('.node-group-renaming input[type=text]')
-            .clearValue()
-            .type('Node_Network_Group_2')
-            // Enter
-            .type('\uE007')
-            .end()
+          .then(function() {
+            return networkPage.renameNodeNetworkGroup(
+              'Node_Network_Group_2',
+              'Node_Network_Group_1'
+            );
+          })
           .assertElementDisplayed('.subtab-link-Node_Network_Group_2',
-            'Node network group was successfully renamed');
+            'Node network group was successfully renamed')
+          .clickLinkByText('Environments')
+          .then(function() {
+            return clustersPage.goToEnvironment('Test Cluster #1');
+          })
+          .then(function() {
+            return clusterPage.goToTab('Networks');
+          })
+          .then(function() {
+            return networkPage.addNodeNetworkGroup('1');
+          })
+          .clickLinkByText('Environments')
+          .then(function() {
+            return clustersPage.goToEnvironment('Test vlan segmentation');
+          })
+          .then(function() {
+            return clusterPage.goToTab('Networks');
+          })
+          .then(function() {
+            return networkPage.addNodeNetworkGroup('1');
+          })
+          .clickByCssSelector('.subtab-link-default')
+          .then(function() {
+            return networkPage.renameNodeNetworkGroup('new');
+          })
+          .then(function() {
+            return networkPage.renameNodeNetworkGroup('default');
+          })
+          .assertElementContainsText(
+            '.network-group-name .btn-link', 'default',
+            'Node network group was successfully renamed to "default"'
+          );
       },
       'Node network group deletion': function() {
         return this.remote

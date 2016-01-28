@@ -121,6 +121,7 @@ var ClusterPage = React.createClass({
           return this.constructor.__super__.fetch.call(this,
             _.extend({data: {cluster_id: id}}, options));
         };
+
         promise = $.when(
             cluster.fetch(),
             cluster.get('settings').fetch(),
@@ -160,7 +161,9 @@ var ClusterPage = React.createClass({
       return promise.then((data) => {
         return {
           cluster: cluster,
-          nodeNetworkGroups: nodeNetworkGroups,
+          nodeNetworkGroups: new models.NodeNetworkGroups(
+            _.invoke(nodeNetworkGroups.where({cluster_id: cluster.id}), 'toJSON')
+          ),
           activeTab: activeTab,
           tabOptions: tabOptions,
           tabData: data

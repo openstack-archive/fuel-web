@@ -847,14 +847,16 @@ var NetworkTab = React.createClass({
     return fieldsWithVerificationErrors;
   },
   removeNodeNetworkGroup() {
-    var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
+    var nodeNetworkGroup = this.props.nodeNetworkGroups.find(
+      {name: this.props.activeNetworkSectionName}
+    );
     RemoveNodeNetworkGroupDialog
       .show({
         showUnsavedChangesWarning: this.hasChanges()
       })
       .done(() => {
         this.props.setActiveNetworkSectionName(
-          this.nodeNetworkGroups.find({is_default: true}).get('name')
+          this.props.nodeNetworkGroups.find({is_default: true}).get('name')
         );
         return nodeNetworkGroup
           .destroy({wait: true})
@@ -883,13 +885,13 @@ var NetworkTab = React.createClass({
     CreateNodeNetworkGroupDialog
       .show({
         clusterId: this.props.cluster.id,
-        nodeNetworkGroups: this.nodeNetworkGroups
+        nodeNetworkGroups: this.props.nodeNetworkGroups
       })
       .done(() => {
         this.setState({hideVerificationResult: true});
-        return this.nodeNetworkGroups.fetch()
+        return this.props.nodeNetworkGroups.fetch({data: {cluster_id: this.props.cluster.id}})
           .then(() => {
-            var newNodeNetworkGroup = this.nodeNetworkGroups.last();
+            var newNodeNetworkGroup = this.props.nodeNetworkGroups.last();
             this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
             this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
             return this.props.cluster.get('networkConfiguration').fetch();
@@ -900,7 +902,7 @@ var NetworkTab = React.createClass({
   render() {
     var isLocked = this.isLocked();
     var hasChanges = this.hasChanges();
-    var {activeNetworkSectionName, cluster} = this.props;
+    var {activeNetworkSectionName, cluster, nodeNetworkGroups} = this.props;
     var networkConfiguration = this.props.cluster.get('networkConfiguration');
     var networkingParameters = networkConfiguration.get('networking_parameters');
     var manager = networkingParameters.get('net_manager');
@@ -922,8 +924,6 @@ var NetworkTab = React.createClass({
       row: true,
       'changes-locked': isLocked
     };
-    var nodeNetworkGroups = this.nodeNetworkGroups =
-      new models.NodeNetworkGroups(this.props.nodeNetworkGroups.where({cluster_id: cluster.id}));
     var isNovaEnvironment = cluster.get('net_provider') === 'nova_network';
     var networks = networkConfiguration.get('networks');
     var isMultiRack = nodeNetworkGroups.length > 1;
@@ -938,7 +938,9 @@ var NetworkTab = React.createClass({
       isMultiRack ||
       notEnoughOnlineNodesForVerification;
 
-    var currentNodeNetworkGroup = nodeNetworkGroups.findWhere({name: activeNetworkSectionName});
+    var currentNodeNetworkGroup = nodeNetworkGroups.find({name: activeNetworkSectionName}) ||
+      // this is needed to avoid undefined currentNodeNetworkGroup immediately after renaming
+      nodeNetworkGroups.first();
     var nodeNetworkGroupProps = {
       cluster: cluster,
       locked: isLocked,

@@ -450,7 +450,7 @@ var DeployReadinessBlock = React.createClass({
     },
     // check cluster network configuration
     function(cluster) {
-      if (this.props.nodeNetworkGroups.where({cluster_id: cluster.id}).length > 1) return null;
+      if (this.props.nodeNetworkGroups.length > 1) return null;
       var networkVerificationTask = cluster.task('verify_networks');
       var makeComponent = (text, isError) => {
         var span = (

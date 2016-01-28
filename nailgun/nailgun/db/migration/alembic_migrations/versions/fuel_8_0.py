@@ -578,7 +578,7 @@ def cluster_plugin_links_upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('cluster_id', sa.Integer(), nullable=False),
         sa.Column('title', sa.Text(), nullable=False),
-        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False, index=True),
         sa.Column('description', sa.Text()),
         sa.Column(
             'hidden',
@@ -603,7 +603,7 @@ def plugin_links_upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('plugin_id', sa.Integer(), nullable=False),
         sa.Column('title', sa.Text(), nullable=False),
-        sa.Column('url', sa.Text(), nullable=False),
+        sa.Column('url', sa.Text(), nullable=False, index=True),
         sa.Column('description', sa.Text()),
         sa.Column(
             'hidden',

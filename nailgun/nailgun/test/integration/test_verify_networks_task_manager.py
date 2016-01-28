@@ -691,6 +691,18 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         cluster = self.env.clusters[0]
         deploy_task = self.env.launch_deployment()
         self.env.wait_until_task_pending(deploy_task)
+
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        # TODO(aroma): remove unnecessary copying when enhancement
+        # of Mutable types will be introduced for corresponding
+        # fields of ORM models
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['deployed_before']['value'] = False
+        cluster.attributes.generated = generated_attrs
+        self.db.flush()
+
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.db.refresh(cluster)

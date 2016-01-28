@@ -177,3 +177,24 @@ class TestTaskDeploy(BaseIntegrationTest):
             (task["id"] for task in deploy_tasks[compute.uid]
              if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
         )
+
+    @fake_tasks(mock_rpc=False, fake_rpc=False)
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
+    @mock.patch('nailgun.rpc.cast')
+    def test_task_deploy_all_tasks(self, rpc_cast, *_):
+        self.enable_deploy_task(True)
+        compute = next(
+            (x for x in self.env.nodes if 'compute' in x.roles), None
+        )
+        self.assertIsNotNone(compute)
+        compute.status = consts.NODE_STATUSES.provisioned
+        compute.pending_addition = False
+        self.db.flush()
+
+        message = self.get_deploy_message()
+        deploy_tasks = message['args']['deployment_tasks']
+        self.assertIn(
+            "netconfig",
+            {task["id"] for task in deploy_tasks[compute.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped}
+        )

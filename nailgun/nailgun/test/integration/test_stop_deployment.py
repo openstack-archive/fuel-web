@@ -23,6 +23,7 @@ from nailgun.db.sqlalchemy.models.task import Task
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import reverse
 
 
 class TestStopDeployment(BaseIntegrationTest):
@@ -77,6 +78,42 @@ class TestStopDeployment(BaseIntegrationTest):
             notification.message,
             'Please make changes and reset the environment '
             'if you want to redeploy it.')
+
+    # FIXME(aroma): remove when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    @fake_tasks(tick_interval=1)
+    def test_stop_deployment_fail_if_deployed_before(self):
+        deploy_task = self.env.launch_deployment()
+        self.env.wait_ready(deploy_task)
+
+        # changes to deploy
+        self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=["controller"],
+            pending_addition=True
+        )
+
+        redeploy_task = self.env.launch_deployment()
+        self.env.wait_until_task_pending(redeploy_task)
+
+        # stop task will not be created as in this situation
+        # the error will be raised by validator thus we cannot use
+        # self.env.stop_deployment to check the result
+        resp = self.app.put(
+            reverse(
+                'ClusterStopDeploymentHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            expect_errors=True,
+            headers=self.default_headers
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json_body['message'],
+                         'Stop action is forbidden for the cluster')
+
+        # wait that redeployment end successfully
+        self.env.wait_ready(redeploy_task)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

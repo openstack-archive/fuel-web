@@ -13,11 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from mock import Mock
 from mock import patch
 from mock import PropertyMock
 from oslo_serialization import jsonutils
 
+from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun import consts
 from nailgun.errors import errors
@@ -214,3 +217,25 @@ class TestClusterValidator(BaseTestCase):
                                 ClusterValidator.validate_update,
                                 self.cluster_data,
                                 cluster_mock)
+
+
+class TestClusterStopDeploymentValidator(BaseTestCase):
+
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_stop_deployment_failed_for_once_deployed_cluster(self):
+        cluster = self.env.create_cluster(api=False)
+
+        # TODO(aroma): remove unnecessary copying when enhancement
+        # of Mutable types will be introduced for corresponding
+        # fields of ORM models
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['deployed_before']['value'] = True
+        cluster.attributes.generated = generated_attrs
+
+        self.assertRaises(
+            errors.CannotBeStopped,
+            ClusterStopDeploymentValidator.validate,
+            cluster
+        )

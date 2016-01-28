@@ -59,6 +59,12 @@ class TestResetEnvironment(BaseIntegrationTest):
 
         self.assertEqual(cluster_db.status, "new")
 
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        self.assertTrue(
+            cluster_db.attributes.generated['deployed_before']['value'])
+
         for n in cluster_db.nodes:
             self.assertEqual(n.online, False)
             self.assertEqual(n.status, "discover")

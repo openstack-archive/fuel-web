@@ -747,6 +747,20 @@ class StopDeploymentTaskManager(TaskManager):
 class ResetEnvironmentTaskManager(TaskManager):
 
     def execute(self):
+
+        # FIXME(aroma): remove updating of 'deployed_before'
+        # when stop action is reworked. 'deployed_before'
+        # flag identifies whether stop action is allowed for the
+        # cluster. Please, refer to [1] for more details.
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        if not self.cluster.attributes.generated['deployed_before']['value']:
+            # TODO(aroma): remove unnecessary copying when enhancement
+            # of Mutable types will be introduced for corresponding
+            # fields of ORM models
+            generated_attrs = copy.deepcopy(cluster.attributes.generated)
+            generated_attrs['deployed_before']['value'] = True
+            cluster.attributes.generated = generated_attrs
+
         deploy_running = db().query(Task).filter_by(
             cluster=self.cluster,
             name=consts.TASK_NAMES.deploy,

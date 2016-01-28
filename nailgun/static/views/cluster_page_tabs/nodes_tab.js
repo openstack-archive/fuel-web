@@ -140,7 +140,7 @@ var NodesTab = React.createClass({
             {...this.state.screenData}
             {..._.pick(
               this.props,
-              'cluster', 'nodeNetworkGroups', 'selectedNodeIds', 'selectNodes'
+              'cluster', 'selectedNodeIds', 'selectNodes'
             )}
             ref='screen'
             screenOptions={this.state.screenOptions}

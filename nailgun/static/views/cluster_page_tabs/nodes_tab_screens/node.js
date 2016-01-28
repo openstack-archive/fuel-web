@@ -134,7 +134,9 @@ var Node = React.createClass({
     ShowNodeInfoDialog.show({
       node: this.props.node,
       cluster: this.props.cluster,
-      nodeNetworkGroup: this.props.nodeNetworkGroups.get(this.props.node.get('group_id')),
+      nodeNetworkGroup:
+        (this.props.nodeNetworkGroups || this.props.cluster.get('nodeNetworkGroups'))
+          .get(this.props.node.get('group_id')),
       renderActionButtons: this.props.renderActionButtons
     });
   },

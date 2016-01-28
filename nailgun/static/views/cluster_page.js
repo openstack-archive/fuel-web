@@ -82,7 +82,6 @@ var ClusterPage = React.createClass({
     fetchData(id, activeTab, ...tabOptions) {
       id = Number(id);
       var cluster, promise, currentClusterId;
-      var nodeNetworkGroups = app.nodeNetworkGroups;
       var tab = _.find(this.getTabs(), {url: activeTab}).tab;
       try {
         currentClusterId = app.page.props.cluster.id;
@@ -108,6 +107,10 @@ var ClusterPage = React.createClass({
         pluginLinks.url = _.result(cluster, 'url') + '/plugin_links';
         cluster.set({pluginLinks: pluginLinks});
 
+        cluster.get('nodeNetworkGroups').fetch = function(options) {
+          return this.constructor.__super__.fetch.call(this,
+            _.extend({data: {cluster_id: id}}, options));
+        };
         cluster.get('nodes').fetch = function(options) {
           return this.constructor.__super__.fetch.call(this,
             _.extend({data: {cluster_id: id}}, options));
@@ -119,7 +122,7 @@ var ClusterPage = React.createClass({
             cluster.get('pluginLinks').fetch({cache: true}),
             cluster.fetchRelated('nodes'),
             cluster.fetchRelated('tasks'),
-            nodeNetworkGroups.fetch({cache: true})
+            cluster.fetchRelated('nodeNetworkGroups')
           )
           .then(() => {
             var networkConfiguration = new models.NetworkConfiguration();
@@ -149,7 +152,14 @@ var ClusterPage = React.createClass({
           });
       }
       return promise.then(
-        (tabData) => ({cluster, nodeNetworkGroups, activeTab, tabOptions, tabData})
+        (tabData) => {
+          return {
+            cluster,
+            activeTab,
+            tabOptions,
+            tabData
+          };
+        }
       );
     }
   },
@@ -300,7 +310,7 @@ var ClusterPage = React.createClass({
           <Tab
             ref='tab'
             {... _.pick(this, 'selectNodes', 'changeLogSelection')}
-            {... _.pick(this.props, 'cluster', 'nodeNetworkGroups', 'tabOptions')}
+            {... _.pick(this.props, 'cluster', 'tabOptions')}
             {...this.state}
             {...this.props.tabData}
           />

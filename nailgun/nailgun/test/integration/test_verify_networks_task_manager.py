@@ -691,6 +691,15 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         cluster = self.env.clusters[0]
         deploy_task = self.env.launch_deployment()
         self.env.wait_until_task_pending(deploy_task)
+
+        # set 'once_deployed' to false in order to
+        # get stop deploy task be executed on the cluster
+        cluster = self.env.clusters[0]
+        generated_attrs = copy.deepcopy(cluster.attributes.generated)
+        generated_attrs['once_deployed']['value'] = False
+        cluster.attributes.generated = generated_attrs
+        self.db.flush()
+
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.db.refresh(cluster)

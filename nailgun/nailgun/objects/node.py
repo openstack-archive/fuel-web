@@ -355,7 +355,6 @@ class Node(NailgunObject):
         """
         return instance.status not in (
             consts.NODE_STATUSES.discover,
-            consts.NODE_STATUSES.provisioned,
             consts.NODE_STATUSES.error,
         )
 

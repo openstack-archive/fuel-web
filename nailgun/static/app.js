@@ -171,7 +171,6 @@ class App {
     this.statistics = new models.NodesStatistics();
     this.notifications = new models.Notifications();
     this.releases = new models.Releases();
-    this.nodeNetworkGroups = new models.NodeNetworkGroups();
   }
 
   initialize() {
@@ -193,8 +192,7 @@ class App {
       })
       .then(() => {
         return $.when(
-          this.fuelSettings.fetch(),
-          this.nodeNetworkGroups.fetch()
+          this.fuelSettings.fetch()
         );
       })
       .then(null, () => {

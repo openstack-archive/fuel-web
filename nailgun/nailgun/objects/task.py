@@ -167,7 +167,21 @@ class Task(NailgunObject):
         logger.debug(
             "Updating cluster (%s) status: from %s to %s",
             cluster.full_name, cluster.status, status)
-        Cluster.update(cluster, data={'status': status})
+
+        data = {'status': status}
+
+        # FIXME(aroma): remove updating of 'once_deployed'
+        # when stop action is reworked. 'once_deployed'
+        # flag identifies wether stop action is allowed for the
+        # cluster. Please, refer to [1] for more details.
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        if status == consts.CLUSTER_STATUSES.operational \
+                and not cluster.attributes.generated['once_deployed']['value']:
+            generated_attrs = copy.deepcopy(cluster.attributes.generated)
+            generated_attrs['once_deployed']['value'] = True
+            cluster.attributes.generated = generated_attrs
+
+        Cluster.update(cluster, data)
 
     @classmethod
     def _update_cluster_data(cls, instance):
@@ -175,7 +189,7 @@ class Task(NailgunObject):
 
         if instance.name == 'deploy':
             if instance.status == 'ready':
-                # If for some reasosns orchestrator
+                # If for some reasons orchestrator
                 # didn't send ready status for node
                 # we should set it explicitly
                 for n in cluster.nodes:

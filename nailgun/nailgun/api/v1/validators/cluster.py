@@ -433,6 +433,19 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
 
 
+class ClusterStopDeploymentValidator(BaseDefferedTaskValidator):
+
+    @classmethod
+    def validate(cls, cluster):
+        super(ClusterStopDeploymentValidator, cls).validate(cluster)
+
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        if cluster.attributes.generated['once_deployed']['value']:
+            raise errors.CannotBeStopped()
+
+
 class VmwareAttributesValidator(BasicValidator):
 
     single_schema = cluster_schema.vmware_attributes_schema

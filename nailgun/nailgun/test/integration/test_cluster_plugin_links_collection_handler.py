@@ -27,6 +27,10 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             cluster_kwargs={"api": True},
             nodes_kwargs=[{}]
         )
+        self.second_cluster = self.env.create(
+            cluster_kwargs={"api": True},
+            nodes_kwargs=[{}]
+        )
         self.link_data = {
             'title': 'test title',
             'url': 'http://test.com/url',
@@ -64,6 +68,44 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             self.link_data['description'],
             plugin_link.description
         )
+
+    def test_cluster_plugin_link_creation_fail_duplicate(self):
+        self.env.create_cluster_plugin_link(
+            cluster_id=self.cluster['id'],
+            url='http://uniq1.com'
+        )
+        resp = self.app.post(
+            reverse(
+                'ClusterPluginLinkCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
+            ),
+            params=jsonutils.dumps({
+                'title': 'My Plugin',
+                'url': 'http://uniq1.com'
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(409, resp.status_code)
+
+    def test_creation_not_fail_on_duplicate_in_different_clusters(self):
+        self.app.post(
+            reverse(
+                'ClusterPluginLinkCollectionHandler',
+                kwargs={'cluster_id': self.cluster['id']}
+            ),
+            params=jsonutils.dumps(self.link_data),
+            headers=self.default_headers
+        )
+        resp = self.app.post(
+            reverse(
+                'ClusterPluginLinkCollectionHandler',
+                kwargs={'cluster_id': self.second_cluster['id']}
+            ),
+            params=jsonutils.dumps(self.link_data),
+            headers=self.default_headers
+        )
+        self.assertEqual(201, resp.status_code)
 
     def test_cluster_plugin_link_fail_creation(self):
         resp = self.app.post(

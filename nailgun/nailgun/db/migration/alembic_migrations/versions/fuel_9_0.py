@@ -151,9 +151,11 @@ def upgrade():
     upgrade_bond_modes()
     upgrade_task_attributes()
     upgrade_store_deployment_history()
+    upgrade_plugin_links_constraints()
 
 
 def downgrade():
+    downgrade_plugin_links_constraints()
     downgrade_store_deployment_history()
     downgrade_task_attributes()
     downgrade_bond_modes()
@@ -1353,3 +1355,31 @@ def upgrade_store_deployment_history():
 def downgrade_store_deployment_history():
     op.drop_table('deployment_history')
     drop_enum('history_task_statuses')
+
+
+def upgrade_plugin_links_constraints():
+    op.create_index('plugin_links_url_plugin_id_idx',
+                    'plugin_links', ['url', 'plugin_id'])
+    op.create_unique_constraint(
+        'plugin_links_url_plugin_id_uc',
+        'plugin_links',
+        ['url', 'plugin_id']
+    )
+
+    op.create_index('cluster_plugin_links_url_cluster_id_idx',
+                    'cluster_plugin_links', ['url', 'cluster_id'])
+    op.create_unique_constraint(
+        'cluster_plugin_links_url_cluster_id_uc',
+        'cluster_plugin_links',
+        ['url', 'cluster_id']
+    )
+
+
+def downgrade_plugin_links_constraints():
+    op.drop_constraint('cluster_plugin_links_url_cluster_id_uc',
+                       'cluster_plugin_links')
+    op.drop_index('cluster_plugin_links_url_cluster_id_idx', 'plugin_links')
+
+    op.drop_constraint('plugin_links_url_plugin_id_uc',
+                       'plugin_links')
+    op.drop_index('plugin_links_url_plugin_id_idx', 'plugin_links')

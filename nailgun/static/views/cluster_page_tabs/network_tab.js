@@ -1462,7 +1462,7 @@ var NetworkingL2Parameters = React.createClass({
       this.props.cluster.get('networkConfiguration').get('networking_parameters');
     var idRangePrefix = networkParameters.get('segmentation_type') === 'vlan' ? 'vlan' : 'gre_id';
     return (
-      <div className='forms-box' key='neutron-l2'>
+      <div className='forms-box neutron-l2' key='neutron-l2'>
         <h3 className='networks'>{i18n(parametersNS + 'l2_configuration')}</h3>
         <div className='network-description'>
           {
@@ -1501,7 +1501,7 @@ var NetworkingL3Parameters = React.createClass({
     var networks = this.props.cluster.get('networkConfiguration').get('networks');
     return (
       <div key='neutron-l3'>
-        <div className='forms-box' key='floating-net'>
+        <div className='forms-box floating-net' key='floating-net'>
           <h3>
             <span className='subtab-group-floating-net'>{i18n(networkTabNS + 'floating_net')}</span>
           </h3>
@@ -1513,7 +1513,7 @@ var NetworkingL3Parameters = React.createClass({
           />
           {this.renderInput('floating_name', false, {maxLength: '65'})}
         </div>
-        <div className='forms-box' key='internal-net'>
+        <div className='forms-box internal-net' key='internal-net'>
           <h3>
             <span className='subtab-group-internal-net'>{i18n(networkTabNS + 'internal_net')}</span>
           </h3>
@@ -1523,7 +1523,7 @@ var NetworkingL3Parameters = React.createClass({
           {this.renderInput('internal_name', false, {maxLength: '65'})}
         </div>
         {networks.findWhere({name: 'baremetal'}) &&
-          <div className='forms-box' key='baremetal-net'>
+          <div className='forms-box baremetal-net' key='baremetal-net'>
             <h3>
               <span className='subtab-group-baremetal-net'>
                 {i18n(networkTabNS + 'baremetal_net')}
@@ -1541,7 +1541,7 @@ var NetworkingL3Parameters = React.createClass({
             {this.renderInput('baremetal_gateway')}
           </div>
         }
-        <div className='forms-box' key='dns-nameservers'>
+        <div className='forms-box dns-nameservers' key='dns-nameservers'>
           <h3>
             <span className='subtab-group-dns-nameservers'>
               {i18n(networkTabNS + 'dns_nameservers')}

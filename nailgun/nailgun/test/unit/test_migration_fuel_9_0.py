@@ -233,7 +233,7 @@ def prepare():
         }])
     releaseid = result.inserted_primary_key[0]
 
-    db.execute(
+    result = db.execute(
         meta.tables['clusters'].insert(),
         [{
             'name': 'test_env',
@@ -245,8 +245,23 @@ def prepare():
             'fuel_version': '8.0',
             'deployment_tasks': jsonutils.dumps(JSON_TASKS)
         }])
+    cluster_id = result.inserted_primary_key[0]
 
-    db.execute(
+    result = db.execute(
+        meta.tables['clusters'].insert(),
+        [{
+            'name': 'test_env2',
+            'release_id': releaseid,
+            'mode': 'ha_compact',
+            'status': 'new',
+            'net_provider': 'neutron',
+            'grouping': 'roles',
+            'fuel_version': '8.0',
+            'deployment_tasks': jsonutils.dumps(JSON_TASKS)
+        }])
+    cluster2_id = result.inserted_primary_key[0]
+
+    result = db.execute(
         meta.tables['nodes'].insert(),
         [{
             'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',
@@ -316,7 +331,7 @@ def prepare():
             'meta': jsonutils.dumps({'assign_vip': True})
         }])
 
-    db.execute(
+    result = db.execute(
         meta.tables['plugins'].insert(),
         [{
             'name': 'test_plugin_a',
@@ -353,8 +368,9 @@ def prepare():
             }])
         }]
     )
+    plugin_a_id = result.inserted_primary_key[0]
 
-    db.execute(
+    result = db.execute(
         meta.tables['plugins'].insert(),
         [{
             'name': 'test_plugin_b',
@@ -389,6 +405,58 @@ def prepare():
                 }
             }])
         }]
+    )
+    plugin_b_id = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['cluster_plugin_links'].insert(),
+        [
+            {
+                'cluster_id': cluster_id,
+                'title': 'title',
+                'url': 'http://www.zzz.com',
+                'description': 'description',
+                'hidden': False
+            },
+            # this is duplicate, should be deleted during migration
+            {
+                'cluster_id': cluster2_id,
+                'title': 'title',
+                'url': 'http://www.zzz.com',
+                'description': 'description_duplicate',
+                'hidden': False
+            },
+            # duplicate by URL but in another cluster, should
+            # not be deleted
+            {
+                'cluster_id': cluster_id,
+                'title': 'title',
+                'url': 'http://www.zzz.com',
+                'description': 'description',
+                'hidden': False
+            }
+        ]
+    )
+
+    db.execute(
+        meta.tables['plugin_links'].insert(),
+        [
+            {
+                'plugin_id': plugin_a_id,
+                'title': 'title',
+                'url': 'http://www.zzz.com',
+                'description': 'description',
+                'hidden': False
+            },
+            # this is duplicate, should be deleted during migration
+            {
+                'plugin_id': plugin_b_id,
+                'title': 'title',
+                'url': 'http://www.zzz.com',
+                'description': 'description_duplicate',
+                'hidden': False
+            }
+        ]
     )
 
     db.commit()
@@ -846,3 +914,20 @@ class TestTasksMigration(base.BaseAlembicMigrationTest):
             None
         )
         self.assertIsNotNone(cluster_name_idx)
+
+
+class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):
+    # see initial data in setup section
+    def test_plugin_links_duplicate_cleanup(self):
+        links_count = db.execute(
+            sa.select(
+                [sa.func.count(self.meta.tables['plugin_links'].c.id)]
+            )).fetchone()[0]
+        self.assertEqual(links_count, 1)
+
+    def test_cluster_plugin_links_duplicate_cleanup(self):
+        links_count = db.execute(
+            sa.select(
+                [sa.func.count(self.meta.tables['cluster_plugin_links'].c.id)]
+            )).fetchone()[0]
+        self.assertEqual(links_count, 2)

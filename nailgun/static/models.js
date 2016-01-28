@@ -987,208 +987,277 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
     }
     return null;
   },
-  validateNetworkGateway(network, cidr) {
-    if (network.get('meta').use_gateway) {
-      if (!utils.validateIP(network.get('gateway'))) {
-        return {gateway: i18n('cluster_page.network_tab.validation.invalid_gateway')};
-      }
-      if (cidr && !utils.validateIpCorrespondsToCIDR(cidr, network.get('gateway'))) {
-        return {gateway: i18n('cluster_page.network_tab.validation.gateway_does_not_match_cidr')};
-      }
-      return null;
+  validateFixedNetworksAmount(fixedNetworksAmount, fixedNetworkVlan) {
+    if (!utils.isNaturalNumber(parseInt(fixedNetworksAmount, 10))) {
+      return {fixed_networks_amount: i18n('cluster_page.network_tab.validation.invalid_amount')};
+    }
+    if (fixedNetworkVlan && fixedNetworksAmount > 4095 - fixedNetworkVlan) {
+      return {fixed_networks_amount: i18n('cluster_page.network_tab.validation.need_more_vlan')};
     }
     return null;
   },
-  validate(attrs) {
-    var errors = {};
-    var networkingParametersErrors = {};
+  validateNeutronIdRange([idStart, idEnd], vlanSegmentation, vlans = []) {
     var ns = 'cluster_page.network_tab.validation.';
-    var networks = attrs.networks;
-    var networkParameters = attrs.networking_parameters;
-    var nodeNetworkGroupsErrors = {};
-    var nodeNetworkGroups = app.nodeNetworkGroups;
-    var novaNetManager = networkParameters.get('net_manager');
-    var floatingRangesErrors;
+    var maxId = vlanSegmentation ? 4094 : 65535;
+    var errors = _.map([idStart, idEnd], (id, index) => {
+      return !utils.isNaturalNumber(id) || id < 2 || id > maxId ?
+        i18n(ns + (index === 0 ? 'invalid_id_start' : 'invalid_id_end')) : '';
+    });
+    if (errors[0] || errors[1]) return errors;
 
-    nodeNetworkGroups.map((nodeNetworkGroup) => {
-      var networksToCheck = new models.Networks(networks.filter((network) => {
+    errors[0] = errors[1] = idStart === idEnd ?
+        i18n(ns + 'not_enough_id')
+      :
+        idStart > idEnd ? i18n(ns + 'invalid_id_range') : '';
+    if (errors[0] || errors[1]) return errors;
+
+    if (vlanSegmentation) {
+      if (_.any(vlans, (vlan) => utils.validateVlanRange(idStart, idEnd, vlan))) {
+        errors[0] = errors[1] = i18n(ns + 'vlan_intersection');
+      }
+    }
+    return errors;
+  },
+  validateNeutronFloatingRange(floatingRanges, networks, networkErrors) {
+    var networkToCheck = networks.find((network) => {
+      var cidrError;
+      try {
+        cidrError = !!networkErrors[network.get('group_id')][network.id].cidr;
+      } catch (error) {}
+      if (cidrError || !network.get('meta').floating_range_var) return false;
+      var [floatingRangeStart, floatingRangeEnd] = floatingRanges[0];
+      var cidr = network.get('cidr');
+      return utils.validateIpCorrespondsToCIDR(cidr, floatingRangeStart) &&
+        utils.validateIpCorrespondsToCIDR(cidr, floatingRangeEnd);
+    });
+
+    return utils.validateIPRanges(
+      floatingRanges,
+      networkToCheck ? networkToCheck.get('cidr') : undefined,
+      networkToCheck ? _.filter(networkToCheck.get('ip_ranges'), (range, index) => {
+        var ipRangeError = false;
+        try {
+          ipRangeError = !_.all(range) || _.any(
+              networkErrors[networkToCheck.get('group_id')][networkToCheck.id].ip_ranges,
+              {index: index}
+            );
+        } catch (error) {}
+        return !ipRangeError;
+      }) : [],
+      {
+        IP_RANGES_INTERSECTION: i18n(
+          'cluster_page.network_tab.validation.floating_and_public_ip_ranges_intersection',
+          networkToCheck ?
+            {
+              cidr: networkToCheck.get('cidr'),
+              network: _.capitalize(networkToCheck.get('name')),
+              nodeNetworkGroup: app.nodeNetworkGroups
+                .get(networkToCheck.get('group_id')).get('name')
+            }
+          :
+            {}
+        ),
+        IP_RANGE_IS_NOT_IN_PUBLIC_CIDR:
+          i18n('cluster_page.network_tab.validation.floating_range_is_not_in_public_cidr')
+      }
+    );
+  },
+  validateNetwork(network, networksToCheck, novaNetworking = false) {
+    var cidr = network.get('cidr');
+    var errors = {};
+
+    _.extend(errors, utils.validateCidr(cidr));
+    var cidrError = _.has(errors, 'cidr');
+
+    _.extend(errors, this.validateNetworkIpRanges(network, cidrError ? null : cidr));
+
+    if (network.get('meta').use_gateway) {
+      _.extend(
+        errors,
+        utils.validateGateway(network.get('gateway'), cidrError ? null : cidr)
+      );
+    }
+
+    // same VLAN IDs are not permitted for nova-network
+    var forbiddenVlans = novaNetworking ? networksToCheck.map((net) => {
+      return net.id !== network.id ? net.get('vlan_start') : null;
+    }) : [];
+    _.extend(
+      errors,
+      utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start')
+    );
+
+    return errors;
+  },
+  validateNovaNetworkParameters(parameters, networks, manager) {
+    var errors = {};
+
+    _.extend(
+      errors,
+      utils.validateCidr(parameters.get('fixed_networks_cidr'), 'fixed_networks_cidr')
+    );
+
+    var fixedNetworkVlan = parameters.get('fixed_networks_vlan_start');
+    var fixedNetworkVlanError = utils.validateVlan(
+      fixedNetworkVlan,
+      networks.pluck('vlan_start'),
+      'fixed_networks_vlan_start',
+      manager === 'VlanManager'
+    );
+    _.extend(errors, fixedNetworkVlanError);
+
+    var fixedNetworksAmount = parameters.get('fixed_networks_amount');
+    _.extend(
+      errors,
+      this.validateFixedNetworksAmount(
+        fixedNetworksAmount,
+        _.isEmpty(fixedNetworkVlanError) ? null : fixedNetworkVlan
+      )
+    );
+
+    if (_.isEmpty(fixedNetworkVlanError)) {
+      var vlanIntersection = _.any(_.compact(networks.pluck('vlan_start')),
+        (vlan) => utils.validateVlanRange(
+          fixedNetworkVlan,
+          fixedNetworkVlan + fixedNetworksAmount - 1, vlan
+        )
+      );
+      if (vlanIntersection) {
+        errors.fixed_networks_vlan_start =
+          i18n('cluster_page.network_tab.validation.vlan_intersection');
+      }
+    }
+
+    var floatingRangeErrors = utils.validateIPRanges(parameters.get('floating_ranges'));
+    if (floatingRangeErrors.length) {
+      errors.floating_ranges = floatingRangeErrors;
+    }
+
+    return errors;
+  },
+  validateNeutronParameters(parameters, networks, networkErrors) {
+    var errors = {};
+
+    var vlanSegmentation = parameters.get('segmentation_type') === 'vlan';
+    var idRangeAttributeName = vlanSegmentation ? 'vlan_range' : 'gre_id_range';
+    var idRangeErrors = this.validateNeutronIdRange(
+      _.map(parameters.get(idRangeAttributeName), Number),
+      vlanSegmentation,
+      _.compact(networks.pluck('vlan_start'))
+    );
+    if (idRangeErrors[0] || idRangeErrors[1]) errors[idRangeAttributeName] = idRangeErrors;
+
+    if (!parameters.get('base_mac').match(utils.regexes.mac)) {
+      errors.base_mac = i18n('cluster_page.network_tab.validation.invalid_mac');
+    }
+
+    _.extend(errors, utils.validateCidr(parameters.get('internal_cidr'), 'internal_cidr'));
+
+    _.extend(
+      errors,
+      utils.validateGateway(
+        parameters.get('internal_gateway'),
+        parameters.get('internal_cidr'),
+        'internal_gateway'
+      )
+    );
+
+    _.each(['internal_name', 'floating_name'], (attribute) => {
+      if (!parameters.get(attribute).match(/^[a-z][\w\-]*$/i)) {
+        errors[attribute] = i18n('cluster_page.network_tab.validation.invalid_name');
+      }
+    });
+
+    var floatingRangeErrors = this.validateNeutronFloatingRange(
+      parameters.get('floating_ranges'),
+      networks,
+      networkErrors
+    );
+    if (floatingRangeErrors.length) errors.floating_ranges = floatingRangeErrors;
+
+    return errors;
+  },
+  validateBaremetalParameters(cidr, networkingParameters) {
+    var errors = {};
+
+    _.extend(
+      errors,
+      utils.validateGateway(
+        networkingParameters.get('baremetal_gateway'),
+        cidr,
+        'baremetal_gateway'
+      )
+    );
+
+    var baremetalRangeErrors = utils.validateIPRanges(
+      [networkingParameters.get('baremetal_range')],
+      cidr
+    );
+    if (baremetalRangeErrors.length) {
+      var [{start, end}] = baremetalRangeErrors;
+      errors.baremetal_range = [start, end];
+    }
+
+    return errors;
+  },
+  validateNameServers(nameservers) {
+    var errors = _.map(nameservers,
+      (nameserver) => !utils.validateIP(nameserver) ?
+        i18n('cluster_page.network_tab.validation.invalid_nameserver') : null
+    );
+    if (_.compact(errors).length) return {dns_nameservers: errors};
+  },
+  validate(attrs) {
+    var networkingParameters = attrs.networking_parameters;
+    var novaNetworkManager = networkingParameters.get('net_manager');
+
+    var errors = {};
+
+    // validate networks
+    var nodeNetworkGroupsErrors = {};
+    app.nodeNetworkGroups.map((nodeNetworkGroup) => {
+      var nodeNetworkGroupErrors = {};
+      var networksToCheck = new models.Networks(attrs.networks.filter((network) => {
         return network.get('group_id') === nodeNetworkGroup.id && network.get('meta').configurable;
       }));
-      var nodeNetworkGroupErrors = {};
       networksToCheck.each((network) => {
-        var networkErrors = {};
-
-        var cidr = network.get('cidr');
-        _.extend(networkErrors, utils.validateCidr(cidr));
-        var cidrError = _.has(networkErrors, 'cidr');
-        _.extend(networkErrors, this.validateNetworkIpRanges(network, cidrError ? null : cidr));
-        _.extend(networkErrors, this.validateNetworkGateway(network, cidrError ? null : cidr));
-        //FIXME (morale): same VLAN IDs are not permitted for nova-network for now
-        var forbiddenVlans = novaNetManager ? networksToCheck.map((net) => {
-          return net.id !== network.id ? net.get('vlan_start') : null;
-        }) : [];
-        _.extend(networkErrors,
-          utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
-
-        if (!_.isEmpty(networkErrors)) {
-          nodeNetworkGroupErrors[network.id] = networkErrors;
-        }
-
-        if (network.get('name') === 'baremetal') {
-          var baremetalGateway = networkParameters.get('baremetal_gateway');
-          if (!utils.validateIP(baremetalGateway)) {
-            networkingParametersErrors.baremetal_gateway = i18n(ns + 'invalid_gateway');
-          } else if (!cidrError && !utils.validateIpCorrespondsToCIDR(cidr, baremetalGateway)) {
-            networkingParametersErrors.baremetal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
-          }
-          var baremetalRangeErrors =
-            utils.validateIPRanges([networkParameters.get('baremetal_range')], cidrError ?
-              null : cidr);
-          if (baremetalRangeErrors.length) {
-            var [{start, end}] = baremetalRangeErrors;
-            networkingParametersErrors.baremetal_range = [start, end];
-          }
-        }
-      }, this);
-
+        var networkErrors = this.validateNetwork(network, networksToCheck, !!novaNetworkManager);
+        if (!_.isEmpty(networkErrors)) nodeNetworkGroupErrors[network.id] = networkErrors;
+      });
       if (!_.isEmpty(nodeNetworkGroupErrors)) {
         nodeNetworkGroupsErrors[nodeNetworkGroup.id] = nodeNetworkGroupErrors;
       }
     });
-
-    if (!_.isEmpty(nodeNetworkGroupsErrors)) {
-      errors.networks = nodeNetworkGroupsErrors;
-    }
+    if (!_.isEmpty(nodeNetworkGroupsErrors)) errors.networks = nodeNetworkGroupsErrors;
 
     // validate networking parameters
-    if (novaNetManager) {
-      networkingParametersErrors = _.extend(networkingParametersErrors,
-        utils.validateCidr(networkParameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
-      var fixedAmount = networkParameters.get('fixed_networks_amount');
-      var fixedVlan = networkParameters.get('fixed_networks_vlan_start');
-      if (!utils.isNaturalNumber(parseInt(fixedAmount, 10))) {
-        networkingParametersErrors.fixed_networks_amount = i18n(ns + 'invalid_amount');
-      }
-      var vlanErrors = utils.validateVlan(fixedVlan, networks.pluck('vlan_start'),
-        'fixed_networks_vlan_start', novaNetManager === 'VlanManager');
-      _.extend(networkingParametersErrors, vlanErrors);
-      if (_.isEmpty(vlanErrors)) {
-        if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
-          networkingParametersErrors.fixed_networks_amount = i18n(ns + 'need_more_vlan');
-        }
-        var vlanIntersection = false;
-        _.each(_.compact(networks.pluck('vlan_start')), (vlan) => {
-          if (utils.validateVlanRange(fixedVlan, fixedVlan + fixedAmount - 1, vlan)) {
-            vlanIntersection = true;
-          }
-        });
-        if (vlanIntersection) {
-          networkingParametersErrors.fixed_networks_vlan_start = i18n(ns + 'vlan_intersection');
-        }
-      }
-      floatingRangesErrors = utils.validateIPRanges(networkParameters.get('floating_ranges'), null);
-      if (floatingRangesErrors.length) {
-        networkingParametersErrors.floating_ranges = floatingRangesErrors;
-      }
-    } else {
-      var idRangeErrors = ['', ''];
-      var segmentation = networkParameters.get('segmentation_type');
-      var idRangeAttr = segmentation === 'vlan' ? 'vlan_range' : 'gre_id_range';
-      var maxId = segmentation === 'vlan' ? 4094 : 65535;
-      var idRange = networkParameters.get(idRangeAttr);
-      var idStart = Number(idRange[0]);
-      var idEnd = Number(idRange[1]);
-      if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {
-        idRangeErrors[0] = i18n(ns + 'invalid_id_start');
-      } else if (!utils.isNaturalNumber(idEnd) || idEnd < 2 || idEnd > maxId) {
-        idRangeErrors[1] = i18n(ns + 'invalid_id_end');
-      } else if (idStart > idEnd) {
-        idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'invalid_id_range');
-      } else if (idStart === idEnd) {
-        idRangeErrors[0] = idRangeErrors[1] = i18n(ns + 'not_enough_id');
-      } else if (segmentation === 'vlan') {
-        _.each(_.compact(networks.pluck('vlan_start')), (vlan) => {
-          if (utils.validateVlanRange(idStart, idEnd, vlan)) {
-            idRangeErrors[0] = i18n(ns + 'vlan_intersection');
-          }
-          return idRangeErrors[0];
-        });
-      }
-      if (_.compact(idRangeErrors).length) {
-        networkingParametersErrors[idRangeAttr] = idRangeErrors;
-      }
-      if (!networkParameters.get('base_mac').match(utils.regexes.mac)) {
-        networkingParametersErrors.base_mac = i18n(ns + 'invalid_mac');
-      }
-      var cidr = networkParameters.get('internal_cidr');
-      networkingParametersErrors = _.extend(networkingParametersErrors,
-        utils.validateCidr(cidr, 'internal_cidr'));
-      var gateway = networkParameters.get('internal_gateway');
-      if (!utils.validateIP(gateway)) {
-        networkingParametersErrors.internal_gateway = i18n(ns + 'invalid_gateway');
-      } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
-        networkingParametersErrors.internal_gateway = i18n(ns + 'gateway_does_not_match_cidr');
-      }
-      var networkNamesRegExp = /^[a-z][\w\-]*$/i;
-      _.each(['internal_name', 'floating_name'], (paramName) => {
-        if (!networkParameters.get(paramName).match(networkNamesRegExp)) {
-          networkingParametersErrors[paramName] = i18n(ns + 'invalid_name');
-        }
-      });
+    var networkingParametersErrors = novaNetworkManager ?
+        this.validateNovaNetworkParameters(networkingParameters, attrs.networks, novaNetworkManager)
+      :
+        this.validateNeutronParameters(networkingParameters, attrs.networks, errors.networks);
 
-      var floatingRanges = networkParameters.get('floating_ranges');
-      var networkToCheckFloatingRange = networks.find((network) => {
-        if (!network.get('meta').floating_range_var) return false;
-        var cidrError = false;
-        try {
-          cidrError = !!errors.networks[network.get('group_id')][network.id].cidr;
-        } catch (error) {}
-        if (cidrError) return false;
-        return utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][0]) &&
-          utils.validateIpCorrespondsToCIDR(network.get('cidr'), floatingRanges[0][1]);
-      });
-
-      var networkToCheckFloatingRangeData = networkToCheckFloatingRange ? {
-        cidr: networkToCheckFloatingRange.get('cidr'),
-        network: _.capitalize(networkToCheckFloatingRange.get('name')),
-        nodeNetworkGroup: nodeNetworkGroups
-          .get(networkToCheckFloatingRange.get('group_id'))
-          .get('name')
-      } : {};
-      var networkToCheckFloatingRangeIPRanges = networkToCheckFloatingRange ?
-        _.filter(networkToCheckFloatingRange.get('ip_ranges'), (range, index) => {
-          var ipRangeError = false;
-          try {
-            ipRangeError = !_.all(range) ||
-              !!_.find(errors
-                .networks[networkToCheckFloatingRange
-                .get('group_id')][networkToCheckFloatingRange.id].ip_ranges, {index: index});
-          } catch (error) {}
-          return !ipRangeError;
-        }) : [];
-
-      floatingRangesErrors = utils.validateIPRanges(
-        floatingRanges,
-        networkToCheckFloatingRangeData.cidr,
-        networkToCheckFloatingRangeIPRanges,
-        {
-          IP_RANGES_INTERSECTION: i18n(ns + 'floating_and_public_ip_ranges_intersection',
-            networkToCheckFloatingRangeData),
-          IP_RANGE_IS_NOT_IN_PUBLIC_CIDR: i18n(ns + 'floating_range_is_not_in_public_cidr')
-        }
+    // it is only one baremetal network in environment
+    // so node network group filter is not needed here
+    var baremetalNetwork = attrs.networks.find({name: 'baremetal'});
+    if (baremetalNetwork) {
+      var baremetalCidrError = false;
+      try {
+        baremetalCidrError = errors
+          .networks[baremetalNetwork.get('group_id')][baremetalNetwork.id].cidr;
+      } catch (error) {}
+      _.extend(
+        networkingParametersErrors,
+        this.validateBaremetalParameters(
+          baremetalCidrError ? null : baremetalNetwork.get('cidr'),
+          networkingParameters
+        )
       );
+    }
 
-      if (floatingRangesErrors.length) {
-        networkingParametersErrors.floating_ranges = floatingRangesErrors;
-      }
-    }
-    var nameserverErrors = [];
-    _.each(networkParameters.get('dns_nameservers'), (nameserver) => {
-      nameserverErrors.push(!utils.validateIP(nameserver) ? i18n(ns + 'invalid_nameserver') : null);
-    });
-    if (_.compact(nameserverErrors).length) {
-      networkingParametersErrors.dns_nameservers = nameserverErrors;
-    }
+    _.extend(
+      networkingParametersErrors,
+      this.validateNameServers(networkingParameters.get('dns_nameservers'))
+    );
 
     if (!_.isEmpty(networkingParametersErrors)) {
       errors.networking_parameters = networkingParametersErrors;

@@ -56,8 +56,7 @@ class PluginLinkHandler(base.SingleHandler):
         obj = self._get_plugin_link_object(plugin_id, obj_id)
         data = self.checked_data(
             self.validator.validate_update,
-            instance=obj
-        )
+            instance=obj)
         self.single.update(obj, data)
         return self.single.to_json(obj)
 

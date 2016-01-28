@@ -1005,6 +1005,29 @@ class Cluster(NailgunObject):
                    consts.CLUSTER_STATUSES.error]
         return instance.status not in allowed
 
+    # FIXME(aroma): remove updating of 'deployed_before'
+    # when stop action is reworked. 'deployed_before'
+    # flag identifies whether stop action is allowed for the
+    # cluster. Please, refer to [1] for more details.
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    @classmethod
+    def set_deployed_before_flag(cls, instance, value):
+        """Change value for before_deployed if needed
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :param value: new value for flag
+        :type value: bool
+        """
+        if instance.attributes.generated['deployed_before']['value'] != value:
+            # TODO(aroma): remove unnecessary copying when enhancement
+            # of Mutable types will be introduced for corresponding
+            # fields of ORM models
+            generated_attrs = copy.deepcopy(instance.attributes.generated)
+            generated_attrs['deployed_before']['value'] = value
+            instance.attributes.generated = generated_attrs
+
+            db.flush()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

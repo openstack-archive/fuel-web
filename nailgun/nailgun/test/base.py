@@ -1006,6 +1006,12 @@ class EnvironmentManager(object):
         self._wait_task(task, timeout, message)
         self.tester.assertEqual(task.status, 'ready')
 
+    def wait_until_task_pending(self, task, timeout=60):
+        wait_until_in_statuses = (consts.TASK_STATUSES.pending,)
+        self._wait_task_status(task, timeout,
+                               wait_until_in_statuses=wait_until_in_statuses)
+        self.tester.assertNotEqual(task.status, consts.TASK_STATUSES.pending)
+
     def wait_error(self, task, timeout=60, message=None):
         self._wait_task(task, timeout, message)
         self.tester.assertEqual(task.status, 'error')

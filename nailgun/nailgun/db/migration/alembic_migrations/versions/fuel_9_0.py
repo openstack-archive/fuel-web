@@ -151,9 +151,11 @@ def upgrade():
     upgrade_bond_modes()
     upgrade_task_attributes()
     upgrade_store_deployment_history()
+    upgrade_plugin_links_constraints()
 
 
 def downgrade():
+    downgrade_plugin_links_constraints()
     downgrade_store_deployment_history()
     downgrade_task_attributes()
     downgrade_bond_modes()
@@ -1353,3 +1355,48 @@ def upgrade_store_deployment_history():
 def downgrade_store_deployment_history():
     op.drop_table('deployment_history')
     drop_enum('history_task_statuses')
+
+
+def upgrade_plugin_links_constraints():
+    connection = op.get_bind()
+
+    # plugin links
+    plugin_links_remove_duplicates_query = sa.text("""
+        DELETE FROM plugin_links
+        WHERE id
+        NOT IN (
+          SELECT MIN(id)
+          FROM plugin_links
+          GROUP BY url
+        )
+    """)
+    connection.execute(plugin_links_remove_duplicates_query)
+
+    op.create_unique_constraint(
+        'plugin_links_url_uc',
+        'plugin_links',
+        ['url'])
+
+    # cluster plugin links
+    cluster_plugin_links_remove_duplicates_query = sa.text("""
+        DELETE FROM cluster_plugin_links
+        WHERE id
+        NOT IN (
+          SELECT MIN(id)
+          FROM cluster_plugin_links
+          GROUP BY cluster_id,url
+        )
+    """)
+    connection.execute(cluster_plugin_links_remove_duplicates_query)
+
+    op.create_unique_constraint(
+        'cluster_plugin_links_cluster_id_url_uc',
+        'cluster_plugin_links',
+        ['cluster_id', 'url'])
+
+
+def downgrade_plugin_links_constraints():
+    op.drop_constraint('cluster_plugin_links_cluster_id_url_uc',
+                       'cluster_plugin_links')
+
+    op.drop_constraint('plugin_links_url_uc', 'plugin_links')

@@ -14,24 +14,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import ForeignKey
-from sqlalchemy import Integer
-from sqlalchemy import Text
+import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models.base import Base
 
 
 class ClusterPluginLink(Base):
     __tablename__ = 'cluster_plugin_links'
-    id = Column(Integer, primary_key=True)
-    cluster_id = Column(
-        Integer,
-        ForeignKey('clusters.id', ondelete='CASCADE'),
+    __table_args__ = (
+        sa.UniqueConstraint(
+            'cluster_id',
+            'url',
+            name='cluster_plugin_links_cluster_id_url_uc'),
+    )
+    id = sa.Column(sa.Integer, primary_key=True)
+    cluster_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey('clusters.id', ondelete='CASCADE'),
         nullable=False
     )
-    title = Column(Text, nullable=False)
-    url = Column(Text, nullable=False)
-    description = Column(Text)
-    hidden = Column(Boolean, default=False)
+    title = sa.Column(sa.Text, nullable=False)
+    url = sa.Column(sa.Text, nullable=False)
+    description = sa.Column(sa.Text)
+    hidden = sa.Column(sa.Boolean, default=False)

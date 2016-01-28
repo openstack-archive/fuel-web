@@ -62,6 +62,27 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             plugin_link.description
         )
 
+    def test_plugin_link_creation_fail_duplicate(self):
+        self.env.create_plugin_link(
+            plugin_id=self.plugin.id,
+            url='http://uniq1.com'
+        )
+        resp = self.app.post(
+            reverse(
+                'PluginLinkCollectionHandler',
+                kwargs={
+                    'plugin_id': self.plugin['id']
+                }
+            ),
+            params=jsonutils.dumps({
+                'title': 'My Plugin',
+                'url': 'http://uniq1.com'
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(409, resp.status_code)
+
     def test_plugin_link_fail_creation(self):
         resp = self.app.post(
             reverse(

@@ -208,7 +208,6 @@ function($, _, i18n, Backbone, models) {
         model: AvailabilityZone
     });
 
-    var Network = BaseModel.extend({constructorName: 'Network'});
     var Glance = BaseModel.extend({constructorName: 'Glance'});
 
     var VCenter = BaseModel.extend({
@@ -231,10 +230,6 @@ function($, _, i18n, Backbone, models) {
                 return value;
             });
 
-            // Network
-            var networkMetadata = _.find(metadata, {name: 'network'});
-            var networkValue = _.extend(_.clone(value.network), {metadata: networkMetadata.fields});
-
             // Glance
             var glanceMetadata = _.find(metadata, {name: 'glance'});
             var glanceValue = _.extend(_.clone(value.glance), {metadata: glanceMetadata.fields});
@@ -242,12 +237,11 @@ function($, _, i18n, Backbone, models) {
             return {
                 metadata: metadata,
                 availability_zones: new AvailabilityZones(azValues),
-                network: new Network(networkValue),
                 glance: new Glance(glanceValue)
             };
         },
         isFilled: function() {
-            var result = this.get('availability_zones') && this.get('network') && this.get('glance');
+            var result = this.get('availability_zones') && this.get('glance');
             return !!result;
         },
         toJSON: function() {
@@ -258,7 +252,6 @@ function($, _, i18n, Backbone, models) {
                 editable: {
                     value: {
                         availability_zones: this.get('availability_zones').toJSON(),
-                        network: this.get('network').toJSON(),
                         glance: this.get('glance').toJSON()
                     }
                 }
@@ -311,7 +304,6 @@ function($, _, i18n, Backbone, models) {
     return {
         VCenter: VCenter,
         AvailabilityZone: AvailabilityZone,
-        Network: Network,
         Glance: Glance,
         NovaCompute: NovaCompute,
         isRegularField: isRegularField

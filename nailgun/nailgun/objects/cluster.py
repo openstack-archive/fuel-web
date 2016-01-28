@@ -18,6 +18,8 @@
 Cluster-related objects and collections
 """
 
+import copy
+
 from nailgun.objects.serializers.cluster import ClusterSerializer
 
 from nailgun import consts
@@ -671,6 +673,34 @@ class Cluster(NailgunObject):
         db.add(node_group)
         db().flush()
         return node_group
+
+    # FIXME(aroma): remove updating of 'deployed_before'
+    # when stop action is reworked. 'deployed_before'
+    # flag identifies whether stop action is allowed for the
+    # cluster. Please, refer to [1] for more details.
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    @classmethod
+    def set_deployed_before_flag(cls, instance, value):
+        """Change value for before_deployed if needed
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :param value: new value for flag
+        :type value: bool
+        """
+        generated = copy.deepcopy(instance.attributes.generated)
+
+        if 'deployed_before' not in generated:
+            # NOTE(aroma): this is needed for case when master node has
+            # been upgraded and there is attempt to re/deploy previously
+            # existing clusters. As long as setting the flag is temporary
+            # solution data base migration code should not be mangled
+            # in order to support it
+            generated['deployed_before'] = {'value': value}
+        elif generated['deployed_before']['value'] != value:
+            generated['deployed_before']['value'] = value
+
+        instance.attributes.generated = generated
+        db.flush()
 
 
 class ClusterCollection(NailgunCollection):

@@ -80,6 +80,50 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(404, resp.status_code)
 
+    def test_plugin_link_fail_duplicate(self):
+        self.env.create_plugin_link(
+            plugin_id=self.plugin.id,
+            url='http://uniq1.com'
+        )
+        existing_plugin_link2 = self.env.create_plugin_link(
+            plugin_id=self.plugin.id,
+            url='http://uniq2.com'
+        )
+
+        resp = self.app.put(
+            reverse(
+                'PluginLinkHandler',
+                kwargs={'plugin_id': self.plugin['id'],
+                        'obj_id': existing_plugin_link2.id}
+            ),
+            jsonutils.dumps({'url': 'http://uniq1.com'}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(409, resp.status_code)
+
+    def test_plugin_link_update_with_same_url_ok(self):
+        existing_plugin_link = self.env.create_plugin_link(
+            plugin_id=self.plugin.id,
+            url='http://uniq1.com'
+        )
+
+        resp = self.app.put(
+            reverse(
+                'PluginLinkHandler',
+                kwargs={'plugin_id': self.plugin['id'],
+                        'obj_id': existing_plugin_link.id}
+            ),
+            jsonutils.dumps({
+                'url': 'http://uniq1.com',
+                'title': 'new name'
+            }),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(200, resp.status_code)
+
     def test_plugin_link_delete(self):
         resp = self.app.delete(
             reverse(

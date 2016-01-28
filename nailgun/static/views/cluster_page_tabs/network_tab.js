@@ -553,18 +553,16 @@ var NetworkTab = React.createClass({
       ).then(() => ({}));
     },
     getSubtabs(options) {
-      return _.map(
-          // FIXME(jkirnosova): remove this filter after #1537816 fix
-          options.nodeNetworkGroups.where({cluster_id: options.cluster.id}),
-          (nodeNetworkGroup) => 'group/' + nodeNetworkGroup.id
-        )
-        .concat(
-          options.cluster.get('net_provider') === 'nova_network' ?
-            ['nova_configuration']
-          :
-            ['neutron_l2', 'neutron_l3']
-        )
-        .concat(['network_settings', 'network_verification']);
+      return options.nodeNetworkGroups.map((nodeNetworkGroup) => {
+        return 'group/' + nodeNetworkGroup.id;
+      })
+      .concat(
+        options.cluster.get('net_provider') === 'nova_network' ?
+          ['nova_configuration']
+        :
+          ['neutron_l2', 'neutron_l3']
+      )
+      .concat(['network_settings', 'network_verification']);
     },
     checkSubroute(tabProps) {
       var {activeTab, cluster, tabOptions} = tabProps;
@@ -877,7 +875,7 @@ var NetworkTab = React.createClass({
     return fieldsWithVerificationErrors;
   },
   removeNodeNetworkGroup() {
-    var nodeNetworkGroup = this.nodeNetworkGroups.get(
+    var nodeNetworkGroup = app.nodeNetworkGroups.get(
       this.props.activeNetworkSectionName.split('/')[1]
     );
     RemoveNodeNetworkGroupDialog
@@ -905,6 +903,7 @@ var NetworkTab = React.createClass({
       });
   },
   addNodeNetworkGroup(hasChanges) {
+    var nodeNetworkGroups = app.nodeNetworkGroups;
     if (hasChanges) {
       utils.showErrorDialog({
         title: i18n(networkTabNS + 'node_network_group_creation_error'),
@@ -919,15 +918,14 @@ var NetworkTab = React.createClass({
     CreateNodeNetworkGroupDialog
       .show({
         clusterId: this.props.cluster.id,
-        nodeNetworkGroups: this.nodeNetworkGroups
+        nodeNetworkGroups: this.props.nodeNetworkGroups
       })
       .done(() => {
         this.setState({hideVerificationResult: true});
         var newNodeNetworkGroup;
-        return this.nodeNetworkGroups.fetch()
+        return nodeNetworkGroups.fetch()
           .then(() => {
-            newNodeNetworkGroup = this.nodeNetworkGroups.last();
-            this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
+            newNodeNetworkGroup = nodeNetworkGroups.last();
             return this.props.cluster.get('networkConfiguration').fetch();
           })
           .then(() => {
@@ -942,7 +940,7 @@ var NetworkTab = React.createClass({
   render() {
     var isLocked = this.isLocked();
     var hasChanges = this.hasChanges();
-    var {activeNetworkSectionName, cluster} = this.props;
+    var {activeNetworkSectionName, cluster, nodeNetworkGroups} = this.props;
     var networkConfiguration = this.props.cluster.get('networkConfiguration');
     var networkingParameters = networkConfiguration.get('networking_parameters');
     var manager = networkingParameters.get('net_manager');
@@ -964,8 +962,6 @@ var NetworkTab = React.createClass({
       row: true,
       'changes-locked': isLocked
     };
-    var nodeNetworkGroups = this.nodeNetworkGroups =
-      new models.NodeNetworkGroups(this.props.nodeNetworkGroups.where({cluster_id: cluster.id}));
     var isNovaEnvironment = cluster.get('net_provider') === 'nova_network';
     var networks = networkConfiguration.get('networks');
     var isMultiRack = nodeNetworkGroups.length > 1;
@@ -1271,7 +1267,8 @@ var NodeNetworkGroupTitle = React.createClass({
               });
               element.focus();
             })
-            .done(this.endRenaming);
+            .done(this.endRenaming)
+            .then(() => app.nodeNetworkGroups.fetch());
         }
       } else {
         this.endRenaming();

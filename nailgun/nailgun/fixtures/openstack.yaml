@@ -1351,6 +1351,8 @@
         puppet:
           manifests: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/manifests/"
           modules: "rsync://{settings.MASTER_IP}:/puppet/{cluster.release.version}/modules/"
+        once_deployed:
+          value: false
     wizard_metadata:
       Mode:
         metadata:

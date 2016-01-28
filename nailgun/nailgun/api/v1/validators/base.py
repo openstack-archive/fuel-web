@@ -59,3 +59,10 @@ class BasicValidator(object):
             # jsonschema has no base class for exceptions, so we don't know
             # about internal attributes with error description.
             raise errors.InvalidData(str(exc))
+
+
+class BaseDefferedTaskValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, cluster):
+        pass

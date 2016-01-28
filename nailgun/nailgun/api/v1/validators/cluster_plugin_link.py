@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -19,39 +19,39 @@ from nailgun import errors
 from nailgun import objects
 
 
-class PluginLinkValidator(BasicValidator):
+class ClusterPluginLinkValidator(BasicValidator):
     collection_schema = plugin_link.PLUGIN_LINKS_SCHEMA
 
     @classmethod
-    def validate(cls, data):
-        parsed = super(PluginLinkValidator, cls).validate(data)
-        cls.validate_schema(
-            parsed,
-            plugin_link.PLUGIN_LINK_SCHEMA
-        )
-        if objects.PluginLinkCollection.filter_by(
+    def validate(cls, data, **kwargs):
+        parsed = super(ClusterPluginLinkValidator, cls).validate(data)
+        cls.validate_schema(parsed, plugin_link.PLUGIN_LINK_SCHEMA)
+        if objects.ClusterPluginLinkCollection.filter_by(
             None,
-            url=parsed['url']
+            url=parsed['url'],
+            cluster_id=kwargs['cluster_id']
         ).first():
             raise errors.AlreadyExists(
-                "Plugin link with URL {0} already exists".format(
-                    parsed['url']),
+                "Cluster plugin link with URL {0} and cluster ID={1} already "
+                "exists".format(parsed['url'], kwargs['cluster_id']),
                 log_message=True)
         return parsed
 
     @classmethod
     def validate_update(cls, data, instance):
-        parsed = super(PluginLinkValidator, cls).validate(data)
+        parsed = super(ClusterPluginLinkValidator, cls).validate(data)
         cls.validate_schema(parsed, plugin_link.PLUGIN_LINK_UPDATE_SCHEMA)
-        if objects.PluginLinkCollection.filter_by_not(
-            objects.PluginLinkCollection.filter_by(
+        cluster_id = parsed.get('cluster_id', instance.cluster_id)
+        if objects.ClusterPluginLinkCollection.filter_by_not(
+            objects.ClusterPluginLinkCollection.filter_by(
                 None,
-                url=parsed.get('url', instance.url)
+                url=parsed.get('url', instance.url),
+                cluster_id=cluster_id,
             ),
             id=instance.id
         ).first():
             raise errors.AlreadyExists(
-                "Plugin link with URL {0} already exists".format(
-                    parsed['url']),
+                "Cluster plugin link with URL {0} and cluster ID={1} already "
+                "exists".format(parsed['url'], cluster_id),
                 log_message=True)
         return parsed

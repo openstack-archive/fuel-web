@@ -16,14 +16,14 @@
 
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.validators import plugin_link
+from nailgun.api.v1.validators import cluster_plugin_link
 from nailgun import errors
 from nailgun import objects
 
 
 class ClusterPluginLinkHandler(base.SingleHandler):
 
-    validator = plugin_link.PluginLinkValidator
+    validator = cluster_plugin_link.ClusterPluginLinkValidator
     single = objects.ClusterPluginLink
 
     def GET(self, cluster_id, obj_id):
@@ -46,7 +46,6 @@ class ClusterPluginLinkHandler(base.SingleHandler):
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-
         data = self.checked_data(
             self.validator.validate_update,
             instance=obj
@@ -78,7 +77,7 @@ class ClusterPluginLinkHandler(base.SingleHandler):
 class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
 
     collection = objects.ClusterPluginLinkCollection
-    validator = plugin_link.PluginLinkValidator
+    validator = cluster_plugin_link.ClusterPluginLinkValidator
 
     @content
     def GET(self, cluster_id):
@@ -99,7 +98,7 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
         :http: * 201 (object successfully created)
                * 400 (invalid object data specified)
         """
-        data = self.checked_data()
+        data = self.checked_data(cluster_id=cluster_id)
 
         try:
             new_obj = self.collection.create_with_cluster_id(data, cluster_id)

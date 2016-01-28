@@ -950,13 +950,13 @@
             weight: 70
             type: "textarea"
           task_deploy:
-            value: false
+            value: true
             label: "Enable task based deploy"
-            description: "Enables new deployment engine based on cross-node dependencies for deployment tasks which allows to deploy all nodes simultaneously. Works only for deployment tasks with version >= 2.0.0."
+            description: "The new deployment engine based on cross-node dependencies for deployment tasks."
             weight: 11
             type: "checkbox"
             restrictions:
-              - condition: "not ('experimental' in version:feature_groups)"
+              - condition: "true"
                 action: "hide"
 
         public_network_assignment:

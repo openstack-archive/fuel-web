@@ -168,8 +168,7 @@ var utils = {
     }
     return error[field] ? error : {};
   },
-  validateCidr(cidr, field) {
-    field = field || 'cidr';
+  validateCidr(cidr, attributeName = 'cidr') {
     var error = {};
     var match;
     if (_.isString(cidr)) {
@@ -177,17 +176,30 @@ var utils = {
       if (match) {
         var prefix = parseInt(match[1], 10);
         if (prefix < 2) {
-          error[field] = i18n('cluster_page.network_tab.validation.large_network');
+          error[attributeName] = i18n('cluster_page.network_tab.validation.large_network');
         } else if (prefix > 30) {
-          error[field] = i18n('cluster_page.network_tab.validation.small_network');
+          error[attributeName] = i18n('cluster_page.network_tab.validation.small_network');
         }
       } else {
-        error[field] = i18n('cluster_page.network_tab.validation.invalid_cidr');
+        error[attributeName] = i18n('cluster_page.network_tab.validation.invalid_cidr');
       }
     } else {
-      error[field] = i18n('cluster_page.network_tab.validation.invalid_cidr');
+      error[attributeName] = i18n('cluster_page.network_tab.validation.invalid_cidr');
     }
-    return error[field] ? error : {};
+    return error[attributeName] ? error : {};
+  },
+  validateGateway(gateway, cidr, attributeName = 'gateway') {
+    if (!utils.validateIP(gateway)) {
+      return {
+        [attributeName]: i18n('cluster_page.network_tab.validation.invalid_gateway')
+      };
+    }
+    if (cidr && !utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
+      return {
+        [attributeName]: i18n('cluster_page.network_tab.validation.gateway_does_not_match_cidr')
+      };
+    }
+    return null;
   },
   validateIP(ip) {
     return _.isString(ip) && !!ip.match(utils.regexes.ip);
@@ -220,8 +232,6 @@ var utils = {
           if (_.isEmpty(error)) {
             if (IP.toLong(range[0]) > IP.toLong(range[1])) {
               error.start = error.end = warnings.INVALID_IP_RANGE;
-            } else if (_.isUndefined(cidr)) {
-              error.start = error.end = warnings.IP_RANGE_IS_NOT_IN_PUBLIC_CIDR;
             } else if (existingRanges.length) {
               var intersection = utils.checkIPRangesIntersection(range, existingRanges);
               if (intersection) {

@@ -149,7 +149,17 @@ var ClusterPage = React.createClass({
           });
       }
       return promise.then(
-        (tabData) => ({cluster, nodeNetworkGroups, activeTab, tabOptions, tabData})
+        (tabData) => {
+          return {
+            cluster,
+            nodeNetworkGroups: new models.NodeNetworkGroups(
+              _.invoke(nodeNetworkGroups.where({cluster_id: cluster.id}), 'toJSON')
+            ),
+            activeTab,
+            tabOptions,
+            tabData
+          };
+        }
       );
     }
   },

@@ -19,31 +19,34 @@ define([
   'intern/chai!assert',
   'tests/functional/pages/common',
   'tests/functional/pages/cluster',
+  'tests/functional/pages/clusters',
   'tests/functional/pages/modal',
-  'tests/functional/pages/dashboard'
-], function(registerSuite, assert, Common, ClusterPage, ModalWindow, DashboardPage) {
+  'tests/functional/pages/dashboard',
+  'tests/functional/pages/network'
+], function(registerSuite, assert, Common, ClusterPage,
+    ClustersPage, ModalWindow, DashboardPage, NetworkPage) {
   'use strict';
 
   registerSuite(function() {
     var common,
       clusterPage,
-      clusterName,
-      dashboardPage;
+      dashboardPage,
+      networkPage;
     var applyButtonSelector = '.apply-btn';
     return {
       name: 'Networks page Neutron tests',
       setup: function() {
         common = new Common(this.remote);
         clusterPage = new ClusterPage(this.remote);
-        clusterName = common.pickRandomName('Test Cluster');
         dashboardPage = new DashboardPage(this.remote);
+        networkPage = new NetworkPage(this.remote);
         return this.remote
           .then(function() {
             return common.getIn();
           })
           .then(function() {
             return common.createCluster(
-              clusterName,
+              'Test Cluster #1',
               {
                 'Networking Setup': function() {
                   return this.remote
@@ -112,9 +115,9 @@ define([
       },
       'Testing cluster networks: network notation change': function() {
         return this.remote
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           .assertElementAppears('.storage', 2000, 'Storage network is shown')
           .assertElementSelected('.storage .cidr input[type=checkbox]',
             'Storage network has "cidr" notation by default')
@@ -142,9 +145,9 @@ define([
           .assertElementTextEquals('.alert-warning',
             'At least two online nodes are required to verify environment network configuration',
             'Not enough nodes warning is shown')
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           .then(function() {
             // Adding 2 controllers
             return common.addNodesToCluster(2, ['Controller']);
@@ -159,9 +162,9 @@ define([
           .assertElementAppears('.alert-danger.network-alert', 'Address intersection',
             'Verification result is shown in case of address intersection')
           // Testing cluster networks: verification task deletion
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           .setInputValue('.public input[name=gateway]', '172.16.0.5')
           .clickByCssSelector('.subtab-link-network_verification')
           .assertElementNotExists('.page-control-box .alert',
@@ -184,9 +187,9 @@ define([
       },
       'Check VlanID field validation': function() {
         return this.remote
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           .assertElementAppears('.management', 2000, 'Management network appears')
           .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
           .clickByCssSelector('.management .vlan-tagging input[type=checkbox]')
@@ -195,9 +198,9 @@ define([
       },
       'Testing cluster networks: data validation on invalid settings': function() {
         return this.remote
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           .setInputValue('input[name=range-end_ip_ranges]', '172.16.0.2')
           .clickByCssSelector(applyButtonSelector)
           .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears')
@@ -241,9 +244,9 @@ define([
       },
       'Segmentation types differences': function() {
         return this.remote
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           // Tunneling segmentation tests
           .assertElementExists('.private',
             'Private Network is visible for tunneling segmentation type')
@@ -276,8 +279,9 @@ define([
     var common,
       clusterPage,
       dashboardPage,
-      clusterName,
-      modal;
+      modal,
+      networkPage,
+      clustersPage;
 
     return {
       name: 'Node network group tests',
@@ -285,15 +289,16 @@ define([
         common = new Common(this.remote);
         clusterPage = new ClusterPage(this.remote);
         dashboardPage = new DashboardPage(this.remote);
-        clusterName = common.pickRandomName('Test Cluster');
         modal = new ModalWindow(this.remote);
+        networkPage = new NetworkPage(this.remote);
+        clustersPage = new ClustersPage(this.remote);
 
         return this.remote
           .then(function() {
             return common.getIn();
           })
           .then(function() {
-            return common.createCluster(clusterName);
+            return clustersPage.goToEnvironment('Test vlan segmentation');
           })
           .then(function() {
             return clusterPage.goToTab('Networks');
@@ -316,7 +321,7 @@ define([
           })
           .assertElementDisappears(
             '.network-group-name .explanation',
-            3000,
+            5000,
             'New subtab is shown'
           )
           .assertElementTextEquals(
@@ -333,23 +338,56 @@ define([
       },
       'Node network group renaming': function() {
         return this.remote
-          .clickLinkByText('Node_Network_Group_1')
-          .clickByCssSelector('.glyphicon-pencil')
-          .waitForCssSelector('.network-group-name input[type=text]', 2000)
-          .findByCssSelector('.node-group-renaming input[type=text]')
-            .clearValue()
-            .type('Node_Network_Group_2')
-            // Enter
-            .type('\uE007')
-            .end()
-          // check the node network group was successfully renamed
-          .clickLinkByText('Node_Network_Group_2');
+          .then(function() {
+            return networkPage.renameNodeNetworkGroup(
+              'Node_Network_Group_2',
+              'Node_Network_Group_1'
+            );
+          })
+          .assertElementTextEquals(
+            '.nav-pills.node_network_groups li:last-child',
+            'Node_Network_Group_2',
+            'Node network group was successfully renamed'
+        )
+          .clickLinkByText('Environments')
+          .then(function() {
+            return clustersPage.goToEnvironment('Test Cluster #1');
+          })
+          .then(function() {
+            return clusterPage.goToTab('Networks');
+          })
+          .then(function() {
+            return networkPage.addNodeNetworkGroup('1');
+          })
+          .clickLinkByText('Environments')
+          .then(function() {
+            return clustersPage.goToEnvironment('Test vlan segmentation');
+          })
+          .then(function() {
+            return clusterPage.goToTab('Networks');
+          })
+          .then(function() {
+            return networkPage.addNodeNetworkGroup('1');
+          })
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
+          .then(function() {
+            return networkPage.renameNodeNetworkGroup('new');
+          })
+          .then(function() {
+            return networkPage.renameNodeNetworkGroup('default');
+          })
+          .assertElementContainsText(
+            '.network-group-name .btn-link', 'default',
+            'Node network group was successfully renamed to "default"'
+          );
       },
       'Node network group deletion': function() {
         return this.remote
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           .assertElementDisappears(
             '.glyphicon-remove',
             3000,
@@ -391,9 +429,9 @@ define([
           .then(function() {
             return clusterPage.goToTab('Networks');
           })
-          .findByCssSelector('ul.node_network_groups')
-            .clickLinkByText('default')
-            .end()
+          .then(function() {
+            return networkPage.goToNodeNetworkGroup();
+          })
           .assertElementNotExists('.glyphicon-pencil',
             'Renaming of a node network group is fobidden in deployed environment')
           .clickByCssSelector('.network-group-name .name')

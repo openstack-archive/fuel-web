@@ -888,61 +888,82 @@ export var ShowNodeInfoDialog = React.createClass({
       ReactDOM.findDOMNode(this).focus();
     }
   },
+  getNodeIp(networkName) {
+    var node = this.props.node;
+    var networkData = _.find(node.get('network_data'), {name: networkName});
+    if (networkData.ip) return networkData.ip.split('/')[0];
+    var interfaceData = _.find(node.get('meta').interfaces, {name: networkData.dev});
+    return (interfaceData || {}).ip || i18n('common.not_available');
+  },
   renderNodeSummary() {
     var {cluster, node, nodeNetworkGroup} = this.props;
     return (
-      <div className='node-summary'>
-        {cluster &&
-          <div><strong>{i18n('dialog.show_node.cluster')}: </strong>
-            {cluster.get('name')}
-          </div>
-        }
-        <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>
-          {node.get('manufacturer') || i18n('common.not_available')}
-        </div>
-        {nodeNetworkGroup &&
-          <div>
-            <strong>{i18n('dialog.show_node.node_network_group')}: </strong>
-            {nodeNetworkGroup.get('name')}
-          </div>
-        }
-        <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>
-          {node.get('mac') || i18n('common.not_available')}
-        </div>
-        <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>
-          {
-            (node.get('meta').system || {}).fqdn ||
-            node.get('fqdn') ||
-            i18n('common.not_available')
+      <div className='row'>
+        <div className='col-xs-6 node-summary'>
+          {cluster &&
+            <div><strong>{i18n('dialog.show_node.cluster')}: </strong>
+              {cluster.get('name')}
+            </div>
           }
+          <div><strong>{i18n('dialog.show_node.manufacturer_label')}: </strong>
+            {node.get('manufacturer') || i18n('common.not_available')}
+          </div>
+          {nodeNetworkGroup &&
+            <div>
+              <strong>{i18n('dialog.show_node.node_network_group')}: </strong>
+              {nodeNetworkGroup.get('name')}
+            </div>
+          }
+          <div><strong>{i18n('dialog.show_node.fqdn_label')}: </strong>
+            {
+              (node.get('meta').system || {}).fqdn ||
+              node.get('fqdn') ||
+              i18n('common.not_available')
+            }
+          </div>
         </div>
-        <div className='change-hostname'>
-          <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
-          {this.state.isRenaming ?
-            <Input
-              ref='hostname'
-              type='text'
-              defaultValue={node.get('hostname')}
-              inputClassName={'input-sm'}
-              error={this.state.hostnameChangingError}
-              disabled={this.state.actionInProgress}
-              onKeyDown={this.onHostnameInputKeydown}
-              selectOnFocus
-              autoFocus
-            />
-          :
-            <span>
-              <span className='node-hostname'>
-                {node.get('hostname') || i18n('common.not_available')}
+        <div className='col-xs-6 node-summary'>
+          {node.get('cluster') &&
+            <div>
+              <div><strong>{i18n('dialog.show_node.management_ip')}: </strong>
+                {this.getNodeIp('management')}
+              </div>
+              <div><strong>{i18n('dialog.show_node.public_ip')}: </strong>
+                {this.getNodeIp('public')}
+              </div>
+            </div>
+          }
+          <div><strong>{i18n('dialog.show_node.mac_address_label')}: </strong>
+            {node.get('mac') || i18n('common.not_available')}
+          </div>
+          <div className='change-hostname'>
+            <strong>{i18n('dialog.show_node.hostname_label')}: </strong>
+            {this.state.isRenaming ?
+              <Input
+                ref='hostname'
+                type='text'
+                defaultValue={node.get('hostname')}
+                inputClassName={'input-sm'}
+                error={this.state.hostnameChangingError}
+                disabled={this.state.actionInProgress}
+                onKeyDown={this.onHostnameInputKeydown}
+                selectOnFocus
+                autoFocus
+              />
+            :
+              <span>
+                <span className='node-hostname'>
+                  {node.get('hostname') || i18n('common.not_available')}
+                </span>
+                {(node.get('pending_addition') || !node.get('cluster')) &&
+                  <button
+                    className='btn-link glyphicon glyphicon-pencil'
+                    onClick={this.startHostnameRenaming}
+                  />
+                }
               </span>
-              {(node.get('pending_addition') || !node.get('cluster')) &&
-                <button
-                  className='btn-link glyphicon glyphicon-pencil'
-                  onClick={this.startHostnameRenaming}
-                />
-              }
-            </span>
-          }
+            }
+          </div>
         </div>
       </div>
     );
@@ -1096,10 +1117,7 @@ export var ShowNodeInfoDialog = React.createClass({
     if (!this.props.node.get('meta')) return <ProgressBar />;
     return (
       <div className='node-details-popup'>
-        <div className='row'>
-          <div className='col-xs-5'><div className='node-image-outline' /></div>
-          <div className='col-xs-7'>{this.renderNodeSummary()}</div>
-        </div>
+        {this.renderNodeSummary()}
         {this.renderNodeHardware()}
       </div>
     );

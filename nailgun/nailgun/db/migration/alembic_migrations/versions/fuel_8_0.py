@@ -84,6 +84,7 @@ task_names_old = (
 
 task_names_new = task_names_old + (
     'update_dnsmasq',
+    'remove_ironic_bootstrap',
 )
 
 

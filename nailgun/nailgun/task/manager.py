@@ -802,10 +802,15 @@ class ResetEnvironmentTaskManager(TaskManager):
             consts.TASK_NAMES.reset_environment
         )
 
+        remove_ironic_bootstrap_task = supertask.create_subtask(
+            consts.TASK_NAMES.remove_ironic_bootstrap
+        )
+
         db.commit()
 
         rpc.cast('naily', [
             tasks.ResetEnvironmentTask.message(supertask),
+            tasks.RemoveIronicBootstrap.message(remove_ironic_bootstrap_task),
             tasks.RemoveClusterKeys.message(remove_keys_task)
         ])
         TaskHelper.update_action_log(supertask, al)

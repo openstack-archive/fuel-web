@@ -282,6 +282,11 @@ var VmWareTab = React.createClass({
     unsavedChangesMixin
   ],
   statics: {
+    breadcrumbsPath() {
+      return [
+        [i18n('vmware.title'), null, {active: true}]
+      ];
+    },
     isVisible(cluster) {
       return cluster.get('settings').get('common.use_vcenter').value;
     },

@@ -88,6 +88,7 @@ define([
           .assertElementExists('.modal .btn-edit-disks', 'Disks can be configured for cluster node')
           .assertElementExists('.modal .btn-edit-networks',
             'Interfaces can be configured for cluster node')
+          .assertElementExists('.modal .management-ip', 'Management IP is visible')
           .clickByCssSelector('.change-hostname .btn-link')
           // change the hostname
           .findByCssSelector('.change-hostname [type=text]')
@@ -173,6 +174,8 @@ define([
             'Disks can not be configured for unallocated node')
           .assertElementNotExists('.modal .btn-edit-networks',
             'Interfaces can not be configured for unallocated node')
+          .assertElementNotExists('.modal .management-ip',
+            'Management IP is not visible for unallocated node')
           .then(function() {
             return modal.close();
           });

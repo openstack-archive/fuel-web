@@ -715,6 +715,21 @@ class NailgunReceiver(object):
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
+    def remove_ironic_bootstrap_resp(cls, **kwargs):
+        logger.info(
+            "RPC method remove_ironic_bootstrap_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        status = kwargs.get('status')
+        task_uuid = kwargs.get('task_uuid')
+        nodes = kwargs.get('nodes', [])
+        task = objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+        )
+        cls._update_action_log_entry(status, task.name, task_uuid, nodes)
+
+    @classmethod
     def reset_environment_resp(cls, **kwargs):
         logger.info(
             "RPC method reset_environment_resp received: %s",

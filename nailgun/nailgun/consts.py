@@ -255,6 +255,7 @@ TASK_NAMES = Enum(
     'cluster_deletion',
     'remove_images',
     'check_before_deployment',
+    'remove_ironic_bootstrap',
 
     # network
     'check_networks',

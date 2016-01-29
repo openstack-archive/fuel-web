@@ -875,6 +875,8 @@
                 message: "Murano should be enabled"
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
+              - condition: "settings:additional_components.murano_glance_artifacts_plugin.value == true"
+                message: "GLARE should be disabled if you want to use service broker"
           murano_glance_artifacts_plugin:
             value: false
             label: "Enable glance artifact repository"
@@ -886,6 +888,8 @@
                 message: "Murano should be enabled"
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
+              - condition: "settings:additional_components.murano-cfapi.value == true"
+                message: "Service broker should be disabled if you want to use GLARE"
           heat:
             value: true
             label: ""

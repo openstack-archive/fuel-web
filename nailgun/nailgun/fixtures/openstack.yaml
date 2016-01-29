@@ -2057,6 +2057,62 @@
                 suite: "auxiliary"
                 section: "main restricted"
                 priority: 1150
+        provision:
+          metadata:
+            label: "Provision"
+            weight: 80
+            group: "general"
+            restrictions:
+              - condition: "false"
+                action: "hide"
+          packages:
+            label: "Initial packages"
+            weight: 10
+            type: "textarea"
+            value: |
+              acl
+              anacron
+              bash-completion
+              bridge-utils
+              bsdmainutils
+              build-essential
+              cloud-init
+              curl
+              daemonize
+              debconf-utils
+              gdisk
+              grub-pc
+              hpsa-dkms
+              i40e-dkms
+              linux-firmware
+              linux-firmware-nonfree
+              linux-headers-generic-lts-trusty
+              linux-image-generic-lts-trusty
+              lvm2
+              mcollective
+              mdadm
+              nailgun-agent
+              nailgun-mcagents
+              network-checker
+              ntp
+              openssh-client
+              openssh-server
+              puppet
+              python-amqp
+              ruby-augeas
+              ruby-ipaddress
+              ruby-json
+              ruby-netaddr
+              ruby-openstack
+              ruby-shadow
+              ruby-stomp
+              telnet
+              ubuntu-minimal
+              ubuntu-standard
+              uuid-runtime
+              vim
+              virt-what
+              vlan
       generated:
         repo_setup:
           installer_kernel:

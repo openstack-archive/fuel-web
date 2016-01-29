@@ -295,12 +295,14 @@ class ProvisioningSerializer61(ProvisioningSerializer):
             attrs['provision']['method'] == consts.PROVISION_METHODS.image])
 
         if is_build_images:
+            packages = cls._make_provisioning_package_list(attrs['provision'])
             tasks.append(
                 tasks_templates.make_provisioning_images_task(
                     [consts.MASTER_NODE_UID],
                     attrs['repo_setup']['repos'],
                     attrs['provision'],
-                    cluster.id))
+                    cluster.id,
+                    packages))
 
         # NOTE(kozhukalov): This pre-provision task is going to be
         # removed by 7.0 because we need this only for classic way of
@@ -332,6 +334,12 @@ class ProvisioningSerializer61(ProvisioningSerializer):
             serialized_node['ks_meta']['kernel_lt'] = 1
 
         return serialized_node
+
+    @classmethod
+    def _make_provisioning_package_list(cls, provision_data):
+        packages = provision_data.get('packages', '')
+        return six.moves.filter(
+            bool, (s.strip() for s in packages.split('\n')))
 
 
 def get_serializer_for_cluster(cluster):

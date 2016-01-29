@@ -985,6 +985,8 @@
                     "manufacturer_label": "Manufacturer",
                     "mac_address_label": "MAC Address",
                     "fqdn_label": "FQDN",
+                    "management_ip": "Management IP",
+                    "public_ip": "Public IP",
                     "hostname_label": "Hostname",
                     "ssh_console": "SSH console",
                     "network_configuration": "Interface Configuration",

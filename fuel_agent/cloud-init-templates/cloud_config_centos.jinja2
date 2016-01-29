@@ -40,7 +40,6 @@ runcmd:
  - chkconfig mcollective off
 {% else %}
  - chkconfig mcollective on
- - service mcollective restart
 {% endif %}
  - iptables -t filter -F INPUT
  - iptables -t filter -F FORWARD

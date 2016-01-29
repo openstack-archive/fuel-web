@@ -95,7 +95,6 @@ runcmd:
  - echo manual > /etc/init/mcollective.override
 {% else %}
  - rm -f /etc/init/mcollective.override
- - service mcollective restart
 {% endif %}
  - iptables -t filter -F INPUT
  - iptables -t filter -F FORWARD

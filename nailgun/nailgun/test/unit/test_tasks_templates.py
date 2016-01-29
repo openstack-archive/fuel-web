@@ -120,6 +120,12 @@ class TestMakeTask(base.BaseTestCase):
                  'timeout': 10}})
 
     def test_make_provisioning_images_task(self):
+        packages = [
+          'linux-firmware',
+          'linux-firmware-nonfree',
+          'linux-headers-generic-lts-trusty',
+          'linux-image-generic-lts-trusty',
+        ]
         result = tasks_templates.make_provisioning_images_task(
             [1, 2, 3],
             repos=[
@@ -133,7 +139,9 @@ class TestMakeTask(base.BaseTestCase):
                         'uri': 'http://uri'
                     }
                 }},
-            cid=123)
+            cid=123,
+            packages=packages
+        )
 
         fuel_image_conf = {
             "image_data": {
@@ -149,7 +157,8 @@ class TestMakeTask(base.BaseTestCase):
                     "uri": "http://some"
                 }
             ],
-            "codename": "trusty"
+            "codename": "trusty",
+            "packages": packages
         }
 
         self.assertEqual(result["type"], "shell")

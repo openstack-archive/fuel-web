@@ -224,6 +224,22 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
 
     serializer = ps.ProvisioningSerializer61
 
+    def test_make_privisioning_package_list(self):
+        provisioning_data = {'packages': """
+            linux-firmware
+            linux-firmware-nonfree
+            linux-headers-generic-lts-trusty
+            linux-image-generic-lts-trusty
+        """}
+        packages = self.serializer._make_privisioning_package_list(
+                provisioning_data)
+        self.assertEqual(packages, [
+            'linux-firmware',
+            'linux-firmware-nonfree',
+            'linux-headers-generic-lts-trusty',
+            'linux-image-generic-lts-trusty',
+        ])
+
     def test_ubuntu_prov_task_for_images(self):
         release = self.env.create_release(
             api=False, operating_system=consts.RELEASE_OS.ubuntu)
@@ -231,6 +247,12 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
             api=False, release_id=release.id)
         self.cluster.attributes.editable['provision']['method'] = \
             consts.PROVISION_METHODS.image
+        self.cluster.attributes.editable['provision']['packages'] = """
+            linux-firmware
+            linux-firmware-nonfree
+            linux-headers-generic-lts-trusty
+            linux-image-generic-lts-trusty
+        """
 
         serialized_info = self.serializer.serialize(self.cluster, [])
 

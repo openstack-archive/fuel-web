@@ -96,16 +96,24 @@ export var Navbar = React.createClass({
     var unreadNotificationsCount = this.props.notifications.where({status: 'unread'}).length;
     var authenticationEnabled = this.props.version.get('auth_required') &&
       this.props.user.get('authenticated');
+    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
+
     return (
       <div className='navigation-box'>
         <div className='navbar-bg'></div>
         <nav className='navbar navbar-default' role='navigation'>
           <div className='row'>
             <div className='navbar-header col-xs-2'>
-              <a className='navbar-logo' href='#'></a>
+              <a className={utils.classNames({
+                'navbar-logo': true,
+                mirantis: isMirantisIso
+              })} href='#'></a>
             </div>
             <div className='col-xs-6'>
-              <ul className='nav navbar-nav pull-left'>
+              <ul className={utils.classNames({
+                'nav navbar-nav pull-left': true,
+                mirantis: isMirantisIso
+              })}>
                 {_.map(this.props.elements, (element) => {
                   return (
                     <li
@@ -126,7 +134,8 @@ export var Navbar = React.createClass({
               <ul className={utils.classNames({
                 'nav navbar-icons pull-right': true,
                 'with-auth': authenticationEnabled,
-                'without-auth': !authenticationEnabled
+                'without-auth': !authenticationEnabled,
+                mirantis: isMirantisIso
               })}>
                 <li
                   key='language-icon'
@@ -366,15 +375,9 @@ export var Footer = React.createClass({
     var version = this.props.version;
     return (
       <div className='footer'>
-        {_.contains(version.get('feature_groups'), 'mirantis') && [
-          <a
-            key='logo'
-            className='mirantis-logo-white'
-            href='http://www.mirantis.com/'
-            target='_blank'
-          />,
+        {_.contains(version.get('feature_groups'), 'mirantis') &&
           <div key='copyright'>{i18n('common.copyright')}</div>
-        ]}
+        }
         <div key='version'>{i18n('common.version')}: {version.get('release')}</div>
       </div>
     );

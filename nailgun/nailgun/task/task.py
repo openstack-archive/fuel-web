@@ -43,6 +43,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
 from nailgun.network.manager import NetworkManager
+from nailgun import objects
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
@@ -732,6 +733,37 @@ class RemoveClusterKeys(object):
         return rpc_message
 
 
+class RemoveIronicBootstrap(object):
+    """Task that deletes Ironic's bootstrap images
+
+    Meant to be run after environment reset to make sure that new images will
+    be generated.
+    """
+
+    @classmethod
+    def message(cls, task):
+        rpc_message = make_astute_message(
+            task,
+            "execute_tasks",
+            "remove_ironic_bootstrap_resp",
+            {
+                "tasks": [
+                    tasks_templates.make_shell_task(
+                        [consts.MASTER_NODE_UID],
+                        {
+                            "parameters": {
+                                "cmd": "rm -rf /var/www/nailgun/bootstrap/"
+                                       "ironic/{0}".format(task.cluster.id),
+                                "timeout": 30
+                            }
+                        }
+                    )
+                ]
+            }
+        )
+        return rpc_message
+
+
 class ClusterDeletionTask(object):
 
     @classmethod
@@ -748,6 +780,8 @@ class ClusterDeletionTask(object):
                     task.cluster, attrs['provision']['image_data'])
         else:
             logger.debug("Skipping IBP images deletion task")
+        if objects.Cluster.is_component_enabled(task.cluster, 'ironic'):
+            RemoveIronicBootstrap.message(task)
         DeletionTask.execute(
             task,
             nodes=DeletionTask.get_task_nodes_for_cluster(task.cluster),

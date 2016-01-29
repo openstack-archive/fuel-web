@@ -1689,6 +1689,9 @@
         weight: 1000
         label: "dialog.create_cluster_wizard.network.neutron_ml2"
         description: "dialog.create_cluster_wizard.network.neutron_ml2_description"
+        compatible:
+          - name: hypervisor:*
+          - name: network:neutron:ml2:*
       - name: network:neutron:ml2:vlan
         default: true
         bind: !!pairs

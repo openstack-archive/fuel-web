@@ -28,19 +28,20 @@ var LoginPage = React.createClass({
     hiddenLayout: true
   },
   render() {
+    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
     return (
       <div className='login-page'>
         <div className='container col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
-          <div className='box'>
-            <div className='logo-circle'></div>
-            <div className='logo'></div>
-            <div className='fields-box'>
+          <div className={utils.classNames({box: true, mirantis: isMirantisIso})}>
+            <div className={utils.classNames({'logo-circle': true, mirantis: isMirantisIso})}></div>
+            <div className={utils.classNames({logo: true, mirantis: isMirantisIso})}></div>
+            <div className={utils.classNames({'fields-box': true, mirantis: isMirantisIso})}>
               <LoginForm />
             </div>
           </div>
         </div>
         <div className='footer col-xs-12'>
-          {_.contains(app.version.get('feature_groups'), 'mirantis') &&
+          {isMirantisIso &&
             <p className='text-center'>{i18n('common.copyright')}</p>
           }
           <p className='text-center'>{i18n('common.version')}: {app.version.get('release')}</p>

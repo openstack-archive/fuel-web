@@ -40,6 +40,7 @@ tasks_names_actions_groups_mapping = {
     consts.TASK_NAMES.cluster_deletion: "cluster_changes",
     consts.TASK_NAMES.stop_deployment: "cluster_changes",
     consts.TASK_NAMES.reset_environment: "cluster_changes",
+    consts.TASK_NAMES.remove_ironic_bootstrap: "cluster_changes",
 
     consts.TASK_NAMES.check_networks: "cluster_checking",
     consts.TASK_NAMES.check_before_deployment: "cluster_checking",

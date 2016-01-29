@@ -275,6 +275,9 @@ class IronicCopyBootstrapKey(CopyKeys):
 
     identity = 'ironic_copy_bootstrap_key'
 
+    def should_execute(self):
+        return len(self.role_resolver.resolve(['ironic'])) > 0
+
 
 class RestartRadosGW(GenericRolesHook):
 

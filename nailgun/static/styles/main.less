@@ -99,6 +99,8 @@
 @range-color: @tab-color - 50%;
 @slider-color: @tab-color + 20%;
 
+
+
 // Fonts and Weight
 @import "../../node_modules/open-sans-fontface/open-sans.css";
 
@@ -698,12 +700,12 @@ input[type=range] {
 
 .navbar-logo {
   float: left;
-  height: 60px;
+  height: 36px;
   line-height: 20px;
   padding: 0px;
-  margin-top: 2px;
-  width: 166px;
-  background: url(../img/logos/fuel-logo.svg) no-repeat top left;
+  margin-top: 17px;
+  width: 170px;
+  background: url(../img/logos/mirantis-fuel.svg) no-repeat top left;
 }
 
 .navbar-icons {
@@ -908,9 +910,20 @@ input[type=range] {
     }
 
     &.language-popover {
+      .active {
+        a {
+          color: #ffffff;
+          &:hover {
+            color: #ffffff;
+          }
+        }
+      }
       a {
         cursor: pointer;
         padding: 10px 15px;
+        &:hover {
+          color: #ffffff;
+        }
       }
     }
   }
@@ -2607,22 +2620,26 @@ input[type=range] {
   .container {
     margin-top: @logo-circle-size / 2;
     .box {
+      background: #ffffff url(../img/login-bg.gif) no-repeat top left;
       position: relative;
-      background-color: @white;
       color: @base-text-color;
       border-radius: 18px;
       margin-top: 10%;
       box-shadow: 0 1px 1px @shadow-color;
       .logo-circle {
-        background-color: @white;
-        position: relative;
-        width: @logo-circle-size;
-        height: @logo-circle-size;
-        top: -@logo-circle-size / 2;
-        border-radius: @logo-circle-size / 2;
+        width: 360px;
+        height: 155px;
+        background: url(../img/mirantis-fuel-logo.svg) no-repeat center center;
+        //background-color: @white;
+        //position: relative;
+        //width: @logo-circle-size;
+        //height: @logo-circle-size;
+        //top: -@logo-circle-size / 2;
+        //border-radius: @logo-circle-size / 2;
         margin: 0 auto;
       }
       .logo {
+        display: none;
         @logo-width: 200px;
         @logo-height: 260px;
         background: url(../img/fuel-big-logo.svg) repeat scroll 0 0 rgba(0, 0, 0, 0);
@@ -2634,7 +2651,7 @@ input[type=range] {
       }
       .fields-box {
         overflow: hidden;
-        padding-top: 10px;
+        padding-top: 20px;
         form {
           label {
             font-size: @base-font-size + 1;
@@ -4429,5 +4446,52 @@ input[type=range] {
       margin-left: 62px;
       font-size: @base-font-size - 2;
     }
+  }
+}
+
+// Mirantis Identity
+@mirantis-red:  #c63927;
+@mirantis-lred: #e8b0a9;
+@mirantis-gray: #7f7f7f;
+
+.navbar-nav li a {
+  color: @mirantis-red !important;
+  &:hover {
+   color: @white !important;
+   background-color: @mirantis-lred !important;
+  }
+}
+
+.navbar-nav .active a {
+  color: @white !important;
+  background-color: @mirantis-red !important;
+  &:hover {
+    background-color: @mirantis-red !important;
+  }
+}
+
+.navbar-icons li div {
+  color: @mirantis-gray !important;
+}
+
+.language-popover .popover-content li a {
+  color: @mirantis-gray !important;
+  &:hover {
+    color: @white !important;
+    background-color: @mirantis-gray + 60%;
+  }
+}
+
+.language-popover .popover-content .active a {
+  background-color: @mirantis-gray !important;
+  color: @white !important;
+}
+
+.statistics-popover a,
+.notifications-popover a,
+.notifications-popover .notification.clickable p {
+  color: @mirantis-gray !important;
+  &:hover {
+    color: @mirantis-gray - 25% !important;
   }
 }

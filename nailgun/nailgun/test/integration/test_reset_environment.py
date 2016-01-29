@@ -150,7 +150,8 @@ class TestResetEnvironment(BaseIntegrationTest):
         with mock.patch('nailgun.task.task.rpc.cast') as cast_mock:
             self.env.reset_environment()
             casted_tasks = cast_mock.call_args[0][1]
-            self.assertEqual(len(casted_tasks), 2)
+            self.assertEqual(len(casted_tasks), 3)
 
             self.assertEqual(casted_tasks[0]['method'], 'reset_environment')
             self.assertEqual(casted_tasks[1]['method'], 'execute_tasks')
+            self.assertEqual(casted_tasks[2]['method'], 'execute_tasks')

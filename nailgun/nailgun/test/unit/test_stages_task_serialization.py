@@ -466,6 +466,24 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         serialized = list(task.serialize())
         self.assertEqual(len(serialized), 0)
 
+    def test_serialize_ironic_copy_bootstrap_key(self):
+        task_config = {'id': 'ironic_copy_bootstrap_key',
+                       'type': 'copy_files',
+                       'role': ['ironic'],
+                       'stage': 'post-deployment',
+                       'parameters': {
+                           'files': [{'src': '/1', 'dst': '/2'}],
+                           'permissions': '0600',
+                           'dir_permissions': '0700'}}
+        task = tasks_serializer.IronicCopyBootstrapKey(
+            task_config, self.cluster, self.nodes)
+        self.assertFalse(task.should_execute())
+        new_node = self.env.create_node(
+            roles=['ironic'], cluster_id=self.cluster.id)
+        task = tasks_serializer.IronicCopyBootstrapKey(
+            task_config, self.cluster, [new_node])
+        self.assertTrue(task.should_execute())
+
 
 class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
 

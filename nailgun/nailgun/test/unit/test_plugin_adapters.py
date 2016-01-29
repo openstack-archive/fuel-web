@@ -142,13 +142,13 @@ class TestPluginBase(base.BaseTestCase):
         self.assertEqual(
             expected, self.plugin_adapter.master_scripts_path(self.cluster))
 
-    def test_sync_metadata_to_db(self):
+    def test_get_metadata(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
 
         with mock.patch.object(
                 self.plugin_adapter, '_load_config') as load_conf:
             load_conf.return_value = plugin_metadata
-            self.plugin_adapter.sync_metadata_to_db()
+            Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
                 self.assertEqual(
@@ -172,9 +172,7 @@ class TestPluginBase(base.BaseTestCase):
         self.assertEqual(depl_task['parameters'].get('cwd'), expected)
 
     def _find_path(self, config_name):
-        return os.path.join(
-            self.plugin_adapter.plugin_path,
-            '{0}.yaml'.format(config_name))
+        return '{0}.yaml'.format(config_name)
 
 
 class TestPluginV1(TestPluginBase):
@@ -224,7 +222,7 @@ class TestPluginV3(TestPluginBase):
     __test__ = True
     package_version = '3.0.0'
 
-    def test_sync_metadata_to_db(self):
+    def test_get_metadata(self):
         self.maxDiff = None
         plugin_metadata = self.env.get_default_plugin_metadata()
         attributes_metadata = self.env.get_default_plugin_env_config()
@@ -247,7 +245,7 @@ class TestPluginV3(TestPluginBase):
         with mock.patch.object(
                 self.plugin_adapter, '_load_config') as load_conf:
             load_conf.side_effect = lambda key: mocked_metadata[key]
-            self.plugin_adapter.sync_metadata_to_db()
+            Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
                 self.assertEqual(
@@ -278,7 +276,7 @@ class TestPluginV4(TestPluginBase):
     __test__ = True
     package_version = '4.0.0'
 
-    def test_sync_metadata_to_db(self):
+    def test_get_metadata(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
         attributes_metadata = self.env.get_default_plugin_env_config()
         roles_metadata = self.env.get_default_plugin_node_roles_config()
@@ -302,7 +300,7 @@ class TestPluginV4(TestPluginBase):
         with mock.patch.object(
                 self.plugin_adapter, '_load_config') as load_conf:
             load_conf.side_effect = lambda key: mocked_metadata[key]
-            self.plugin_adapter.sync_metadata_to_db()
+            Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
                 self.assertEqual(
@@ -348,7 +346,7 @@ class TestClusterCompatibilityValidation(base.BaseTestCase):
 
     def validate_with_cluster(self, **kwargs):
         cluster = self.cluster_mock(**kwargs)
-        return ClusterPlugins.validate_compatibility(cluster, self.plugin)
+        return ClusterPlugins.is_compatible(cluster, self.plugin)
 
     def test_validation_ubuntu_ha(self):
         self.assertTrue(self.validate_with_cluster(

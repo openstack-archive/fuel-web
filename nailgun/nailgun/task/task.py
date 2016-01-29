@@ -732,6 +732,37 @@ class RemoveClusterKeys(object):
         return rpc_message
 
 
+class RemoveIronicBootstrap(object):
+    """Task that deletes Ironic's bootstrap images
+
+    Meant to be run after environment reset to make sure that new images will
+    be generated.
+    """
+
+    @classmethod
+    def message(cls, task):
+        rpc_message = make_astute_message(
+            task,
+            "execute_tasks",
+            "reset_environment_resp",
+            {
+                "tasks": [
+                    tasks_templates.make_shell_task(
+                        [consts.MASTER_NODE_UID],
+                        {
+                            "parameters": {
+                                "cmd": "rm -rf /var/www/nailgun/bootstrap/"
+                                       "ironic/{0}".format(task.cluster.id),
+                                "timeout": 30
+                            }
+                        }
+                    )
+                ]
+            }
+        )
+        return rpc_message
+
+
 class ClusterDeletionTask(object):
 
     @classmethod

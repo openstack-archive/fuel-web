@@ -275,6 +275,12 @@ class IronicCopyBootstrapKey(CopyKeys):
 
     identity = 'ironic_copy_bootstrap_key'
 
+    def should_execute(self):
+        for node in self.nodes:
+            if 'ironic' in node.all_roles:
+                return True
+        return False
+
 
 class RestartRadosGW(GenericRolesHook):
 

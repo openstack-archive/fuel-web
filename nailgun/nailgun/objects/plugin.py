@@ -24,6 +24,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.plugin import PluginSerializer
+from nailgun.plugins.adapters import wrap_plugin
 
 
 class Plugin(NailgunObject):
@@ -35,13 +36,8 @@ class Plugin(NailgunObject):
     def create(cls, data):
         new_plugin = super(Plugin, cls).create(data)
 
-        # FIXME (vmygal): This is very ugly hack and it must be fixed ASAP.
-        # Need to remove the syncing of plugin metadata from here.
-        # All plugin metadata must be sent via 'data' argument of this
-        # function and it must be fixed in 'python-fuelclient' repository.
-        from nailgun.plugins.adapters import wrap_plugin
         plugin_adapter = wrap_plugin(new_plugin)
-        plugin_adapter.sync_metadata_to_db()
+        cls.update(new_plugin, plugin_adapter.get_metadata())
 
         ClusterPlugins.add_compatible_clusters(new_plugin)
 
@@ -123,12 +119,8 @@ class ClusterPlugins(NailgunObject):
     model = models.ClusterPlugins
 
     @classmethod
-    def validate_compatibility(cls, cluster, plugin):
+    def is_compatible(cls, cluster, plugin):
         """Validates if plugin is compatible with cluster.
-
-        - validates operating systems
-        - modes of clusters (simple or ha)
-        - release version
 
         :param cluster: A cluster instance
         :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
@@ -137,39 +129,9 @@ class ClusterPlugins(NailgunObject):
         :return: True if compatible, False if not
         :rtype: bool
         """
-        cluster_os = cluster.release.operating_system.lower()
-        for release in plugin.releases:
-            if cluster_os != release['os'].lower():
-                continue
-            # plugin writer should be able to specify ha in release['mode']
-            # and know nothing about ha_compact
-            if not any(
-                cluster.mode.startswith(mode) for mode in release['mode']
-            ):
-                continue
+        plugin_adapter = wrap_plugin(plugin)
 
-            if not cls.is_release_version_compatible(
-                cluster.release.version, release['version']
-            ):
-                continue
-            return True
-        return False
-
-    @staticmethod
-    def is_release_version_compatible(rel_version, plugin_rel_version):
-        """Checks if release version is compatible with plugin version.
-
-        :param rel_version: Release version
-        :type rel_version: str
-        :param plugin_rel_version: Plugin release version
-        :type plugin_rel_version: str
-        :return: True if compatible, False if not
-        :rtype: bool
-        """
-        rel_os, rel_fuel = rel_version.split('-')
-        plugin_os, plugin_rel = plugin_rel_version.split('-')
-
-        return rel_os.startswith(plugin_os) and rel_fuel.startswith(plugin_rel)
+        return plugin_adapter.validate_compatibility(cluster)
 
     @classmethod
     def get_compatible_plugins(cls, cluster):
@@ -181,7 +143,7 @@ class ClusterPlugins(NailgunObject):
         :rtype: list
         """
         return list(six.moves.filter(
-            lambda p: cls.validate_compatibility(cluster, p),
+            lambda p: cls.is_compatible(cluster, p),
             PluginCollection.all()))
 
     @classmethod
@@ -211,7 +173,7 @@ class ClusterPlugins(NailgunObject):
         :rtype: list
         """
         return list(six.moves.filter(
-            lambda c: cls.validate_compatibility(c, plugin),
+            lambda c: cls.is_compatible(c, plugin),
             db().query(models.Cluster)))
 
     @classmethod

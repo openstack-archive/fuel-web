@@ -658,7 +658,7 @@ input[type=range] {
       a {
         font-family: 'bebas';
         font-size: @base-font-size + 7;
-        color: @navbar-color;
+        color: #c63927; //@navbar-color;
         padding-top: 7px;
         padding-bottom: 0px;
         height: @navbar-height;
@@ -666,7 +666,7 @@ input[type=range] {
         -webkit-font-smoothing: antialiased;
         &:hover {
           color: @white;
-          background-color: @base-light-color;
+          background-color: #e8b0a9; //@base-light-color;
           border-radius: 4px;
         }
         &:focus {
@@ -679,16 +679,16 @@ input[type=range] {
     .active {
       a {
         color: @white;
-        background-color: @navbar-color-active;
+        background-color: #c63927; //@navbar-color-active;
         border-radius: 4px;
         &:hover {
           color: @white;
-          background-color: @navbar-color-active;
+          background-color: #c63927; //@navbar-color-active;
           border-radius: 4px;
         }
         &:focus {
           color: @white;
-          background-color: @navbar-color-active;
+          background-color: #c63927; //@navbar-color-active;
           border-radius: 4px;
         }
       }
@@ -698,12 +698,12 @@ input[type=range] {
 
 .navbar-logo {
   float: left;
-  height: 60px;
+  height: 36px;
   line-height: 20px;
   padding: 0px;
-  margin-top: 2px;
-  width: 166px;
-  background: url(../img/logos/fuel-logo.svg) no-repeat top left;
+  margin-top: 17px;
+  width: 170px;
+  background: url(../img/logos/mirantis-fuel.svg) no-repeat top left;
 }
 
 .navbar-icons {
@@ -763,6 +763,7 @@ input[type=range] {
         margin-top: 7px;
         font-family: @navbar-icon-font;
         font-size: @base-font-size + 8;
+        color: #7f7f7f;
       }
     }
 
@@ -772,6 +773,7 @@ input[type=range] {
         display: block;
         text-align: center;
         font-size: @base-font-size - 4;
+        color: #7f7f7f;
         .font-bold;
         margin: 8px 0 0 0;
       }
@@ -779,6 +781,7 @@ input[type=range] {
         display: block;
         text-align: center;
         font-size: @base-font-size - 4;
+        color: #7f7f7f;
         .font-bold;
         margin: 1px 0 0 0;
       }
@@ -856,11 +859,11 @@ input[type=range] {
         }
         &.clickable {
           p {
-            color: @link-color;
+            color: #7F7F7F; //@link-color;
             cursor: pointer;
             &:hover {
               text-decoration: underline;
-              color: @link-color-hover;
+              color: #7F7F7F - 20%; //@link-color-hover;
             }
           }
         }
@@ -880,6 +883,9 @@ input[type=range] {
         text-align: center;
         .font-semibold;
         font-size: @base-font-size;
+        a {
+          color: #7f7f7f;
+        }
       }
     }
 
@@ -905,12 +911,30 @@ input[type=range] {
       .list-group {
         margin: 0;
       }
+      a {
+        color: #7f7f7f;
+      }
     }
 
     &.language-popover {
+      .active {
+        a {
+          background-color: #7f7f7f;
+          color: #ffffff;
+          &:hover {
+            background-color: #7f7f7f;
+            color: #ffffff;
+          }
+        }
+      }
       a {
         cursor: pointer;
         padding: 10px 15px;
+        color: #7f7f7f;
+        &:hover {
+          background-color: #cfcfcf;
+          color: #ffffff;
+        }
       }
     }
   }
@@ -2607,22 +2631,26 @@ input[type=range] {
   .container {
     margin-top: @logo-circle-size / 2;
     .box {
+      background: #ffffff url(../img/login-bg.gif) no-repeat top left;
       position: relative;
-      background-color: @white;
       color: @base-text-color;
       border-radius: 18px;
       margin-top: 10%;
       box-shadow: 0 1px 1px @shadow-color;
       .logo-circle {
-        background-color: @white;
-        position: relative;
-        width: @logo-circle-size;
-        height: @logo-circle-size;
-        top: -@logo-circle-size / 2;
-        border-radius: @logo-circle-size / 2;
+        width: 360px;
+        height: 155px;
+        background: url(../img/mirantis-fuel-logo.svg) no-repeat center center;
+        //background-color: @white;
+        //position: relative;
+        //width: @logo-circle-size;
+        //height: @logo-circle-size;
+        //top: -@logo-circle-size / 2;
+        //border-radius: @logo-circle-size / 2;
         margin: 0 auto;
       }
       .logo {
+        display: none;
         @logo-width: 200px;
         @logo-height: 260px;
         background: url(../img/fuel-big-logo.svg) repeat scroll 0 0 rgba(0, 0, 0, 0);
@@ -2634,7 +2662,7 @@ input[type=range] {
       }
       .fields-box {
         overflow: hidden;
-        padding-top: 10px;
+        padding-top: 20px;
         form {
           label {
             font-size: @base-font-size + 1;

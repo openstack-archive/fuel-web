@@ -1107,7 +1107,10 @@ class NeutronNetworkTemplateSerializer70(
         # because duplicated transformations will break deployment.
         for role in roles:
             for t in template['templates_for_node_role'][role]:
-                role_templates[t] = True
+                role_templates[t] = template['network_scheme'][t].get('priority')
+
+        # sort network schemes by priority
+        role_templates = sorted(role_templates.iteritems(), key=lambda x: x[1])
 
         for t in role_templates:
             txs.extend(template['templates'][t]['transformations'])

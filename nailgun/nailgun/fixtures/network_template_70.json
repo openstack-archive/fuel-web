@@ -47,6 +47,7 @@
             },
             "network_scheme": {
                 "storage": {
+                    "priority": 300,
                     "endpoints": [
                         "br-storage"
                     ],
@@ -69,6 +70,7 @@
                     }
                 },
                 "common": {
+                    "priority": 200,
                     "endpoints": [
                         "br-mgmt",
                         "br-fw-admin"
@@ -120,6 +122,7 @@
                     }
                 },
                 "private": {
+                    "priority": 50,
                     "endpoints": [
                         "br-prv"
                     ],
@@ -153,6 +156,7 @@
                     }
                 },
                 "public": {
+                    "priority": 100,
                     "endpoints": [
                         "br-ex"
                     ],
@@ -340,6 +344,7 @@
                     }
                 },
                 "common": {
+                    "priority": 200,
                     "endpoints": [
                         "br-fw-admin",
                         "br-mgmt"

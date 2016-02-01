@@ -67,8 +67,10 @@ EOL
 prepare_server() {
     python ${NAILGUN_ROOT}/manage.py syncdb > /dev/null
     python ${NAILGUN_ROOT}/manage.py loaddefault > /dev/null
-    if test "$NAILGUN_SAMPLE_LOAD" = "yes"; then
-        python ${NAILGUN_ROOT}/manage.py loaddata $NAILGUN_SAMPLE_FILE > /dev/null
+    if test -n "$NAILGUN_FIXTURE_FILES"; then
+        for nailgun_fixture_file in $NAILGUN_FIXTURE_FILES; do
+            python ${NAILGUN_ROOT}/manage.py loaddata $nailgun_fixture_file > /dev/null
+        done
     fi
 
     python ${NAILGUN_ROOT}/manage.py run \

@@ -1298,6 +1298,78 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 self.fail("Unexpected combination of node roles: {0}".format(
                     node.all_roles))
 
+    def test_network_schemes_priorities(self):
+        expected = [
+            {
+                "action": "add-br",
+                "name": "br-prv",
+                "provider": "ovs"
+            },
+            {
+                "action": "add-br",
+                "name": "br-aux"
+            },
+            {
+                "action": "add-patch",
+                "bridges": [
+                    "br-prv",
+                    "br-aux"
+                ],
+                "provider": "ovs",
+                "mtu": 65000
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-aux",
+                "name": "eth3.101"
+            },
+            {
+                "action": "add-br",
+                "name": "br-fw-admin"
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-fw-admin",
+                "name": "eth0"
+            },
+            {
+                "action": "add-br",
+                "name": "br-mgmt"
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-mgmt",
+                "name": "eth1.104"
+            },
+            {
+                "action": "add-br",
+                "name": "br-storage"
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-storage",
+                "name": "eth4"
+            }
+        ]
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template
+        )
+
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 8,
+            roles=['cinder', 'controller']
+        )[0]
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        network_scheme = net_serializer.generate_network_scheme(
+            node, nm.get_node_networks(node))
+        self.assertEqual(expected, network_scheme['transformations'])
+
     def test_gateway_not_set_for_none_ip(self):
         attrs = copy.deepcopy(self.cluster.attributes.editable)
         attrs['neutron_advanced_configuration']['neutron_dvr']['value'] = True

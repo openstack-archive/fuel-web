@@ -3218,7 +3218,7 @@ input[type=range] {
   }
 }
 
-.display-changes-dialog {
+.display-changes-dialog, .provision-nodes-dialog {
   hr {
     margin: 8px 0 12px 0;
   }
@@ -4363,7 +4363,7 @@ input[type=range] {
       margin-bottom: 6px;
       .capacity-items {
         margin-top: -9px;
-        .capacity-item {
+        > div {
           cursor: default;
           background-color: @white;
           padding: 4px 10px;
@@ -4379,6 +4379,7 @@ input[type=range] {
           }
           .capacity-value {
             .font-semibold;
+            float: right;
           }
         }
       }
@@ -4402,9 +4403,11 @@ input[type=range] {
     }
   }
 
+  @dashboard-border-color: #d3d3d3;
+
   .dashboard-block {
     padding: @dashboard-offset;
-    border: 1px solid #d3d3d3;
+    border: 1px solid @dashboard-border-color;
     border-radius: 4px;
     margin: 0 15px @dashboard-offset * 2;
     > div {
@@ -4454,7 +4457,7 @@ input[type=range] {
     .instruction {
       margin-bottom: @dashboard-offset;
     }
-    .environment-alerts {
+    .task-alerts {
       .invalid {
         .font-semibold;
         font-size: @base-font-size - 1;
@@ -4490,6 +4493,42 @@ input[type=range] {
       }
     }
   }
+
+  .actions-panel {
+    .nav {
+      border: none;
+      li {
+        button {
+          border-bottom: 1px solid @dashboard-border-color;
+        }
+        &.active {
+          button {
+            .font-semibold;
+            cursor: default;
+            text-decoration: none;
+            border: 1px solid @dashboard-border-color;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            border-bottom: none;
+          }
+        }
+        &.unavailable {
+          button {
+            color: @gray;
+          }
+        }
+      }
+    }
+    .dashboard-block {
+      margin-left: 0;
+      margin-right: 0;
+      margin-top: 0;
+      border-top: none;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+  }
+
   .links-block {
     .row:not(:last-child) {
       margin-bottom: @dashboard-offset * 2;

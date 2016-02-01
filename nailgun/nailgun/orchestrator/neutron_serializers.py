@@ -1107,9 +1107,13 @@ class NeutronNetworkTemplateSerializer70(
         # because duplicated transformations will break deployment.
         for role in roles:
             for t in template['templates_for_node_role'][role]:
-                role_templates[t] = True
+                role_templates[t] = template['templates'][t].get(
+                    'priority')
 
-        for t in role_templates:
+        # sort network schemes by priority
+        role_templates = sorted(role_templates.iteritems(), key=lambda x: x[1])
+
+        for t, p in role_templates:
             txs.extend(template['templates'][t]['transformations'])
 
         return txs
@@ -1141,6 +1145,7 @@ class NeutronNetworkTemplateSerializer70(
         # TODO(rmoe): fix gateway selection
         if 'public/vip' in roles:
             public_ep = roles['public/vip']
+
             public_net = None
 
             for network_group, endpoint in netgroup_mapping:

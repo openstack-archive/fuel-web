@@ -18,6 +18,7 @@
 
 from collections import defaultdict
 from ordereddict import OrderedDict
+import re
 import six
 
 from nailgun import consts
@@ -30,7 +31,6 @@ from nailgun.objects import NodeGroupCollection
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.settings import settings
 from nailgun import utils
-import re
 
 
 class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
@@ -1153,11 +1153,20 @@ class NeutronNetworkTemplateSerializer70(
         # ordered set. The order of transformations is important which
         # is why we can't just use a set. The list needs to be unique
         # because duplicated transformations will break deployment.
+        # If some template contains 'priority' property, than node's
+        # templates order should be based on it, in other case, all node's
+        # templates will have zero priority and have the same order as
+        # there is no property field.
         for role in roles:
             for t in template['templates_for_node_role'][role]:
-                role_templates[t] = True
+                role_templates[t] = template['templates'][t].get(
+                    'priority', 0)
 
-        for t in role_templates:
+        # sort network schemes by priority
+        sorted_role_templates = sorted(role_templates.iteritems(),
+                                       key=lambda x: x[1])
+
+        for t, p in sorted_role_templates:
             txs.extend(template['templates'][t]['transformations'])
 
         return txs

@@ -79,9 +79,8 @@ var Node = React.createClass({
     e.preventDefault();
     if (this.state.actionInProgress) return;
     this.setState({actionInProgress: true});
-    var node = new models.Node(this.props.node.attributes);
-    var data = {pending_deletion: false};
-    node.save(data, {patch: true})
+    new models.Node(this.props.node.attributes)
+      .save({pending_deletion: false}, {patch: true})
       .done(() => {
         this.props.cluster.fetchRelated('nodes').done(() => {
           this.setState({actionInProgress: false});
@@ -302,7 +301,7 @@ var Node = React.createClass({
     );
   },
   renderCompactNode(options) {
-    var node = this.props.node;
+    var {node, checked, locked, onNodeSelection, renderActionButtons} = this.props;
     var {ns, status, roles, nodePanelClasses, logoClasses, statusClasses, isSelectable} = options;
     return (
       <div className='compact-node'>
@@ -310,12 +309,10 @@ var Node = React.createClass({
           <label className='node-box'>
             <div
               className='node-box-inner clearfix'
-              onClick={isSelectable &&
-                _.partial(this.props.onNodeSelection, null, !this.props.checked)
-              }
+              onClick={isSelectable && _.partial(onNodeSelection, null, !checked)}
             >
               <div className='node-checkbox'>
-                {this.props.checked && <i className='glyphicon glyphicon-ok' />}
+                {checked && <i className='glyphicon glyphicon-ok' />}
               </div>
               <div className='node-name'>
                 <p>{node.get('name') || node.get('mac')}</p>
@@ -331,7 +328,7 @@ var Node = React.createClass({
             <div className='node-hardware'>
               <p>
                 <span>
-                  {node.resource('cores') || '0'} ({node.resource('ht_cores') || '?'})
+                  {node.resource('cores')} ({node.resource('ht_cores') || '?'})
                 </span> / <span>
                   {node.resource('hdd') ? utils.showDiskSize(node.resource('hdd')) : '?' +
                     i18n('common.size.gb')
@@ -364,7 +361,7 @@ var Node = React.createClass({
                     {this.renderRoleList(roles)}
                   </div>
                 }
-                {!_.isEmpty(this.props.node.get('labels')) &&
+                {!_.isEmpty(node.get('labels')) &&
                   <div className='node-labels'>
                     <i className='glyphicon glyphicon-tags pull-left' />
                     {this.renderLabels()}
@@ -387,20 +384,20 @@ var Node = React.createClass({
                         {status === 'offline' && this.renderRemoveButton()}
                         {[
                           !!node.get('cluster') && this.renderLogsLink(),
-                          this.props.renderActionButtons && node.hasChanges() &&
-                            !this.props.locked &&
+                          renderActionButtons &&
+                            (node.get('pending_addition') || node.get('pending_deletion')) &&
+                            !locked &&
                             <button
                               className='btn btn-discard'
                               key='btn-discard'
-                              onClick={
-                                node.get('pending_deletion') ?
-                                this.discardNodeDeletion : this.showDeleteNodesDialog
+                              onClick={node.get('pending_deletion') ?
+                                this.discardNodeDeletion
+                              :
+                                this.showDeleteNodesDialog
                               }
                             >
-                              {i18n(
-                                ns + (node.get('pending_deletion') ?
-                                  'discard_deletion' : 'delete_node'
-                                )
+                              {i18n(ns +
+                                (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node')
                               )}
                             </button>
                         ]}
@@ -425,7 +422,7 @@ var Node = React.createClass({
     );
   },
   renderStandardNode(options) {
-    var node = this.props.node;
+    var {node, locked, renderActionButtons} = this.props;
     var {ns, status, roles, nodePanelClasses, logoClasses, statusClasses} = options;
     return (
       <div className={utils.classNames(nodePanelClasses)}>
@@ -456,17 +453,21 @@ var Node = React.createClass({
           <div className='node-action'>
             {[
               !!node.get('cluster') && this.renderLogsLink(true),
-              this.props.renderActionButtons && node.hasChanges() && !this.props.locked &&
+              renderActionButtons &&
+                (node.get('pending_addition') || node.get('pending_deletion')) &&
+                !locked &&
                 <Tooltip
-                  key={'pending_addition_' + node.id}
-                  text={
-                    i18n(ns + (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node'))
-                  }
+                  key={'discard-node-changes-' + node.id}
+                  text={i18n(ns +
+                    (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node')
+                  )}
                 >
                   <div
                     className='icon btn-discard'
                     onClick={node.get('pending_deletion') ?
-                      this.discardNodeDeletion : this.showDeleteNodesDialog
+                      this.discardNodeDeletion
+                    :
+                      this.showDeleteNodesDialog
                     }
                   />
                 </Tooltip>

@@ -765,6 +765,10 @@ DUMP:
         path: /etc/astute
       - type: dir
         path: /etc/fuel
+      - type: file
+        path: /etc/fuel_build_id
+      - type: file
+        path: /etc/fuel_build_number
       - type: command
         command: df -h
         to_file: df.txt

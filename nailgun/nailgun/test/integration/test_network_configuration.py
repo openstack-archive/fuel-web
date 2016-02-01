@@ -14,10 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
+import copy
 
 from mock import patch
-
+import netaddr
 from oslo_serialization import jsonutils
 from sqlalchemy.sql import not_
 
@@ -286,12 +286,20 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             for key in keys:
                 self.assertEqual(network[key], getattr(network_group, key))
 
-    def test_get_request_should_return_vips(self):
+    def test_get_request_should_return_vips_after_put(self):
+        self.env.neutron_networks_put(self.cluster.id, {})
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = resp.json_body
 
         self.assertIn('public_vip', data)
         self.assertIn('management_vip', data)
+
+    def test_get_request_should_not_return_vips_before_assignment(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        data = resp.json_body
+
+        self.assertNotIn('public_vip', data)
+        self.assertNotIn('management_vip', data)
 
     def test_not_found_cluster(self):
         resp = self.env.neutron_networks_get(self.cluster.id + 999,
@@ -523,7 +531,9 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertIsNone(strg['gateway'])
 
     def test_admin_vip_reservation(self):
-        self.cluster.release.network_roles_metadata.append({
+        nrm_copy = copy.deepcopy(
+            self.cluster.release.network_roles_metadata)
+        nrm_copy.append({
             'id': 'admin/vip',
             'default_mapping': consts.NETWORKS.fuelweb_admin,
             'properties': {
@@ -537,7 +547,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.cluster.release.version = 'liberty-8.0'
         self.db.flush()
 
-        resp = self.env.neutron_networks_get(self.cluster.id)
+        resp = self.env.neutron_networks_put(self.cluster.id, {})
         self.assertEqual(200, resp.status_code)
 
         nm = objects.Cluster.get_network_manager(self.cluster)
@@ -546,7 +556,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             nm.assign_vip(nodegroup, consts.NETWORKS.fuelweb_admin, 'my-vip'),
             resp.json_body['vips']['my-vip']['ipaddr'])
 
-    def test_not_enough_ip_addresses_return_400_on_get(self):
+    def test_not_enough_ip_addresses_return_200_on_get(self):
         # restrict public network to have only 2 ip addresses
         netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
         public = next((
@@ -572,15 +582,10 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         })
         self.db.flush()
 
-        # check that we return 400 Bad Request
         resp = self.env.neutron_networks_get(
             self.cluster.id,
             expect_errors=True)
-        self.assertEqual(400, resp.status_code)
-        self.assertEqual(
-            "Not enough free IP addresses in ranges [172.16.0.2-172.16.0.4] "
-            "of 'public' network",
-            resp.json_body['message'])
+        self.assertEqual(200, resp.status_code)
 
     def test_not_enough_ip_addresses_return_400_on_put(self):
         netconfig = self.env.neutron_networks_get(self.cluster.id).json_body
@@ -618,7 +623,9 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
         # populate release with a network role that requests a VIP
         # for compute nodes
-        self.env.clusters[0].release.network_roles_metadata.append({
+        nrm_copy = copy.deepcopy(
+            self.env.clusters[0].release.network_roles_metadata)
+        nrm_copy.append({
             'id': 'mymgmt/vip',
             'default_mapping': consts.NETWORKS.management,
             'properties': {
@@ -629,24 +636,19 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                     'node_roles': ['compute'],
                 }]
             }})
+        self.env.clusters[0].release.network_roles_metadata = nrm_copy
         self.db.flush()
+
+        self.env.neutron_networks_put(self.cluster.id, {})
 
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.assertEqual(200, resp.status_code)
         ipaddr = resp.json_body['vips']['my-vip']['ipaddr']
         self.assertEqual('10.42.0.2', ipaddr)
 
-    def test_get_returns_error_if_vip_names_are_intersected(self):
-        cluster = self.env.create(
-            release_kwargs={'version': '2015.1.0-7.0'},
-            cluster_kwargs={
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
-                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
-                'api': False,
-            },
-            nodes_kwargs=[{'roles': ['controller']}]
-        )
-        cluster.release.network_roles_metadata.append({
+    def test_put_returns_error_if_vip_names_are_intersected(self):
+        nrm_copy = copy.deepcopy(self.cluster.release.network_roles_metadata)
+        nrm_copy.append({
             'id': 'mymgmt/vip',
             'default_mapping': consts.NETWORKS.management,
             'properties': {
@@ -657,13 +659,43 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                     'node_roles': ['compute'],
                 }]
             }})
+        self.cluster.release.network_roles_metadata = nrm_copy
         self.db.flush()
-        resp = self.env.neutron_networks_get(cluster.id, expect_errors=True)
+        resp = self.env.neutron_networks_put(self.cluster.id, {},
+                                             expect_errors=True)
         self.assertEqual(400, resp.status_code)
         self.assertIn(
             'Duplicate VIP names found in network configuration',
             resp.json_body['message']
         )
+
+    @patch('nailgun.network.manager.AllocateVIPs70Mixin.'
+           '_assign_vips_for_net_groups')
+    def test_network_conf_not_applied_on_vip_allocation_error(self, m_assign):
+        m_assign.side_effect = Exception
+
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        net_conf = resp.json_body
+
+        old_cidr = ''
+
+        for net in net_conf['networks']:
+            if net['name'] == 'management':
+                old_cidr = net['cidr']
+                net['cidr'] = net['cidr'].partition('/')[0] + '/25'
+
+        resp = self.env.neutron_networks_put(self.cluster.id,
+                                             net_conf,
+                                             expect_errors=True)
+
+        self.assertEqual(resp.status_code, 500)
+
+        self.db.refresh(self.cluster)
+        net = [ng for ng in self.cluster.network_groups
+               if ng.name == 'management'].pop()
+
+        self.assertEqual(net.cidr, old_cidr)
+        self.assertTrue(m_assign.called)  # Verifies no other error occured
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

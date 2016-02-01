@@ -99,7 +99,10 @@ class TaskManager(object):
     def serialize_network_cfg(self, cluster):
         serializer = {'nova_network': NovaNetworkConfigurationSerializer,
                       'neutron': NeutronNetworkConfigurationSerializer}
-        return serializer[cluster.net_provider].serialize_for_cluster(cluster)
+        return serializer[cluster.net_provider].serialize_for_cluster(
+            cluster,
+            allocate_vips=True
+        )
 
 
 class DeploymentCheckMixin(object):

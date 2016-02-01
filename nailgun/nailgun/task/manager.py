@@ -747,6 +747,14 @@ class StopDeploymentTaskManager(TaskManager):
 class ResetEnvironmentTaskManager(TaskManager):
 
     def execute(self):
+
+        # FIXME(aroma): remove updating of 'deployed_before'
+        # when stop action is reworked. 'deployed_before'
+        # flag identifies whether stop action is allowed for the
+        # cluster. Please, refer to [1] for more details.
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
+
         deploy_running = db().query(Task).filter_by(
             cluster=self.cluster,
             name=consts.TASK_NAMES.deploy,

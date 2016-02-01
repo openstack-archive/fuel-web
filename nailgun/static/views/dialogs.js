@@ -366,7 +366,7 @@ export var DiscardNodeChangesDialog = React.createClass({
   }
 });
 
-export var DeployChangesDialog = React.createClass({
+export var DeployClusterDialog = React.createClass({
   mixins: [
     dialogMixin,
     // this is needed to somehow handle the case when
@@ -379,9 +379,9 @@ export var DeployChangesDialog = React.createClass({
     })
   ],
   getDefaultProps() {
-    return {title: i18n('dialog.display_changes.title')};
+    return {title: i18n('dialog.deploy_cluster.title')};
   },
-  ns: 'dialog.display_changes.',
+  ns: 'dialog.deploy_cluster.',
   deployCluster() {
     this.setState({actionInProgress: true});
     dispatcher.trigger('deploymentTasksUpdated');
@@ -441,6 +441,72 @@ export var DeployChangesDialog = React.createClass({
         disabled={this.state.actionInProgress || this.state.isInvalid}
         onClick={this.deployCluster}
       >{i18n(this.ns + 'deploy')}</button>
+    ]);
+  }
+});
+
+export var ProvisionNodesDialog = React.createClass({
+  mixins: [dialogMixin],
+  getDefaultProps() {
+    return {title: i18n('dialog.provision_nodes.title')};
+  },
+  ns: 'dialog.provision_nodes.',
+  provisionNodes() {
+    this.setState({actionInProgress: true});
+    dispatcher.trigger('deploymentTasksUpdated');
+    var task = new models.Task();
+    task.save({}, {url: _.result(this.props.cluster, 'url') + '/provision', type: 'PUT'})
+      .done(() => {
+        this.close();
+        dispatcher.trigger('deploymentTaskStarted');
+      })
+      .fail(this.showError);
+  },
+  renderBody() {
+    return (
+      <div className='provision-nodes-dialog'>
+        <div className='text-warning'>
+          <i className='glyphicon glyphicon-warning-sign' />
+          <div className='instruction'>
+            {i18n(this.ns + 'locked_node_settings_alert') + ' '}
+          </div>
+        </div>
+        <div className='text-warning'>
+          <i className='glyphicon glyphicon-warning-sign' />
+          <div className='instruction'>
+            {i18n('cluster_page.dashboard_tab.package_information') + ' '}
+            <a
+              target='_blank'
+              href={utils.composeDocumentationLink('operations.html#troubleshooting')}
+            >
+              {i18n('cluster_page.dashboard_tab.operations_guide')}
+            </a>
+            {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+          </div>
+        </div>
+        <div className='confirmation-question'>
+          {i18n(this.ns + 'are_you_sure_provision')}
+        </div>
+      </div>
+    );
+  },
+  renderFooter() {
+    return ([
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
+      <button key='provisioning'
+        className='btn start-provision-btn btn-success'
+        disabled={this.state.actionInProgress}
+        onClick={this.provisionNodes}
+      >
+        {i18n(this.ns + 'start_provisioning')}
+      </button>
     ]);
   }
 });

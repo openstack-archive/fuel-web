@@ -93,9 +93,8 @@ define([
           );
         });
     },
-    checkNodes: function(amount, status) {
+    checkNodes: function(amount, status = 'discover') {
       var self = this;
-      status = status || 'discover';
       return this.remote
         .then(function() {
           return _.range(amount).reduce(

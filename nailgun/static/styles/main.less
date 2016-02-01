@@ -3148,7 +3148,7 @@ input[type=range] {
   }
 }
 
-.display-changes-dialog {
+.display-changes-dialog, .provision-nodes-dialog {
   hr {
     margin: 8px 0 12px 0;
   }
@@ -4337,6 +4337,30 @@ input[type=range] {
           width: 22px;
           height: 18px;
           top: 3px;
+        }
+
+        /*padding-left: 40px;
+        position: relative;
+        margin-right: 0;
+        .deploy-icon {
+          position: absolute;
+          top: 5px;
+          left: 12px;
+          &:before {
+            content: " ";
+          }
+        }*/
+
+      }
+      .deploy-btn-group {
+        .dropdown-toggle {
+          margin-left: 1px;
+        }
+        ul{
+          .btn {
+            width: 100%;
+            text-align: left;
+          }
         }
       }
       .btn-discard-changes {

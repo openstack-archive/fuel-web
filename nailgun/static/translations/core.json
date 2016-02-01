@@ -798,6 +798,8 @@
                 "deploy_changes": "Deploy Changes",
                 "provision_vms": "Provision VMs",
                 "deploy": "Deploying",
+                "provision": "Provisioning",
+                "run_provision": "Run provisioning only",
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
@@ -974,6 +976,11 @@
                     "tls_for_horizon_not_enabled": "TLS is not enabled for Horizon public endpoint. It is highly recommended to enable and configure TLS for Horizon.",
                     "tls_for_services_not_enabled": "TLS is not enabled for OpenStack public endpoints. It is highly recommended to enable and configure TLS.",
                     "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes."
+                },
+                "provision_nodes": {
+                    "title": "Provision Nodes",
+                    "are_you_sure_provision": "Click Start Provisioning to provision the operating system onto the environment nodes, or Cancel to make changes.",
+                    "start_provisioning": "Start Provisioning"
                 },
                 "provision_vms": {
                     "title": "Provision VMs",

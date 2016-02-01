@@ -22,7 +22,7 @@ import utils from 'utils';
 import dispatcher from 'dispatcher';
 import {Input, ProgressBar, Tooltip} from 'views/controls';
 import {
-  DiscardNodeChangesDialog, DeployChangesDialog, ProvisionVMsDialog,
+  DiscardNodeChangesDialog, DeployChangesDialog, ProvisionVMsDialog, ProvisionNodesDialog,
   RemoveClusterDialog, ResetEnvironmentDialog, StopDeploymentDialog
 } from 'views/dialogs';
 import {backboneMixin, pollingMixin, renamingMixin} from 'component_mixins';
@@ -238,8 +238,11 @@ var DeploymentResult = React.createClass({
     return {collapsed: false};
   },
   dismissTaskResult() {
-    var task = this.props.cluster.task({group: 'deployment'});
-    if (task) task.destroy();
+    this.props.cluster.task({group: 'deployment'}).destroy()
+      .done(() => {
+        // removal of 'deploy' task deletes 'provision' task also
+        this.props.cluster.fetchRelated('tasks');
+      });
   },
   componentDidMount() {
     $('.result-details', ReactDOM.findDOMNode(this))
@@ -502,9 +505,24 @@ var DeployReadinessBlock = React.createClass({
     var nodes = cluster.get('nodes');
     var alerts = this.validate(cluster);
     var isDeploymentPossible = cluster.isDeploymentPossible() && !alerts.blocker.length;
+    var isProvisionPossible = nodes.any(
+      (node) => !_.contains(['provisioned', 'ready'], node.get('status'))
+    );
     var isVMsProvisioningAvailable = nodes.any((node) => {
       return node.get('pending_addition') && node.hasRole('virt');
     });
+
+    var deployButtonClasses = utils.classNames({
+      'btn btn-primary': true,
+      'btn-warning': (
+        _.isEmpty(alerts.blocker) && (!_.isEmpty(alerts.error) || !_.isEmpty(alerts.warning))
+      )
+    });
+    var deployButtonProps = {
+      className: deployButtonClasses + ' deploy-btn',
+      onClick: _.partial(this.showDialog, DeployChangesDialog),
+      disabled: !isDeploymentPossible
+    };
 
     return (
       <div className='row'>
@@ -537,18 +555,31 @@ var DeployReadinessBlock = React.createClass({
                 <div className='deploy-icon' />
                 {i18n('cluster_page.provision_vms')}
               </button>
+            : isProvisionPossible ?
+              <div className='btn-group deploy-btn-group' key='deploy-changes'>
+                <button {...deployButtonProps}>
+                  <div className='deploy-icon' />
+                  {i18n('cluster_page.deploy_changes')}
+                </button>
+                <button
+                  className={deployButtonClasses + ' dropdown-toggle'}
+                  data-toggle='dropdown'
+                >
+                  <span className='caret' />
+                </button>
+                <ul className='dropdown-menu'>
+                  <li>
+                    <button
+                      className='btn btn-link btn-provision'
+                      onClick={_.partial(this.showDialog, ProvisionNodesDialog)}
+                    >
+                      {i18n('cluster_page.run_provision')}
+                    </button>
+                  </li>
+                </ul>
+              </div>
             :
-              <button
-                className={utils.classNames({
-                  'btn btn-primary deploy-btn': true,
-                  'btn-warning': (
-                    _.isEmpty(alerts.blocker) &&
-                    (!_.isEmpty(alerts.error) || !_.isEmpty(alerts.warning))
-                  )
-                })}
-                onClick={_.partial(this.showDialog, DeployChangesDialog)}
-                disabled={!isDeploymentPossible}
-              >
+              <button {...deployButtonProps}>
                 <div className='deploy-icon' />
                 {i18n('cluster_page.deploy_changes')}
               </button>

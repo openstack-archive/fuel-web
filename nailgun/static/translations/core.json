@@ -624,6 +624,7 @@
                     "add_nodes": "Add nodes to the OpenStack Environment.",
                     "not_deployed_instruction": "Before you proceed, review the environment configuration, including the node disk partitioning and network settings. You will not be able to change these settings after Fuel deploys the OpenStack environment.",
                     "deployment_cannot_be_started": "Deployment cannot be started due to invalid environment configuration. Please review and address the warnings below before proceeding and see the",
+                    "provisioning_cannot_be_started": "Provisioning of nodes cannot be started due to invalid environment configuration. Please review and address the warnings below before proceeding",
                     "stop": "Stop",
                     "healthcheck": "To view the OpenStack health check status go to ",
                     "healthcheck_tab": "Healthcheck tab",
@@ -644,7 +645,46 @@
                     "horizon_description": "The OpenStack dashboard Horizon is now available.",
                     "go_to_horizon": "Go to Horizon",
                     "no_storage_enabled": "No storage option enabled",
-                    "http_plugin_link": "(HTTP)"
+                    "http_plugin_link": "(HTTP)",
+                    "added_node": "Added __count__ node",
+                    "added_node_plural": "Added __count__ nodes",
+                    "deleted_node": "Deleted __count__ node",
+                    "deleted_node_plural": "Deleted __count__ nodes",
+                    "provisioned_node": "Provisioned __count__ node",
+                    "provisioned_node_plural": "Provisioned __count__ nodes",
+                    "verification_not_performed": "Please verify your network settings before deployment.",
+                    "verification_in_progress": "Network verification is in progress.",
+                    "verification_failed": "Networks verification failed with an error.",
+                    "get_more_info": "For more information please visit the",
+                    "networks_link": "Networks tab",
+                    "invalid_settings": "Environment settings are invalid.",
+                    "settings_link": "Settings tab",
+                    "tls_not_enabled": "TLS is not enabled. It is highly recommended to enable and configure TLS.",
+                    "tls_for_horizon_not_enabled": "TLS is not enabled for Horizon public endpoint. It is highly recommended to enable and configure TLS for Horizon.",
+                    "tls_for_services_not_enabled": "TLS is not enabled for OpenStack public endpoints. It is highly recommended to enable and configure TLS.",
+                    "offline_nodes": "Some nodes are offline.",
+                    "unprovisioned_virt_nodes": "The __role__ node is not provisioned.",
+                    "unprovisioned_virt_nodes_plural": "Some __role__ nodes are not provisioned.",
+                    "deployment_mode": "Deployment Mode",
+                    "actions": {
+                        "deploy": {
+                            "title": "Regular deployment",
+                            "button_title": "Deploy Changes"
+                        },
+                        "provision": {
+                            "title": "Advanced provisioning",
+                            "nodes_to_provision": "__count__ node to be provisioned.",
+                            "nodes_to_provision_plural": "__count__ nodes to be provisioned.",
+                            "no_nodes_to_provision": "No online discovered nodes to provision.",
+                            "button_title": "Provision Nodes"
+                        },
+                        "spawn_vms": {
+                            "title": "VMs provisioning",
+                            "nodes_to_provision": "__count__ node to be provisioned.",
+                            "nodes_to_provision_plural": "__count__ nodes to be provisioned.",
+                            "button_title": "Provision VMs"
+                        }
+                    }
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -798,13 +838,11 @@
                     "tenant_label": "Tenant",
                     "tenant_description": "Tenant (project) name for Administrator"
                 },
-                "deploy_changes": "Deploy Changes",
-                "provision_vms": "Provision VMs",
                 "deploy": "Deploying",
+                "provision": "Provisioning of nodes",
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
-                "deployment_mode": "Deployment Mode",
                 "show_details_button": "Show additional information",
                 "hide_details_button": "Hide additional information",
                 "openstack_release": "OpenStack Release",
@@ -944,38 +982,18 @@
                     "saving_failed_message": "Failed to save changes. Please fix the errors and try again.",
                     "no_discard_message": "You have unsaved changes on this page. Press Cancel to stay on the page or Save and Proceed to save data and proceed."
                 },
-                "display_changes": {
+                "deploy_cluster": {
                     "title": "Deploy Changes",
-                    "added_node": "Added __count__ node",
-                    "added_node_plural": "Added __count__ nodes",
-                    "deleted_node": "Deleted __count__ node",
-                    "deleted_node_plural": "Deleted __count__ nodes",
-                    "provisioned_node": "Provisioned __count__ node",
-                    "provisioned_node_plural": "Provisioned __count__ nodes",
-                    "settings_changes": {
-                        "attributes": "Changed OpenStack settings.",
-                        "networks": "Changed network settings.",
-                        "disks": "Changed disk configuration of the following nodes:",
-                        "interfaces": "Changed interface configuration of the following nodes:"
-                    },
-                    "warnings": {
-                        "no_deployment": "Environment configuration is invalid. Cannot start the deployment. Please check the warnings below.",
-                        "connectivity_alert": "Packages and updates are fetched from the repositories defined in the Settings tab. If your environment uses the default repositories, verify that the Fuel Master node can access the Internet. If the Fuel Master node is not connected to the Internet, you must set up a local mirror and configure Fuel to upload packages from the local mirror. Fuel must have network access to the local mirror."
-                    },
-                    "deploy": "Deploy",
-                    "redeployment_needed": "Deployment completed with errors. Please redeploy your environment.",
-                    "verification_not_performed": "Please verify your network settings before deployment.",
-                    "verification_in_progress": "Network verification is in progress.",
-                    "verification_failed": "Networks verification failed with an error.",
-                    "get_more_info": "For more information please visit the",
-                    "networks_link": "Networks tab",
-                    "invalid_settings": "Environment settings are invalid.",
-                    "settings_link": "Settings tab",
-                    "tls_not_enabled": "TLS is not enabled. It is highly recommended to enable and configure TLS.",
-                    "tls_for_horizon_not_enabled": "TLS is not enabled for Horizon public endpoint. It is highly recommended to enable and configure TLS for Horizon.",
-                    "tls_for_services_not_enabled": "TLS is not enabled for OpenStack public endpoints. It is highly recommended to enable and configure TLS.",
+                    "no_deployment": "Environment configuration is invalid. Cannot start the deployment. Please check the warnings below.",
+                    "connectivity_alert": "Packages and updates are fetched from the repositories defined in the Settings tab. If your environment uses the default repositories, verify that the Fuel Master node can access the Internet. If the Fuel Master node is not connected to the Internet, you must set up a local mirror and configure Fuel to upload packages from the local mirror. Fuel must have network access to the local mirror.",
                     "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes.",
-                    "offline_nodes": "Some nodes are offline."
+                    "deploy": "Deploy"
+                },
+                "provision_nodes": {
+                    "title": "Provision Nodes",
+                    "locked_node_settings_alert": "Before you proceed, review the environment nodes configuration, including disk partitioning and interfaces configuration. You will not be able to change these settings after Fuel provisions the nodes.",
+                    "are_you_sure_provision": "Click Start Provisioning to provision the operating system onto the environment nodes, or Cancel to make changes.",
+                    "start_provisioning": "Start Provisioning"
                 },
                 "provision_vms": {
                     "title": "Provision VMs",
@@ -1008,10 +1026,10 @@
                     "title": "Delete Nodes",
                     "common_message": "Are you sure you want to delete the selected node from the environment?",
                     "common_message_plural": "Are you sure you want to delete the selected nodes from the environment?",
-                    "not_deployed_nodes_message": "The not deployed node will return to the pool of unallocated nodes.",
-                    "not_deployed_nodes_message_plural": "Not deployed nodes will return to the pool of unallocated nodes.",
-                    "deployed_nodes_message": "The deployed node will be marked as pending deletion and will be removed from the environment after re-deployment.",
-                    "deployed_nodes_message_plural": "Deployed nodes will be marked as pending deletion and will be removed from the environment after redeployment."
+                    "added_nodes_message": "The node will return to the pool of unallocated nodes.",
+                    "added_nodes_message_plural": "The nodes will return to the pool of unallocated nodes.",
+                    "deployed_nodes_message": "The node will be marked as pending deletion and will be removed from the environment after deployment.",
+                    "deployed_nodes_message_plural": "The nodes will be marked as pending deletion and will be removed from the environment after deployment."
                 },
                 "discard_changes": {
                     "title": "Discard Changes",
@@ -1566,7 +1584,13 @@
                 },
                 "dashboard_tab": {
                     "delete_environment": "删除环境",
-                    "alert_delete": "清除每个节点并放回未分配节点池"
+                    "alert_delete": "清除每个节点并放回未分配节点池",
+                    "added_node": "增加 __count__ 个节点。",
+                    "added_node_plural": "增加 __count__ 个节点。",
+                    "deleted_node": "删除 __count__ 个节点。",
+                    "deleted_node_plural": "删除 __count__ 个节点。",
+                    "provisioned_node": "配置了 __count__ 个节点",
+                    "provisioned_node_plural": "配置了 __count__ 个节点"
                 },
                 "network_tab": {
                     "title": "网络设置",
@@ -1760,38 +1784,11 @@
                     "saving_failed_message": "保存失败。请修复错误后再保存。",
                     "no_discard_message": "你有尚未保存的变更。选择“取消”留在本页，或者“保存并更改”使配置生效。"
                 },
-                "display_changes": {
+                "deploy_cluster": {
                     "title": "部署变更",
-                    "added_node": "增加 __count__ 个节点。",
-                    "added_node_plural": "增加 __count__ 个节点。",
-                    "deleted_node": "删除 __count__ 个节点。",
-                    "deleted_node_plural": "删除 __count__ 个节点。",
-                    "provisioned_node": "配置了 __count__ 个节点",
-                    "provisioned_node_plural": "配置了 __count__ 个节点",
-                    "settings_changes": {
-                        "attributes": "OpenStack 设置已改变。",
-                        "networks": "网络设置已改变。",
-                        "disks": "以下节点的磁盘配置已改变：",
-                        "interfaces": "以下节点的接口配置已改变："
-                    },
-                    "warnings": {
-                        "no_deployment": "环境配置有误，无法开始部署。请检查下面的错误。",
-                        "connectivity_alert": "软件包和更新所用的镜像源定义在设置标签页中。如果你的环境使用默认的镜像源，请检查 Fuel 的主节点能访问外网。如果 Fuel 的主节点没有连接外网，你必须搭建一个本地的镜像源，并配置 Fuel 从本地镜像源获取软件包。Fuel 必须能通过网络访问本地镜像源。"
-                    },
                     "deploy": "部署",
-                    "redeployment_needed": "某些节点配置后状态错误，需要重新部署。",
-                    "verification_not_performed": "请在部署前检测网络。",
-                    "verification_in_progress": "正在进行网络检测。",
-                    "verification_failed": "网络检测遇到问题。",
-                    "get_more_info": "更多信息请访问",
-                    "networks_link": "网络标签页",
-                    "invalid_settings": "环境设置有误。",
-                    "settings_link": "设置标签页",
-                    "tls_not_enabled": "没有启用 TLS。强烈建议启用并设置 TLS。",
-                    "tls_for_horizon_not_enabled": "Horizon 公共接入点没有启用 TLS。强烈建议为 Horizon 启用和配置 TLS。",
-                    "tls_for_services_not_enabled": "OpenStack 公共接入点没有启用 TLS。强烈建议启用和配置 TLS。",
-                    "are_you_sure_deploy": "点击部署开始部署，或者点击取消。",
-                    "offline_nodes": "有些节点离线。"
+                    "no_deployment": "环境配置有误，无法开始部署。请检查下面的错误。",
+                    "connectivity_alert": "软件包和更新所用的镜像源定义在设置标签页中。如果你的环境使用默认的镜像源，请检查 Fuel 的主节点能访问外网。如果 Fuel 的主节点没有连接外网，你必须搭建一个本地的镜像源，并配置 Fuel 从本地镜像源获取软件包。Fuel 必须能通过网络访问本地镜像源。"
                 },
                 "provision_vms": {
                     "title": "配置 VM",
@@ -2262,7 +2259,19 @@
                     "reset_disabled_for_deploying_cluster": "環境のリセットはデプロイ中の環境には使用できません。",
                     "rename_error": {
                         "title": "環境の名前変更ができませんでした"
-                    }
+                    },
+                    "added_node": "__count__ノードを追加。",
+                    "added_node_plural": "__count__ノードを追加。",
+                    "deleted_node": "__count__ノードを削除。",
+                    "deleted_node_plural": "__count__ノードを削除。",
+                    "locked_settings_alert": "環境設定とノードの設定はデプロイ後に変更できなくなりますので注意してください。",
+                    "verification_not_performed": "デプロイ前にネットワーク設定を確認することをおすすめします。",
+                    "verification_in_progress": "ネットワークの検証が進行中です。",
+                    "verification_failed": "ネットワークの検証がエラーのために失敗しました。",
+                    "get_more_info": "詳しい情報は次を参照してください:",
+                    "networks_link": "ネットワークタブ",
+                    "invalid_settings": "環境設定が不正です。",
+                    "settings_link": "設定タブ"
                 },
                 "network_tab": {
                     "title": "ネットワーク設定",
@@ -2489,32 +2498,11 @@
                     "leave_button": "ページから離れ、変更を破棄",
                     "default_message": "このページでの変更が保存されていません。変更を破棄してこのページから離れてもよろしいですか？"
                 },
-                "display_changes": {
+                "deploy_cluster": {
                     "title": "変更をデプロイ",
-                    "added_node": "__count__ノードを追加。",
-                    "added_node_plural": "__count__ノードを追加。",
-                    "deleted_node": "__count__ノードを削除。",
-                    "deleted_node_plural": "__count__ノードを削除。",
-                    "settings_changes": {
-                        "attributes": "OpenStack設定を変更。",
-                        "networks": "ネットワーク設定を変更。",
-                        "disks": "以下のノードのディスク構成を変更:",
-                        "interfaces": "以下のノードのインタフェイス構成を変更:"
-                    },
-                    "warnings": {
-                        "no_deployment": "環境の設定が無効です。デプロイは開始できません。次の警告を確認してください。",
-                        "connectivity_alert": "デフォルトではパッケージやパッケージの更新は、リポジトリから取得されます。 Fuelノードがインタネットにアクセスできることを確認してください。\n別のリポジトリを指定またはローカルミラーを作成するには、デプロイ前に設定タブを確認してください。"
-                    },
                     "deploy": "デプロイ",
-                    "redeployment_needed": "いくつかのノードはデプロイ後にステータスがエラーになっています。再デプロイが必要です。",
-                    "locked_settings_alert": "環境設定とノードの設定はデプロイ後に変更できなくなりますので注意してください。",
-                    "verification_not_performed": "デプロイ前にネットワーク設定を確認することをおすすめします。",
-                    "verification_in_progress": "ネットワークの検証が進行中です。",
-                    "verification_failed": "ネットワークの検証がエラーのために失敗しました。",
-                    "get_more_info": "詳しい情報は次を参照してください:",
-                    "networks_link": "ネットワークタブ",
-                    "invalid_settings": "環境設定が不正です。",
-                    "settings_link": "設定タブ"
+                    "no_deployment": "環境の設定が無効です。デプロイは開始できません。次の警告を確認してください。",
+                    "connectivity_alert": "デフォルトではパッケージやパッケージの更新は、リポジトリから取得されます。 Fuelノードがインタネットにアクセスできることを確認してください。\n別のリポジトリを指定またはローカルミラーを作成するには、デプロイ前に設定タブを確認してください。"
                 },
                 "show_node": {
                     "manufacturer_label": "製造元",
@@ -2813,7 +2801,23 @@
                     "reset_environment_warning": "이 작업은 기존의 모든 노드를 배치전 상태로 바꾸고 기존의 환경을 삭제합니다.",
                     "reset_disabled_for_new_cluster": "아직 배치되지 않은 환경에서 환경재설정은 할수없습니다.",
                     "repeated_reset_disabled": "현재의 환경은 이미 재설정되고 있읍니다.",
-                    "reset_disabled_for_deploying_cluster": "배치되고있는 환경에서 환경재설정은 할수 없습니다.배치 프로세스를 중지하려면 [배치중지]를 사용합니다."
+                    "reset_disabled_for_deploying_cluster": "배치되고있는 환경에서 환경재설정은 할수 없습니다.배치 프로세스를 중지하려면 [배치중지]를 사용합니다.",
+                    "added_node": "__count__ 노드를 추가",
+                    "added_node_plural": "__count__ 노드들을 추가",
+                    "deleted_node": "__count__ 노드를 삭제",
+                    "deleted_node_plural": "__count__ 노드들을 삭제",
+                    "verification_not_performed": "请在部署前检测网络。",
+                    "verification_in_progress": "正在进行网络检测。",
+                    "verification_failed": "网络检测遇到问题。",
+                    "get_more_info": "更多信息请访问",
+                    "networks_link": "网络标签页",
+                    "invalid_settings": "环境设置有误。",
+                    "settings_link": "设置标签页",
+                    "tls_not_enabled": "没有启用 TLS。强烈建议启用并设置 TLS。",
+                    "tls_for_horizon_not_enabled": "Horizon 公共接入点没有启用 TLS。强烈建议为 Horizon 启用和配置 TLS。",
+                    "tls_for_services_not_enabled": "OpenStack 公共接入点没有启用 TLS。强烈建议启用和配置 TLS。",
+                    "are_you_sure_deploy": "点击部署开始部署，或者点击取消。",
+                    "offline_nodes": "有些节点离线。"
                 },
                 "network_tab": {
                     "title": "네트워크 설정",
@@ -2985,21 +2989,9 @@
                     "leave_button": "변경사항을 취소하고 페이지를 떠나가기",
                     "default_message": "설정이 수정되었지만 저장되지 않았습니다.변경 사항을 취소하고 페이지를 떠나겠습니까?"
                 },
-                "display_changes": {
+                "deploy_cluster": {
                     "title": "변경내용 배치",
-                    "added_node": "__count__ 노드를 추가",
-                    "added_node_plural": "__count__ 노드들을 추가",
-                    "deleted_node": "__count__ 노드를 삭제",
-                    "deleted_node_plural": "__count__ 노드들을 삭제",
-                    "settings_changes": {
-                        "attributes": "OpenStack 설정",
-                        "networks": "네트워크 설정",
-                        "disks": "다음 노드들의 디스크 설정:"
-                    },
-                    "warnings": {
-                    },
-                    "deploy": "배치되었읍니다",
-                    "redeployment_needed": "일부 노드는 배치후 오류상태가 있습니다. 재배치가 필요합니다."
+                    "deploy": "배치되었읍니다"
                 },
                 "show_node": {
                     "manufacturer_label": "제조업자",

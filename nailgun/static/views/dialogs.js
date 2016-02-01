@@ -366,7 +366,7 @@ export var DiscardNodeChangesDialog = React.createClass({
   }
 });
 
-export var DeployChangesDialog = React.createClass({
+export var DeployClusterDialog = React.createClass({
   mixins: [
     dialogMixin,
     // this is needed to somehow handle the case when
@@ -379,9 +379,9 @@ export var DeployChangesDialog = React.createClass({
     })
   ],
   getDefaultProps() {
-    return {title: i18n('dialog.display_changes.title')};
+    return {title: i18n('dialog.deploy_cluster.title')};
   },
-  ns: 'dialog.display_changes.',
+  ns: 'dialog.deploy_cluster.',
   deployCluster() {
     this.setState({actionInProgress: true});
     dispatcher.trigger('deploymentTasksUpdated');
@@ -441,6 +441,72 @@ export var DeployChangesDialog = React.createClass({
         disabled={this.state.actionInProgress || this.state.isInvalid}
         onClick={this.deployCluster}
       >{i18n(this.ns + 'deploy')}</button>
+    ]);
+  }
+});
+
+export var ProvisionNodesDialog = React.createClass({
+  mixins: [dialogMixin],
+  getDefaultProps() {
+    return {title: i18n('dialog.provision_nodes.title')};
+  },
+  ns: 'dialog.provision_nodes.',
+  provisionNodes() {
+    this.setState({actionInProgress: true});
+    dispatcher.trigger('deploymentTasksUpdated');
+    var task = new models.Task();
+    task.save({}, {url: _.result(this.props.cluster, 'url') + '/provision', type: 'PUT'})
+      .done(() => {
+        this.close();
+        dispatcher.trigger('deploymentTaskStarted');
+      })
+      .fail(this.showError);
+  },
+  renderBody() {
+    return (
+      <div className='provision-nodes-dialog'>
+        <div className='text-warning'>
+          <i className='glyphicon glyphicon-warning-sign' />
+          <div className='instruction'>
+            {i18n(this.ns + 'locked_node_settings_alert') + ' '}
+          </div>
+        </div>
+        <div className='text-warning'>
+          <i className='glyphicon glyphicon-warning-sign' />
+          <div className='instruction'>
+            {i18n('cluster_page.dashboard_tab.package_information') + ' '}
+            <a
+              target='_blank'
+              href={utils.composeDocumentationLink('operations.html#troubleshooting')}
+            >
+              {i18n('cluster_page.dashboard_tab.operations_guide')}
+            </a>
+            {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+          </div>
+        </div>
+        <div className='confirmation-question'>
+          {i18n(this.ns + 'are_you_sure_provision')}
+        </div>
+      </div>
+    );
+  },
+  renderFooter() {
+    return ([
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
+      <button key='provisioning'
+        className='btn start-provision-btn btn-success'
+        disabled={this.state.actionInProgress}
+        onClick={this.provisionNodes}
+      >
+        {i18n(this.ns + 'start_provisioning')}
+      </button>
     ]);
   }
 });
@@ -1253,17 +1319,20 @@ export var DeleteNodesDialog = React.createClass({
   },
   renderBody() {
     var ns = 'dialog.delete_nodes.';
-    var notDeployedNodesAmount = this.props.nodes.reject({status: 'ready'}).length;
-    var deployedNodesAmount = this.props.nodes.length - notDeployedNodesAmount;
+    var {nodes} = this.props;
+    var addedNodes = nodes.where({pending_addition: true});
     return (
       <div className='text-danger'>
         {this.renderImportantLabel()}
         {i18n(ns + 'common_message', {count: this.props.nodes.length})}
         <br/>
-        {!!notDeployedNodesAmount && i18n(ns + 'not_deployed_nodes_message',
-          {count: notDeployedNodesAmount})}
+        {!!addedNodes.length &&
+          i18n(ns + 'added_nodes_message', {count: addedNodes.length})
+        }
         {' '}
-        {!!deployedNodesAmount && i18n(ns + 'deployed_nodes_message', {count: deployedNodesAmount})}
+        {!!(nodes.length - addedNodes.length) &&
+          i18n(ns + 'deployed_nodes_message', {count: nodes.length - addedNodes.length})
+        }
       </div>
     );
   },
@@ -1286,19 +1355,17 @@ export var DeleteNodesDialog = React.createClass({
   deleteNodes() {
     this.setState({actionInProgress: true});
     var nodes = new models.Nodes(this.props.nodes.map((node) => {
-      // mark deployed node as pending deletion
-      if (node.get('status') === 'ready') {
+      if (node.get('pending_addition')) {
         return {
           id: node.id,
-          pending_deletion: true
+          cluster_id: null,
+          pending_addition: false,
+          pending_roles: []
         };
       }
-      // remove not deployed node from cluster
       return {
         id: node.id,
-        cluster_id: null,
-        pending_addition: false,
-        pending_roles: []
+        pending_deletion: true
       };
     }));
     Backbone.sync('update', nodes)

@@ -68,8 +68,11 @@ define([
             .type('\uE00C')
             .end()
           .assertElementNotExists(renameInputSelector, 'Rename control disappears')
-          .assertElementTextEquals(nameSelector, initialName,
-              'Switching rename control does not change cluster name')
+          .assertElementTextEquals(
+            nameSelector,
+            initialName,
+            'Switching rename control does not change cluster name'
+          )
           .then(function() {
             return dashboardPage.setClusterName(newName);
           })
@@ -86,9 +89,13 @@ define([
           .then(function() {
             return dashboardPage.setClusterName(initialName);
           })
-          .assertElementAppears('.rename-block.has-error', 1000,
-            'Error style for duplicate name is applied')
-          .assertElementTextEquals('.rename-block .text-danger',
+          .assertElementAppears(
+            '.rename-block.has-error',
+            1000,
+            'Error style for duplicate name is applied'
+          )
+          .assertElementTextEquals(
+            '.rename-block .text-danger',
             'Environment with this name already exists',
             'Duplicate name error text appears'
           )
@@ -101,7 +108,7 @@ define([
             return clustersPage.goToEnvironment(initialName);
           });
       },
-      'Provision button availability': function() {
+      'Provision VMs button availability': function() {
         return this.remote
           .then(function() {
             return common.addNodesToCluster(1, ['Virtual']);
@@ -109,8 +116,13 @@ define([
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
-          .assertElementTextEquals(dashboardPage.deployButtonSelector, 'Provision VMs',
-              'After adding Virtual node deploy button has appropriate text')
+          .assertElementAppears(
+            '.actions-panel .btn-provision-vms',
+            1000,
+            'Provision VMs action appears on the Dashboard'
+          )
+          .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
+          .clickByCssSelector('.actions-panel .nav .dropdown-menu li.deploy button')
           .then(function() {
             return dashboardPage.discardChanges();
           });
@@ -124,14 +136,19 @@ define([
             return clusterPage.goToTab('Networks');
           })
           .clickByCssSelector('.subtab-link-network_verification')
-          .assertElementContainsText('.alert-warning', 'At least two online nodes are required',
-            'Network verification warning appears if only one node added')
+          .assertElementContainsText(
+            '.alert-warning',
+            'At least two online nodes are required',
+            'Network verification warning appears if only one node added'
+          )
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
-          .assertElementContainsText('.warnings-block',
+          .assertElementContainsText(
+            '.actions-panel .warnings-block',
             'Please verify your network settings before deployment',
-            'Network verification warning is shown')
+            'Network verification warning is shown'
+          )
           .then(function() {
             return dashboardPage.discardChanges();
           });
@@ -139,18 +156,21 @@ define([
       'No controller warning': function() {
         return this.remote
           .then(function() {
-            // Adding single compute
             return common.addNodesToCluster(1, ['Compute']);
           })
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
-          .assertElementDisabled(dashboardPage.deployButtonSelector,
-            'No deployment should be possible without controller nodes added')
+          .assertElementDisabled(
+            dashboardPage.deployButtonSelector,
+            'No deployment should be possible without controller nodes added'
+          )
           .assertElementExists('div.instruction.invalid', 'Invalid configuration message is shown')
-          .assertElementContainsText('.environment-alerts ul.text-danger li',
-              'At least 1 Controller nodes are required (0 selected currently).',
-              'No controllers added warning should be shown')
+          .assertElementContainsText(
+            '.task-alerts ul.text-danger li',
+            'At least 1 Controller nodes are required (0 selected currently).',
+            'No controllers added warning should be shown'
+          )
           .then(function() {
             return dashboardPage.discardChanges();
           });
@@ -202,25 +222,48 @@ define([
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
-          .assertElementTextEquals(valueSelector + '.total', total,
-              'The number of Total nodes in statistics is updated according to added nodes')
-          .assertElementTextEquals(valueSelector + '.controller', controllerNodes,
-              'The number of controllerNodes nodes in statistics is updated according to ' +
-              'added nodes')
-          .assertElementTextEquals(valueSelector + '.compute', computeNodes,
-              'The number of Compute nodes in statistics is updated according to added nodes')
-          .assertElementTextEquals(valueSelector + '.base-os', operatingSystemNodes,
-              'The number of Operating Systems nodes in statistics is updated according to ' +
-              'added nodes')
-          .assertElementTextEquals(valueSelector + '.virt', virtualNodes,
-              'The number of Virtual nodes in statistics is updated according to added nodes')
-          .assertElementTextEquals(valueSelector + '.offline', 1,
-              'The number of Offline nodes in statistics is updated according to added nodes')
-          .assertElementTextEquals(valueSelector + '.error', 1,
-              'The number of Error nodes in statistics is updated according to added nodes')
-          .assertElementTextEquals(valueSelector + '.pending_addition', total,
-              'The number of Pending Addition nodes in statistics is updated according to ' +
-              'added nodes')
+          .assertElementTextEquals(
+            valueSelector + '.total',
+            total,
+            'The number of Total nodes in statistics is correct'
+          )
+          .assertElementTextEquals(
+            valueSelector + '.controller',
+            controllerNodes,
+            'The number of controllerNodes nodes in statistics is correct'
+          )
+          .assertElementTextEquals(
+            valueSelector + '.compute',
+            computeNodes,
+            'The number of Compute nodes in statistics is correct'
+          )
+          .assertElementTextEquals(
+            valueSelector + '.base-os',
+            operatingSystemNodes,
+            'The number of Operating Systems nodes in statistics is correct'
+          )
+          .assertElementTextEquals(
+            valueSelector + '.virt',
+            virtualNodes,
+            'The number of Virtual nodes in statistics is corrects'
+          )
+          .assertElementTextEquals(
+            valueSelector + '.offline',
+            1,
+            'The number of Offline nodes in statistics is correct'
+          )
+          .assertElementTextEquals(
+            valueSelector + '.error',
+            1,
+            'The number of Error nodes in statistics is correct'
+          )
+          .assertElementTextEquals(
+            valueSelector + '.pending_addition',
+            total,
+            'The number of Pending Addition nodes in statistics is correct'
+          )
+          .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
+          .clickByCssSelector('.actions-panel .nav .dropdown-menu li.deploy button')
           .then(function() {
             return dashboardPage.discardChanges();
           });

@@ -14,13 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import six
 import sys
 import time
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.logger import logger
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import OpenStackWorkloadStatsCollection
@@ -29,6 +29,9 @@ from nailgun.statistics import errors
 from nailgun.statistics.oswl import helpers
 from nailgun.statistics.oswl.saver import oswl_statistics_save
 from nailgun.statistics import utils
+
+
+logger = logging.getLogger('statistics')
 
 
 def collect(resource_type):
@@ -94,6 +97,11 @@ def collect(resource_type):
 
 def run():
     resource_type = sys.argv[1]
+
+    # add file handler to log collecting for particular resource
+    log_file = "oswl_{0}_collectord.log".format(resource_type)
+    utils.prepare_logger(logger, log_file)
+
     poll_interval = settings.OSWL_COLLECTORS_POLLING_INTERVAL[resource_type]
     logger.info("Starting OSWL collector for {0} resource"
                 .format(resource_type))

@@ -363,10 +363,9 @@ models.Cluster = BaseModel.extend({
     return !this.get('is_locked');
   },
   isDeploymentPossible() {
-    var nodes = this.get('nodes');
-    return this.get('release').get('state') !== 'unavailable' && !!nodes.length &&
-      (nodes.hasChanges() || this.needsRedeployment()) &&
-        !this.task({group: 'deployment', active: true});
+    return this.get('release').get('state') !== 'unavailable' &&
+      !this.task({group: 'deployment', active: true}) &&
+      (this.get('status') !== 'operational' || this.get('nodes').hasChanges());
   }
 });
 
@@ -425,6 +424,12 @@ models.Node = BaseModel.extend({
     // and useless management of roles, disks, interfaces, etc.
     return this.get('status') !== 'removing';
   },
+  isAvailableForProvisioning() {
+    return this.get('online') && (
+      this.get('status') === 'discover' ||
+      this.get('status') === 'error' && this.get('error_type') === 'provisioning'
+    );
+  },
   hasRole(role, onlyDeployedRoles) {
     var roles = onlyDeployedRoles ? this.get('roles') :
       _.union(this.get('roles'), this.get('pending_roles'));
@@ -433,7 +438,7 @@ models.Node = BaseModel.extend({
   hasChanges() {
     return this.get('pending_addition') ||
       this.get('pending_deletion') ||
-      this.get('cluster') && !!this.get('pending_roles').length;
+      !!this.get('cluster') && !!this.get('pending_roles').length;
   },
   areDisksConfigurable() {
     var status = this.get('status');
@@ -548,7 +553,9 @@ models.Task = BaseModel.extend({
   },
   groups: {
     network: ['verify_networks', 'check_networks'],
-    deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
+    deployment: [
+      'update', 'stop_deployment', 'deploy', 'provision', 'reset_environment', 'spawn_vms'
+    ]
   },
   extendGroups(filters) {
     var names = utils.composeList(filters.name);
@@ -600,11 +607,13 @@ models.Tasks = BaseCollection.extend({
   },
   comparator: 'id',
   filterTasks(filters) {
-    return _.flatten(_.map(this.model.prototype.extendGroups(filters), (name) => {
-      return this.filter((task) => {
-        return task.match(_.extend(_.omit(filters, 'group'), {name: name}));
-      });
-    }));
+    return _.chain(this.model.prototype.extendGroups(filters))
+      .map((name) => {
+        return this.filter((task) => task.match(_.extend(_.omit(filters, 'group'), {name: name})));
+      })
+      .flatten()
+      .compact()
+      .value();
   },
   findTask(filters) {
     return this.filterTasks(filters)[0];

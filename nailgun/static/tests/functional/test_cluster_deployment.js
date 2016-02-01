@@ -61,29 +61,94 @@ define([
           .assertElementNotExists(dashboardPage.deployButtonSelector,
             'No deployment should be possible without nodes added');
       },
-      'Discard changes': function() {
+      'Provision nodes': function() {
+        this.timeout = 100000;
         return this.remote
           .then(function() {
-            // Adding three controllers
+            return common.addNodesToCluster(3, ['Controller']);
+          })
+          .then(function() {
+            return clusterPage.goToTab('Dashboard');
+          })
+          .waitForCssSelector('.dashboard-tab', 200)
+          .clickByCssSelector('.actions-panel li.provision')
+          .assertElementContainsText(
+            '.actions-panel .dashboard-block .changes-list ul li',
+            '3 nodes to be provisioned.',
+            '3 nodes to be provisioned'
+          )
+          .clickByCssSelector('.btn-provision')
+          .then(function() {
+            return modal.waitToOpen();
+          })
+          .then(function() {
+            return modal.checkTitle('Provision Nodes');
+          })
+          .then(function() {
+            return modal.clickFooterButton('Start Provisioning');
+          })
+          .then(function() {
+            return modal.waitToClose();
+          })
+          .assertElementAppears('div.deploy-process div.progress', 2000, 'Provisioning started')
+          .assertElementDisappears('div.deploy-process div.progress', 5000, 'Provisioning finished')
+          .assertElementContainsText(
+            'div.alert-success strong',
+            'Success',
+            'Provisioning successfully finished'
+          )
+          .then(function() {
+            return clusterPage.isTabLocked('Networks');
+          })
+          .then(function(isLocked) {
+            assert.isFalse(isLocked, 'Networks tab is not locked after nodes were provisioned');
+          })
+          .then(function() {
+            return clusterPage.isTabLocked('Settings');
+          })
+          .then(function(isLocked) {
+            assert.isFalse(isLocked, 'Settings tab is not locked after nodes were provisioned');
+          })
+          .then(function() {
+            return clusterPage.goToTab('Dashboard');
+          })
+          .assertElementEnabled(
+            dashboardPage.deployButtonSelector,
+            'Provisioned nodes can be deployed'
+          )
+          .then(function() {
+            return clusterPage.resetEnvironment(clusterName);
+          });
+      },
+      'Discard node addition': function() {
+        return this.remote
+          .then(function() {
             return common.addNodesToCluster(1, ['Controller']);
           })
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
+          .waitForCssSelector('.dashboard-tab', 200)
           .clickByCssSelector('.btn-discard-changes')
           .then(function() {
             return modal.waitToOpen();
           })
-          .assertElementContainsText('h4.modal-title', 'Discard Changes',
-            'Discard Changes confirmation modal expected')
+          .assertElementContainsText(
+            'h4.modal-title',
+            'Discard Changes',
+            'Discard Changes confirmation modal expected'
+          )
           .then(function() {
             return modal.clickFooterButton('Discard');
           })
           .then(function() {
             return modal.waitToClose();
           })
-          .assertElementAppears('.dashboard-block a.btn-add-nodes', 2000,
-            'All changes discarded, add nodes button gets visible in deploy readiness block');
+          .assertElementAppears(
+            '.dashboard-block a.btn-add-nodes',
+            2000,
+            'All changes discarded, Add Nodes button is visible on the tab'
+          );
       },
       'Start/stop deployment': function() {
         this.timeout = 100000;
@@ -94,24 +159,34 @@ define([
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
-          .assertElementAppears('.dashboard-tab', 200, 'Dashboard tab opened')
+          .waitForCssSelector('.dashboard-tab', 200)
           .then(function() {
             return dashboardPage.startDeployment();
           })
           .assertElementAppears('div.deploy-process div.progress', 2000, 'Deployment started')
-          .assertElementAppears('button.stop-deployment-btn:not(:disabled)', 5000,
-            'Stop button appears')
+          .assertElementAppears(
+            'button.stop-deployment-btn:not(:disabled)',
+            5000,
+            'Stop button appears'
+          )
           .then(function() {
             return dashboardPage.stopDeployment();
           })
           .assertElementDisappears('div.deploy-process div.progress', 20000, 'Deployment stopped')
-          .assertElementAppears(dashboardPage.deployButtonSelector, 1000,
-            'Deployment button available')
-          .assertElementContainsText('div.alert-warning strong', 'Success',
-            'Deployment successfully stopped alert is expected')
-          .assertElementNotExists('.go-to-healthcheck',
-            'Healthcheck link is not visible after stopped deploy')
-          // Reset environment button is available
+          .assertElementAppears(
+            dashboardPage.deployButtonSelector,
+            3000,
+            'Deployment button available'
+          )
+          .assertElementContainsText(
+            'div.alert-warning strong',
+            'Success',
+            'Deployment successfully stopped alert is expected'
+          )
+          .assertElementNotExists(
+            '.go-to-healthcheck',
+            'Healthcheck link is not visible after stopped deploy'
+          )
           .then(function() {
             return clusterPage.resetEnvironment(clusterName);
           });
@@ -141,8 +216,11 @@ define([
           .then(function() {
             return dashboardPage.startDeployment();
           })
-          .assertElementDisappears('.dashboard-block .progress', 60000,
-            'Progress bar disappears after deployment')
+          .assertElementDisappears(
+            '.dashboard-block .progress',
+            60000,
+            'Progress bar disappears after deployment'
+          )
           .assertElementAppears('.links-block', 5000, 'Deployment completed')
           .assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy')
           .findByLinkText('Horizon')
@@ -162,8 +240,10 @@ define([
           .then(function(isLocked) {
             assert.isTrue(isLocked, 'Networks tab should turn locked after deployment');
           })
-          .assertElementEnabled('.add-nodegroup-btn',
-            'Add Node network group button is enabled after cluster deploy')
+          .assertElementEnabled(
+            '.add-nodegroup-btn',
+            'Add Node network group button is enabled after cluster deploy'
+          )
           .then(function() {
             return clusterPage.isTabLocked('Settings');
           })

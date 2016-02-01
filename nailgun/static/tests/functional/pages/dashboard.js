@@ -22,7 +22,7 @@ define([
   function DashboardPage(remote) {
     this.remote = remote;
     this.modal = new ModalWindow(remote);
-    this.deployButtonSelector = 'button.deploy-btn';
+    this.deployButtonSelector = '.actions-panel .deploy-btn';
   }
 
   DashboardPage.prototype = {

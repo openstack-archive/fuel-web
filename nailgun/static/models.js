@@ -433,7 +433,7 @@ define([
         },
         areInterfacesConfigurable: function() {
             var status = this.get('status');
-            return status == 'discover' || status == 'error' || status == 'provisioned';
+            return status == 'discover' || status == 'error';
         },
         getRolesSummary: function(releaseRoles) {
             return _.map(this.sortedRoles(releaseRoles.pluck('name')), function(role) {

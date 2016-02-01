@@ -47,6 +47,7 @@
             },
             "network_scheme": {
                 "storage": {
+                    "priority": 300,
                     "endpoints": [
                         "br-storage"
                     ],
@@ -59,11 +60,6 @@
                             "action": "add-port",
                             "bridge": "br-storage",
                             "name": "<% if3 %>"
-                        },
-                        {
-                            "action": "add-port",
-                            "bridge": "br-mgmt",
-                            "name": "<% if4 %>"
                         }
                     ],
                     "roles": {
@@ -74,6 +70,7 @@
                     }
                 },
                 "common": {
+                    "priority": 200,
                     "endpoints": [
                         "br-mgmt",
                         "br-fw-admin"
@@ -158,6 +155,7 @@
                     }
                 },
                 "public": {
+                    "priority": 100,
                     "endpoints": [
                         "br-ex"
                     ],

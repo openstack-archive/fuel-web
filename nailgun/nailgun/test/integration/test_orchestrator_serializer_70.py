@@ -1023,6 +1023,78 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
         self.assertIs(net_serializer, NeutronNetworkTemplateSerializer70)
 
+    def test_network_schemes_priorities(self):
+        expected = [
+            {
+                "action": "add-br",
+                "name": "br-prv",
+                "provider": "ovs"
+            },
+            {
+                "action": "add-br",
+                "name": "br-aux"
+            },
+            {
+                "action": "add-patch",
+                "bridges": [
+                    "br-prv",
+                    "br-aux"
+                ],
+                "provider": "ovs",
+                "mtu": 65000
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-aux",
+                "name": "eth3.101"
+            },
+            {
+                "action": "add-br",
+                "name": "br-fw-admin"
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-fw-admin",
+                "name": "eth0"
+            },
+            {
+                "action": "add-br",
+                "name": "br-mgmt"
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-mgmt",
+                "name": "eth1"
+            },
+            {
+                "action": "add-br",
+                "name": "br-storage"
+            },
+            {
+                "action": "add-port",
+                "bridge": "br-storage",
+                "name": "eth2"
+            }
+        ]
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template
+        )
+
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 8, roles=['compute', 'cinder'],
+            cluster_id=self.cluster.id
+        )[0]
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        network_scheme = net_serializer.generate_network_scheme(
+            node, nm.get_node_networks(node))
+        self.assertEqual(expected, network_scheme['transformations'])
+
     def test_ip_assignment_according_to_template(self):
         self.create_more_nodes()
         # according to the template different node roles have different sets of

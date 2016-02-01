@@ -14,10 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 
 from unittest2.case import TestCase
 
 from nailgun.network.template import NetworkTemplate
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer70 as ts
 
 
 class TestNetworkTemplate(TestCase):
@@ -58,3 +61,40 @@ class TestNetworkTemplate(TestCase):
         self.assertRaises(KeyError,
                           template.substitute,
                           b='bbb')
+
+    def test_schemes_order(self):
+        template = {
+            "templates_for_node_role": {
+                "cinder": [
+                    "common",
+                    "storage"
+                ],
+                "compute": [
+                    "common",
+                    "private",
+                    "storage"
+                ]
+            },
+            "templates": {
+                "storage": {
+                    "transformations": [
+                        "storage"
+                    ]
+                },
+                "common": {
+                    "transformations": [
+                        "common"
+                    ]
+                },
+                "private": {
+                    "transformations": [
+                        "private"
+                    ]
+                },
+            }
+        }
+
+        node = mock.Mock(network_template=template,
+                         all_roles=['cinder', 'compute'])
+        transformations = ts.generate_transformations(node)
+        self.assertEqual(["common", "storage", "private"], transformations)

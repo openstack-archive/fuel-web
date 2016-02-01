@@ -35,7 +35,7 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 class Task(Base):
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     uuid = Column(String(36), nullable=False,
                   default=lambda: str(uuid.uuid4()))
     name = Column(
@@ -54,7 +54,7 @@ class Task(Base):
     # By design 'result' value accept dict and list types
     # depends on task type. Don't do this field MutableDict.
     result = Column(JSON, default={})
-    parent_id = Column(Integer, ForeignKey('tasks.id'))
+    parent_id = Column(Integer, ForeignKey('tasks.id', ondelete='CASCADE'))
     subtasks = relationship(
         "Task",
         backref=backref('parent', remote_side=[id]),

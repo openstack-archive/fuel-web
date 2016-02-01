@@ -46,7 +46,7 @@ class NodeGroup(Base):
         UniqueConstraint('cluster_id', 'name',
                          name='_name_cluster_uc'),)
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     name = Column(String(50), nullable=False)
     is_default = Column(Boolean, default=False, nullable=False,
                         server_default='false', index=True)
@@ -67,8 +67,12 @@ class Node(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), nullable=False,
                   default=lambda: str(uuid.uuid4()), unique=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
-    group_id = Column(Integer, ForeignKey('nodegroups.id'), nullable=True)
+    cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
+    group_id = Column(
+        Integer,
+        ForeignKey('nodegroups.id', ondelete='SET NULL'),
+        nullable=True
+    )
     name = Column(Unicode(100))
     status = Column(
         Enum(*consts.NODE_STATUSES, name='node_status'),
@@ -253,7 +257,10 @@ class NodeNICInterface(Base):
     interface_properties = Column(
         MutableDict.as_mutable(JSON), default={}, nullable=False,
         server_default='{}')
-    parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
+    parent_id = Column(
+        Integer,
+        ForeignKey('node_bond_interfaces.id', ondelete='SET NULL')
+    )
     driver = Column(Text)
     bus_info = Column(Text)
     pxe = Column(Boolean, default=False, nullable=False)

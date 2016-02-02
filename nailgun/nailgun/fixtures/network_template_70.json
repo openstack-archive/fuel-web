@@ -106,7 +106,6 @@
                         "swift/api": "br-mgmt",
                         "heat/api": "br-mgmt",
                         "cinder/api": "br-mgmt",
-                        "murano/api": "br-mgmt",
                         "nova/api": "br-mgmt",
                         "horizon": "br-mgmt",
                         "mgmt/memcache": "br-mgmt",
@@ -384,7 +383,6 @@
                         "fw-admin": "br-fw-admin",
                         "glance/api": "br-mgmt",
                         "heat/api": "br-mgmt",
-                        "murano/api": "br-mgmt",
                         "nova/api": "br-mgmt",
                         "horizon": "br-mgmt",
                         "nova/migration": "br-mgmt",
@@ -430,9 +428,6 @@
                 },
                 "storage": {
                     "ep": "br-storage"
-                },
-                "murano": {
-                    "ep": "<% if5 %>"
                 }
             },
             "templates_for_node_role": {
@@ -632,7 +627,6 @@
                         }
                     ],
                     "roles": {
-                        "murano/api": "<% if5 %>",
                         "keystone/api": "br-keystone",
                         "neutron/mesh": "br-mgmt",
                         "mgmt/database": "br-mgmt",

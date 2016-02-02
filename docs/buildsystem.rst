@@ -11,10 +11,7 @@ This repository contains a set of GNU Make build scripts.
 Quick start
 -----------
 
-1. You must use one of the following distributions to build Fuel components or the build process may fail. Note that build only works for x64 platforms.
-
-* Ubuntu 12.04
-* Ubuntu 14.04
+1. You must use Ubuntu 14.04 distribution to build Fuel components or the build process may fail. Note that build only works for x64 platforms.
 
 2. Check whether you have git installed in
    your system. To do that, use the following command:
@@ -85,7 +82,7 @@ Build system structure
 Fuel consists of several components such as web interface,
 puppet modules, orchestration components, testing components.
 Source code of all those components is split into multiple git
-repositories like:
+repositories like, for example:
 
 - https://github.com/openstack/fuel-web
 - https://github.com/openstack/fuel-astute
@@ -130,10 +127,6 @@ pieces of Fuel build system:
   ones which are to be copied on Fuel ISO even if Internet
   connection is down.
 
-* **puppet** - contains the code used
-  to pack Fuel puppet modules into a tarball that is afterwards
-  put on Fuel ISO.
-
 * **packages** - contains DEB and RPM
   specs as well as make code for building those packages,
   included in Fuel DEB and RPM mirrors.
@@ -141,15 +134,8 @@ pieces of Fuel build system:
 * **bootstrap** -  contains a make script intended
   to build CentOS-based miniroot image (a.k.a initrd or initramfs).
 
-* **image** - contains **make** scripts for building CentOS
-  and Ubuntu images using the Fuel mirrors, built
-  from the scripts in the *mirror* directory. The images
-  are alternative to using the standard anaconda and debian installers.
-
 * **docker** - contains the make scripts to
   build docker containers, deployed on the Fuel Master node.
-
-* **upgrade** - contains make scripts for building Fuel upgrade tarball.
 
 * **iso** - contains **make** scripts for building Fuel ISO file.
 
@@ -158,12 +144,6 @@ related to Fuel build processes:
 
 * **virtualbox** - contains a set of shell scripts
   which allow one to deploy Fuel demo lab easily using VirtualBox.
-
-* **utils** -  contains a set of utilities used for
-  maintaining Fuel components.
-
-* **fuelweb_test** and **fuelweb_ui_test** -  contain
-  the code of Fuel system tests.
 
 
 .. _build-targets:
@@ -186,11 +166,6 @@ Build targets
 
 * **iso** - used for building Fuel ISO. If build succeeds,
   ISO is put into build/artifacts folder.
-
-* **img** - used for building Fuel flash stick image,
-  binary copied to a flash stick. That
-  stick is then used as a bootable device and
-  contains Fuel ISO as well as some auxiliary boot files.
 
 * **clean** - removes build directory.
 
@@ -233,12 +208,6 @@ They are defined in **config.mk** file:
   just ISO name.
   By default, it is **$(ARTS_DIR)/$(ISO_NAME).iso**.
 
-* **UPGRADE_TARBALL_NAME** - defines the name of upgrade tarball.
-  By default, it is **$(UPGRADE_TARBALL_NAME).tar**.
-
-* **UPGRADE_TARBALL_PATH** - used to define full upgrade tarball path.
-  By default, it is **$(ARTS_DIR)/$(UPGRADE_TARBALL_NAME).tar**.
-
 * **VBOX_SCRIPTS_NAME** - defines the name of the archive with
   VirtualBox scripts.
   By default, it is placed into **$(VBOX_SCRIPTS_NAME).zip**.
@@ -269,8 +238,6 @@ They are defined in **config.mk** file:
 
 Other options
 -------------
-
-* **BUILD_OPENSTACK_PACKAGES** - list of Openstack packages to be rebuilt from source.
 
 * **[repo]_REPO** - remote source code repo.
   URL or git repository can be specified for each of the Fuel components.
@@ -310,19 +277,4 @@ Other options
   For example,
   *qemu2,http://osci-obs.vm.mirantis.net:82/centos-fuel-5.1-stable-15943/centos/ libvirt,http://osci-obs.vm.mirantis.net:82/centos-fuel-5.1-stable-17019/centos/*.
 
-* **EXTRA_DEP_REPOS** - extra repos with DEB packages.
-  Each repo must consist of an url,
-  distro and section parts.
-  Repos must be separated by bar:
-  <first_repo_path>|<second_repo_path>
-  For example,
-  *http://fuel-repository.mirantis.com/repos/ubuntu-fuel-5.1-stable-15955/ubuntu/|http://fuel-repository.mirantis.com/repos/ubuntu-fuel-5.1-stable-15953/ubuntu/*.
-
-** **FEATURE_GROUPS** - options for the ISO.
-  Combination of the following:
-
-  * mirantis (use mirantis logos and logic)
-
-  * experimental (allow experimental features on Fuel web UI)
-
-Note that if you want to add more packages to the Fuel Master node, you should update the **requirements-rpm.txt** and the **requirements-deb.txt** files.
+Note that if you want to add more packages to the Fuel Master node, you should update the **requirements-rpm.txt** file.

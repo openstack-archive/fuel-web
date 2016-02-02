@@ -56,7 +56,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             jsonutils.dumps(nodes_list),
             headers=self.default_headers)
         self.assertEqual(resp_put.status_code, 200)
-        self.assertEqual(resp_put.json_body, nodes_list)
+        self.assertItemsEqual(resp_put.json_body, nodes_list)
 
     @fake_tasks()
     def test_interface_changes_added(self):

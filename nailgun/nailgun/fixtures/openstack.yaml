@@ -124,7 +124,16 @@
         name: "Compute VMware"
         description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
         weight: 90
-        conflicts: "*"
+        conflicts:
+          - controller
+          - compute
+          - cinder
+          - cinder-block-device
+          - ceph-osd
+          - mongo
+          - base-os
+          - virt
+          - ironic
         restrictions:
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"

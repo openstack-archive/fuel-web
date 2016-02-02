@@ -1176,6 +1176,17 @@ class Cluster(NailgunObject):
             models.Node.cluster_id == instance.id).all()]
 
     @classmethod
+    def get_vips(cls, instance):
+
+        net_roles = cls.get_network_roles(instance)
+
+        cluster_vips = []
+        for nr in net_roles:
+            cluster_vips.extend(nr['properties']['vip'])
+
+        return cluster_vips
+
+    @classmethod
     def get_assigned_roles(cls, instance):
         """Get list of all roles currently assigned to nodes in cluster
 

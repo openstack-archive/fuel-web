@@ -66,6 +66,16 @@ class TestNetworkRoleMergePolicy(BaseUnitTest):
             target['properties']['vip']
         )
 
+    def test_apply_patch_vips_reset(self):
+        target = self._make_plugin_network_role(
+            vip=[{'name': 'test_vip_a'}, {'name': 'test_vip_b'}]
+        )
+
+        patch = self._make_plugin_network_role(vip=[])
+        self.policy.apply_patch(target, patch)
+
+        self.assertItemsEqual([], target['properties']['vip'])
+
     def test_apply_patch_fail_if_conflict(self):
         with self.assertRaisesRegexp(errors.UnresolvableConflict, 'subnet'):
             self.policy.apply_patch(

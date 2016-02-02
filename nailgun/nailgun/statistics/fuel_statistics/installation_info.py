@@ -102,13 +102,6 @@ class InstallationInfo(object):
 
         WhiteListRule(('additional_components', 'sahara', 'value'),
                       'sahara', None),
-        WhiteListRule(('additional_components', 'murano', 'value'),
-                      'murano', None),
-        WhiteListRule(('additional_components', 'murano-cfapi', 'value'),
-                      'murano-cfapi', None),
-        WhiteListRule(('additional_components',
-                       'murano_glance_artifacts_plugin', 'value'),
-                      'murano_glance_artifacts_plugin', None),
         WhiteListRule(('additional_components', 'heat', 'value'),
                       'heat', None),
         WhiteListRule(('additional_components', 'ceilometer', 'value'),

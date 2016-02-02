@@ -1127,7 +1127,6 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def execute(cls, task):
         cls._check_nodes_are_online(task)
-        cls._check_controllers_count(task)
         cls._check_disks(task)
         cls._check_ceph(task)
         cls._check_volumes(task)
@@ -1161,39 +1160,6 @@ class CheckBeforeDeploymentTask(object):
                 u'Nodes "{0}" are offline.'
                 ' Remove them from environment '
                 'and try again.'.format(node_names))
-
-    @classmethod
-    def _check_controllers_count(cls, task):
-        cluster = task.cluster
-        min_controllers = objects.Release.get_min_controller_count(
-            cluster.release)
-
-        controllers = objects.Cluster.get_nodes_by_role(
-            task.cluster, 'controller')
-        # we should make sure that cluster has at least one controller
-        if len(controllers) < min_controllers:
-            raise errors.NotEnoughControllers(
-                "Not enough controllers, %s mode requires at least %s "
-                "controller(s)" % (cluster.mode, min_controllers))
-
-        if cluster.status in (
-                consts.CLUSTER_STATUSES.operational,
-                consts.CLUSTER_STATUSES.error,
-                consts.CLUSTER_STATUSES.update_error):
-            # get a list of deployed controllers - which are going
-            # don't to be changed
-            deployed_controllers = filter(
-                lambda node: all([
-                    node.pending_addition is False,
-                    node.pending_deletion is False]),
-                controllers)
-
-            # we should fail in case of user remove all controllers and add
-            # new in one task, since that's affect cluster's availability
-            if not deployed_controllers:
-                raise errors.NotEnoughControllers(
-                    "Not enough deployed controllers - deployed cluster "
-                    "requires at least 1 deployed controller.")
 
     @classmethod
     def _check_disks(cls, task):

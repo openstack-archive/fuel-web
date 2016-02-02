@@ -505,6 +505,24 @@ class NetworkCheck(object):
             self.result.append({"ids": [],
                                 "name": ["internal"],
                                 "errors": ["gateway"]})
+
+        try:
+            bare_net = self.network_config['baremetal_range']
+            bare_net_r = netaddr.IPRange(bare_net[0], bare_net[1])
+            bare_gw = netaddr.IPAddress(
+                self.network_config['baremetal_gateway'])
+
+            if bare_gw in bare_net_r:
+                self.err_msgs.append(
+                    u"Address intersection between Ironic gateway "
+                    u"and Ironic IP range."
+                )
+            self.result.append({"ids": [],
+                                "name": ["baremetal"],
+                                "errors": ["gateway", "ip_ranges"]})
+        except KeyError:
+            pass
+
         self.expose_error_messages()
 
     def _get_net_range_for_ip(self, ip, net):

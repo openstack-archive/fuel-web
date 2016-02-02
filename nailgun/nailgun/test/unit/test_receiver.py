@@ -124,25 +124,36 @@ class TestNailgunReceiver(base.BaseTestCase):
             "status": "ready",
             "progress": 100,
             "task_uuid": self.task.uuid,
-            "nodes": [{
-                "status": 1,
-                "out": {"failed_urls": urls},
-                "err": "",
-                "uid": self.cluster.nodes[0].uid}]}
+            "nodes": [
+                {
+                    "status": 1,
+                    "out": {"failed_urls": urls},
+                    "err": "",
+                    "uid": self.cluster.nodes[0].uid
+                },
+                {
+                    "status": 1,
+                    "out": {"failed_urls": urls},
+                    "err": "",
+                    "uid": consts.MASTER_NODE_UID
+                }
+            ]}
 
         expected_err_msg = {
             'check_repositories_resp': (
                 r'Repo availability verification'
-                ' failed on following nodes {0}.\n '
+                ' failed on following nodes {0}, {1}.\n '
                 'Following repos are not available - '
-                .format(self.cluster.nodes[0].name)
+                .format(consts.MASTER_NODE_NAME,
+                        self.cluster.nodes[0].name)
             ),
             'check_repositories_with_setup_resp': (
                 r'Repo availability verification'
                 ' using public network'
-                ' failed on following nodes {0}.\n '
+                ' failed on following nodes {0}, {1}.\n '
                 'Following repos are not available - '
-                .format(self.cluster.nodes[0].name)
+                .format(consts.MASTER_NODE_NAME,
+                        self.cluster.nodes[0].name)
             ),
         }
         for resp_method in expected_err_msg:

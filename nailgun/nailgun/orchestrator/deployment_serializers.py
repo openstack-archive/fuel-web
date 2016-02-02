@@ -34,7 +34,6 @@ from nailgun import objects
 from nailgun import utils
 from nailgun.utils.ceph import get_pool_pg_count
 
-from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
     VmwareDeploymentSerializerMixin
 from nailgun.orchestrator.neutron_serializers import \
@@ -391,16 +390,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         """Assign and get vips for net groups."""
         return objects.Cluster.get_network_manager(cluster).\
             assign_vips_for_net_groups(cluster)
-
-
-class DeploymentMultinodeSerializer50(MuranoMetadataSerializerMixin,
-                                      DeploymentMultinodeSerializer):
-    pass
-
-
-class DeploymentHASerializer50(MuranoMetadataSerializerMixin,
-                               DeploymentHASerializer):
-    pass
 
 
 class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer50):

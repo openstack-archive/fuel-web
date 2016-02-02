@@ -76,7 +76,7 @@ The test docstrings are another important piece and you should always stick to t
 
   - test duration - an estimate of how much a test will take
 
-deployment tags (optional) - gives information about what kind of environment the test will be run, possible values are CENTOS, Ubuntu, RHEL nova_network, Heat, Murano, Sahara)
+deployment tags (optional) - gives information about what kind of environment the test will be run, possible values are CENTOS, Ubuntu, RHEL nova_network, Heat, Sahara)
 
 Here's a test example which confirms the above explanations:
 

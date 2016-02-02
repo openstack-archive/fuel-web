@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 from mock import patch
 
 import requests
@@ -25,7 +24,6 @@ from nailgun.utils import compact
 from nailgun.utils import dict_merge
 from nailgun.utils import flatten
 from nailgun.utils import grouper
-from nailgun.utils import http_get
 from nailgun.utils import traverse
 
 from nailgun.utils.debian import get_apt_preferences_line
@@ -501,47 +499,3 @@ class TestFakeNodeGenerator(base.BaseUnitTest):
             disks_meta = self.generator._generate_disks_meta(1)
             self.assertNotEqual(disks_meta[0]['size'], 0)
             self.assertEqual(mock_random.call_count, 3)
-
-
-@mock.patch('time.sleep')   # don't sleep on tests
-class TestHttpGet(base.BaseUnitTest):
-
-    _response_error = mock.Mock(status_code=500, url='url1')
-    _response_ok = mock.Mock(status_code=200, url='url1')
-
-    @mock.patch('requests.get', return_value=_response_ok)
-    def test_success_on_first_attempt(self, get_mock, _):
-        response = http_get('url1', retries=2)
-
-        self.assertIs(response, self._response_ok)
-        get_mock.assert_called_once_with('url1')
-
-    @mock.patch('requests.get', side_effect=[_response_error, _response_ok])
-    def test_success_on_second_attempt(self, get_mock, _):
-        response = http_get('url1', retries=2)
-
-        self.assertIs(response, self._response_ok)
-        self.assertEqual(get_mock.call_args_list, [
-            mock.call('url1'),
-            mock.call('url1'),
-        ])
-
-    @mock.patch('requests.get')
-    def test_last_response_is_returned(self, get_mock, _):
-        response_500 = mock.Mock(status_code=500, url='url1')
-        get_mock.side_effect = [
-            self._response_error,
-            self._response_error,
-            response_500,
-        ]
-
-        response = http_get('url1', retries=3)
-
-        self.assertIsNot(response, self._response_error)
-        self.assertIs(response, response_500)
-
-        self.assertEqual(get_mock.call_args_list, [
-            mock.call('url1'),
-            mock.call('url1'),
-            mock.call('url1'),
-        ])

@@ -30,6 +30,7 @@ from kombu import Queue
 
 from nailgun import objects
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.rpc.receiver import NailgunReceiver
@@ -38,48 +39,48 @@ from nailgun.settings import settings
 
 class FSMNodeFlow(Fysom):
 
-    def __init__(self, data):
+    def __init__(self, data, initial=None):
         super(FSMNodeFlow, self).__init__({
-            'initial': 'discover',
+            'initial': initial or consts.NODE_STATUSES.discover,
             'events': [
                 {'name': 'next',
-                 'src': 'discover',
-                 'dst': 'provisioning'},
+                 'src': consts.NODE_STATUSES.discover,
+                 'dst': consts.NODE_STATUSES.provisioning},
                 {'name': 'next',
-                 'src': 'provisioning',
-                 'dst': 'provisioned'},
+                 'src': consts.NODE_STATUSES.provisioning,
+                 'dst': consts.NODE_STATUSES.provisioned},
                 {'name': 'next',
-                 'src': 'provisioned',
-                 'dst': 'deploying'},
+                 'src': consts.NODE_STATUSES.provisioned,
+                 'dst': consts.NODE_STATUSES.deploying},
                 {'name': 'next',
-                 'src': 'deploying',
-                 'dst': 'ready'},
+                 'src': consts.NODE_STATUSES.deploying,
+                 'dst': consts.NODE_STATUSES.ready},
                 {'name': 'next',
-                 'src': 'error',
-                 'dst': 'error'},
+                 'src': consts.NODE_STATUSES.error,
+                 'dst': consts.NODE_STATUSES.error},
                 {
                     'name': 'error',
                     'src': [
-                        'discover',
-                        'provisioning',
-                        'provisioned',
-                        'deployment',
-                        'ready',
-                        'error'
+                        consts.NODE_STATUSES.discover,
+                        consts.NODE_STATUSES.provisioning,
+                        consts.NODE_STATUSES.provisioned,
+                        consts.NODE_STATUSES.deploying,
+                        consts.NODE_STATUSES.ready,
+                        consts.NODE_STATUSES.error
                     ],
-                    'dst': 'error'
+                    'dst': consts.NODE_STATUSES.error
                 },
                 {
-                    'name': 'ready',
+                    'name': consts.NODE_STATUSES.ready,
                     'src': [
-                        'discover',
-                        'provisioning',
-                        'provisioned',
-                        'deployment',
-                        'ready',
-                        'error'
+                        consts.NODE_STATUSES.discover,
+                        consts.NODE_STATUSES.provisioning,
+                        consts.NODE_STATUSES.provisioned,
+                        consts.NODE_STATUSES.deploying,
+                        consts.NODE_STATUSES.ready,
+                        consts.NODE_STATUSES.error
                     ],
-                    'dst': 'ready'
+                    'dst': consts.NODE_STATUSES.ready
                 },
             ],
             'callbacks': {
@@ -90,25 +91,33 @@ class FSMNodeFlow(Fysom):
         })
         self.data = data
         self.data.setdefault('progress', 0)
-        if data.get('status') == 'error':
+        if data.get('status') == consts.NODE_STATUSES.error:
             self.error()
         else:
             self.next()
 
     def on_ready(self, e):
-        self.data['status'] = 'ready'
+        self.data['status'] = consts.NODE_STATUSES.ready
         self.data['progress'] = 100
 
     def on_error(self, e):
-        self.data['status'] = 'error'
-        if e.src in ['discover', 'provisioning']:
-            self.data['error_type'] = 'provision'
-        elif e.src in ['provisioned', 'deploying', 'ready']:
-            self.data['error_type'] = 'deploy'
+        self.data['status'] = consts.NODE_STATUSES.error
+        if e.src in [
+            consts.NODE_STATUSES.discover, consts.NODE_STATUSES.provisioning
+        ]:
+            if not self.data.get('error_type'):
+                self.data['error_type'] = 'provision'
+        elif e.src in [consts.NODE_STATUSES.provisioned,
+                       consts.NODE_STATUSES.deploying,
+                       consts.NODE_STATUSES.ready]:
+            if not self.data.get('error_type'):
+                self.data['error_type'] = 'deploy'
         self.data['progress'] = 100
 
     def on_next(self, e):
-        if e.dst in ['provisioning', 'deploying']:
+        if e.dst in [
+            consts.NODE_STATUSES.provisioning, consts.NODE_STATUSES.deploying
+        ]:
             self.data['progress'] = 0
         self.data['status'] = e.dst
 
@@ -120,6 +129,10 @@ class FSMNodeFlow(Fysom):
 
 
 class FakeThread(threading.Thread):
+    NODE_FIELDS = ('status', 'error_msg', 'error_type')
+
+    Receiver = NailgunReceiver
+
     def __init__(self, data=None, params=None, group=None, target=None,
                  name=None, verbose=None, join_to=None):
         threading.Thread.__init__(self, group=group, target=target, name=name,
@@ -171,49 +184,28 @@ class FakeThread(threading.Thread):
             repeat(step, int(float(timeout) / step))
         )
 
+    def refresh_nodes(self, nodes):
+        nodes_map = {str(n['uid']): n for n in nodes}
+        nodes_db = db().query(Node).filter(
+            Node.id.in_(nodes_map)
+        )
+        for node_db in nodes_db:
+            node = nodes_map[str(node_db.id)]
+            for field in self.NODE_FIELDS:
+                v = getattr(node_db, field)
+                if v is not None:
+                    node[field] = v
 
-class FakeAmpqThread(FakeThread):
-
-    def run(self):
-        super(FakeAmpqThread, self).run()
-        if settings.FAKE_TASKS_AMQP:
-            nailgun_exchange = Exchange(
-                'nailgun',
-                'topic',
-                durable=True
-            )
-            nailgun_queue = Queue(
-                'nailgun',
-                exchange=nailgun_exchange,
-                routing_key='nailgun'
-            )
-            with Connection('amqp://guest:guest@localhost//') as conn:
-                with conn.Producer(serializer='json') as producer:
-                    for msg in self.message_gen():
-                        producer.publish(
-                            {
-                                "method": self.respond_to,
-                                "args": msg
-                            },
-                            exchange=nailgun_exchange,
-                            routing_key='nailgun',
-                            declare=[nailgun_queue]
-                        )
-        else:
-            receiver = NailgunReceiver
-            resp_method = getattr(receiver, self.respond_to)
-            for msg in self.message_gen():
-                try:
-                    resp_method(**msg)
-                    db().commit()
-                except Exception:
-                    # TODO(ikalnitsky): research why some tests hit this
-                    # code but do not fail.
-                    db().rollback()
-                    raise
-
-
-class FakeDeploymentThread(FakeAmpqThread):
+    def notify(self, kwargs):
+        resp_method = getattr(self.Receiver, self.respond_to)
+        try:
+            resp_method(**kwargs)
+            db().commit()
+        except Exception as e:
+            # TODO(ikalnitsky): research why some tests hit this
+            # code but do not fail.
+            db().rollback()
+            raise e
 
     def run_until_status(self, smart_nodes, status,
                          role=None, random_error=False,
@@ -226,7 +218,7 @@ class FakeDeploymentThread(FakeAmpqThread):
         while not ready and not self.stoprequest.isSet():
             for sn in smart_nodes:
                 continue_cases = (
-                    sn.current in (status, 'error'),
+                    sn.current in (status, consts.NODE_STATUSES.error),
                     role and (sn.data['role'] != role)
                 )
                 if any(continue_cases):
@@ -260,10 +252,45 @@ class FakeDeploymentThread(FakeAmpqThread):
 
             yield [sn.data for sn in smart_nodes]
 
+
+class FakeAmpqThread(FakeThread):
+
+    def run(self):
+        super(FakeAmpqThread, self).run()
+        if settings.FAKE_TASKS_AMQP:
+            nailgun_exchange = Exchange(
+                'nailgun',
+                'topic',
+                durable=True
+            )
+            nailgun_queue = Queue(
+                'nailgun',
+                exchange=nailgun_exchange,
+                routing_key='nailgun'
+            )
+            with Connection('amqp://guest:guest@localhost//') as conn:
+                with conn.Producer(serializer='json') as producer:
+                    for msg in self.message_gen():
+                        producer.publish(
+                            {
+                                "method": self.respond_to,
+                                "args": msg
+                            },
+                            exchange=nailgun_exchange,
+                            routing_key='nailgun',
+                            declare=[nailgun_queue]
+                        )
+        else:
+            for msg in self.message_gen():
+                self.notify(msg)
+
+
+class FakeDeploymentThread(FakeAmpqThread):
     def message_gen(self):
-        # TEST: we can fail at any stage:
-        # "provisioning" or "deployment"
+        # TEST: we can fail only in deployment stage here:
         error = self.params.get("error")
+        if error != 'deployment':
+            error = None
         # TEST: error message from "orchestrator"
         error_msg = self.params.get("error_msg", "")
         # TEST: we can set task to ready no matter what
@@ -292,31 +319,33 @@ class FakeDeploymentThread(FakeAmpqThread):
             yield kwargs
             raise StopIteration
 
-        smart_nodes = [FSMNodeFlow(n) for n in kwargs['nodes']]
+        self.refresh_nodes(kwargs['nodes'])
+        smart_nodes = [
+            FSMNodeFlow(n, consts.NODE_STATUSES.provisioned)
+            for n in kwargs['nodes']
+        ]
 
         stages_errors = {
             # no errors - default deployment
             None: chain(
-                self.run_until_status(smart_nodes, 'provisioned'),
-                self.run_until_status(smart_nodes, 'ready', 'controller'),
-                self.run_until_status(smart_nodes, 'ready')
-            ),
-            # error on provisioning stage
-            'provisioning': chain(
                 self.run_until_status(
-                    smart_nodes,
-                    'provisioned',
-                    random_error=True
+                    smart_nodes, consts.NODE_STATUSES.deploying
+                ),
+                self.run_until_status(
+                    smart_nodes, consts.NODE_STATUSES.ready, 'controller'
+                ),
+                self.run_until_status(
+                    smart_nodes, consts.NODE_STATUSES.ready
                 )
             ),
             # error on deployment stage
             'deployment': chain(
-                self.run_until_status(smart_nodes, 'provisioned'),
                 self.run_until_status(
-                    smart_nodes,
-                    'ready',
-                    'controller',
-                    random_error=True
+                    smart_nodes, consts.NODE_STATUSES.deploying
+                ),
+                self.run_until_status(
+                    smart_nodes, consts.NODE_STATUSES.ready,
+                    'controller', random_error=True
                 )
             )
         }
@@ -329,9 +358,9 @@ class FakeDeploymentThread(FakeAmpqThread):
             self.sleep(self.tick_interval)
 
         if not error or task_ready:
-            kwargs['status'] = 'ready'
+            kwargs['status'] = consts.TASK_STATUSES.ready
         else:
-            kwargs['status'] = 'error'
+            kwargs['status'] = consts.TASK_STATUSES.error
 
         if error_msg:
             kwargs['error'] = error_msg
@@ -342,25 +371,49 @@ class FakeDeploymentThread(FakeAmpqThread):
 class FakeProvisionThread(FakeThread):
     def run(self):
         super(FakeProvisionThread, self).run()
-        receiver = NailgunReceiver
+        # TEST: we can fail only in deployment stage here:
+        error = self.params.get("error")
+        error_msg = self.params.get('error_msg')
+        if error != "provisioning":
+            error = None
 
-        self.sleep(self.tick_interval * 2)
-
-        # Since we just add systems to cobbler and reboot nodes
-        # We think this task is always successful if it is launched.
         kwargs = {
             'task_uuid': self.task_uuid,
-            'status': 'ready',
-            'progress': 100
+            'status': consts.TASK_STATUSES.running,
+            'progress': 0
         }
 
-        resp_method = getattr(receiver, self.respond_to)
-        try:
-            resp_method(**kwargs)
-            db().commit()
-        except Exception as e:
-            db().rollback()
-            raise e
+        smart_nodes = [
+            FSMNodeFlow(n, consts.NODE_STATUSES.discover)
+            for n in self.data['args']['provisioning_info']['nodes']
+        ]
+
+        for nodes in self.run_until_status(
+                smart_nodes, consts.NODE_STATUSES.provisioned,
+                random_error=error is not None
+        ):
+            kwargs['nodes'] = nodes
+            for n in nodes:
+                if n['status'] in (
+                    consts.NODE_STATUSES.provisioned,
+                    consts.NODE_STATUSES.error
+                ):
+                    continue
+
+                kwargs['progress'] = n['progress']
+                kwargs['status'] = consts.TASK_STATUSES.running
+                break
+            else:
+                kwargs['progress'] = 100
+                if error is None:
+                    kwargs['status'] = consts.TASK_STATUSES.ready
+                else:
+                    kwargs['status'] = consts.TASK_STATUSES.error
+                    if error_msg:
+                        kwargs['error_msg'] = error_msg
+
+            self.notify(kwargs)
+            self.sleep(self.tick_interval)
 
 
 class FakeDeletionThread(FakeThread):

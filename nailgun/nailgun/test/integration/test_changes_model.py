@@ -147,7 +147,7 @@ class TestClusterChanges(BaseIntegrationTest):
         )
         self.assertEqual(list(cluster_db.changes), [])
 
-    @fake_tasks()
+    @fake_tasks(error="deployment", error_msg="Terrible error")
     def test_failed_deployment_does_nothing_with_changes(self):
         cluster = self.env.create_cluster(api=True)
         self.env.create_node(

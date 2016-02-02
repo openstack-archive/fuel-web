@@ -22,6 +22,7 @@ from netaddr import IPNetwork
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.objects import Node
 from nailgun.settings import settings
@@ -141,6 +142,8 @@ class MuranoMetadataSerializerMixin(object):
 
     def generate_test_vm_image_data(self, node):
         """Adds murano metadata to the test image"""
+        logger.warning('Installation of Murano is removed from Fuel from box '
+                       'since 9.0 version. Now it is available via plugin.')
         image_data = super(
             MuranoMetadataSerializerMixin,
             self).generate_test_vm_image_data(node)

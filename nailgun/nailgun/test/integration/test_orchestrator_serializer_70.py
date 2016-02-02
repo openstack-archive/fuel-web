@@ -103,10 +103,6 @@ class PrepareDataMixin(object):
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
       -
-        id: "murano/api"
-        default_mapping: "management"
-        properties: *default_network_roles_metadata_properties
-      -
         id: "horizon"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
@@ -234,7 +230,7 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer,
                                                   PrepareDataMixin):
     management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
                   'ceilometer/api', 'cinder/api', 'glance/api', 'heat/api',
-                  'nova/api', 'murano/api', 'horizon', 'management',
+                  'nova/api', 'horizon', 'management',
                   'mgmt/database', 'mgmt/messaging', 'mgmt/corosync',
                   'mgmt/memcache', 'mgmt/vip', 'mongo/db',
                   'ceph/public', 'nova/migration']
@@ -576,7 +572,6 @@ class TestDeploymentSerializationForNovaNetwork70(
                 'glance/api': 'br-mgmt',
                 'heat/api': 'br-mgmt',
                 'nova/api': 'br-mgmt',
-                'murano/api': 'br-mgmt',
                 'horizon': 'br-mgmt',
 
                 'mgmt/database': 'br-mgmt',
@@ -651,7 +646,6 @@ class TestDeploymentSerializationForNovaNetwork70(
                     'glance/api': ip_by_net['management'],
                     'heat/api': ip_by_net['management'],
                     'nova/api': ip_by_net['management'],
-                    'murano/api': ip_by_net['management'],
                     'horizon': ip_by_net['management'],
 
                     'management': ip_by_net['management'],
@@ -1420,7 +1414,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 'glance/api': 'br-mgmt',
                 'heat/api': 'br-mgmt',
                 'nova/api': 'br-mgmt',
-                'murano/api': 'br-mgmt',
                 'horizon': 'br-mgmt',
                 'mgmt/memcache': 'br-mgmt',
                 'mgmt/database': 'br-mgmt',
@@ -1451,7 +1444,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 'glance/api': 'br-mgmt',
                 'heat/api': 'br-mgmt',
                 'nova/api': 'br-mgmt',
-                'murano/api': 'br-mgmt',
                 'horizon': 'br-mgmt',
                 'mgmt/memcache': 'br-mgmt',
                 'mgmt/database': 'br-mgmt',
@@ -1545,7 +1537,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                     'glance/api': ip_by_net['management'],
                     'heat/api': ip_by_net['management'],
                     'nova/api': ip_by_net['management'],
-                    'murano/api': ip_by_net['management'],
                     'horizon': ip_by_net['management'],
                     'mgmt/memcache': ip_by_net['management'],
                     'mgmt/database': ip_by_net['management'],
@@ -1658,7 +1649,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             'glance/api',
             'heat/api',
             'nova/api',
-            'murano/api',
             'horizon',
             'mgmt/memcache',
             'mgmt/database',

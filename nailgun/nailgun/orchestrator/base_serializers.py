@@ -140,12 +140,12 @@ class MellanoxMixin(object):
 class MuranoMetadataSerializerMixin(object):
 
     def generate_test_vm_image_data(self, node):
-        """Adds murano metadata to the test image"""
-        image_data = super(
+        return self.inject_murano_settings(super(
             MuranoMetadataSerializerMixin,
-            self).generate_test_vm_image_data(node)
+            self).generate_test_vm_image_data(node))
 
-        # Add default Glance property for Murano.
+    def inject_murano_settings(self, image_data):
+        """Adds murano metadata to the test image"""
         test_vm_image = image_data['test_vm_image']
         existing_properties = test_vm_image['glance_properties']
         murano_data = ' '.join(["""--property murano_image_info='{"title":"""

@@ -552,6 +552,12 @@ class DeploymentHASerializer80(DeploymentHASerializer70):
         return {'node_volumes': node_extension_call('get_node_volumes', node)}
 
 
+class DeploymentHASerializer90(DeploymentHASerializer80):
+
+    def inject_murano_settings(self, data):
+        return data
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -581,6 +587,9 @@ def get_serializer_for_cluster(cluster):
         },
         '8.0': {
             'ha': DeploymentHASerializer80,
+        }
+        '9.0': {
+            'ha':  DeploymentHASerializer90,
         }
     }
 

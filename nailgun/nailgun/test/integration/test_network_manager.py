@@ -1303,7 +1303,6 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         )
         self.env._create_network_group(name='mongo', vlan_start=None)
         self.env._create_network_group(name='keystone', vlan_start=None)
-        self.env._create_network_group(name='murano', vlan_start=None)
         objects.Cluster.set_network_template(
             self.cluster,
             self.net_template
@@ -1322,7 +1321,6 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         expected_mapping = {
             'eth0': ['fuelweb_admin'],
             'eth1': ['public', 'storage'],
-            'eth2': ['murano'],
             'eth3': [],
             'eth4': ['mongo', 'keystone'],
             'eth5': [],
@@ -1408,7 +1406,6 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         expected_mapping = {
             'eth0': ['fuelweb_admin'],
             'eth1': ['public', 'storage'],
-            'eth2': ['murano'],
             'eth3': [],
             'eth4': ['mongo', 'keystone'],
             'eth5': [],

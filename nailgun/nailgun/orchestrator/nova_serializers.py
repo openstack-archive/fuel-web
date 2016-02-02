@@ -329,7 +329,6 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
         attrs['roles']['mgmt/vip'] = 'br-mgmt'
 
         attrs['roles']['nova/api'] = 'br-mgmt'
-        attrs['roles']['murano/api'] = 'br-mgmt'
         attrs['roles']['sahara/api'] = 'br-mgmt'
         attrs['roles']['ceilometer/api'] = 'br-mgmt'
         attrs['roles']['heat/api'] = 'br-mgmt'
@@ -388,7 +387,6 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
                 'glance/api': ip_by_net['management'],
                 'heat/api': ip_by_net['management'],
                 'nova/api': ip_by_net['management'],
-                'murano/api': ip_by_net['management'],
                 'horizon': ip_by_net['management'],
 
                 'management': ip_by_net['management'],

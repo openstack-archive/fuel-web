@@ -603,3 +603,9 @@ def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
 
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)
+
+
+class DeploymentHASerializer90(DeploymentHASerializer80):
+
+    def inject_murano_settings(self, data):
+        return data

@@ -189,14 +189,6 @@
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
       -
-        id: "murano/api"
-        default_mapping: "management"
-        properties: *default_network_roles_metadata_properties
-      -
-        id: "murano/cfapi"
-        default_mapping: "management"
-        properties: *default_network_roles_metadata_properties
-      -
         id: "horizon"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
@@ -742,21 +734,6 @@
           tenant:
             value: "services"
             type: "text"
-        murano_settings:
-          metadata:
-            label: "Murano Settings"
-            weight: 20
-            group: "openstack_services"
-            restrictions:
-              - condition: "settings:additional_components.murano.value == false"
-                message: "Murano is not enabled on the Additional Components section"
-                action: "hide"
-          murano_repo_url:
-            value: "http://storage.apps.openstack.org/"
-            label: "Murano Repository URL"
-            description: ""
-            weight: 10
-            type: "text"
         external_mongo:
           metadata:
             label: "External MongoDB"
@@ -819,34 +796,6 @@
             description: "If selected, Sahara component will be installed"
             weight: 10
             type: "checkbox"
-          murano:
-            value: false
-            label: "Install Murano"
-            description: "If selected, Murano component will be installed"
-            weight: 20
-            type: "checkbox"
-          murano-cfapi:
-            value: false
-            label: "Install Murano service broker for Cloud Foundry"
-            description: "If selected, Murano service broker will be installed"
-            weight: 30
-            type: "checkbox"
-            restrictions:
-              - condition: "settings:additional_components.murano.value == false"
-                message: "Murano should be enabled"
-              - condition: "not ('experimental' in version:feature_groups)"
-                action: "hide"
-          murano_glance_artifacts_plugin:
-            value: false
-            label: "Enable glance artifact repository"
-            description: "If selected glance artifact repository will be enabled"
-            weight: 40
-            type: "checkbox"
-            restrictions:
-              - condition: "settings:additional_components.murano.value == false"
-                message: "Murano should be enabled"
-              - condition: "not ('experimental' in version:feature_groups)"
-                action: "hide"
           heat:
             value: true
             label: ""
@@ -1300,20 +1249,6 @@
             generator: "password"
           db_password:
             generator: "password"
-        murano:
-          user_password:
-            generator: "password"
-          rabbit_password:
-            generator: "password"
-          db_password:
-            generator: "password"
-        murano-cfapi:
-          user_password:
-            generator: "password"
-          rabbit_password:
-            generator: "password"
-          db_password:
-            generator: "password"
         heat:
           user_password:
             generator: "password"
@@ -1447,12 +1382,6 @@
           description: "dialog.create_cluster_wizard.additional.install_sahara_description"
           bind: "settings:additional_components.sahara.value"
           weight: 10
-        murano:
-          type: "checkbox"
-          label: "dialog.create_cluster_wizard.additional.install_murano"
-          description: "dialog.create_cluster_wizard.additional.install_murano_description"
-          bind: "settings:additional_components.murano.value"
-          weight: 20
         ceilometer:
           type: "checkbox"
           label: "dialog.create_cluster_wizard.additional.install_ceilometer"
@@ -1772,26 +1701,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:murano
-          - name: additional_service:ceilometer
-          - name: additional_service:ironic
-      - name: additional_service:murano
-        bind:
-          - "settings:additional_components.murano.value"
-        weight: 20
-        label: "dialog.create_cluster_wizard.additional.install_murano"
-        description: "dialog.create_cluster_wizard.additional.install_murano_description"
-        compatible:
-          - name: hypervisor:qemu
-          - name: hypervisor:vmware
-          - name: network:neutron:ml2:vlan
-          - name: network:neutron:ml2:tun
-          - name: storage:block:lvm
-          - name: storage:block:ceph
-          - name: storage:object:ceph
-          - name: storage:ephemeral:ceph
-          - name: storage:image:ceph
-          - name: additional_service:sahara
           - name: additional_service:ceilometer
           - name: additional_service:ironic
       - name: additional_service:ceilometer
@@ -1811,7 +1720,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:murano
           - name: additional_service:ironic
       - name: additional_service:ironic
         bind:
@@ -1828,7 +1736,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:murano
           - name: additional_service:ceilometer
         incompatible:
           - name: network:neutron:ml2:tun

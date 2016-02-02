@@ -604,20 +604,6 @@ _wizard_meta = {
             "bind": "settings:additional_components.sahara.value",
             "weight": 10
         },
-        "murano": {
-            "type": "checkbox",
-            "label": "dialog.create_cluster_wizard.additional.install_murano",
-            "description": "dialog.create_cluster_wizard.additional."
-            "install_murano_description",
-            "bind": "settings:additional_components.murano.value",
-            "weight": 20,
-            "restrictions": [
-                {
-                    "Network.manager == 'nova-network'": "dialog."
-                    "create_cluster_wizard.additional.network_mode_alert"
-                }
-            ]
-        },
         "ceilometer": {
             "type": "checkbox",
             "label": "dialog.create_cluster_wizard.additional."

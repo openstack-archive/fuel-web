@@ -118,24 +118,49 @@ class TestNailgunReceiver(base.BaseTestCase):
             "status": "ready",
             "progress": 100,
             "task_uuid": self.task.uuid,
-            "nodes": [{
-                "status": 1,
-                "out": {"failed_urls": urls},
-                "err": "",
-                "uid": "1"}]}
-        NailgunReceiver.check_repositories_resp(**repo_check_message)
+            "nodes": [
+                {
+                    "status": 1,
+                    "out": {"failed_urls": urls},
+                    "err": "",
+                    "uid": self.cluster.nodes[0].uid
+                },
+                {
+                    "status": 1,
+                    "out": {"failed_urls": urls},
+                    "err": "",
+                    "uid": consts.MASTER_NODE_UID
+                }
+            ]}
 
-        update_verify_networks.assert_called_with(
-            self.task, 'error', 100, ANY, [])
-        actual_msg = update_verify_networks.call_args[0][3]
-        expected_urls_set = set(urls)
-        actual_urls = actual_msg.replace('"', '').replace(',', '').\
-            split()[-len(expected_urls_set):]
-        self.assertItemsEqual(expected_urls_set, actual_urls)
-        self.assertRegexpMatches(
-            actual_msg,
-            r'These nodes: "1" failed to '
-            'connect to some of these repositories: .*')
+        expected_err_msg = {
+            'check_repositories_resp': (
+                r'Repo availability verification'
+                ' failed on following nodes {0}, {1}.\n '
+                'Following repos are not available - '
+                .format(consts.MASTER_NODE_NAME,
+                        self.cluster.nodes[0].name)
+            ),
+            'check_repositories_with_setup_resp': (
+                r'Repo availability verification'
+                ' using public network'
+                ' failed on following nodes {0}, {1}.\n '
+                'Following repos are not available - '
+                .format(consts.MASTER_NODE_NAME,
+                        self.cluster.nodes[0].name)
+            ),
+        }
+        for resp_method in expected_err_msg:
+            getattr(NailgunReceiver, resp_method)(**repo_check_message)
+            update_verify_networks.assert_called_with(
+                self.task, 'error', 100, ANY, {})
+            actual_msg = update_verify_networks.call_args[0][3]
+
+            self.assertIn(', '.join(set(urls)), actual_msg)
+            self.assertIn(
+                expected_err_msg[resp_method],
+                actual_msg,
+            )
 
     def test_task_in_orchestrator_task_not_found(self):
         resp = {'task_uuid': 'fake_uuid'}

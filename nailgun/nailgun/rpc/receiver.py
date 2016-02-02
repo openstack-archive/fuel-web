@@ -1155,67 +1155,66 @@ class NailgunReceiver(object):
         logger.info("RPC method stats_user_resp processed")
 
     @classmethod
-    def check_repositories_resp(cls, **kwargs):
-        logger.info(
-            "RPC method check_repositories_resp received: %s",
-            jsonutils.dumps(kwargs)
-        )
-        task_uuid = kwargs.get('task_uuid')
-        nodes = kwargs.get('nodes')
+    def _get_failed_repos(cls, node):
+        """Get failed repositories from failed node.
 
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
-        failed_nodes = [node for node in nodes if node['status'] != 0]
-        failed_nodes_ids = [node['uid'] for node in failed_nodes]
-
-        progress = 100
-        message = ''
-
-        if not failed_nodes_ids:
-            status = consts.TASK_STATUSES.ready
-        else:
-            failed_urls = set()
-            for n in failed_nodes:
-                failed_urls.update(n['out'].get('failed_urls', []))
-
-            message = ('These nodes: "{0}" failed to connect to '
-                       'some of these repositories: "{1}"').format(
-                           '", "'.join([str(id) for id in failed_nodes_ids]),
-                           '", "'.join(failed_urls))
-
-            status = consts.TASK_STATUSES.error
-
-        objects.Task.update_verify_networks(
-            task, status, progress, message, [])
+        :param node: master or slave
+        :type node: dict
+        :return: list of failed repositories
+        """
+        return node['out'].get('failed_urls', [])
 
     @classmethod
-    def check_repositories_with_setup_resp(cls, **kwargs):
-        logger.info(
-            "RPC method check_repositories_with_setup received: %s" %
-            jsonutils.dumps(kwargs)
-        )
+    def _check_repos_connectivity(cls, resp_kwargs, failed_nodes_msg,
+                                  suggestion_msg=''):
+        """Analyze response data to check repo connectivity from nodes
 
-        task_uuid = kwargs.get('task_uuid')
-        response = kwargs.get('nodes', [])
+        :param resp_kwargs: task response data
+        :type resp_kwargs: dict
+        :param failed_nodes_msg: error message part if the task has not
+            due to underlying command execution error; is formatted by
+            node name
+        :type failed_nodes_msg: str
+        :param failed_repos_msg: error message part if connection to the
+            repositories cannot be established; is formatted by list of names
+            of the repositories
+        :type failed_repos_msg: str
+        :param err_msg: general error message part
+        :type err_msg: str
+        """
+        task_uuid = resp_kwargs.get('task_uuid')
+        response = resp_kwargs.get('nodes', [])
         status = consts.TASK_STATUSES.ready
         progress = 100
 
         task = objects.Task.get_by_uuid(
             task_uuid, fail_if_not_found=True)
 
-        response_nodes = dict([(n['uid'], n) for n in response])
-        nodes = objects.NodeCollection.filter_by_list(
-            None, 'id', response_nodes.keys(), order_by='id')
+        failed_response_nodes = {
+            n['uid']: n for n in response if n['status'] != 0
+        }
 
         failed_nodes = []
         failed_repos = set()
+
+        master = failed_response_nodes.pop(consts.MASTER_NODE_UID, None)
+        if master is not None:
+            failed_repos.update(cls._get_failed_repos(master))
+            failed_nodes.append(consts.MASTER_NODE_NAME)
+
+        nodes = objects.NodeCollection.filter_by_list(
+            None, 'id', failed_response_nodes, order_by='id')
+
         for node in nodes:
-            node_response = response_nodes[node.uid]
-            if node_response['status'] != 0:
-                if isinstance(node_response['out'], dict):
-                    failed_repos.update(
-                        node_response['out'].get('failed_urls', []))
-                failed_nodes.append(node.name)
-        msg = ''
+            failed_repos.update(cls._get_failed_repos(
+                failed_response_nodes[node.uid]))
+            failed_nodes.append(node.name)
+
+        err_msg = ''
+
+        failed_repos_msg = (
+            'Following repos are not available - {0}.\n '
+        )
 
         if failed_nodes:
             msg = ('Repo availability verification using public network'

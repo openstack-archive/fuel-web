@@ -13,89 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
-
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import Task
-from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.task.task import CheckRepoAvailability
 from nailgun.task.task import CheckRepoAvailabilityWithSetup
-from nailgun.task.task import CheckRepositoryConnectionFromMasterNodeTask
 from nailgun.test.base import BaseTestCase
-from requests.exceptions import ConnectionError
-
-
-@mock.patch('time.sleep')   # don't sleep on tests
-class CheckRepositoryConnectionFromMasterNodeTaskTest(BaseTestCase):
-
-    _response_error = mock.Mock(status_code=500, url='url1')
-    _response_ok = mock.Mock(status_code=200, url='url1')
-    _connection_error = ConnectionError()
-
-    def setUp(self):
-        super(CheckRepositoryConnectionFromMasterNodeTaskTest, self).setUp()
-        self.env.create(
-            cluster_kwargs={
-                'net_provider': 'neutron',
-                'net_segment_type': 'gre'
-            },
-            nodes_kwargs=[{'roles': ['controller']}])
-
-        self.env.create_node()
-        self.task = Task(cluster_id=self.env.clusters[0].id)
-        self.env.db.add(self.task)
-        self.env.db.flush()
-
-        self.url = 'url1'
-        self.mocked_repositories = [
-            {'type': 'deb', 'uri': self.url, 'suite': 'suite'}]
-
-        self.patcher = mock.patch(
-            'nailgun.task.task.objects.Cluster.get_repo_urls',
-            new=mock.Mock(return_value=self.mocked_repositories))
-        self.mrepos = self.patcher.start()
-
-    def tearDown(self):
-        self.patcher.stop()
-        super(CheckRepositoryConnectionFromMasterNodeTaskTest, self).tearDown()
-
-    @mock.patch('requests.get', return_value=_response_ok)
-    def test_execute_success(self, _, __):
-        CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
-        self.mrepos.assert_called_with(self.task.cluster)
-
-    @mock.patch('requests.get', return_value=_response_error)
-    def test_execute_fail(self, _, __):
-        with self.assertRaises(errors.CheckBeforeDeploymentError) as cm:
-            CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
-
-        self.assertEqual(
-            cm.exception.message,
-            'Connection to the following repositories '
-            'could not be established: <url1 [500]>')
-
-    @mock.patch('requests.get', side_effect=_connection_error)
-    @mock.patch('nailgun.task.task.logger.exception')
-    def test_execute_fail_with_connection_error(self, m_exception, _, __):
-        with self.assertRaises(errors.CheckBeforeDeploymentError) as cm:
-            CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
-
-        m_exception.assert_called_once_with(
-            "Connection to the repositories could not be established: %s.",
-            self._connection_error)
-
-        self.assertEqual(
-            cm.exception.message,
-            "Connection to the repositories could not be "
-            "established. Please refer to the Fuel Master "
-            "web backend logs for more details.")
-
-    @mock.patch('requests.get', side_effect=[_response_error, _response_ok])
-    def test_execute_success_on_retry(self, _, __):
-        CheckRepositoryConnectionFromMasterNodeTask.execute(self.task)
-        self.mrepos.assert_called_with(self.task.cluster)
 
 
 class TestRepoAvailability(BaseTestCase):
@@ -150,5 +73,5 @@ class TestRepoAvailability(BaseTestCase):
             'name': consts.TASK_NAMES.check_repo_availability})
         repo_check = CheckRepoAvailability(task, {})
         self.assertItemsEqual(
-            self.online_uids,
+            [consts.MASTER_NODE_UID] + self.online_uids,
             [str(n['uid']) for n in repo_check._get_nodes_to_check()])

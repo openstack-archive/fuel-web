@@ -50,7 +50,7 @@ class TestCharsetIssues(BaseIntegrationTest):
         # deletion
         # provision
         # deployment
-        self.assertEqual(len(supertask.subtasks), 4)
+        self.assertEqual(len(supertask.subtasks), 3)
         self.env.wait_ready(supertask)
 
     @fake_tasks()

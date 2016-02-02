@@ -1329,19 +1329,6 @@ class BaseTestCase(TestCase):
         )
         syncdb()
 
-    @classmethod
-    def _set_up_check_repo_patcher(cls):
-        resp_mock = mock.Mock()
-        resp_mock.status_code = 200
-        resp_mock.url = ''
-        responses_mock = mock.Mock(return_value=[resp_mock])
-        cls.repo_check_patcher = mock.patch(
-            ('nailgun.task.task.CheckRepositoryConnectionFromMasterNodeTask'
-             '._get_responses'),
-            new=responses_mock
-        )
-        cls.repo_check_patcher.start()
-
     def setUp(self):
         self.db = db
         flush()
@@ -1436,11 +1423,9 @@ class BaseIntegrationTest(BaseTestCase):
     def setUpClass(cls):
         super(BaseIntegrationTest, cls).setUpClass()
         nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
-        cls._set_up_check_repo_patcher()
 
     @classmethod
     def tearDownClass(cls):
-        cls.repo_check_patcher.stop()
         super(BaseIntegrationTest, cls).tearDownClass()
 
     def _wait_for_threads(self):

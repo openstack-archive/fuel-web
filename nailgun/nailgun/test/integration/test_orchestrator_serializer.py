@@ -2654,16 +2654,6 @@ class BaseDeploymentSerializer(base.BaseIntegrationTest):
         self.assertEqual(result['glance']['vc_datacenter'], "test_datacenter")
         self.assertEqual(result['glance']['vc_datastore'], "test_datastore")
 
-    def check_no_murano_data(self):
-        glance_properties = self.serializer.generate_test_vm_image_data(
-            self.env.nodes[0])['test_vm_image']['glance_properties']
-        self.assertNotIn('murano_image_info', glance_properties)
-
-    def check_murano_data(self):
-        glance_properties = self.serializer.generate_test_vm_image_data(
-            self.env.nodes[0])['test_vm_image']['glance_properties']
-        self.assertIn('murano_image_info', glance_properties)
-
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
 
@@ -2682,9 +2672,6 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
 
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
-
-    def test_glance_properties(self):
-        self.check_no_murano_data()
 
 
 class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
@@ -2804,9 +2791,6 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
     def test_generate_vmware_attributes_data(self):
         self.check_generate_vmware_attributes_data()
 
-    def test_glance_properties(self):
-        self.check_no_murano_data()
-
 
 class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
@@ -2913,9 +2897,6 @@ class TestDeploymentHASerializer50(BaseDeploymentSerializer):
         objects.Cluster.prepare_for_deployment(self.env.clusters[-1])
         self.serializer = DeploymentHASerializer50(self.cluster)
 
-    def test_glance_properties(self):
-        self.check_murano_data()
-
 
 class TestDeploymentMultinodeSerializer50(BaseDeploymentSerializer):
 
@@ -2926,9 +2907,6 @@ class TestDeploymentMultinodeSerializer50(BaseDeploymentSerializer):
         self.cluster = self.create_env(consts.CLUSTER_MODES.multinode)
         objects.Cluster.prepare_for_deployment(self.env.clusters[-1])
         self.serializer = DeploymentMultinodeSerializer50(self.cluster)
-
-    def test_glance_properties(self):
-        self.check_murano_data()
 
 
 class TestDeploymentGraphlessSerializers(OrchestratorSerializerTestBase):

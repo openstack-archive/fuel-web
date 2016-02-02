@@ -1127,7 +1127,6 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def execute(cls, task):
         cls._check_nodes_are_online(task)
-        cls._check_controllers_count(task)
         cls._check_disks(task)
         cls._check_ceph(task)
         cls._check_volumes(task)

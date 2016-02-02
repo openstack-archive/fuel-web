@@ -153,8 +153,10 @@ class TestClusterChanges(BaseIntegrationTest):
         self.env.create_node(
             cluster_id=cluster["id"],
             status="error",
-            error_type="provision"
+            error_type="provision",
+            pending_roles=["controller"]
         )
+
         supertask = self.env.launch_deployment()
         self.env.wait_error(supertask, 60)
         attributes_changes = self.db.query(ClusterChanges).filter_by(

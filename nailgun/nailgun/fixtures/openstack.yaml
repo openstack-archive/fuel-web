@@ -79,7 +79,7 @@
         limits:
             min: "settings:storage.osd_pool_size.value"
         restrictions:
-          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false"
+          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false and settings:storage.objects_ceph.value == false"
             message: "Ceph must be enabled in settings"
         update_once:
           - controller

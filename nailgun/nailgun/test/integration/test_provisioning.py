@@ -103,6 +103,37 @@ class TestProvisioning(BaseIntegrationTest):
             self.env.nodes[5].status, consts.NODE_STATUSES.provisioning
         )
 
+    @fake_tasks()
+    def test_node_has_proper_status_after_provisioning(self, *_):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False, "status": consts.NODE_STATUSES.discover,
+                 "roles": ["compute"]},
+                {"api": False, "roles": ["controller"],
+                 "status": consts.NODE_STATUSES.discover}
+            ]
+        )
+        cluster_db = self.env.clusters[-1]
+        self.env.network_manager.assign_ips(
+            cluster_db, self.env.nodes, consts.NETWORKS.fuelweb_admin
+        )
+        self.env.network_manager.assign_ips(
+            cluster_db, self.env.nodes, consts.NETWORKS.management
+        )
+        self.env.network_manager.assign_ips(
+            cluster_db, self.env.nodes, consts.NETWORKS.storage
+        )
+        self.env.network_manager.assign_ips(
+            cluster_db, self.env.nodes, consts.NETWORKS.public
+        )
+
+        task = self.env.launch_provisioning_selected(cluster_id=cluster_db.id)
+        self.env.wait_ready(task, timeout=120)
+
+        for n in cluster_db.nodes:
+            self.assertEqual(consts.NODE_STATUSES.provisioned, n.status)
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_vms_reset_on_provisioning(self, mocked_rpc=None):

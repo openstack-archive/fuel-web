@@ -909,11 +909,8 @@
                     "additional": {
                         "title": "Additional Services",
                         "release_alert": "Additional services are not available in __NameAndRelease.release_name__",
-                        "network_mode_alert": "Murano requires Neutron as a network option.",
                         "install_sahara": "Install Sahara",
                         "install_sahara_description": "Sahara enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
-                        "install_murano": "Install Murano",
-                        "install_murano_description": "Murano is an application catalog, which allows application developers and cloud administrators to publish various cloud-ready applications in a browsable categorized catalog, which may be used by the cloud users (including the inexperienced ones) to pick-up the needed applications and services and composes the reliable environments out of them in a “push-the-button” manner.",
                         "install_ceilometer": "Install Ceilometer (OpenStack Telemetry)",
                         "install_ceilometer_description": "Ceilometer provides metering and monitoring of an OpenStack cloud.",
                         "install_ironic": "Install Ironic",
@@ -1275,10 +1272,6 @@
                             "label": "安装Sahara",
                             "description": "如果选择，Sahara组件将被安装。"
                         },
-                        "murano": {
-                            "label": "安装Murano",
-                            "description": "如果选择，Murano组件将被安装。"
-                        },
                         "ceilometer": {
                             "label": "安装Ceilometer",
                             "description": "如果选择，Ceilometer组件将被安装。"
@@ -1508,9 +1501,7 @@
                         "title": "附加服务",
                         "release_alert": "__releaseName__不支持附加服务",
                         "install_sahara": "安装Sahara",
-                        "install_sahara_description": "利用Sahara能在各大版本厂商的OpenStack上的部署Hadoop集群。",
-                        "install_murano": "安装Murano",
-                        "install_murano_description": "利用Murano能将基于Windows的数据中心服务，如活动目录、IIS、Microsoft SQL和ASP.NET部署到OpenStack上。"
+                        "install_sahara_description": "利用Sahara能在各大版本厂商的OpenStack上的部署Hadoop集群。"
                     },
                     "ready": {
                         "title": "完成",
@@ -2198,11 +2189,8 @@
                     "additional": {
                         "title": "追加サービス",
                         "release_alert": "追加サービスは __NameAndRelease.release_name__ では使用できません",
-                        "network_mode_alert": "MuranoはネットワークオプションとしてNeutronが必要です。",
                         "install_sahara": "Saharaのインストール",
                         "install_sahara_description": "Saharaは様々なベンダーディストリビューションでデプロイされたOpenStack上にHadoopクラスタのオンデマンドプロビジョニングを可能にします。",
-                        "install_murano": "Muranoのインストール",
-                        "install_murano_description": "Muranoはアプリケーションカタログです。アプリケーション開発者およびクラウドの管理者がブラウズ可能なカテゴライズされたカタログの中でさまざまなクラウド対応アプリケーションを公開するために使用されます。これは、クラウド·ユーザー（経験の浅いものを含む）によって使用され、ピックアップするために必要なアプリケーションやサービスを「ボタンを押す」ような操作だけで信頼性の高い環境を構成することができます。",
                         "install_ceilometer": "Ceilometer(OpenStack テレメトリー)のインストール",
                         "install_ceilometer_description": "CeilometerはOpenStackクラウドのメータリングおよびモニタリング機能を提供します。"
                     },
@@ -2715,11 +2703,8 @@
                     "additional": {
                         "title": "추가 서비스",
                         "release_alert": "추가 서비스는 __releaseName__에서는 지원되지 않습니다.",
-                        "network_mode_alert": "Murano는 현재의 네트워크 모드에서는 지원되지 않습니다.  Murano를 사용하기위해서는 Neutron 네트워크를 선택하십시오.",
                         "install_sahara": "Sahara 설치",
                         "install_sahara_description": "Sahara 공급 업체의 다양한 분포를 활용하는 OpenStack에서 배치하는 하둡 클러스터의 on demand 프로비저닝을 가능하게 합니다.",
-                        "install_murano": "Murano 설치",
-                        "install_murano_description": "Murano는 액티브 디렉토리, IIS, 아파치, 마이크로 소프트 SQL 및 ASP.NET와 같은 윈도우나 리눅스 기반의 데이터센터 서비스를 OpenStack에서 배치할 수 있게 합니다.",
                         "install_ceilometer": "Ceilometer (OpenStack Telemetry) 설치",
                         "install_ceilometer_description": "Ceilometer는 OpenStack Cloud의 계량 및 모니터링 기능을 제공합니다."
                     },

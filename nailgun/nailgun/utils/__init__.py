@@ -14,7 +14,6 @@
 
 import base64
 import collections
-import glob
 import os
 import re
 import shutil
@@ -22,7 +21,6 @@ import string
 import struct
 import six
 import time
-import yaml
 
 from copy import deepcopy
 from itertools import chain

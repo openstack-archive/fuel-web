@@ -55,8 +55,31 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             reverse('NodeCollectionNICsHandler'),
             jsonutils.dumps(nodes_list),
             headers=self.default_headers)
+
         self.assertEqual(resp_put.status_code, 200)
-        self.assertItemsEqual(resp_put.json_body, nodes_list)
+        self.assertEqual(len(resp_put.json_body), 1)
+
+        resp_data = resp_put.json_body[0]
+
+        self.assertEqual(resp_data['id'], nodes_list[0]['id'])
+
+        def id_key(elem):
+            return elem['id']
+
+        for resp_iface, node_iface in zip(
+                sorted(resp_data['interfaces'], key=id_key),
+                sorted(nodes_list[0]['interfaces'], key=id_key)):
+
+            # Assert that the dicts are equal, except for assigned_networks
+            # which is more complex structure and requires other checks.
+            self.datadiff(resp_iface, node_iface,
+                          ignore_keys='assigned_networks')
+
+            for resp_net, node_net in zip(
+                    sorted(resp_iface['assigned_networks'], key=id_key),
+                    sorted(node_iface['assigned_networks'], key=id_key)):
+
+                self.assertDictEqual(resp_net, node_net)
 
     @fake_tasks()
     def test_interface_changes_added(self):

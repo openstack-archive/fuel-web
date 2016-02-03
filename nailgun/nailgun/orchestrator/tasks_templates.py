@@ -208,13 +208,18 @@ def make_reboot_task(uids, task):
             'timeout': task['parameters']['timeout']}}
 
 
-def make_provisioning_images_task(uids, repos, provision_data, cid):
+def make_provisioning_images_task(
+        uids, repos, provision_data, cid, packages):
     conf = {
         'repos': repos,
         'image_data': provision_data['image_data'],
         'codename': provision_data['codename'],
         'output': settings.PROVISIONING_IMAGES_PATH,
     }
+
+    if packages:
+        conf['packages'] = packages
+
     # TODO(ikalnitsky):
     # Upload settings before using and pass them as command line argument.
     conf = jsonutils.dumps(conf)

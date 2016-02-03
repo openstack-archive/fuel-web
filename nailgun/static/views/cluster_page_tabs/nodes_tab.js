@@ -115,7 +115,7 @@ function($, _, React, controls, ClusterNodesScreen, AddNodesScreen, EditNodesScr
                     >
                         <Screen
                             {...this.state.screenData}
-                            {... _.pick(this.props, 'cluster', 'nodeNetworkGroups', 'selectedNodeIds', 'selectNodes')}
+                            {... _.pick(this.props, 'cluster', 'selectedNodeIds', 'selectNodes')}
                             ref='screen'
                             screenOptions={this.state.screenOptions}
                         />

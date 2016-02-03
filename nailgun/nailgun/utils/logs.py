@@ -121,7 +121,7 @@ def delete_node_logs(node, prefix=settings.SYSLOG_DIR):
 def prepare_submodule_logger(submodule_name, file_path=None):
     logger = logging.getLogger(submodule_name)
 
-    if file_path is None:
+    if file_path is not None:
         handler = logging.FileHandler(file_path)
     else:
         handler = logging.StreamHandler(sys.stdout)

@@ -531,12 +531,19 @@ export var StopDeploymentDialog = React.createClass({
       });
   },
   renderBody() {
+    var ns = 'dialog.stop_deployment.';
     return (
       <div className='text-danger'>
         {this.renderImportantLabel()}
-        {i18n('dialog.stop_deployment.' +
-          (this.props.cluster.get('nodes').where({status: 'provisioning'}).length ?
-            'provisioning_warning' : 'text'))}
+        {this.props.cluster.get('nodes').any({status: 'provisioning'}) ?
+          <span>
+            {i18n(ns + 'provisioning_warning')}
+            <br/><br/>
+            {i18n(ns + 'redeployment_warning')}
+          </span>
+        :
+          i18n(ns + 'text')
+        }
       </div>
     );
   },

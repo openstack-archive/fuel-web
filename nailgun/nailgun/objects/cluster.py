@@ -1373,6 +1373,13 @@ class Cluster(NailgunObject):
 
             db.flush()
 
+    @classmethod
+    def get_effective_release_id(cls, instance):
+        """Return release_id that is used for new nodes."""
+        if instance.pending_release_id is not None:
+            return instance.pending_release_id
+        return instance.release_id
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

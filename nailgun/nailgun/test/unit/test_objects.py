@@ -425,6 +425,16 @@ class TestNodeObject(BaseIntegrationTest):
                 getattr(node2_db, f)
             )
 
+    def test_add_into_cluster_during_upgrade(self):
+        cluster = self.env.create(cluster_kwargs={"api": False},
+                                  nodes_kwargs=[{"role": "controller"},
+                                                {"role": "compute"}])
+        node = self.env.create_node()
+        release = self.env.create_release(api=False)
+        objects.Cluster.update(cluster, {'pending_release_id': release.id})
+        objects.Node.add_into_cluster(node, cluster.id)
+        self.assertEqual(node.release_id, release.id)
+
     def test_removing_from_cluster_idempotent(self):
         self.env.create(
             cluster_kwargs={},
@@ -1418,6 +1428,18 @@ class TestClusterObject(BaseTestCase):
 
         self.db().refresh(config)
         self.assertFalse(config.is_active)
+
+    def tesst_get_effective_release_id(self):
+        cluster = self.env.clusters[0]
+        release_id = objects.Cluster.get_effective_release_id(cluster)
+        self.assertEqual(cluster.release_id, release_id)
+
+    def tesst_get_effective_pending_release_id(self):
+        cluster = self.env.clusters[0]
+        release = self.env.create_release(api=False)
+        objects.Cluster.update(cluster, {'pending_release_id': release.id})
+        release_id = objects.Cluster.get_effective_release_id(cluster)
+        self.assertEqual(cluster.pending_release_id, release_id)
 
 
 class TestClusterObjectVirtRoles(BaseTestCase):

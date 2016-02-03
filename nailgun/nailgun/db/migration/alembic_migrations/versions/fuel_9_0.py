@@ -34,9 +34,11 @@ def upgrade():
     add_foreign_key_ondelete()
     upgrade_ip_address()
     update_vips_from_network_roles()
+    upgrade_nodes_add_release_id()
 
 
 def downgrade():
+    downgrade_nodes_remove_release_id()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
 
@@ -535,3 +537,17 @@ def downgrade_ip_address():
     )
     op.drop_column('ip_addrs', 'is_user_defined')
     op.drop_column('ip_addrs', 'vip_namespace')
+
+
+def upgrade_nodes_add_release_id():
+    op.add_column('nodes', sa.Column('release_id', sa.Integer,
+                                     sa.ForeignKey('releases.id')))
+    update_query = sa.sql.text("UPDATE nodes "
+                               "SET release_id = clusters.release_id "
+                               "FROM clusters "
+                               "WHERE cluster_id = clusters.id")
+    op.execute(update_query)
+
+
+def downgrade_nodes_remove_release_id():
+    op.drop_column('nodes', 'release_id')

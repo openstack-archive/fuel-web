@@ -141,7 +141,7 @@ cleanup_database() {
 prepare_database_role() {
     # requires pgpass
     echo "Trying to find out if role ${NAILGUN_DB_USER} exists"
-    local roles=$(psql -h 127.0.0.1 -U ${DB_ROOT} -t -c "SELECT 'HERE' from pg_roles where rolname='${NAILGUN_DB_USER}'")
+    local roles=$(psql -h ${NAILGUN_DB_HOST} -U ${DB_ROOT} -t -c "SELECT 'HERE' from pg_roles where rolname='${NAILGUN_DB_USER}'")
     if [[ ${roles} == *HERE ]]; then
         echo "Role ${NAILGUN_DB_USER} exists. Setting password ${NAILGUN_DB_PW}"
         psql -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} -c "ALTER ROLE ${NAILGUN_DB_USER} WITH SUPERUSER LOGIN PASSWORD '${NAILGUN_DB_PW}'"

@@ -1643,39 +1643,6 @@ class TestHandlers(BaseIntegrationTest):
             "Node '%s' has insufficient disk space" %
             node_db.human_readable_name)
 
-    # TODO(awoodward): Purge multinode
-    def test_occurs_error_not_enough_controllers_for_multinode(self):
-        self.env.create(
-            release_kwargs={
-                'modes': [consts.CLUSTER_MODES.multinode, ]
-            },
-            cluster_kwargs={
-                'mode': consts.CLUSTER_MODES.multinode
-            },
-            nodes_kwargs=[
-                {'roles': ['compute'], 'pending_addition': True}])
-
-        task = self.env.launch_deployment()
-
-        self.assertEqual(task.status, 'error')
-        self.assertEqual(
-            task.message,
-            "Not enough controllers, multinode mode requires at least 1 "
-            "controller(s)")
-
-    def test_occurs_error_not_enough_controllers_for_ha(self):
-        self.env.create(
-            nodes_kwargs=[
-                {'roles': ['compute'], 'pending_addition': True}])
-
-        task = self.env.launch_deployment()
-
-        self.assertEqual(task.status, 'error')
-        self.assertEqual(
-            task.message,
-            'Not enough controllers, ha_compact '
-            'mode requires at least 1 controller(s)')
-
     def test_occurs_error_not_enough_osds_for_ceph(self):
         cluster = self.env.create(
             nodes_kwargs=[
@@ -1857,3 +1824,15 @@ class TestHandlers(BaseIntegrationTest):
         )
         deploy_task = self.env.launch_deployment()
         self.assertEqual(consts.TASK_STATUSES.pending, deploy_task.status)
+
+    @fake_tasks()
+    def test_deploymend_possible_without_controllers(self):
+        cluster = self.env.create_cluster(api=True)
+        self.env.create_node(
+            cluster_id=cluster["id"],
+            status=consts.NODE_STATUSES.discover,
+            pending_roles=["compute"]
+        )
+
+        supertask = self.env.launch_deployment()
+        self.env.wait_ready(supertask, timeout=60)

@@ -1376,7 +1376,7 @@ class BaseTestCase(TestCase):
     def assertValidJSON(self, data):
         self.assertNotRaises(ValueError, jsonutils.loads, data)
 
-    def datadiff(self, node1, node2, path=None, ignore_keys=[],
+    def datadiff(self, data1, data2, path=None, ignore_keys=[],
                  compare_sorted=False):
         if path is None:
             path = []
@@ -1384,33 +1384,33 @@ class BaseTestCase(TestCase):
         def fail(msg, failed_path):
             self.fail('Path "{0}": {1}'.format("->".join(failed_path), msg))
 
-        if not isinstance(node1, dict) or not isinstance(node2, dict):
-            if isinstance(node1, (list, tuple)):
+        if not isinstance(data1, dict) or not isinstance(data2, dict):
+            if isinstance(data1, (list, tuple)):
                 newpath = path[:]
                 if compare_sorted:
-                    node1 = sorted(node1)
-                    node2 = sorted(node2)
-                for i, keys in enumerate(izip(node1, node2)):
+                    data1 = sorted(data1)
+                    data2 = sorted(data2)
+                for i, keys in enumerate(izip(data1, data2)):
                     newpath.append(str(i))
                     self.datadiff(keys[0], keys[1], newpath, ignore_keys,
                                   compare_sorted)
                     newpath.pop()
-            elif node1 != node2:
+            elif data1 != data2:
                 err = "Values differ: {0} != {1}".format(
-                    str(node1),
-                    str(node2)
+                    str(data1),
+                    str(data2)
                 )
                 fail(err, path)
         else:
             newpath = path[:]
 
-            if len(node1) != len(node2):
-                fail('Nodes have different keys number: {0} != {1}'.format(
-                    len(node1), len(node2)), path)
+            if len(data1) != len(data2):
+                fail('Dicts have different keys number: {0} != {1}'.format(
+                    len(data1), len(data2)), path)
 
             for key1, key2 in zip(
-                sorted(node1),
-                sorted(node2)
+                sorted(data1),
+                sorted(data2)
             ):
                 if key1 != key2:
                     err = "Keys differ: {0} != {1}".format(
@@ -1421,7 +1421,7 @@ class BaseTestCase(TestCase):
                 if key1 in ignore_keys:
                     continue
                 newpath.append(key1)
-                self.datadiff(node1[key1], node2[key2], newpath, ignore_keys,
+                self.datadiff(data1[key1], data2[key2], newpath, ignore_keys,
                               compare_sorted)
                 newpath.pop()
 

@@ -131,7 +131,7 @@ def prepare():
         }])
     releaseid = result.inserted_primary_key[0]
 
-    db.execute(
+    result = db.execute(
         meta.tables['clusters'].insert(),
         [{
             'name': 'test_env',
@@ -142,8 +142,17 @@ def prepare():
             'grouping': 'roles',
             'fuel_version': '8.0',
         }])
+    cluster_id = result.inserted_primary_key[0]
 
-    db.execute(
+    result = db.execute(
+        meta.tables['nodegroups'].insert(),
+        [{
+            'cluster_id': cluster_id,
+            'name': 'default',
+        }])
+    group_id = result.inserted_primary_key[0]
+
+    result = db.execute(
         meta.tables['nodes'].insert(),
         [{
             'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',
@@ -153,20 +162,30 @@ def prepare():
             'meta': '{}',
             'mac': 'aa:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
+        }, {
+            'uuid': '018b17bb-c7a0-48be-8f52-8469e04afc57',
+            'cluster_id': cluster_id,
+            'group_id': group_id,
+            'status': 'ready',
+            'meta': '{}',
+            'mac': 'bb:bb:bb:bb:bb:bb',
+            'timestamp': datetime.datetime.utcnow(),
         }]
     )
-    node_id = result.inserted_primary_key[0]
+    nodes_table = meta.tables['nodes']
+    result = db.execute(nodes_table.select().column(nodes_table.c.id))
 
-    db.execute(
-        meta.tables['node_attributes'].insert(),
-        [{
-            'node_id': node_id,
-            'vms_conf': jsonutils.dumps([
-                {'cpu': 1, 'mem': 2},
-                {'cpu': 1, 'mem': 2},
-            ])
-        }]
-    )
+    for record in result:
+        db.execute(
+            meta.tables['node_attributes'].insert(),
+            [{
+                'node_id': record[nodes_table.c.id],
+                'vms_conf': jsonutils.dumps([
+                    {'cpu': 1, 'mem': 2},
+                    {'cpu': 1, 'mem': 2},
+                ])
+            }]
+        )
 
     db.execute(
         meta.tables['ip_addrs'].insert(),
@@ -424,3 +443,22 @@ class TestMergeNodeAttributes(base.BaseAlembicMigrationTest):
                     {'cpu': 1, 'mem': 2},
                 ]
             )
+
+
+class TestNodesReleaseIdAttribute(base.BaseAlembicMigrationTest):
+    def test_node_release_id_attribute(self):
+        nodes = self.meta.tables['nodes']
+        clusters = self.meta.tables['clusters']
+        cluster_release_id = clusters.c.release_id.label('cluster_release_id')
+
+        join_query = nodes.outerjoin(clusters)
+        query = sa.select([nodes.c.id, nodes.c.cluster_id, nodes.c.release_id,
+                           cluster_release_id]).select_from(join_query)
+        records = db.execute(query)
+
+        for record in records:
+            if record[nodes.c.cluster_id] is None:
+                self.assertIsNone(record[nodes.c.release_id])
+            else:
+                self.assertEqual(record[nodes.c.release_id],
+                                 record[cluster_release_id])

@@ -594,6 +594,7 @@ class Node(NailgunObject):
         """
         roles = instance.roles
         instance.cluster_id = cluster.id
+        instance.release_id = Cluster.get_effective_release_id(cluster)
         instance.kernel_params = None
         instance.group_id = None
         instance.deployment_info = []
@@ -770,9 +771,10 @@ class Node(NailgunObject):
         :returns: None
         """
         instance.cluster_id = cluster_id
-
+        cluster = instance.cluster
+        instance.release_id = Cluster.get_effective_release_id(cluster)
         cls.assign_group(instance)
-        network_manager = Cluster.get_network_manager(instance.cluster)
+        network_manager = Cluster.get_network_manager(cluster)
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
@@ -843,6 +845,7 @@ class Node(NailgunObject):
         cls.remove_replaced_params(instance)
         instance.cluster_id = None
         instance.group_id = None
+        instance.release_id = None
         instance.kernel_params = None
         instance.primary_roles = []
         instance.hostname = cls.default_slave_name(instance)

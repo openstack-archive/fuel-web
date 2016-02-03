@@ -1748,6 +1748,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
         incompatible:
@@ -1763,6 +1764,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
           - name: storage:object:ceph
@@ -1780,6 +1782,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
           - name: storage:block:ceph
@@ -1794,6 +1797,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
           - name: storage:block:ceph
@@ -1808,6 +1812,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
           - name: storage:block:ceph
@@ -1822,6 +1827,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
           - name: storage:block:lvm
@@ -1842,6 +1848,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
           - name: storage:block:lvm
@@ -1861,6 +1868,7 @@
         compatible:
           - name: hypervisor:qemu
           - name: hypervisor:vmware
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
           - name: storage:block:lvm
@@ -1879,6 +1887,7 @@
         description: "dialog.create_cluster_wizard.additional.install_ironic_description"
         compatible:
           - name: hypervisor:qemu
+          - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: storage:block:lvm
           - name: storage:block:ceph

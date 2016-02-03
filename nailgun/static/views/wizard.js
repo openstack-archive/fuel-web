@@ -704,7 +704,6 @@ function($, _, i18n, React, Backbone, utils, models, componentMixins, dialogs, c
                 deferred.done(() => {
                         this.props.clusters.add(cluster);
                         this.close();
-                        app.nodeNetworkGroups.fetch();
                         app.navigate('#cluster/' + this.cluster.id, {trigger: true});
                     })
                     .fail((response) => {

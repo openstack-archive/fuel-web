@@ -38,11 +38,13 @@ function($, _, i18n, React, models, componentMixins, NodeListScreen) {
                 var nodes = new models.Nodes(),
                     clusters = new models.Clusters(),
                     plugins = new models.Plugins(),
-                    {releases, nodeNetworkGroups, fuelSettings} = app;
+                    nodeNetworkGroups = new models.NodeNetworkGroups(),
+                    {releases, fuelSettings} = app;
 
                 return $.when(
                     nodes.fetch(),
                     clusters.fetch(),
+                    nodeNetworkGroups.fetch(),
                     releases.fetch({cache: true}),
                     nodeNetworkGroups.fetch({cache: true}),
                     fuelSettings.fetch({cache: true}),

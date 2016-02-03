@@ -41,6 +41,7 @@ function($, _, React, models, NodeListScreen) {
                 ref='screen'
                 mode='add'
                 roles={this.props.cluster.get('roles')}
+                nodeNetworkGroups={this.props.cluster.get('nodeNetworkGroups')}
                 sorters={_.without(models.Nodes.prototype.sorters, 'cluster', 'roles', 'group_id')}
                 defaultSorting={[{status: 'asc'}]}
                 filters={_.without(models.Nodes.prototype.filters, 'cluster', 'roles', 'group_id')}

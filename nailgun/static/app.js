@@ -173,7 +173,6 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
             this.releases = new models.Releases();
-            this.nodeNetworkGroups = new models.NodeNetworkGroups();
         }
 
         initialize() {
@@ -193,12 +192,7 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
                     }
                     return $.Deferred().resolve();
                 })
-                .then(() => {
-                    return $.when(
-                        this.fuelSettings.fetch(),
-                        this.nodeNetworkGroups.fetch()
-                    );
-                })
+                .then(() => this.fuelSettings.fetch())
                 .then(null, () => {
                     if (this.version.get('auth_required') && !this.user.get('authenticated')) {
                         return $.Deferred().resolve();

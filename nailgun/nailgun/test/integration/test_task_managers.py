@@ -594,7 +594,8 @@ class TestTaskManagers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         cluster_id = cluster['id']
         manager_ = manager.ApplyChangesTaskManager(cluster_id)
-        task = models.Task(name='provision', cluster_id=cluster_id)
+        task = models.Task(name='provision', cluster_id=cluster_id,
+                           status=consts.TASK_STATUSES.ready)
         self.db.add(task)
         self.db.commit()
         rpc.receiver.NailgunReceiver.deploy_resp(nodes=[

@@ -107,9 +107,11 @@ class TaskManager(object):
 
 class DeploymentCheckMixin(object):
 
-    # A list of tasks which we cannot run at the same cluster in parallel
+    # A list of tasks which prevent to start new deploy process
     deployment_tasks = (
         consts.TASK_NAMES.deploy,
+        consts.TASK_NAMES.deployment,
+        consts.TASK_NAMES.provision,
         consts.TASK_NAMES.stop_deployment,
         consts.TASK_NAMES.reset_environment,
         # NOTE(eli): Node deletion may require nodes redeployment

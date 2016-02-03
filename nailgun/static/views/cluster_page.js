@@ -92,7 +92,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
             },
             fetchData: function(id, activeTab, ...tabOptions) {
                 var cluster, promise, currentClusterId;
-                var nodeNetworkGroups = app.nodeNetworkGroups;
                 var tab = _.find(this.getTabs(), {url: activeTab}).tab;
                 try {
                     currentClusterId = app.page.props.cluster.id;
@@ -120,6 +119,10 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                     cluster.get('nodes').fetch = function(options) {
                         return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
                     };
+
+                    cluster.get('nodeNetworkGroups').fetch = function(options) {
+                        return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: id}}, options));
+                    };
                     promise = $.when(
                             cluster.fetch(),
                             cluster.get('settings').fetch(),
@@ -127,7 +130,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                             cluster.get('pluginLinks').fetch({cache: true}),
                             cluster.fetchRelated('nodes'),
                             cluster.fetchRelated('tasks'),
-                            nodeNetworkGroups.fetch({cache: true})
+                            cluster.fetchRelated('nodeNetworkGroups')
                         )
                         .then(function() {
                             var networkConfiguration = new models.NetworkConfiguration();
@@ -154,7 +157,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 return promise.then(function(data) {
                     return {
                         cluster: cluster,
-                        nodeNetworkGroups: nodeNetworkGroups,
                         activeTab: activeTab,
                         tabOptions: tabOptions,
                         tabData: data
@@ -314,7 +316,6 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                         <Tab
                             ref='tab'
                             cluster={cluster}
-                            nodeNetworkGroups={this.props.nodeNetworkGroups}
                             tabOptions={this.props.tabOptions}
                             setActiveSettingsGroupName={this.setActiveSettingsGroupName}
                             setActiveNetworkSectionName={this.setActiveNetworkSectionName}

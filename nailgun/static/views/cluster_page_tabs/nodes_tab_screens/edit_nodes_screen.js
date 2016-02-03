@@ -53,6 +53,7 @@ function($, _, React, models, utils, NodeListScreen) {
                     ref='screen'
                     mode='edit'
                     roles={this.props.cluster.get('roles')}
+                    nodeNetworkGroups={this.props.cluster.get('nodeNetworkGroups')}
                 />
             );
         }

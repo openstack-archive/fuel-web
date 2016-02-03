@@ -53,7 +53,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             var networkConfiguration = this.props.cluster.get('networkConfiguration');
             this.getModel().set(attribute, value);
             dispatcher.trigger('hideNetworkVerificationResult');
-            networkConfiguration.isValid();
+            networkConfiguration.isValid({
+                nodeNetworkGroups: this.props.cluster.get('nodeNetworkGroups')
+            });
         },
         getModel: function() {
             return this.props.network ||
@@ -490,7 +492,12 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             NetworkInputsMixin,
             NetworkModelManipulationMixin,
             componentMixins.backboneMixin('cluster', 'change:status'),
-            componentMixins.backboneMixin('nodeNetworkGroups', 'change update'),
+            componentMixins.backboneMixin({
+                modelOrCollection(props) {
+                    return props.cluster.get('nodeNetworkGroups');
+                },
+                renderOn: 'change update'
+            }),
             componentMixins.backboneMixin({
                 modelOrCollection: function(props) {
                     return props.cluster.get('networkConfiguration').get('networking_parameters');
@@ -550,7 +557,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             };
         },
         componentDidMount: function() {
-            this.props.cluster.get('networkConfiguration').isValid();
+            this.props.cluster.get('networkConfiguration').isValid({
+                nodeNetworkGroups: this.props.cluster.get('nodeNetworkGroups')
+            });
             this.props.cluster.get('settings').isValid({models: this.state.configModels});
             this.props.cluster.get('tasks').on('change:status change:unsaved', this.destroyUnsavedNetworkVerificationTask, this);
         },
@@ -586,7 +595,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
         revertChanges: function() {
             this.loadInitialConfiguration();
             this.loadInitialSettings();
-            this.props.cluster.get('networkConfiguration').isValid();
+            this.props.cluster.get('networkConfiguration').isValid({
+                nodeNetworkGroups: this.props.cluster.get('nodeNetworkGroups')
+            });
             this.setState({
                 hideVerificationResult: true,
                 key: _.now()
@@ -633,7 +644,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 net_manager: value,
                 fixed_networks_amount: value == 'FlatDHCPManager' ? 1 : fixedAmount
             });
-            networkConfiguration.isValid();
+            networkConfiguration.isValid({
+                nodeNetworkGroups: this.props.cluster.get('nodeNetworkGroups')
+            });
             this.setState({hideVerificationResult: true});
         },
         verifyNetworks: function() {
@@ -804,7 +817,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             return fieldsWithVerificationErrors;
         },
         removeNodeNetworkGroup: function() {
-            var nodeNetworkGroup = this.nodeNetworkGroups.find({name: this.props.activeNetworkSectionName});
+            var nodeNetworkGroup = this.props.cluster.get('nodeNetworkGroups').find({
+                name: this.props.activeNetworkSectionName
+            });
             dialogs.RemoveNodeNetworkGroupDialog
                 .show({
                     showUnsavedChangesWarning: this.hasChanges()
@@ -830,17 +845,18 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                 });
                 return;
             }
+            var nodeNetworkGroups = this.props.cluster.get('nodeNetworkGroups');
             dialogs.CreateNodeNetworkGroupDialog
                 .show({
                     clusterId: this.props.cluster.id,
-                    nodeNetworkGroups: this.nodeNetworkGroups
+                    nodeNetworkGroups: nodeNetworkGroups
                 })
                 .done(() => {
                     this.setState({hideVerificationResult: true});
-                    return this.nodeNetworkGroups.fetch()
+                    return nodeNetworkGroups.fetch()
                         .then(() => {
-                            var newNodeNetworkGroup = this.nodeNetworkGroups.last();
-                            this.props.nodeNetworkGroups.add(newNodeNetworkGroup);
+                            var newNodeNetworkGroup = nodeNetworkGroups.last();
+                            nodeNetworkGroups.add(newNodeNetworkGroup);
                             this.props.setActiveNetworkSectionName(newNodeNetworkGroup.get('name'));
                             return this.props.cluster.get('networkConfiguration').fetch();
                         })
@@ -872,7 +888,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
                     row: true,
                     'changes-locked': isLocked
                 },
-                nodeNetworkGroups = this.nodeNetworkGroups = new models.NodeNetworkGroups(this.props.nodeNetworkGroups.where({cluster_id: cluster.id})),
+                nodeNetworkGroups = this.props.cluster.get('nodeNetworkGroups'),
                 isNovaEnvironment = cluster.get('net_provider') == 'nova_network',
                 networks = networkConfiguration.get('networks'),
                 isMultiRack = nodeNetworkGroups.length > 1,
@@ -1025,7 +1041,8 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
     var NodeNetworkGroup = React.createClass({
         render: function() {
-            var {cluster, networks, nodeNetworkGroup, nodeNetworkGroups, verificationErrors, validationError} = this.props;
+            var {cluster, networks, nodeNetworkGroup, verificationErrors, validationError} = this.props;
+            var nodeNetworkGroups = cluster.get('nodeNetworkGroups');
             return (
                 <div>
                     <NodeNetworkGroupTitle
@@ -1056,8 +1073,9 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
 
     var NetworkSubtabs = React.createClass({
         renderClickablePills: function(sections, isNetworkGroupPill) {
-            var {cluster, nodeNetworkGroups, validationError} = this.props,
+            var {cluster, validationError} = this.props,
                 isNovaEnvironment = cluster.get('net_provider') == 'nova_network';
+            var nodeNetworkGroups = cluster.get('nodeNetworkGroups');
 
             var networkParametersErrors = (validationError || {}).networking_parameters,
                 networksErrors = (validationError || {}).networks;
@@ -1116,7 +1134,7 @@ function($, _, i18n, Backbone, React, models, dispatcher, utils, dialogs, compon
             }, this));
         },
         render: function() {
-            var {nodeNetworkGroups} = this.props,
+            var nodeNetworkGroups = this.props.cluster.get('nodeNetworkGroups'),
                 settingsSections = [],
                 nodeGroupSections = nodeNetworkGroups.pluck('name');
 

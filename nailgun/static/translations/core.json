@@ -1030,7 +1030,8 @@
                 "stop_deployment": {
                     "title": "Stop Deployment",
                     "text": "Are you sure you want to stop this deployment? You may not be able to successfully re-deploy this OpenStack environment until you reset the environment. Proceed with caution!",
-                    "provisioning_warning": "Are you sure you want to interrupt the deployment? If Fuel has not completed the node provisioning, changes applied to the nodes will be discarded and the nodes will be reset to their pre-deployment state.",
+                    "provisioning_warning": "Are you sure you want to interrupt the deployment at OS provisioning stage? Fuel has not completed the node provisioning, changes applied to the nodes will be discarded and the nodes will be reset to their pre-deployment state.",
+                    "redeployment_warning": "Please wait 20 minutes before attempting to run the deployment again to ensure the provisioning process has been stopped.",
                     "stop_deployment_error": {
                         "title": "Stop Deployment Error",
                         "stop_deployment_warning": "Unable to stop deployment"

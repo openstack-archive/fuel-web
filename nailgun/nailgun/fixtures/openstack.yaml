@@ -1967,25 +1967,25 @@
               - type: "deb"
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
-                suite: "mos9.0"
+                suite: "mos-master"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
-                name: "mos-updates"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos9.0-updates"
+                name: "mos-master-updates"
+                uri: "http://perestroika-repo-tst.infra.mirantis.net/mos-repos/ubuntu/master/"
+                suite: "mos-master-updates"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-security"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos9.0-security"
+                uri: "http://perestroika-repo-tst.infra.mirantis.net/mos-repos/ubuntu/master/"
+                suite: "mos-master-security"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"
                 name: "mos-holdback"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos9.0-holdback"
+                uri: "http://perestroika-repo-tst.infra.mirantis.net/mos-repos/ubuntu/master/"
+                suite: "mos-master-holdback"
                 section: "main restricted"
                 priority: 1100
               - type: "deb"
@@ -1994,6 +1994,12 @@
                 suite: "auxiliary"
                 section: "main restricted"
                 priority: 1150
+              - type: "deb"
+                name: "mos-master"
+                uri: "http://perestroika-repo-tst.infra.mirantis.net/mos-repos/ubuntu/master/"
+                suite: "mos-master"
+                section: "main restricted"
+                priority: 1152
       generated:
         repo_setup:
           installer_kernel:

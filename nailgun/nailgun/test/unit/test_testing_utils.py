@@ -45,7 +45,7 @@ class TestDataDiff(base.BaseTestCase):
     def test_compare_different_key_number(self):
         self.dict_b['g'] = 'extra-key'
         with self.assertRaisesRegexp(AssertionError,
-                                     'Nodes have different keys number'):
+                                     'Dicts have different keys number'):
             self.datadiff(self.dict_a, self.dict_b)
 
     def test_compare_different_same_key_number(self):

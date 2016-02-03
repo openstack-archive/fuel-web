@@ -337,6 +337,7 @@ class NeutronManager70(
     def _split_iface_name(cls, iface):
         try:
             iface, vlan = iface.split('.')
+            vlan = int(vlan)
         except ValueError:
             vlan = None
 

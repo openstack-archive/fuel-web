@@ -43,6 +43,14 @@ class NailgunClusterAdapter(object):
         return NailgunReleaseAdapter(self.cluster.release)
 
     @property
+    def release_id(self):
+        return self.cluster.release_id
+
+    @property
+    def pending_release_id(self):
+        return self.cluster.pending_release_id
+
+    @property
     def generated_attrs(self):
         return self.cluster.attributes.generated
 

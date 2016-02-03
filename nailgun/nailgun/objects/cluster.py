@@ -1371,6 +1371,23 @@ class Cluster(NailgunObject):
 
             db.flush()
 
+    @classmethod
+    def get_effective_release_id(cls, instance):
+        """Return release_id that is used for new nodes.
+
+        During the upgrade procedure the new release for the given
+        cluster is assigned to the pending_release_id attribute and
+        should be used for new nodes that can be added within this
+        procedure.
+
+        :param instance: the cluster to get the appropriate release_id
+        :type instance: an instance of
+            :class:`nailgun.db.sqlalchemy.models.Cluster`
+        """
+        if instance.pending_release_id is not None:
+            return instance.pending_release_id
+        return instance.release_id
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

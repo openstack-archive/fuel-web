@@ -42,9 +42,11 @@ def upgrade():
     upgrade_node_roles_metadata()
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
+    upgrade_nodes_add_release_id()
 
 
 def downgrade():
+    downgrade_nodes_remove_release_id()
     downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
     downgrade_node_roles_metadata()
@@ -648,3 +650,17 @@ def upgrade_node_attributes():
 
 def downgrade_node_attributes():
     op.drop_column('nodes', 'attributes')
+
+
+def upgrade_nodes_add_release_id():
+    op.add_column('nodes', sa.Column('release_id', sa.Integer,
+                                     sa.ForeignKey('releases.id')))
+    update_query = sa.sql.text("UPDATE nodes "
+                               "SET release_id = clusters.release_id "
+                               "FROM clusters "
+                               "WHERE cluster_id = clusters.id")
+    op.execute(update_query)
+
+
+def downgrade_nodes_remove_release_id():
+    op.drop_column('nodes', 'release_id')

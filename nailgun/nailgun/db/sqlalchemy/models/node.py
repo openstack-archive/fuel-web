@@ -99,6 +99,7 @@ class Node(Base):
     online = Column(Boolean, default=True)
     labels = Column(
         MutableDict.as_mutable(JSON), nullable=False, server_default='{}')
+    release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
     roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                    default=[], nullable=False, server_default='{}')
     pending_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),

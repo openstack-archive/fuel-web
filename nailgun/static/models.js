@@ -327,9 +327,10 @@ models.Cluster = BaseModel.extend({
   defaults() {
     var defaults = {
       nodes: new models.Nodes(),
-      tasks: new models.Tasks()
+      tasks: new models.Tasks(),
+      nodeNetworkGroups: new models.NodeNetworkGroups()
     };
-    defaults.nodes.cluster = defaults.tasks.cluster = this;
+    defaults.nodes.cluster = defaults.tasks.cluster = defaults.nodeNetworkGroups.cluster = this;
     return defaults;
   },
   validate(attrs) {
@@ -999,14 +1000,14 @@ models.NetworkConfiguration = BaseModel.extend(cacheMixin).extend({
     }
     return null;
   },
-  validate(attrs) {
+  validate(attrs, options) {
     var errors = {};
     var networkingParametersErrors = {};
     var ns = 'cluster_page.network_tab.validation.';
     var networks = attrs.networks;
     var networkParameters = attrs.networking_parameters;
     var nodeNetworkGroupsErrors = {};
-    var nodeNetworkGroups = app.nodeNetworkGroups;
+    var nodeNetworkGroups = options.nodeNetworkGroups;
     var novaNetManager = networkParameters.get('net_manager');
     var floatingRangesErrors;
 
@@ -1409,9 +1410,8 @@ models.NodeNetworkGroup = BaseModel.extend({
   }
 });
 
-models.NodeNetworkGroups = BaseCollection.extend(cacheMixin).extend({
+models.NodeNetworkGroups = BaseCollection.extend({
   constructorName: 'NodeNetworkGroups',
-  cacheFor: 60 * 1000,
   model: models.NodeNetworkGroup,
   url: '/api/nodegroups',
   comparator: (nodeNetworkGroup) => -nodeNetworkGroup.get('is_default')

@@ -154,7 +154,6 @@
                 "http_warning_link": "Switch to HTTPS"
             },
             "statistics": {
-                "help_to_improve": "Help us to improve your experience by sending Mirantis information about the settings, features, and deployment actions when you use Mirantis OpenStack.",
                 "help_to_improve_community": "Help us to improve your experience by sending information about the settings, features, and deployment actions when you use Fuel and OpenStack.",
                 "learn_whats_collected": "Learn what's collected",
                 "statistics_user_info": "Note, that if you agree to send statistics, a new user \"fuel_stats_user\" will be added to your OpenStack environment. The fuel_stats_user will collect information about OpenStack workloads.",
@@ -196,9 +195,7 @@
                     "openstack_version": "OpenStack version info"
                 },
                 "setting_labels": {
-                    "send_anonymous_statistic": "Send usage statistics to Mirantis",
                     "send_anonymous_statistic_community": "Send usage statistics",
-                    "send_user_info": "Identify my error reports, so that Mirantis Support can assist me with resolving",
                     "send_user_info_community": "Identify my error reports, so that Mirantis Support can assist me with resolving",
                     "name": "Name",
                     "email": "Email",
@@ -211,29 +208,10 @@
                 }
             },
             "welcome_page": {
-                "title": "Welcome to Mirantis OpenStack!",
                 "title_community": "Welcome to Fuel and OpenStack!",
                 "start_fuel": "Start Using Fuel",
-                "connect_now": "Connect Now",
-                "connect_later": "Connect Later",
-                "change_settings": "You can change your settings at any time by updating your user profile information.",
-                "thanks": "Thanks for helping to improve Mirantis OpenStack!",
                 "thanks_community": "Thanks for helping to improve Fuel and OpenStack!",
-                "statistics_collector": "Web UI for collected statistics is under development and will be available at ",
-                "privacy_policy": "Usage statistics will include your name, company, and email address once you log in to your Mirantis account.",
-                "privacy_policy_link": "Read Privacy Policy",
-                "register": {
-                    "register_installation": "Connect this installation with your Mirantis account and receive important notifications about security updates and other improvements.",
-                    "link_text": "Register Now",
-                    "create_account": "Create Account",
-                    "retrieve_password": "Retrieve Password",
-                    "connection_error": "This machine may not be connected to the Internet. Please check the Internet connection and try again.",
-                    "required_fields": "All fields are required.",
-                    "welcome_phrase": {
-                        "thanks": "Thanks",
-                        "content": "you are all set!"
-                    }
-                }
+                "statistics_collector": "Web UI for collected statistics is under development and will be available at "
             },
             "navbar": {
                 "environments": "Environments",
@@ -275,10 +253,6 @@
                 "irc_text": "If you have any questions, you can reach out to the OpenStack developers directly through the IRC channel",
                 "log_text": "If you have encountered bugs or errors, you may need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
                 "contact_support": "Contact Support",
-                "register_fuel_title": "Connect Mirantis Account",
-                "register_fuel_content": "This will ensure that you receive important notifications about security updates and other improvements. In addition, you will be notified about new versions of Mirantis products.",
-                "product_registered_title": "Connect Mirantis Account",
-                "product_registered_content": "This OpenStack environment is connected to",
                 "master_node_uuid": "Master Node UUID",
                 "manage_account": "Manage Account",
                 "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
@@ -292,9 +266,7 @@
                 "save_changes": "Save Changes",
                 "documentation_link": "Go to Documentation",
                 "community_title": "Fuel Documentation",
-                "mirantis_title": "Mirantis OpenStack Documentation",
-                "community_text": "The page contains the most recent Fuel documentation. You can read it online or download in PDF.",
-                "mirantis_text": "The page contains the most recent Mirantis OpenStack documentation. You can read it online or download in PDF."
+                "community_text": "The page contains the most recent Fuel documentation. You can read it online or download in PDF."
             },
             "release_page": {
                 "title": "Releases",
@@ -1089,19 +1061,6 @@
                     "wrong_current_password": "Wrong password",
                     "new_password_mismatch": "Passwords do not match"
                 },
-                "registration": {
-                    "title": "Create Account",
-                    "i_agree": "I Read and Accept",
-                    "terms_and_conditions": "Terms & Conditions",
-                    "agree_error": "You need to accept Terms and Conditions"
-                },
-                "retrieve_password": {
-                    "title": "Retrieve Password",
-                    "send_new_password": "Send New Password",
-                    "submit_email": "Please submit your Mirantis Account email to receive your new password by email.",
-                    "done": "Done.",
-                    "check_email": "Please check your email for new password"
-                },
                 "remove_node_network_group": {
                     "title": "Remove Node Network Group",
                     "confirmation": "Are you sure, you want to delete this node network group?",
@@ -1194,8 +1153,6 @@
                 "irc_text": "如果您有任何问题，可通过IRC（freenode.net网络的 #fuel 频道）联系开发者。",
                 "log_text": "如果您在使用Fuel Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
                 "contact_support": "联系支持",
-                "register_fuel_title": "注册FUEL",
-                "register_fuel_content": "注册后能收到新版本和相关重要信息。另外，您在接下来的30天内将可得到基础支持服务!",
                 "download_diagnostic_snapshot_text": "下载诊断快照",
                 "gen_logs_snapshot_text": "生成日志快照...",
                 "gen_diagnostic_snapshot_text": "生成诊断快照",
@@ -1705,7 +1662,6 @@
                 "title": "ログイン"
             },
             "statistics": {
-                "help_to_improve": "Mirantis OpenStackを使用した設定、機能、そして、デプロイアクションの情報をMirantisに送信して、製品をより良いものにする手助けをしてください。",
                 "help_to_improve_community": "FuelとOpenStackを使用した設定、機能、そして、デプロイアクションの情報を送信して、製品をより良いものにする手助けをしてください。",
                 "learn_whats_collected": "収集される情報について",
                 "statistics_user_info": "統計情報を送信することに同意する場合は、\"fuel_stats_user\"の名前で、新しいユーザーがOpenStackの環境に追加されることに注意してください。 fuel_stats_userは、OpenStackのワークロードに関する情報を収集します。",
@@ -1747,9 +1703,7 @@
                     "openstack_version": "OpenStackバージョン情報"
                 },
                 "setting_labels": {
-                    "send_anonymous_statistic": "Mirantisへ統計情報を送信",
                     "send_anonymous_statistic_community": "統計情報を送信",
-                    "send_user_info": "Mirantisサポートが私を手助けできるようにエラーレポートに私を特定できる情報を含めます",
                     "send_user_info_community": "Mirantisサポートが私を手助けできるようにエラーレポートに私を特定できる情報を含めます",
                     "name": "お名前",
                     "email": "Email",
@@ -1762,29 +1716,10 @@
                 }
             },
             "welcome_page": {
-                "title": "Mirantis OpenStackへようこそ",
                 "title_community": "FuelとOpenStackへようこそ",
                 "start_fuel": "Fuelの使用を開始",
-                "connect_now": "今すぐ接続",
-                "connect_later": "後で接続",
-                "change_settings": "ユーザープロファイル情報を更新することでいつでも設定を変更できます。",
-                "thanks": "Mirantis OpenStackの向上に貢献してくれてありがとうございます！",
                 "thanks_community": "FuelとOpenStackの向上に貢献してくれてありがとうございます！",
-                "statistics_collector": "収集した統計情報のためのWeb UIを開発中です。次で利用できるようになります",
-                "privacy_policy": "使用統計情報には、Mirantisアカウントにログイン後のあなたの名前、会社名、そして電子メールが含まれます。",
-                "privacy_policy_link": "プライバシーポリシーを読む",
-                "register": {
-                    "register_installation": "あなたのMirantisアカウントとこのインストールを紐づけてセキュリティ更新プログラムおよびその他の改善に関する重要な通知を受信します。",
-                    "link_text": "いますぐ登録",
-                    "create_account": "アカウントの作成",
-                    "retrieve_password": "パスワードを取得",
-                    "connection_error": " このマシンはインターネットに接続されていないようです。接続を確認して、もう一度お試しください",
-                    "required_fields": "すべてのフィールドが必須であることに注意してください。",
-                    "welcome_phrase": {
-                        "thanks": "ありがとうございます",
-                        "content": "すべての設定が完了しました！"
-                    }
-                }
+                "statistics_collector": "収集した統計情報のためのWeb UIを開発中です。次で利用できるようになります"
             },
             "navbar": {
                 "environments": "環境",
@@ -1818,10 +1753,6 @@
                 "irc_text": "ご質問がある場合は、IRCチャネルで開発者に直接聞くことができます",
                 "log_text": "バグやエラーが発生した場合、デプロイメントと操作のログをサポートチームへ提供する必要があります。下のボタンをクリックすると、一度にすべてのログをダウンロードすることができます。",
                 "contact_support": "サポートへのお問い合わせ",
-                "register_fuel_title": "Mirantisアカウントへのお問い合わせ",
-                "register_fuel_content": "登録いただくと、問題やMirantis製品の新しいバージョンについての重要な通知を受け取ることができます。また、Mirantis製品の新しいバージョンについて通知されます。",
-                "product_registered_title": "Mirantisアカウントの登録",
-                "product_registered_content": "このOpenStackのインストールは次のものに接続されています:",
                 "master_node_uuid": "マスターノード UUID",
                 "manage_account": "アカウントの管理",
                 "download_diagnostic_snapshot_text": "診断スナップショットをダウンロード",
@@ -1835,9 +1766,7 @@
                 "save_changes": "変更を保存",
                 "documentation_link": "ドキュメントに移動",
                 "community_title": "Fuelドキュメント",
-                "mirantis_title": "Mirantis OpenStack ドキュメント",
-                "community_text": "このページには、最新のFuelドキュメントが含まれています。あなたはそれをオンラインで読むか、PDFでダウンロードすることができます。",
-                "mirantis_text": "このページには、最新のMirantis OpenStack ドキュメントが含まれています。あなたはそれをオンラインで読むか、PDFでダウンロードすることができます。"
+                "community_text": "このページには、最新のFuelドキュメントが含まれています。あなたはそれをオンラインで読むか、PDFでダウンロードすることができます。"
             },
             "release_page": {
                 "title": "リリース",
@@ -2343,19 +2272,6 @@
                     "confirm_new_password": "新しいパスワードの確認",
                     "wrong_current_password": "パスワードが違います",
                     "new_password_mismatch": "パスワードが一致しません"
-                },
-                "registration": {
-                    "title": "アカウントの作成",
-                    "i_agree": "私は読み、同意します",
-                    "terms_and_conditions": "利用規約",
-                    "agree_error": "利用規約に同意する必要があります"
-                },
-                "retrieve_password": {
-                    "title": "パスワードを取得",
-                    "send_new_password": "新しいパスワードの送信",
-                    "submit_email": "Mirantisアカウントのメールアドレスを送信してください、そのアドレスに新しいパスワードを送ります。",
-                    "done": "完了。",
-                    "check_email": "新しいパスワードのために電子メールをチェックしてください"
                 }
             }
         }
@@ -2456,8 +2372,6 @@
                 "irc_text": "질문이있는 경우,IRC채널에서 개발자들과 이야기할수있습니다",
                 "log_text": "버그나 오류가 발생한 경우, 배치와운영로그를 지원팀에 제공할수있습니다. 아래버튼을 클릭함으로서 한번에 모두를 다운로드할수있습니다.",
                 "contact_support": "지원 문의",
-                "register_fuel_title": "Fuel 등록",
-                "register_fuel_content": "등록은 문제와 Mirantis 제품의 새로운 버전에 대한 중요한 알림을 받을 수 있도록합니다. 또한, 다음 30일동안 기본적인 지원 서비스를 받을기회를 얻을 수 있습니다!",
                 "download_diagnostic_snapshot_text": "진단 스냅샷을 다운로드",
                 "gen_logs_snapshot_text": "로그 스냅샷 생성중...",
                 "gen_diagnostic_snapshot_text": "진단 스냅샷을 생성",

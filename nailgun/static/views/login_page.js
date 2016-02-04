@@ -15,7 +15,6 @@
  **/
 
 import $ from 'jquery';
-import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -28,22 +27,18 @@ var LoginPage = React.createClass({
     hiddenLayout: true
   },
   render() {
-    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
     return (
-      <div className={utils.classNames({'login-page': true, mirantis: isMirantisIso})}>
+      <div className='login-page'>
         <div className='container col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
           <div className='box'>
             <div className='logo-circle' />
-            {!isMirantisIso && <div className='logo' />}
+            <div className='logo' />
             <div className='fields-box'>
               <LoginForm />
             </div>
           </div>
         </div>
         <div className='footer col-xs-12'>
-          {isMirantisIso &&
-            <p className='text-center'>{i18n('common.copyright')}</p>
-          }
           <p className='text-center'>{i18n('common.version')}: {app.version.get('release')}</p>
         </div>
       </div>

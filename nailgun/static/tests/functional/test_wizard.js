@@ -74,7 +74,7 @@ define([
                     .pressKeys('\uE007')
                     .clickByCssSelector('input[name=hypervisor\\:vmware]')
                     .clickByCssSelector('input[name=hypervisor\\:qemu]')
-                    .assertElementExists('.wizard-compute-pane .alert',
+                    .assertElementExists('.wizard-compute-pane .alert.empty-choice',
                     'There should be the warning when no hypervisors selected')
                     .assertElementExists('.next-pane-btn.disabled', 'Next button should be disabled');
             }

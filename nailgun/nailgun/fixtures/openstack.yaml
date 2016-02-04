@@ -1736,6 +1736,7 @@
           - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
+          - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
@@ -1751,6 +1752,7 @@
           - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
+          - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:object:ceph
           - name: storage:image:ceph
@@ -1766,6 +1768,7 @@
           - name: network:neutron:core:ml2
           - name: network:neutron:ml2:vlan
           - name: network:neutron:ml2:tun
+          - name: storage:block:lvm
           - name: storage:block:ceph
           - name: storage:object:ceph
           - name: storage:ephemeral:ceph

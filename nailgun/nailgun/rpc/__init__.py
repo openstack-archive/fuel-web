@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import six
 import functools
 
@@ -91,9 +90,11 @@ def cast(name, message, service=False):
     use_queue = naily_queue if not service else naily_service_queue
     use_exchange = naily_exchange if not service else naily_service_exchange
     with Connection(conn_str) as conn:
-        with conn.Producer(serializer='json') as producer:
-            publish = functools.partial(producer.publish, message,
-                exchange=use_exchange, routing_key=name, declare=[use_queue])
+        with conn.Producer(serializer='json', compression='gzip') as producer:
+            publish = functools.partial(
+                producer.publish, message,
+                exchange=use_exchange, routing_key=name, declare=[use_queue]
+            )
             try:
                 publish()
             except amqp_exceptions.PreconditionFailed as e:

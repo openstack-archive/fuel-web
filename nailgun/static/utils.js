@@ -343,10 +343,8 @@ var utils = {
     return options.desc ? -result : result;
   },
   composeDocumentationLink(link) {
-    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
     var release = app.version.get('release');
-    var linkStart = isMirantisIso ? 'https://docs.mirantis.com/openstack/fuel/fuel-' :
-        'https://docs.fuel-infra.org/openstack/fuel/fuel-';
+    var linkStart = 'https://docs.fuel-infra.org/openstack/fuel/fuel-';
     return linkStart + release + '/' + link;
   }
 };

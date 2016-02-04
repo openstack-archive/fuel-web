@@ -259,7 +259,7 @@ define(
                         {
                             this.props.errors.unassigned_nodes.map(function(node) {
                                 return (
-                                    <li className='unassigned-node'>
+                                    <li key={node.id} className='unassigned-node'>
                                         <span className='unassigned-node-name'>{node.get('name')}</span>
                                         &nbsp;
                                         ({node.get('mac')})

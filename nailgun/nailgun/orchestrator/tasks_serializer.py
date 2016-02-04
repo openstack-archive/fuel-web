@@ -226,8 +226,8 @@ class CopyKeys(GenericRolesHook):
             file_path['src'] = file_path['src'].format(
                 CLUSTER_ID=self.cluster.id)
         uids = self.get_uids()
-        yield templates.make_generic_task(
-            uids, self.task)
+        if uids:
+            yield templates.make_generic_task(uids, self.task)
 
 
 class GenerateCephKeys(GenerateKeys):

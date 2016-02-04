@@ -292,7 +292,6 @@ var DocumentationLinks = React.createClass({
     );
   },
   render() {
-    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
     return (
       <div className='row content-elements'>
         <div className='title'>{i18n(namespace + 'documentation')}</div>
@@ -300,33 +299,11 @@ var DocumentationLinks = React.createClass({
           <p>{i18n(namespace + 'documentation_description')}</p>
         </div>
         <div className='documentation col-xs-12'>
-          {isMirantisIso ?
-            [
-              this.renderDocumentationLinks(
-                'https://www.mirantis.com/openstack-documentation/',
-                'mos_documentation'
-              ),
-              this.renderDocumentationLinks(
-                utils.composeDocumentationLink('plugin-dev.html#plugin-dev'),
-                'plugin_documentation'
-              ),
-              this.renderDocumentationLinks(
-                'https://software.mirantis.com/mirantis-openstack-technical-bulletins/',
-                'technical_bulletins'
-              )
-            ]
-          :
-            [
-              this.renderDocumentationLinks(
-                'http://docs.openstack.org/',
-                'openstack_documentation'
-              ),
-              this.renderDocumentationLinks(
-                'https://wiki.openstack.org/wiki/Fuel/Plugins',
-                'plugin_documentation'
-              )
-            ]
-          }
+          {this.renderDocumentationLinks('http://docs.openstack.org/', 'openstack_documentation')}
+          {this.renderDocumentationLinks(
+            'https://wiki.openstack.org/wiki/Fuel/Plugins',
+            'plugin_documentation'
+          )}
         </div>
       </div>
     );

@@ -26,6 +26,7 @@ API: "1"
 FEATURE_GROUPS:
   - "experimental"
   - "advanced"
+  - "mirantis"
 
 FUEL_KEY: "Unknown"
 

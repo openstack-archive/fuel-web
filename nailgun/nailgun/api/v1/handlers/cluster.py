@@ -19,6 +19,7 @@ Handlers dealing with clusters
 """
 
 import traceback
+import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
@@ -168,7 +169,9 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        data = self.checked_data(cluster=cluster)
+        force = web.input(force=None).force not in (None, '', '0', 0)
+
+        data = self.checked_data(cluster=cluster, force=force)
         objects.Cluster.patch_attributes(cluster, data)
 
         return {

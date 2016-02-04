@@ -82,7 +82,8 @@ class TestTaskDeploy(BaseIntegrationTest):
         message = self.get_deploy_message()
         self.assertEqual("task_deploy", message["method"])
         self.assertItemsEqual(
-            ["task_uuid", "deployment_info", "deployment_tasks"],
+            ["task_uuid", "deployment_info",
+             "deployment_tasks_info", "deployment_tasks_links"],
             message["args"]
         )
 
@@ -122,7 +123,7 @@ class TestTaskDeploy(BaseIntegrationTest):
             (x.uid for x in self.env.nodes if 'compute' in x.roles), None
         )
         self.assertIsNotNone(compute_uid)
-        compute_tasks = message['args']['deployment_tasks'][compute_uid]
+        compute_tasks = message['args']['deployment_tasks_links'][compute_uid]
 
         expected_tasks = {
             consts.PLUGIN_PRE_DEPLOYMENT_HOOK + "_start",
@@ -167,10 +168,10 @@ class TestTaskDeploy(BaseIntegrationTest):
             ).status
         )
 
-        deploy_tasks = rpc_cast.call_args[0][1]['args']['deployment_tasks']
+        links = rpc_cast.call_args[0][1]['args']['deployment_tasks_links']
         self.assertItemsEqual(
             ["deploy_legacy"],
-            (task["id"] for task in deploy_tasks[compute.uid]
+            (task["id"] for task in links[compute.uid]
              if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
         )
 
@@ -187,7 +188,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         self.db.flush()
 
         message = self.get_deploy_message()
-        deploy_tasks = message['args']['deployment_tasks']
+        deploy_tasks = message['args']['deployment_tasks_links']
         self.assertIn(
             "netconfig",
             {task["id"] for task in deploy_tasks[compute.uid]

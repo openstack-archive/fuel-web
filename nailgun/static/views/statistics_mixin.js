@@ -17,96 +17,28 @@ import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
 import utils from 'utils';
-import models from 'models';
-import {Input, ProgressBar} from 'views/controls';
-import {RegistrationDialog, RetrievePasswordDialog} from 'views/dialogs';
+import {Input} from 'views/controls';
 
 export default {
   propTypes: {
     settings: React.PropTypes.object.isRequired
   },
-  getDefaultProps() {
-    return {statsCheckboxes: ['send_anonymous_statistic', 'send_user_info']};
-  },
   getInitialState() {
-    var tracking = this.props.settings.get('tracking');
     return {
-      isConnected: !!(tracking.email.value && tracking.password.value),
-      actionInProgress: false,
-      remoteLoginForm: new models.MirantisLoginForm(),
-      registrationForm: new models.MirantisRegistrationForm(),
-      remoteRetrievePasswordForm: new models.MirantisRetrievePasswordForm()
+      initialAttributes: _.cloneDeep(this.props.settings.attributes),
+      actionInProgress: false
     };
   },
-  setConnected() {
-    this.setState({isConnected: true});
-  },
-  saveSettings(initialAttributes) {
+  saveSettings() {
     var settings = this.props.settings;
     this.setState({actionInProgress: true});
     return settings.save(null, {patch: true, wait: true, validate: false})
       .fail((response) => {
-        if (initialAttributes) settings.set(initialAttributes);
+        settings.set(this.state.initialAttributes);
         utils.showErrorDialog({response: response});
       })
-      .always(() => {
-        this.setState({actionInProgress: false});
-      });
-  },
-  prepareStatisticsToSave() {
-    var currentAttributes = _.cloneDeep(this.props.settings.attributes);
-    // We're saving only two checkboxes
-    _.each(this.props.statsCheckboxes, (field) => {
-      var path = this.props.settings.makePath('statistics', field, 'value');
-      this.props.settings.set(path, this.props.statistics.get(path));
-    });
-    return this.saveSettings(currentAttributes);
-  },
-  prepareTrackingToSave(response) {
-    var currentAttributes = _.cloneDeep(this.props.settings.attributes);
-    // Saving user contact data to Statistics section
-    _.each(response, (value, name) => {
-      if (name !== 'password') {
-        var path = this.props.settings.makePath('statistics', name, 'value');
-        this.props.settings.set(path, value);
-        this.props.tracking.set(path, value);
-      }
-    });
-    // Saving email and password to Tracking section
-    _.each(this.props.tracking.get('tracking'), (data, inputName) => {
-      var path = this.props.settings.makePath('tracking', inputName, 'value');
-      this.props.settings.set(path, this.props.tracking.get(path));
-    });
-    this.saveSettings(currentAttributes).done(this.setConnected);
-  },
-  showResponseErrors(response) {
-    var jsonObj;
-    var error = '';
-    try {
-      jsonObj = JSON.parse(response.responseText);
-      error = jsonObj.message;
-    } catch (e) {
-      error = i18n('welcome_page.register.connection_error');
-    }
-    this.setState({error: error});
-  },
-  connectToMirantis() {
-    this.setState({error: null});
-    var tracking = this.props.tracking.get('tracking');
-    if (this.props.tracking.isValid({models: this.configModels})) {
-      var remoteLoginForm = this.state.remoteLoginForm;
-      this.setState({actionInProgress: true});
-      _.each(tracking, (data, inputName) => {
-        var name = remoteLoginForm.makePath('credentials', inputName, 'value');
-        remoteLoginForm.set(name, tracking[inputName].value);
-      });
-      remoteLoginForm.save()
-        .done(this.prepareTrackingToSave)
-        .fail(this.showResponseErrors)
-        .always(() => {
-          this.setState({actionInProgress: false});
-        });
-    }
+      .done(() => this.setState({initialAttributes: _.cloneDeep(settings.attributes)}))
+      .always(() => this.setState({actionInProgress: false}));
   },
   checkRestrictions(name, action = 'disable') {
     return this.props.settings.checkRestrictions(
@@ -116,29 +48,27 @@ export default {
     );
   },
   componentWillMount() {
-    var model = this.props.statistics || this.props.tracking;
     this.configModels = {
-      fuel_settings: model,
+      fuel_settings: this.props.settings,
       version: app.version,
-      default: model
+      default: this.props.settings
     };
   },
   getError(model, name) {
     return (model.validationError || {})[model.makePath('statistics', name)];
   },
   getText(key) {
-    if (_.contains(app.version.get('feature_groups'), 'mirantis')) return i18n(key);
     return i18n(key + '_community');
   },
   renderInput(settingName, wrapperClassName, disabledState) {
-    var model = this.props.statistics || this.props.tracking;
-    var setting = model.get(model.makePath('statistics', settingName));
+    var settings = this.props.settings;
+    var setting = settings.get(settings.makePath('statistics', settingName));
     if (
       this.checkRestrictions('metadata', 'hide').result ||
       this.checkRestrictions(settingName, 'hide').result ||
       setting.type === 'hidden'
     ) return null;
-    var error = this.getError(model, settingName);
+    var error = this.getError(settings, settingName);
     var disabled = this.checkRestrictions('metadata').result ||
       this.checkRestrictions(settingName).result ||
       disabledState;
@@ -170,7 +100,6 @@ export default {
   },
   renderIntro() {
     var ns = 'statistics.';
-    var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
     var lists = {
       actions: [
         'operation_type',
@@ -208,7 +137,7 @@ export default {
     return (
       <div>
         <div className='statistics-text-box'>
-          <div className={utils.classNames({notice: isMirantisIso})}>
+          <div>
             {this.getText(ns + 'help_to_improve')}
           </div>
           <button
@@ -228,83 +157,6 @@ export default {
     );
   },
   onCheckboxChange(name, value) {
-    var model = this.props.statistics || this.props.tracking;
-    model.set(model.makePath('statistics', name, 'value'), value);
-  },
-  onTrackingSettingChange(name, value) {
-    this.setState({error: null});
-    var path = this.props.tracking.makePath('tracking', name);
-    delete (this.props.tracking.validationError || {})[path];
-    this.props.tracking.set(this.props.tracking.makePath(path, 'value'), value);
-  },
-  clearRegistrationForm() {
-    if (!this.state.isConnected) {
-      var tracking = this.props.tracking;
-      var initialData = this.props.settings.get('tracking');
-      _.each(tracking.get('tracking'), (data, name) => {
-        var path = tracking.makePath('tracking', name, 'value');
-        tracking.set(path, initialData[name].value);
-      });
-      tracking.validationError = null;
-    }
-  },
-  renderRegistrationForm(model, disabled, error, showProgressBar) {
-    var tracking = model.get('tracking');
-    var sortedFields = _.chain(_.keys(tracking))
-      .without('metadata')
-      .sortBy((inputName) => tracking[inputName].weight)
-      .value();
-    return (
-      <div>
-        {error &&
-          <div className='text-danger'>
-            <i className='glyphicon glyphicon-warning-sign' />
-            {error}
-          </div>
-        }
-        <div className='connection-form'>
-          {showProgressBar && <ProgressBar />}
-          {_.map(sortedFields, (inputName) => {
-            return <Input
-              ref={inputName}
-              key={inputName}
-              name={inputName}
-              disabled={disabled}
-              {... _.pick(tracking[inputName], 'type', 'label', 'value')}
-              onChange={this.onTrackingSettingChange}
-              error={(model.validationError || {})[model.makePath('tracking', inputName)]}
-            />;
-          })}
-          <div className='links-container'>
-            <button
-              className='btn btn-link create-account pull-left'
-              onClick={this.showRegistrationDialog}
-            >
-              {i18n('welcome_page.register.create_account')}
-            </button>
-            <button
-              className='btn btn-link retrive-password pull-right'
-              onClick={this.showRetrievePasswordDialog}
-            >
-              {i18n('welcome_page.register.retrieve_password')}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  },
-  showRegistrationDialog() {
-    RegistrationDialog.show({
-      registrationForm: this.state.registrationForm,
-      setConnected: this.setConnected,
-      settings: this.props.settings,
-      tracking: this.props.tracking,
-      saveSettings: this.saveSettings
-    });
-  },
-  showRetrievePasswordDialog() {
-    RetrievePasswordDialog.show({
-      remoteRetrievePasswordForm: this.state.remoteRetrievePasswordForm
-    });
+    this.props.settings.set(this.props.settings.makePath('statistics', name, 'value'), value);
   }
 };

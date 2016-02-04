@@ -357,9 +357,9 @@ var Compute = React.createClass({
   },
   updateRestrictions() {
     this.processRestrictions(this.components, ['hypervisor']);
-    this.checkVCenter(this.props.allComponents);
+    this.checkVCenterDisabled(this.props.allComponents);
   },
-  checkVCenter(allComponents) {
+  checkVCenterDisabled(allComponents) {
     // TODO remove this hack in 9.0
     var hasCompatibleBackends = _.any(allComponents.models, (component) => {
       return _.contains(this.constructor.vCenterNetworkBackends, component.id);
@@ -372,7 +372,9 @@ var Compute = React.createClass({
         disabled: true,
         warnings: i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')
       });
+      return true;
     }
+    return false;
   },
   render() {
     return (
@@ -382,6 +384,17 @@ var Compute = React.createClass({
           components={this.components}
           onChange={this.props.onChange}
         />
+        {this.checkVCenterDisabled(this.props.allComponents) &&
+          <div className='alert alert-warning'>
+            <div>
+              {i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')}
+            </div>
+            <a href='https://www.mirantis.com/products/openstack-drivers-and-plugins/fuel-plugins/'
+              target='_blank'>
+              {i18n('dialog.create_cluster_wizard.compute.vcenter_plugins_page')}
+            </a>
+          </div>
+        }
         {this.constructor.hasErrors(this.props.wizard) &&
           <div className='alert alert-warning'>
             {i18n('dialog.create_cluster_wizard.compute.empty_choice')}

@@ -101,7 +101,7 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             return (
                 <div className='navigation-box'>
                     <div className='navbar-bg'></div>
-                        <nav className='navbar navbar-default' role='navigation'>
+                        <nav className={utils.classNames({'navbar navbar-default': true, mirantis: _.contains(app.version.get('feature_groups'), 'mirantis')})} role='navigation'>
                             <div className='row'>
                                 <div className='navbar-header col-xs-2'>
                                     <a className='navbar-logo' href='#'></a>
@@ -352,10 +352,9 @@ function($, _, i18n, Backbone, React, utils, models, controls, componentMixins, 
             var version = this.props.version;
             return (
                 <div className='footer'>
-                    {_.contains(version.get('feature_groups'), 'mirantis') && [
-                        <a key='logo' className='mirantis-logo-white' href='http://www.mirantis.com/' target='_blank'></a>,
+                    {_.contains(version.get('feature_groups'), 'mirantis') &&
                         <div key='copyright'>{i18n('common.copyright')}</div>
-                    ]}
+                    }
                     <div key='version'>{i18n('common.version')}: {version.get('release')}</div>
                 </div>
             );

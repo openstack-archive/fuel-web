@@ -925,15 +925,18 @@
             weight: 30
             type: "hidden"
           libvirt_type:
-            value: "qemu"
+            value: "auto"
             values:
+              - data: "auto"
+                label: "automatic"
+                description: "This will automatically determine if your hardware supports QEMU with KVM acceleration and chose the best value for you."
               - data: "kvm"
                 label: "KVM"
-                description: "Choose this type of hypervisor if you run OpenStack on hardware"
+                description: "This will configure OpenStack to use QEMU with KVM acceleration. This is good for nodes with nested KVM and physical hardware"
               - data: "qemu"
                 label: "QEMU"
-                description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
-            label: "Hypervisor type"
+                description: "This will configure OpenStack to only use QEME without KVM acceleration. This is good for nodes with out KVM acceleration support, such as virtual guests and older hardware platforms"
+            label: "QEMU-KVM type"
             group: "compute"
             weight: 30
             type: "radio"

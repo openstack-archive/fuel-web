@@ -31,19 +31,20 @@ function($, _, i18n, React, dispatcher, utils) {
             hiddenLayout: true
         },
         render: function() {
+            var isMirantisIso = _.contains(app.version.get('feature_groups'), 'mirantis');
             return (
-                <div className='login-page'>
+                <div className={utils.classNames({'login-page': true, mirantis: isMirantisIso})}>
                     <div className='container col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
                         <div className='box'>
                             <div className='logo-circle'></div>
-                            <div className='logo'></div>
+                            {!isMirantisIso && <div className='logo' />}
                             <div className='fields-box'>
                                 <LoginForm />
                             </div>
                         </div>
                     </div>
                     <div className='footer col-xs-12'>
-                        {_.contains(app.version.get('feature_groups'), 'mirantis') &&
+                        {isMirantisIso &&
                             <p className='text-center'>{i18n('common.copyright')}</p>
                         }
                         <p className='text-center'>{i18n('common.version')}: {app.version.get('release')}</p>
@@ -56,7 +57,6 @@ function($, _, i18n, React, dispatcher, utils) {
     var LoginForm = React.createClass({
         login: function(username, password) {
             var keystoneClient = app.keystoneClient;
-
             return keystoneClient.authenticate(username, password, {force: true})
                 .fail((xhr) => {
                     $(React.findDOMNode(this.refs.username)).focus();

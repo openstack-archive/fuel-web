@@ -91,6 +91,11 @@
 @navbar-icon-color: @base-dark-color + #203c4c;
 @shadow-color: rgba(0,0,0,0.5);
 
+// Mirantis
+@mirantis-red:  #c63927;
+@mirantis-light-red: #e8b0a9;
+@mirantis-gray: #7f7f7f;
+
 // Tabs & Content Settings
 @tab-color: desaturate(lighten(@base-dark-color, 55%), 20%);
 @tab-color-hover: desaturate(lighten(@base-dark-color, 50%), 20%);
@@ -945,6 +950,122 @@ input[type=range] {
   }
 }
 
+.navbar-default.mirantis {
+  .navbar-nav {
+    li {
+      a {
+        color: @mirantis-red;
+        &:hover, &:focus {
+          color: @white;
+          background-color: @mirantis-light-red;
+        }
+      }
+      &.active {
+        a, a:hover {
+          color: @white;
+          background-color: @mirantis-red;
+        }
+      }
+    }
+  }
+  .navbar-logo {
+    height: 36px;
+    margin-top: 17px;
+    width: 170px;
+    background: url(../img/mirantis-fuel-logo.svg) no-repeat top left;
+  }
+  .navbar-icons {
+    @navbar-icon-size: 44px;
+    @navbar-icon-spacing: 10px;
+    @navbar-icon-font: 'bebas bold';
+    > li {
+      .navbar-icon-sprite-index(@index) {
+        @icon-sprite-img: "../img/icons/mirantis-header-icons-sprite.svg";
+        background: url(@icon-sprite-img) no-repeat 0 -@navbar-icon-size * @index;
+        &:hover {
+          background: url(@icon-sprite-img) no-repeat -@navbar-icon-size -@navbar-icon-size * @index;
+        }
+      }
+
+      &.language-icon {
+        .navbar-icon-sprite-index(0);
+        .language-text {
+          color: @mirantis-gray;
+        }
+      }
+
+      &.statistics-icon {
+        .navbar-icon-sprite-index(1);
+        .unallocated, .total {
+          color: @mirantis-gray;
+        }
+        &.no-unallocated {
+          .navbar-icon-sprite-index(0);
+          .total {
+            color: @mirantis-gray;
+          }
+        }
+      }
+
+      &.user-icon {
+        .navbar-icon-sprite-index(2);
+      }
+
+      &.notifications-icon {
+        .navbar-icon-sprite-index(3);
+      }
+    }
+    .popover {
+      &.notifications-popover {
+        .notification.clickable {
+          p {
+            color: @mirantis-gray;
+            text-decoration: underline;
+            &:hover {
+              color: @mirantis-gray;
+              text-decoration: none;
+            }
+          }
+        }
+        .show-more {
+          a {
+            color: @mirantis-gray;
+            &:hover {
+              color: @mirantis-gray - 50%;
+            }
+          }
+        }
+      }
+
+      &.statistics-popover {
+        .list-group {
+          margin: 0;
+          a {
+            color: @mirantis-gray;
+            &:hover {
+              color: @mirantis-gray - 20%;
+            }
+          }
+        }
+      }
+
+      &.language-popover {
+        a {
+          color: @mirantis-gray;
+          &:hover {
+            color: @white;
+            background-color: @mirantis-gray + 60%;
+          }
+        }
+        .active a {
+          color: @white;
+          background-color: @mirantis-gray;
+        }
+      }
+    }
+  }
+}
+
 .page-up {
   background: url(@common-icons-sprite) no-repeat -44px -764px;
   cursor: pointer;
@@ -1009,15 +1130,6 @@ input[type=range] {
   margin-top: -70px;
   padding-top: 16px;
   box-sizing: border-box;
-  > .mirantis-logo-white {
-    display: block;
-    width: 61px;
-    height: 30px;
-    float: left;
-    background: url(../img/logos/mirantis-logo-white.svg) no-repeat 0px 0px;
-    background-size: contain;
-    margin-right: 10px;
-  }
 }
 
 // PAGE ELEMENTS
@@ -2679,6 +2791,22 @@ input[type=range] {
     font-size: 12px;
     color: @base-dark-color + 60%;
   }
+
+  &.mirantis {
+    .container .box {
+      background: @white url(../img/login-bg.gif) no-repeat top left;
+      .logo-circle {
+        top: 0px;
+        width: 360px;
+        height: 155px;
+        background: url(../img/logos/mirantis-fuel-logo.svg) no-repeat center center;
+      }
+      .fields-box {
+        padding-top: 20px;
+      }
+    }
+  }
+
 }
 
 .clusters-page {

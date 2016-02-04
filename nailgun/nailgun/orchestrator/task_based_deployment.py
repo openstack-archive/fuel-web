@@ -356,7 +356,7 @@ class TaskProcessor(object):
             requires_ex = current.setdefault('requires_ex', [])
             for node_id in previous.get('uids', ()):
                 requires_ex.append(
-                    {'name': previous['id'], 'node_id': node_id}
+                    (previous['id'], node_id)
                 )
 
     @staticmethod
@@ -387,7 +387,8 @@ class TasksSerializer(object):
         self.role_resolver = RoleResolver(nodes)
         self.task_serializer = DeployTaskSerializer()
         self.task_processor = TaskProcessor()
-        self.tasks_per_node = collections.defaultdict(dict)
+        self.tasks_connections = collections.defaultdict(dict)
+        self.tasks_dictionary = dict()
         self.task_filter = self.make_task_filter(task_ids)
 
     @classmethod
@@ -399,15 +400,18 @@ class TasksSerializer(object):
         :param tasks: the list of tasks
         :param task_ids: Only specified tasks will be executed,
                          If None, all tasks will be executed
-        :return: the list of serialized task per node
+        :return: the tasks dictionary, the tasks connections
         """
         serializer = cls(cluster, nodes, task_ids)
         serializer.resolve_nodes(add_plugin_deployment_hooks(tasks), nodes)
         serializer.resolve_dependencies()
-        return dict(
-            (k, list(six.itervalues(v)))
-            for k, v in six.iteritems(serializer.tasks_per_node)
-        )
+        tasks_dictionary = serializer.tasks_dictionary
+        tasks_connections = serializer.tasks_connections
+        for node_id in tasks_connections:
+            tasks_connections[node_id] = list(
+                six.itervalues(tasks_connections[node_id])
+            )
+        return tasks_dictionary, tasks_connections
 
     def resolve_nodes(self, tasks, nodes):
         """Resolves node roles in tasks.
@@ -432,7 +436,7 @@ class TasksSerializer(object):
 
         self.expand_task_groups(groups, tasks_mapping)
         # make sure that null node is present
-        self.tasks_per_node.setdefault(None, dict())
+        self.tasks_connections.setdefault(None, dict())
 
     def process_task(self, task, nodes, resolver_factory, skip=False):
         """Processes one task one nodes of cluster.
@@ -452,50 +456,65 @@ class TasksSerializer(object):
         # do not pass skipped attribute to astute
         skipped = skip or task.pop('skipped', False) or \
             not task_serializer.should_execute()
-        for astute_task in self.task_processor.process_tasks(
+        for serialized in self.task_processor.process_tasks(
                 task, task_serializer.serialize()):
             # all skipped task shall have type skipped
             # do not exclude them from graph to keep connections between nodes
-            if skipped:
-                astute_task['type'] = \
-                    consts.ORCHESTRATOR_TASK_TYPES.skipped
 
-            for node_id in astute_task.pop('uids', ()):
-                node_tasks = self.tasks_per_node[node_id]
+            if skipped:
+                task_type = consts.ORCHESTRATOR_TASK_TYPES.skipped
+            else:
+                task_type = serialized['type']
+
+            task_relations = {
+                'id': serialized['id'],
+                'type': task_type,
+                'requires': serialized.pop('requires', []),
+                'required_for': serialized.pop('required_for', []),
+                'cross-depends': serialized.pop('cross-depends', []),
+                'cross-depended-by': serialized.pop('cross-depended-by', []),
+            }
+            node_ids = serialized.pop('uids', ())
+            self.tasks_dictionary[serialized['id']] = serialized
+            for node_id in node_ids:
+                node_tasks = self.tasks_connections[node_id]
                 # de-duplication the tasks on node
                 # since task can be added after expand group need to
                 # overwrite if existed task is skipped and new is not skipped.
-                if self.need_update_task(node_tasks, astute_task):
-                    node_tasks[astute_task['id']] = copy.deepcopy(astute_task)
+                if self.need_update_task(node_tasks, serialized):
+                    node_tasks[serialized['id']] = task_relations.copy()
 
     def resolve_dependencies(self):
         """Resolves tasks dependencies."""
 
-        for node_id, tasks in six.iteritems(self.tasks_per_node):
+        for node_id, tasks in six.iteritems(self.tasks_connections):
             for task in six.itervalues(tasks):
-                task['requires'] = list(
-                    self.expand_dependencies(
-                        node_id, task.get('requires'), False
-                    )
-                )
-                task['required_for'] = list(
-                    self.expand_dependencies(
-                        node_id, task.get('required_for'), True
-                    )
-                )
-                task['requires'].extend(
-                    self.expand_cross_dependencies(
-                        node_id, task.pop('cross-depends', None), False
-                    )
-                )
+                requires = set(self.expand_dependencies(
+                    node_id, task.pop('requires'), False
+                ))
+                requires.update(self.expand_cross_dependencies(
+                    node_id, task.pop('cross-depends', None), False
+                ))
+                requires.update(task.pop('requires_ex', ()))
 
-                task['required_for'].extend(
-                    self.expand_cross_dependencies(
-                        node_id, task.pop('cross-depended-by', None), True
-                    )
-                )
-                task['requires'].extend(task.pop('requires_ex', ()))
-                task['required_for'].extend(task.pop('required_for_ex', ()))
+                required_for = set(self.expand_dependencies(
+                    node_id, task.pop('required_for'), True
+                ))
+                required_for.update(self.expand_cross_dependencies(
+                    node_id, task.pop('cross-depended-by', None), True
+                ))
+                required_for.update(task.pop('required_for_ex', ()))
+                # render
+                if requires:
+                    task['requires'] = [
+                        dict(six.moves.zip(('name', 'node_id'), r))
+                        for r in requires
+                    ]
+                if required_for:
+                    task['required_for'] = [
+                        dict(six.moves.zip(('name', 'node_id'), r))
+                        for r in required_for
+                    ]
 
     def expand_task_groups(self, groups, task_mapping):
         """Expand group of tasks.
@@ -573,11 +592,11 @@ class TasksSerializer(object):
         match_policy = NameMatchingPolicy.create(name)
         for node_id in node_ids:
             applied_tasks = set()
-            for task_name in self.tasks_per_node[node_id]:
+            for task_name in self.tasks_connections[node_id]:
                 if task_name == name:
                     # the simple case when name of current task
                     # is exact math to name of task that is search
-                    yield {"name": task_name, "node_id": node_id}
+                    yield task_name, node_id
                     continue
 
                 # at first get the original task name, actual
@@ -595,7 +614,7 @@ class TasksSerializer(object):
                         task_name_gen = self.task_processor.get_last_task_id
                     task_name = task_name_gen(original_task)
 
-                yield {"name": task_name, "node_id": node_id}
+                yield task_name, node_id
 
     @classmethod
     def need_update_task(cls, tasks, task):

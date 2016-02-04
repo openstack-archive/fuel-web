@@ -258,7 +258,7 @@ class ClusterValidator(BasicValidator):
 class AttributesValidator(BasicValidator):
 
     @classmethod
-    def validate(cls, data, cluster=None):
+    def validate(cls, data, cluster=None, force=False):
         d = cls.validate_json(data)
         if "generated" in d:
             raise errors.InvalidData(
@@ -275,7 +275,7 @@ class AttributesValidator(BasicValidator):
         if cluster is not None:
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
             cls.validate_provision(cluster, attrs)
-            cls.validate_allowed_attributes(cluster, d)
+            cls.validate_allowed_attributes(cluster, d, force)
         cls.validate_editable_attributes(attrs)
 
         return d
@@ -365,13 +365,15 @@ class AttributesValidator(BasicValidator):
                     '[{0}] {1}'.format(attr_name, regex_err))
 
     @classmethod
-    def validate_allowed_attributes(cls, cluster, data):
+    def validate_allowed_attributes(cls, cluster, data, force):
         """Validates if attributes are hot pluggable or not.
 
         :param cluster: A cluster instance
         :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
         :param data: Changed attributes of cluster
         :type data: dict
+        :param force: Allow forcefully update cluster attributes
+        :type force: bool
         :raises: errors.NotAllowed
         """
         # TODO(need to enable restrictions check for cluster attributes[1])
@@ -381,7 +383,7 @@ class AttributesValidator(BasicValidator):
         # If cluster is locked we have to check which attributes
         # we want to change and block an entire operation if there
         # one with always_editable=False.
-        if not cluster.is_locked:
+        if not cluster.is_locked or force:
             return
 
         editable_cluster = objects.Cluster.get_editable_attributes(

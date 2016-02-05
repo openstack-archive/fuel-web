@@ -16,8 +16,9 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import utils from 'utils';
-import {Input} from 'views/controls';
+import {Input, Tooltip} from 'views/controls';
 
 var customControls = {};
 
@@ -200,6 +201,234 @@ customControls.custom_repo_configuration = React.createClass({
             {i18n(ns + 'add_repo_button')}
           </button>
         </div>
+      </div>
+    );
+  }
+});
+
+var multipleValuesInputMixin = {
+  statics: {
+    validate(setting) {
+      if (!(setting.regex || {}).source) return null;
+      var regex = new RegExp(setting.regex.source);
+      var errors = _.map(setting.value,
+        (value) => value.match(regex) ? null : setting.regex.error
+      );
+      return _.compact(errors).length ? errors : null;
+    }
+  },
+  propTypes: {
+    value: React.PropTypes.arrayOf(React.PropTypes.node).isRequired,
+    type: React.PropTypes.oneOf(['text_list', 'password_list', 'textarea_list'])
+      .isRequired,
+    name: React.PropTypes.node,
+    label: React.PropTypes.node,
+    description: React.PropTypes.node,
+    error: React.PropTypes.arrayOf(React.PropTypes.node),
+    disabled: React.PropTypes.bool,
+    wrapperClassName: React.PropTypes.node,
+    onChange: React.PropTypes.func,
+    minFieldsLength: React.PropTypes.number,
+    tooltipPlacement: React.PropTypes.oneOf(['left', 'right', 'top', 'bottom']),
+    tooltipIcon: React.PropTypes.node,
+    tooltipText: React.PropTypes.node
+  },
+  getInitialState() {
+    return {};
+  },
+  getDefaultProps() {
+    return {
+      minFieldsLength: 1,
+      tooltipIcon: 'glyphicon-warning-sign',
+      tooltipPlacement: 'right'
+    };
+  },
+  changeField(index, method = 'change') {
+    var value = _.clone(this.props.value);
+    switch (method) {
+      case 'add':
+        value.splice(index + 1, 0, '');
+        this.setState({key: _.now()});
+        break;
+      case 'remove':
+        value.splice(index, 1);
+        this.setState({key: _.now()});
+        break;
+      case 'change':
+        var input = ReactDOM.findDOMNode(this.refs['input' + index]);
+        value[index] = input.value;
+        break;
+    }
+    if (this.props.onChange) return this.props.onChange(this.props.name, value);
+  },
+  debouncedFieldChange: _.debounce(function(index) {
+    return this.changeField(index);
+  }, 200, {leading: true}),
+  renderMultipleInputControls(index) {
+    return (
+      <div className='field-controls'>
+        <button
+          className='btn btn-link btn-add-field'
+          disabled={this.props.disabled}
+          onClick={() => this.changeField(index, 'add')}
+        >
+          <i className='glyphicon glyphicon-plus-sign' />
+        </button>
+        {this.props.value.length > this.props.minFieldsLength &&
+          <button
+            className='btn btn-link btn-remove-field'
+            disabled={this.props.disabled}
+            onClick={() => this.changeField(index, 'remove')}
+          >
+            <i className='glyphicon glyphicon-minus-sign' />
+          </button>
+        }
+      </div>
+    );
+  },
+  renderLabel() {
+    if (!this.props.label) return null;
+    return (
+      <label key='label'>
+        {this.props.label}
+        {this.props.tooltipText &&
+          <Tooltip text={this.props.tooltipText} placement={this.props.tooltipPlacement}>
+            <i className={utils.classNames('glyphicon tooltip-icon', this.props.tooltipIcon)} />
+          </Tooltip>
+        }
+      </label>
+    );
+  },
+  renderDescription() {
+    if (this.props.error) return null;
+    return <span key='description' className='help-block'>{this.props.description}</span>;
+  },
+  renderWrapper(children) {
+    return (
+      <div
+        key={this.state.key}
+        className={utils.classNames({
+          'form-group': true,
+          disabled: this.props.disabled,
+          [this.props.wrapperClassName]: this.props.wrapperClassName
+        })}
+      >
+        {children}
+      </div>
+    );
+  },
+  render() {
+    return this.renderWrapper([
+      this.renderLabel(),
+      <div
+        key='field-list'
+        className={utils.classNames({
+          'field-list': true,
+          [this.props.type]: true
+        })}
+      >
+        {_.map(this.props.value, this.renderInput)}
+      </div>,
+      this.renderDescription()
+    ]);
+  }
+};
+
+customControls.text_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <input
+          {... _.pick(this.props, 'name', 'disabled')}
+          ref={'input' + index}
+          type='text'
+          className='form-control'
+          onChange={() => this.debouncedFieldChange(index)}
+          defaultValue={value}
+        />
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.password_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  getInitialState() {
+    return {
+      contentVisibilityMap: _.map(this.props.value, () => false)
+    };
+  },
+  togglePassword(index) {
+    var contentVisibilityMap = _.clone(this.state.contentVisibilityMap);
+    contentVisibilityMap[index] = !contentVisibilityMap[index];
+    this.setState({contentVisibilityMap});
+  },
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({
+          'input-group': true,
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <input
+          {... _.pick(this.props, 'name', 'disabled')}
+          ref={'input' + index}
+          type={this.state.contentVisibilityMap[index] ? 'text' : 'password'}
+          className='form-control'
+          onChange={() => this.debouncedFieldChange(index)}
+          defaultValue={value}
+        />
+        <div className='input-group-addon' onClick={() => this.togglePassword(index)}>
+          <i
+            className={
+              this.state.contentVisibilityMap[index] ?
+              'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'
+            }
+          />
+        </div>
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.textarea_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({'has-error': !_.isNull(error)})}
+      >
+        <textarea
+          {... _.pick(this.props, 'name', 'disabled')}
+          ref={'input' + index}
+          className='form-control'
+          onChange={() => this.debouncedFieldChange(index)}
+          defaultValue={value}
+        />
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
       </div>
     );
   }

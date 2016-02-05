@@ -55,6 +55,9 @@ structure includes the following attributes::
   * *select* - drop-down list
   * *hidden* - invisible input
   * *file* - file contents input
+  * *text_list* - multiple sigle text line input
+  * *password_list* - multiple password input
+  * *textarea_list* - multiple multiline text input
 
 * *regex* section is applicable for settings of "text" type. "regex.source"
   is used when validating with a regular expression. "regex.error" contains

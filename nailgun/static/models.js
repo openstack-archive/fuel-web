@@ -695,7 +695,7 @@ models.Settings = Backbone.DeepModel
           var path = this.makePath(groupName, settingName);
           // support of custom controls
           var CustomControl = customControls[setting.type];
-          if (CustomControl) {
+          if (CustomControl && CustomControl.validate) {
             var error = CustomControl.validate(setting, models);
             if (error) errors[path] = error;
             return;

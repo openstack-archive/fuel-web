@@ -26,6 +26,9 @@ import sqlalchemy as sa
 # revision identifiers, used by Alembic.
 from oslo_serialization import jsonutils
 
+from nailgun.db.sqlalchemy.models import fields
+
+
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
 
@@ -34,9 +37,11 @@ def upgrade():
     add_foreign_key_ondelete()
     upgrade_ip_address()
     update_vips_from_network_roles()
+    upgrade_node_attributes()
 
 
 def downgrade():
+    downgrade_node_attributes()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
 
@@ -535,3 +540,19 @@ def downgrade_ip_address():
     )
     op.drop_column('ip_addrs', 'is_user_defined')
     op.drop_column('ip_addrs', 'vip_namespace')
+
+
+def upgrade_node_attributes():
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+
+def downgrade_node_attributes():
+    op.drop_column('nodes', 'attributes_metadata')

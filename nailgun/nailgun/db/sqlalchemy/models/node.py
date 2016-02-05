@@ -125,6 +125,8 @@ class Node(Base):
                               server_default=None, nullable=True)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), default={}, server_default='{}')
 
     @property
     def interfaces(self):

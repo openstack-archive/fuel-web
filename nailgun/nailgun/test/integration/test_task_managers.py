@@ -679,6 +679,22 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @fake_tasks()
+    def test_force_deploy_changes(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"status": NODE_STATUSES.ready}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        objects.Cluster.clear_pending_changes(cluster_db)
+        manager_ = manager.ApplyChangesForceTaskManager(cluster_db.id)
+        supertask = manager_.execute()
+        self.assertEqual(supertask.name, TASK_NAMES.deploy)
+        self.assertIn(supertask.status, (TASK_STATUSES.pending,
+                                         TASK_STATUSES.running,
+                                         TASK_STATUSES.ready))
+
+    @fake_tasks()
     @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')
     def test_apply_changes_exception_caught(self, mdeletion_execute):
         self.env.create(

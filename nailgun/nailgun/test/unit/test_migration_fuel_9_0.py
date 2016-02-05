@@ -424,3 +424,14 @@ class TestMergeNodeAttributes(base.BaseAlembicMigrationTest):
                     {'cpu': 1, 'mem': 2},
                 ]
             )
+
+
+class TestNodeAttributesMigration(base.BaseAlembicMigrationTest):
+
+    def test_attributes_fields_exist(self):
+        columns = [
+            self.meta.tables['nodes'].c.attributes
+        ]
+        db_values = db.execute(sa.select(columns)).fetchone()
+        for db_value in db_values:
+            self.assertEqual(db_value, '{}')

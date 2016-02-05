@@ -974,7 +974,8 @@
                     "tls_not_enabled": "TLS is not enabled. It is highly recommended to enable and configure TLS.",
                     "tls_for_horizon_not_enabled": "TLS is not enabled for Horizon public endpoint. It is highly recommended to enable and configure TLS for Horizon.",
                     "tls_for_services_not_enabled": "TLS is not enabled for OpenStack public endpoints. It is highly recommended to enable and configure TLS.",
-                    "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes."
+                    "are_you_sure_deploy": "Click Deploy to start the deployment or Cancel to make changes.",
+                    "offline_nodes": "Some nodes are offline."
                 },
                 "provision_vms": {
                     "title": "Provision VMs",

@@ -368,6 +368,12 @@ var DeployReadinessBlock = React.createClass({
     );
   },
   validations: [
+    // check if some cluster nodes are offline
+    function(cluster) {
+      if (cluster.get('nodes').any({online: false})) {
+        return {blocker: [i18n(this.ns + 'offline_nodes')]};
+      }
+    },
     // check if TLS settings are not configured
     function(cluster) {
       var sslSettings = cluster.get('settings').get('public_ssl');

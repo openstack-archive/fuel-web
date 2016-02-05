@@ -19,6 +19,7 @@ Handlers dealing with clusters
 """
 
 import traceback
+import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
@@ -36,6 +37,7 @@ from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 from nailgun.logger import logger
 from nailgun import objects
 
+from nailgun.task.manager import ApplyChangesForceTaskManager
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
@@ -83,8 +85,13 @@ class ClusterChangesHandler(DeferredTaskHandler):
     log_message = u"Trying to start deployment at environment '{env_id}'"
     log_error = u"Error during execution of deployment " \
                 u"task on environment '{env_id}': {error}"
-    task_manager = ApplyChangesTaskManager
     validator = ClusterChangesValidator
+
+    def __init__(self):
+        if web.input(force=None).force in (None, '', '0'):
+            self.task_manager = ApplyChangesTaskManager
+        else:
+            self.task_manager = ApplyChangesForceTaskManager
 
 
 class ClusterStopDeploymentHandler(DeferredTaskHandler):

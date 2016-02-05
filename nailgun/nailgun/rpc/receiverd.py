@@ -34,6 +34,8 @@ from nailgun.errors import errors
 import nailgun.rpc as rpc
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.rpc import utils
+from nailgun.settings import settings
+from nailgun.utils import logs
 
 
 logger = logging.getLogger('receiverd')
@@ -83,6 +85,8 @@ class RPCConsumer(ConsumerMixin):
 
 
 def run():
+    logger = logs.prepare_submodule_logger('receiverd',
+                                           settings.RPC_CONSUMER_LOG_PATH)
     logger.info("Starting standalone RPC consumer...")
     with Connection(rpc.conn_str) as conn:
         try:

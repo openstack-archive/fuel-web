@@ -27,11 +27,8 @@ from kombu import Queue
 from nailgun.settings import settings
 from nailgun.rpc import utils
 
-from nailgun.utils import logs
 
-
-logger = logs.prepare_submodule_logger('receiverd',
-                                       settings.RPC_CONSUMER_LOG_PATH)
+logger = logging.getLogger('receiverd')
 
 
 creds = (

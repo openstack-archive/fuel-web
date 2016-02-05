@@ -556,10 +556,13 @@ class DeferredTaskHandler(BaseHandler):
 
         logger.info(self.log_message.format(env_id=cluster_id))
 
+        force = web.input(force=None).force not in (None, '', '0')
+        kwargs = {'force': force} if force else {}
+
         try:
             self.validator.validate(cluster)
             task_manager = self.task_manager(cluster_id=cluster.id)
-            task = task_manager.execute()
+            task = task_manager.execute(**kwargs)
         except (
             errors.AlreadyExists,
             errors.StopAlreadyRunning

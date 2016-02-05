@@ -55,7 +55,7 @@ DATABASE:
   host: "${NAILGUN_DB_HOST}"
   port: "${NAILGUN_DB_PORT}"
   user: "${NAILGUN_DB_USER}"
-  passwd: "${NAILGUN_DB_PW}"
+  passwd: "${NAILGUN_DB_USERPW}"
 API_LOG: "${NAILGUN_LOGS}/api.log"
 APP_LOG: "${NAILGUN_LOGS}/app.log"
 RPC_CONSUMER_LOG_PATH: "${NAILGUN_LOGS}/receiverd.log"
@@ -143,11 +143,11 @@ prepare_database_role() {
     echo "Trying to find out if role ${NAILGUN_DB_USER} exists"
     local roles=$(psql -h ${NAILGUN_DB_HOST} -U ${DB_ROOT} -t -c "SELECT 'HERE' from pg_roles where rolname='${NAILGUN_DB_USER}'")
     if [[ ${roles} == *HERE ]]; then
-        echo "Role ${NAILGUN_DB_USER} exists. Setting password ${NAILGUN_DB_PW}"
-        psql -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} -c "ALTER ROLE ${NAILGUN_DB_USER} WITH SUPERUSER LOGIN PASSWORD '${NAILGUN_DB_PW}'"
+        echo "Role ${NAILGUN_DB_USER} exists. Setting password ${NAILGUN_DB_USERPW}"
+        psql -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} -c "ALTER ROLE ${NAILGUN_DB_USER} WITH SUPERUSER LOGIN PASSWORD '${NAILGUN_DB_USERPW}'"
     else
-        echo "Creating role ${NAILGUN_DB_USER} with password ${NAILGUN_DB_PW}"
-        psql -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} -c "CREATE ROLE ${NAILGUN_DB_USER} WITH SUPERUSER LOGIN PASSWORD '${NAILGUN_DB_PW}'"
+        echo "Creating role ${NAILGUN_DB_USER} with password ${NAILGUN_DB_USERPW}"
+        psql -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} -c "CREATE ROLE ${NAILGUN_DB_USER} WITH SUPERUSER LOGIN PASSWORD '${NAILGUN_DB_USERPW}'"
     fi
 }
 

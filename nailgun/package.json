@@ -14,7 +14,7 @@
     "lint": "gulp lint",
     "test": "npm run unit-tests && npm run func-tests",
     "unit-tests": "gulp unit-tests",
-    "func-tests": "../run_tests.sh --ui-func",
+    "func-tests": "./run_ui_func_tests.sh",
     "prepublish": "gulp build"
   },
   "dependencies": {

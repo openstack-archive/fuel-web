@@ -71,7 +71,8 @@ def prepare():
                     'networks': [],
                     'config': {}
                 }
-            })
+            }),
+            'roles_metadata': jsonutils.dumps({}),
         }
     )
 

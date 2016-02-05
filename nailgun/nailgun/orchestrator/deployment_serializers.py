@@ -106,13 +106,10 @@ class DeploymentMultinodeSerializer(object):
     def get_common_attrs(self, cluster):
         """Cluster attributes."""
         attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
-        release = self.current_release(cluster)
 
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
-        attrs['openstack_version_prev'] = getattr(
-            self.previous_release(cluster), 'version', None)
-        attrs['openstack_version'] = release.version
+        attrs['openstack_version'] = cluster.release.version
         attrs['fuel_version'] = cluster.fuel_version
         attrs['nodes'] = self.node_list(
             objects.Cluster.get_nodes_not_for_deletion(cluster))
@@ -138,23 +135,6 @@ class DeploymentMultinodeSerializer(object):
         self.inject_list_of_plugins(attrs, cluster)
 
         return attrs
-
-    def current_release(self, cluster):
-        """Actual cluster release."""
-        return objects.Release.get_by_uid(cluster.pending_release_id) \
-            if cluster.status == consts.CLUSTER_STATUSES.update \
-            else cluster.release
-
-    def previous_release(self, cluster):
-        """Returns previous release.
-
-        :param cluster: a ``Cluster`` instance to retrieve release from
-        :returns: a ``Release`` instance of previous release or ``None``
-            in case there's no previous release (fresh deployment).
-        """
-        if cluster.status == consts.CLUSTER_STATUSES.update:
-            return cluster.release
-        return None
 
     def set_storage_parameters(self, cluster, attrs):
         """Generate pg_num

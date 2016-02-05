@@ -273,40 +273,6 @@ class UpdateNodesInfoTask(object):
         return rpc_message
 
 
-class UpdateTask(object):
-
-    @classmethod
-    def message(cls, task, nodes):
-        logger.debug("%s.message(task=%s)", cls.__class__.__name__, task.uuid)
-
-        for n in nodes:
-            if n.pending_roles:
-                n.roles += n.pending_roles
-                n.pending_roles = []
-            n.status = 'provisioned'
-            n.progress = 0
-
-        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-
-        serialized_cluster = deployment_serializers.serialize(
-            orchestrator_graph, task.cluster, nodes)
-
-        # After serialization set pending_addition to False
-        for node in nodes:
-            node.pending_addition = False
-
-        rpc_message = make_astute_message(
-            task,
-            'deploy',
-            'deploy_resp',
-            {
-                'deployment_info': serialized_cluster
-            }
-        )
-        db().flush()
-        return rpc_message
-
-
 class ProvisionTask(object):
 
     @classmethod

@@ -24,7 +24,6 @@ class ReleaseSerializer(BasicSerializer):
         "id",
         "name",
         "version",
-        "can_update_from_versions",
         "description",
         "operating_system",
         "modes_metadata",

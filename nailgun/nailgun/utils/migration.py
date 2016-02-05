@@ -206,7 +206,7 @@ def upgrade_clusters_replaced_info(connection):
             WHERE id = :id""")
         connection.execute(
             update_cluster,
-            deploy=jsonutils.dumps({}),
+            deploy=jsonutils.dumps([]),
             provision=jsonutils.dumps(provisioning_info),
             id=cluster[0])
 

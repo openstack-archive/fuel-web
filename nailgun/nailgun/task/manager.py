@@ -804,60 +804,6 @@ class ResetEnvironmentTaskManager(TaskManager):
         return supertask
 
 
-class UpdateEnvironmentTaskManager(TaskManager):
-
-    def execute(self):
-        if not self.cluster.pending_release_id:
-            raise errors.InvalidReleaseId(
-                u"Can't update environment '{0}' when "
-                u"new release Id is invalid".format(self.cluster.name))
-
-        running_tasks = db().query(Task).filter_by(
-            cluster_id=self.cluster.id,
-            status='running'
-        ).filter(
-            Task.name.in_([
-                consts.TASK_NAMES.deploy,
-                consts.TASK_NAMES.deployment,
-                consts.TASK_NAMES.reset_environment,
-                consts.TASK_NAMES.stop_deployment
-            ])
-        )
-        if running_tasks.first():
-            raise errors.TaskAlreadyRunning(
-                u"Can't update environment '{0}' when "
-                u"other task is running".format(
-                    self.cluster.id
-                )
-            )
-
-        nodes_to_change = TaskHelper.nodes_to_upgrade(self.cluster)
-        logger.debug('Nodes to update: {0}'.format(
-            ' '.join([objects.Node.get_node_fqdn(n)
-                      for n in nodes_to_change])))
-        task_update = Task(name=consts.TASK_NAMES.update, cluster=self.cluster)
-        db().add(task_update)
-        self.cluster.status = 'update'
-        db().flush()
-
-        deployment_message = self._call_silently(
-            task_update,
-            tasks.UpdateTask,
-            nodes_to_change,
-            method_name='message')
-
-        db().refresh(task_update)
-
-        for node in nodes_to_change:
-            node.status = 'deploying'
-            node.progress = 0
-
-        db().commit()
-        rpc.cast('naily', deployment_message)
-
-        return task_update
-
-
 class CheckNetworksTaskManager(TaskManager):
 
     def execute(self, data, check_all_parameters=False):
@@ -909,7 +855,6 @@ class VerifyNetworksTaskManager(TaskManager):
 
     _blocking_statuses = (
         consts.CLUSTER_STATUSES.deployment,
-        consts.CLUSTER_STATUSES.update,
     )
 
     def remove_previous_task(self):

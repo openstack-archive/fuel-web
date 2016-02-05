@@ -332,7 +332,7 @@ class TestInstallationInfo(BaseTestCase):
 
         # Removing of not required fields
         remove_fields = (
-            'tasks', 'cluster_changes', 'nodegroups', 'pending_release_id',
+            'tasks', 'cluster_changes', 'nodegroups',
             'releases', 'replaced_provisioning_info', 'notifications',
             'deployment_tasks', 'name', 'replaced_deployment_info',
             'ui_settings'

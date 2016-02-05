@@ -68,7 +68,7 @@ class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
 
     def setUp(self):
         super(OrchestratorSerializerTestBase, self).setUp()
-        self.cluster_mock = mock.MagicMock(pending_release_id=None)
+        self.cluster_mock = mock.MagicMock()
         self.cluster_mock.id = 0
         self.cluster_mock.deployment_tasks = []
         self.cluster_mock.release.deployment_tasks = []
@@ -1451,77 +1451,6 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
             {'role': 'controller', 'priority': 600},
             {'role': 'controller', 'priority': 600},
             {'role': 'ceph-osd', 'priority': 700}
-        ]
-        self.add_default_params(expected_priorities)
-        self.assertEqual(expected_priorities, nodes)
-
-
-class TestHASerializerPatching(TestNovaOrchestratorHASerializer):
-
-    env_version = '1111-5.0'
-
-    @property
-    def serializer(self):
-        self.cluster_mock.pending_release_id = '111'
-        self.cluster_mock.release.environment_version = '5.0'
-        return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
-
-    def test_set_deployment_priorities(self):
-        nodes = [
-            {'role': 'zabbix-server'},
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
-            {'role': 'primary-controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'ceph-osd'}
-        ]
-        self.add_default_params(nodes)
-        self.serializer.set_deployment_priorities(nodes)
-        expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
-            {'role': 'mongo', 'priority': 200},
-            {'role': 'primary-mongo', 'priority': 300},
-            {'role': 'primary-controller', 'priority': 400},
-            {'role': 'controller', 'priority': 500},
-            {'role': 'controller', 'priority': 600},
-            {'role': 'ceph-osd', 'priority': 700}
-        ]
-        self.add_default_params(expected_priorities)
-        self.assertEqual(expected_priorities, nodes)
-
-    def test_set_deployment_priorities_many_cntrls(self):
-        nodes = [
-            {'role': 'zabbix-server'},
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
-            {'role': 'primary-controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'ceph-osd'}
-        ]
-        self.add_default_params(nodes)
-        self.serializer.set_deployment_priorities(nodes)
-        expected_priorities = [
-            {'role': 'zabbix-server', 'priority': 100},
-            {'role': 'mongo', 'priority': 200},
-            {'role': 'primary-mongo', 'priority': 300},
-            {'role': 'primary-controller', 'priority': 400},
-            {'role': 'controller', 'priority': 500},
-            {'role': 'controller', 'priority': 600},
-            {'role': 'controller', 'priority': 700},
-            {'role': 'controller', 'priority': 800},
-            {'role': 'controller', 'priority': 900},
-            {'role': 'controller', 'priority': 1000},
-            {'role': 'controller', 'priority': 1100},
-            {'role': 'controller', 'priority': 1200},
-            {'role': 'ceph-osd', 'priority': 1300}
         ]
         self.add_default_params(expected_priorities)
         self.assertEqual(expected_priorities, nodes)

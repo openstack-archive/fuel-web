@@ -157,7 +157,6 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         cluster_db = self.env.clusters[0]
         blocking_statuses = (
             consts.CLUSTER_STATUSES.deployment,
-            consts.CLUSTER_STATUSES.update,
         )
         for status in blocking_statuses:
             cluster_db.status = status

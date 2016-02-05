@@ -257,15 +257,19 @@ class AttributesRestriction(RestrictionBase):
                 if restr.get('result'):
                     # TODO(apopovych): handle restriction message
                     return
-                else:
-                    regex_error = cls.validate_regex(data)
-                    if regex_error is not None:
-                        yield regex_error
+                attr_type = data.get(type)
+                if attr_type == 'text_list' or attr_type == 'textarea_list':
+                    err = cls.check_fields_length(data)
+                    if err is not None:
+                        yield err
+                regex_error = cls.validate_regex(data)
+                if regex_error is not None:
+                    yield regex_error
 
-                    for key, value in six.iteritems(data):
-                        if key not in ['restrictions', 'regex']:
-                            for err in find_errors(value):
-                                yield err
+                for key, value in six.iteritems(data):
+                    if key not in ['restrictions', 'regex']:
+                        for err in find_errors(value):
+                            yield err
             elif isinstance(data, list):
                 for item in data:
                     for err in find_errors(item):
@@ -277,13 +281,36 @@ class AttributesRestriction(RestrictionBase):
     def validate_regex(data):
         attr_regex = data.get('regex', {})
         if attr_regex:
-            value = data.get('value')
-            if not isinstance(value, basestring):
-                return ('Value {0} is of invalid type, cannot check '
-                        'regexp'.format(value))
+            attr_value = data.get('value')
             pattern = re.compile(attr_regex.get('source'))
-            if not pattern.search(value):
-                return attr_regex.get('error')
+            error = attr_regex.get('error')
+
+            def test_regex(value, pattern=pattern, error=error):
+                if not pattern.search(value):
+                    return error
+
+            if isinstance(attr_value, six.string_types):
+                return test_regex(attr_value)
+            elif isinstance(attr_value, list):
+                errors = map(test_regex, attr_value)
+                if compact(errors):
+                    return errors
+            else:
+                return ('Value {0} is of invalid type, cannot check '
+                        'regexp'.format(attr_value))
+
+    @staticmethod
+    def check_fields_length(data):
+        minItems = data.get('min')
+        maxItems = data.get('max')
+        attr_value = data.get('value')
+
+        if minItems and len(attr_value) < minItems:
+            return ('Value {0} should have at least {1} '
+                    'items'.format(attr_value, minItems))
+        if maxItems and len(attr_value) > maxItems:
+            return ('Value {0} should not have more than {1} '
+                    'items'.format(attr_value, maxItems))
 
 
 class VmwareAttributesRestriction(RestrictionBase):

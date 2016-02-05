@@ -245,8 +245,24 @@ class TestAttributesRestriction(base.BaseTestCase):
                       source: '\S'
                       error: "Invalid email"
                   tenant:
-                    value: ""
-                    type: "text"
+                    value: [""]
+                    type: "text_list"
+                    regex:
+                      source: '\S'
+                      error: "Invalid tenant name"
+                  another_tenant:
+                    value: ["test"]
+                    type: "text_list"
+                    min: 2
+                    max: 2
+                    regex:
+                      source: '\S'
+                      error: "Invalid tenant name"
+                  another_tenant_2:
+                    value: ["test1", "test2", "test3"]
+                    type: "text_list"
+                    min: 2
+                    max: 2
                     regex:
                       source: '\S'
                       error: "Invalid tenant name"
@@ -270,12 +286,17 @@ class TestAttributesRestriction(base.BaseTestCase):
 
         errs = AttributesRestriction.check_data(models, attributes)
         self.assertItemsEqual(
-            errs, ['Invalid username', 'Invalid tenant name'])
+            errs, ['Invalid username', ['Invalid tenant name'],
+                   'Value ["test"] should have at least 2 items',
+                   'Value ["test1", "test2", "test3"] '
+                   'should not have more than 2 items'])
 
     def test_check_with_valid_values(self):
         access = self.attributes_data['editable']['access']
         access['user']['value'] = 'admin'
-        access['tenant']['value'] = 'test'
+        access['tenant']['value'] = ['test']
+        access['another_tenant']['value'] = ['test1', 'test2']
+        access['another_tenant_2']['value'] = ['test1', 'test2']
 
         objects.Cluster.update_attributes(
             self.cluster, self.attributes_data)

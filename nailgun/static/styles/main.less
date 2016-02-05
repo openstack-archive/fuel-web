@@ -1375,6 +1375,38 @@ input[type=range] {
       padding: 0 0 0 @base-indent * 0.5;
     }
   }
+
+  .field-list {
+    float: left;
+    > div {
+      float: none;
+      input, textarea {
+        margin-bottom: @base-indent / 2;
+      }
+      &:last-child input,  &:last-child textarea {
+        margin-bottom: 0;
+      }
+      .field-controls {
+        float: left;
+        padding-left: @base-indent;
+        .btn {
+          padding: 0;
+          margin: 7px 0 5px;
+          &.btn-add-field + .btn {
+            margin-left: @base-indent / 2;
+          }
+
+        }
+      }
+      .field-error {
+        .text-danger;
+        padding-top: 1px;
+      }
+    }
+    + .help-block {
+      max-width: 350px;
+    }
+  }
 }
 
 // PAGES

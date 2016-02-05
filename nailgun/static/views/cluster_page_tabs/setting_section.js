@@ -229,12 +229,13 @@ var SettingSection = React.createClass({
   renderCustomControl(options) {
     var {
       setting, settingKey, error, isSettingDisabled, showSettingWarning,
-      settingWarning, CustomControl, path
+      settingWarning, CustomControl, path, settingName
     } = options;
     return <CustomControl
       {...setting}
-      {... _.pick(this.props, 'cluster', 'settings', 'configModels')}
+      {... _.pick(this.props, 'cluster', 'settings', 'configModels', 'onChange')}
       key={settingKey}
+      name={settingName}
       path={path}
       error={error}
       disabled={isSettingDisabled}
@@ -361,7 +362,9 @@ var SettingSection = React.createClass({
             // support of custom controls
             var CustomControl = customControls[setting.type];
             if (CustomControl) {
-              return this.renderCustomControl(_.extend(renderOptions, {CustomControl, path}));
+              return this.renderCustomControl(
+                _.extend(renderOptions, {CustomControl, path, settingName})
+              );
             } else if (setting.values) {
               return this.renderRadioGroup(_.extend(renderOptions, {settingName}));
             } else {

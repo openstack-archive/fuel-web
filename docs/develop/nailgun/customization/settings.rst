@@ -40,6 +40,8 @@ structure includes the following attributes::
     regex:
       source: "^[A-z0-9]+$"
       error: "Invalid data"
+    min: 1
+    max: 3
 
 * *label* is a setting title that is displayed on UI
 * *weight* defines the order in which this setting is displayed in its group.
@@ -55,6 +57,8 @@ structure includes the following attributes::
   * *select* - drop-down list
   * *hidden* - invisible input
   * *file* - file contents input
+  * *text_list* - multiple sigle line text inputs
+  * *textarea_list* - multiple multiline text inputs
 
 * *regex* section is applicable for settings of "text" type. "regex.source"
   is used when validating with a regular expression. "regex.error" contains
@@ -65,6 +69,10 @@ structure includes the following attributes::
 * *values* list is needed for settings of "radio" or "select" type to declare
   its possible values. Options from "values" list also support dependencies
   and conflcits declaration.
+* *min* is actual for settings of "text_list" or "textarea_list" type
+  to declare a minimum input list length for the setting
+* *max* is actual for settings of "text_list" or "textarea_list" type
+  to declare a maximum input list length for the setting
 
 .. _restrictions:
 

@@ -278,12 +278,21 @@ class AttributesRestriction(RestrictionBase):
         attr_regex = data.get('regex', {})
         if attr_regex:
             value = data.get('value')
-            if not isinstance(value, basestring):
+
+            def test_regex(str, regex=attr_regex):
+                pattern = re.compile(regex.get('source'))
+                if not pattern.search(str):
+                    return regex.get('error')
+
+            if isinstance(value, basestring):
+                return test_regex(value)
+            elif isinstance(value, list):
+                errors = map(test_regex, value)
+                if compact(errors):
+                    return errors
+            else:
                 return ('Value {0} is of invalid type, cannot check '
                         'regexp'.format(value))
-            pattern = re.compile(attr_regex.get('source'))
-            if not pattern.search(value):
-                return attr_regex.get('error')
 
 
 class VmwareAttributesRestriction(RestrictionBase):

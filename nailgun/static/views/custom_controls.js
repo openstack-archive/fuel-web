@@ -16,8 +16,9 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import utils from 'utils';
-import {Input} from 'views/controls';
+import {Input, Tooltip} from 'views/controls';
 
 var customControls = {};
 
@@ -202,6 +203,154 @@ customControls.custom_repo_configuration = React.createClass({
         </div>
       </div>
     );
+  }
+});
+
+customControls.text_list = customControls.textarea_list = React.createClass({
+  statics: {
+    validate(setting) {
+      if (!(setting.regex || {}).source) return null;
+      var regex = new RegExp(setting.regex.source);
+      var errors = _.map(setting.value,
+        (value) => value.match(regex) ? null : setting.regex.error
+      );
+      return _.compact(errors).length ? errors : null;
+    }
+  },
+  propTypes: {
+    value: React.PropTypes.arrayOf(React.PropTypes.node).isRequired,
+    type: React.PropTypes.oneOf(['text_list', 'textarea_list']).isRequired,
+    name: React.PropTypes.node,
+    label: React.PropTypes.node,
+    description: React.PropTypes.node,
+    error: React.PropTypes.arrayOf(React.PropTypes.node),
+    disabled: React.PropTypes.bool,
+    wrapperClassName: React.PropTypes.node,
+    onChange: React.PropTypes.func,
+    minFieldsLength: React.PropTypes.number,
+    maxFieldsLength: React.PropTypes.number,
+    tooltipPlacement: React.PropTypes.oneOf(['left', 'right', 'top', 'bottom']),
+    tooltipIcon: React.PropTypes.node,
+    tooltipText: React.PropTypes.node
+  },
+  getInitialState() {
+    return {};
+  },
+  getDefaultProps() {
+    return {
+      minFieldsLength: 1,
+      maxFieldsLength: null,
+      tooltipIcon: 'glyphicon-warning-sign',
+      tooltipPlacement: 'right'
+    };
+  },
+  changeField(index, method = 'change') {
+    var value = _.clone(this.props.value);
+    switch (method) {
+      case 'add':
+        value.splice(index + 1, 0, '');
+        this.setState({key: _.now()});
+        break;
+      case 'remove':
+        value.splice(index, 1);
+        this.setState({key: _.now()});
+        break;
+      case 'change':
+        var input = ReactDOM.findDOMNode(this.refs['input' + index]);
+        value[index] = input.value;
+        break;
+    }
+    if (this.props.onChange) return this.props.onChange(this.props.name, value);
+  },
+  debouncedFieldChange: _.debounce(function(index) {
+    return this.changeField(index);
+  }, 200, {leading: true}),
+  renderMultipleInputControls(index) {
+    return (
+      <div className='field-controls'>
+        {(!this.props.maxFieldsLength || this.props.value.length < this.props.maxFieldsLength) &&
+          <button
+            className='btn btn-link btn-add-field'
+            disabled={this.props.disabled}
+            onClick={() => this.changeField(index, 'add')}
+          >
+            <i className='glyphicon glyphicon-plus-sign' />
+          </button>
+        }
+        {this.props.value.length > this.props.minFieldsLength &&
+          <button
+            className='btn btn-link btn-remove-field'
+            disabled={this.props.disabled}
+            onClick={() => this.changeField(index, 'remove')}
+          >
+            <i className='glyphicon glyphicon-minus-sign' />
+          </button>
+        }
+      </div>
+    );
+  },
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    var Tag = this.props.type === 'textarea_list' ? 'textarea' : 'input';
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({'has-error': !_.isNull(error)})}
+      >
+        <Tag
+          {... _.pick(this.props, 'name', 'disabled')}
+          ref={'input' + index}
+          type='text'
+          className='form-control'
+          onChange={() => this.debouncedFieldChange(index)}
+          defaultValue={value}
+        />
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  },
+  renderLabel() {
+    if (!this.props.label) return null;
+    return (
+      <label key='label'>
+        {this.props.label}
+        {this.props.tooltipText &&
+          <Tooltip text={this.props.tooltipText} placement={this.props.tooltipPlacement}>
+            <i className={utils.classNames('glyphicon tooltip-icon', this.props.tooltipIcon)} />
+          </Tooltip>
+        }
+      </label>
+    );
+  },
+  renderDescription() {
+    if (this.props.error) return null;
+    return <span key='description' className='help-block'>{this.props.description}</span>;
+  },
+  renderWrapper(children) {
+    return (
+      <div
+        key={this.state.key}
+        className={utils.classNames({
+          'form-group': true,
+          disabled: this.props.disabled,
+          [this.props.wrapperClassName]: this.props.wrapperClassName
+        })}
+      >
+        {children}
+      </div>
+    );
+  },
+  render() {
+    return this.renderWrapper([
+      this.renderLabel(),
+      <div key='field-list' className='field-list'>
+        {_.map(this.props.value, this.renderInput)}
+      </div>,
+      this.renderDescription()
+    ]);
   }
 });
 

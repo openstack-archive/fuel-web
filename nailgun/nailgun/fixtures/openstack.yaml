@@ -695,11 +695,11 @@
             weight: 10
             group: "general"
           user:
-            value: "admin"
+            value: ["admin"]
             label: "Username"
             description: "Username for Administrator"
             weight: 10
-            type: "text"
+            type: "text_list"
             regex:
               source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?!ironic$)(?![Gg]uest$)(?!.* +.*$).+'
               error: "Invalid username"

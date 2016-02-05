@@ -1323,6 +1323,37 @@ input[type=range] {
     font-size: @base-font-size + 2px;
   }
 
+  .field-list {
+    float: left;
+    > div {
+      float: none;
+      input {
+        margin-bottom: @base-indent / 2;
+      }
+      &:last-child input {
+        margin-bottom: 0;
+      }
+      .field-controls {
+        float: left;
+        padding-left: @base-indent;
+        .btn {
+          padding: 0;
+          margin: 7px 0 5px;
+          &.btn-add-field + .btn {
+            margin-left: @base-indent / 2;
+          }
+
+        }
+      }
+      &:not(.has-error) {
+        .form-control {
+          border-color: #ccc;
+        }
+      }
+    }
+
+  }
+
   // custom control styles
   .repos {
     margin-bottom: @base-indent;

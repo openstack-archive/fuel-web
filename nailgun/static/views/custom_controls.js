@@ -16,6 +16,7 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import utils from 'utils';
 import {Input} from 'views/controls';
 
@@ -200,6 +201,315 @@ customControls.custom_repo_configuration = React.createClass({
             {i18n(ns + 'add_repo_button')}
           </button>
         </div>
+      </div>
+    );
+  }
+});
+
+var multipleValuesInputMixin = {
+  getInitialState() {
+    return {};
+  },
+  getDefaultProps() {
+    return {
+      minValuesLength: 1
+    };
+  },
+  addField(index) {
+    var value = _.clone(this.props.defaultValue);
+    value.splice(index + 1, 0, '');
+    if (this.props.onChange) return this.props.onChange(this.props.name, value);
+  },
+  removeField(index) {
+    var value = _.clone(this.props.defaultValue);
+    value.splice(index, 1);
+    if (this.props.onChange) return this.props.onChange(this.props.name, value);
+  },
+  changeFieldValue(index) {
+    var value = _.clone(this.props.defaultValue);
+    var input = ReactDOM.findDOMNode(this.refs['input' + index]);
+    value[index] = input.value;
+    if (this.props.onChange) return this.props.onChange(this.props.name, value);
+  },
+  debouncedFieldValueChange: _.debounce(function(index) {
+    return this.onChange(index);
+  }, 200, {leading: true}),
+  renderMultipleInputControls(index) {
+    return (
+      <div className='field-controls'>
+        <button
+          className='btn btn-link btn-add-field'
+          disabled={this.props.disabled}
+          onClick={_.partial(this.addField, index)}
+        >
+          <i className='glyphicon glyphicon-plus-sign' />
+        </button>
+        {this.props.defaultValue.length > this.props.minValuesLength &&
+          <button
+            className='btn btn-link btn-remove-field'
+            disabled={this.props.disabled}
+            onClick={_.partial(this.removeField, index)}
+          >
+            <i className='glyphicon glyphicon-minus-sign' />
+          </button>
+        }
+      </div>
+    );
+  },
+  renderLabel() {
+    if (!this.props.label) return null;
+    return <label key='label'>{this.props.label}</label>;
+  },
+  renderDescription() {
+    if (this.props.error) return null;
+    return <span key='description' className='help-block'>{this.props.description}</span>;
+  },
+  renderWrapper(children) {
+    return <div
+      className={utils.classNames({
+        'form-group': true,
+        disabled: this.props.disabled,
+        [this.props.wrapperClassName]: this.props.wrapperClassName
+      })}
+    >
+      {children}
+    </div>;
+  },
+  render() {
+    return this.renderWrapper([
+      this.renderLabel(),
+      <div className='field-list' key='field-list'>
+        {this.props.defaultValue.map(this.renderInput)}
+      </div>,
+      this.renderDescription()
+    ]);
+  }
+};
+
+customControls.text_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  statics: {
+    // validate method represented as static method to support cluster settings validation
+    validate() {
+      return null;
+    }
+  },
+  propTypes: {
+
+  },
+  renderInput(value, index) {
+    //console.log(this.props);
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index + value}
+        className={utils.classNames({
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <input
+          {...this.props}
+          ref={'input' + index}
+          type='text'
+          className='form-control'
+          onChange={_.partial(this.changeFieldValue, index)}
+          defaultValue={value}
+        />
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.password_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  statics: {
+    // validate method represented as static method to support cluster settings validation
+    validate() {
+      return null;
+    }
+  },
+  propTypes: {
+
+  },
+  getInitialState() {
+    return {
+      visible: false
+    };
+  },
+  togglePassword() {
+    this.setState({visible: !this.state.visible});
+  },
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index + value}
+        className={utils.classNames({
+          'input-group': true,
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <input
+          {...this.props}
+          ref={'input' + index}
+          type={this.state.visible ? 'text' : 'password'}
+          className='form-control'
+          onChange={_.partial(this.changeFieldValue, index)}
+          defaultValue={value}
+        />
+        <div className='input-group-addon' onClick={this.togglePassword}>
+          <i
+            className={
+              this.state.visible ?
+              'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'
+            }
+          />
+        </div>
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.textarea_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  statics: {
+    // validate method represented as static method to support cluster settings validation
+    validate() {
+      return null;
+    }
+  },
+  propTypes: {
+
+  },
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index + value}
+        className={utils.classNames({
+          textarea: true,
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <textarea
+          {...this.props}
+          ref={'input' + index}
+          className='form-control'
+          onChange={_.partial(this.changeFieldValue, index)}
+          defaultValue={value}
+        />
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.file_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  statics: {
+    // validate method represented as static method to support cluster settings validation
+    validate() {
+      return null;
+    }
+  },
+  propTypes: {
+
+  },
+  getInitialState() {
+    return {
+      fileName: (this.props.defaultValue || {}).name || null,
+      content: (this.props.defaultValue || {}).content || null
+    };
+  },
+  pickFile() {
+    if (!this.props.disabled) {
+      this.getInputDOMNode().click();
+    }
+  },
+  saveFile(fileName, content) {
+    this.setState({
+      fileName: fileName,
+      content: content
+    });
+    return this.props.onChange(
+      this.props.name,
+      {name: fileName, content: content}
+    );
+  },
+  removeFile() {
+    if (!this.props.disabled) {
+      ReactDOM.findDOMNode(this.refs.form).reset();
+      this.saveFile(null, null);
+    }
+  },
+  readFile() {
+    var reader = new FileReader();
+    var input = this.getInputDOMNode();
+
+    if (input.files.length) {
+      reader.onload = () => this.saveFile(input.value.replace(/^.*[\\\/]/g, ''), reader.result);
+      reader.readAsBinaryString(input.files[0]);
+    }
+  },
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index + value}
+        className={utils.classNames({
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <form ref='form'>
+          <input
+            {...this.props}
+            ref={'input' + index}
+            type='file'
+            className='form-control'
+            onChange={this.readFile}
+            defaultValue={value}
+          />
+        </form>
+        <div className='input-group'>
+          <input
+            className='form-control file-name'
+            type='text'
+            placeholder={i18n('file.placeholder')}
+            value={
+              this.state.fileName && (
+                '[' + utils.showSize(this.state.content.length) + '] ' + this.state.fileName
+              )
+            }
+            onClick={this.pickFile}
+            disabled={this.props.disabled}
+            readOnly
+          />
+          <div
+            className='input-group-addon'
+            onClick={this.state.fileName ? this.removeFile : this.pickFile}
+          >
+            <i
+              className={this.state.fileName && !this.props.disabled ?
+                'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'
+              }
+            />
+          </div>
+        </div>
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
       </div>
     );
   }

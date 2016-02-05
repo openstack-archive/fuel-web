@@ -1021,31 +1021,6 @@ class EnvironmentManager(object):
                 "Nothing to delete - try creating cluster"
             )
 
-    def update_environment(self, pending_release_id=None, expect_http=202,
-                           cluster_id=None):
-        if self.clusters:
-            cluster = self._get_cluster_by_id(cluster_id)
-            if not pending_release_id:
-                pending_release_id = cluster.release_id
-            cluster.pending_release_id = pending_release_id
-            self.db.commit()
-            resp = self.app.put(
-                reverse(
-                    'ClusterUpdateHandler',
-                    kwargs={'cluster_id': cluster.id}),
-                expect_errors=True,
-                headers=self.default_headers)
-            self.tester.assertEqual(expect_http, resp.status_code)
-            if not str(expect_http).startswith("2"):
-                return resp.body
-            return self.db.query(Task).filter_by(
-                name=consts.TASK_NAMES.update
-            ).first()
-        else:
-            raise NotImplementedError(
-                "Nothing to update - try creating cluster"
-            )
-
     def launch_verify_networks(self, data=None, expect_errors=False,
                                cluster_id=None):
         if self.clusters:

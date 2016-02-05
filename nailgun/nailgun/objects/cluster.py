@@ -964,7 +964,6 @@ class Cluster(NailgunObject):
 
             - if there is deployment_graph defined by user - use it instead of
               defined
-            - if instance assigned for patching - return custom patching graph
             - else return default for release and enabled plugins
               deployment graph
         """

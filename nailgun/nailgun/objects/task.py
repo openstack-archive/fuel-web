@@ -236,26 +236,6 @@ class Task(NailgunObject):
             else:
                 cls.__update_cluster_status(cluster, 'stopped')
 
-        elif instance.name == consts.TASK_NAMES.update:
-            if instance.status == consts.TASK_STATUSES.error:
-                cls.__update_cluster_status(
-                    cluster,
-                    consts.CLUSTER_STATUSES.update_error
-                )
-
-                q_nodes_to_error = \
-                    TaskHelper.get_nodes_to_deployment_error(cluster)
-                cls.__update_nodes_to_error(
-                    q_nodes_to_error, error_type=consts.NODE_ERRORS.deploy)
-
-            elif instance.status == consts.TASK_STATUSES.ready:
-                cls.__update_cluster_status(
-                    cluster,
-                    consts.CLUSTER_STATUSES.operational
-                )
-                cluster.release_id = cluster.pending_release_id
-                cluster.pending_release_id = None
-
     @classmethod
     def _clean_data(cls, data):
         result = copy.copy(data)

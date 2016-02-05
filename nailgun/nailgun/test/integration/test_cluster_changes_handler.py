@@ -99,7 +99,6 @@ class TestHandlers(BaseIntegrationTest):
             'master_ip': '127.0.0.1',
             'use_cinder': True,
             'deployment_id': cluster_db.id,
-            'openstack_version_prev': None,
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version,
             'plugins': []
@@ -460,7 +459,6 @@ class TestHandlers(BaseIntegrationTest):
             'master_ip': '127.0.0.1',
             'use_cinder': True,
             'deployment_id': cluster_db.id,
-            'openstack_version_prev': None,
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version,
             'tasks': [],
@@ -946,7 +944,6 @@ class TestHandlers(BaseIntegrationTest):
             'master_ip': '127.0.0.1',
             'use_cinder': True,
             'deployment_id': cluster_db.id,
-            'openstack_version_prev': None,
             'openstack_version': cluster_db.release.version,
             'fuel_version': cluster_db.fuel_version,
             'plugins': []

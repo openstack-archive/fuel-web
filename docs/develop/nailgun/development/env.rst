@@ -90,14 +90,10 @@ Setup for Nailgun Unit Tests
     workon fuel #activate virtual environment created in the previous section
     pip install tox
 
-#. Run the Nailgun backend unit tests::
+#. Run the Nailgun backend unit tests and flake8 test::
 
     sudo apt-get install puppet-common #install missing package required by tasklib tests
-    ./run_tests.sh --no-webui
-
-#. Run the Nailgun flake8 test::
-
-    ./run_tests.sh --flake8
+    ./run_tests.sh
 
 #. You can also run the same tests by hand, using tox itself::
 
@@ -152,13 +148,14 @@ Setup for Web UI Tests
 #. Run full Web UI test suite (this will wipe your Nailgun database in
    PostgreSQL)::
 
-    cd fuel-web
-    ./run_tests.sh --webui
+    cd nailgun
+    npm run lint
+    npm test
 
    By default Firefox browser is used. You can specify the browser using
    BROWSER environment variable::
 
-    BROWSER=chrome ./run_tests.sh --webui
+    BROWSER=chrome npm test
 
 
 .. _running-parallel-tests-py:

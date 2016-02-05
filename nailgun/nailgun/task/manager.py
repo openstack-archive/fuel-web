@@ -162,7 +162,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             db().delete(task)
         db().flush()
 
-    def execute(self, nodes_to_provision_deploy=None, deployment_tasks=None):
+    def execute(self, nodes_to_provision_deploy=None, deployment_tasks=None,
+                force=False):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
                 self.cluster.name or self.cluster.id
@@ -178,7 +179,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
         nodes_to_deploy = nodes_to_provision_deploy or \
-            TaskHelper.nodes_to_deploy(self.cluster)
+            TaskHelper.nodes_to_deploy(self.cluster, force)
         nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
 
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
@@ -198,13 +199,14 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             self.cluster.id,
             supertask.id,
             nodes_to_provision_deploy=nodes_ids_to_deploy,
-            deployment_tasks=deployment_tasks
+            deployment_tasks=deployment_tasks,
+            force=force
         )
 
         return supertask
 
     def _execute_async(self, supertask_id, deployment_tasks=None,
-                       nodes_to_provision_deploy=None):
+                       nodes_to_provision_deploy=None, force=False):
         """Function for execute task in the mule
 
         :param supertask_id: id of parent task
@@ -218,7 +220,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             self._execute_async_content(
                 supertask,
                 deployment_tasks=deployment_tasks,
-                nodes_to_provision_deploy=nodes_to_provision_deploy)
+                nodes_to_provision_deploy=nodes_to_provision_deploy,
+                force=force)
         except Exception as e:
             logger.exception('Error occurred when running task')
             data = {
@@ -243,7 +246,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         return task_deletion
 
     def _execute_async_content(self, supertask, deployment_tasks=None,
-                               nodes_to_provision_deploy=None):
+                               nodes_to_provision_deploy=None, force=False):
         """Processes supertask async in mule
 
         :param supertask: SqlAlchemy task object
@@ -260,7 +263,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 n.needs_reprovision]),
                 nodes_to_deploy)
         else:
-            nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
+            nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster, force)
             nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
             nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
 
@@ -541,6 +544,13 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         db().delete(check_before)
         db().refresh(supertask)
         db().flush()
+
+
+class ApplyChangesForceTaskManager(ApplyChangesTaskManager):
+
+    def execute(self, **kwargs):
+        kwargs['force'] = True
+        return super(ApplyChangesForceTaskManager, self).execute(**kwargs)
 
 
 class SpawnVMsTaskManager(ApplyChangesTaskManager):

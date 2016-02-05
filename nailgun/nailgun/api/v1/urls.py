@@ -26,6 +26,7 @@ from nailgun.api.v1.handlers.capacity import CapacityLogHandler
 
 from nailgun.api.v1.handlers.cluster import ClusterAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import ClusterAttributesHandler
+from nailgun.api.v1.handlers.cluster import ClusterChangesForceRedeployHandler
 from nailgun.api.v1.handlers.cluster import ClusterChangesHandler
 from nailgun.api.v1.handlers.cluster import ClusterCollectionHandler
 from nailgun.api.v1.handlers.cluster import ClusterDeploymentTasksHandler
@@ -159,6 +160,8 @@ urls = (
     ClusterHandler,
     r'/clusters/(?P<cluster_id>\d+)/changes/?$',
     ClusterChangesHandler,
+    r'/clusters/(?P<cluster_id>\d+)/changes/redeploy/?$',
+    ClusterChangesForceRedeployHandler,
     r'/clusters/(?P<cluster_id>\d+)/attributes/?$',
     ClusterAttributesHandler,
     r'/clusters/(?P<cluster_id>\d+)/attributes/defaults/?$',

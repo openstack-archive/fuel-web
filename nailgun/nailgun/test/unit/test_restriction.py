@@ -245,8 +245,8 @@ class TestAttributesRestriction(base.BaseTestCase):
                       source: '\S'
                       error: "Invalid email"
                   tenant:
-                    value: ""
-                    type: "text"
+                    value: [""]
+                    type: "text_list"
                     regex:
                       source: '\S'
                       error: "Invalid tenant name"
@@ -270,12 +270,12 @@ class TestAttributesRestriction(base.BaseTestCase):
 
         errs = AttributesRestriction.check_data(models, attributes)
         self.assertItemsEqual(
-            errs, ['Invalid username', 'Invalid tenant name'])
+            errs, ['Invalid username', ['Invalid tenant name']])
 
     def test_check_with_valid_values(self):
         access = self.attributes_data['editable']['access']
         access['user']['value'] = 'admin'
-        access['tenant']['value'] = 'test'
+        access['tenant']['value'] = ['test']
 
         objects.Cluster.update_attributes(
             self.cluster, self.attributes_data)

@@ -43,7 +43,6 @@ single_schema = {
         },
         "ui_settings": base_types.UI_SETTINGS,
         "release_id": {"type": "number"},
-        "pending_release_id": base_types.NULLABLE_ID,
         "replaced_deployment_info": {"type": "object"},
         "replaced_provisioning_info": {"type": "object"},
         "is_customized": {"type": "boolean"},

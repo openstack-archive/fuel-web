@@ -24,15 +24,34 @@ from alembic import op
 import six
 import sqlalchemy as sa
 
-# revision identifiers, used by Alembic.
 from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_enum
 
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
+
+cluster_statuses_old = (
+    'new',
+    'deployment',
+    'stopped',
+    'operational',
+    'error',
+    'remove',
+    'update',
+    'update_error'
+)
+cluster_statuses_new = (
+    'new',
+    'deployment',
+    'stopped',
+    'operational',
+    'error',
+    'remove',
+)
 
 
 def upgrade():
@@ -43,9 +62,11 @@ def upgrade():
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
     upgrade_remove_wizard_metadata_from_releases()
+    drop_legacy_patching()
 
 
 def downgrade():
+    restore_legacy_patching()
     downgrade_remove_wizard_metadata_from_releases()
     downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
@@ -679,4 +700,54 @@ def downgrade_remove_wizard_metadata_from_releases():
             fields.JSON(),
             nullable=True
         )
+    )
+
+
+def drop_legacy_patching():
+    upgrade_enum(
+        "clusters",                 # table
+        "status",                   # column
+        "cluster_status",           # ENUM name
+        cluster_statuses_old,       # old options
+        cluster_statuses_new,       # new options
+    )
+
+    op.drop_constraint(
+        'fk_pending_release_id',
+        'clusters',
+        type_='foreignkey'
+    )
+    op.drop_column('clusters', 'pending_release_id')
+    op.drop_column('releases', 'can_update_from_versions')
+
+
+def restore_legacy_patching():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'can_update_from_versions',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        ))
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'pending_release_id',
+            sa.Integer(),
+            nullable=True
+        ))
+    op.create_foreign_key(
+        'fk_pending_release_id',
+        'clusters',
+        'releases',
+        ['pending_release_id'],
+        ['id'])
+
+    upgrade_enum(
+        "clusters",                 # table
+        "status",                   # column
+        "cluster_status",           # ENUM name
+        cluster_statuses_new,       # new options
+        cluster_statuses_old,       # old options
     )

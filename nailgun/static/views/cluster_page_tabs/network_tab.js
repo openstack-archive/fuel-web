@@ -846,7 +846,8 @@ var NetworkTab = React.createClass({
   },
   renderButtons() {
     var isCancelChangesDisabled = this.state.actionInProgress ||
-      !!this.props.cluster.task({group: 'deployment', active: true}) || !this.hasChanges();
+      !!this.props.cluster.task({group: ['deployment', 'network'], active: true}) ||
+      !this.hasChanges();
     return (
       <div className='well clearfix'>
         <div className='btn-group pull-right'>

@@ -1824,3 +1824,36 @@ class TestHandlers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=60)
+
+    @fake_tasks()
+    def test_force_deploy(self):
+        self.env.create(
+            nodes_kwargs=[{'name': '', 'pending_addition': True}]
+        )
+
+        def _send_request(handler):
+            return self.app.put(
+                reverse(
+                    handler,
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ),
+                headers=self.default_headers,
+                expect_errors=True
+            )
+
+        # Initial deployment
+        task = self.env.launch_deployment()
+        self.env.wait_ready(task, timeout=60)
+
+        # Trying to deploy on cluster in the operational state
+        resp = _send_request('ClusterChangesHandler')
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json_body.get('message'), 'No changes to deploy')
+
+        # Trying to force deploy on cluster in the operational state
+        resp = _send_request('ClusterChangesForceHandler')
+        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.json_body.get('name'),
+                         consts.TASK_NAMES.deploy)
+        self.assertEqual(resp.json_body.get('status'),
+                         consts.TASK_STATUSES.pending)

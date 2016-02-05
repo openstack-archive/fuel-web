@@ -44,21 +44,6 @@ class ClusterValidator(BasicValidator):
     )
 
     @classmethod
-    def _can_update_release(cls, curr_release, pend_release):
-        return any([
-            # redeploy
-            curr_release.id == pend_release.id,
-
-            # update to upper release
-            curr_release.operating_system == pend_release.operating_system
-            and curr_release.version in pend_release.can_update_from_versions,
-
-            # update to lower release
-            curr_release.operating_system == pend_release.operating_system
-            and pend_release.version in curr_release.can_update_from_versions,
-        ])
-
-    @classmethod
     def _validate_common(cls, data, instance=None):
         d = cls.validate_json(data)
         release_id = d.get("release", d.get("release_id"))
@@ -72,27 +57,6 @@ class ClusterValidator(BasicValidator):
                     "Release with ID '{0}' is not deployable.".format(
                         release_id), log_message=True)
             cls._validate_mode(d, release)
-
-        pend_release_id = d.get("pending_release_id")
-        if pend_release_id:
-            pend_release = objects.Release.get_by_uid(pend_release_id,
-                                                      fail_if_not_found=True)
-            if not release_id:
-                if not instance:
-                    raise errors.InvalidData(
-                        "Cannot set pending release when "
-                        "there is no current release",
-                        log_message=True
-                    )
-                release_id = instance.release_id
-            curr_release = objects.Release.get_by_uid(release_id)
-
-            if not cls._can_update_release(curr_release, pend_release):
-                raise errors.InvalidData(
-                    "Cannot set pending release as "
-                    "it cannot update current release",
-                    log_message=True
-                )
 
         return d
 

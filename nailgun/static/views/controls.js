@@ -375,7 +375,7 @@ export var Tooltip = React.createClass({
       this.removeTooltip();
     }
   },
-  componentWillUnmount() {
+  componentWillUnmount()  {
     this.removeTooltip();
   },
   addTooltip() {

@@ -125,6 +125,9 @@ class Node(Base):
                         default=[], nullable=False, server_default='{}')
     vms_conf = Column(MutableList.as_mutable(JSON),
                       default=[], server_default='[]', nullable=False)
+    attributes = Column(
+        MutableDict.as_mutable(JSON),
+        default={}, server_default='{}', nullable=False)
 
     @property
     def interfaces(self):

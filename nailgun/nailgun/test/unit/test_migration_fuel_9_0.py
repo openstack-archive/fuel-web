@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+
 import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
@@ -80,9 +82,9 @@ def prepare():
         }])
     releaseid = result.inserted_primary_key[0]
 
-    db.execute(
-        meta.tables['clusters'].insert(),
-        [{
+    cluster_id = base.insert_table_row(
+        meta.tables['clusters'],
+        {
             'name': 'test_env',
             'release_id': releaseid,
             'mode': 'ha_compact',
@@ -90,7 +92,28 @@ def prepare():
             'net_provider': 'neutron',
             'grouping': 'roles',
             'fuel_version': '8.0',
-        }])
+        }
+    )
+
+    node_id = base.insert_table_row(
+        meta.tables['nodes'],
+        {
+            'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',
+            'cluster_id': cluster_id,
+            'group_id': None,
+            'status': 'discover',
+            'meta': '{}',
+            'mac': 'aa:aa:aa:aa:aa:aa',
+            'timestamp': datetime.datetime.utcnow(),
+        }
+    )
+
+    base.insert_table_row(
+        meta.tables['node_attributes'],
+        {
+            'node_id': node_id,
+        }
+    )
 
     db.execute(
         meta.tables['ip_addrs'].insert(),
@@ -299,3 +322,15 @@ class TestVipMigration(base.BaseAlembicMigrationTest):
             ),
             result
         )
+
+
+class TestNodeAttributesMigration(base.BaseAlembicMigrationTest):
+
+    def test_attributes_fields_exist(self):
+        columns = [
+            self.meta.tables['node_attributes'].c.editable,
+            self.meta.tables['node_attributes'].c.generated
+        ]
+        db_values = db.execute(sa.select(columns)).fetchone()
+        for db_value in db_values:
+            self.assertEqual(db_value, '{}')

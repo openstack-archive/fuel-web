@@ -1598,6 +1598,14 @@ def get_nodegroup_network_schema_template(template, group_name):
     return jsonutils.loads(node_custom_template)['network_scheme']
 
 
+def insert_table_row(table, row_data):
+    result = db.execute(
+        table.insert(),
+        [row_data]
+    )
+    return result.inserted_primary_key[0]
+
+
 class BaseAlembicMigrationTest(TestCase):
 
     def setUp(self):

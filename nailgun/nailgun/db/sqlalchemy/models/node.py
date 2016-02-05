@@ -235,6 +235,11 @@ class NodeAttributes(Base):
     vms_conf = Column(MutableList.as_mutable(JSON),
                       default=[], server_default='[]')
 
+    editable = Column(MutableDict.as_mutable(JSON),
+                      default={}, server_default='{}')
+    generated = Column(MutableDict.as_mutable(JSON),
+                       default={}, server_default='{}')
+
 
 class NodeNICInterface(Base):
     __tablename__ = 'node_nic_interfaces'

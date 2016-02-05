@@ -79,7 +79,7 @@ var SettingsTab = React.createClass({
           .get('networking_parameters'),
         version: app.version,
         release: this.props.cluster.get('release'),
-        default: settings
+        default:  settings
       },
       settingsForChecks: new models.Settings(_.cloneDeep(settings.attributes)),
       initialAttributes: _.cloneDeep(settings.attributes),

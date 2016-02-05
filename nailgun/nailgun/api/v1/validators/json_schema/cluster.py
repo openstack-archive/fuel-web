@@ -81,6 +81,10 @@ attribute_schema = {
                 'text',
                 'textarea',
                 'file',
+                'text_list',
+                'password_list',
+                'textarea_list',
+                'file_list',
             ]
         },
         # 'value': None,  # custom validation depending on type
@@ -116,6 +120,25 @@ allowed_values_schema = {
     },
 }
 
+# Schema with a structure of multiple text fields setting value
+multiple_text_value_schema = {
+    'value': {
+        'type': 'array',
+        'minItems': 1,
+        'items': [{'type': 'string'}],
+    },
+}
+
+# Schema with a structure of file setting value
+file_value_schema = {
+    'type': ['string', 'object'],
+    'properties': {
+        'name': {'type': ['string', 'null']},
+        'content': {'type': ['string', 'null']},
+    },
+    'required': ['name', 'content'],
+}
+
 # Additional properties definitions for 'attirbute_schema'
 # depending on 'type' property
 attribute_type_schemas = {
@@ -144,6 +167,17 @@ attribute_type_schemas = {
     'select': allowed_values_schema,
     'text': {'value': {'type': 'string'}},
     'textarea': {'value': {'type': 'string'}},
+    'text_list': multiple_text_value_schema,
+    'password_list': multiple_text_value_schema,
+    'textarea_list': multiple_text_value_schema,
+    'file': {'value': file_value_schema},
+    'file_list': {
+        'value': {
+            'type': 'array',
+            'minItems': 1,
+            'items': [file_value_schema],
+        },
+    },
 }
 
 vmware_attributes_schema = {

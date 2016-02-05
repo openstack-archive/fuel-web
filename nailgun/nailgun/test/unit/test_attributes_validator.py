@@ -274,6 +274,36 @@ class TestAttributesValidator(BaseTestCase):
                           AttributesValidator.validate_editable_attributes,
                           yaml.load(attrs))
 
+    def test_text_list_value(self):
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: text_list
+              value: ['2']
+              weight: 80
+        '''
+
+        self.assertNotRaises(errors.InvalidData,
+                             AttributesValidator.validate_editable_attributes,
+                             yaml.load(attrs))
+        attrs = '''
+        editable:
+          storage:
+            osd_pool_size:
+              description: desc
+              label: OSD Pool Size
+              type: text_list
+              value: 2
+              weight: 80
+        '''
+
+        self.assertRaises(errors.InvalidData,
+                          AttributesValidator.validate_editable_attributes,
+                          yaml.load(attrs))
+
     @patch('nailgun.objects.Cluster.get_updated_editable_attributes')
     def test_invalid_provisioning_method(self, mock_cluster_attrs):
         attrs = {'editable': {'provision': {'method':

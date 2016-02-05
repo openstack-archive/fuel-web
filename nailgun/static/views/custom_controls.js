@@ -16,8 +16,9 @@
 import _ from 'underscore';
 import i18n from 'i18n';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import utils from 'utils';
-import {Input} from 'views/controls';
+import {Input, Tooltip} from 'views/controls';
 
 var customControls = {};
 
@@ -200,6 +201,328 @@ customControls.custom_repo_configuration = React.createClass({
             {i18n(ns + 'add_repo_button')}
           </button>
         </div>
+      </div>
+    );
+  }
+});
+
+var multipleValuesInputMixin = {
+  statics: {
+    validate(setting) {
+      if (!(setting.regex || {}).source) return null;
+      var regex = new RegExp(setting.regex.source);
+      var errors = _.map(setting.value,
+        (value) => value.match(regex) ? null : setting.regex.error
+      );
+      return _.compact(errors).length ? errors : null;
+    }
+  },
+  propTypes: {
+    value: React.PropTypes.arrayOf(React.PropTypes.node).isRequired,
+    type: React.PropTypes.oneOf(['text_list', 'password_list', 'textarea_list', 'file_list'])
+      .isRequired,
+    name: React.PropTypes.node,
+    label: React.PropTypes.node,
+    description: React.PropTypes.node,
+    error: React.PropTypes.arrayOf(React.PropTypes.node),
+    disabled: React.PropTypes.bool,
+    wrapperClassName: React.PropTypes.node,
+    onChange: React.PropTypes.func,
+    minFieldsLength: React.PropTypes.number,
+    tooltipPlacement: React.PropTypes.oneOf(['left', 'right', 'top', 'bottom']),
+    tooltipIcon: React.PropTypes.node,
+    tooltipText: React.PropTypes.node
+  },
+  getInitialState() {
+    return {};
+  },
+  getDefaultProps() {
+    return {
+      minFieldsLength: 1,
+      tooltipIcon: 'glyphicon-warning-sign',
+      tooltipPlacement: 'right'
+    };
+  },
+  changeField(index, method = 'change') {
+    var value = _.clone(this.props.value);
+    switch (method) {
+      case 'add':
+        value.splice(index + 1, 0, '');
+        break;
+      case 'remove':
+        value.splice(index, 1);
+        this.setState({key: _.now()});
+        break;
+      case 'change':
+        var input = ReactDOM.findDOMNode(this.refs['input' + index]);
+        value[index] = input.value;
+        break;
+    }
+    if (this.props.onChange) return this.props.onChange(this.props.name, value);
+  },
+  debouncedFieldValueChange: _.debounce(function(index) {
+    return this.changeField(index);
+  }, 200, {leading: true}),
+  renderMultipleInputControls(index) {
+    return (
+      <div className='field-controls'>
+        <button
+          className='btn btn-link btn-add-field'
+          disabled={this.props.disabled}
+          onClick={() => this.changeField(index, 'add')}
+        >
+          <i className='glyphicon glyphicon-plus-sign' />
+        </button>
+        {this.props.value.length > this.props.minFieldsLength &&
+          <button
+            className='btn btn-link btn-remove-field'
+            disabled={this.props.disabled}
+            onClick={() => this.changeField(index, 'remove')}
+          >
+            <i className='glyphicon glyphicon-minus-sign' />
+          </button>
+        }
+      </div>
+    );
+  },
+  renderLabel() {
+    if (!this.props.label) return null;
+    return (
+      <label key='label'>
+        {this.props.label}
+        {this.props.tooltipText &&
+          <Tooltip text={this.props.tooltipText} placement={this.props.tooltipPlacement}>
+            <i className={utils.classNames('glyphicon tooltip-icon', this.props.tooltipIcon)} />
+          </Tooltip>
+        }
+      </label>
+    );
+  },
+  renderDescription() {
+    if (this.props.error) return null;
+    return <span key='description' className='help-block'>{this.props.description}</span>;
+  },
+  renderWrapper(children) {
+    return (
+      <div
+        key={this.state.key}
+        className={utils.classNames({
+          'form-group': true,
+          disabled: this.props.disabled,
+          [this.props.wrapperClassName]: this.props.wrapperClassName
+        })}
+      >
+        {children}
+      </div>
+    );
+  },
+  render() {
+    return this.renderWrapper([
+      this.renderLabel(),
+      <div key='field-list' className={utils.classNames('field-list', [this.props.type])}>
+        {_.map(this.props.value, this.renderInput)}
+      </div>,
+      this.renderDescription()
+    ]);
+  }
+};
+
+customControls.text_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  renderInput(value, index) {
+    console.log(value, index);
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <input
+          {...this.props}
+          ref={'input' + index}
+          type='text'
+          className='form-control'
+          onChange={() => this.changeField(index)}
+          value={value}
+        />
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.password_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  getInitialState() {
+    return {
+      contentVisibilityMap: _.map(this.props.value, () => false)
+    };
+  },
+  togglePassword(index) {
+    var contentVisibilityMap = _.clone(this.state.contentVisibilityMap);
+    contentVisibilityMap[index] = !contentVisibilityMap[index];
+    this.setState({contentVisibilityMap});
+  },
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({
+          'input-group': true,
+          'has-error': !_.isNull(error)
+        })}
+      >
+        <input
+          {...this.props}
+          ref={'input' + index}
+          type={this.state.contentVisibilityMap[index] ? 'text' : 'password'}
+          className='form-control'
+          onChange={() => this.changeField(index)}
+          value={value}
+        />
+        <div className='input-group-addon' onClick={() => this.togglePassword(index)}>
+          <i
+            className={
+              this.state.contentVisibilityMap[index] ?
+              'glyphicon glyphicon-eye-close' : 'glyphicon glyphicon-eye-open'
+            }
+          />
+        </div>
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.textarea_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({'has-error': !_.isNull(error)})}
+      >
+        <textarea
+          {...this.props}
+          ref={'input' + index}
+          className='form-control'
+          onChange={() => this.changeField(index)}
+          value={value}
+        />
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
+      </div>
+    );
+  }
+});
+
+customControls.file_list = React.createClass({
+  mixins: [multipleValuesInputMixin],
+  propTypes: {
+    value: React.PropTypes.arrayOf(
+        React.PropTypes.oneOfType([
+          React.PropTypes.shape({
+            name: React.PropTypes.string,
+            content: React.PropTypes.string
+          }),
+          React.PropTypes.string
+        ])
+      ).isRequired
+  },
+  getInitialState() {
+    return {
+      fileNames: _.map(this.props.value, (value) => (value || {}).name || null),
+      fileContents: _.map(this.props.value, (value) => (value || {}).content || null)
+    };
+  },
+  pickFile(index) {
+    if (!this.props.disabled) ReactDOM.findDOMNode(this.refs['input' + index]).click();
+  },
+  saveFile(index, fileName = null, content = null) {
+    var fileNames = _.clone(this.state.fileNames);
+    var fileContents = _.clone(this.state.fileContents);
+    fileNames[index] = fileName;
+    fileContents[index] = content;
+    this.setState({fileNames, fileContents});
+    return this.props.onChange(
+      this.props.name,
+      _.map(fileNames, (name, index) => ({name, content: fileContents[index]}))
+    );
+  },
+  removeFile(index) {
+    if (!this.props.disabled) {
+      ReactDOM.findDOMNode(this.refs['form' + index]).reset();
+      this.saveFile(index);
+    }
+  },
+  readFile(index) {
+    var reader = new FileReader();
+    var input = ReactDOM.findDOMNode(this.refs['input' + index]);
+    if (input.files.length) {
+      var fileName = input.value.replace(/^.*[\\\/]/g, '');
+      reader.onload = () => this.saveFile(index, fileName, reader.result);
+      reader.readAsBinaryString(input.files[0]);
+    }
+  },
+  renderInput(value, index) {
+    var error = (this.props.error || [])[index] || null;
+    return (
+      <div
+        key={'input' + index}
+        className={utils.classNames({'has-error': !_.isNull(error)})}
+      >
+        <form ref={'form' + index}>
+          <input
+            {...this.props}
+            ref={'input' + index}
+            type='file'
+            className='form-control'
+            onChange={() => this.readFile(index)}
+            value={value}
+          />
+        </form>
+        <div className='input-group'>
+          <input
+            className='form-control file-name'
+            type='text'
+            placeholder={i18n('controls.file.placeholder')}
+            value={
+              this.state.fileNames[index] && (
+                '[' + utils.showSize(this.state.fileContents[index].length) + '] '
+                  + this.state.fileNames[index]
+              )
+            }
+            onClick={() => this.pickFile(index)}
+            disabled={this.props.disabled}
+            readOnly
+          />
+          <div
+            className='input-group-addon'
+            onClick={() => (this.state.fileNames[index] ? this.removeFile : this.pickFile)(index)}
+          >
+            <i
+              className={this.state.fileNames[index] && !this.props.disabled ?
+                'glyphicon glyphicon-remove' : 'glyphicon glyphicon-file'
+              }
+            />
+          </div>
+        </div>
+        {this.renderMultipleInputControls(index)}
+        {error &&
+          <div className='help-block field-error'>{error}</div>
+        }
       </div>
     );
   }

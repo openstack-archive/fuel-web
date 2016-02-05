@@ -535,13 +535,10 @@ class TestNodeObject(BaseIntegrationTest):
 
         # Checking order by number of fields
         nodes = objects.NodeCollection.filter_by(None).all()
-        ordered_nodes = objects.NodeCollection.order_by(nodes, ('-id', 'role'))
+        ordered_nodes = objects.NodeCollection.order_by(nodes, ('role', '-id'))
         self.assertListEqual(
             ordered_nodes,
-            sorted(
-                sorted(nodes, key=lambda x: x.id, reverse=True),
-                key=lambda x: x.role
-            )
+            [self.env.nodes[i] for i in [1, 2, 7, 6, 5, 4, 3, 0]]
         )
 
     def test_eager_nodes_handlers(self):

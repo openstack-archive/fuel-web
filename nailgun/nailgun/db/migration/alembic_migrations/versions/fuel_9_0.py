@@ -30,6 +30,7 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 
+
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
 
@@ -40,9 +41,11 @@ def upgrade():
     update_vips_from_network_roles()
     upgrade_node_roles_metadata()
     merge_node_attributes_with_nodes()
+    upgrade_node_attributes()
 
 
 def downgrade():
+    downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
     downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
@@ -635,3 +638,19 @@ def downgrade_merge_node_attributes_with_nodes():
         connection.execute(insert_query, node_id=node_id, vms_conf=vms_conf)
 
     op.drop_column('nodes', 'vms_conf')
+
+
+def upgrade_node_attributes():
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+
+def downgrade_node_attributes():
+    op.drop_column('nodes', 'attributes')

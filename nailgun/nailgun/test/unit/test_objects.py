@@ -729,8 +729,7 @@ class TestTaskObject(BaseIntegrationTest):
         kvm_node = self.cluster.nodes[0]
         kvm_node.roles = [consts.VIRTUAL_NODE_TYPES.virt]
         self.db.flush()
-        objects.Node.set_vms_conf(kvm_node,
-                                  [{'id': 1, 'cluster_id': self.cluster.id}])
+        kvm_node.vms_conf = [{'id': 1, 'cluster_id': self.cluster.id}]
         task = Task(name=consts.TASK_NAMES.spawn_vms,
                     cluster=self.cluster,
                     status=consts.TASK_STATUSES.ready)
@@ -742,7 +741,7 @@ class TestTaskObject(BaseIntegrationTest):
 
         for node in self.cluster.nodes:
             if consts.VIRTUAL_NODE_TYPES.virt in node.roles:
-                self.assertTrue(node.attributes.vms_conf[0].get('created'))
+                self.assertTrue(node.vms_conf[0].get('created'))
             else:
                 self.assertNotEquals(node.status, consts.NODE_STATUSES.ready)
 
@@ -1432,12 +1431,12 @@ class TestClusterObjectVirtRoles(BaseTestCase):
             ]
         )
 
-        self.env.nodes[0].attributes.vms_conf = [
+        self.env.nodes[0].vms_conf = [
             {'id': 1, 'cpu': 1, 'mem': 2},
             {'id': 2, 'cpu': 1, 'mem': 2},
         ]
 
-        self.env.nodes[1].attributes.vms_conf = [
+        self.env.nodes[1].vms_conf = [
             {'id': 1, 'cpu': 1, 'mem': 2},
             {'id': 2, 'cpu': 1, 'mem': 2},
         ]
@@ -1446,7 +1445,7 @@ class TestClusterObjectVirtRoles(BaseTestCase):
         objects.Cluster.set_vms_created_state(self.env.clusters[0])
 
         for node in self.env.nodes:
-            for conf in node.attributes.vms_conf:
+            for conf in node.vms_conf:
                 self.assertTrue(conf['created'])
 
     def test_reset_vms_created_state(self):
@@ -1454,10 +1453,10 @@ class TestClusterObjectVirtRoles(BaseTestCase):
 
         objects.Node.reset_vms_created_state(self.env.nodes[0])
 
-        for conf in self.env.nodes[0].attributes.vms_conf:
+        for conf in self.env.nodes[0].vms_conf:
             self.assertFalse(conf['created'])
 
-        for conf in self.env.nodes[1].attributes.vms_conf:
+        for conf in self.env.nodes[1].vms_conf:
             self.assertTrue(conf['created'])
 
 

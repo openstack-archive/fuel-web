@@ -67,13 +67,10 @@ class TestLoadDbDriverWithSAExceptions(unittest.TestCase):
 
     def test_sa_relationship_constraint(self):
         def handler():
-            node = models.Node(
-                mac='60:a4:4c:35:28:95',
-                timestamp=datetime.datetime.now()
-            )
+            cluster = models.Cluster()
 
-            node.attributes = models.IPAddr()
-            db.add(node)
+            cluster.attributes = models.IPAddr()
+            db.add(cluster)
             db.flush()
 
         self.assertRaises(AssertionError, load_db_driver, handler)

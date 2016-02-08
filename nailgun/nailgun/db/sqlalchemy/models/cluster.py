@@ -24,7 +24,6 @@ from sqlalchemy import Text
 from sqlalchemy import UnicodeText
 
 from sqlalchemy.dialects import postgresql as psql
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
@@ -35,7 +34,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
-from nailgun.db.sqlalchemy.models.mutable import MutableList
+from nailgun.db.sqlalchemy.models import mutable
 from nailgun.db.sqlalchemy.models.node import Node
 
 
@@ -73,7 +72,7 @@ class Cluster(Base):
                                   cascade="all,delete",
                                   uselist=False)
     ui_settings = Column(
-        MutableDict.as_mutable(JSON),
+        mutable.MutableDict.as_mutable(JSON),
         nullable=False,
         server_default=jsonutils.dumps({
             "view_mode": "standard",
@@ -111,20 +110,22 @@ class Cluster(Base):
         cascade="delete"
     )
     replaced_deployment_info = Column(
-        MutableList.as_mutable(JSON), default=[])
+        mutable.MutableList.as_mutable(JSON), default=[])
     replaced_provisioning_info = Column(
-        MutableDict.as_mutable(JSON), default={})
+        mutable.MutableDict.as_mutable(JSON), default={})
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
     deployment_tasks = Column(
-        MutableList.as_mutable(JSON), default=[])
+        mutable.MutableList.as_mutable(JSON), default=[])
     components = Column(
-        MutableList.as_mutable(JSON),
+        mutable.MutableList.as_mutable(JSON),
         default=[],
         server_default='[]',
         nullable=False)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    node_attributes = Column(mutable.MutableDict.as_mutable(JSON), default={},
+                             server_default='{}', nullable=False)
 
     @property
     def changes(self):
@@ -169,12 +170,12 @@ class Attributes(Base):
     __tablename__ = 'attributes'
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
-    editable = Column(MutableDict.as_mutable(JSON))
-    generated = Column(MutableDict.as_mutable(JSON))
+    editable = Column(mutable.MutableDict.as_mutable(JSON))
+    generated = Column(mutable.MutableDict.as_mutable(JSON))
 
 
 class VmwareAttributes(Base):
     __tablename__ = 'vmware_attributes'
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
-    editable = Column(MutableDict.as_mutable(JSON))
+    editable = Column(mutable.MutableDict.as_mutable(JSON))

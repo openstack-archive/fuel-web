@@ -597,11 +597,13 @@ class Node(NailgunObject):
         instance.kernel_params = None
         instance.group_id = None
         instance.deployment_info = []
+        instance.attributes = None
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, roles)
         cls.remove_replaced_params(instance)
         cls.assign_group(instance)
         cls.set_network_template(instance)
+        cls.update_attributes(instance)
         db().flush()
 
     @classmethod
@@ -776,6 +778,7 @@ class Node(NailgunObject):
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
+        cls.update_attributes(instance)
 
     @classmethod
     def set_network_template(cls, instance):
@@ -846,6 +849,7 @@ class Node(NailgunObject):
         instance.kernel_params = None
         instance.primary_roles = []
         instance.hostname = cls.default_slave_name(instance)
+        instance.attributes = None
 
         from nailgun.objects import OpenstackConfig
         OpenstackConfig.disable_by_nodes([instance])
@@ -980,6 +984,17 @@ class Node(NailgunObject):
 
         for vm in node.vms_conf:
             vm['created'] = False
+
+    @classmethod
+    def update_attributes(cls, instance):
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to update attributes of node "
+                u"'{0}' which isn't added to cluster".format(
+                    instance.full_name))
+            return
+
+        instance.attributes = instance.cluster.release.node_attributes
 
 
 class NodeCollection(NailgunCollection):

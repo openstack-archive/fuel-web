@@ -127,6 +127,9 @@ def prepare():
                     ]
                 }
             }]),
+            'node_attributes': jsonutils.dumps({
+
+            }),
             'is_deployable': True,
         }])
     releaseid = result.inserted_primary_key[0]

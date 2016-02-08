@@ -245,7 +245,6 @@ class Node(NailgunObject):
             cls.update_primary_roles(new_node, primary_roles)
 
         # creating attributes
-        cls.create_attributes(new_node)
         cls.create_discover_notification(new_node)
 
         if new_node.ip:
@@ -333,20 +332,6 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def create_attributes(cls, instance):
-        """Create attributes for Node instance
-
-        :param instance: Node instance
-        :returns: NodeAttributes instance
-        """
-        new_attributes = models.NodeAttributes()
-        instance.attributes = new_attributes
-        db().add(new_attributes)
-        db().add(instance)
-        db().flush()
-        return new_attributes
-
-    @classmethod
     def is_interfaces_configuration_locked(cls, instance):
         """Returns true if update of network configuration is not allowed.
 
@@ -390,19 +375,6 @@ class Node(NailgunObject):
                 "in meta: %s", instance.human_readable_name, exc.message
             )
             logger.warning(traceback.format_exc())
-
-    @classmethod
-    def set_vms_conf(cls, instance, vms_conf):
-        """Set vms_conf for Node instance from JSON data.
-
-        :param instance: Node instance
-        :param volumes_data: JSON with new vms_conf data
-        :returns: None
-        """
-        db().query(models.NodeAttributes).filter_by(
-            node_id=instance.id).update({'vms_conf': vms_conf})
-        db().flush()
-        db().refresh(instance)
 
     @classmethod
     def create_discover_notification(cls, instance):
@@ -1006,10 +978,8 @@ class Node(NailgunObject):
         if consts.VIRTUAL_NODE_TYPES.virt not in node.all_roles:
             return
 
-        for vm in node.attributes.vms_conf:
+        for vm in node.vms_conf:
             vm['created'] = False
-        # Was changed second level data in 'vms_conf'
-        node.attributes.vms_conf.changed()
 
 
 class NodeCollection(NailgunCollection):

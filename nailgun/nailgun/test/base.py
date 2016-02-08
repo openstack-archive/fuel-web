@@ -56,7 +56,6 @@ from nailgun.db.sqlalchemy.fixman import load_fake_deployment_tasks
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import ClusterPluginLink
-from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import PluginLink
@@ -392,9 +391,6 @@ class EnvironmentManager(object):
         self.db.add(task)
         self.db.commit()
         return task
-
-    def create_attributes(self):
-        return NodeAttributes()
 
     def create_notification(self, **kwargs):
         notif_data = {

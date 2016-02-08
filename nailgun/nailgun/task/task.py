@@ -161,14 +161,12 @@ class DeploymentTask(object):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
         task_ids = deployment_tasks or []
 
-        nodes_ids = [n.id for n in nodes]
-        for n in db().query(Node).filter_by(
-                cluster=task.cluster).order_by(Node.id):
+        objects.NodeCollection.lock_nodes(nodes)
 
-            if n.id in nodes_ids:
-                if n.pending_roles:
-                    n.roles = n.roles + n.pending_roles
-                    n.pending_roles = []
+        for n in nodes:
+            if n.pending_roles:
+                n.roles = n.roles + n.pending_roles
+                n.pending_roles = []
 
                 # If receiver for some reasons didn't update
                 # node's status to provisioned when deployment
@@ -176,7 +174,6 @@ class DeploymentTask(object):
                 if n.status in (consts.NODE_STATUSES.deploying,):
                     n.status = consts.NODE_STATUSES.provisioned
                 n.progress = 0
-                db().add(n)
         db().flush()
 
         deployment_mode = cls._get_deployment_method(task.cluster)

@@ -386,38 +386,6 @@ def upgrade_attributes_metadata_6_0_to_6_1(attributes_meta):
 
 
 def upgrade_master_node_settings_6_0_to_6_1(master_node_settings):
-    master_node_settings['statistics']['name']['type'] = 'hidden'
-    master_node_settings['statistics']['email']['type'] = 'hidden'
-    master_node_settings['statistics']['company']['type'] = 'hidden'
-    master_node_settings['tracking'] = {
-        "email": {
-            "type": "text",
-            "value": "",
-            "label": "Mirantis Account Email",
-            "weight": 10,
-            "regex": {
-                "source": "^\\S+@\\S+\.\\S+$",
-                "error": "Invalid email"
-            }
-        },
-        "password": {
-            "type": "password",
-            "value": "",
-            "label": "Password",
-            "weight": 20,
-            "regex": {
-                "source": "\\S",
-                "error": "Password cannot be empty"
-            }
-        }
-    }
-    master_node_settings['statistics']['name']['regex'] = {}
-    master_node_settings['statistics']['email']['regex'] = {}
-    master_node_settings['statistics']['company']['regex'] = {}
-    master_node_settings['statistics']['name']['restrictions'] = {}
-    master_node_settings['statistics']['email']['restrictions'] = {}
-    master_node_settings['statistics']['company']['restrictions'] = {}
-
     return master_node_settings
 
 

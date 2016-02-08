@@ -149,7 +149,7 @@ export var Input = React.createClass({
             <input
               className='form-control file-name'
               type='text'
-              placeholder={i18n('file.placeholder')}
+              placeholder={i18n('controls.file.placeholder')}
               value={
                 this.state.fileName && (
                   '[' + utils.showSize(this.state.content.length) + '] ' + this.state.fileName

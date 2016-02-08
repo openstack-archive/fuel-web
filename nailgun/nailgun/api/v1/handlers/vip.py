@@ -77,6 +77,7 @@ class ClusterVIPHandler(base.SingleHandler):
         :http: * 200 (OK)
                * 400 (data validation failed)
                * 404 (ip_addr entry not found in db)
+               * 409 (updating ip_addr intersects with ips of clusters)
         """
         obj = self._get_vip_from_cluster_or_http_error(
             int(cluster_id), int(ip_addr_id))
@@ -101,6 +102,7 @@ class ClusterVIPHandler(base.SingleHandler):
         :http: * 200 (OK)
                * 400 (data validation failed)
                * 404 (ip_addr entry not found in db)
+               * 409 (updating ip_addr intersects with ips of clusters)
         """
         return self.PUT(cluster_id, ip_addr_id)
 
@@ -157,6 +159,7 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
 
         :http: * 200 (OK)
                * 400 (data validation failed)
+               * 409 (updating ip_addr intersects with ips of clusters)
         """
         update_data = self.checked_data(
             self.validator.validate_collection_update,
@@ -176,5 +179,6 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
 
         :http: * 200 (OK)
                * 400 (data validation failed)
+               * 409 (updating ip_addr intersects with ips of clusters)
         """
         return self.PUT(cluster_id)

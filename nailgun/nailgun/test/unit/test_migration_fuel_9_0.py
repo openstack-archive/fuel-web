@@ -430,8 +430,11 @@ class TestNodeAttributesMigration(base.BaseAlembicMigrationTest):
 
     def test_attributes_fields_exist(self):
         columns = [
-            self.meta.tables['nodes'].c.attributes
+            self.meta.tables['nodes'].c.attributes,
+            self.meta.tables['releases'].c.node_attributes,
         ]
-        db_values = db.execute(sa.select(columns)).fetchone()
-        for db_value in db_values:
-            self.assertEqual(db_value, '{}')
+
+        for column in columns:
+            db_values = db.execute(sa.select([column])).fetchone()
+            for db_value in db_values:
+                self.assertEqual(db_value, '{}')

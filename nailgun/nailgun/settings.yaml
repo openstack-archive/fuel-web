@@ -757,7 +757,6 @@ DUMP:
 
     master:
       hosts: []
-
       objects:
       - type: dir
         path: /etc/nailgun
@@ -835,10 +834,13 @@ DUMP:
       - type: file
         path: /etc/cobbler*
       - type: dir
-        path: /var/log
-        exclude:
-          - atop/
-          - dump/
+        path: /var/log/docker-logs
+      - type: file
+        path: /var/log/docker-*.log
+      - type: file
+        path: /var/log/fuelmenu.log
+      - type: file
+        path: /var/log/puppet/bootstrap_admin_node.log
       - type: file
         path: /var/log/atop/atop_current
       - type: command

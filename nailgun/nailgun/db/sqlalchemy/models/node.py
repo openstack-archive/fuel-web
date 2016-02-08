@@ -26,9 +26,10 @@ from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.orm import relationship, backref
+
 from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import relationship
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
@@ -104,10 +105,7 @@ class Node(Base):
                            default=[], nullable=False, server_default='{}')
     primary_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                            default=[], nullable=False, server_default='{}')
-    attributes = relationship("NodeAttributes",
-                              backref=backref("node"),
-                              uselist=False,
-                              cascade="all,delete")
+
     nic_interfaces = relationship("NodeNICInterface", backref="node",
                                   cascade="all, delete-orphan",
                                   order_by="NodeNICInterface.name")
@@ -125,6 +123,8 @@ class Node(Base):
                               server_default=None, nullable=True)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    vms_conf = Column(MutableList.as_mutable(JSON),
+                      default=[], server_default='[]', nullable=False)
 
     @property
     def interfaces(self):
@@ -225,15 +225,6 @@ class Node(Base):
 
         data["interfaces"] = result
         self.meta = data
-
-
-class NodeAttributes(Base):
-    __tablename__ = 'node_attributes'
-    id = Column(Integer, primary_key=True)
-    node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))
-    interfaces = Column(MutableDict.as_mutable(JSON), default={})
-    vms_conf = Column(MutableList.as_mutable(JSON),
-                      default=[], server_default='[]')
 
 
 class NodeNICInterface(Base):

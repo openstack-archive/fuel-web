@@ -26,6 +26,8 @@ import sqlalchemy as sa
 # revision identifiers, used by Alembic.
 from oslo_serialization import jsonutils
 
+from nailgun.db.sqlalchemy.models import fields
+
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
 
@@ -34,9 +36,11 @@ def upgrade():
     add_foreign_key_ondelete()
     upgrade_ip_address()
     update_vips_from_network_roles()
+    merge_node_attributes_with_nodes()
 
 
 def downgrade():
+    downgrade_merge_node_attributes_with_nodes()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
 
@@ -535,3 +539,47 @@ def downgrade_ip_address():
     )
     op.drop_column('ip_addrs', 'is_user_defined')
     op.drop_column('ip_addrs', 'vip_namespace')
+
+
+def merge_node_attributes_with_nodes():
+    connection = op.get_bind()
+
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'vms_conf',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        )
+    )
+
+    update_query = sa.sql.text(
+        'UPDATE nodes SET vms_conf = node_attributes.vms_conf '
+        'FROM node_attributes WHERE node_attributes.id = nodes.id')
+    connection.execute(update_query)
+
+    op.drop_table('node_attributes')
+
+
+def downgrade_merge_node_attributes_with_nodes():
+    connection = op.get_bind()
+
+    op.create_table(
+        'node_attributes',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=True),
+        sa.Column('interfaces', fields.JSON(), nullable=True),
+        sa.Column('vms_conf', fields.JSON(),
+                  nullable=False, server_default='[]'),
+        sa.ForeignKeyConstraint(['node_id'], ['nodes.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    select_query = sa.sql.text('SELECT id, vms_conf FROM nodes')
+    insert_query = sa.sql.text('INSERT INTO node_attributes (node_id, vms)')
+
+    for node_id, vms_conf in connection.execute(select_query):
+        connection.execute(insert_query, node_id=node_id, vms_conf=vms_conf)
+
+    op.drop_column('nodes', 'vms_conf')

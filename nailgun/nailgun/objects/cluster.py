@@ -1124,7 +1124,7 @@ class Cluster(NailgunObject):
         nodes = []
         for node in cls.get_nodes_by_role(instance,
                                           consts.VIRTUAL_NODE_TYPES.virt):
-            for vm in node.attributes.vms_conf:
+            for vm in node.vms_conf:
                 if not vm.get('created'):
                     nodes.append(node)
         return nodes
@@ -1133,11 +1133,9 @@ class Cluster(NailgunObject):
     def set_vms_created_state(cls, instance):
         nodes = cls.get_nodes_by_role(instance, consts.VIRTUAL_NODE_TYPES.virt)
         for node in nodes:
-            for vm in node.attributes.vms_conf:
+            for vm in node.vms_conf:
                 if not vm.get('created'):
                     vm['created'] = True
-            # Second level data was changed in 'vms_conf'.
-            node.attributes.vms_conf.changed()
         db().flush()
 
     @classmethod

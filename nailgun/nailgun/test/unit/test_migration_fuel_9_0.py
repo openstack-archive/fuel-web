@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+
 import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
@@ -140,6 +142,31 @@ def prepare():
             'grouping': 'roles',
             'fuel_version': '8.0',
         }])
+
+    db.execute(
+        meta.tables['nodes'].insert(),
+        [{
+            'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',
+            'cluster_id': None,
+            'group_id': None,
+            'status': 'discover',
+            'meta': '{}',
+            'mac': 'aa:aa:aa:aa:aa:aa',
+            'timestamp': datetime.datetime.utcnow(),
+        }]
+    )
+    node_id = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['node_attributes'].insert(),
+        [{
+            'node_id': node_id,
+            'vms_conf': jsonutils.dumps([
+                {'cpu': 1, 'mem': 2},
+                {'cpu': 1, 'mem': 2},
+            ])
+        }]
+    )
 
     db.execute(
         meta.tables['ip_addrs'].insert(),
@@ -376,4 +403,24 @@ class TestNodeRolesMigration(base.BaseAlembicMigrationTest):
             self.assertEquals(
                 role_group,
                 role_groups.get(role_name, consts.NODE_ROLE_GROUPS.other)
+            )
+
+
+class TestMergeNodeAttributes(base.BaseAlembicMigrationTest):
+
+    def test_node_attributes_not_exists(self):
+        self.assertNotIn('node_attributes', self.meta.tables)
+
+    def test_data_moved_into_nodes_table(self):
+        nodes_table = self.meta.tables['nodes']
+        records = list(db.execute(
+            sa.select([nodes_table.c.vms_conf])))
+
+        for record in records:
+            self.assertEqual(
+                jsonutils.loads(record[0]),
+                [
+                    {'cpu': 1, 'mem': 2},
+                    {'cpu': 1, 'mem': 2},
+                ]
             )

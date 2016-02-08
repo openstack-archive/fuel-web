@@ -82,8 +82,6 @@ class NodeDefaultsDisksHandler(BaseHandler):
                * 404 (node or its attributes not found in db)
         """
         node = self.get_object_or_404(objects.Node, node_id)
-        if not node.attributes:
-            raise self.http(404)
 
         volumes = DisksFormatConvertor.format_disks_to_simple(
             node.volume_manager.gen_volumes_info())

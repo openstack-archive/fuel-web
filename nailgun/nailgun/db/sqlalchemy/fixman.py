@@ -197,7 +197,6 @@ def upload_fixture(fileobj, loader=None):
 
         # UGLY HACK for testing
         if new_obj.__class__.__name__ == 'Node':
-            objects.Node.create_attributes(new_obj)
             objects.Node.update_interfaces(new_obj)
             fire_callback_on_node_create(new_obj)
             db().commit()

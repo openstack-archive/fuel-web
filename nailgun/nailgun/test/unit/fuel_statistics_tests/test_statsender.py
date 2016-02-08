@@ -28,7 +28,6 @@ from nailgun.objects import OpenStackWorkloadStats
 from nailgun.settings import settings
 from nailgun.statistics.statsenderd import StatsSender
 
-FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
 FEATURE_EXPERIMENTAL = {'feature_groups': ['experimental']}
 
 
@@ -51,10 +50,6 @@ class TestStatisticsSender(BaseTestCase):
             StatsSender().build_collector_url("COLLECTOR_PING_URL"),
             settings.COLLECTOR_PING_URL.format(collector_server=server)
         )
-
-    @patch.dict('nailgun.settings.settings.VERSION', FEATURE_MIRANTIS)
-    def test_mirantis_collector_urls(self):
-        self.check_collector_urls(StatsSender.COLLECTOR_MIRANTIS_SERVER)
 
     @patch.dict('nailgun.settings.settings.VERSION', FEATURE_EXPERIMENTAL)
     def test_community_collector_urls(self):

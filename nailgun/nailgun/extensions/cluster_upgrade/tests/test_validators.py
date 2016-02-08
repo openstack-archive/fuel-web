@@ -36,7 +36,7 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
         self.validator.validate_release_upgrade(self.release_61,
                                                 self.release_80)
 
-    @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
+    @mock.patch.dict(settings.VERSION, {'feature_groups': []})
     def test_validate_release_upgrade_deprecated_release(self):
         release_511 = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,

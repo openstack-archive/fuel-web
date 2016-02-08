@@ -525,7 +525,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "must have name".format(self.env.nodes[0]["id"])
         )
 
-    @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
+    @mock.patch.dict(settings.VERSION, {'feature_groups': []})
     def test_nics_bond_create_failed_admin_net_w_lacp_lnx(self):
         mode = BOND_MODES.l_802_3ad
         bond_nets = self.admin_nic["assigned_networks"] + \
@@ -548,7 +548,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "and has lacp mode '{1}'".format(self.env.nodes[0]["id"], mode)
         )
 
-    @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
+    @mock.patch.dict(settings.VERSION, {'feature_groups': []})
     def test_nics_bond_create_failed_admin_net_w_lacp_ovs(self):
         mode = BOND_MODES.lacp_balance_tcp
         bond_nets = self.admin_nic["assigned_networks"] + \

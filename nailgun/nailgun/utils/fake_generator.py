@@ -269,7 +269,7 @@ class FakeNodesGenerator(object):
                                         random.randint(0, 9)),
             'serial': ''.join(
                 [str(random.randint(0, 9)) for _ in six.moves.range(10)]),
-            'fqdn': '{0}.mirantis.net'.format(hostname),
+            'fqdn': '{0}.some-where.net'.format(hostname),
             'product': platform_name,
             'family': 'To be filled by O.E.M.'
         }

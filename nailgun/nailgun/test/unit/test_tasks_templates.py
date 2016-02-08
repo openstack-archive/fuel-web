@@ -67,7 +67,7 @@ class TestMakeTask(base.BaseTestCase):
             result,
             {'parameters': {
                 'data': 'APT::Get::AllowUnauthenticated 1;\n',
-                'path': '/etc/apt/apt.conf.d/02mirantis-allow-unsigned'},
+                'path': '/etc/apt/apt.conf.d/02fuel-allow-unsigned'},
              'type': 'upload_file',
              'uids': [1, 2, 3]})
 

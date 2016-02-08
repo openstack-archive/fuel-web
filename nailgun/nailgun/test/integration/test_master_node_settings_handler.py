@@ -51,7 +51,8 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
     def test_put(self):
         data = copy.deepcopy(self.master_node_settings)
 
-        data['settings']['statistics']['send_user_info']['value'] = True
+        data['settings']['statistics'][
+            'send_anonymous_statistic']['value'] = True
 
         resp = self.app.put(
             reverse('MasterNodeSettingsHandler'),
@@ -64,8 +65,8 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
 
     def test_patch(self):
         data = copy.deepcopy(self.master_node_settings)
-        user_info = data['settings']['statistics']['send_user_info']
-        user_info['value'] = True
+        send_stat = data['settings']['statistics']['send_anonymous_statistic']
+        send_stat['value'] = True
 
         resp = self.app.patch(
             reverse('MasterNodeSettingsHandler'),
@@ -73,7 +74,7 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
             params=jsonutils.dumps({
                 'settings': {
                     'statistics': {
-                        'send_user_info': user_info,
+                        'send_anonymous_statistic': send_stat,
                     }
                 }
             })
@@ -216,81 +217,6 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
             InstallationInfo().get_installation_info()['user_information'],
             {'contact_info_provided': False})
 
-    def test_user_contacts_info_enabled_by_user(self):
-        resp = self.app.get(
-            reverse("MasterNodeSettingsHandler"),
-            headers=self.default_headers)
-        self.assertEqual(200, resp.status_code)
-        data = resp.json_body
-
-        # emulate user enabled contact info sending to support team
-        data["settings"]["statistics"]["user_choice_saved"]["value"] = True
-        data["settings"]["statistics"]["send_user_info"]["value"] = \
-            True
-        name = "user"
-        email = "u@e.mail"
-        company = "user company"
-        data["settings"]["statistics"]["name"]["value"] = name
-        data["settings"]["statistics"]["email"]["value"] = email
-        data["settings"]["statistics"]["company"]["value"] = company
-        resp = self.app.put(
-            reverse("MasterNodeSettingsHandler"),
-            headers=self.default_headers,
-            params=jsonutils.dumps(data)
-        )
-        self.assertEqual(200, resp.status_code)
-        self.assertDictEqual(
-            InstallationInfo().get_installation_info()['user_information'],
-            {
-                'contact_info_provided': True,
-                'name': name,
-                'email': email,
-                'company': company
-            }
-        )
-
-    def test_partial_user_contacts_info(self):
-        resp = self.app.get(
-            reverse("MasterNodeSettingsHandler"),
-            headers=self.default_headers)
-        self.assertEqual(200, resp.status_code)
-        data = resp.json_body
-
-        # emulate user enabled contact info sending to support team
-        data["settings"]["statistics"]["user_choice_saved"]["value"] = True
-        data["settings"]["statistics"]["send_user_info"]["value"] = \
-            True
-        name = "user"
-        email = "u@e.mail"
-        data["settings"]["statistics"]["name"]["value"] = name
-        data["settings"]["statistics"]["email"]["value"] = email
-        resp = self.app.put(
-            reverse("MasterNodeSettingsHandler"),
-            headers=self.default_headers,
-            params=jsonutils.dumps(data)
-        )
-        self.assertEqual(200, resp.status_code)
-        self.assertDictEqual(
-            InstallationInfo().get_installation_info()['user_information'],
-            {
-                'contact_info_provided': True,
-                'name': name,
-                'email': email,
-                'company': ''
-            }
-        )
-
-    def test_user_contacts_info_broken(self):
-        settings_from_db = objects.MasterNodeSettings.get_one()
-        settings = dict(settings_from_db.settings)
-        settings["statistics"] = None
-        settings_from_db.settings = settings
-        self.db.commit()
-
-        self.assertDictEqual(
-            InstallationInfo().get_installation_info()['user_information'],
-            {'contact_info_provided': False})
-
     def test_installation_info_when_stats_info_deleted(self):
         settings_from_db = objects.MasterNodeSettings.get_one()
         self.db.delete(settings_from_db)
@@ -356,33 +282,3 @@ class TestMasterNodeSettingsHandler(BaseMasterNodeSettignsTest):
             self.app.patch, reverse("MasterNodeSettingsHandler"),
             headers=self.default_headers)
         self.check_task_created_only_on_new_opt_in(handler_method)
-
-    def test_unicode_master_node_settings(self):
-        data = self.get_current_settings()
-
-        # emulate user enabled contact info sending to support team
-        data["settings"]["statistics"]["user_choice_saved"]["value"] = True
-        data["settings"]["statistics"]["send_user_info"]["value"] = \
-            True
-
-        name = u"Фёдор Я"
-        email = "u@e.mail"
-        company = u"Компания"
-        data["settings"]["statistics"]["name"]["value"] = name
-        data["settings"]["statistics"]["email"]["value"] = email
-        data["settings"]["statistics"]["company"]["value"] = company
-        resp = self.app.put(
-            reverse("MasterNodeSettingsHandler"),
-            headers=self.default_headers,
-            params=jsonutils.dumps(data)
-        )
-        self.assertEqual(200, resp.status_code)
-        self.assertDictEqual(
-            InstallationInfo().get_installation_info()['user_information'],
-            {
-                'contact_info_provided': True,
-                'name': name,
-                'email': email,
-                'company': company
-            }
-        )

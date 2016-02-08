@@ -70,6 +70,22 @@ class BaseIPAddrTest(BaseNetworkManagerTest):
 
         return clean_response if list_given else clean_response[0]
 
+    def _check_ip_intersection(self, handler_name, patch_kwargs, patch_data):
+        resp = self.app.patch(
+            reverse(
+                handler_name,
+                kwargs=patch_kwargs,
+            ),
+            params=jsonutils.dumps(patch_data),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 409)
+
+        err_msg = "already exists for cluster with id"
+        self.assertIn(err_msg, resp.json_body['message'])
+
 
 class TestIPAddrList(BaseIPAddrTest):
     def test_vips_list_for_cluster(self):
@@ -225,6 +241,25 @@ class TestIPAddrList(BaseIPAddrTest):
         )
         self.assertEqual(400, resp.status_code)
         self.assertIn("'network'", resp.json_body["message"])
+
+    def test_update_user_defined_fail_if_ip_intersection(self):
+        intersecting_vip = self.vips[1]['ip_addr']
+
+        patch_data = [
+            {
+                'id': self.vip_ids[0],
+                'ip_addr': intersecting_vip,
+                'is_user_defined': True
+            }
+        ]
+
+        patch_kwargs = {
+            'cluster_id': self.cluster['id'],
+        }
+
+        self._check_ip_intersection(
+            'ClusterVIPCollectionHandler', patch_kwargs, patch_data
+        )
 
     def test_update_pass_with_non_updatable_not_changed_field(self):
         new_data = [
@@ -518,6 +553,24 @@ class TestIPAddrHandler(BaseIPAddrTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
+
+    def test_update_user_defined_fail_if_ip_intersection(self):
+        intersecting_vip = self.vips[1]['ip_addr']
+
+        patch_data = {
+            'is_user_defined': True,
+            'ip_addr': intersecting_vip,
+            'vip_namespace': 'new-namespace'
+        }
+
+        patch_kwargs = {
+            'cluster_id': self.cluster['id'],
+            'ip_addr_id': self.vips[0]['id']
+        }
+
+        self._check_ip_intersection(
+            'ClusterVIPHandler', patch_kwargs, patch_data
+        )
 
     def test_update_ip_addr(self):
         update_data = {

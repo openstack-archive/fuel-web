@@ -645,6 +645,17 @@ def upgrade_node_attributes():
         )
     )
 
+    op.add_column(
+        'releases',
+        sa.Column(
+            'node_attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
 
 def downgrade_node_attributes():
+    op.drop_column('releases', 'node_attributes')
     op.drop_column('nodes', 'attributes')

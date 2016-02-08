@@ -112,7 +112,7 @@ def make_ubuntu_unauth_repos_task(uids):
     # from unauthenticated repositories. Apt has special
     # mechanism for this.
     config_content = 'APT::Get::AllowUnauthenticated 1;\n'
-    config_path = '/etc/apt/apt.conf.d/02mirantis-allow-unsigned'
+    config_path = '/etc/apt/apt.conf.d/02fuel-allow-unsigned'
     return make_upload_task(uids, config_content, config_path)
 
 

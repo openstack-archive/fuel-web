@@ -72,6 +72,8 @@ class Release(Base):
         cascade="all,delete")
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    node_attributes = Column(MutableDict.as_mutable(JSON), default={},
+                             server_default='{}', nullable=False)
 
     # TODO(enchantner): get rid of properties
 

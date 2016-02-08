@@ -78,8 +78,6 @@ RPC_CONSUMER_LOG_PATH: "/var/log/nailgun/receiverd.log"
 
 ASSASSIN_LOG_PATH: "/var/log/nailgun/assassind.log"
 
-MIRANTIS_REGISTRATION_URL: "https://software.mirantis.com/wp-content/themes/mirantis_responsive_v_1_0/scripts/fuel_forms_api/"
-
 COLLECTOR_ACTION_LOGS_URL: "https://{collector_server}/api/v1/action_logs/"
 COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_structure/"
 COLLECTOR_OSWL_INFO_URL: "https://{collector_server}/api/v1/oswl_stats/"

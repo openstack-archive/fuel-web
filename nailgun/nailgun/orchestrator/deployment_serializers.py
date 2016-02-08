@@ -19,10 +19,8 @@
 from copy import deepcopy
 from itertools import groupby
 
-import sqlalchemy as sa
-from sqlalchemy.orm import joinedload
-
 import six
+import sqlalchemy as sa
 
 from nailgun import consts
 from nailgun.db import db
@@ -171,7 +169,7 @@ class DeploymentMultinodeSerializer(object):
         ).filter(sa.or_(
             Node.roles.any('ceph-osd'),
             Node.pending_roles.any('ceph-osd')
-        )).options(joinedload('attributes'))
+        ))
 
         for node in nodes:
             for disk in node_extension_call('get_node_volumes', node):
@@ -250,7 +248,7 @@ class DeploymentMultinodeSerializer(object):
             'fqdn': objects.Node.get_node_fqdn(node),
             'status': node.status,
             'role': role,
-            'vms_conf': node.attributes.vms_conf,
+            'vms_conf': node.vms_conf,
             # TODO(eli): need to remove, requried for the fake thread only
             'online': node.online
         }

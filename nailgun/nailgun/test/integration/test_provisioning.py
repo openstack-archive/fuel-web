@@ -118,16 +118,16 @@ class TestProvisioning(BaseIntegrationTest):
         )
 
         nodes = self.env.nodes
-        nodes[0].attributes.vms_conf = [
+        nodes[0].vms_conf = [
             {'id': 1, 'cpu': 1, 'mem': 2, 'created': True},
             {'id': 2, 'cpu': 1, 'mem': 2, 'created': True}
         ]
-        nodes[1].attributes.vms_conf = [
+        nodes[1].vms_conf = [
             {'id': 1, 'cpu': 2, 'mem': 4}
         ]
         self.db.commit()
 
         self.env.launch_provisioning_selected([str(nodes[0].id)])
 
-        for conf in nodes[0].attributes.vms_conf:
+        for conf in nodes[0].vms_conf:
             self.assertFalse(conf['created'])

@@ -38,14 +38,11 @@ logger = logging.getLogger('statistics')
 
 class StatsSender(object):
 
-    COLLECTOR_MIRANTIS_SERVER = "collector.mirantis.com"
     COLLECTOR_COMMUNITY_SERVER = "collector.fuel-infra.org"
 
     def build_collector_url(self, url_template):
-        server = self.COLLECTOR_MIRANTIS_SERVER \
-            if "mirantis" in settings.VERSION["feature_groups"] \
-            else self.COLLECTOR_COMMUNITY_SERVER
-        return getattr(settings, url_template).format(collector_server=server)
+        return getattr(settings, url_template)\
+            .format(collector_server=self.COLLECTOR_COMMUNITY_SERVER)
 
     def ping_collector(self):
         try:

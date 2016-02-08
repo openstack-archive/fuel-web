@@ -18,7 +18,9 @@ import six
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun import consts
 from nailgun.api.v1.validators.json_schema import ip_addr
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun import objects
@@ -67,7 +69,49 @@ class IPAddrValidator(BasicValidator):
                     )
                 ])
             )
+
+        # we have to check if user defined vip is not intersecting
+        # with other ips from existing clusters
+        if data.get('is_user_defined') and data.get('ip_addr'):
+            cls._check_vip_addr_intersection(existing_data['id'],
+                                             data['ip_addr'])
+
         return data
+
+    @classmethod
+    def _check_vip_addr_intersection(cls, obj_id, addr):
+        """Check intersection with ip addresses of existing clusters
+
+        If ip address is being updated for a VIP manually its intersection
+        with ips of all existing clusters must be checked
+
+        :param obj_id: id of the VIP being updated
+        :param addr: new ip address for VIP
+        """
+        q_intersecting_ip = db.query(models.IPAddr)\
+            .filter(models.IPAddr.ip_addr == addr)\
+            .filter(models.IPAddr != obj_id)
+
+        ip_exists = db.query(q_intersecting_ip.exists()).scalar()
+
+        if ip_exists:
+            ip_db = q_intersecting_ip.first()
+
+            err_msg = ''
+
+            if ip_db.network_data.name == consts.NETWORKS.fuelweb_admin:
+                err_msg = (
+                    "IP address {0} already exists within FUEL admin network"
+                    .format(addr)
+                )
+            else:
+                cluster_id = ip_db.network_data.nodegroup.cluster_id
+                err_msg = (
+                    "IP address {0} already exists for cluster with id {1}"
+                    .format(addr, cluster_id)
+                )
+
+            raise errors.AlreadyExists(err_msg)
 
     @classmethod
     def validate_collection_update(cls, data, cluster_id):

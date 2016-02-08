@@ -17,13 +17,18 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.test.integration.test_network_manager import \
     BaseNetworkManagerTest
 from nailgun.utils import reverse
 
 
 class BaseIPAddrTest(BaseNetworkManagerTest):
+
+    __test__ = False
+
     def setUp(self):
         self.maxDiff = None
         super(BaseIPAddrTest, self).setUp()
@@ -70,12 +75,81 @@ class BaseIPAddrTest(BaseNetworkManagerTest):
 
         return clean_response if list_given else clean_response[0]
 
+    def _create_admin_ip(self):
+        admin_netg = self.db.query(NetworkGroup)\
+            .filter_by(name=consts.NETWORKS.fuelweb_admin)\
+            .first()
+
+        ip_addr = IPAddr(ip_addr='10.20.0.3', network=admin_netg.id)
+        self.db.add(ip_addr)
+        self.db.flush()
+
+        return ip_addr
+
+    def _check_ip_intersection(self, ip_addr):
+        handlers_info = {
+            'ClusterVIPHandler': {
+                'patch_kwargs': {
+                    'cluster_id': self.cluster['id'],
+                    'ip_addr_id': self.vips[0]['id']
+                },
+                'patch_data': {
+                    'is_user_defined': True,
+                    'ip_addr': ip_addr,
+                    'vip_namespace': 'new-namespace'
+                },
+            },
+            'ClusterVIPCollectionHandler': {
+                'patch_kwargs': {'cluster_id': self.cluster['id']},
+                'patch_data': [
+                    {
+                        'id': self.vip_ids[0],
+                        'ip_addr': ip_addr,
+                        'is_user_defined': True
+                    }
+                ]
+            }
+        }
+
+        resp = self.app.patch(
+            reverse(
+                self.handler_name,
+                kwargs=handlers_info[self.handler_name]['patch_kwargs'],
+            ),
+            params=jsonutils.dumps(
+                handlers_info[self.handler_name]['patch_data']),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 409)
+
+        net_group = self.db.query(NetworkGroup)\
+            .filter_by(id=self.vips[0].network)\
+            .first()
+
+        err_msg = (
+            "IP address {0} is already allocated within "
+            "{1} network with CIDR {2}"
+            .format(ip_addr, net_group.name, net_group.cidr)
+        )
+        self.assertIn(err_msg, resp.json_body['message'])
+
+    def test_update_user_defined_fail_if_ip_addr_intersection(self):
+        intersecting_vip = self.vips[1]['ip_addr']
+        self._check_ip_intersection(intersecting_vip)
+
 
 class TestIPAddrList(BaseIPAddrTest):
+
+    __test__ = True
+
+    handler_name = 'ClusterVIPCollectionHandler'
+
     def test_vips_list_for_cluster(self):
         resp = self.app.get(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={'cluster_id': self.cluster['id']}
             ),
             headers=self.default_headers
@@ -97,7 +171,7 @@ class TestIPAddrList(BaseIPAddrTest):
         )
         resp = self.app.get(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={'cluster_id': self.cluster['id']}
             ),
             headers=self.default_headers
@@ -114,7 +188,7 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_wrong_cluster(self):
         resp = self.app.get(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={'cluster_id': 99999}
             ),
             headers=self.default_headers,
@@ -125,7 +199,7 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_create_fail(self):
         resp = self.app.post(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id'],
                     'ip_addr_id': self.vip_ids[0]
@@ -167,7 +241,7 @@ class TestIPAddrList(BaseIPAddrTest):
         ]
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -188,7 +262,7 @@ class TestIPAddrList(BaseIPAddrTest):
         }]
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -214,7 +288,7 @@ class TestIPAddrList(BaseIPAddrTest):
         ]
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -236,7 +310,7 @@ class TestIPAddrList(BaseIPAddrTest):
         ]
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -254,7 +328,7 @@ class TestIPAddrList(BaseIPAddrTest):
         }]
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -273,7 +347,7 @@ class TestIPAddrList(BaseIPAddrTest):
         }
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -287,7 +361,7 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_update_failing_on_empty_request(self):
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -301,7 +375,7 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_update_not_failing_on_empty_list_request(self):
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -323,7 +397,7 @@ class TestIPAddrList(BaseIPAddrTest):
         for new_data in new_data_suites:
             resp = self.app.patch(
                 reverse(
-                    'ClusterVIPCollectionHandler',
+                    self.handler_name,
                     kwargs={
                         'cluster_id': self.cluster['id']
                     }
@@ -345,7 +419,7 @@ class TestIPAddrList(BaseIPAddrTest):
         for new_data in new_data_suites:
             resp = self.app.patch(
                 reverse(
-                    'ClusterVIPCollectionHandler',
+                    self.handler_name,
                     kwargs={
                         'cluster_id': another_cluster['id']
                     }
@@ -377,7 +451,7 @@ class TestIPAddrList(BaseIPAddrTest):
         ]
         resp = self.app.patch(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -393,7 +467,7 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_ipaddr_filter_by_network_id(self):
         resp = self.app.get(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -407,7 +481,7 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_ipaddr_filter_by_missing_network_id(self):
         resp = self.app.get(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -433,7 +507,7 @@ class TestIPAddrList(BaseIPAddrTest):
 
         resp = self.app.get(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -449,7 +523,7 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_ipaddr_filter_by_missing_network_role(self):
         resp = self.app.get(
             reverse(
-                'ClusterVIPCollectionHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id']
                 }
@@ -462,10 +536,15 @@ class TestIPAddrList(BaseIPAddrTest):
 
 
 class TestIPAddrHandler(BaseIPAddrTest):
+
+    __test__ = True
+
+    handler_name = 'ClusterVIPHandler'
+
     def test_get_ip_addr(self):
         resp = self.app.get(
             reverse(
-                'ClusterVIPHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id'],
                     'ip_addr_id': self.vip_ids[0]
@@ -485,7 +564,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
     def test_delete_fail(self):
         resp = self.app.delete(
             reverse(
-                'ClusterVIPHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id'],
                     'ip_addr_id': self.vip_ids[0]
@@ -508,7 +587,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
 
         resp = self.app.get(
             reverse(
-                'ClusterVIPHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id'],
                     'ip_addr_id': not_vip_id
@@ -533,7 +612,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
         }
         resp = self.app.patch(
             reverse(
-                'ClusterVIPHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id'],
                     'ip_addr_id': self.vips[0]['id']
@@ -565,7 +644,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
         }
         resp = self.app.put(
             reverse(
-                'ClusterVIPHandler',
+                self.handler_name,
                 kwargs={
                     'cluster_id': self.cluster['id'],
                     'ip_addr_id': self.vips[0]['id']

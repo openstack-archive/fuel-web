@@ -67,7 +67,7 @@ class TestHandlers(BaseIntegrationTest):
             "clusters assigned"
         )
 
-    @mock.patch.dict(settings.VERSION, {'feature_groups': ['mirantis']})
+    @mock.patch.dict(settings.VERSION, {'feature_groups': []})
     def test_release_put_deployable(self):
         release = self.env.create_release(api=False)
 

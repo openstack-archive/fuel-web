@@ -62,7 +62,7 @@ class TestUrls(BaseTestCase):
              'handlers': [{'class': FakeHandler, 'name': 'FakeHandler'}]})
 
     @mock.patch.dict('nailgun.api.v1.urls.settings.VERSION',
-                     {'feature_groups': ['mirantis']})
+                     {'feature_groups': []})
     def test_get_feature_urls(self):
 
         result = get_all_urls()

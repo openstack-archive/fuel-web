@@ -67,7 +67,35 @@ class IPAddrValidator(BasicValidator):
                     )
                 ])
             )
+
+        # we have to check if user defined vip is not intersecting
+        # with other ips from existing clusters
+        if data.get('is_user_defined') and data.get('ip_addr'):
+            cls._check_vip_addr_intersection(existing_obj,
+                                             data['ip_addr'])
+
         return data
+
+    @classmethod
+    def _check_vip_addr_intersection(cls, ip_instance, addr):
+        """Check intersection with ip addresses of existing clusters
+
+        If ip address is being updated for a VIP manually its intersection
+        with ips of all existing clusters must be checked
+
+        :param obj_id: id of the VIP being updated
+        :param addr: new ip address for VIP
+        """
+        intersecting_ip = objects.IPAddr.get_intersecting_ip(ip_instance, addr)
+        if intersecting_ip:
+            err_msg = (
+                "IP address {0} is already allocated within "
+                "{1} network with CIDR {2}"
+                .format(addr,
+                        intersecting_ip.network_data.name,
+                        intersecting_ip.network_data.cidr)
+            )
+            raise errors.AlreadyExists(err_msg)
 
     @classmethod
     def validate_collection_update(cls, data, cluster_id):

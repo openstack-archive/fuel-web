@@ -1794,3 +1794,35 @@ class TestOpenstackConfig(BaseTestCase):
 
         objects.OpenstackConfig.disable(config)
         self.assertFalse(config.is_active)
+
+
+class TestIPAddrObject(BaseTestCase):
+
+    def test_get_intersecting_ip(self):
+        admin_netg = self.db.query(objects.NetworkGroup.model).filter_by(
+            name=consts.NETWORKS.fuelweb_admin
+        ).first()
+
+        ip_addr_one = objects.IPAddr.model(
+            ip_addr='10.20.0.3',
+            network=admin_netg.id
+        )
+
+        ip_addr_two = objects.IPAddr.model(
+            ip_addr='10.20.0.4',
+            network=admin_netg.id
+        )
+        self.db.add_all([ip_addr_one, ip_addr_two])
+        self.db.flush()
+
+        intersect = objects.IPAddr.get_intersecting_ip(ip_addr_two,
+                                                       '10.20.0.3')
+        self.assertEqual(intersect, ip_addr_one)
+
+        intersect = objects.IPAddr.get_intersecting_ip(ip_addr_two,
+                                                       '10.20.0.5')
+        self.assertIsNone(intersect, ip_addr_one)
+
+        intersect = objects.IPAddr.get_intersecting_ip(ip_addr_one,
+                                                       '10.20.0.3')
+        self.assertIsNone(intersect)

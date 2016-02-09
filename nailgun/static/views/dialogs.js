@@ -899,7 +899,7 @@ export var ShowNodeInfoDialog = React.createClass({
     var {cluster, node, nodeNetworkGroup} = this.props;
     return (
       <div className='node-summary'>
-        {cluster &&
+        {node.get('cluster') && cluster &&
           <div><strong>{i18n('dialog.show_node.cluster')}: </strong>
             {cluster.get('name')}
           </div>

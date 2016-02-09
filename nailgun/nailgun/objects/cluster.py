@@ -169,8 +169,9 @@ class Cluster(NailgunObject):
         cls.create_default_extensions(cluster)
 
         try:
-            cls.get_network_manager(cluster).\
-                create_network_groups_and_config(cluster, data)
+            net_manager = cls.get_network_manager(cluster)
+            net_manager.create_network_groups_and_config(cluster, data)
+
             cls.add_pending_changes(
                 cluster, consts.CLUSTER_CHANGES.attributes)
             cls.add_pending_changes(
@@ -180,10 +181,17 @@ class Cluster(NailgunObject):
 
             if assign_nodes:
                 cls.update_nodes(cluster, assign_nodes)
+
+            net_manager.assign_vips_for_net_groups(cluster)
+
         except (
             errors.OutOfVLANs,
             errors.OutOfIPs,
-            errors.NoSuitableCIDR
+            errors.NoSuitableCIDR,
+
+            # VIP assignment related errors
+            errors.CanNotFindCommonNodeGroup,
+            errors.CanNotFindNetworkForNodeGroup
         ) as exc:
             raise errors.CannotCreate(exc.message)
 

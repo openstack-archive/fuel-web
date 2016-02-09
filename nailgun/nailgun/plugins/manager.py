@@ -45,7 +45,12 @@ class PluginManager(object):
         for k in list(attributes):
             if cls.is_plugin_data(attributes[k]):
                 plugins[k] = attributes.pop(k)['metadata']
-                cluster.attributes.editable.pop(k, None)
+                try:
+                    cluster.attributes.editable.pop(k)
+                except KeyError:
+                    logger.warning(
+                        'Cluster {} doesn\'t have attribute {}'.format(
+                            cluster.id, k))
 
         for container in six.itervalues(plugins):
             default = container.get('default', False)

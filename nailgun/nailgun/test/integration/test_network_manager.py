@@ -49,27 +49,7 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
 
-class BaseNetworkManagerTest(BaseIntegrationTest):
-    def _create_ip_addrs_by_rules(self, cluster, rules):
-        created_ips = []
-        for net_group in cluster.network_groups:
-            if net_group.name not in rules:
-                continue
-            vips_by_names = rules[net_group.name]
-            for vip_name, ip_addr in vips_by_names.items():
-                ip = IPAddr(
-                    network=net_group.id,
-                    ip_addr=ip_addr,
-                    vip_name=vip_name,
-                )
-                self.db.add(ip)
-                created_ips.append(ip)
-        if created_ips:
-            self.db.flush()
-        return created_ips
-
-
-class TestNetworkManager(BaseNetworkManagerTest):
+class TestNetworkManager(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -568,7 +548,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             },
         }
         cluster = self.env.create_cluster(api=False)
-        self._create_ip_addrs_by_rules(cluster, vips_to_create)
+        self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
         vips = self.env.network_manager.get_assigned_vips(cluster)
         self.assertEqual(vips_to_create, vips)
 
@@ -592,7 +572,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
             },
         }
         cluster = self.env.create_cluster(api=False)
-        self._create_ip_addrs_by_rules(cluster, vips_to_create)
+        self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
         self.env.network_manager.assign_given_vips_for_net_groups(
             cluster, vips_to_assign)
         vips = self.env.network_manager.get_assigned_vips(cluster)
@@ -1029,7 +1009,7 @@ class TestNeutronManager(BaseIntegrationTest):
             self.env.network_manager.get_admin_interface(node))
 
 
-class TestNeutronManager70(BaseNetworkManagerTest):
+class TestNeutronManager70(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNeutronManager70, self).setUp()
@@ -1238,7 +1218,7 @@ class TestNeutronManager70(BaseNetworkManagerTest):
                 'public': '172.16.0.5',
             },
         }
-        self._create_ip_addrs_by_rules(self.cluster, vips_to_create)
+        self.env.create_ip_addrs_by_rules(self.cluster, vips_to_create)
         self.net_manager.assign_given_vips_for_net_groups(
             self.cluster, vips_to_assign)
         vips = self.net_manager.get_assigned_vips(self.cluster)
@@ -1291,7 +1271,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             self.assertEqual(endpoint_ip, vip)
 
 
-class TestTemplateManager70(BaseNetworkManagerTest):
+class TestTemplateManager70(BaseIntegrationTest):
     def setUp(self):
         super(TestTemplateManager70, self).setUp()
         self.cluster = self.env.create(
@@ -1442,7 +1422,7 @@ class TestTemplateManager70(BaseNetworkManagerTest):
         self._check_nic_mapping(node, expected_mapping)
 
 
-class TestNeutronManager80(BaseNetworkManagerTest):
+class TestNeutronManager80(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNeutronManager80, self).setUp()

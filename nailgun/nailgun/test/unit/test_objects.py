@@ -983,6 +983,36 @@ class TestClusterObject(BaseTestCase):
 
         return dict_merge(network_role, kwargs)
 
+    def test_create_cluster_triggers_vips_allocation(self):
+        vips = objects.IPAddrCollection.get_vips_by_cluster_id(
+            self.cluster.id
+        ).all()
+
+        self.assertIsNotNone(vips)
+
+    @mock.patch('nailgun.objects.Cluster.update_nodes')
+    @mock.patch('nailgun.objects.Cluster.add_pending_changes')
+    @mock.patch('nailgun.objects.Cluster.get_network_manager')
+    def test_create_cluster_fail_if_vips_cannot_be_allocated(self,
+                                                             get_nm_mock,
+                                                             *_):
+        def assign_vip_fails():
+            yield errors.CanNotFindCommonNodeGroup
+            yield errors.CanNotFindNetworkForNodeGroup
+
+        for exc in assign_vip_fails():
+            net_manager_mock = mock.Mock(
+                assign_vips_for_net_groups=mock.Mock(side_effect=exc)
+            )
+            get_nm_mock.return_value = net_manager_mock
+
+            self.assertRaises(
+                errors.CannotCreate,
+                objects.Cluster.create,
+                {'name': uuid.uuid4().hex,
+                 'release_id': self.env.releases[0].id}
+            )
+
     # FIXME(aroma): remove this test when stop action will be reworked for ha
     # cluster. To get more details, please, refer to [1]
     # [1]: https://bugs.launchpad.net/fuel/+bug/1529691

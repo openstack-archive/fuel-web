@@ -18,41 +18,59 @@
 from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import IPAddr
-from nailgun.test.integration.test_network_manager import \
-    BaseNetworkManagerTest
 from nailgun.utils import reverse
 
+from nailgun.test.base import BaseIntegrationTest
 
-class BaseIPAddrTest(BaseNetworkManagerTest):
+
+class BaseIPAddrTest(BaseIntegrationTest):
     def setUp(self):
         self.maxDiff = None
         super(BaseIPAddrTest, self).setUp()
-        self.vips_to_create = {
-            'management': {
-                'haproxy': '192.168.0.1',
-                'vrouter': '192.168.0.2',
-            }
-        }
-        self.cluster = self.env.create_cluster(api=False)
-        self.vips = self._create_ip_addrs_by_rules(
-            self.cluster,
-            self.vips_to_create)
-        self.vip_ids = [v.get('id') for v in self.vips]
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={'api': False}
+        )
+
+        management_net = [
+            ng for ng in self.cluster.network_groups if ng.name == 'management'
+        ][0]
+        self.management_vips = self.db.query(IPAddr)\
+            .filter(IPAddr.vip_name.isnot(None))\
+            .filter(IPAddr.network == management_net.id)\
+            .all()
+        self.vip_ids = [v.id for v in self.management_vips]
+
         self.expected_vips = [
             {
-                'vip_name': 'haproxy',
+                'vip_name': 'vrouter',
                 'node': None,
                 'ip_addr': '192.168.0.1',
                 'is_user_defined': False,
                 'vip_namespace': None
             },
             {
-                'vip_name': 'vrouter',
+                'vip_name': 'management',
                 'node': None,
                 'ip_addr': '192.168.0.2',
                 'is_user_defined': False,
                 'vip_namespace': None
-            }
+            },
+            {
+                'ip_addr': '172.16.0.3',
+                'is_user_defined': False,
+                'node': None,
+                'vip_name': 'public',
+                'vip_namespace': None
+            },
+            {
+                'ip_addr': '172.16.0.2',
+                'is_user_defined': False,
+                'node': None,
+                'vip_name': 'vrouter_pub',
+                'vip_namespace': None
+            },
+
         ]
         self.non_existing_id = 11341134
 
@@ -91,9 +109,14 @@ class TestIPAddrList(BaseIPAddrTest):
 
     def test_vips_list_with_two_clusters(self):
         self.second_cluster = self.env.create_cluster(api=False)
-        self._create_ip_addrs_by_rules(
+        self.env.create_ip_addrs_by_rules(
             self.second_cluster,
-            self.vips_to_create
+            {
+                'management': {
+                    'haproxy': '192.168.0.1',
+                    'vrouter': '192.168.0.2',
+                }
+            }
         )
         resp = self.app.get(
             reverse(
@@ -153,14 +176,14 @@ class TestIPAddrList(BaseIPAddrTest):
             {
                 'id': self.vip_ids[0],
                 'is_user_defined': True,
-                'vip_name': self.vips[0]["vip_name"],
+                'vip_name': self.management_vips[0]["vip_name"],
                 'ip_addr': '192.168.0.44',
                 'vip_namespace': None
             },
             {
                 'id': self.vip_ids[1],
                 'is_user_defined': False,
-                'vip_name': self.vips[1]["vip_name"],
+                'vip_name': self.management_vips[1]["vip_name"],
                 'ip_addr': '192.168.0.43',
                 'vip_namespace': None
             }
@@ -229,9 +252,9 @@ class TestIPAddrList(BaseIPAddrTest):
     def test_update_pass_with_non_updatable_not_changed_field(self):
         new_data = [
             {
-                'id': self.vips[0].id,
+                'id': self.management_vips[0].id,
                 'ip_addr': '192.168.0.44',
-                'network': self.vips[0].network
+                'network': self.management_vips[0].network
             }
         ]
         resp = self.app.patch(
@@ -398,10 +421,11 @@ class TestIPAddrList(BaseIPAddrTest):
                     'cluster_id': self.cluster['id']
                 }
             ),
-            params={"network_id": self.vips[0]['network']},
+            params={"network_id": self.management_vips[0]['network']},
             headers=self.default_headers
         )
-        self.assertEqual([dict(v) for v in self.vips], resp.json_body)
+        self.assertEqual([dict(v) for v in self.management_vips],
+                         resp.json_body)
         self.assertEqual(200, resp.status_code)
 
     def test_ipaddr_filter_by_missing_network_id(self):
@@ -419,17 +443,7 @@ class TestIPAddrList(BaseIPAddrTest):
         self.assertEqual(200, resp.status_code)
 
     def test_ipaddr_filter_by_network_role(self):
-
-        # create more vips in another network
-        ips_in_different_network_name = {
-            'public': {
-                'vrouter_pub': '172.16.0.4',
-                'public': '172.16.0.5',
-            }
-        }
-        expected_vips = self._create_ip_addrs_by_rules(
-            self.cluster,
-            ips_in_different_network_name)
+        public_net_vip_names = ('vrouter_pub', 'public')
 
         resp = self.app.get(
             reverse(
@@ -442,8 +456,15 @@ class TestIPAddrList(BaseIPAddrTest):
             headers=self.default_headers
         )
 
-        expected_vips = [dict(vip) for vip in expected_vips]
-        self.assertItemsEqual(expected_vips, resp.json_body)
+        expected_vips = [vip for vip in self.expected_vips
+                         if vip['vip_name'] in public_net_vip_names]
+        self.assertItemsEqual(
+            expected_vips,
+            self._remove_from_response(
+                resp.json_body,
+                ['id', 'network']
+            )
+        )
         self.assertEqual(200, resp.status_code)
 
     def test_ipaddr_filter_by_missing_network_role(self):
@@ -527,7 +548,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
         }
         expected_data = {
             'is_user_defined': True,
-            'vip_name': self.vips[0]['vip_name'],
+            'vip_name': self.management_vips[0]['vip_name'],
             'ip_addr': '192.168.0.100',
             'vip_namespace': 'new-namespace'
         }
@@ -536,7 +557,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
                 'ClusterVIPHandler',
                 kwargs={
                     'cluster_id': self.cluster['id'],
-                    'ip_addr_id': self.vips[0]['id']
+                    'ip_addr_id': self.management_vips[0]['id']
                 }
             ),
             params=jsonutils.dumps(update_data),
@@ -559,7 +580,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
         }
         expected_data = {
             'is_user_defined': True,
-            'vip_name': self.vips[0]['vip_name'],
+            'vip_name': self.management_vips[0]['vip_name'],
             'ip_addr': '192.168.0.100',
             'vip_namespace': 'new-namespace'
         }
@@ -568,7 +589,7 @@ class TestIPAddrHandler(BaseIPAddrTest):
                 'ClusterVIPHandler',
                 kwargs={
                     'cluster_id': self.cluster['id'],
-                    'ip_addr_id': self.vips[0]['id']
+                    'ip_addr_id': self.management_vips[0]['id']
                 }
             ),
             params=jsonutils.dumps(update_data),

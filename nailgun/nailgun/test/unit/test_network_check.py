@@ -406,22 +406,28 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertNotRaises(errors.NetworkCheckError,
                              checker.check_networks_amount)
 
+    @patch('objects.Cluster.is_component_enabled')
     @patch.object(helpers, 'db')
     def test_neutron_check_l3_addresses_not_match_subnet_and_broadcast(
-            self, mocked_db):
+            self, mocked_db, is_component_enabled):
         checker = NetworkCheck(self.task, {})
         checker.network_config['floating_ranges'] = [('192.168.0.1',
                                                       '192.168.0.255')]
         checker.network_config['internal_cidr'] = '192.168.0.0/24'
         checker.network_config['internal_gateway'] = '192.168.0.0'
+        checker.network_config['baremetal_range'] = ['192.168.3.52',
+                                                     '192.168.3.254']
+        checker.network_config['baremetal_gateway'] = '192.168.3.53'
         checker.networks = [{'id': 1,
                              'cidr': '192.168.0.0/24',
                              'gateway': '192.168.0.1',
                              'name': 'public'}]
+        is_component_enabled.return_value = True
+
         self.assertRaises(
             errors.NetworkCheckError,
             checker.neutron_check_l3_addresses_not_match_subnet_and_broadcast)
-        self.assertEqual(len(checker.err_msgs), 2)
+        self.assertEqual(len(checker.err_msgs), 3)
 
     def test_check_network_classes_exclude_loopback(self):
         checker = NetworkCheck(self.task, {})

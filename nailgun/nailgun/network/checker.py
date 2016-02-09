@@ -505,6 +505,22 @@ class NetworkCheck(object):
             self.result.append({"ids": [],
                                 "name": ["internal"],
                                 "errors": ["gateway"]})
+
+        if objects.Cluster.is_component_enabled(self.cluster, 'ironic'):
+            bare_net = self.network_config['baremetal_range']
+            bare_net_range = netaddr.IPRange(bare_net[0], bare_net[1])
+            bare_gw = netaddr.IPAddress(
+                self.network_config['baremetal_gateway'])
+
+            if bare_gw in bare_net_range:
+                self.err_msgs.append(
+                    u"Neutron L3 address intersection between Ironic gateway "
+                    u"and Ironic IP range."
+                )
+                self.result.append({"ids": [],
+                                    "name": ["baremetal"],
+                                    "errors": ["gateway", "ip_ranges"]})
+
         self.expose_error_messages()
 
     def _get_net_range_for_ip(self, ip, net):

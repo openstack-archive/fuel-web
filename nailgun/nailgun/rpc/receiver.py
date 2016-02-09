@@ -1155,6 +1155,16 @@ class NailgunReceiver(object):
         logger.info("RPC method stats_user_resp processed")
 
     @classmethod
+    def _get_failed_repos(cls, node):
+        """Get failed repositories from failed node.
+
+        :param node: master or slave
+        :type node: dict
+        :return: list of failed repositories
+        """
+        return node['out'].get('failed_urls', [])
+
+    @classmethod
     def _check_repos_connectivity(cls, resp_kwargs, failed_nodes_msg,
                                   suggestion_msg=''):
         """Analyze response data to check repo connectivity from nodes
@@ -1180,24 +1190,30 @@ class NailgunReceiver(object):
         task = objects.Task.get_by_uuid(
             task_uuid, fail_if_not_found=True)
 
-        response_nodes = dict([(n['uid'], n) for n in response])
-        nodes = objects.NodeCollection.filter_by_list(
-            None, 'id', response_nodes.keys(), order_by='id')
+        failed_response_nodes = {
+            n['uid']: n for n in response if n['status'] != 0
+        }
 
         failed_nodes = []
         failed_repos = set()
+
+        master = failed_response_nodes.pop(consts.MASTER_NODE_UID, None)
+        if master is not None:
+            failed_repos.update(cls._get_failed_repos(master))
+            failed_nodes.append(consts.MASTER_NODE_NAME)
+
+        nodes = objects.NodeCollection.filter_by_list(
+            None, 'id', failed_response_nodes, order_by='id')
+
         for node in nodes:
-            node_response = response_nodes[node.uid]
-            if node_response['status'] != 0:
-                if isinstance(node_response['out'], dict):
-                    failed_repos.update(
-                        node_response['out'].get('failed_urls', []))
-                failed_nodes.append(node.name)
+            failed_repos.update(cls._get_failed_repos(
+                failed_response_nodes[node.uid]))
+            failed_nodes.append(node.name)
 
         err_msg = ''
 
         failed_repos_msg = (
-            'Following repos are not available - {0}\n. '
+            'Following repos are not available - {0}.\n '
         )
 
         if failed_nodes:

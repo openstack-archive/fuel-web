@@ -385,6 +385,7 @@ ROLE_NAME_MAX_SIZE = 64
 EXTENSION_NAME_MAX_SIZE = 64
 
 MASTER_NODE_UID = 'master'
+MASTER_NODE_NAME = 'Fuel master node'
 
 # version of Fuel when we added granular deploy support
 FUEL_GRANULAR_DEPLOY = '6.1'

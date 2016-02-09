@@ -28,7 +28,6 @@ from copy import deepcopy
 from itertools import chain
 from random import choice
 
-import requests
 from six.moves import range
 from six.moves import zip_longest
 
@@ -227,25 +226,3 @@ def join_range(r):
     """Converts (1, 2) -> "1:2"
     """
     return ":".join(map(str, r)) if r else None
-
-
-def http_get(url, retries_on=[500, 502], retries=3, timeout=2):
-    """Make an HTTP GET request and retry if response's status code is one
-    we aren't expecting.
-
-    :param url: a URL to make request to
-    :param retries_on: a list of HTTP status codes to make retries in case of
-    :param retries: a number of retries
-    :param timeout: timeout in seconds between attempts
-    :returns: a first successful attempt or last unsuccessful
-    """
-    for _ in range(retries):
-        response = requests.get(url)
-
-        logger.debug('HTTP GET on %s => %d', url, response.status_code)
-        if response.status_code not in retries_on:
-            break
-
-        time.sleep(timeout)
-
-    return response

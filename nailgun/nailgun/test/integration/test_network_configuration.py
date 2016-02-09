@@ -294,13 +294,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertIn('public_vip', data)
         self.assertIn('management_vip', data)
 
-    def test_get_request_should_not_return_vips_before_assignment(self):
-        resp = self.env.neutron_networks_get(self.cluster.id)
-        data = resp.json_body
-
-        self.assertNotIn('public_vip', data)
-        self.assertNotIn('management_vip', data)
-
     def test_not_found_cluster(self):
         resp = self.env.neutron_networks_get(self.cluster.id + 999,
                                              expect_errors=True)

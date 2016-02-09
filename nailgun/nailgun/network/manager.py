@@ -215,7 +215,7 @@ class NetworkManager(object):
 
         :param cluster: Cluster instance.
         :type  cluster: instance
-        :param nodes: The sequence of Node objects
+        :param nodes: The collection of Node objects
         :type  nodes: iterable
         :param network_name: Network name
         :type  network_name: str
@@ -352,14 +352,14 @@ class NetworkManager(object):
         network = cls.get_network_by_name_and_nodegroup(network_name,
                                                         nodegroup)
 
-        if already_assigned is not None and \
-                cls.check_ip_belongs_to_net(already_assigned, network):
-            return already_assigned
-
         if network is None:
             raise errors.CanNotFindNetworkForNodeGroup(
                 u"Network '{0}' for nodegroup='{1}' not found.".format(
                     network_name, nodegroup.name))
+
+        if already_assigned is not None and \
+                cls.check_ip_belongs_to_net(already_assigned, network):
+            return already_assigned
 
         cluster_vip = db().query(IPAddr).filter_by(
             network=network.id,
@@ -1809,6 +1809,9 @@ class AllocateVIPs70Mixin(object):
 
     @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
+        # check VIPs names overlapping before assigning them
+        cls.check_unique_vip_names_for_cluster(cluster)
+
         for nodegroup, net_group, vip_name, role, vip_info\
                 in cls.get_node_groups_info(cluster):
             vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
@@ -1836,8 +1839,6 @@ class AllocateVIPs70Mixin(object):
         vips = {}
         vips['vips'] = {}
         if allocate:
-            # check VIPs names overlapping before assigning them
-            cls.check_unique_vip_names_for_cluster(cluster)
             allocated_vips_data = cls._assign_vips_for_net_groups(cluster)
         else:
             allocated_vips_data = cls._get_vips_for_net_groups(cluster)
@@ -1877,13 +1878,6 @@ class AllocateVIPs70Mixin(object):
         :type  cluster: Cluster model
         :return: dict with vip definitions
         """
-        # NOTE(aroma): VIPs names intersection must be checked here too
-        # since deployment can be started omitting ApplyChangesTaskManager
-        # so, in turn, 'check_before_deployment' will not be executed.
-        # But it is not very good idea to put additional check into
-        # serialization process. Hence the issue remains possible unless
-        # some general validation of network data will be introduced for
-        # all kinds of deployment flow
         vips = {}
         for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
                 cluster):

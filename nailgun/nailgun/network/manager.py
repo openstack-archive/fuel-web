@@ -215,7 +215,7 @@ class NetworkManager(object):
 
         :param cluster: Cluster instance.
         :type  cluster: instance
-        :param nodes: The sequence of Node objects
+        :param nodes: The collection of Node objects
         :type  nodes: iterable
         :param network_name: Network name
         :type  network_name: str
@@ -352,14 +352,14 @@ class NetworkManager(object):
         network = cls.get_network_by_name_and_nodegroup(network_name,
                                                         nodegroup)
 
-        if already_assigned is not None and \
-                cls.check_ip_belongs_to_net(already_assigned, network):
-            return already_assigned
-
         if network is None:
             raise errors.CanNotFindNetworkForNodeGroup(
                 u"Network '{0}' for nodegroup='{1}' not found.".format(
                     network_name, nodegroup.name))
+
+        if already_assigned is not None and \
+                cls.check_ip_belongs_to_net(already_assigned, network):
+            return already_assigned
 
         cluster_vip = db().query(IPAddr).filter_by(
             network=network.id,

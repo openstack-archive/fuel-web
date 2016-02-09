@@ -56,6 +56,7 @@ from nailgun.db.sqlalchemy.fixman import load_fake_deployment_tasks
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import ClusterPluginLink
+from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
@@ -436,6 +437,24 @@ class EnvironmentManager(object):
             db().flush()
 
         return ng
+
+    def create_ip_addrs_by_rules(self, cluster, rules):
+        created_ips = []
+        for net_group in cluster.network_groups:
+            if net_group.name not in rules:
+                continue
+            vips_by_names = rules[net_group.name]
+            for vip_name, ip_addr in vips_by_names.items():
+                ip = IPAddr(
+                    network=net_group.id,
+                    ip_addr=ip_addr,
+                    vip_name=vip_name,
+                )
+                self.db.add(ip)
+                created_ips.append(ip)
+        if created_ips:
+            self.db.flush()
+        return created_ips
 
     def delete_node_group(self, ng_id, status_code=200, api=True):
         if api:

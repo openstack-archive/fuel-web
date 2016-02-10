@@ -38,3 +38,13 @@ class TestDeploymentHASerializer90(
 ):
     def test_glance_properties(self):
         self.check_no_murano_data()
+
+    def test_ceph_keys(self):
+        storage_attrs = self.serializer.get_common_attrs(
+            self.env.clusters[0]
+        )['storage']
+        expected_keys = (
+            'fsid', 'mon_key', 'admin_key', 'bootstrap_osd_key', 'radosgw_key'
+        )
+        for ceph_key in expected_keys:
+            self.assertIn(ceph_key, storage_attrs)

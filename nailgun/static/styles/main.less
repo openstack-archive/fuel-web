@@ -4594,12 +4594,15 @@ input[type=range] {
       .title {
         margin-bottom: @dashboard-offset;
         padding: 0;
-        .http-link {
-          font-size: @base-font-size;
-          display: inline-block;
-          margin-left: @dashboard-offset / 2;
-          position: relative;
-          top: -2.5px;
+        a {
+          text-decoration: underline;
+          &.http-link {
+            font-size: @base-font-size;
+            display: inline-block;
+            margin-left: @dashboard-offset / 2;
+            position: relative;
+            top: 1px;
+          }
         }
       }
       .description {

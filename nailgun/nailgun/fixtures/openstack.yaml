@@ -1985,6 +1985,84 @@
                 suite: "auxiliary"
                 section: "main restricted"
                 priority: 1150
+          repo_type:
+            label: "OpenStack packages source"
+            type: "radio"
+            weight: 51
+            value: "fuel"
+            values:
+              - data: "fuel"
+                label: "Fuel"
+                description: "Use bundled OpenStack packages"
+              - data: "uca"
+                label: "Ubuntu Cloud Archive"
+                description: "Use Ubuntu Cloud Archive repository"
+              - data: "debian"
+                label: "Debian Trusty backports"
+                label: "Use Debian Ubuntu Trusty backports"
+          uca_repo_url:
+            value: 'http://ubuntu-cloud.archive.canonical.com/ubuntu'
+            label: 'URL to UCA repository'
+            description: 'This the url to the repository hosting the UCA packages'
+            weight: 58
+            type: "text"
+            restrictions:
+              - condition: "settings:repo_setup.repo_type.value != 'uca'"
+                action: "hide"
+          uca_openstack_release:
+            value: 'mitaka'
+            label: 'UCA OpenStack Release'
+            description: 'This is the named release for the UCA packages (kilo, liberty, etc)'
+            weight: 52
+            type: "text"
+            restrictions:
+              - condition: "settings:repo_setup.repo_type.value != 'uca'"
+                action: "hide"
+          debian_trusty_repo_url:
+            value: 'http://mitaka-trusty.pkgs.mirantis.com/debian'
+            label: 'URL to UCA repository'
+            description: 'This the url to the repository hosting the debian trusty packages'
+            weight: 53
+            type: "text"
+            restrictions:
+              - condition: "settings:repo_setup.repo_type.value != 'debian'"
+                action: "hide"
+          debian_trusty_openstack_release:
+            value: 'trusty-mitaka-backports'
+            label: 'UCA OpenStack Release'
+            description: 'This is the named release for the UCA packages (kilo, liberty, etc)'
+            weight: 53
+            type: "text"
+            restrictions:
+              - condition: "settings:repo_setup.repo_type.value != 'debian'"
+                action: "hide"
+          pin_haproxy:
+            label: "HAProxy APT Pinning"
+            description: "Use Fuel HAProxy packages instead of upstream"
+            weight: 59
+            type: "checkbox"
+            value: true
+            restrictions:
+              - condition: "settings:repo_setup.repo_type.value == 'fuel'"
+                action: "hide"
+          pin_rabbitmq:
+            label: "RabbitMQ APT Pinning"
+            description: "Use Fuel RabbitMQ packages instead of upstream"
+            weight: 60
+            type: "checkbox"
+            value: true
+            restrictions:
+              - condition: "settings:repo_setup.repo_type.value == 'fuel'"
+                action: "hide"
+          pin_ceph:
+            label: "Ceph APT Pinning"
+            description: "Use Fuel Ceph packages instead of upstream"
+            weight: 61
+            type: "checkbox"
+            value: true
+            restrictions:
+              - condition: "settings:repo_setup.repo_type.value == 'fuel'"
+                action: "hide"
         provision:
           metadata:
             label: "Provision"

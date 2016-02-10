@@ -1274,6 +1274,31 @@
             regex:
               source: '^[1-9]\d*$'
               error: "Invalid number"
+          fsid:
+            type: "hidden"
+            label: "fsid"
+            value:
+              generator: "uuid4"
+          mon_key:
+            type: "hidden"
+            label: "mon_key"
+            value:
+              generator: "cephx_key"
+          admin_key:
+            type: "hidden"
+            label: "admin_key"
+            value:
+              generator: "cephx_key"
+          bootstrap_osd_key:
+            type: "hidden"
+            label: "bootstrap_osd_key"
+            value:
+              generator: "cephx_key"
+          radosgw_key:
+            type: "hidden"
+            label: "radosgw_key"
+            value:
+              generator: "cephx_key"
       generated:
         service_user:
           password:

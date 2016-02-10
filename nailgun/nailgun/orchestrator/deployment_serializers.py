@@ -625,7 +625,6 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             serialized_node.setdefault('hugepages', []).extend(
                 hugepages)
 
-
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 

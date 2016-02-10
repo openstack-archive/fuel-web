@@ -15,6 +15,7 @@
 #    under the License.
 
 from netaddr import IPNetwork
+import six
 
 from nailgun import consts
 from nailgun.db import db
@@ -62,7 +63,7 @@ class NetworkGroup(NailgunObject):
         return instance
 
     @classmethod
-    def update(cls, instance, data):
+    def update(cls, instance, data, reallocate=True):
         # cleanup stalled data and generate new for the group
         cls._regenerate_ip_ranges_on_notation(instance, data)
 
@@ -74,15 +75,52 @@ class NetworkGroup(NailgunObject):
         # remove 'ip_ranges' (if) any from data as this is relation
         # attribute for the orm model object
         data.pop('ip_ranges', None)
-        return super(NetworkGroup, cls).update(instance, data)
+
+        updated = super(NetworkGroup, cls).update(instance, data)
+
+        try:
+            # reallocate VIPs for cluster
+            if reallocate and \
+                    not instance.name == consts.NETWORKS.fuelweb_admin:
+                cluster = instance.nodegroup.cluster
+                net_manager = Cluster.get_network_manager(cluster)
+                net_manager.assign_vips_for_net_groups(cluster)
+        except (errors.CanNotFindCommonNodeGroup,
+                errors.CanNotFindNetworkForNodeGroup,
+                errors.DuplicatedVIPNames) as exc:
+            raise errors.CannotUpdate(
+                'Reallocation of VIPs cannot be done on update for network '
+                'group with id {0}. Original error: {1}'.format(
+                    instance.id, six.text_type(exc)
+                )
+            )
+
+        return updated
 
     @classmethod
     def delete(cls, instance):
+        instance_id = instance.id
+
         notation = instance.meta.get('notation')
-        if notation and not instance.nodegroup.cluster.is_locked:
+        cluster = instance.nodegroup.cluster
+        if notation and not cluster.is_locked:
             cls._delete_ips(instance)
         instance.nodegroup.networks.remove(instance)
         db().flush()
+
+        try:
+            # reallocate VIPs for cluster
+            net_manager = Cluster.get_network_manager(cluster)
+            net_manager.assign_vips_for_net_groups(cluster)
+        except (errors.CanNotFindCommonNodeGroup,
+                errors.CanNotFindNetworkForNodeGroup,
+                errors.DuplicatedVIPNames) as exc:
+            raise errors.CannotDelete(
+                'Reallocation of VIPs cannot be done on delete for network '
+                'group with id {0}. Original error: {1}'.format(
+                    instance_id, six.text_type(exc)
+                )
+            )
 
     @classmethod
     def is_untagged(cls, instance):

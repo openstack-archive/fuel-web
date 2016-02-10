@@ -1328,15 +1328,19 @@ class BaseTestCase(TestCase):
                 ConnectionMonitorMiddleware)
         )
         syncdb()
+        cls.db = db
+        cls.env = EnvironmentManager(app=cls.app, session=cls.db)
+        cls.env.upload_fixtures(cls.fixtures)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.db.remove()
 
     def setUp(self):
-        self.db = db
-        flush()
-        self.env = EnvironmentManager(app=self.app, session=self.db)
-        self.env.upload_fixtures(self.fixtures)
+        self.db.begin_nested()
 
     def tearDown(self):
-        self.db.remove()
+        self.db.rollback()
 
     def assertNotRaises(self, exception, method, *args, **kwargs):
         try:

@@ -183,6 +183,9 @@ class DeploymentMultinodeSerializer(object):
         storage_attrs['pg_num'] = pg_counts['default_pg_num']
         storage_attrs['per_pool_pg_nums'] = pg_counts
 
+        if osd_num != 0:
+            self.inject_key_settings()
+
     @classmethod
     def node_list(cls, nodes):
         """Generate nodes list. Represents as "nodes" parameter in facts."""
@@ -542,6 +545,13 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def inject_murano_settings(self, data):
         return data
 
+    def inject_key_settings(self, storage_attrs):
+        storage_attrs['fsid'] = utils.uuid4()
+        storage_attrs['mon_key'] = utils.cephx_key()
+        storage_attrs['admin_key'] = utils.cephx_key()
+        storage_attrs['bootstrap_osd_key'] = utils.cephx_key()
+        storage_attrs['radosgw_key'] = utils.cephx_key()
+
     def get_common_attrs(self, cluster):
         attrs = super(DeploymentHASerializer90, self).get_common_attrs(cluster)
 
@@ -624,7 +634,6 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         if hugepages:
             serialized_node.setdefault('hugepages', []).extend(
                 hugepages)
-
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.

@@ -1531,7 +1531,10 @@ class NetworkManager(object):
             if 'meta' not in ng:
                 # there are no restrictions on update process if
                 # meta is not supplied
-                objects.NetworkGroup.update(ng_db, ng)
+                # NOTE(aroma): we must disable reallocation of VIPs
+                # on this stage after network update as it is done after
+                # execution of current method
+                objects.NetworkGroup.update(ng_db, ng, reallocate=False)
                 continue
 
             # only 'notation' and 'use_gateway' attributes is
@@ -1551,7 +1554,11 @@ class NetworkManager(object):
             # for proper update of the network group instance
             data_to_update = dict(ng)
             del data_to_update['meta']
-            objects.NetworkGroup.update(ng_db, data_to_update)
+            # NOTE(aroma): we must disable reallocation of VIPs
+            # on this stage after network update as it is done after
+            # execution of current method
+            objects.NetworkGroup.update(ng_db, data_to_update,
+                                        reallocate=False)
 
     @classmethod
     def update(cls, cluster, network_configuration):

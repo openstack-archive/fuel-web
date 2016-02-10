@@ -1645,6 +1645,45 @@ class TestNetworkGroup(BaseTestCase):
         self.assertTrue(objects.NetworkGroup.is_untagged(admin_net))
         self.assertFalse(objects.NetworkGroup.is_untagged(mgmt_net))
 
+    def _check_assign_vips_called(self, operation,
+                                  must_be_called, add_args=None):
+        if add_args is None:
+            add_args = []
+
+        self.env.create_cluster(api=False)
+        resp = self.env._create_network_group(name='test')
+        network = objects.NetworkGroup.get_by_uid(resp.json_body['id'])
+
+        with @mock.patch('nailgun.objects.network_group.Cluster') as cobj_m:
+            net_manager_mock = mock.Mock()
+            cobj_m.get_network_manager = mock.Mock(
+                return_value=net_manager_mock
+            )
+            objects.NetworkGroup.__dict__[operation](network, *add_args)
+
+            if must_be_assigned:
+                net_manager_mock.assign_vips_for_net_groups\
+                    .assert_called_once_with(mock.ANY)
+
+
+    def test_assign_vips_called_on_delete(self, cobj_m):
+        network = self._create_network()
+
+        net_manager_mock = self._get_net_manager_mock(cobj_m)
+
+        objects.NetworkGroup.delete(network)
+
+        net_manager_mock.assign_vips_for_net_groups\
+            .assert_called_once_with(mock.ANY)
+
+    @mock.patch('nailgun.objects.network_group.Cluster')
+    def test_assign_vips_called_on_update(self):
+        network = self._create_network()
+
+        net_manager_mock = self._get_net_manager_mock(cobj_m)
+
+        objects.NetworkGroup.delete(network)
+
 
 class TestRelease(BaseTestCase):
 

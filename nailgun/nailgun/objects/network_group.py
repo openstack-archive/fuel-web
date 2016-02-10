@@ -62,7 +62,7 @@ class NetworkGroup(NailgunObject):
         return instance
 
     @classmethod
-    def update(cls, instance, data):
+    def update(cls, instance, data, reallocate=True):
         # cleanup stalled data and generate new for the group
         cls._regenerate_ip_ranges_on_notation(instance, data)
 
@@ -74,15 +74,30 @@ class NetworkGroup(NailgunObject):
         # remove 'ip_ranges' (if) any from data as this is relation
         # attribute for the orm model object
         data.pop('ip_ranges', None)
-        return super(NetworkGroup, cls).update(instance, data)
+
+        updated = super(NetworkGroup, cls).update(instance, data)
+
+        # reallocate VIPs for cluster
+        if reallocate and \
+                not instance.name == consts.NETWORKS.fuelweb_admin:
+            cluster = instance.nodegroup.cluster
+            net_manager = Cluster.get_network_manager(cluster)
+            net_manager.assign_vips_for_net_groups(cluster)
+
+        return updated
 
     @classmethod
     def delete(cls, instance):
         notation = instance.meta.get('notation')
-        if notation and not instance.nodegroup.cluster.is_locked:
+        cluster = instance.nodegroup.cluster
+        if notation and not cluster.is_locked:
             cls._delete_ips(instance)
         instance.nodegroup.networks.remove(instance)
         db().flush()
+
+        # reallocate VIPs for cluster
+        net_manager = Cluster.get_network_manager(cluster)
+        net_manager.assign_vips_for_net_groups(cluster)
 
     @classmethod
     def is_untagged(cls, instance):

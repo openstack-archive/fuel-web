@@ -1645,6 +1645,107 @@ class TestNetworkGroup(BaseTestCase):
         self.assertTrue(objects.NetworkGroup.is_untagged(admin_net))
         self.assertFalse(objects.NetworkGroup.is_untagged(mgmt_net))
 
+    def _create_network_instance(self, admin_group=False):
+        self.env.create_cluster(api=False)
+        if admin_group:
+            network = self.db.query(objects.NetworkGroup.model)\
+                .filter_by(name=consts.NETWORKS.fuelweb_admin)\
+                .first()
+        else:
+            resp = self.env._create_network_group(name='test')
+            network = objects.NetworkGroup.get_by_uid(resp.json_body['id'])
+
+        return network
+
+    def assign_vips_errors(self):
+        yield errors.CanNotFindCommonNodeGroup
+        yield errors.CanNotFindNetworkForNodeGroup
+        yield errors.DuplicatedVIPNames
+
+    def _prepare_cluster_object_mock(self, assign_vips_mock):
+        cobj_m = mock.Mock()
+        net_manager_mock = mock.Mock()
+        cobj_m.get_network_manager = mock.Mock(
+            return_value=net_manager_mock)
+        net_manager_mock.assign_vips_for_net_groups = assign_vips_mock
+
+        return cobj_m
+
+    def test_assign_vips_on_delete(self, must_be_called=True):
+        network_inst = self._create_network_instance()
+
+        assign_vips_mock = mock.Mock()
+        cobj_m = self._prepare_cluster_object_mock(assign_vips_mock)
+
+        with mock.patch('nailgun.objects.network_group.Cluster', new=cobj_m):
+            objects.NetworkGroup.delete(network_inst)
+
+        if must_be_called:
+            assign_vips_mock.assert_called_once_with(mock.ANY)
+        else:
+            self.assertFalse(assign_vips_mock.called)
+
+    def test_check_assign_vips_on_delete_fail(self):
+
+        for err in self.assign_vips_errors():
+            assign_vips_mock = mock.Mock(side_effect=err)
+            cobj_m = self._prepare_cluster_object_mock(assign_vips_mock)
+
+            network_inst = self._create_network_instance()
+
+            with mock.patch('nailgun.objects.network_group.Cluster',
+                            new=cobj_m):
+                self.assertRaises(
+                    errors.CannotDelete,
+                    objects.NetworkGroup.delete,
+                    network_inst
+                )
+
+    def _check_assign_vips_on_update(self, reallocate=True, admin_ng=False,
+                                     must_be_called=True):
+        network_inst = self._create_network_instance(admin_ng)
+
+        assign_vips_mock = mock.Mock()
+        cobj_m = self._prepare_cluster_object_mock(assign_vips_mock)
+
+        with mock.patch('nailgun.objects.network_group.Cluster', new=cobj_m):
+            with mock.patch('nailgun.objects.network_group.NetworkGroup.'
+                            '_regenerate_ip_ranges_on_notation'):
+                objects.NetworkGroup.update(network_inst, {}, reallocate)
+
+        if must_be_called:
+            assign_vips_mock.assert_called_once_with(mock.ANY)
+        else:
+            self.assertFalse(assign_vips_mock.called)
+
+    def test_assign_vips_called_on_update_for_non_admin_network(self):
+        self._check_assign_vips_on_update()
+
+    def test_assign_vips_is_not_called_on_update_for_admin_network(self):
+        self._check_assign_vips_on_update(must_be_called=False, admin_ng=True)
+
+    def test_assign_vips_is_not_called_on_update_if_reallocate_false(self):
+        self._check_assign_vips_on_update(reallocate=False,
+                                          must_be_called=False)
+
+    def test_check_assign_vips_on_update_fail(self):
+        network_inst = self._create_network_instance()
+
+        for err in self.assign_vips_errors():
+            assign_vips_mock = mock.Mock(side_effect=err)
+            cobj_m = self._prepare_cluster_object_mock(assign_vips_mock)
+
+            with mock.patch('nailgun.objects.network_group.Cluster',
+                            new=cobj_m):
+                with mock.patch('nailgun.objects.network_group.NetworkGroup.'
+                                '_regenerate_ip_ranges_on_notation'):
+                    self.assertRaises(
+                        errors.CannotUpdate,
+                        objects.NetworkGroup.update,
+                        network_inst,
+                        {}
+                    )
+
 
 class TestRelease(BaseTestCase):
 

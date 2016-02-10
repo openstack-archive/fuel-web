@@ -16,6 +16,7 @@ import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -42,6 +43,54 @@ def prepare():
             'version': '2015.1-8.0',
             'operating_system': 'ubuntu',
             'state': 'available',
+            'roles': jsonutils.dumps([
+                'controller',
+                'compute',
+                'virt',
+                'compute-vmware',
+                'ironic',
+                'cinder',
+                'cinder-block-device',
+                'cinder-vmware',
+                'ceph-osd',
+                'mongo',
+                'base-os',
+            ]),
+            'roles_metadata': jsonutils.dumps({
+                'controller': {
+                    'name': 'Controller',
+                },
+                'compute': {
+                    'name': 'Compute',
+                },
+                'virt': {
+                    'name': 'Virtual',
+                },
+                'compute-vmware': {
+                    'name': 'Compute VMware',
+                },
+                'ironic': {
+                    'name': 'Ironic',
+                },
+                'cinder': {
+                    'name': 'Cinder',
+                },
+                'cinder-block-device': {
+                    'name': 'Cinder Block Device',
+                },
+                'cinder-vmware': {
+                    'name': 'Cinder Proxy to VMware Datastore',
+                },
+                'ceph-osd': {
+                    'name': 'Ceph OSD',
+                },
+                'mongo': {
+                    'name': 'Telemetry - MongoDB',
+                },
+                'base-os': {
+                    'name': 'Operating System',
+                }
+            }),
             'networks_metadata': jsonutils.dumps({
                 'neutron': {
                     'networks': [
@@ -299,3 +348,32 @@ class TestVipMigration(base.BaseAlembicMigrationTest):
             ),
             result
         )
+
+
+class TestNodeRolesMigration(base.BaseAlembicMigrationTest):
+    def test_category_is_injected_to_roles_meta(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.roles_metadata])
+        )
+        rel_row = result.fetchone()
+
+        roles_metadata = jsonutils.loads(rel_row[0])
+
+        role_groups = {
+            'controller': 'base',
+            'compute': 'compute',
+            'virt': 'compute',
+            'compute-vmware': 'compute',
+            'ironic': 'compute',
+            'cinder': 'storage',
+            'cinder-block-device': 'storage',
+            'cinder-vmware': 'storage',
+            'ceph-osd': 'storage'
+        }
+
+        for role_name in roles_metadata:
+            role_group = roles_metadata[role_name].get('group')
+            self.assertEquals(
+                role_group,
+                role_groups.get(role_name, consts.NODE_ROLE_GROUPS.other)
+            )

@@ -159,7 +159,7 @@ define([
       'Capacity table tests': function() {
         return this.remote
           .then(function() {
-            return common.addNodesToCluster(1, ['Controller', 'Storage - Cinder']);
+            return common.addNodesToCluster(1, ['Controller', 'Cinder']);
           })
           .then(function() {
             return common.addNodesToCluster(2, ['Compute']);
@@ -189,7 +189,7 @@ define([
             return common.addNodesToCluster(controllerNodes, ['Controller']);
           })
           .then(function() {
-            return common.addNodesToCluster(storageCinderNodes, ['Storage - Cinder']);
+            return common.addNodesToCluster(storageCinderNodes, ['Cinder']);
           })
           .then(function() {
             return common.addNodesToCluster(computeNodes, ['Compute']);

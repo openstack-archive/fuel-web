@@ -58,7 +58,7 @@ define([
             return common.createCluster(clusterName);
           })
           .then(function() {
-            return common.addNodesToCluster(1, ['Storage - Cinder']);
+            return common.addNodesToCluster(1, ['Cinder']);
           })
           // Just in case - reset and hide badge notification counter by clicking on it
           .clickByCssSelector('.notifications-icon')

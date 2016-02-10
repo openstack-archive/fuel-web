@@ -21,10 +21,13 @@ Create Date: 2015-12-15 17:20:49.519542
 """
 
 from alembic import op
+import six
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 from oslo_serialization import jsonutils
+
+from nailgun import consts
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
@@ -34,9 +37,11 @@ def upgrade():
     add_foreign_key_ondelete()
     upgrade_ip_address()
     update_vips_from_network_roles()
+    upgrade_node_roles_metadata()
 
 
 def downgrade():
+    downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
 
@@ -535,3 +540,51 @@ def downgrade_ip_address():
     )
     op.drop_column('ip_addrs', 'is_user_defined')
     op.drop_column('ip_addrs', 'vip_namespace')
+
+
+def upgrade_node_roles_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT id, roles_metadata FROM releases")
+    update_query = sa.sql.text(
+        "UPDATE releases SET roles_metadata = :roles_metadata WHERE id = :id")
+
+    for id, roles_metadata in connection.execute(select_query):
+        roles_metadata = jsonutils.loads(roles_metadata)
+
+        role_groups = {
+            'controller': 'base',
+            'compute': 'compute',
+            'virt': 'compute',
+            'compute-vmware': 'compute',
+            'ironic': 'compute',
+            'cinder': 'storage',
+            'cinder-block-device': 'storage',
+            'cinder-vmware': 'storage',
+            'ceph-osd': 'storage'
+        }
+        for role_name, role_metadata in six.iteritems(roles_metadata):
+            role_metadata['group'] = role_groups\
+                .get(role_name, consts.NODE_ROLE_GROUPS.other)
+
+        connection.execute(
+            update_query,
+            id=id,
+            roles_metadata=jsonutils.dumps(roles_metadata),
+        )
+
+
+def downgrade_node_roles_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text("SELECT id, roles_metadata FROM releases")
+    update_query = sa.sql.text(
+        "UPDATE releases SET roles_metadata = :roles_metadata WHERE id = :id")
+
+    for id, roles_metadata in connection.execute(select_query):
+        roles_metadata = jsonutils.loads(roles_metadata)
+        for role_name, role_metadata in six.iteritems(roles_metadata):
+            del role_metadata['group']
+        connection.execute(
+            update_query,
+            id=id,
+            roles_metadata=jsonutils.dumps(roles_metadata),
+        )

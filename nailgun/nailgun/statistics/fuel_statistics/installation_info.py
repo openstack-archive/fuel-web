@@ -76,6 +76,18 @@ class InstallationInfo(object):
                       'external_ntp_list', bool),
 
         WhiteListRule(('repo_setup', 'repos', 'value'), 'repos', bool),
+        WhiteListRule(('repo_setup', 'repos', 'pin_ceph', 'value'),
+                      'pin_ceph', bool),
+        WhiteListRule(('repo_setup', 'repos', 'pin_haproxy', 'value'),
+                      'pin_haproxy', bool),
+        WhiteListRule(('repo_setup', 'repos', 'pin_rabbitmq', 'value'),
+                      'pin_rabbitmq', bool),
+        WhiteListRule(('repo_setup', 'repos', 'repo_type', 'value'),
+                      'repo_type', None),
+        WhiteListRule(('repo_setup', 'repos', 'uca_openstack_release',
+                       'value'), 'uca_openstack_release', None),
+        WhiteListRule(('repo_setup', 'repos', 'uca_repo_url', 'value'),
+                      'uca_repo_url', None),
 
         WhiteListRule(('storage', 'volumes_lvm', 'value'),
                       'volumes_lvm', None),

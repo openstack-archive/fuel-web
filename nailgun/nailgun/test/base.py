@@ -1323,20 +1323,25 @@ class BaseTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.app = app.TestApp(
+        syncdb()
+        cls.db = db
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.db.remove()
+
+    def setUp(self):
+        self.app = app.TestApp(
             build_app(db_driver=test_db_driver).wsgifunc(
                 ConnectionMonitorMiddleware)
         )
-        syncdb()
-
-    def setUp(self):
-        self.db = db
-        flush()
         self.env = EnvironmentManager(app=self.app, session=self.db)
         self.env.upload_fixtures(self.fixtures)
+        flush()
+        self.db.begin_nested()
 
     def tearDown(self):
-        self.db.remove()
+        self.db.rollback()
 
     def assertNotRaises(self, exception, method, *args, **kwargs):
         try:

@@ -16,8 +16,13 @@
 
 """Deployment serializers for orchestrator"""
 
+import base64
 from copy import deepcopy
 from itertools import groupby
+import os
+import struct
+import time
+import uuid
 
 import sqlalchemy as sa
 from sqlalchemy.orm import joinedload
@@ -197,6 +202,24 @@ class DeploymentMultinodeSerializer(object):
 
         storage_attrs['pg_num'] = pg_counts['default_pg_num']
         storage_attrs['per_pool_pg_nums'] = pg_counts
+
+        if osd_num != 0:
+            def generate_auth_key():
+                key = os.urandom(16)
+                header = struct.pack(
+                    '<hiih',
+                    1,                 # le16 type: CEPH_CRYPTO_AES
+                    int(time.time()),  # le32 created: seconds
+                    0,                 # le32 created: nanoseconds,
+                    len(key),          # le16: len(key)
+                )
+                return base64.b64encode(header + key)
+
+            storage_attrs['fsid'] = str(uuid.uuid1())
+            storage_attrs['mon_key'] = generate_auth_key()
+            storage_attrs['admin_key'] = generate_auth_key()
+            storage_attrs['bootstrap_osd_key'] = generate_auth_key()
+            storage_attrs['radosgw_key'] = generate_auth_key()
 
     @classmethod
     def node_list(cls, nodes):

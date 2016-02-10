@@ -1334,9 +1334,10 @@ class BaseTestCase(TestCase):
         flush()
         self.env = EnvironmentManager(app=self.app, session=self.db)
         self.env.upload_fixtures(self.fixtures)
+        self.db.begin_nested()
 
     def tearDown(self):
-        self.db.remove()
+        self.db.rollback()
 
     def assertNotRaises(self, exception, method, *args, **kwargs):
         try:

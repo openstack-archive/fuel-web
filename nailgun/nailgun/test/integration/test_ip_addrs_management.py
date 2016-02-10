@@ -17,7 +17,11 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
+from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun import objects
+from nailgun.test import base
 from nailgun.test.integration.test_network_manager import \
     BaseNetworkManagerTest
 from nailgun.utils import reverse
@@ -582,3 +586,78 @@ class TestIPAddrHandler(BaseIPAddrTest):
                 ['id', 'network', 'node']
             )
         )
+
+
+class TestReallocateVIPsWhenNetGroupChanges(base.BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestReallocateVIPsWhenNetGroupChanges, self).setUp()
+
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={'api': False}
+        )
+        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
+
+        self.net_name = 'test'
+        create_resp = self.env._create_network_group(
+            name=self.net_name,
+            meta={
+                "notation": "ip_ranges",
+                "ip_range": ["10.3.0.33", "10.3.0.158"],
+            }
+        )
+        self.network = objects.NetworkGroup.get_by_uid(
+            create_resp.json_body['id'])
+
+        self.vip_name = 'test_vip'
+        net_role = {
+            'id': 'test_role',
+            'default_mapping': self.net_name,
+            'properties': {
+                'vip': [{'name': self.vip_name}]
+            }
+        }
+        self.cluster.release.network_roles_metadata.append(net_role)
+
+    def _get_vip_for_network(self, vip_name):
+        return db.query(objects.IPAddr.model).filter(
+            objects.IPAddr.model.vip_name == vip_name,
+            objects.IPAddr.model.network == self.network.id
+        ).first()
+
+    def check_vips(self):
+        assigned_vips = self.net_manager.get_assigned_vips(self.cluster)
+
+        self.assertIn(self.net_name, assigned_vips)
+        self.assertTrue(assigned_vips[self.net_name][self.vip_name])
+
+        vip = self._get_vip_for_network(self.vip_name)
+        self.assertEqual(
+            assigned_vips[self.net_name][self.vip_name], vip.ip_addr
+        )
+        self.assertTrue(self.net_manager.check_ip_belongs_to_net(vip.ip_addr,
+                                                                 self.network))
+
+    def test_vip_allocation_on_net_group_update(self):
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
+        self.check_vips()
+
+        data = {
+            'meta': {
+                "notation": consts.NETWORK_NOTATION.ip_ranges,
+            },
+            "ip_ranges": [["10.20.0.33", "10.20.0.158"]],
+        }
+        objects.NetworkGroup.update(self.network, data, True)
+
+        self.check_vips()
+
+    def test_vip_allocation_on_net_group_delete(self):
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
+        self.check_vips()
+
+        objects.NetworkGroup.delete(self.network)
+
+        assigned_vips = self.net_manager.get_assigned_vips(self.cluster)
+        self.assertNotIn(self.net_name, assigned_vips)

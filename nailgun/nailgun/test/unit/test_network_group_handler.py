@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -432,3 +433,35 @@ class TestHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             'Default Admin-pxe network cannot be changed'
         )
+
+    def test_put_returns_400_on_cannot_update_error(self):
+        create_resp = self.env._create_network_group(name='test')
+
+        with mock.patch('nailgun.api.v1.handlers.'
+                        'network_group.NetworkGroupHandler.single.update',
+                        side_effect=errors.CannotUpdate):
+
+            resp = self.env._update_network_group(create_resp.json_body,
+                                                  expect_errors=True)
+            self.assertEqual(400, resp.status_code)
+            self.assertEqual(resp.json_body['message'],
+                             "Can\'t update object")
+
+    def test_delete_returns_400_on_cannot_delete_error(self):
+        create_resp = self.env._create_network_group(name='test')
+
+        with mock.patch('nailgun.api.v1.handlers.network_group.'
+                        'NetworkGroupHandler.single.delete',
+                        side_effect=errors.CannotDelete):
+
+            resp = self.app.delete(
+                reverse(
+                    'NetworkGroupHandler',
+                    kwargs={'obj_id': create_resp.json_body['id']}
+                ),
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(400, resp.status_code)
+            self.assertEqual(resp.json_body['message'],
+                             "Can\'t delete object")

@@ -1380,6 +1380,18 @@ class Cluster(NailgunObject):
 
             db.flush()
 
+    @classmethod
+    def get_nodes_count_unmet_status(cls, instance, status):
+        """Gets the number of nodes, that does not have specified status.
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :param status: the expected status
+        :return: the number of nodes that does not have specified status
+        """
+
+        q = db().query(models.Node).filter_by(cluster_id=instance.id)
+        return q.filter(models.Node.status != status).count()
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

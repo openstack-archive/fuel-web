@@ -55,10 +55,12 @@ class TestNailgunReceiver(base.BaseTestCase):
             cluster_id=self.cluster.id)
 
     def test_success_action_with_plugins(self):
-        NailgunReceiver._success_action(self.task, 'ready', 100)
+        NailgunReceiver._success_action(
+            self.task, 'ready', 100, self.env.nodes
+        )
         self.assertRegexpMatches(
             self.task.message,
-            "Deployment of environment '[^\s]+' is done. "
+            "Deployment of environment '[^\s]+' is done."
             "\n\n"
             "Plugin name\d is deployed. description\d\n"
             "Plugin name\d is deployed. description\d")

@@ -83,6 +83,10 @@ class PrepareDataMixin(object):
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
       -
+        id: "aodh/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
         id: "ceilometer/api"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
@@ -233,10 +237,10 @@ class PrepareDataMixin(object):
 class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer,
                                                   PrepareDataMixin):
     management = ['keystone/api', 'neutron/api', 'swift/api', 'sahara/api',
-                  'ceilometer/api', 'cinder/api', 'glance/api', 'heat/api',
-                  'nova/api', 'murano/api', 'horizon', 'management',
-                  'mgmt/database', 'mgmt/messaging', 'mgmt/corosync',
-                  'mgmt/memcache', 'mgmt/vip', 'mongo/db',
+                  'aodh/api', 'ceilometer/api', 'cinder/api', 'glance/api',
+                  'heat/api', 'nova/api', 'murano/api', 'horizon',
+                  'management', 'mgmt/database', 'mgmt/messaging',
+                  'mgmt/corosync', 'mgmt/memcache', 'mgmt/vip', 'mongo/db',
                   'ceph/public', 'nova/migration']
     fuelweb_admin = ['admin/pxe', 'fw-admin']
     neutron = ['neutron/private', 'neutron/floating']
@@ -571,6 +575,7 @@ class TestDeploymentSerializationForNovaNetwork70(
                 'keystone/api': 'br-mgmt',
                 'swift/api': 'br-mgmt',
                 'sahara/api': 'br-mgmt',
+                'aodh/api': 'br-mgmt',
                 'ceilometer/api': 'br-mgmt',
                 'cinder/api': 'br-mgmt',
                 'glance/api': 'br-mgmt',
@@ -646,6 +651,7 @@ class TestDeploymentSerializationForNovaNetwork70(
                     'keystone/api': ip_by_net['management'],
                     'swift/api': ip_by_net['management'],
                     'sahara/api': ip_by_net['management'],
+                    'aodh/api': ip_by_net['management'],
                     'ceilometer/api': ip_by_net['management'],
                     'cinder/api': ip_by_net['management'],
                     'glance/api': ip_by_net['management'],
@@ -1414,6 +1420,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 'swift/api': 'br-mgmt',
                 'neutron/api': 'br-mgmt',
                 'sahara/api': 'br-mgmt',
+                'aodh/api': 'br-mgmt',
                 'ceilometer/api': 'br-mgmt',
                 'cinder/api': 'br-mgmt',
                 'keystone/api': 'br-mgmt',
@@ -1445,6 +1452,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 'swift/api': 'br-mgmt',
                 'neutron/api': 'br-mgmt',
                 'sahara/api': 'br-mgmt',
+                'aodh/api': 'br-mgmt',
                 'ceilometer/api': 'br-mgmt',
                 'cinder/api': 'br-mgmt',
                 'keystone/api': 'br-mgmt',
@@ -1539,6 +1547,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                     'swift/api': ip_by_net['management'],
                     'neutron/api': ip_by_net['management'],
                     'sahara/api': ip_by_net['management'],
+                    'aodh/api': ip_by_net['management'],
                     'ceilometer/api': ip_by_net['management'],
                     'cinder/api': ip_by_net['management'],
                     'keystone/api': ip_by_net['management'],
@@ -1652,6 +1661,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             'swift/api',
             'neutron/api',
             'sahara/api',
+            'aodh/api',
             'ceilometer/api',
             'cinder/api',
             'keystone/api',

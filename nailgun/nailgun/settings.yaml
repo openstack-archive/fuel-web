@@ -577,6 +577,30 @@ LOGS:
     <<: *remote_openstack_log_format
     <<: *os_log_group
     path: "neutron-metadata-agent.log"
+  - id: 'os/aodh-evaluator'
+    name: "aodh-evaluator"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "aodh-evaluator.log"
+  - id: 'os/aodh-notifier'
+    name: "aodh-notifier"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "aodh-notifier.log"
+  - id: 'os/aodh-dbsync'
+    name: "aodh-dbsync"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "aodh-dbsync.log"
+  - id: 'os/aodh-listener'
+    name: "aodh-listener"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "aodh-listener.log"
   - id: 'os/ceilometer-agent-central'
     name: "ceilometer-agent-central"
     <<: *remote_openstack_log_type
@@ -589,18 +613,6 @@ LOGS:
     <<: *remote_openstack_log_format
     <<: *os_log_group
     path: "ceilometer-agent-notification.log"
-  - id: 'os/ceilometer-alarm-evaluator'
-    name: "ceilometer-alarm-evaluator"
-    <<: *remote_openstack_log_type
-    <<: *remote_openstack_log_format
-    <<: *os_log_group
-    path: "ceilometer-alarm-evaluator.log"
-  - id: 'os/ceilometer-alarm-notifier'
-    name: "ceilometer-alarm-notifier"
-    <<: *remote_openstack_log_type
-    <<: *remote_openstack_log_format
-    <<: *os_log_group
-    path: "ceilometer-alarm-notifier.log"
   - id: 'os/ceilometer-api'
     name: "ceilometer-api"
     <<: *remote_openstack_log_type

@@ -331,6 +331,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
         attrs['roles']['nova/api'] = 'br-mgmt'
         attrs['roles']['murano/api'] = 'br-mgmt'
         attrs['roles']['sahara/api'] = 'br-mgmt'
+        attrs['roles']['aodh/api'] = 'br-mgmt'
         attrs['roles']['ceilometer/api'] = 'br-mgmt'
         attrs['roles']['heat/api'] = 'br-mgmt'
         attrs['roles']['keystone/api'] = 'br-mgmt'
@@ -383,6 +384,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
                 'keystone/api': ip_by_net['management'],
                 'swift/api': ip_by_net['management'],
                 'sahara/api': ip_by_net['management'],
+                'aodh/api': ip_by_net['management'],
                 'ceilometer/api': ip_by_net['management'],
                 'cinder/api': ip_by_net['management'],
                 'glance/api': ip_by_net['management'],

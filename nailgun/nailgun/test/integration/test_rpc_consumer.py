@@ -1632,6 +1632,65 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(nodes[1].status, consts.NODE_STATUSES.ready)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
+    def _check_success_message(self, callback, task_name, node_status):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {'api': False, 'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.discover},
+                {'api': False, 'roles': ['compute'],
+                 'status': consts.NODE_STATUSES.discover},
+            ])
+        cluster = self.env.clusters[-1]
+        nodes = self.env.nodes
+        task_title = task_name.title()
+        task = Task(
+            uuid=str(uuid.uuid4()),
+            name=task_name,
+            cluster_id=cluster.id
+        )
+        task.cache = {'nodes': [nodes[0].uid, nodes[1].uid]}
+        self.db.add(task)
+        self.db.flush()
+        params = {
+            'task_uuid': task.uuid,
+            'status': consts.TASK_STATUSES.ready,
+            'progress': 100,
+            'nodes': [{'uid': nodes[0].uid, 'status':node_status}]
+        }
+        callback(**params)
+        self.assertEqual(
+            "{0} of 1 environment node(s) is done.".format(task_title),
+            task.message
+        )
+        params['nodes'] = []
+        callback(**params)
+        self.assertEqual(
+            "{0} is done. No changes.".format(task_title),
+            task.message
+        )
+        params['nodes'] = [{'uid': nodes[1].uid, 'status':node_status}]
+        callback(**params)
+        self.assertEqual(
+            "{0} of environment '{1}' is done."
+            .format(task_title, cluster.name),
+            task.message
+        )
+
+    def test_success_deploy_messsage(self):
+        self._check_success_message(
+            self.receiver.deploy_resp,
+            consts.TASK_NAMES.deployment,
+            consts.NODE_STATUSES.ready
+        )
+
+    def test_success_provision_messsage(self):
+        self._check_success_message(
+            self.receiver.deploy_resp,
+            consts.TASK_NAMES.provision,
+            consts.NODE_STATUSES.provisioned
+        )
+
 
 class TestResetEnvironment(BaseReciverTestCase):
 

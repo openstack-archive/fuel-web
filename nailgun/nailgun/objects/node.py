@@ -1073,3 +1073,20 @@ class NodeCollection(NailgunCollection):
             models.Node.id).filter_by(status=consts.NODE_STATUSES.discover)
 
         return [_id for (_id,) in q_discovery]
+
+    @classmethod
+    def get_count_does_not_have_status(cls, status, cluster_id):
+        """Gets the number of nodes, that does not have specified status.
+
+        :param status: the expected status
+        :param cluster_id: the id of cluster, that is owner
+        :return: the number of nodes that does not have specified status
+        """
+
+        query = db().query(cls.single.model).filter(
+            cls.single.model.status != status
+        )
+        if cluster_id is not None:
+            query = query.filter_by(cluster_id=cluster_id)
+
+        return cls.count(query)

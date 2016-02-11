@@ -87,11 +87,13 @@ class NailgunReceiver(object):
             node['id'] if 'id' in node else node['uid']
             for node in all_nodes
         ]
-        locked_nodes = objects.NodeCollection.filter_by_list(
-            None,
-            'id',
-            all_nodes_ids,
-            order_by='id'
+        locked_nodes = objects.NodeCollection.order_by(
+            objects.NodeCollection.filter_by_list(
+                None,
+                'id',
+                all_nodes_ids,
+            ),
+            'id'
         )
         objects.NodeCollection.lock_for_update(locked_nodes).all()
 
@@ -100,7 +102,7 @@ class NailgunReceiver(object):
 
         nodes_to_delete_ids = [get_node_id(n) for n in nodes]
 
-        if(len(inaccessible_nodes) > 0):
+        if len(inaccessible_nodes) > 0:
             inaccessible_node_ids = [
                 get_node_id(n) for n in inaccessible_nodes]
 
@@ -256,38 +258,26 @@ class NailgunReceiver(object):
             status = task.status
 
         # for deployment we need just to pop
-        master = next((
-            n for n in nodes if n['uid'] == consts.MASTER_NODE_UID), {})
-
-        # we should remove master node from the nodes since it requires
-        # special handling and won't work with old code
-        if master:
-            nodes.remove(master)
-
         # if there no node except master - then just skip updating
         # nodes status, for the task itself astute will send
         # message with descriptive error
-        if nodes:
+        nodes_by_id = {str(n['uid']): n for n in nodes}
+        master = nodes_by_id.pop(consts.MASTER_NODE_UID, {})
 
+        if nodes_by_id:
             # lock nodes for updating so they can't be deleted
             q_nodes = objects.NodeCollection.filter_by_id_list(
                 None,
-                [n['uid'] for n in nodes],
+                nodes_by_id,
             )
             q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
-            objects.NodeCollection.lock_for_update(q_nodes).all()
+            db_nodes = objects.NodeCollection.lock_for_update(q_nodes).all()
+        else:
+            db_nodes = []
 
         # First of all, let's update nodes in database
-        for node in nodes:
-            node_db = objects.Node.get_by_uid(node['uid'])
-            if not node_db:
-                logger.warning(
-                    u"No node found with uid '{0}' - nothing changed".format(
-                        node['uid']
-                    )
-                )
-                continue
-
+        for node_db in db_nodes:
+            node = nodes_by_id.pop(node_db.uid)
             update_fields = (
                 'error_msg',
                 'error_type',
@@ -297,13 +287,8 @@ class NailgunReceiver(object):
             )
             for param in update_fields:
                 if param in node:
-                    logger.debug(
-                        u"Updating node {0} - set {1} to {2}".format(
-                            node['uid'],
-                            param,
-                            node[param]
-                        )
-                    )
+                    logger.debug("Updating node %s - set %s to %s",
+                                 node['uid'], param, node[param])
                     setattr(node_db, param, node[param])
 
                     if param == 'progress' and node.get('status') == 'error' \
@@ -328,6 +313,10 @@ class NailgunReceiver(object):
                             task_uuid=task_uuid
                         )
         db().flush()
+        if nodes_by_id:
+            logger.warning("The following nodes is not found: %s",
+                           ",".join(sorted(nodes_by_id)))
+
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)
 
@@ -335,7 +324,7 @@ class NailgunReceiver(object):
         if master.get('status') == consts.TASK_STATUSES.error:
             status = consts.TASK_STATUSES.error
 
-        cls._update_task_status(task, status, progress, message)
+        cls._update_task_status(task, status, progress, message, db_nodes)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
@@ -356,35 +345,23 @@ class NailgunReceiver(object):
             lock_for_update=True
         )
 
-        # if task was failed on master node then we should
-        # mark all cluster's nodes in error state
-        master = next((
-            n for n in nodes if n['uid'] == consts.MASTER_NODE_UID), {})
-
         # we should remove master node from the nodes since it requires
         # special handling and won't work with old code
-        if master:
-            nodes.remove(master)
-
+        # lock nodes for updating
+        nodes_by_id = {str(n['uid']): n for n in nodes}
+        master = nodes_by_id.pop(consts.MASTER_NODE_UID, {})
         if master.get('status') == consts.TASK_STATUSES.error:
             status = consts.TASK_STATUSES.error
             progress = 100
 
-        # lock nodes for updating
         q_nodes = objects.NodeCollection.filter_by_id_list(
-            None,
-            [n['uid'] for n in nodes])
+            None, nodes_by_id
+        )
         q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
-        objects.NodeCollection.lock_for_update(q_nodes).all()
+        db_nodes = objects.NodeCollection.lock_for_update(q_nodes).all()
 
-        for node in nodes:
-            uid = node.get('uid')
-            node_db = objects.Node.get_by_uid(node['uid'])
-
-            if not node_db:
-                logger.warn('Node with uid "{0}" not found'.format(uid))
-                continue
-
+        for node_db in db_nodes:
+            node = nodes_by_id[node_db.uid]
             if node.get('status') == consts.TASK_STATUSES.error:
                 node_db.status = consts.TASK_STATUSES.error
                 node_db.progress = 100
@@ -395,10 +372,14 @@ class NailgunReceiver(object):
                 node_db.progress = node.get('progress')
 
         db().flush()
+        if nodes_by_id:
+            logger.warning("The following nodes is not found: %s",
+                           ",".join(sorted(six.moves.map(str, nodes_by_id))))
+
         if nodes and not progress:
             progress = TaskHelper.recalculate_provisioning_task_progress(task)
 
-        cls._update_task_status(task, status, progress, message)
+        cls._update_task_status(task, status, progress, message, db_nodes)
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
@@ -467,19 +448,20 @@ class NailgunReceiver(object):
         )
 
     @classmethod
-    def _update_task_status(cls, task, status, progress, message):
+    def _update_task_status(cls, task, status, progress, message, nodes):
         """Do update task status actions.
 
         :param task: objects.Task object
         :param status: consts.TASK_STATUSES value
         :param progress: progress number value
         :param message: message text
+        :param nodes: the modified nodes list
         """
         # Let's check the whole task status
         if status == consts.TASK_STATUSES.error:
             cls._error_action(task, status, progress, message)
         elif status == consts.TASK_STATUSES.ready:
-            cls._success_action(task, status, progress)
+            cls._success_action(task, status, progress, nodes)
         else:
             data = {'status': status, 'progress': progress, 'message': message}
             objects.Task.update(task, data)
@@ -568,30 +550,28 @@ class NailgunReceiver(object):
         objects.Task.update(task, data)
 
     @classmethod
-    def _success_action(cls, task, status, progress):
+    def _success_action(cls, task, status, progress, nodes):
         # check if all nodes are ready
-        if any(map(lambda n: n.status == 'error',
-                   task.cluster.nodes)):
+        if any(n.status == consts.NODE_STATUSES.error for n in nodes):
             cls._error_action(task, 'error', 100)
             return
 
         task_name = task.name.title()
-        try:
-            message = (
-                u"{0} of environment '{1}' is done. "
-            ).format(
-                task_name,
-                task.cluster.name,
+        if nodes:
+            # check that all nodes in same state
+            remaining = objects.NodeCollection.get_count_does_not_have_status(
+                status=nodes[0].status, cluster_id=nodes[0].cluster_id
             )
-        except Exception as exc:
-            logger.error(": ".join([
-                str(exc),
-                traceback.format_exc()
-            ]))
-            message = u"{0} of environment '{1}' is done".format(
-                task_name,
-                task.cluster.name
-            )
+            if remaining > 0:
+                message = u"{0} of {1} environment node(s) is done.".format(
+                    task_name, len(nodes)
+                )
+            else:
+                message = u"{0} of environment '{1}' is done.".format(
+                    task_name, task.cluster.name
+                )
+        else:
+            message = u"{0} is done. No changes.".format(task_name)
 
         zabbix_url = objects.Cluster.get_network_manager(
             task.cluster

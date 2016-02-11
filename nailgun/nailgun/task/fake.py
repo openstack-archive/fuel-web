@@ -20,6 +20,7 @@ from itertools import chain
 from itertools import repeat
 from random import randrange
 import threading
+import traceback
 import time
 
 from fysom import Fysom
@@ -201,11 +202,12 @@ class FakeThread(threading.Thread):
         try:
             resp_method(**kwargs)
             db().commit()
-        except Exception as e:
+        except Exception:
+            traceback.print_exc()
             # TODO(ikalnitsky): research why some tests hit this
             # code but do not fail.
             db().rollback()
-            raise e
+            raise
 
     def run_until_status(self, smart_nodes, status,
                          role=None, random_error=False,

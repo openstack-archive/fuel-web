@@ -1418,6 +1418,22 @@ class TestClusterObject(BaseTestCase):
         self.db().refresh(config)
         self.assertFalse(config.is_active)
 
+    def test_get_nodes_count_unmet_status(self):
+        # by default all nodes in discover state
+        remaining = objects.Cluster.get_nodes_count_unmet_status(
+            self.cluster, consts.NODE_STATUSES.discover
+        )
+        self.assertEqual(0, remaining)
+        remaining = objects.Cluster.get_nodes_count_unmet_status(
+            self.cluster, consts.NODE_STATUSES.ready
+        )
+        self.assertEqual(len(self.env.nodes), remaining)
+        self.env.nodes[0].status = consts.NODE_STATUSES.ready
+        remaining = objects.Cluster.get_nodes_count_unmet_status(
+            self.cluster, consts.NODE_STATUSES.ready
+        )
+        self.assertEqual(len(self.env.nodes) - 1, remaining)
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 

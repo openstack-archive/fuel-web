@@ -85,11 +85,20 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(
             supertask,
             60,
-            u"Successfully removed 1 node(s). No errors occurred\n"
-            u"Provision of environment '{0}' is done. \n"
-            u"Deployment of environment '{0}' is done. ".format(
-                self.env.clusters[0].name
-            )
+            None
+        )
+        cluster_name = self.env.clusters[-1].name
+        self.assertIn(
+            u"Successfully removed 1 node(s). No errors occurred",
+            supertask.message
+        )
+        self.assertIn(
+            u"Provision of environment '{0}' is done.".format(cluster_name),
+            supertask.message
+        )
+        self.assertIn(
+            u"Provision of environment '{0}' is done.".format(cluster_name),
+            supertask.message
         )
         self.env.wait_for_nodes_status(wait_nodes, NODE_STATUSES.ready)
         self.env.refresh_nodes()

@@ -201,11 +201,11 @@ class FakeThread(threading.Thread):
         try:
             resp_method(**kwargs)
             db().commit()
-        except Exception as e:
+        except Exception:
             # TODO(ikalnitsky): research why some tests hit this
             # code but do not fail.
             db().rollback()
-            raise e
+            raise
 
     def run_until_status(self, smart_nodes, status,
                          role=None, random_error=False,
@@ -432,9 +432,9 @@ class FakeDeletionThread(FakeThread):
         try:
             resp_method(**kwargs)
             db().commit()
-        except Exception as e:
+        except Exception:
             db().rollback()
-            raise e
+            raise
 
         recover_nodes = self.params.get("recover_nodes", True)
         recover_offline_nodes = self.params.get("recover_offline_nodes", True)
@@ -482,9 +482,9 @@ class FakeStopDeploymentThread(FakeThread):
         try:
             resp_method(**kwargs)
             db().commit()
-        except Exception as e:
+        except Exception:
             db().rollback()
-            raise e
+            raise
 
         if not recover_nodes:
             db().commit()
@@ -530,9 +530,9 @@ class FakeResetEnvironmentThread(FakeThread):
         try:
             resp_method(**kwargs)
             db().commit()
-        except Exception as e:
+        except Exception:
             db().rollback()
-            raise e
+            raise
 
         if not recover_nodes:
             db().commit()
@@ -579,9 +579,9 @@ class FakeVerificationThread(FakeThread):
                 nodes=self.data['args']['nodes'],
             )
             db().commit()
-        except Exception as e:
+        except Exception:
             db().rollback()
-            raise e
+            raise
 
 
 class FakeMulticastVerifications(FakeAmpqThread):

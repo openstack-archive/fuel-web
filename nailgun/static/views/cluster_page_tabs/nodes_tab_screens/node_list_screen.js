@@ -1772,13 +1772,41 @@ RolePanel = React.createClass({
 });
 
 Role = React.createClass({
+  getDefaultProps() {
+    return {showPopoverTimeout: 800};
+  },
   getInitialState() {
     return {
-      isPopoverVisible: false
+      isPopoverVisible: false,
+      isPopoverForceHidden: false
     };
   },
-  togglePopover() {
-    this.setState({isPopoverVisible: !this.state.isPopoverVisible});
+  startCountdown() {
+    this.popoverTimeout = _.delay(() => this.togglePopover(true), this.props.showPopoverTimeout);
+  },
+  stopCountdown() {
+    if (this.popoverTimeout) clearTimeout(this.popoverTimeout);
+    delete this.popoverTimeout;
+  },
+  resetCountdown() {
+    if (!this.state.isPopoverForceHidden) {
+      this.stopCountdown();
+      this.startCountdown();
+    }
+  },
+  forceHidePopover() {
+    this.stopCountdown();
+    this.setState({
+      isPopoverVisible: false,
+      isPopoverForceHidden: true
+    });
+  },
+  togglePopover(isVisible) {
+    if (!isVisible) this.stopCountdown();
+    this.setState({
+      isPopoverVisible: isVisible,
+      isPopoverForceHidden: false
+    });
   },
   render() {
     var {role, selected, indeterminated, restrictions, isRolePanelDisabled, onClick} = this.props;
@@ -1792,20 +1820,23 @@ Role = React.createClass({
           indeterminated,
           disabled
         })}
-        onClick={!disabled && onClick}
-        onMouseEnter={this.togglePopover}
-        onMouseLeave={this.togglePopover}
+        onMouseEnter={this.startCountdown}
+        onMouseMove={this.resetCountdown}
+        onMouseLeave={() => this.togglePopover(false)}
       >
-        <div className='role'>
-          <i
-            className={utils.classNames({
-              glyphicon: true,
-              'glyphicon-selected-role': selected,
-              'glyphicon-indeterminated-role': indeterminated && !restrictions.message,
-              'glyphicon-warning-sign': !!restrictions.message
-            })}
-          />
-          {role.get('label')}
+        <div className='popover-binder'/>
+        <div onClick={this.forceHidePopover}>          
+          <div className='role' onClick={!disabled && onClick}>
+            <i
+              className={utils.classNames({
+                glyphicon: true,
+                'glyphicon-selected-role': selected,
+                'glyphicon-indeterminated-role': indeterminated && !restrictions.message,
+                'glyphicon-warning-sign': !!restrictions.message
+              })}
+            />
+            {role.get('label')}
+          </div>
         </div>
         {this.state.isPopoverVisible &&
           <Popover placement='top'>

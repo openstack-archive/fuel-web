@@ -3088,10 +3088,8 @@ input[type=range] {
       position: relative;
       width: 100%;
       height: @role-height;
-      display: table-cell;
-      vertical-align: middle;
       padding: 0px 16px;
-      line-height: 16px;
+      line-height: @role-height;
       .break-word;
       i {
         display: block;
@@ -3103,11 +3101,14 @@ input[type=range] {
         }
       }
     }
+    .popover-binder {
+      @popover-binder-height: 13px;
+      position: absolute;
+      top: -@popover-binder-height;
+      height: @popover-binder-height;
+      width: 100%;
+    }
     .popover {
-      animation-name: bounceIn;
-      animation-duration: 0.8s;
-      animation-fill-mode: both;
-      animation-timing-function: step-end;
       position: absolute;
       bottom: 60px;
       top: auto;

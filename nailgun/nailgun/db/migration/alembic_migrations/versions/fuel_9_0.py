@@ -28,6 +28,7 @@ import sqlalchemy as sa
 from oslo_serialization import jsonutils
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import fields
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
@@ -38,9 +39,11 @@ def upgrade():
     upgrade_ip_address()
     update_vips_from_network_roles()
     upgrade_node_roles_metadata()
+    merge_node_attributes_with_nodes()
 
 
 def downgrade():
+    downgrade_merge_node_attributes_with_nodes()
     downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
@@ -588,3 +591,41 @@ def downgrade_node_roles_metadata():
             id=id,
             roles_metadata=jsonutils.dumps(roles_metadata),
         )
+
+
+def merge_node_attributes_with_nodes():
+    connection = op.get_bind()
+
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'vms_conf',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        )
+    )
+
+    select_query = sa.sql.text('SELECT node_id, vms_conf FROM node_attributes')
+    update_query = sa.sql.text(
+        'UPDATE nodes SET vms_conf = :vms_conf WHERE id = :node_id')
+
+    for node_id, vms_conf in connection.execute(select_query):
+        connection.execute(update_query, node_id=node_id, vms_conf=vms_conf)
+
+    op.drop_table('node_attributes')
+
+
+def downgrade_merge_node_attributes_with_nodes():
+    op.create_table(
+        'node_attributes',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=True),
+        sa.Column('interfaces', fields.JSON(), nullable=True),
+        sa.Column('vms_conf', fields.JSON(),
+                  nullable=False, server_default='[]'),
+        sa.ForeignKeyConstraint(['node_id'], ['nodes.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    op.drop_column('nodes', 'vms_conf')

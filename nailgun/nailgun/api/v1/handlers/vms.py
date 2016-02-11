@@ -87,7 +87,7 @@ class NodeVMsHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(objects.Node, node_id)
-        node_vms = node.attributes.vms_conf
+        node_vms = node.vms_conf
         return {"vms_conf": node_vms}
 
     @content
@@ -101,5 +101,5 @@ class NodeVMsHandler(BaseHandler):
         node = self.get_object_or_404(objects.Node, node_id)
         data = self.checked_data()
 
-        objects.Node.set_vms_conf(node, data.get("vms_conf"))
-        return {"vms_conf": node.attributes.vms_conf}
+        node.vms_conf = data.get("vms_conf")
+        return {"vms_conf": node.vms_conf}

@@ -1772,13 +1772,41 @@ RolePanel = React.createClass({
 });
 
 Role = React.createClass({
+  getDefaultProps() {
+    return {showPopoverTimeout: 800};
+  },
   getInitialState() {
     return {
-      isPopoverVisible: false
+      isPopoverVisible: false,
+      isPopoverForceHidden: false
     };
   },
-  togglePopover() {
-    this.setState({isPopoverVisible: !this.state.isPopoverVisible});
+  startCountdown() {
+    this.popoverTimeout = _.delay(() => this.togglePopover(true), this.props.showPopoverTimeout);
+  },
+  stopCountdown() {
+    if (this.popoverTimeout) clearTimeout(this.popoverTimeout);
+    delete this.popoverTimeout;
+  },
+  resetCountdown() {
+    if (!this.state.isPopoverForceHidden) {
+      this.stopCountdown();
+      this.startCountdown();
+    }
+  },
+  forceHidePopover() {
+    this.stopCountdown();
+    this.setState({
+      isPopoverVisible: false,
+      isPopoverForceHidden: true
+    });
+  },
+  togglePopover(isVisible) {
+    if (!isVisible) this.stopCountdown();
+    this.setState({
+      isPopoverVisible: isVisible,
+      isPopoverForceHidden: false
+    });
   },
   render() {
     var {role, selected, indeterminated, restrictions, isRolePanelDisabled, onClick} = this.props;
@@ -1792,11 +1820,16 @@ Role = React.createClass({
           indeterminated,
           disabled
         })}
-        onClick={!disabled && onClick}
-        onMouseEnter={this.togglePopover}
-        onMouseLeave={this.togglePopover}
+        onMouseEnter={this.startCountdown}
+        onMouseMove={this.resetCountdown}
+        onClick={this.forceHidePopover}
+        onMouseLeave={() => this.togglePopover(false)}
       >
-        <div className='role'>
+        <div className='popover-binder'/>
+        <div
+          className='role'
+          onClick={!disabled && onClick}
+        >
           <i
             className={utils.classNames({
               glyphicon: true,
@@ -1807,7 +1840,7 @@ Role = React.createClass({
           />
           {role.get('label')}
         </div>
-        {this.state.isPopoverVisible &&
+        {this.state.isPopoverVisible && !this.state.isPopoverForceHidden &&
           <Popover placement='top'>
             <div>
               {!!restrictions.message &&

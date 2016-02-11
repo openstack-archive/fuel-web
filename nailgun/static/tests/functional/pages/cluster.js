@@ -74,7 +74,7 @@ define([
     },
     checkNodeRoles: function(assignRoles) {
       return this.remote
-        .findAllByCssSelector('.role-panel .role-block')
+        .findAllByCssSelector('.role-panel .role-block .role')
         .then(function(roles) {
           return roles.reduce(
             function(result, role) {

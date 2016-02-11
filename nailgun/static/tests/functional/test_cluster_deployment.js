@@ -147,8 +147,13 @@ define([
           .assertElementExists('.go-to-healthcheck', 'Healthcheck link is visible after deploy')
           .findByLinkText('Horizon')
             .getAttribute('href')
-            .then(function(value) {
-              return assert.isTrue(_.startsWith(value, 'http'), 'Link to Horizon is formed');
+            .then(function(href) {
+              // check the link includes 'http(s)' and there is '.' in it's domain
+              return assert.match(
+                href,
+                /^https?:\/\/[-\w]+\.[-\w.]+(:\d+)?\/?$/,
+                'Link to Horizon is formed'
+              );
             })
             .end()
           .then(function() {

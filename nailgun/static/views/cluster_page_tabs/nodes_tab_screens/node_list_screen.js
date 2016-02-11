@@ -1774,11 +1774,34 @@ RolePanel = React.createClass({
 Role = React.createClass({
   getInitialState() {
     return {
-      isPopoverVisible: false
+      isPopoverVisible: false,
+      currentDelay : 600
     };
   },
-  togglePopover() {
-    this.setState({isPopoverVisible: !this.state.isPopoverVisible});
+  startCountdown() {
+    this.activeTimeout = _.delay(this.countdown, 100);
+  },
+  resetCountdown() {
+    this.setState({currentDelay: 600});
+  },
+  stopCountdown() {
+    if (this.activeTimeout) clearTimeout(this.activeTimeout);
+    delete this.activeTimeout;
+  },
+  countdown() {
+    var currentDelay = this.state.currentDelay - 100;
+    if (!currentDelay) {
+      this.setState({currentDelay: currentDelay});
+      this.stopCountdown();
+      this.togglePopover(true);
+    } else {
+      this.setState({currentDelay: currentDelay});
+      this.startCountdown();
+    }
+  },
+  togglePopover(isVisible) {
+    if (!isVisible) this.stopCountdown();
+    this.setState({isPopoverVisible: isVisible});
   },
   render() {
     var {role, selected, indeterminated, restrictions, isRolePanelDisabled, onClick} = this.props;
@@ -1792,11 +1815,16 @@ Role = React.createClass({
           indeterminated,
           disabled
         })}
-        onClick={!disabled && onClick}
-        onMouseEnter={this.togglePopover}
-        onMouseLeave={this.togglePopover}
+        onMouseEnter={this.startCountdown}
+        onMouseMove={this.resetCountdown}
+        onClick={this.stopCountdown}
+        onMouseLeave={() => this.togglePopover(false)}
       >
-        <div className='role'>
+        <div className='popover-binder'/>
+        <div
+          className='role'
+          onClick={!disabled && onClick}
+        >
           <i
             className={utils.classNames({
               glyphicon: true,

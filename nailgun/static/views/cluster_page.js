@@ -212,6 +212,7 @@ var ClusterPage = React.createClass({
       this.props.cluster.fetch(),
       this.props.cluster.fetchRelated('nodes'),
       this.props.cluster.fetchRelated('tasks'),
+      this.props.cluster.get('networkConfiguration').fetch(),
       this.props.cluster.get('pluginLinks').fetch()
     );
   },

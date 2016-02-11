@@ -21,6 +21,7 @@ Node-related objects and collections
 import itertools
 import operator
 from oslo_serialization import jsonutils
+import six.moves
 import traceback
 
 from datetime import datetime
@@ -52,6 +53,10 @@ from nailgun.objects import Notification
 from nailgun.settings import settings
 
 from nailgun.network.template import NetworkTemplate
+
+
+STORAGE_CODES = frozenset([3, 8, 9, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106,
+                          107, 108, 109, 110, 111, 202, 252, 253, 259])
 
 
 class Node(NailgunObject):
@@ -666,6 +671,71 @@ class Node(NailgunObject):
             else:
                 data.pop('status', None)
         return cls.update(instance, data)
+
+    @staticmethod
+    def interpret_disks(disks):
+        def _double_strip(s):
+            return s.strip().strip("'")
+        devices = []
+        device = {}
+        for key, value in disks['dmsetup_info']:
+            if key in device:
+                devices.append(device)
+                device = {}
+            device[key] = value
+        if device:
+            devices.append(device)
+        mapping = {}
+        result = {}
+        for device in devices:
+            device['DM_BLKDEVS_USED'] = device['DM_BLKDEVS_USED'].strip("'").\
+                split(',')
+            device['DM_BLKDEVNAME'] = _double_strip(device['DM_BLKDEVNAME'])
+            mapping.update(dict.fromkeys(device['DM_BLKDEVS_USED'],
+                                         device['DM_BLKDEVNAME']))
+            # XXX: ugly
+            mapping[device['DM_BLKDEVNAME']] = None
+            disk = {}
+            disk['size'] = 0
+            disk['removable'] = 0
+            disk['model'] = ''
+            disk['name'] = device['DM_BLKDEVNAME']
+            disk['disk'] = ''
+            disk['extra'] = ''
+            disk['mpath'] = device['DM_BLKDEVS_USED']
+            result[disk['name']] = disk
+
+        BYID_DEV = '/dev/disk/by-id/'
+        for block in disks['blocks']:
+            udev = block['udev_info']
+            if int(udev.get('MAJOR', 0)) not in STORAGE_CODES or\
+                    udev.get('ID_BUS', '') == 'usb':
+                continue
+            disk = {}
+            disk['size'] = block['size']
+            disk['removable'] = block['removable']
+            disk['model'] = udev.get('ID_MODEL', None)
+            disk['name'] = udev['DEVNAME'][len('/dev/'):]
+            devlinks = udev.get('DEVLINKS', '').split(' ')
+            disk['disk'] = udev.get('ID_PATH', '')
+            disk['extra'] = next(six.moves.filter(
+                                 lambda a: a.startswith(BYID_DEV),
+                                 devlinks), '')[len(BYID_DEV):]
+            if disk['name'] in mapping:
+                mpath_name = mapping[disk['name']]
+                if mpath_name:
+                    rdevice = result[mpath_name]
+                    rdevice['size'] = disk['size']
+                    rdevice['removable'] = disk['removable']
+                    rdevice['model'] = disk['model']
+                else:
+                    rdevice = result[disk['name']]
+                    rdevice['disk'] = disk['disk']
+                    rdevice['extra'] = disk['extra']
+            else:
+                disk['mpath'] = []
+                result[disk['name']] = disk
+        return result.values()
 
     @classmethod
     def update_roles(cls, instance, new_roles):

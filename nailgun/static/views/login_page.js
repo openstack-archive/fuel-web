@@ -33,7 +33,7 @@ var LoginPage = React.createClass({
       <div className={utils.classNames({'login-page': true, mirantis: isMirantisIso})}>
         <div className='container col-md-4 col-md-offset-4 col-xs-10 col-xs-offset-1'>
           <div className='box'>
-            <div className='logo-circle' />
+            <div className='login-head' />
             {!isMirantisIso && <div className='logo' />}
             <div className='fields-box'>
               <LoginForm />

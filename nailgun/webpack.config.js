@@ -31,7 +31,7 @@ module.exports = {
       {test: /\.html$/, loader: 'raw'},
       {test: /\.json$/, loader: 'json'},
       {test: /\.jison$/, loader: 'jison'},
-      {test: /\.(gif|png)$/, loader: 'file'},
+      {test: /\.(gif|png|jpg)$/, loader: 'file'},
       {test: /\.(woff|woff2|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/, loader: 'file'}
     ]
   },

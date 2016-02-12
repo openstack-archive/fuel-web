@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from copy import deepcopy
 from mock import patch
 
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 from nailgun import consts
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.test.base import BaseTestCase
@@ -336,7 +336,7 @@ class TestAttributesValidator(BaseTestCase):
             {"editable": {"metadata": metadata, "value": db_attributes_value}}
         )
 
-        new_attributes = deepcopy(db_attributes_value)
+        new_attributes = MutableDict(db_attributes_value)
         new_attributes["foo"] = ["foo_field_name"]
         msg = "Value type of 'foo_field_name' attribute couldn't be changed."
         with self.assertRaisesRegexp(errors.InvalidData, msg):
@@ -344,7 +344,7 @@ class TestAttributesValidator(BaseTestCase):
                 {"editable": {"value": new_attributes}},
                 instance)
 
-        new_attributes = deepcopy(db_attributes_value)
+        new_attributes = MutableDict(db_attributes_value)
         new_attributes["foo"]["foo_field_name"] = "new_foo_field_value"
         msg = "Value of 'foo_field_name' attribute couldn't be changed."
         with self.assertRaisesRegexp(errors.InvalidData, msg):
@@ -352,7 +352,7 @@ class TestAttributesValidator(BaseTestCase):
                 {"editable": {"value": new_attributes}},
                 instance)
 
-        new_attributes = deepcopy(db_attributes_value)
+        new_attributes = MutableDict(db_attributes_value)
         new_attributes["availability_zones"].append({
             "az_name": "az_2",
             "vcenter_host": "127.0.0.1",
@@ -363,7 +363,7 @@ class TestAttributesValidator(BaseTestCase):
             VmwareAttributesValidator._validate_updated_attributes(
                 {"editable": {"value": new_attributes}}, instance)
 
-        new_attributes = deepcopy(db_attributes_value)
+        new_attributes = MutableDict(db_attributes_value)
         new_attributes["availability_zones"][0]["nova_computes"][0].update(
             {"target_node": {"current": {"id": "node-2"}}}
         )
@@ -426,7 +426,7 @@ class TestAttributesValidator(BaseTestCase):
             {"editable": {"metadata": metadata, "value": db_attributes_value}}
         )
 
-        new_attributes = deepcopy(db_attributes_value)
+        new_attributes = MutableDict(db_attributes_value)
         new_attributes["foo"]["foo_field_name"] = 1
         new_attributes["availability_zones"][0]["nova_computes"][0].update(
             {"target_node": {"current": {"id": "node-2"}}}

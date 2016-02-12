@@ -810,17 +810,21 @@ class Cluster(NailgunObject):
         return nodes
 
     @classmethod
-    def get_nodes_by_status(cls, instance, status):
+    def get_nodes_by_status(cls, instance, status, exclude=None):
         """Get cluster nodes with particular status
 
         :param instance: cluster instance
         :param status: node status
+        :param exclude: the list of uids to exclude
         :return: filtered query on nodes
         """
-        return db().query(models.Node).filter_by(
+        query = db().query(models.Node).filter_by(
             cluster_id=instance.id,
             status=status
         )
+        if exclude:
+            query = query.filter(sa.not_(models.Node.id.in_(exclude)))
+        return query
 
     @classmethod
     def get_primary_node(cls, instance, role_name):

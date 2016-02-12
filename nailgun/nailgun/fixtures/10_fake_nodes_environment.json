@@ -1,0 +1,1401 @@
+[
+    {
+        "pk": 1, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "172.18.67.1", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:fe", 
+            "meta": {
+                "memory": {
+                    "slots": 2, 
+                    "total": 4311744512, 
+                    "maximum_capacity": 17179869184, 
+                    "devices": [
+                        {
+                            "type": "Flash", 
+                            "size": 16777216
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "ip": "172.18.67.1", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:fe", 
+                        "max_speed": 1000, 
+                        "current_speed": null, 
+                        "pxe": true, 
+                        "bus_info": "0000:00:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "QEMU HARDDISK", 
+                        "disk": "sda", 
+                        "size": 68719476736
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "QEMU HARDDISK", 
+                        "disk": "sdb", 
+                        "size": 68719476736
+                    }, 
+                    {
+                        "name": "sdc", 
+                        "model": "Virtual HDisk0", 
+                        "disk": "sdc", 
+                        "size": 0
+                    }
+                ], 
+                "cpu": {
+                    "real": 1, 
+                    "total": 2, 
+                    "spec": [
+                        {
+                            "model": "Intel(R) Xeon(R) CPU E31230 @ 3.20GHz", 
+                            "frequency": 3201
+                        }, 
+                        {
+                            "model": "Intel(R) Xeon(R) CPU E31230 @ 3.20GHz", 
+                            "frequency": 3201
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-1.mirantis.net", 
+                    "version": "9.9", 
+                    "serial": "2902036715", 
+                    "manufacturer": "Dell"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "Dell", 
+            "name": "Dell (1)", 
+            "timestamp": "", 
+            "hostname": "node-1", 
+            "platform_name": "", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "10.20.0.1", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:fd", 
+            "meta": {
+                "memory": {
+                    "slots": 4, 
+                    "total": 17196646400, 
+                    "maximum_capacity": 68719476736, 
+                    "devices": [
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 8589934592
+                        }, 
+                        {
+                            "type": "Flash", 
+                            "size": 16777216
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:fc", 
+                        "max_speed": 56000, 
+                        "current_speed": 55127, 
+                        "pxe": true, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "10.20.0.1", 
+                        "driver": "igb", 
+                        "netmask": "255.255.0.0", 
+                        "mac": "ff:ff:ff:ff:ff:fd", 
+                        "max_speed": 1000, 
+                        "current_speed": null, 
+                        "pxe": true, 
+                        "bus_info": "0000:01:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sda", 
+                        "size": 320072933376
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "Silicon-Power16G", 
+                        "disk": "sdb", 
+                        "size": 155692564480
+                    }
+                ], 
+                "cpu": {
+                    "real": 0, 
+                    "total": 1, 
+                    "spec": [
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "N5110", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-2.mirantis.net", 
+                    "version": "4.4", 
+                    "serial": "7666823209", 
+                    "manufacturer": "VirtualBox"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "VirtualBox", 
+            "name": "VirtualBox N5110(1)", 
+            "timestamp": "", 
+            "hostname": "node-2", 
+            "platform_name": "N5110", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "10.20.0.2", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:fb", 
+            "meta": {
+                "memory": {
+                    "slots": 2, 
+                    "total": 8606711808, 
+                    "maximum_capacity": 68719476736, 
+                    "devices": [
+                        {
+                            "type": "Flash", 
+                            "size": 16777216
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 8589934592
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:fa", 
+                        "max_speed": 56000, 
+                        "current_speed": 31173, 
+                        "pxe": true, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "10.20.0.2", 
+                        "driver": "igb", 
+                        "netmask": "255.255.0.0", 
+                        "mac": "ff:ff:ff:ff:ff:fb", 
+                        "max_speed": 56000, 
+                        "current_speed": 33884, 
+                        "pxe": true, 
+                        "bus_info": "0000:01:00.0"
+                    }, 
+                    {
+                        "name": "eth2", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:f9", 
+                        "max_speed": 1000, 
+                        "current_speed": null, 
+                        "pxe": true, 
+                        "bus_info": "0000:02:00.0"
+                    }, 
+                    {
+                        "name": "eth3", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:f8", 
+                        "max_speed": 56000, 
+                        "current_speed": null, 
+                        "pxe": false, 
+                        "bus_info": "0000:03:00.0"
+                    }, 
+                    {
+                        "name": "eth4", 
+                        "ip": "10.20.0.3", 
+                        "driver": "igb", 
+                        "netmask": "255.255.0.0", 
+                        "mac": "ff:ff:ff:ff:ff:f7", 
+                        "max_speed": 100, 
+                        "current_speed": 78, 
+                        "pxe": false, 
+                        "bus_info": "0000:04:00.0"
+                    }, 
+                    {
+                        "name": "eth5", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:f6", 
+                        "max_speed": 1000, 
+                        "current_speed": null, 
+                        "pxe": false, 
+                        "bus_info": "0000:05:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "Virtual HDisk0", 
+                        "disk": "sda", 
+                        "size": 0
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sdb", 
+                        "size": 320072933376
+                    }
+                ], 
+                "cpu": {
+                    "real": 4, 
+                    "total": 16, 
+                    "spec": [
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-3.mirantis.net", 
+                    "version": "10.10", 
+                    "serial": "6819786311", 
+                    "manufacturer": "VirtualBox"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "VirtualBox", 
+            "name": "VirtualBox (2)", 
+            "timestamp": "", 
+            "hostname": "node-3", 
+            "platform_name": "", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "172.18.67.2", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:f5", 
+            "meta": {
+                "memory": {
+                    "slots": 2, 
+                    "total": 8589934592, 
+                    "maximum_capacity": 8589934592, 
+                    "devices": [
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "ip": "172.18.67.2", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:f5", 
+                        "max_speed": 100, 
+                        "current_speed": 57, 
+                        "pxe": true, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "172.18.67.3", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:f4", 
+                        "max_speed": 100, 
+                        "current_speed": null, 
+                        "pxe": true, 
+                        "bus_info": "0000:01:00.0"
+                    }, 
+                    {
+                        "name": "eth2", 
+                        "ip": "172.18.67.4", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:f3", 
+                        "max_speed": 1000, 
+                        "current_speed": null, 
+                        "pxe": false, 
+                        "bus_info": "0000:02:00.0"
+                    }, 
+                    {
+                        "name": "eth3", 
+                        "ip": "172.18.67.5", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:f2", 
+                        "max_speed": 1000, 
+                        "current_speed": 630, 
+                        "pxe": false, 
+                        "bus_info": "0000:03:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sda", 
+                        "size": 320072933376
+                    }
+                ], 
+                "cpu": {
+                    "real": 2, 
+                    "total": 2, 
+                    "spec": [
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "N5110", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-4.mirantis.net", 
+                    "version": "7.7", 
+                    "serial": "0028746576", 
+                    "manufacturer": "VirtualBox"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "VirtualBox", 
+            "name": "VirtualBox N5110(3)", 
+            "timestamp": "", 
+            "hostname": "node-4", 
+            "platform_name": "N5110", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "10.20.0.4", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:f1", 
+            "meta": {
+                "memory": {
+                    "slots": 1, 
+                    "total": 8589934592, 
+                    "maximum_capacity": 8589934592, 
+                    "devices": [
+                        {
+                            "type": "RAM", 
+                            "size": 8589934592
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "ip": "172.18.67.6", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:f0", 
+                        "max_speed": 56000, 
+                        "current_speed": null, 
+                        "pxe": false, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "10.20.0.4", 
+                        "driver": "igb", 
+                        "netmask": "255.255.0.0", 
+                        "mac": "ff:ff:ff:ff:ff:f1", 
+                        "max_speed": 56000, 
+                        "current_speed": 38906, 
+                        "pxe": false, 
+                        "bus_info": "0000:01:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "Silicon-Power16G", 
+                        "disk": "sda", 
+                        "size": 155692564480
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "Virtual HDisk0", 
+                        "disk": "sdb", 
+                        "size": 0
+                    }
+                ], 
+                "cpu": {
+                    "real": 0, 
+                    "total": 1, 
+                    "spec": [
+                        {
+                            "model": "Intel(R) Xeon(R) CPU E5-2620 0 @ 2.00GHz", 
+                            "frequency": 2001
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-5.mirantis.net", 
+                    "version": "9.9", 
+                    "serial": "2772212084", 
+                    "manufacturer": "Supermicro"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "Supermicro", 
+            "name": "Supermicro (1)", 
+            "timestamp": "", 
+            "hostname": "node-5", 
+            "platform_name": "", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "10.20.0.5", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:ef", 
+            "meta": {
+                "memory": {
+                    "slots": 3, 
+                    "total": 12901679104, 
+                    "maximum_capacity": 68719476736, 
+                    "devices": [
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 8589934592
+                        }, 
+                        {
+                            "type": "Flash", 
+                            "size": 16777216
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "ip": "10.20.0.5", 
+                        "driver": "igb", 
+                        "netmask": "255.255.0.0", 
+                        "mac": "ff:ff:ff:ff:ff:ef", 
+                        "max_speed": 100, 
+                        "current_speed": null, 
+                        "pxe": false, 
+                        "bus_info": "0000:00:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "TOSHIBA MK1002TS", 
+                        "disk": "sda", 
+                        "size": 1000204886016
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "QEMU HARDDISK", 
+                        "disk": "sdb", 
+                        "size": 68719476736
+                    }, 
+                    {
+                        "name": "sdc", 
+                        "model": "Virtual Floppy0", 
+                        "disk": "sdc", 
+                        "size": 0
+                    }, 
+                    {
+                        "name": "sdd", 
+                        "model": "TOSHIBA MK1002TS", 
+                        "disk": "sdd", 
+                        "size": 1000204886016
+                    }, 
+                    {
+                        "name": "sde", 
+                        "model": "Virtual HDisk0", 
+                        "disk": "sde", 
+                        "size": 0
+                    }, 
+                    {
+                        "name": "sdf", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sdf", 
+                        "size": 320072933376
+                    }
+                ], 
+                "cpu": {
+                    "real": 0, 
+                    "total": 1, 
+                    "spec": [
+                        {
+                            "model": "Intel(R) Xeon(R) CPU E5-2620 0 @ 2.00GHz", 
+                            "frequency": 2001
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "X9DRW", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-6.mirantis.net", 
+                    "version": "1.1", 
+                    "serial": "6214876848", 
+                    "manufacturer": "80AD"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "80AD", 
+            "name": "80AD X9DRW(1)", 
+            "timestamp": "", 
+            "hostname": "node-6", 
+            "platform_name": "X9DRW", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "10.20.0.6", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:ee", 
+            "meta": {
+                "memory": {
+                    "slots": 1, 
+                    "total": 10737418240, 
+                    "maximum_capacity": 17179869184, 
+                    "devices": [
+                        {
+                            "type": "RAM", 
+                            "size": 10737418240
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "ip": "10.20.0.6", 
+                        "driver": "e1000", 
+                        "netmask": "255.255.0.0", 
+                        "mac": "ff:ff:ff:ff:ff:ee", 
+                        "max_speed": 1000, 
+                        "current_speed": 614, 
+                        "offloading_modes": [
+                            {
+                                "state": null, 
+                                "name": "tx-checksumming", 
+                                "sub": [
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-sctp", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-ipv6", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-ipv4", 
+                                        "sub": []
+                                    }
+                                ]
+                            }, 
+                            {
+                                "state": false, 
+                                "name": "rx-checksumming", 
+                                "sub": []
+                            }
+                        ], 
+                        "pxe": true, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "172.18.67.7", 
+                        "driver": "e1000", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:ed", 
+                        "max_speed": 100, 
+                        "current_speed": 99, 
+                        "offloading_modes": [
+                            {
+                                "state": true, 
+                                "name": "tx-checksumming", 
+                                "sub": [
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-sctp", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": false, 
+                                        "name": "tx-checksum-ipv6", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": null, 
+                                        "name": "tx-checksum-ipv4", 
+                                        "sub": []
+                                    }
+                                ]
+                            }, 
+                            {
+                                "state": true, 
+                                "name": "rx-checksumming", 
+                                "sub": []
+                            }
+                        ], 
+                        "pxe": false, 
+                        "bus_info": "0000:01:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sda", 
+                        "size": 320072933376
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "TOSHIBA MK1002TS", 
+                        "disk": "sdb", 
+                        "size": 1000204886016
+                    }, 
+                    {
+                        "name": "sdc", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sdc", 
+                        "size": 320072933376
+                    }, 
+                    {
+                        "name": "sdd", 
+                        "model": "Virtual Floppy0", 
+                        "disk": "sdd", 
+                        "size": 0
+                    }, 
+                    {
+                        "name": "sde", 
+                        "model": "Virtual HDisk0", 
+                        "disk": "sde", 
+                        "size": 0
+                    }, 
+                    {
+                        "name": "sdf", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sdf", 
+                        "size": 320072933376
+                    }
+                ], 
+                "cpu": {
+                    "real": 0, 
+                    "total": 1, 
+                    "spec": [
+                        {
+                            "model": "Intel(R) Xeon(R) CPU E31230 @ 3.20GHz", 
+                            "frequency": 3201
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "X9SCD", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-7.mirantis.net", 
+                    "version": "2.2", 
+                    "serial": "6616276131", 
+                    "manufacturer": "Dell"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "Dell", 
+            "name": "Dell X9SCD(2)", 
+            "timestamp": "", 
+            "hostname": "node-7", 
+            "platform_name": "X9SCD", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "172.18.67.8", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:ec", 
+            "meta": {
+                "memory": {
+                    "slots": 6, 
+                    "total": 17213423616, 
+                    "maximum_capacity": 68719476736, 
+                    "devices": [
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "type": "Flash", 
+                            "size": 16777216
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "type": "Flash", 
+                            "size": 16777216
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "ip": "10.20.0.7", 
+                        "driver": "mlx4_en", 
+                        "netmask": "255.255.0.0", 
+                        "mac": "ff:ff:ff:ff:ff:eb", 
+                        "max_speed": 100, 
+                        "current_speed": 96, 
+                        "offloading_modes": [
+                            {
+                                "state": null, 
+                                "name": "tx-checksumming", 
+                                "sub": [
+                                    {
+                                        "state": false, 
+                                        "name": "tx-checksum-sctp", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-ipv6", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": null, 
+                                        "name": "tx-checksum-ipv4", 
+                                        "sub": []
+                                    }
+                                ]
+                            }, 
+                            {
+                                "state": true, 
+                                "name": "rx-checksumming", 
+                                "sub": []
+                            }
+                        ], 
+                        "pxe": true, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "172.18.67.8", 
+                        "driver": "mlx4_en", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:ec", 
+                        "max_speed": 100, 
+                        "current_speed": 96, 
+                        "offloading_modes": [
+                            {
+                                "state": true, 
+                                "name": "tx-checksumming", 
+                                "sub": [
+                                    {
+                                        "state": false, 
+                                        "name": "tx-checksum-sctp", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": null, 
+                                        "name": "tx-checksum-ipv6", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": null, 
+                                        "name": "tx-checksum-ipv4", 
+                                        "sub": []
+                                    }
+                                ]
+                            }, 
+                            {
+                                "state": true, 
+                                "name": "rx-checksumming", 
+                                "sub": []
+                            }
+                        ], 
+                        "pxe": true, 
+                        "bus_info": "0000:01:00.0"
+                    }, 
+                    {
+                        "name": "eth2", 
+                        "ip": "172.18.67.9", 
+                        "driver": "mlx4_en", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:ea", 
+                        "max_speed": 56000, 
+                        "current_speed": 31684, 
+                        "offloading_modes": [
+                            {
+                                "state": false, 
+                                "name": "tx-checksumming", 
+                                "sub": [
+                                    {
+                                        "state": null, 
+                                        "name": "tx-checksum-sctp", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-ipv6", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-ipv4", 
+                                        "sub": []
+                                    }
+                                ]
+                            }, 
+                            {
+                                "state": false, 
+                                "name": "rx-checksumming", 
+                                "sub": []
+                            }
+                        ], 
+                        "pxe": true, 
+                        "bus_info": "0000:02:00.0"
+                    }, 
+                    {
+                        "name": "eth3", 
+                        "driver": "mlx4_en", 
+                        "mac": "ff:ff:ff:ff:ff:e9", 
+                        "max_speed": 56000, 
+                        "current_speed": 32400, 
+                        "offloading_modes": [
+                            {
+                                "state": true, 
+                                "name": "tx-checksumming", 
+                                "sub": [
+                                    {
+                                        "state": false, 
+                                        "name": "tx-checksum-sctp", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": false, 
+                                        "name": "tx-checksum-ipv6", 
+                                        "sub": []
+                                    }, 
+                                    {
+                                        "state": true, 
+                                        "name": "tx-checksum-ipv4", 
+                                        "sub": []
+                                    }
+                                ]
+                            }, 
+                            {
+                                "state": null, 
+                                "name": "rx-checksumming", 
+                                "sub": []
+                            }
+                        ], 
+                        "pxe": false, 
+                        "bus_info": "0000:03:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sda", 
+                        "size": 320072933376
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "WDC WD3200BPVT-7", 
+                        "disk": "sdb", 
+                        "size": 320072933376
+                    }, 
+                    {
+                        "name": "sdc", 
+                        "model": "Virtual HDisk0", 
+                        "disk": "sdc", 
+                        "size": 0
+                    }
+                ], 
+                "cpu": {
+                    "real": 4, 
+                    "total": 4, 
+                    "spec": [
+                        {
+                            "model": "Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz", 
+                            "frequency": 2185
+                        }, 
+                        {
+                            "model": "Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz", 
+                            "frequency": 2185
+                        }, 
+                        {
+                            "model": "Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz", 
+                            "frequency": 2185
+                        }, 
+                        {
+                            "model": "Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz", 
+                            "frequency": 2185
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-8.mirantis.net", 
+                    "version": "8.8", 
+                    "serial": "3097213774", 
+                    "manufacturer": "80AD"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "80AD", 
+            "name": "80AD (2)", 
+            "timestamp": "", 
+            "hostname": "node-8", 
+            "platform_name": "", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "172.18.67.10", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:e8", 
+            "meta": {
+                "memory": {
+                    "slots": 5, 
+                    "total": 42949672960, 
+                    "maximum_capacity": 68719476736, 
+                    "devices": [
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "type": "RAM", 
+                            "size": 10737418240
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 8589934592
+                        }, 
+                        {
+                            "type": "RAM", 
+                            "size": 10737418240
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 8589934592
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:e7", 
+                        "max_speed": 100, 
+                        "current_speed": null, 
+                        "pxe": false, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "172.18.67.10", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:e8", 
+                        "max_speed": 100, 
+                        "current_speed": null, 
+                        "pxe": true, 
+                        "bus_info": "0000:01:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "Virtual HDisk0", 
+                        "disk": "sda", 
+                        "size": 0
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "QEMU HARDDISK", 
+                        "disk": "sdb", 
+                        "size": 68719476736
+                    }
+                ], 
+                "cpu": {
+                    "real": 0, 
+                    "total": 1, 
+                    "spec": [
+                        {
+                            "model": "Intel(R) Xeon(R) CPU E5-2620 0 @ 2.00GHz", 
+                            "frequency": 2001
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "N5110", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-9.mirantis.net", 
+                    "version": "2.2", 
+                    "serial": "6714568878", 
+                    "manufacturer": "Dell"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "Dell", 
+            "name": "Dell N5110(3)", 
+            "timestamp": "", 
+            "hostname": "node-9", 
+            "platform_name": "N5110", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "nailgun.node", 
+        "fields": {
+            "status": "discover", 
+            "ip": "172.18.67.11", 
+            "labels": {}, 
+            "pending_addition": false, 
+            "mac": "ff:ff:ff:ff:ff:e6", 
+            "meta": {
+                "memory": {
+                    "slots": 5, 
+                    "total": 32229031936, 
+                    "maximum_capacity": 34359738368, 
+                    "devices": [
+                        {
+                            "type": "Flash", 
+                            "size": 16777216
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 4294967296
+                        }, 
+                        {
+                            "type": "RAM", 
+                            "size": 10737418240
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 8589934592
+                        }, 
+                        {
+                            "frequency": 1333, 
+                            "type": "DDR3", 
+                            "size": 8589934592
+                        }
+                    ]
+                }, 
+                "interfaces": [
+                    {
+                        "name": "eth0", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:e5", 
+                        "max_speed": 1000, 
+                        "current_speed": 758, 
+                        "pxe": false, 
+                        "bus_info": "0000:00:00.0"
+                    }, 
+                    {
+                        "name": "eth1", 
+                        "ip": "172.18.67.11", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:e6", 
+                        "max_speed": 1000, 
+                        "current_speed": 618, 
+                        "pxe": false, 
+                        "bus_info": "0000:01:00.0"
+                    }, 
+                    {
+                        "name": "eth2", 
+                        "driver": "igb", 
+                        "mac": "ff:ff:ff:ff:ff:e4", 
+                        "max_speed": 1000, 
+                        "current_speed": null, 
+                        "pxe": true, 
+                        "bus_info": "0000:02:00.0"
+                    }, 
+                    {
+                        "name": "eth3", 
+                        "ip": "172.18.67.12", 
+                        "driver": "igb", 
+                        "netmask": "255.255.255.0", 
+                        "mac": "ff:ff:ff:ff:ff:e3", 
+                        "max_speed": 1000, 
+                        "current_speed": 714, 
+                        "pxe": true, 
+                        "bus_info": "0000:03:00.0"
+                    }
+                ], 
+                "disks": [
+                    {
+                        "name": "sda", 
+                        "model": "Silicon-Power16G", 
+                        "disk": "sda", 
+                        "size": 155692564480
+                    }, 
+                    {
+                        "name": "sdb", 
+                        "model": "Virtual Floppy0", 
+                        "disk": "sdb", 
+                        "size": 0
+                    }, 
+                    {
+                        "name": "sdc", 
+                        "model": "Silicon-Power16G", 
+                        "disk": "sdc", 
+                        "size": 155692564480
+                    }
+                ], 
+                "cpu": {
+                    "real": 4, 
+                    "total": 8, 
+                    "spec": [
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }, 
+                        {
+                            "model": "QEMU Virtual CPU version 1.0", 
+                            "frequency": 1999
+                        }
+                    ]
+                }, 
+                "system": {
+                    "product": "X9SCD", 
+                    "family": "To be filled by O.E.M.", 
+                    "fqdn": "node-10.mirantis.net", 
+                    "version": "7.7", 
+                    "serial": "9160672641", 
+                    "manufacturer": "VirtualBox"
+                }
+            }, 
+            "os_platform": "ubuntu", 
+            "manufacturer": "VirtualBox", 
+            "name": "VirtualBox X9SCD(4)", 
+            "timestamp": "", 
+            "hostname": "node-10", 
+            "platform_name": "X9SCD", 
+            "online": true, 
+            "progress": 0, 
+            "pending_deletion": false
+        }
+    }
+]

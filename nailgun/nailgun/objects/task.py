@@ -163,12 +163,19 @@ class Task(NailgunObject):
                 n.error_type = error_type
 
     @classmethod
-    def __update_cluster_status(cls, cluster, status):
+    def __update_cluster_status(cls, cluster, status, expected_node_status):
         logger.debug(
             "Updating cluster (%s) status: from %s to %s",
             cluster.full_name, cluster.status, status)
 
-        data = {'status': status}
+        if expected_node_status is not None:
+            remaining = Cluster.get_nodes_count_unmet_status(
+                cluster, expected_node_status
+            )
+            if remaining > 0:
+                logger.debug("Detect that cluster '%s' is partially deployed.",
+                             cluster.id)
+                status = consts.CLUSTER_STATUSES.partially_deployed
 
         # FIXME(aroma): remove updating of 'deployed_before'
         # when stop action is reworked. 'deployed_before'
@@ -178,63 +185,82 @@ class Task(NailgunObject):
         if status == consts.CLUSTER_STATUSES.operational:
             Cluster.set_deployed_before_flag(cluster, value=True)
 
-        Cluster.update(cluster, data)
+        Cluster.update(cluster, {'status': status})
 
     @classmethod
     def _update_cluster_data(cls, instance):
         cluster = instance.cluster
 
-        if instance.name == 'deploy':
-            if instance.status == 'ready':
+        if instance.name == consts.TASK_NAMES.deployment:
+            if instance.status == consts.TASK_STATUSES.ready:
                 # If for some reasons orchestrator
                 # didn't send ready status for node
                 # we should set it explicitly
                 for n in cluster.nodes:
-                    if n.status == 'deploying':
-                        n.status = 'ready'
+                    if n.status == consts.NODE_STATUSES.deploying:
+                        n.status = consts.NODE_STATUSES.ready
                         n.progress = 100
 
-                cls.__update_cluster_status(cluster, 'operational')
+                cls.__update_cluster_status(
+                    cluster,
+                    consts.CLUSTER_STATUSES.operational,
+                    consts.NODE_STATUSES.ready
+                )
 
                 Cluster.clear_pending_changes(cluster)
 
-            elif instance.status == 'error' and \
-                    not TaskHelper.before_deployment_error(instance):
-                # We don't want to set cluster status to
-                # error because we don't want to lock
-                # settings if cluster wasn't delpoyed
-
-                cls.__update_cluster_status(cluster, 'error')
-
+            elif instance.status == consts.CLUSTER_STATUSES.error:
+                cls.__update_cluster_status(
+                    cluster, consts.CLUSTER_STATUSES.error, None
+                )
+                q_nodes_to_error = TaskHelper.get_nodes_to_deployment_error(
+                    cluster
+                )
+                cls.__update_nodes_to_error(
+                    q_nodes_to_error, error_type=consts.NODE_ERRORS.deploy
+                )
         elif instance.name == consts.TASK_NAMES.spawn_vms:
             if instance.status == consts.TASK_STATUSES.ready:
                 Cluster.set_vms_created_state(cluster)
             elif instance.status == consts.TASK_STATUSES.error and \
                     not TaskHelper.before_deployment_error(instance):
-                cls.__update_cluster_status(cluster, 'error')
-        elif instance.name == 'deployment' and instance.status == 'error':
-            cls.__update_cluster_status(cluster, 'error')
+                cls.__update_cluster_status(
+                    cluster, consts.CLUSTER_STATUSES.error, None
+                )
+        elif instance.name == consts.TASK_NAMES.deploy and \
+                instance.status == consts.TASK_STATUSES.error and \
+                not TaskHelper.before_deployment_error(instance):
+            # We don't want to set cluster status to
+            # error because we don't want to lock
+            # settings if cluster wasn't deployed
 
-            q_nodes_to_error = \
-                TaskHelper.get_nodes_to_deployment_error(cluster)
+            cls.__update_cluster_status(
+                cluster, consts.CLUSTER_STATUSES.error, None
+            )
 
-            cls.__update_nodes_to_error(q_nodes_to_error,
-                                        error_type='deploy')
+        elif instance.name == consts.TASK_NAMES.provision:
+            if instance.status == consts.TASK_STATUSES.ready:
+                cls.__update_cluster_status(
+                    cluster, consts.CLUSTER_STATUSES.partially_deployed, None
+                )
+            elif instance.status == consts.TASK_STATUSES.error:
+                cls.__update_cluster_status(
+                    cluster, consts.CLUSTER_STATUSES.error, None
+                )
+                q_nodes_to_error = \
+                    TaskHelper.get_nodes_to_provisioning_error(cluster)
 
-        elif instance.name == 'provision' and instance.status == 'error':
-            cls.__update_cluster_status(cluster, 'error')
-
-            q_nodes_to_error = \
-                TaskHelper.get_nodes_to_provisioning_error(cluster)
-
-            cls.__update_nodes_to_error(q_nodes_to_error,
-                                        error_type='provision')
-
-        elif instance.name == 'stop_deployment':
-            if instance.status == 'error':
-                cls.__update_cluster_status(cluster, 'error')
+                cls.__update_nodes_to_error(
+                    q_nodes_to_error, error_type=consts.NODE_ERRORS.provision)
+        elif instance.name == consts.TASK_NAMES.stop_deployment:
+            if instance.status == consts.TASK_STATUSES.error:
+                cls.__update_cluster_status(
+                    consts.CLUSTER_STATUSES.error, None
+                )
             else:
-                cls.__update_cluster_status(cluster, 'stopped')
+                cls.__update_cluster_status(
+                    cluster, consts.CLUSTER_STATUSES.stopped, None
+                )
 
     @classmethod
     def _clean_data(cls, data):

@@ -1714,22 +1714,24 @@ RolePanel = React.createClass({
       .flatten()
       .uniq()
       .value();
-    var messages = [];
+    var warnings = [];
 
     if (restrictionsCheck.result && restrictionsCheck.message) {
-      messages.push(restrictionsCheck.message);
+      warnings.push(restrictionsCheck.message);
     }
     if (roleLimitsCheckResults && !roleLimitsCheckResults.valid && roleLimitsCheckResults.message) {
-      messages.push(roleLimitsCheckResults.message);
+      warnings.push(roleLimitsCheckResults.message);
     }
-    if (_.contains(conflicts, name)) messages.push(i18n('cluster_page.nodes_tab.role_conflict'));
+    if (_.contains(conflicts, name)) {
+      warnings.push(i18n('cluster_page.nodes_tab.role_conflict'));
+    }
 
     return {
       result: restrictionsCheck.result || _.contains(conflicts, name) ||
         (roleLimitsCheckResults && !roleLimitsCheckResults.valid &&
           !_.contains(this.props.selectedRoles, name)
         ),
-      message: messages.join(' ')
+      warnings
     };
   },
   render() {
@@ -1783,6 +1785,7 @@ Role = React.createClass({
   render() {
     var {role, selected, indeterminated, restrictions, isRolePanelDisabled, onClick} = this.props;
     var disabled = isRolePanelDisabled || restrictions.result;
+    var {warnings} = restrictions;
     return (
       <div
         className={utils.classNames({
@@ -1801,8 +1804,8 @@ Role = React.createClass({
             className={utils.classNames({
               glyphicon: true,
               'glyphicon-selected-role': selected,
-              'glyphicon-indeterminated-role': indeterminated && !restrictions.message,
-              'glyphicon-warning-sign': !!restrictions.message
+              'glyphicon-indeterminated-role': indeterminated && !warnings.length,
+              'glyphicon-warning-sign': !!warnings.length
             })}
           />
           {role.get('label')}
@@ -1810,12 +1813,8 @@ Role = React.createClass({
         {this.state.isPopoverVisible &&
           <Popover placement='top'>
             <div>
-              {!!restrictions.message &&
-                <div>
-                  <div className='text-warning'>{restrictions.message}</div>
-                  <hr />
-                </div>
-              }
+              {_.map(warnings, (text, index) => <p key={index} className='text-warning'>{text}</p>)}
+              {!!warnings.length && <hr />}
               <div>{role.get('description')}</div>
             </div>
           </Popover>

@@ -218,6 +218,7 @@ function($, _, i18n, Backbone, React, utils, models, dispatcher, componentMixins
                 this.props.cluster.fetch(),
                 this.props.cluster.fetchRelated('nodes'),
                 this.props.cluster.fetchRelated('tasks'),
+                this.props.cluster.get('networkConfiguration').fetch(),
                 this.props.cluster.get('pluginLinks').fetch()
             );
         },

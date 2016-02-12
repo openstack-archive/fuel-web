@@ -1141,6 +1141,9 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
         db().flush()
 
         nodes_to_deploy = []
+        # TODO(aglarendil): remove this hardcode and decide
+        # <UNHARDCODE1>
+        # which stuff to run on controller deletion data-driven
         objects.Cluster.adjust_nodes_lists_on_controller_removing(
             self.cluster, nodes_to_delete, nodes_to_deploy)
 

@@ -473,6 +473,8 @@ TASK_CROSS_DEPENDENCY = '2.0.0'
 # From which (major) plugins package version task based is strictly required
 TASK_DEPLOY_STRICT_FROM_VER = '5.0.0'
 
+TASK_COMPUTABLE_FIELDS = ('condition','cross-depends','cross-depended-by')
+
 IRONIC_BOOTSTRAP_PKGS = ('openssh-server',
                          'ntp',
                          'fuel-agent',

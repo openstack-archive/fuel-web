@@ -19,15 +19,57 @@ from collections import defaultdict
 import os
 import six
 import yaml
+import yaql
 
 from nailgun import consts
+from nailgun import objects
+from nailgun.consts import TASK_COMPUTABLE_FIELDS
 from nailgun.errors import errors
 from nailgun.expression import Expression
-from nailgun import objects
+from nailgun.logger import logger
+from nailgun.objects import NodeCollection
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
 from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.role_resolver import BaseRoleResolver
+from nailgun.utils.task_meta_parser import Parser,LegacyParser,YAQLParser
+
+def get_uids_for_roles(nodes, roles):
+    """Returns list of uids for nodes that matches roles
+
+    :param nodes: list of nodes
+    :param roles: list of roles or consts.TASK_ROLES.all
+    :returns: list of strings
+    """
+
+    uids = set()
+
+    if roles == consts.TASK_ROLES.all:
+        uids.update([n.uid for n in nodes])
+    elif roles == consts.TASK_ROLES.master:
+        return [consts.MASTER_NODE_UID]
+    elif isinstance(roles, list):
+        for node in nodes:
+            if set(roles) & set(objects.Node.all_roles(node)):
+                uids.add(node.uid)
+    else:
+        logger.warn(
+            'Wrong roles format, `roles` should be a list or "*": %s',
+            roles)
+
+    return list(uids)
+
+
+class LegacyRoleResolver(BaseRoleResolver):
+    """The role resolver that implements legacy behaviour."""
+
+    # TODO(bgaifullin): remove this in 9.0
+    def __init__(self, nodes):
+        self.nodes = nodes
+
+    def resolve(self, roles, policy=None):
+        return get_uids_for_roles(self.nodes, roles)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -49,22 +91,73 @@ class DeploymentHook(object):
 
 class ExpressionBasedTask(DeploymentHook):
 
-    def __init__(self, task, cluster):
+    def __init__(self, task, cluster, yaql_engine=None):
         self.task = task
         self.cluster = cluster
+        self.yaqldata = self.build_yaql_data()
+        self.legacydata = self.build_legacy_data()
+        self.evaluate_computable_fields()
 
-    @property
-    def _expression_context(self):
+
+
+    @staticmethod
+    def seq_iter(iter):
+        if isinstance(iter, dict):
+            for k, v in six.iteritems(iter):
+                yield k, v
+        elif isinstance(iter, list):
+            for i in xrange(len(iter)):
+                yield i, iter[i]
+
+    def build_legacy_data(self):
         return {'cluster': self.cluster,
                 'settings':
                 objects.Cluster.get_editable_attributes(self.cluster)}
 
+    def _eval_expression(self, data):
+        if isinstance(data,six.string_types):
+            parser=Parser(data).get_parser()
+            if isinstance(parser, LegacyParser):
+                parser.data = self.legacydata
+            elif isinstance(parser, YAQLParser):
+                parser.context = yaql.create_context()
+                parser.data = self.yaqldata
+                import pprint
+                pprint.pprint(self.yaqldata)
+                #print self.yaqldata.__class__
+                #row2dict = lambda r: {c.name: str(getattr(r, c.name)) for c in r.__table__.columns}
+                #print row2dict(self.yaqldata)
+                #print self.yaqldata
+            else:
+                raise errors.UnknownTaskFieldParser('Unknown parser {0} retrieved for {1}'.format(
+                parser.__class__, data,))
+            evaled = parser.evaluate()
+            return evaled
+        else:
+            for key, item in data.seq_iter():
+                data[key] = self._eval_expression(item)
+        return data
+
+    def evaluate_computable_fields(self):
+        for field in TASK_COMPUTABLE_FIELDS:
+            if field in self.task:
+                self.task[field] = self._eval_expression(self.task[field])
+
+    def build_yaql_data(self):
+        #TODO(aglarendil): build context with regard to installed plugins
+        row2dict = lambda r: {c.name: str(getattr(r, c.name)) for c in r.__table__.columns}
+        result = {'cluster': row2dict(self.cluster),
+                'nodes': NodeCollection.to_list(),
+                'settings':
+                objects.Cluster.get_editable_attributes(self.cluster)}
+        import json
+        print json.dumps(result)
+        return result
+
     def should_execute(self):
         if 'condition' not in self.task:
             return True
-        return Expression(
-            self.task['condition'], self._expression_context).evaluate()
-
+        return self.task['condition']
 
 class GenericNodeHook(ExpressionBasedTask):
     """Should be used for node serialization."""

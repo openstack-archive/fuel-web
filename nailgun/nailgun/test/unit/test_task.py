@@ -194,6 +194,8 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
     def test_update_cluster_to_operational(self):
         deploy_task = Task(name='deploy', cluster=self.cluster, status='ready')
+        for node in self.env.nodes:
+            node.status = consts.NODE_STATUSES.ready
         self.db.add(deploy_task)
         self.db.commit()
 

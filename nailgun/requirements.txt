@@ -37,6 +37,7 @@ python-cinderclient>=1.3.1
 networkx>=1.10
 pydot-ng>=1.0.0
 oslo.utils>2.0.0,!=2.6.0
+yaql>=1.0.0
 # NOTE(prmtl): not all packages has correctly
 # requirements for stevedore - some of them install
 # newest one which case version conflicts

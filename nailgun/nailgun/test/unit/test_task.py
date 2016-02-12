@@ -194,34 +194,44 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.nodes_should_not_be_error(self.cluster.nodes[1:])
 
     def test_update_cluster_to_operational(self):
-        deploy_task = Task(name='deploy', cluster=self.cluster, status='ready')
+        deploy_task = Task(
+            name=consts.TASK_NAMES.deployment,
+            cluster=self.cluster, status=consts.TASK_STATUSES.ready
+        )
+        for node in self.env.nodes:
+            node.status = consts.NODE_STATUSES.ready
         self.db.add(deploy_task)
         self.db.commit()
 
         objects.Task._update_cluster_data(deploy_task)
         self.db.flush()
 
-        self.assertEqual(self.cluster.status, 'operational')
+        self.assertEqual(
+            self.cluster.status, consts.CLUSTER_STATUSES.operational)
 
     def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
         for node in self.cluster.nodes:
-            node.status = 'ready'
+            node.status = consts.NODE_STATUSES.ready
             node.progress = 100
 
-        self.cluster.nodes[0].status = 'deploying'
+        self.cluster.nodes[0].status = consts.NODE_STATUSES.deploying
         self.cluster.nodes[0].progress = 24
 
-        deploy_task = Task(name='deploy', cluster=self.cluster, status='ready')
+        deploy_task = Task(
+            name=consts.TASK_NAMES.deployment,
+            cluster=self.cluster, status=consts.TASK_STATUSES.ready
+        )
         self.db.add(deploy_task)
         self.db.commit()
 
         objects.Task._update_cluster_data(deploy_task)
         self.db.flush()
 
-        self.assertEqual(self.cluster.status, 'operational')
+        self.assertEqual(
+            self.cluster.status, consts.CLUSTER_STATUSES.operational)
 
         for node in self.cluster.nodes:
-            self.assertEqual(node.status, 'ready')
+            self.assertEqual(node.status, consts.NODE_STATUSES.ready)
             self.assertEqual(node.progress, 100)
 
     def test_update_cluster_status_if_task_was_already_in_error_status(self):

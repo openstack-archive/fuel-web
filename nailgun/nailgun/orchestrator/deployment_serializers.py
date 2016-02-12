@@ -93,6 +93,8 @@ class DeploymentMultinodeSerializer(object):
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
+        #TODO(aglarendil): Remove this hardcode and allow
+        #a set of critical tasks to be data-driven
         self.set_critical_nodes(nodes)
         return [utils.dict_merge(node, common_attrs) for node in nodes]
 

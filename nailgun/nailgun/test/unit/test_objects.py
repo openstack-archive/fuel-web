@@ -720,6 +720,9 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.add(task)
         self.db.flush()
 
+        for node in self.env.nodes:
+            node.status = consts.NODE_STATUSES.ready
+
         objects.Task._update_cluster_data(task)
         self.db.flush()
 

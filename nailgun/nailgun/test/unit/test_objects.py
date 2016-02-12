@@ -714,11 +714,14 @@ class TestTaskObject(BaseIntegrationTest):
         self._nodes_should_not_be_error(self.cluster.nodes[1:])
 
     def test_update_cluster_to_operational(self):
-        task = Task(name=consts.TASK_NAMES.deploy,
+        task = Task(name=consts.TASK_NAMES.deployment,
                     cluster=self.cluster,
                     status=consts.TASK_STATUSES.ready)
         self.db.add(task)
         self.db.flush()
+
+        for node in self.env.nodes:
+            node.status = consts.NODE_STATUSES.ready
 
         objects.Task._update_cluster_data(task)
         self.db.flush()
@@ -756,7 +759,7 @@ class TestTaskObject(BaseIntegrationTest):
         self.cluster.nodes[0].status = consts.NODE_STATUSES.deploying
         self.cluster.nodes[0].progress = 24
 
-        task = Task(name=consts.TASK_NAMES.deploy,
+        task = Task(name=consts.TASK_NAMES.deployment,
                     cluster=self.cluster,
                     status=consts.TASK_STATUSES.ready)
         self.db.add(task)

@@ -16,7 +16,6 @@
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy.dialects import postgresql as psql
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
@@ -25,6 +24,7 @@ from sqlalchemy import String
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 
 
 class IPAddr(Base):

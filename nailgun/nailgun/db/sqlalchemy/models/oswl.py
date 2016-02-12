@@ -18,7 +18,6 @@ from sqlalchemy import Column
 from sqlalchemy import Date
 from sqlalchemy.dialects import postgresql
 from sqlalchemy import Enum
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import Time
@@ -26,6 +25,7 @@ from sqlalchemy import UniqueConstraint
 
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 
 from nailgun import consts
 

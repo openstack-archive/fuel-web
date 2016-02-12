@@ -440,6 +440,17 @@ class TestNodeAttributesMigration(base.BaseAlembicMigrationTest):
                 self.assertEqual(db_value, '{}')
 
 
+class TestClusterStatusMigration(base.BaseAlembicMigrationTest):
+    def test_cluster_status_upgraded(self):
+        clusters_table = self.meta.tables['clusters']
+        columns = [clusters_table.c.id, clusters_table.c.status]
+        cluster = db.execute(sa.select(columns)).fetchone()
+
+        db.execute(clusters_table.update().where(
+            clusters_table.c.id == cluster.id
+        ).values(status=consts.CLUSTER_STATUSES.partial_deploy))
+
+
 class TestRemoveWizardMetadata(base.BaseAlembicMigrationTest):
 
     def test_wizard_metadata_does_not_exist_in_releases(self):

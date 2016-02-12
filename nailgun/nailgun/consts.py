@@ -52,7 +52,8 @@ CLUSTER_STATUSES = Enum(
     'error',
     'remove',
     'update',
-    'update_error'
+    'update_error',
+    'partial_deploy'
 )
 
 NETWORKS = Enum(

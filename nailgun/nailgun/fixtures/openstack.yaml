@@ -1168,18 +1168,20 @@
             label: "Public TLS"
             weight: 110
             group: "security"
-          horizon:
-            value: false
-            label: "HTTPS for Horizon"
-            description: "Secure access to Horizon enabling HTTPS instead of HTTP"
-            weight: 10
-            type: "checkbox"
           services:
             value: false
             label: "TLS for OpenStack public endpoints"
             description: "Enable TLS termination on HAProxy for OpenStack services"
+            weight: 10
+            type: "checkbox"
+          horizon:
+            value: false
+            label: "HTTPS for Horizon"
+            description: "Secure access to Horizon enabling HTTPS instead of HTTP"
             weight: 20
             type: "checkbox"
+            restrictions:
+              - "settings:public_ssl.services.value == false": "TLS for OpenStack public endpoints should be enabled"
           cert_source:
             type: "radio"
             weight: 30

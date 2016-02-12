@@ -323,3 +323,35 @@ class NodesAllocationStatsHandler(BaseHandler):
             db().query(Node).count()
         return {'total': total_nodes,
                 'unallocated': unallocated_nodes}
+
+
+class NodeAttributesHandler(BaseHandler):
+    """Node attributes handler"""
+
+    # TODO(asvechnikov): Add validator
+
+    @content
+    def GET(self, node_id):
+        """:returns: JSONized Node attributes.
+
+        :http: * 200 (OK)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(objects.Node, node_id)
+
+        return objects.Node.get_attributes(node)
+
+    @content
+    def PUT(self, node_id):
+        """:returns: JSONized Node attributes.
+
+        :http: * 200 (OK)
+               * 400 (wrong attributes data specified)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(objects.Node, node_id)
+
+        data = self.checked_data()
+        objects.Node.update_attributes(node, data)
+
+        return objects.Node.get_attributes(node)

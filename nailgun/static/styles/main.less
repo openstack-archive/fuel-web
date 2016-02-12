@@ -1,32 +1,47 @@
 @import "../../node_modules/bootstrap/dist/css/bootstrap.css";
 
-// COLOR SETTINGS
+// BASE SETTINGS
 
-// Base Settings
 @page-width: 1170px;
 @default-input-width: 280px;
 @default-label-width: 200px;
 
+// COLOR SETTINGS
+
 // Base Palette
 @base-dark-color:  #415766;
-@base-light-color: @base-dark-color + #7a746c;
+@base-light-color: lighten(desaturate(@base-dark-color, 10%), 60%);
 @base-text-color:  #525960;
+@link-color: @navbar-color;
+@link-color-hover: darken(@navbar-color, 10%);
+
+// Navbar Palette
+@navbar-color: #5a8fb3;
+@navbar-color-active: @navbar-color;
+@navbar-color-hover: lighten(@navbar-color-active, 20%);
+@navbar-icon-color: @navbar-color;
+@shadow-color: rgba(0,0,0,0.5);
+
+// Tabs & Content Settings
+@tab-color: #dfe0e0;
+@tab-color-hover: #d2d3d4;
+@tab-color-active: @white;
 
 // Node Colors
-@base-node-color: #e1e4e6;
-@base-node-border: @base-node-color - 30%;  // - #1e1f1f;
+@base-node-color: #eaedef;
+@base-node-border: @base-node-color - 30%;
 
 // Node Selected
-@node-color-selected: @base-node-color - 15%; //#101010;
-@node-border-color-selected: @base-node-color - 15%; //#101010;
+@node-color-selected: @base-node-color - 15%;
+@node-border-color-selected: @base-node-color - 15%;
 
 // Node Unallocated
 @node-color-discover: @white;
 @node-border-color-discover: @base-node-border;
-@node-color-discover-hover: @base-node-color + 15%; //#141414;
+@node-color-discover-hover: @base-node-color + 15%;
 
 // Node Error
-@node-color-error: @red + 160%; //#decace;
+@node-color-error: @red + 160%;
 @node-border-color-error: @red + 10%;
 
 // Node New
@@ -84,22 +99,10 @@
 @disk-yellow: #F2CA5B;
 @disk-cyan:   #359CBF;
 
-@link-color: saturate(lighten(@base-dark-color, 20%), 30%);
-@link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
-@navbar-color: saturate(lighten(@base-dark-color, 20%), 15%);
-@navbar-color-active: saturate(lighten(@base-dark-color, 20%), 15%);
-@navbar-icon-color: @base-dark-color + #203c4c;
-@shadow-color: rgba(0,0,0,0.5);
-
 // Mirantis
 @mirantis-red:  #c63927;
 @mirantis-light-red: #e8b0a9;
 @mirantis-gray: #7f7f7f;
-
-// Tabs & Content Settings
-@tab-color: desaturate(lighten(@base-dark-color, 55%), 20%);
-@tab-color-hover: desaturate(lighten(@base-dark-color, 50%), 20%);
-@tab-color-active: @white;
 
 @range-color: @tab-color - 50%;
 @slider-color: @tab-color + 20%;
@@ -293,7 +296,7 @@
 }
 
 .base-btn-link-colors() {
-  @base-btn-link-color: #5988A5;
+  @base-btn-link-color: @link-color;
   color: @base-btn-link-color;
   &:hover {
     color: @base-btn-link-color - 15%;
@@ -385,7 +388,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
 .btn-info {
   .button-mixin(@btn-info);
 }
-
+.btn-link {
+  color: @link-color;
+  &:hover {
+    color: @link-color-hover;
+  }
+}
 
 @common-icons-sprite: "../img/icons/icons-sprite.svg";
 
@@ -682,12 +690,12 @@ input[type=range] {
         -webkit-font-smoothing: antialiased;
         &:hover {
           color: @white;
-          background-color: @base-light-color;
+          background-color: @navbar-color-hover;
           border-radius: 4px;
         }
         &:focus {
           color: @white;
-          background-color: @base-light-color;
+          background-color: @navbar-color-hover;
           border-radius: 4px;
         }
       }
@@ -1106,7 +1114,7 @@ input[type=range] {
   li {
     display: inline-block;
     a {
-      color: @blue + 60%;
+      color: @link-color;
     }
   }
   li + li {
@@ -1203,7 +1211,7 @@ input[type=range] {
     font-weight: 600;
     &:hover {
       color: @white;
-      background-color: @base-light-color;
+      background-color: @navbar-color-hover;
     }
   }
   &.group-title {
@@ -2354,7 +2362,7 @@ input[type=range] {
           }
           .btn-link {
             padding: 0;
-            color: @blue;
+            color: @link-color;
             font-size: @base-font-size - 2;
             &:hover, &:focus {
               text-decoration: none;
@@ -4126,7 +4134,7 @@ input[type=range] {
       .btn-link {
         text-decoration: none;
         cursor: default;
-        color: #337ab7;
+        color: @link-color;
       }
     }
     .node-group-renaming {
@@ -4419,7 +4427,7 @@ input[type=range] {
   }
 
   .cluster-information {
-    background-color: rgb(231, 240, 242);
+    background-color: @base-light-color;
     width: @page-width;
     margin: 0 0 @dashboard-offset -@dashboard-offset * 2;
     padding: @dashboard-offset @dashboard-offset * 2;

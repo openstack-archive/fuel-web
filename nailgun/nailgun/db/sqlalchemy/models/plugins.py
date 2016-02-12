@@ -14,7 +14,6 @@
 
 from sqlalchemy import Boolean
 from sqlalchemy import Column
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -25,6 +24,7 @@ from sqlalchemy.orm import relationship
 
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 
 

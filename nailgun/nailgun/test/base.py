@@ -135,12 +135,13 @@ class EnvironmentManager(object):
                     node_kwargs["cluster_id"] = cluster["id"]
                 else:
                     node_kwargs["cluster_id"] = cluster.id
-            node_kwargs.setdefault("api", False)
             if "pending_roles" not in node_kwargs:
                 node_kwargs.setdefault("roles", ["controller"])
-            self.create_node(
-                **node_kwargs
-            )
+            if node_kwargs.get("api"):
+                del node_kwargs['api']
+                self.create_node_api(**node_kwargs)
+            else:
+                self.create_node(**node_kwargs)
         return cluster
 
     def create_release(self, api=False, **kwargs):
@@ -281,19 +282,14 @@ class EnvironmentManager(object):
             Cluster.update_vmware_attributes(cluster_db, vmware_attributes)
         return cluster
 
-    def create_node(
-            self, api=False,
-            exclude=None, expect_http=201,
-            expected_error=None,
-            **kwargs):
-        # TODO(alekseyk) Simplify 'interfaces' and 'mac' manipulation logic
-        metadata = kwargs.get('meta', {})
+    def _create_node_data(self, exclude=None, **kwargs):
+        update_metadata = kwargs.get('meta', {})
         default_metadata = self.default_metadata()
-        default_metadata.update(metadata)
+        default_metadata.update(update_metadata)
 
         mac = kwargs.get('mac', self.generate_random_mac())
         if default_metadata['interfaces']:
-            if not metadata or 'interfaces' not in metadata:
+            if not update_metadata or 'interfaces' not in update_metadata:
                 default_metadata['interfaces'][0]['mac'] = mac
                 default_metadata['interfaces'][0]['pxe'] = True
                 for iface in default_metadata['interfaces'][1:]:
@@ -311,7 +307,6 @@ class EnvironmentManager(object):
                 else:
                     default_metadata['interfaces'][0]['mac'] = mac
                     default_metadata['interfaces'][0]['pxe'] = True
-
         node_data = {
             'mac': mac,
             'status': 'discover',
@@ -323,42 +318,66 @@ class EnvironmentManager(object):
             node_data.update(kwargs)
             if meta:
                 kwargs['meta'] = meta
-
         if exclude and isinstance(exclude, list):
             for ex in exclude:
                 try:
                     del node_data[ex]
                 except KeyError as err:
                     logger.warning(err)
-        if api:
-            resp = self.app.post(
-                reverse('NodeCollectionHandler'),
-                jsonutils.dumps(node_data),
-                headers=self.default_headers,
-                expect_errors=True
-            )
-            self.tester.assertEqual(resp.status_code, expect_http, resp.body)
-            if expected_error:
-                self.tester.assertEqual(
-                    resp.json_body["message"],
-                    expected_error
-                )
-            if str(expect_http)[0] != "2":
-                return None
-            self.tester.assertEqual(resp.status_code, expect_http)
-            node = resp.json_body
-            node_db = Node.get_by_uid(node['id'])
-            if 'interfaces' not in node_data['meta'] \
-                    or not node_data['meta']['interfaces']:
-                self._set_interfaces_if_not_set_in_meta(
-                    node_db.id,
-                    kwargs.get('meta', None))
-            self.nodes.append(node_db)
-        else:
-            node = Node.create(node_data)
-            db().commit()
-            self.nodes.append(node)
+        return node_data
 
+    def create_node(self, **kwargs):
+        node = Node.create(self._create_node_data(**kwargs))
+        db().commit()
+        self.nodes.append(node)
+        return node
+
+    def _fix_api_disk_data(self, disks):
+        return disks
+#        blocks = []
+#        for disk in disks:
+#            api_disk = {
+#                    'size': disk['size'],
+#                    'udevadm_info': ("DEVNAME=/dev/{disk}"
+#                                    "ID_MODEL={model}").format(**disk),
+#                    'removable': disk.get('removable', False)
+#            }
+#            blocks.append(api_disk)
+#        api_disks = {
+#                'blocks': blocks,
+#                'dmsetup_info': "",
+#        }
+#        return api_disks
+
+    def create_node_api(self, exclude=None, expect_http=201,
+                        expected_error=None, **kwargs):
+        node_data = self._create_node_data(exclude, **kwargs)
+        disks = node_data['meta']['disks']
+        node_data['meta']['disks'] = self._fix_api_disk_data(disks)
+
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps(node_data),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.tester.assertEqual(resp.status_code, expect_http, resp.body)
+        if expected_error:
+            self.tester.assertEqual(
+                resp.json_body["message"],
+                expected_error
+            )
+        if str(expect_http)[0] != "2":
+            return None
+        self.tester.assertEqual(resp.status_code, expect_http)
+        node = resp.json_body
+        node_db = Node.get_by_uid(node['id'])
+        if 'interfaces' not in node_data['meta'] \
+                or not node_data['meta']['interfaces']:
+            self._set_interfaces_if_not_set_in_meta(
+                node_db.id,
+                kwargs.get('meta', None))
+        self.nodes.append(node_db)
         return node
 
     def create_nodes(self, count, *args, **kwargs):

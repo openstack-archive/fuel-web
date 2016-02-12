@@ -178,7 +178,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         self.assertEqual(changed_disks[1]['extra'], disks[0]['extra'])
 
     def test_default_attrs_after_creation(self):
-        self.env.create_node(api=True)
+        self.env.create_node_api()
         node_db = self.env.nodes[0]
         disks = self.get(node_db.id)
 
@@ -423,8 +423,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
 
     def test_node_disk_amount_regenerates_volumes_info_if_new_disk_added(self):
         cluster = self.env.create_cluster(api=True)
-        self.env.create_node(
-            api=True,
+        self.env.create_node_api(
             roles=['compute'],  # vgs: os, vm
             cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
@@ -456,7 +455,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             self.assertEqual(len(disk['volumes']), len(vgs))
 
     def test_get_default_attrs(self):
-        self.env.create_node(api=False)
+        self.env.create_node()
         node_db = self.env.nodes[0]
         volumes_from_api = self.get(node_db.id)
 
@@ -733,7 +732,7 @@ class TestVolumeManager(BaseIntegrationTest):
             self.assertEqual(volumes_size, disk['size'])
 
     def test_volume_request_without_cluster(self):
-        self.env.create_node(api=True)
+        self.env.create_node_api()
         node = self.env.nodes[-1]
         resp = self.app.get(
             reverse('NodeVolumesInformationHandler',
@@ -985,7 +984,6 @@ class TestVolumeManager(BaseIntegrationTest):
     def test_get_node_spaces(self):
         cluster = self._prepare_env()
         node = self.env.create_node(
-            api=False,
             cluster_id=cluster.id,
             roles=['controller'],
             pending_addition=True
@@ -1001,7 +999,6 @@ class TestVolumeManager(BaseIntegrationTest):
     def test_get_node_spaces_with_plugins(self):
         cluster = self._prepare_env()
         node = self.env.create_node(
-            api=False,
             cluster_id=cluster.id,
             roles=['controller', 'testing_plugin'],
             pending_addition=True

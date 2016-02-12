@@ -31,9 +31,6 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
 from nailgun import consts
-
-from nailgun.objects.serializers.node import NodeSerializer
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -43,15 +40,14 @@ from nailgun.extensions import fire_callback_on_node_delete
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.logger import logger
-
+from nailgun.network.template import NetworkTemplate
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Notification
-
+from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.settings import settings
-
-from nailgun.network.template import NetworkTemplate
+from nailgun import utils
 
 
 class Node(NailgunObject):
@@ -980,6 +976,14 @@ class Node(NailgunObject):
 
         for vm in node.vms_conf:
             vm['created'] = False
+
+    @classmethod
+    def get_attributes(cls, instance):
+        return instance.attributes
+
+    @classmethod
+    def update_attributes(cls, instance, attrs):
+        instance.attributes = utils.dict_merge(instance.attributes, attrs)
 
 
 class NodeCollection(NailgunCollection):

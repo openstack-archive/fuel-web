@@ -368,3 +368,52 @@ class TestHandlers(BaseIntegrationTest):
                              'ip': ipaddress}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
+
+    def test_get_node_attributes(self):
+        node = self.env.create_node(api=False)
+        fake_attributes = {
+            'group1': {
+                'metadata': {},
+                'comp1': {
+                    'value': 42
+                }
+            }
+        }
+        node.attributes.update(fake_attributes)
+        resp = self.app.get(
+            reverse('NodeAttributesHandler', kwargs={'node_id': node.id}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(fake_attributes, resp.json_body)
+
+    def test_put_node_attributes(self):
+        node = self.env.create_node(api=False)
+        fake_attributes = {
+            'group1': {
+                'metadata': {},
+                'comp1': {
+                    'value': 42
+                }
+            },
+            'group2': {
+                'comp2': {
+                    'value': 'value1'
+                }
+            }
+        }
+        node.attributes.update(fake_attributes)
+        update_attributes = {
+            'group1': {
+                'comp1': {
+                    'value': 41
+                }
+            }
+        }
+        resp = self.app.put(
+            reverse('NodeAttributesHandler', kwargs={'node_id': node.id}),
+            jsonutils.dumps(update_attributes),
+            headers=self.default_headers)
+
+        fake_attributes['group1']['comp1']['value'] = 41
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(fake_attributes, resp.json_body)

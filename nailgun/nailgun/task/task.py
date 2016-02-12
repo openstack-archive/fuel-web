@@ -154,8 +154,18 @@ class DeploymentTask(object):
         return 'deploy'
 
     @classmethod
-    def message(cls, task, nodes, deployment_tasks=None,
+    def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
                 reexecutable_filter=None):
+        """Builds RPC message for deployment task.
+
+        :param task: the database task object instance
+        :param nodes: the nodes for deployment
+        :param affected_nodes: the list of nodes is affected by deployment
+        :deployment_tasks: the list of tasks_ids to execute,
+                           if None, all tasks will be executed
+        :reexecutable_filter: the list of events to find subscribed tasks
+        :return: the RPC message
+        """
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
         task_ids = deployment_tasks or []
 
@@ -178,7 +188,7 @@ class DeploymentTask(object):
         while True:
             try:
                 message = getattr(cls, deployment_mode)(
-                    task, nodes, task_ids, reexecutable_filter
+                    task, nodes, affected_nodes, task_ids, reexecutable_filter
                 )
                 break
             except errors.TaskBaseDeploymentNotAllowed:
@@ -201,10 +211,19 @@ class DeploymentTask(object):
         return rpc_message
 
     @classmethod
-    def granular_deploy(cls, task, nodes, task_ids, reexecutable_filter):
+    def granular_deploy(cls, task, nodes, affected_nodes, task_ids, events):
+        """Builds parameters for granular deployment.
+
+        :param task: the database task object instance
+        :param nodes: the nodes for deployment
+        :param affected_nodes: the list of nodes is affected by deployment
+        :task_ids: the list of tasks_ids to execute,
+                           if None, all tasks will be executed
+        :events: the list of events to find subscribed tasks
+        :return: the arguments for RPC message
+        """
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
         orchestrator_graph.only_tasks(task_ids)
-        orchestrator_graph.reexecutable_tasks(reexecutable_filter)
 
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
@@ -212,6 +231,13 @@ class DeploymentTask(object):
         role_resolver = RoleResolver(nodes)
         serialized_cluster = deployment_serializers.serialize(
             orchestrator_graph, task.cluster, nodes)
+
+        if affected_nodes:
+            orchestrator_graph.reexecutable_tasks(events)
+            serialized_cluster.extend(deployment_serializers.serialize(
+                orchestrator_graph, task.cluster, affected_nodes
+            ))
+            nodes = nodes + affected_nodes
         pre_deployment = stages.pre_deployment_serialize(
             orchestrator_graph, task.cluster, nodes,
             role_resolver=role_resolver)
@@ -228,16 +254,31 @@ class DeploymentTask(object):
     deploy = granular_deploy
 
     @classmethod
-    def task_deploy(cls, task, nodes, task_ids, reexecutable_filter):
+    def task_deploy(cls, task, nodes, affected_nodes, task_ids, events):
+        """Builds parameters for task based deployment.
+
+        :param task: the database task object instance
+        :param nodes: the nodes for deployment
+        :param affected_nodes: the list of nodes is affected by deployment
+        :task_ids: the list of tasks_ids to execute,
+                           if None, all tasks will be executed
+        :events: the list of events to find subscribed tasks
+        :return: the arguments for RPC message
+        """
+
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         logger.debug("start cluster serialization.")
         serialized_cluster = deployment_serializers.serialize(
             None, task.cluster, nodes
         )
         logger.debug("finish cluster serialization.")
+        tasks_events = events and \
+            task_based_deployment.TaskEvents('reexecute_on', events)
+
         logger.debug("start tasks serialization.")
         directory, graph = task_based_deployment.TasksSerializer.serialize(
-            task.cluster, nodes, deployment_tasks, task_ids
+            task.cluster, nodes, deployment_tasks, affected_nodes,
+            task_ids, tasks_events
         )
         logger.debug("finish tasks serialization.")
         return {

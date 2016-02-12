@@ -644,6 +644,38 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertRaises(
             errors.CannotUpdate, objects.Node.update, node_0, data)
 
+    def test_get_attributes(self):
+        node = self.env.create_node()
+
+        fake_attributes = {
+            'fake_attributes': {'fake_key_1': 'fake_value_1',
+                                'fake_key_2': 'fake_value_2'}
+        }
+        node.attributes = fake_attributes
+        self.assertDictEqual(fake_attributes,
+                             objects.Node.get_attributes(node))
+
+    def test_update_attributes(self):
+        node = self.env.create_node()
+        node.attributes = {
+            'fake_attributes': {'fake_key_1': {'key': 'old_value'},
+                                'fake_key_2': 'fake_value_2'}
+        }
+
+        objects.Node.update_attributes(
+            node,
+            {
+                'fake_attributes':
+                    {'fake_key_1': {'key': 'new_value'}}
+            }
+        )
+
+        expected_attributes = {
+            'fake_attributes': {'fake_key_1': {'key': 'new_value'},
+                                'fake_key_2': 'fake_value_2'}
+        }
+        self.assertDictEqual(expected_attributes, node.attributes)
+
 
 class TestTaskObject(BaseIntegrationTest):
 

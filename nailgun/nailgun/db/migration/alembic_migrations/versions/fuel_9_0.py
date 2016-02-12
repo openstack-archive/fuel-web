@@ -29,7 +29,7 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
-
+from nailgun.utils.migration import upgrade_enum
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
@@ -42,6 +42,7 @@ def upgrade():
     upgrade_node_roles_metadata()
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
+    update_cluster_status()
 
 
 def downgrade():
@@ -50,6 +51,7 @@ def downgrade():
     downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
+    downgrade_cluster_status()
 
 
 def remove_foreign_key_ondelete():
@@ -663,3 +665,29 @@ def upgrade_node_attributes():
 def downgrade_node_attributes():
     op.drop_column('releases', 'node_attributes')
     op.drop_column('nodes', 'attributes')
+
+
+cluster_statuses_old = (
+    'new',
+    'deployment',
+    'stopped',
+    'operational',
+    'error',
+    'remove',
+    'update',
+    'update_error'
+)
+
+cluster_statuses_new = cluster_statuses_old + ('inconsistent',)
+
+cluster_statuses_old = consts.CLUSTER_STATUSES
+
+
+def update_cluster_status():
+    upgrade_enum('clusters', 'status', 'cluster_status',
+                 cluster_statuses_old, cluster_statuses_new)
+
+
+def downgrade_cluster_status():
+    upgrade_enum('clusters', 'status', 'cluster_status',
+                 cluster_statuses_new, cluster_statuses_old)

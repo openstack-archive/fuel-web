@@ -438,3 +438,14 @@ class TestNodeAttributesMigration(base.BaseAlembicMigrationTest):
             db_values = db.execute(sa.select([column])).fetchone()
             for db_value in db_values:
                 self.assertEqual(db_value, '{}')
+
+
+class TestClusterStatusMigration(base.BaseAlembicMigrationTest):
+    def test_cluster_status_upgraded(self):
+        clusters_table = self.meta.tables['clusters']
+        columns = [clusters_table.c.id, clusters_table.c.status]
+        cluster = db.execute(sa.select(columns)).fetchone()
+
+        db.execute(clusters_table.update().where(
+            clusters_table.c.id == cluster.id
+        ).values(status=consts.CLUSTER_STATUSES.inconsistent))

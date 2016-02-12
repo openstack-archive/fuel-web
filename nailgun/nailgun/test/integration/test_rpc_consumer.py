@@ -1632,7 +1632,7 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(nodes[1].status, consts.NODE_STATUSES.ready)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
-    def _check_success_message(self, callback, task_name, node_status):
+    def _check_success_message(self, callback, task_name, c_status, n_status):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -1656,12 +1656,16 @@ class TestConsumer(BaseReciverTestCase):
             'task_uuid': task.uuid,
             'status': consts.TASK_STATUSES.ready,
             'progress': 100,
-            'nodes': [{'uid': nodes[0].uid, 'status':node_status}]
+            'nodes': [{'uid': nodes[0].uid, 'status': n_status}]
         }
         callback(**params)
         self.assertEqual(
             "{0} of 1 environment node(s) is done.".format(task_title),
             task.message
+        )
+        self.db.refresh(cluster)
+        self.assertEqual(
+            consts.CLUSTER_STATUSES.partially_deployed, cluster.status
         )
         params['nodes'] = []
         callback(**params)
@@ -1669,18 +1673,21 @@ class TestConsumer(BaseReciverTestCase):
             "{0} is done. No changes.".format(task_title),
             task.message
         )
-        params['nodes'] = [{'uid': nodes[1].uid, 'status':node_status}]
+        params['nodes'] = [{'uid': nodes[1].uid, 'status': n_status}]
         callback(**params)
         self.assertEqual(
             "{0} of environment '{1}' is done."
             .format(task_title, cluster.name),
             task.message
         )
+        self.db.refresh(cluster)
+        self.assertEqual(c_status, cluster.status)
 
     def test_success_deploy_messsage(self):
         self._check_success_message(
             self.receiver.deploy_resp,
             consts.TASK_NAMES.deployment,
+            consts.CLUSTER_STATUSES.operational,
             consts.NODE_STATUSES.ready
         )
 
@@ -1688,8 +1695,10 @@ class TestConsumer(BaseReciverTestCase):
         self._check_success_message(
             self.receiver.deploy_resp,
             consts.TASK_NAMES.provision,
+            consts.CLUSTER_STATUSES.partially_deployed,
             consts.NODE_STATUSES.provisioned
         )
+        self.assertFalse(self.env.clusters[-1].is_locked)
 
 
 class TestResetEnvironment(BaseReciverTestCase):

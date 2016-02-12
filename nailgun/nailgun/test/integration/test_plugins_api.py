@@ -199,6 +199,9 @@ class TestPluginsApi(BasePluginTest):
         self.assertIn(self.sample_plugin['name'],
                       objects.Cluster.get_editable_attributes(
                           cluster, all_plugins_versions=True))
+        self.assertIn(self.sample_plugin['name'],
+                      objects.Cluster.get_attributes(
+                          cluster, all_plugins_versions=True))
 
     def test_enable_disable_plugin(self):
         resp = self.create_plugin()

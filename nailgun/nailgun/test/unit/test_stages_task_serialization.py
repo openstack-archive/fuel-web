@@ -678,6 +678,60 @@ class TestConditionalTasksSerializers(BaseTaskSerializationTest):
         tasks = self.graph.pre_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 0)
 
+class TestYAQLTasksSerializers(BaseTaskSerializationTest):
+
+    TASKS = """
+    - id: pre_deployment_start
+      type: stage
+
+    - id: pre_deployment
+      type: stage
+      requires: [pre_deployment_start]
+
+    - id: deploy_start
+      type: stage
+      requires: [pre_deployment]
+
+    - id: generic_yaql_task1
+      type: puppet
+      role: '*'
+      requires: [pre_deployment_start]
+      required_for: [pre_deployment]
+      condition: |
+        yaql = len($.nodes.where($.status = 'ready' and 'controller' in $.roles)) > 0
+        and len($.nodes.where($.status = 'discover' and 'controller' in $.roles and $.pending_addition = true)) > 0
+      parameters:
+        cmd: /tmp/bash_script.sh
+        timeout: 180
+    """
+#yaql =  len($.nodes.where($.status = ready and controller in $.roles))
+    def setUp(self):
+        super(TestYAQLTasksSerializers, self).setUp()
+        self.cluster.status = 'operational'
+        for node in self.cluster.nodes:
+            if 'controller' in node.roles:
+                node.status = 'ready'
+        new_controller = self.env.create_node(roles=['controller'], cluster_id=self.cluster.id)
+        new_controller.pending_addition = True
+        self.nodes.append(new_controller)
+        self.all_uids = [n.uid for n in self.nodes]
+        self.db.flush()
+        print
+        self.graph = deployment_graph.AstuteGraph(self.cluster)
+
+    def test_yaql_conditions_satisfied(self):
+        tasks = self.graph.pre_tasks_serialize(self.nodes)
+        task_names = map(lambda t: t['id'], tasks)
+        self.assertIn("generic_yaql_task1",task_names)
+        #self.assertIn(self.yaql_task2,tasks)
+
+    def test_yaql_conditions_not_satisfied(self):
+        self.cluster.status = 'new'
+        self.cluster.attributes.editable = {'enabled': False}
+        self.db.flush()
+
+        tasks = self.graph.pre_tasks_serialize(self.nodes)
+        self.assertEqual(len(tasks), 0)
 
 class TestSerializationIsNotSupportedError(base.BaseTestCase):
 

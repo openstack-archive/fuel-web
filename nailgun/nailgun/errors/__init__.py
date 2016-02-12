@@ -119,7 +119,9 @@ default_messages = {
     "UnknownError": "Unknown error",
     "UnresolvableConflict": "Unresolvable conflict",
     "NodeNotBelongToCluster": "The Node doesn't belong to the Cluster",
-    "TaskBaseDeploymentNotAllowed": "The task-based deployment is not allowed"
+    "TaskBaseDeploymentNotAllowed": "The task-based deployment is not allowed",
+    "NonComputableTaskField": "The field cannot be evaluated in an expression",
+    "UnknownTaskFieldParser": "Unknown parser retrieved for the task"
 }
 
 

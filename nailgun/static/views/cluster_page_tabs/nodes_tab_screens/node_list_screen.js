@@ -1729,7 +1729,7 @@ RolePanel = React.createClass({
         (roleLimitsCheckResults && !roleLimitsCheckResults.valid &&
           !_.contains(this.props.selectedRoles, name)
         ),
-      message: messages.join(' ')
+      messages
     };
   },
   render() {
@@ -1783,6 +1783,7 @@ Role = React.createClass({
   render() {
     var {role, selected, indeterminated, restrictions, isRolePanelDisabled, onClick} = this.props;
     var disabled = isRolePanelDisabled || restrictions.result;
+    var doWarningsExist = !!restrictions.messages.length;
     return (
       <div
         className={utils.classNames({
@@ -1801,8 +1802,8 @@ Role = React.createClass({
             className={utils.classNames({
               glyphicon: true,
               'glyphicon-selected-role': selected,
-              'glyphicon-indeterminated-role': indeterminated && !restrictions.message,
-              'glyphicon-warning-sign': !!restrictions.message
+              'glyphicon-indeterminated-role': indeterminated && !doWarningsExist,
+              'glyphicon-warning-sign': doWarningsExist
             })}
           />
           {role.get('label')}
@@ -1810,12 +1811,12 @@ Role = React.createClass({
         {this.state.isPopoverVisible &&
           <Popover placement='top'>
             <div>
-              {!!restrictions.message &&
-                <div>
-                  <div className='text-warning'>{restrictions.message}</div>
-                  <hr />
-                </div>
-              }
+              {doWarningsExist && [
+                _.map(restrictions.messages,
+                  (text, index) => <div key={index} className='text-warning'>{text}</div>
+                ),
+                <hr key='hr' />
+              ]}
               <div>{role.get('description')}</div>
             </div>
           </Popover>

@@ -20,6 +20,8 @@ import six
 from sqlalchemy.ext.mutable import Mutable as MutableBase
 
 
+# TODO(vkaplov) Starting to use native sqlalchemy mutable types after bug fix
+# https://bitbucket.org/zzzeek/sqlalchemy/issues/3646
 class Mutable(MutableBase):
     def __init__(self, *args, **kwargs):
         super(Mutable, self).__init__(*args, **kwargs)

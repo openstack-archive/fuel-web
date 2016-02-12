@@ -69,10 +69,9 @@ class TestTaskDeploy(BaseIntegrationTest):
         )
         self.db.flush()
 
-    @fake_tasks(mock_rpc=False, fake_rpc=False)
-    @mock.patch('nailgun.rpc.cast')
+    @fake_tasks(mock_rpc=True, fake_rpc=False)
     def get_deploy_message(self, rpc_cast):
-        task = self.env.launch_deployment()
+        task = self.env.launch_deployment(self.cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
         args, kwargs = rpc_cast.call_args
         return args[1][1]
@@ -140,9 +139,8 @@ class TestTaskDeploy(BaseIntegrationTest):
                 .format(sorted(expected_tasks))
             )
 
-    @fake_tasks(mock_rpc=False, fake_rpc=False)
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
-    @mock.patch('nailgun.rpc.cast')
+    @fake_tasks(mock_rpc=True, fake_rpc=False)
     def test_task_deploy_specified_tasks(self, rpc_cast, *_):
         compute = next(
             (x for x in self.env.nodes if 'compute' in x.roles), None
@@ -174,10 +172,8 @@ class TestTaskDeploy(BaseIntegrationTest):
              if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
         )
 
-    @fake_tasks(mock_rpc=False, fake_rpc=False)
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
-    @mock.patch('nailgun.rpc.cast')
-    def test_task_deploy_all_tasks(self, rpc_cast, *_):
+    def test_task_deploy_all_tasks(self, *_):
         compute = next(
             (x for x in self.env.nodes if 'compute' in x.roles), None
         )
@@ -193,3 +189,36 @@ class TestTaskDeploy(BaseIntegrationTest):
             {task["id"] for task in deploy_tasks[compute.uid]
              if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped}
         )
+
+    def check_reexecute_task_on_cluster_update(self):
+        node = next(
+            (n for n in self.env.nodes
+             if n.status == consts.NODE_STATUSES.ready),
+            None
+        )
+        self.assertIsNotNone(node)
+        message = self.get_deploy_message()
+        deploy_tasks = message['args']['deployment_tasks']
+        # netconfig has attribute reexecute_on
+        self.assertIn(
+            "netconfig",
+            {task["id"] for task in deploy_tasks[node.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped}
+        )
+        self.db().refresh(self.cluster)
+
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
+    @fake_tasks(mock_rpc=True, fake_rpc=True,
+                override_state={'status': consts.NODE_STATUSES.ready})
+    def test_task_executed_on_adding_node(self, *_):
+        self.env.wait_ready(self.env.launch_deployment(self.cluster.id))
+        self.db().refresh(self.cluster)
+        self.assertEqual(
+            consts.CLUSTER_STATUSES.operational, self.cluster.status
+        )
+        self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            roles=["compute"],
+            pending_addition=True
+        )
+        self.check_reexecute_task_on_cluster_update()

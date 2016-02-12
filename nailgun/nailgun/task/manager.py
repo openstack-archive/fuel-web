@@ -250,7 +250,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         """
 
         nodes_to_delete = []
-        nodes_to_resetup = []
+        affected_nodes = []
 
         if nodes_to_provision_deploy:
             nodes_to_deploy = objects.NodeCollection.get_by_ids(
@@ -282,13 +282,14 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
         if self.cluster.status == consts.CLUSTER_STATUSES.operational:
             # rerun particular tasks on all deployed nodes
-            affected_nodes = set(
-                nodes_to_deploy + nodes_to_provision + nodes_to_delete)
-            ready_nodes = set(objects.Cluster.get_nodes_by_status(
+            modified_node_ids = {n.id for n in nodes_to_deploy}
+            modified_node_ids.update(n.id for n in nodes_to_provision)
+            modified_node_ids.update(n.id for n in nodes_to_delete)
+            affected_nodes = objects.Cluster.get_nodes_by_status(
                 self.cluster,
-                consts.NODE_STATUSES.ready
-            ))
-            nodes_to_resetup = ready_nodes.difference(affected_nodes)
+                status=consts.NODE_STATUSES.ready,
+                exclude=modified_node_ids
+            ).all()
 
         task_deletion, task_provision, task_deployment = None, None, None
 
@@ -332,10 +333,16 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             task_messages.append(provision_message)
 
         deployment_message = None
-        if nodes_to_deploy:
-            logger.debug("There are nodes to deploy: %s",
-                         " ".join([objects.Node.get_node_fqdn(n)
-                                   for n in nodes_to_deploy]))
+        if nodes_to_deploy or affected_nodes:
+            if nodes_to_deploy:
+                logger.debug("There are nodes to deploy: %s",
+                             " ".join((objects.Node.get_node_fqdn(n)
+                                       for n in nodes_to_deploy)))
+            if affected_nodes:
+                logger.debug("There are nodes to deploy: %s",
+                             " ".join((objects.Node.get_node_fqdn(n)
+                                       for n in nodes_to_deploy)))
+
             task_deployment = supertask.create_subtask(
                 name=consts.TASK_NAMES.deployment,
                 status=consts.TASK_STATUSES.pending
@@ -347,8 +354,10 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 task_deployment,
                 tasks.DeploymentTask,
                 nodes_to_deploy,
+                affected_nodes=affected_nodes,
                 deployment_tasks=deployment_tasks,
-                method_name='message'
+                method_name='message',
+                reexecutable_filter=consts.TASKS_TO_RERUN_ON_DEPLOY_CHANGES
             )
 
             db().commit()
@@ -362,47 +371,6 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             if task_deployment.status == consts.TASK_STATUSES.error:
                 return
 
-            task_deployment.cache = deployment_message
-            db().commit()
-
-        if nodes_to_resetup:
-            logger.debug("There are nodes to resetup: %s",
-                         ", ".join([objects.Node.get_node_fqdn(n)
-                                   for n in nodes_to_resetup]))
-
-            if not deployment_message:
-                task_deployment = supertask.create_subtask(
-                    name=consts.TASK_NAMES.deployment,
-                    status=consts.TASK_STATUSES.pending
-                )
-                # we should have task committed for processing in other threads
-                db().commit()
-
-            resetup_message = self._call_silently(
-                task_deployment,
-                tasks.DeploymentTask,
-                nodes_to_resetup,
-                reexecutable_filter=consts.TASKS_TO_RERUN_ON_DEPLOY_CHANGES,
-                method_name='message'
-            )
-            db().commit()
-
-            task_deployment = objects.Task.get_by_uid(
-                task_deployment.id,
-                fail_if_not_found=True,
-                lock_for_update=True
-            )
-            # if failed to generate task message for orchestrator
-            # then task is already set to error
-            if task_deployment.status == consts.TASK_STATUSES.error:
-                return
-
-            if deployment_message:
-                deployment_message['args']['deployment_info'].extend(
-                    resetup_message['args']['deployment_info']
-                )
-            else:
-                deployment_message = resetup_message
             task_deployment.cache = deployment_message
             db().commit()
 

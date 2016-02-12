@@ -56,7 +56,7 @@ class CapacityLog(Base):
     __tablename__ = 'capacity_log'
 
     id = Column(Integer, primary_key=True)
-    report = Column(MutableDict.as_mutable(JSON))
+    report = Column(nailgun_mutable.MutableDict.as_mutable(JSON))
     datetime = Column(DateTime, default=lambda: datetime.now())
 
 

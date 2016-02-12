@@ -55,6 +55,7 @@ class BasePluginTest(base.BaseIntegrationTest):
         network_roles_metadata = self.env.get_default_network_roles_config()
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()
         tasks = self.env.get_default_plugin_tasks()
+        components = self.env.get_default_components()
 
         self.mocked_metadata = {
             'environment_config.yaml': attributes_metadata,
@@ -63,6 +64,7 @@ class BasePluginTest(base.BaseIntegrationTest):
             'network_roles.yaml': network_roles_metadata,
             'deployment_tasks.yaml': deployment_tasks,
             'tasks.yaml': tasks,
+            'components.yaml': components
         }
 
     @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
@@ -412,6 +414,12 @@ class TestPluginsApi(BasePluginTest):
         plugin_ids.append(resp.json['id'])
 
         return plugin_ids
+
+    def test_create_plugin_package_version_50(self):
+        plugin_data = self.env.get_default_plugin_metadata()
+        plugin_data['package_version'] = '5.0.'
+        plugin_data['components_metadata'] = self.env.get_default_components()
+        self.create_plugin(sample=plugin_data)
 
 
 class TestPrePostHooks(BasePluginTest):

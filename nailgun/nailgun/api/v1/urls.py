@@ -69,6 +69,7 @@ from nailgun.api.v1.handlers.network_configuration \
     import TemplateNetworkConfigurationHandler
 
 from nailgun.api.v1.handlers.node import NodeAgentHandler
+from nailgun.api.v1.handlers.node import NodeAttributesHandler
 from nailgun.api.v1.handlers.node import NodeCollectionHandler
 from nailgun.api.v1.handlers.node import NodeHandler
 from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
@@ -252,6 +253,8 @@ urls = (
     NodeAgentHandler,
     r'/nodes/(?P<obj_id>\d+)/?$',
     NodeHandler,
+    r'/nodes/(?P<obj_id>\d+)/attributes/?$',
+    NodeAttributesHandler,
     r'/nodes/interfaces/?$',
     NodeCollectionNICsHandler,
     r'/nodes/interfaces/default_assignment/?$',

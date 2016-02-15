@@ -3152,7 +3152,7 @@ input[type=range] {
         margin: 10px 0;
       }
     }
-    &:not(.disabled):hover {
+    &:not(.disabled):hover,  &:not(.disabled):focus  {
       background-color: @gray + 77%;
       border: 1px solid @gray + 77%;
     }
@@ -3168,9 +3168,9 @@ input[type=range] {
       background-color: @green;
       border: 1px solid @green;
       color: @white;
-      &:hover {
-        background-color: @green - 10%;
-        border: 1px solid @green - 10%;
+      &:hover, &:focus {
+        background-color: @green - 20%;
+        border: 1px solid @green - 20%;
       }
     }
     &.disabled {

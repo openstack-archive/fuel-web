@@ -141,3 +141,52 @@ class TestNodeReassignValidator(base.BaseTestCase):
         msg = "^Empty request received$"
         with self.assertRaisesRegexp(errors.InvalidData, msg):
             self.validator.validate("", node)
+
+
+class TestNodeReassignNoReinstallValidator(tests_base.BaseCloneClusterTest):
+    validator = validators.NodeReassignValidator
+
+    def setUp(self):
+        super(TestNodeReassignNoReinstallValidator, self).setUp()
+        self.dst_cluster = self.env.create_cluster(
+            api=False,
+            release_id=self.dst_release.id,
+        )
+        self.node = self.env.create_node(cluster_id=self.src_cluster.id,
+                                         roles=["compute"], status="ready")
+
+    def test_validate_defaults(self):
+        request = {"node_id": self.node.id}
+        data = jsonutils.dumps(request)
+        parsed = self.validator.validate(data, self.dst_cluster)
+        self.assertEqual(parsed, request)
+        self.assertEqual(self.node.roles, ['compute'])
+
+    def test_validate_with_roles(self):
+        request = {
+            "node_id": self.node.id,
+            "reprovision": True,
+            "roles": ['controller'],
+        }
+        data = jsonutils.dumps(request)
+        parsed = self.validator.validate(data, self.dst_cluster)
+        self.assertEqual(parsed, request)
+
+    def test_validate_not_unique_roles(self):
+        data = jsonutils.dumps({
+            "node_id": self.node.id,
+            "roles": ['compute', 'compute'],
+        })
+        msg = "has non-unique elements"
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate(data, self.dst_cluster)
+
+    def test_validate_no_reprovision_with_conflicts(self):
+        data = jsonutils.dumps({
+            "node_id": self.node.id,
+            "reprovision": False,
+            "roles": ['controller', 'compute'],
+        })
+        msg = '^Role "controller" in conflict with role compute$'
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate(data, self.dst_cluster)

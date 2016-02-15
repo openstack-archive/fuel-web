@@ -760,24 +760,25 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def update_cluster_assignment(cls, instance, cluster):
+    def update_cluster_assignment(cls, instance, cluster,
+                                  roles, pending_roles):
         """Update assignment of the node to the other cluster.
 
         This method primarily used by the cluster_upgrade extension for
-        reassigning and reinstallation of a node. Be careful to use it
-        outside of this extension because node still plugged to networks
-        of a previous cluster.
+        reassigning of a node. Be careful to use it outside of this extension
+        because node still plugged to networks of a previous cluster.
 
         :param instance: An instance of :class:`Node`.
         :param cluster: An instance of :class:`Cluster`.
+        :param roles: A list of roles to be assigned to the node.
+        :param pending_roles: A list of pending roles to be assigned to
+                              the node.
         """
-        roles = instance.roles
         instance.cluster_id = cluster.id
-        instance.kernel_params = None
         instance.group_id = None
         instance.deployment_info = []
-        cls.update_roles(instance, [])
-        cls.update_pending_roles(instance, roles)
+        cls.update_roles(instance, roles)
+        cls.update_pending_roles(instance, pending_roles)
         cls.remove_replaced_params(instance)
         cls.assign_group(instance)
         cls.set_network_template(instance)

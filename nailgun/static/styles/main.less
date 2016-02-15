@@ -3084,6 +3084,10 @@ input[type=range] {
     &:not(:last-child) {
       margin-right: 1%;
     }
+    &:focus {
+      border-color: @range-color;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+    }
     .role {
       position: relative;
       width: 100%;

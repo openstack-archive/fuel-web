@@ -44,9 +44,9 @@ class TestTaskDeploy(BaseIntegrationTest):
         )
         self.cluster = self.env.clusters[-1]
 
-    def enable_deploy_task(self, enable=True):
+    def disable_task_deploy(self):
         cluster_attrs = copy.deepcopy(self.cluster.attributes.editable)
-        cluster_attrs['common']['task_deploy']['value'] = enable
+        cluster_attrs['common']['task_deploy']['value'] = False
         self.cluster.attributes.editable = cluster_attrs
         self.db().flush()
 
@@ -78,8 +78,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         return args[1][1]
 
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
-    def test_task_deploy_used_if_option_enabled(self, _):
-        self.enable_deploy_task(True)
+    def test_task_deploy_used_by_default(self, _):
         message = self.get_deploy_message()
         self.assertEqual("task_deploy", message["method"])
         self.assertItemsEqual(
@@ -90,7 +89,6 @@ class TestTaskDeploy(BaseIntegrationTest):
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     def test_fallback_to_granular_deploy(self, ensure_allowed):
         ensure_allowed.side_effect = errors.TaskBaseDeploymentNotAllowed
-        self.enable_deploy_task(True)
         message = self.get_deploy_message()
         self.assertEqual("granular_deploy", message["method"])
         self.assertItemsEqual(
@@ -101,7 +99,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         ensure_allowed.assert_called_once_with(mock.ANY)
 
     def test_granular_deploy_if_not_enabled(self):
-        self.enable_deploy_task(False)
+        self.disable_task_deploy()
         message = self.get_deploy_message()
         self.assertEqual("granular_deploy", message["method"])
         self.assertItemsEqual(
@@ -114,7 +112,6 @@ class TestTaskDeploy(BaseIntegrationTest):
     @mock.patch('nailgun.plugins.adapters.os.path.exists', return_value=True)
     @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_tasks')
     def test_task_deploy_with_plugins(self, load_tasks, *_):
-        self.enable_deploy_task(True)
         self.add_plugin_with_tasks("plugin_deployment_task")
         # There is bug[1] in PluginAdapters,
         # it always reads the tasks from local file sytem.
@@ -147,7 +144,6 @@ class TestTaskDeploy(BaseIntegrationTest):
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     @mock.patch('nailgun.rpc.cast')
     def test_task_deploy_specified_tasks(self, rpc_cast, *_):
-        self.enable_deploy_task(True)
         compute = next(
             (x for x in self.env.nodes if 'compute' in x.roles), None
         )
@@ -182,7 +178,6 @@ class TestTaskDeploy(BaseIntegrationTest):
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     @mock.patch('nailgun.rpc.cast')
     def test_task_deploy_all_tasks(self, rpc_cast, *_):
-        self.enable_deploy_task(True)
         compute = next(
             (x for x in self.env.nodes if 'compute' in x.roles), None
         )

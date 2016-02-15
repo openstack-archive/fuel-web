@@ -28,6 +28,7 @@ import copy
 import six
 
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import and_
 from sqlalchemy.sql import not_
 from sqlalchemy.sql import or_
 
@@ -415,12 +416,16 @@ class NetworkManager(object):
 
     @classmethod
     def _get_assigned_vips_for_net_groups(cls, cluster):
-        node_group_id = objects.Cluster.get_controllers_group_id(cluster)
-        cluster_vips = db.query(IPAddr).join(IPAddr.network_data).filter(
-            IPAddr.node.is_(None) &
-            IPAddr.vip_name.isnot(None) &
-            (NetworkGroup.group_id == node_group_id)
-        )
+        net_groups_subquery = db.query(NetworkGroup.id).filter(
+            NetworkGroup.group_id.in_(
+                [node_g.id for node_g in cluster.node_groups]
+            )
+        ).subquery()
+
+        cluster_vips = db.query(IPAddr)\
+            .filter(IPAddr.vip_name.isnot(None))\
+            .filter(IPAddr.network.in_(net_groups_subquery))
+
         return cluster_vips
 
     @classmethod
@@ -1808,9 +1813,47 @@ class AllocateVIPs70Mixin(object):
         return cls.assign_vip(node_group, net_group, vip_name='public')
 
     @classmethod
+    def purge_stalled_vips(cls, cluster, net_role_vip_mappings):
+        """Remove stalled vips from db.
+
+        Check that existing VIP with particular name belongs to network
+        of a nodegroup as defined in net_role_vip_mapping for VIP with such
+        name. If the criteria is not met it means that VIP metadata for
+        network roles was changed and the existing VIP entry is no longer
+        valid and must be deleted before reallocation of new VIPs.
+
+        :param cluster: cluster instance for which VIPs assignments are
+            checked;
+        :type cluster: instance of Cluster ORM model;
+        :param net_role_vip_mappings: collection of VIPs to network and
+            nodegroup mapping;
+        :type net_role_vip_mappings: list of dictionaries
+        """
+        vips_to_purge = cls._get_assigned_vips_for_net_groups(cluster)
+
+        for vip_mapping in net_role_vip_mappings:
+            nodegroup, net_group_name, vip_name = vip_mapping[:3]
+
+            vips_to_purge.filter(
+                not_(
+                    and_(
+                        IPAddr.vip_name == vip_name,
+                        NetworkGroup.group_id == nodegroup.id,
+                        NetworkGroup.name == net_group_name
+                    )
+                )
+            )
+
+        vips_to_purge.delete(synchronize_session='fetch')
+
+    @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
+        net_role_vip_mappings = cls.get_node_groups_info(cluster)
+        cls.purge_stalled_vips(cluster, net_role_vip_mappings)
+
         for nodegroup, net_group, vip_name, role, vip_info\
-                in cls.get_node_groups_info(cluster):
+                in net_role_vip_mappings:
+
             vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
 
             if vip_addr is None:
@@ -1940,6 +1983,9 @@ class AllocateVIPs70Mixin(object):
 
     @classmethod
     def get_node_groups_info(cls, cluster):
+        # final result of the method
+        net_role_vip_mappings = []
+
         # noderole -> nodegroup mapping
         #   is used for determine nodegroup where VIP should be allocated
         noderole_nodegroup = {}
@@ -1989,7 +2035,11 @@ class AllocateVIPs70Mixin(object):
                         "Skip VIP '{0}' which is mapped to non-existing"
                         " network '{1}'".format(vip_name, net_group))
                     continue
-                yield nodegroup, net_group, vip_name, role, vip_info
+                net_role_vip_mappings.append(
+                    [nodegroup, net_group, vip_name, role, vip_info]
+                )
+
+        return net_role_vip_mappings
 
 
 class AllocateVIPs80Mixin(object):

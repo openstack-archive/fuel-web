@@ -97,6 +97,52 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         provisioned_uids = [int(n['uid']) for n in nodes]
         self.assertEqual([node_id, ], provisioned_uids)
 
+    @patch('nailgun.task.task.rpc.cast')
+    def test_node_reassign_handler_with_roles(self, mcast):
+        cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'status': consts.NODE_STATUSES.ready,
+                           'roles': ['controller']}])
+        node = cluster.nodes[0]
+        seed_cluster = self.env.create_cluster(api=False)
+
+        # NOTE(akscram): reprovision=True means that the node will be
+        #                re-deployed during the reassigning. This is a
+        #                default behavior.
+        data = {'node_id': node.id,
+                'reprovision': True,
+                'roles': ['compute']}
+        resp = self.app.post(
+            reverse('NodeReassignHandler',
+                    kwargs={'cluster_id': seed_cluster.id}),
+            jsonutils.dumps(data),
+            headers=self.default_headers)
+        self.assertEqual(202, resp.status_code)
+        self.assertEqual(node.roles, [])
+        self.assertEqual(node.pending_roles, ['compute'])
+        self.assertTrue(mcast.called)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_node_reassign_handler_without_reprovisioning(self, mcast):
+        cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'status': consts.NODE_STATUSES.ready,
+                           'roles': ['controller']}])
+        node = cluster.nodes[0]
+        seed_cluster = self.env.create_cluster(api=False)
+
+        data = {'node_id': node.id,
+                'reprovision': False,
+                'roles': ['compute']}
+        resp = self.app.post(
+            reverse('NodeReassignHandler',
+                    kwargs={'cluster_id': seed_cluster.id}),
+            jsonutils.dumps(data),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        self.assertFalse(mcast.called)
+        self.assertEqual(node.roles, ['compute'])
+
     def test_node_reassign_handler_no_node(self):
         self.env.create_cluster()
 

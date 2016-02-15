@@ -195,7 +195,7 @@ define([
           .assertElementNotSelected(div + 'div.vlan_start input[type="checkbox"]',
             'Baremetal "Use VLAN tagging" checkbox is not selected')
           .assertElementNotExists(div + 'div.vlan_start input[type="text"]',
-            'Baremetal "Use VLAN tagging" textfield is not existed')
+            'Baremetal "Use VLAN tagging" textfield does not exist')
           .assertElementNotExists(div + 'div.has-error', 'No Baremetal errors are observed')
           .then(function() {
             return networksLib.saveSettings();

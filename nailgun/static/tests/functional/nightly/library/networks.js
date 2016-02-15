@@ -30,12 +30,13 @@ define([
     btnSaveSelector: 'button.apply-btn',
     btnCancelSelector: 'button.btn-revert-changes',
     btnVerifySelector: 'button.verify-networks-btn',
+    defaultPlaceholder: '127.0.0.1',
 
     gotoNodeNetworkGroup: function(groupName) {
       return this.remote
-        .assertElementContainsText('ul.node_network_groups', groupName,
+        .assertElementContainsText('ul.node-network-groups-list', groupName,
           '"' + groupName + '" link is existed')
-        .findByCssSelector('ul.node_network_groups')
+        .findByCssSelector('ul.node-network-groups-list')
           .clickLinkByText(groupName)
           .end();
     },
@@ -306,6 +307,52 @@ define([
         .assertElementExists(this.btnCancelSelector, '"Cancel Changes" button is disabled')
         .assertElementExists(this.btnSaveSelector, '"Save Settings" button is disabled');
     },
+    checkNetrworkIpRanges: function(networkName, correctIpRange, newIpRange) {
+      var self = this;
+      var netSelector = 'div.' + networkName.toLowerCase() + ' ';
+      var ipStartSelector = netSelector + 'div.ip_ranges input[name*="range-start"]';
+      var ipEndSelector = netSelector + 'div.ip_ranges input[name*="range-end"]';
+      var properNames = ['Public', 'Storage', 'Management', 'Baremetal', 'Private'];
+      if (properNames.indexOf(networkName) === -1) {
+        throw new Error('Invalid input value. Check networkName: "' + networkName +
+          '" parameter and restart test.');
+      }
+      return this.remote
+        // "Use the whole CIDR" option works
+        .then(function() {
+          return self.checkCidrOption(networkName);
+        })
+        .then(function() {
+          return self.saveSettings();
+        })
+        // Correct changing of "IP Ranges" works
+        .setInputValue(ipStartSelector, correctIpRange[0])
+        .setInputValue(ipEndSelector, correctIpRange[1])
+        .then(function() {
+          return self.saveSettings();
+        })
+        .assertElementPropertyEquals(ipStartSelector, 'value', correctIpRange[0],
+          networkName + ' "Start IP Range" textfield  has correct new value')
+        .assertElementPropertyEquals(ipEndSelector, 'value', correctIpRange[1],
+          networkName + ' "End IP Range" textfield has correct new value')
+        // Adding and deleting additional "IP Ranges" fields
+        .then(function() {
+          return self.addNewIpRange(networkName, newIpRange);
+        })
+        .then(function() {
+          return self.saveSettings();
+        })
+        .then(function() {
+          return self.deleteIpRange(networkName);
+        })
+        .then(function() {
+          return self.saveSettings();
+        })
+        // Check "IP Ranges" Start and End validation
+        .then(function() {
+          return self.checkIpRanges(networkName);
+        });
+    },
     checkIncorrectValueInput: function() {
       var self = this;
       return this.remote
@@ -469,6 +516,240 @@ define([
       .assertElementDisabled(this.btnCancelSelector, '"Cancel Changes" button is disabled')
       .assertElementNotExists('div.has-error', 'No errors are observed');
       return chain;
+    },
+    checkCidrOption: function(networkName) {
+      var self = this;
+      var netSelector = 'div.' + networkName.toLowerCase() + ' ';
+      var cidrSelector = netSelector + 'div.cidr input[type="checkbox"]';
+      var ipStartSelector = netSelector + 'div.ip_ranges input[name*="range-start"]';
+      var ipEndSelector = netSelector + 'div.ip_ranges input[name*="range-end"]';
+      var defaultIpRange = {'Storage': '1', 'Management': '0', 'Private': '2'};
+      return this.remote
+        .assertElementEnabled(cidrSelector,
+          networkName + ' "Use the whole CIDR" checkbox is enabled before changing')
+        .findByCssSelector(cidrSelector)
+          .isSelected()
+          .then(function(cidrStatus) {
+            return self.selectCidrWay(networkName, cidrStatus, cidrSelector, ipStartSelector,
+              ipEndSelector);
+          })
+          .end()
+        .assertElementPropertyEquals(ipStartSelector, 'value',
+          '192.168.' + defaultIpRange[networkName] + '.1',
+          networkName + ' "Start IP Range" textfield  has default value')
+        .assertElementPropertyEquals(ipEndSelector, 'value',
+          '192.168.' + defaultIpRange[networkName] + '.254',
+          networkName + ' "End IP Range" textfield has default value')
+        .assertElementNotExists(netSelector + 'div.has-error',
+          'No ' + networkName + ' errors are observed');
+    },
+    selectCidrWay: function(networkName, cidrStatus, cidrSelector, ipStartSelector, ipEndSelector) {
+      var chain = this.remote;
+      chain = chain.clickByCssSelector(cidrSelector)
+      .assertElementEnabled(cidrSelector,
+        networkName + ' "Use the whole CIDR" checkbox is enabled after changing');
+      if (cidrStatus) {
+        chain = chain.assertElementNotSelected(cidrSelector,
+          networkName + ' "Use the whole CIDR" checkbox is not selected')
+        .assertElementEnabled(ipStartSelector,
+          networkName + ' "Start IP Range" textfield is enabled')
+        .assertElementEnabled(ipEndSelector,
+          networkName + ' "End IP Range" textfield is enabled');
+      } else {
+        chain = chain.assertElementSelected(cidrSelector,
+          networkName + ' "Use the whole CIDR" checkbox is selected')
+        .assertElementDisabled(ipStartSelector,
+          networkName + ' "Start IP Range" textfield is disabled')
+        .assertElementDisabled(ipEndSelector,
+          networkName + ' "End IP Range" textfield is disabled');
+      }
+      return chain;
+    },
+    addNewIpRange: function(networkName, newIpRange) {
+      // Works only with last range!
+      // Input array "newIpRange": [Start IP, End IP]
+      var self = this;
+      var chain = this.remote;
+      var netSelector = 'div.' + networkName.toLowerCase() + ' ';
+      var rowRangeSelector = netSelector + 'div.range-row';
+      var lastRangeSelector = rowRangeSelector + ':last-child ';
+      var addRangeSelector = lastRangeSelector + 'button.ip-ranges-add ';
+      var ipStartSelector = 'input[name*="range-start"]';
+      var ipEndSelector = 'input[name*="range-end"]';
+      chain = chain.assertElementEnabled(addRangeSelector, 'IP range add button enabled')
+      .findAllByCssSelector(rowRangeSelector)
+        .then(function(elements) {
+          return self.checkIpRange(addRangeSelector, rowRangeSelector, elements.length + 1);
+        })
+        .end()
+      .assertElementEnabled(lastRangeSelector + ipStartSelector,
+        networkName + ' new "Start IP Range" textfield is enabled')
+      .assertElementEnabled(lastRangeSelector + ipEndSelector,
+        networkName + ' new "End IP Range" textfield is enabled')
+      .assertElementPropertyEquals(lastRangeSelector + ipStartSelector, 'placeholder',
+        this.defaultPlaceholder,
+        networkName + ' new "Start IP Range" textfield has default placeholder')
+      .assertElementPropertyEquals(lastRangeSelector + ipEndSelector, 'placeholder',
+        this.defaultPlaceholder,
+        networkName + ' new "End IP Range" textfield has default placeholder');
+      if (newIpRange) {
+        chain = chain.setInputValue(lastRangeSelector + ipStartSelector, newIpRange[0])
+        .setInputValue(lastRangeSelector + ipEndSelector, newIpRange[1])
+        .assertElementPropertyEquals(lastRangeSelector + ipStartSelector, 'value', newIpRange[0],
+          networkName + ' new "Start IP Range" textfield has new value')
+        .assertElementPropertyEquals(lastRangeSelector + ipEndSelector, 'value', newIpRange[1],
+          networkName + ' new "End IP Range" textfield has new value');
+      }
+      chain = chain.assertElementNotExists(netSelector + 'div.has-error',
+        'No ' + networkName + ' errors are observed');
+      return chain;
+    },
+    deleteIpRange: function(networkName, rangeRow) {
+      var self = this;
+      var netSelector = 'div.' + networkName.toLowerCase() + ' ';
+      var rowRangeSelector = netSelector + 'div.range-row';
+      var rowSelector = rowRangeSelector + ':last-child ';
+      if (rangeRow) {
+        rowSelector = rowRangeSelector + ':nth-child(' + (rangeRow + 1).toString() + ') ';
+      }
+      var delRangeSelector = rowSelector + 'button.ip-ranges-delete';
+      return this.remote
+        .assertElementsExist(rowSelector, networkName + ' IP Range to delete exists')
+        .assertElementEnabled(delRangeSelector, networkName + ' IP Range delete button enabled')
+        .findAllByCssSelector(rowRangeSelector)
+          .then(function(elements) {
+            return self.checkIpRange(delRangeSelector, rowRangeSelector, elements.length - 1);
+          })
+          .end()
+        // Add more powerfull check of range deletion (values disappears)
+        .assertElementNotExists(netSelector + 'div.has-error',
+          'No ' + networkName + ' errors are observed');
+    },
+    checkIpRange: function(addremoveRangeSelector, rowRangeSelector, numRanges) {
+      return this.remote
+        .clickByCssSelector(addremoveRangeSelector)
+        .sleep(500)
+        .assertElementsExist(rowRangeSelector, numRanges, 'Correct number of IP ranges exists');
+    },
+    checkIpRanges: function(networkName) {
+      var self = this;
+      var netSelector = 'div.' + networkName.toLowerCase() + ' ';
+      var cidrSelector = netSelector + 'div.cidr input[type="text"]';
+      var ipStartSelector = netSelector + 'div.ip_ranges input[name*="range-start"]';
+      var ipStartErrorSel = netSelector + 'div.ip_ranges div.has-error input[name*="range-start"]';
+      var ipEndSelector = netSelector + 'div.ip_ranges input[name*="range-end"]';
+      var ipEndErrorSel = netSelector + 'div.ip_ranges div.has-error input[name*="range-end"]';
+      var networkAlertSelector = netSelector + 'div.ip_ranges div.validation-error';
+      var initValue = '192.168.';
+      var errorValue = '192.168.5.0/24';
+      var errorValues = ['.*', '.279', '.254', '.1', '.5'];
+      var defaultIpRange = {'Storage': '1', 'Management': '0', 'Private': '2'};
+      return this.remote
+        .assertElementEnabled(cidrSelector, networkName + ' "CIDR" textfield is enabled')
+        .assertElementEnabled(ipStartSelector, networkName + ' "Start IP Range" txtfld is enabled')
+        .assertElementEnabled(ipEndSelector, networkName + ' "End IP Range" textfield is enabled')
+        // Check #1
+        .setInputValue(ipStartSelector, initValue + defaultIpRange[networkName] + errorValues[0])
+        .assertElementsExist(ipStartErrorSel,
+          networkName + ' "Start IP Range" textfield is "red" marked')
+        .assertElementMatchesRegExp(networkAlertSelector, /Invalid IP address/i,
+          'True error message is displayed')
+        .then(function() {
+          return self.cancelChanges();
+        })
+        // Check #2
+        .setInputValue(ipEndSelector, initValue + defaultIpRange[networkName] + errorValues[1])
+        .assertElementsExist(ipEndErrorSel,
+          networkName + ' "End IP Range" textfield is "red" marked')
+        .assertElementMatchesRegExp(networkAlertSelector, /Invalid IP address/i,
+          'True error message is displayed')
+        .then(function() {
+          return self.cancelChanges();
+        })
+        // Check #3
+        .setInputValue(cidrSelector, errorValue)
+        .assertElementsExist(ipStartErrorSel,
+          networkName + ' "Start IP Range" textfield is "red" marked')
+        .assertElementsExist(ipEndErrorSel,
+          networkName + ' "End IP Range" textfield is "red" marked')
+        .assertElementMatchesRegExp(networkAlertSelector,
+          /IP address does not match the network CIDR/i, 'True error message is displayed')
+        .then(function() {
+          return self.cancelChanges();
+        })
+        // Check #4
+        .setInputValue(ipStartSelector, initValue + defaultIpRange[networkName] + errorValues[2])
+        .setInputValue(ipEndSelector, initValue + defaultIpRange[networkName] + errorValues[3])
+        .assertElementsExist(ipStartErrorSel,
+          networkName + ' "Start IP Range" textfield is "red" marked')
+        .assertElementsExist(ipEndErrorSel,
+          networkName + ' "End IP Range" textfield is "red" marked')
+        .assertElementMatchesRegExp(networkAlertSelector,
+          /Start IP address must be less than end IP address/i, 'True error message is displayed')
+        .then(function() {
+          return self.cancelChanges();
+        })
+        // Check #5
+        .setInputValue(ipStartSelector, initValue + defaultIpRange[networkName] + errorValues[4])
+        .setInputValue(ipEndSelector, initValue + defaultIpRange[networkName] + errorValues[4])
+        .then(function() {
+          return self.saveSettings();
+        })
+        // Check #6
+        .setInputValue(ipStartSelector, ' ')
+        .assertElementsExist(ipStartErrorSel,
+          networkName + ' "Start IP Range" textfield is "red" marked')
+        .assertElementMatchesRegExp(networkAlertSelector, /Invalid IP address/i,
+          'True error message is displayed')
+        .then(function() {
+          return self.cancelChanges();
+        })
+        // Check #7
+        .setInputValue(ipEndSelector, ' ')
+        .assertElementsExist(ipEndErrorSel,
+          networkName + ' "End IP Range" textfield is "red" marked')
+        .assertElementMatchesRegExp(networkAlertSelector, /Invalid IP address/i,
+          'True error message is displayed')
+        .then(function() {
+          return self.cancelChanges();
+        });
+    },
+    checkNerworksIntersection: function(networkNameToEdit, networkName, editValues) {
+      // Input array "editValues": [CIDR, Start IP, End IP]
+      var self = this;
+      var netSelector1 = 'div.' + networkNameToEdit.toLowerCase() + ' ';
+      var cidrSelector = netSelector1 + 'div.cidr input[type="text"]';
+      var cidrErrorSelector = 'div.cidr div.has-error input[type="text"]';
+      var ipStartSelector = netSelector1 + 'div.ip_ranges input[name*="range-start"]';
+      var ipEndSelector = netSelector1 + 'div.ip_ranges input[name*="range-end"]';
+      var netSelector2 = 'div.' + networkName.toLowerCase() + ' ';
+      var networkAlertSelector = 'div.network-alert';
+      var networkAlertMessage = RegExp(
+        'Address space intersection between networks[\\s\\S]*' +
+        '(' + networkNameToEdit + '.*|' + networkName + '.*){2}[\\s\\S]*', 'i');
+      return this.remote
+        .assertElementEnabled(cidrSelector,
+          networkNameToEdit + ' "CIDR" textfield is enabled')
+        .assertElementEnabled(ipStartSelector,
+          networkNameToEdit + ' "Start IP Range" textfield is enabled')
+        .assertElementEnabled(ipEndSelector,
+          networkNameToEdit + ' "End IP Range" textfield is enabled')
+        .setInputValue(cidrSelector, editValues[0])
+        .setInputValue(ipStartSelector, editValues[1])
+        .setInputValue(ipEndSelector, editValues[2])
+        .assertElementEnabled(this.btnSaveSelector, '"Save Settings" button is enabled')
+        .clickByCssSelector(this.btnSaveSelector)
+        .assertElementsExist(netSelector1 + cidrErrorSelector,
+          networkNameToEdit + ' "CIDR" textfield is "red" marked')
+        .assertElementsExist(netSelector2 + cidrErrorSelector,
+          networkName + ' "CIDR" textfield is "red" marked')
+        .assertElementsExist(networkAlertSelector, 'Error message is observed')
+        .assertElementMatchesRegExp(networkAlertSelector, networkAlertMessage,
+          'True error message is displayed for intersection between' +
+          networkNameToEdit + ' and ' + networkName + ' networks')
+        .then(function() {
+          return self.cancelChanges();
+        });
     }
   };
   return NetworksLib;

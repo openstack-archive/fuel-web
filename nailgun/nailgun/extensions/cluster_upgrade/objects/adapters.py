@@ -181,8 +181,9 @@ class NailgunNodeAdapter(object):
     def roles(self):
         return self.node.roles
 
-    def update_cluster_assignment(self, cluster):
-        objects.Node.update_cluster_assignment(self.node, cluster)
+    def update_cluster_assignment(self, cluster, roles, pending_roles):
+        objects.Node.update_cluster_assignment(self.node, cluster, roles,
+                                               pending_roles)
 
     def add_pending_change(self, change):
         objects.Node.add_pending_change(self.node, change)

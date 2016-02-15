@@ -92,17 +92,26 @@ class NodeReassignValidator(base.BasicValidator):
         "type": "object",
         "properties": {
             "node_id": {"type": "number"},
+            "reinstall": {"type": "boolean", "default": True},
+            "roles": {"type": "array",
+                      "items": {"type": "string"},
+                      "uniqueItems": True},
         },
         "required": ["node_id"],
     }
 
     @classmethod
     def validate(cls, data, cluster):
-        data = super(NodeReassignValidator, cls).validate(data)
-        cls.validate_schema(data, cls.schema)
-        node = cls.validate_node(data['node_id'])
+        parsed = super(NodeReassignValidator, cls).validate(data)
+        cls.validate_schema(parsed, cls.schema)
+
+        reinstall = parsed.setdefault('reinstall', True)
+        roles = parsed.setdefault('roles', None)
+
+        node = cls.validate_node(parsed['node_id'])
         cls.validate_node_cluster(node, cluster)
-        return data
+        cls.validate_node_roles(node, cluster, roles, reinstall)
+        return parsed
 
     @classmethod
     def validate_node(cls, node_id):
@@ -135,3 +144,7 @@ class NodeReassignValidator(base.BasicValidator):
             raise errors.InvalidData("Node {0} is already assigned to cluster"
                                      " {1}".format(node.id, cluster.id),
                                      log_message=True)
+
+    @classmethod
+    def validate_node_roles(cls, node, cluster, roles, reinstall):
+        pass

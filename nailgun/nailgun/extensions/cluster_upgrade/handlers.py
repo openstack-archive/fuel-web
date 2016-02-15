@@ -69,22 +69,31 @@ class NodeReassignHandler(base.BaseHandler):
 
     @base.content
     def POST(self, cluster_id):
-        """Reassign node to cluster via reinstallation
+        """Reassign node to the given cluster.
 
-           :param cluster_id: ID of the cluster which node should be
-                              assigned to.
-           :returns: None
-           :http: * 202 (OK)
-                  * 400 (Incorrect node state or problem with task execution)
-                  * 404 (Cluster or node not found)
+        The given node will be assigned from the current cluster to the
+        given cluster, by default it includes re-provisioning and redeployment
+        of this node. If the 'reinstall' flag is set to False, then the node
+        will be just reassigned include an ability to change roles of the node
+        during this procedure by setting the 'roles' flag.
+
+        :param cluster_id: ID of the cluster which node should be
+                           assigned to.
+        :returns: None
+        :http: * 202 (OK)
+               * 400 (Incorrect node state or problem with task execution)
+               * 404 (Cluster or node not found)
         """
         cluster = adapters.NailgunClusterAdapter(
             self.get_object_or_404(self.single, cluster_id))
 
         data = self.checked_data(cluster=cluster)
+        reinstall = data['reinstall']
         node = adapters.NailgunNodeAdapter(
             self.get_object_or_404(objects.Node, data['node_id']))
 
-        upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
+        upgrade.UpgradeHelper.assign_node_to_cluster(
+            node, cluster, data['roles'], reinstall)
 
-        self.handle_task(cluster_id, [node.node, ])
+        if reinstall:
+            self.handle_task(cluster_id, [node.node])

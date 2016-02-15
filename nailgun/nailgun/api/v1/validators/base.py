@@ -13,14 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import jsonschema
 from jsonschema.exceptions import ValidationError
 import six
 
 from oslo_serialization import jsonutils
 
+from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.utils import restrictions
 
 
 class BasicValidator(object):
@@ -121,3 +124,82 @@ class BaseDefferedTaskValidator(BasicValidator):
     @classmethod
     def validate(cls, cluster):
         pass
+
+
+class BasicAttributesValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data):
+        data = cls.validate_json(data)
+        if 'attributes' not in data:
+            raise errors.InvalidData("There are no attributes key",
+                                     log_message=True)
+
+        if not isinstance(data['attributes'], dict):
+            raise errors.InvalidData("Attributes should be a dictionary",
+                                     log_meassage=True)
+
+        attrs = data['attributes']
+        cls.validate_attributes(attrs)
+
+        return attrs
+
+    @classmethod
+    def validate_attributes(cls, attrs):
+        for attr_name, attr in six.iteritems(attrs):
+            cls.validate_attribute(attr_name, attr)
+
+    @classmethod
+    def validate_attribute(cls, attr_name, attr):
+        """Validates a single attribute from settings.yaml.
+
+        Dict is of this form:
+
+        description: <description>
+        label: <label>
+        restrictions:
+          - <restriction>
+          - <restriction>
+          - ...
+        type: <type>
+        value: <value>
+        weight: <weight>
+        regex:
+          error: <error message>
+          source: <regexp source>
+
+        We validate that 'value' corresponds to 'type' according to
+        attribute_type_schemas mapping in json_schema/cluster.py.
+        If regex is present, we additionally check that the provided string
+        value matches the regexp.
+
+        :param attr_name: Name of the attribute being checked
+        :param attr: attribute value
+        :return: attribute or raise InvalidData exception
+        """
+
+        if not isinstance(attr, dict):
+            return attr
+
+        if 'type' not in attr and 'value' not in attr:
+            return attr
+
+        schema = copy.deepcopy(base_types.attribute_schema)
+        type_ = attr.get('type')
+        if type_:
+            value_schema = base_types.attribute_type_schemas.get(type_)
+            if value_schema:
+                schema['properties'].update(value_schema)
+
+        try:
+            cls.validate_schema(attr, schema)
+        except errors.InvalidData as e:
+            raise errors.InvalidData('[{0}] {1}'.format(attr_name, e.message))
+
+        # Validate regexp only if some value is present
+        # Otherwise regexp might be invalid
+        if attr['value']:
+            regex_err = restrictions.AttributesRestriction.validate_regex(attr)
+            if regex_err is not None:
+                raise errors.InvalidData(
+                    '[{0}] {1}'.format(attr_name, regex_err))

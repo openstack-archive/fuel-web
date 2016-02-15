@@ -27,7 +27,7 @@ from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.network import NetAssignmentValidator
-from nailgun.api.v1.validators.node import NodeValidator
+from nailgun.api.v1.validators import node as node_validators
 
 from nailgun import consts
 from nailgun.errors import errors
@@ -48,7 +48,7 @@ from nailgun import notifier
 
 class NodeHandler(SingleHandler):
     single = objects.Node
-    validator = NodeValidator
+    validator = node_validators.NodeValidator
 
     @content
     def DELETE(self, obj_id):
@@ -76,7 +76,7 @@ class NodeHandler(SingleHandler):
 class NodeCollectionHandler(CollectionHandler):
     """Node collection handler"""
 
-    validator = NodeValidator
+    validator = node_validators.NodeValidator
     collection = objects.NodeCollection
 
     @content
@@ -159,7 +159,7 @@ class NodeCollectionHandler(CollectionHandler):
 class NodeAgentHandler(BaseHandler):
 
     collection = objects.NodeCollection
-    validator = NodeValidator
+    validator = node_validators.NodeValidator
 
     @content
     def PUT(self):
@@ -328,7 +328,7 @@ class NodesAllocationStatsHandler(BaseHandler):
 class NodeAttributesHandler(BaseHandler):
     """Node attributes handler"""
 
-    # TODO(asvechnikov): Add validator
+    validator = node_validators.NodeAttributesValidator
 
     @content
     def GET(self, node_id):

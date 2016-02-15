@@ -92,6 +92,7 @@ class NodeReassignValidator(base.BasicValidator):
         "type": "object",
         "properties": {
             "node_id": {"type": "number"},
+            "reinstall": {"type": "boolean", "default": True},
         },
         "required": ["node_id"],
     }

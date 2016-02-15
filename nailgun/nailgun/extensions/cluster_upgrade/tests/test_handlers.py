@@ -97,6 +97,25 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         provisioned_uids = [int(n['uid']) for n in nodes]
         self.assertEqual([node_id, ], provisioned_uids)
 
+    @patch('nailgun.task.task.rpc.cast')
+    def test_node_reassign_handler_without_reinstall(self, mcast):
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'status': consts.NODE_STATUSES.ready}])
+        self.env.create_cluster()
+        cluster = self.env.clusters[0]
+        seed_cluster = self.env.clusters[1]
+        node_id = cluster.nodes[0]['id']
+
+        import pytest; pytest.set_trace()
+        resp = self.app.post(
+            reverse('NodeReassignHandler',
+                    kwargs={'cluster_id': seed_cluster['id']}),
+            jsonutils.dumps({'node_id': node_id, 'reinstall': False}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+        self.assertFalse(mcast.called)
+
     def test_node_reassign_handler_no_node(self):
         self.env.create_cluster()
 

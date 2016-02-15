@@ -169,7 +169,7 @@ class UpgradeHelper(object):
         new_net_manager.assign_vips_for_net_groups()
 
     @classmethod
-    def assign_node_to_cluster(cls, node, seed_cluster):
+    def assign_node_to_cluster(cls, node, seed_cluster, roles, pending_roles):
         orig_cluster = adapters.NailgunClusterAdapter.get_by_uid(
             node.cluster_id)
 
@@ -178,7 +178,7 @@ class UpgradeHelper(object):
         netgroups_id_mapping = cls.get_netgroups_id_mapping(
             orig_cluster, seed_cluster)
 
-        node.update_cluster_assignment(seed_cluster)
+        node.update_cluster_assignment(seed_cluster, roles, pending_roles)
         objects.Node.set_netgroups_ids(node, netgroups_id_mapping)
         orig_manager.set_nic_assignment_netgroups_ids(
             node, netgroups_id_mapping)

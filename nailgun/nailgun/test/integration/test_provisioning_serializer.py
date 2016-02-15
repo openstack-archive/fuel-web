@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
 
-#    Copyright 2013 Mirantis, Inc.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
 #    a copy of the License at
 #
@@ -85,6 +81,12 @@ class TestGetSerializerForCluster(BaseIntegrationTest):
         serializer = ps.get_serializer_for_cluster(cluster)
 
         self.assertIs(serializer, ps.ProvisioningSerializer80)
+
+    def test_env_9_0(self):
+        cluster = self._get_cluster('2016.1-9.0')
+        serializer = ps.get_serializer_for_cluster(cluster)
+
+        self.assertIs(serializer, ps.ProvisioningSerializer90)
 
 
 class TestProvisioningSerializer(BaseIntegrationTest):

@@ -13,21 +13,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators import base
 from nailgun.api.v1.validators.graph import TaskDeploymentValidator
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import node_schema
-
 from nailgun import consts
-from nailgun import objects
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
+from nailgun import objects
 
 
-class MetaInterfacesValidator(BasicValidator):
+class MetaInterfacesValidator(base.BasicValidator):
     @classmethod
     def _validate_data(cls, interfaces):
         if not isinstance(interfaces, list):
@@ -65,7 +63,7 @@ class MetaInterfacesValidator(BasicValidator):
         return interfaces
 
 
-class MetaValidator(BasicValidator):
+class MetaValidator(base.BasicValidator):
     @classmethod
     def _validate_data(cls, meta):
         if not isinstance(meta, dict):
@@ -99,7 +97,7 @@ class MetaValidator(BasicValidator):
         return meta
 
 
-class NodeValidator(BasicValidator):
+class NodeValidator(base.BasicValidator):
 
     single_schema = node_schema.single_schema
 
@@ -313,7 +311,7 @@ class NodeValidator(BasicValidator):
         return d
 
 
-class NodesFilterValidator(BasicValidator):
+class NodesFilterValidator(base.BasicValidator):
 
     @classmethod
     def validate(cls, nodes):
@@ -418,3 +416,10 @@ class NodeDeploymentValidator(TaskDeploymentValidator,
             raise errors.InvalidData('Tasks list must be specified.')
 
         return data
+
+
+class NodeAttributesValidator(base.BasicAttributesValidator):
+
+    @classmethod
+    def validate(cls, data, node=None):
+        return super(NodeAttributesValidator, cls).validate(data)

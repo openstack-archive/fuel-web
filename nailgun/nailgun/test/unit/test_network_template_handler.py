@@ -14,11 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
 from oslo_serialization import jsonutils
 
 from nailgun.db import db
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun.test import base
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -125,7 +128,9 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.get_template(1, expect_errors=True)
         self.assertEqual(404, resp.status_code)
 
-    def check_put_delete_template(self, cluster, forbidden=False):
+    def check_put_delete_template(self, cluster, error_request=False):
+        # codes that can be returned from handlers
+        error_statuses = (400, 403, 404)
         template = self.env.read_fixtures(['network_template_80'])[0]
         template.pop('pk')  # PK is not needed
         resp = self.app.put(
@@ -135,12 +140,12 @@ class TestHandlers(BaseIntegrationTest):
             ),
             jsonutils.dumps(template),
             headers=self.default_headers,
-            expect_errors=forbidden
+            expect_errors=error_request
         )
-        if not forbidden:
+        if not error_request:
             self.assertEqual(resp.status_code, 200)
         else:
-            self.assertEqual(resp.status_code, 403)
+            self.assertIn(resp.status_code, error_statuses)
 
         resp = self.app.delete(
             reverse(
@@ -148,14 +153,14 @@ class TestHandlers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster.id},
             ),
             headers=self.default_headers,
-            expect_errors=forbidden
+            expect_errors=error_request
         )
-        if not forbidden:
+        if not error_request:
             self.assertEqual(resp.status_code, 204)
             resp = self.get_template(cluster.id)
             self.assertEquals(None, resp.json_body)
         else:
-            self.assertEqual(resp.status_code, 403)
+            self.assertIn(resp.status_code, error_statuses)
 
     def test_put_delete_template(self):
         cluster = self.env.create_cluster(api=False)
@@ -173,3 +178,17 @@ class TestHandlers(BaseIntegrationTest):
             # error (403 in this case)
             db().commit()
             self.check_put_delete_template(cluster, status not in allowed)
+
+    def test_set_network_template_fail_if_vips_cannot_be_assigned(self):
+        cluster = self.env.create_cluster(api=False)
+
+        for exc in (errors.CanNotFindCommonNodeGroup,
+                    errors.CanNotFindNetworkForNodeGroup,
+                    errors.DuplicatedVIPNames):
+
+            with mock.patch(
+                'nailgun.api.v1.handlers.network_configuration.'
+                'objects.Cluster.set_network_template',
+                new=mock.Mock(side_effect=exc)
+            ):
+                self.check_put_delete_template(cluster, error_request=True)

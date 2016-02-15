@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun import objects
+from nailgun.test import base
 from nailgun.test.integration.test_network_manager import \
     BaseNetworkManagerTest
 from nailgun.utils import reverse
@@ -581,4 +583,80 @@ class TestIPAddrHandler(BaseIPAddrTest):
                 resp.json_body,
                 ['id', 'network', 'node']
             )
+        )
+
+
+class TestVIPReallocationOnTemplateChange(base.BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestVIPReallocationOnTemplateChange, self).setUp()
+
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={'api': False}
+        )
+        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
+
+        self.net_template = self.env.read_fixtures(['network_template_80'])[0]
+
+        self.template_ndg_name = 'default'
+        self.template_net_end_point = 'br-mgmt'
+        self.expected_net_role = 'public/vip'
+        self.expected_vips = self._get_vips_for_network_role()
+        self.expected_network = self.prepare_template()
+
+    def _get_vips_for_network_role(self):
+        vip_names = []
+        network_metadata = self.cluster.release.network_roles_metadata
+        for nr in network_metadata:
+            if nr['id'] == self.expected_net_role:
+                vip_info = nr['properties']['vip']
+                vip_names.extend([vi['name'] for vi in vip_info])
+        return vip_names
+
+    def prepare_template(self):
+        # add setup mapping between test network role and needed network
+        ndg_data = \
+            self.net_template['adv_net_template'][self.template_ndg_name]
+
+        # following action will result in moving of VIPs for network role
+        # to another network
+        for net_name, scheme in six.iteritems(ndg_data['network_scheme']):
+            if self.expected_net_role in scheme['roles']:
+                scheme['roles'][self.expected_net_role] = \
+                    self.template_net_end_point
+
+        mapped_net = [
+            net_name for net_name, ep_data
+            in six.iteritems(ndg_data['network_assignments'])
+            if ep_data['ep'] == self.template_net_end_point
+        ][0]
+
+        return mapped_net
+
+    def get_net_by_vips(self, cluster_vips):
+        net_by_vips = [
+            net_name for net_name, vip_info
+            in six.iteritems(cluster_vips)
+            if
+            set(six.iterkeys(cluster_vips[net_name])) ==
+            set(self.expected_vips)
+        ][0]
+        return net_by_vips
+
+    def test_vips_are_reallocated_when_template_is_set(self):
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
+        cl_vips_before = self.net_manager.get_assigned_vips(self.cluster)
+        old_net = self.get_net_by_vips(cl_vips_before)
+
+        objects.Cluster.set_network_template(self.cluster, self.net_template)
+
+        cl_vips_after = self.net_manager.get_assigned_vips(self.cluster)
+
+        self.assertIn(self.expected_vip_name,
+                      cl_vips_after[self.expected_network])
+
+        self.assertEqual(
+            len(cl_vips_before[self.expected_network]),
+            len(cl_vips_after[self.expected_network]) - 1
         )

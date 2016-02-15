@@ -1810,12 +1810,20 @@ Role = React.createClass({
       isPopoverForceHidden: false
     });
   },
+  onKeyDown(e) {
+    var {restrictions, isRolePanelDisabled, onClick} = this.props;
+    if (e.key === 'Enter' && !isRolePanelDisabled && !restrictions.result) {
+      e.preventDefault();
+      onClick();
+    }
+  },
   render() {
     var {role, selected, indeterminated, restrictions, isRolePanelDisabled, onClick} = this.props;
     var disabled = isRolePanelDisabled || restrictions.result;
     var {warnings} = restrictions;
     return (
       <div
+        tabIndex='0'
         className={utils.classNames({
           'role-block': true,
           [role.get('name')]: true,
@@ -1826,6 +1834,7 @@ Role = React.createClass({
         onMouseEnter={this.startCountdown}
         onMouseMove={this.resetCountdown}
         onMouseLeave={() => this.togglePopover(false)}
+        onKeyDown={this.onKeyDown}
       >
         <div className='popover-binder'/>
         <div onClick={this.forceHidePopover}>

@@ -1808,9 +1808,43 @@ class AllocateVIPs70Mixin(object):
         return cls.assign_vip(node_group, net_group, vip_name='public')
 
     @classmethod
+    def _get_vip_to_preserve(csl, vips_db, nodegroup,
+                             net_group_name, vip_name):
+        for ip in vips_db:
+            if all([ip.vip_name == vip_name,
+                    ip.network_data.nodegroup.id == nodegroup.id,
+                    ip.network_data.name == net_group_name]):
+                return ip
+
+    @classmethod
+    def purge_stalled_vips(cls, cluster, net_role_vip_mappings):
+        vips_to_purge = cls._get_assigned_vips_for_net_groups(cluster).all()
+
+        # if there is no assigned VIPs, do nothing
+        if vips_to_purge:
+            for vip_mapping in net_role_vip_mappings:
+                nodegroup, net_group_name, vip_name = vip_mapping[:3]
+                vip_to_preserve = cls._get_vip_to_preserve(
+                    vips_to_purge, nodegroup, net_group_name, vip_name
+                )
+                if vip_to_preserve:
+                    vips_to_purge.remove(vip_to_preserve)
+
+        # vips to purge is modified inside the loop above
+        # and may not contain elements at this point
+        if vips_to_purge:
+            db.query(IPAddr).filter(
+                IPAddr.id.in_([ip.id for ip in vips_to_purge])
+            ).delete(synchronize_session='fetch')
+
+    @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
+        net_role_vip_mappings = cls.get_node_groups_info(cluster)
+        cls.purge_stalled_vips(cluster, net_role_vip_mappings)
+
         for nodegroup, net_group, vip_name, role, vip_info\
-                in cls.get_node_groups_info(cluster):
+                in net_role_vip_mappings:
+
             vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
 
             if vip_addr is None:
@@ -1940,6 +1974,9 @@ class AllocateVIPs70Mixin(object):
 
     @classmethod
     def get_node_groups_info(cls, cluster):
+        # final result of the method
+        net_role_vip_mappings = []
+
         # noderole -> nodegroup mapping
         #   is used for determine nodegroup where VIP should be allocated
         noderole_nodegroup = {}
@@ -1989,7 +2026,11 @@ class AllocateVIPs70Mixin(object):
                         "Skip VIP '{0}' which is mapped to non-existing"
                         " network '{1}'".format(vip_name, net_group))
                     continue
-                yield nodegroup, net_group, vip_name, role, vip_info
+                net_role_vip_mappings.append(
+                    [nodegroup, net_group, vip_name, role, vip_info]
+                )
+
+        return net_role_vip_mappings
 
 
 class AllocateVIPs80Mixin(object):

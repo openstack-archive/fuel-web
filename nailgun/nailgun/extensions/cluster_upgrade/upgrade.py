@@ -169,7 +169,31 @@ class UpgradeHelper(object):
         new_net_manager.assign_vips_for_net_groups()
 
     @classmethod
-    def assign_node_to_cluster(cls, node, seed_cluster):
+    def get_node_roles(cls, reprovision, current_roles, given_roles):
+        """Return roles depending on the reprovisioning status.
+
+        In case the node should be re-provisioned, only pending roles
+        should be set, otherwise for an already provisioned and deployed
+        node only actual roles should be set. In the both case the
+        given roles will have precedence over the existing.
+
+        :param reprovision: boolean, if set to True then the node should
+                            be re-provisioned
+        :param current_roles: a list of current roles of the node
+        :param given_roles: a list of roles that should be assigned to
+                            the node
+        :returns: a tuple of a list of roles and a list of pending roles
+                  that will be assigned to the node
+        """
+        roles_to_assign = given_roles if given_roles else current_roles
+        if reprovision:
+            roles, pending_roles = [], roles_to_assign
+        else:
+            roles, pending_roles = roles_to_assign, []
+        return roles, pending_roles
+
+    @classmethod
+    def assign_node_to_cluster(cls, node, seed_cluster, roles, pending_roles):
         orig_cluster = adapters.NailgunClusterAdapter.get_by_uid(
             node.cluster_id)
 
@@ -178,7 +202,7 @@ class UpgradeHelper(object):
         netgroups_id_mapping = cls.get_netgroups_id_mapping(
             orig_cluster, seed_cluster)
 
-        node.update_cluster_assignment(seed_cluster)
+        node.update_cluster_assignment(seed_cluster, roles, pending_roles)
         objects.Node.set_netgroups_ids(node, netgroups_id_mapping)
         orig_manager.set_nic_assignment_netgroups_ids(
             node, netgroups_id_mapping)

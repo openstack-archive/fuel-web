@@ -1049,6 +1049,23 @@
           method:
             type: "hidden"
             value: "image"
+        cgroups:
+          blkio:
+            label: blkio
+            type: textarea
+            value: ''
+          cpu:
+            label: cpu
+            type: textarea
+            value: ''
+          memory:
+            label: memory
+            type: textarea
+            value: ''
+          metadata:
+            group: general
+            label: Cgroups configuration
+            weight: 90
         external_dns:
           metadata:
             label: "Host OS DNS Servers"

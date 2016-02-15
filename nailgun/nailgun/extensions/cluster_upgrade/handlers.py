@@ -67,16 +67,49 @@ class NodeReassignHandler(base.BaseHandler):
 
         self.raise_task(task)
 
+    def get_node_roles(self, reprovision, current_roles, given_roles):
+        """Return roles depending on the reprovisioning status.
+
+        In case the node should be re-provisioned, only pending roles
+        should be set, otherwise for an already provisioned and deploy
+        node only actual roles should be set. In the first case the
+        given roles will have precedence over the existing. In the
+        second case the given roles are required.
+
+        :param reprovision: boolean, if set to True then the node should
+                            be re-provisioned
+        :param current_roles: a list of current roles of the node
+        :param given_roles: a list of roles that should be assigned to
+                            the node
+        """
+        if reprovision:
+            roles = []
+            if given_roles:
+                pending_roles = given_roles
+            else:
+                pending_roles = current_roles
+        else:
+            roles = given_roles
+            pending_roles = []
+        return roles, pending_roles
+
     @base.content
     def POST(self, cluster_id):
-        """Reassign node to cluster via reinstallation
+        """Reassign node to the given cluster.
 
-           :param cluster_id: ID of the cluster which node should be
-                              assigned to.
-           :returns: None
-           :http: * 202 (OK)
-                  * 400 (Incorrect node state or problem with task execution)
-                  * 404 (Cluster or node not found)
+        The given node will be assigned from the current cluster to the
+        given cluster, by default it includes the reprovisioning of this
+        node. If the 'reprovision' flag is set to False, then the node
+        will be just reassigned. If the 'roles' flag is specified, then
+        the given roles will be used as 'pending_roles' in case of
+        the reprovisioning or otherwise as 'roles'.
+
+        :param cluster_id: ID of the cluster which node should be
+                           assigned to.
+        :returns: None
+        :http: * 202 (OK)
+               * 400 (Incorrect node state or problem with task execution)
+               * 404 (Cluster or node not found)
         """
         cluster = adapters.NailgunClusterAdapter(
             self.get_object_or_404(self.single, cluster_id))
@@ -84,7 +117,13 @@ class NodeReassignHandler(base.BaseHandler):
         data = self.checked_data(cluster=cluster)
         node = adapters.NailgunNodeAdapter(
             self.get_object_or_404(objects.Node, data['node_id']))
+        reprovision = data['reprovision']
+        given_roles = data['roles']
 
-        upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
+        roles, pending_roles = self.get_node_roles(
+            reprovision, node.roles, given_roles)
+        upgrade.UpgradeHelper.assign_node_to_cluster(
+            node, cluster, roles, pending_roles)
 
-        self.handle_task(cluster_id, [node.node, ])
+        if reprovision:
+            self.handle_task(cluster_id, [node.node])

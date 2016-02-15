@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.v1.validators import assignment
 from nailgun.api.v1.validators import base
 from nailgun import consts
 from nailgun.errors import errors
@@ -84,7 +85,7 @@ class ClusterUpgradeValidator(base.BasicValidator):
                 log_message=True)
 
 
-class NodeReassignValidator(base.BasicValidator):
+class NodeReassignValidator(assignment.NodeAssignmentValidator):
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "title": "Assign Node Parameters",
@@ -92,17 +93,31 @@ class NodeReassignValidator(base.BasicValidator):
         "type": "object",
         "properties": {
             "node_id": {"type": "number"},
+            "reprovision": {"type": "boolean", "default": True},
+            "roles": {"type": "array",
+                      "items": {"type": "string"},
+                      "uniqueItems": True},
         },
         "required": ["node_id"],
     }
 
     @classmethod
     def validate(cls, data, cluster):
-        data = super(NodeReassignValidator, cls).validate(data)
-        cls.validate_schema(data, cls.schema)
-        node = cls.validate_node(data['node_id'])
+        parsed = super(NodeReassignValidator, cls).validate(data)
+        cls.validate_schema(parsed, cls.schema)
+
+        reprovision = parsed.setdefault('reprovision', True)
+        roles = parsed.setdefault('roles', [])
+
+        node = cls.validate_node(parsed['node_id'])
         cls.validate_node_cluster(node, cluster)
-        return data
+        if not reprovision:
+            if not roles:
+                raise errors.InvalidData(
+                    "Roles for the node {0} should be specified during "
+                    "reassinging without reprovisioning.".format(node.id))
+            cls.validate_roles(cluster, roles)
+        return parsed
 
     @classmethod
     def validate_node(cls, node_id):

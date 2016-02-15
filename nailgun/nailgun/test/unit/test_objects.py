@@ -196,7 +196,7 @@ class TestNodeObject(BaseIntegrationTest):
         new_group = objects.Cluster.get_default_group(new_cluster)
         node = cluster.nodes[0]
         roles = node.roles
-        objects.Node.update_cluster_assignment(node, new_cluster)
+        objects.Node.update_cluster_assignment(node, new_cluster, [], roles)
         self.assertEqual(new_cluster.id, node.cluster_id)
         self.assertEqual(new_group.id, node.group_id)
         self.assertEqual([], node.roles)
@@ -218,7 +218,7 @@ class TestNodeObject(BaseIntegrationTest):
         new_group = objects.Cluster.get_default_group(new_cluster)
         node = cluster.nodes[0]
         roles = node.roles
-        objects.Node.update_cluster_assignment(node, new_cluster)
+        objects.Node.update_cluster_assignment(node, new_cluster, [], roles)
         self.assertEqual(new_cluster.id, node.cluster_id)
         self.assertEqual(new_group.id, node.group_id)
         self.assertEqual([], node.roles)

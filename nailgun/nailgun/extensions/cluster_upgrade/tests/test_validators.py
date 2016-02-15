@@ -141,3 +141,73 @@ class TestNodeReassignValidator(base.BaseTestCase):
         msg = "^Empty request received$"
         with self.assertRaisesRegexp(errors.InvalidData, msg):
             self.validator.validate("", node)
+
+
+class TestNodeReassignNoReinstallValidator(tests_base.BaseCloneClusterTest):
+    validator = validators.NodeReassignValidator
+
+    def setUp(self):
+        super(TestNodeReassignNoReinstallValidator, self).setUp()
+        self.cluster_80 = self.env.create_cluster(
+            api=False,
+            release_id=self.release_80.id,
+        )
+        self.node = self.env.create_node(cluster_id=self.cluster_61.id,
+                                         roles=["compute"], status="ready")
+
+    def test_validate_defaults(self):
+        data = jsonutils.dumps({
+            "node_id": self.node.id,
+        })
+        expected_data = {
+            "node_id": self.node.id,
+            "reprovision": True,
+            "roles": [],
+        }
+        parsed = self.validator.validate(data, self.cluster_80)
+        self.assertEqual(parsed, expected_data)
+        self.assertEqual(self.node.roles, ['compute'])
+
+    def test_validate_with_roles(self):
+        data = jsonutils.dumps({
+            "node_id": self.node.id,
+            "reprovision": True,
+            "roles": ['controller'],
+        })
+        expected_data = {
+            "node_id": self.node.id,
+            "reprovision": True,
+            "roles": ['controller'],
+        }
+        parsed = self.validator.validate(data, self.cluster_80)
+        self.assertEqual(parsed, expected_data)
+
+    def test_validate_no_reprovision_without_roles(self):
+        data = jsonutils.dumps({
+            "node_id": self.node.id,
+            "reprovision": False,
+            "roles": [],
+        })
+        msg = "^Roles for the node {0} should be specified during " \
+              "reassinging without reprovisioning.$".format(self.node.id)
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate(data, self.cluster_80)
+
+    def test_validate_not_unique_roles(self):
+        data = jsonutils.dumps({
+            "node_id": self.node.id,
+            "roles": ['compute', 'compute'],
+        })
+        msg = "has non-unique elements"
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate(data, self.cluster_80)
+
+    def test_validate_no_reprovision_with_conflicts(self):
+        data = jsonutils.dumps({
+            "node_id": self.node.id,
+            "reprovision": False,
+            "roles": ['controller', 'compute'],
+        })
+        msg = '^Role "controller" in conflict with role compute$'
+        with self.assertRaisesRegexp(errors.InvalidData, msg):
+            self.validator.validate(data, self.cluster_80)

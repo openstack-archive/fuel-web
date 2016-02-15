@@ -217,3 +217,84 @@ UI_SETTINGS = {
         },
     }
 }
+
+attribute_schema = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'title': 'Schema for single editable attribute',
+    'type': 'object',
+    'properties': {
+        'type': {
+            'enum': [
+                'checkbox',
+                'custom_repo_configuration',
+                'hidden',
+                'password',
+                'radio',
+                'select',
+                'text',
+                'textarea',
+                'file',
+            ]
+        },
+        # 'value': None,  # custom validation depending on type
+        'restrictions': RESTRICTIONS,
+        'weight': {
+            'type': 'integer',
+            'minimum': 0,
+        },
+    },
+    'required': ['type', 'value'],
+}
+
+# Schema with allowed values for 'radio' and 'select' attribute types
+allowed_values_schema = {
+    'value': {
+        'type': 'string',
+    },
+    'values': {
+        'type': 'array',
+        'minItems': 1,
+        'items': [
+            {
+                'type': 'object',
+                'properties': {
+                    'data': {'type': 'string'},
+                    'label': {'type': 'string'},
+                    'description': {'type': 'string'},
+                    'restrictions': RESTRICTIONS,
+                },
+                'required': ['data', 'label'],
+            },
+        ],
+    },
+}
+
+# Additional properties definitions for 'attirbute_schema'
+# depending on 'type' property
+attribute_type_schemas = {
+    'checkbox': {'value': {'type': 'boolean'}},
+    'custom_repo_configuration': {
+        'value': {
+            'type': 'array',
+            'minItems': 1,
+            'items': [
+                {
+                    'type': 'object',
+                    'properties': {
+                        'name': {'type': 'string'},
+                        'priority': {'type': ['integer', 'null']},
+                        'section': {'type': 'string'},
+                        'suite': {'type': 'string'},
+                        'type': {'type': 'string'},
+                        'uri': {'type': 'string'},
+                    }
+                }
+            ],
+        },
+    },
+    'password': {'value': {'type': 'string'}},
+    'radio': allowed_values_schema,
+    'select': allowed_values_schema,
+    'text': {'value': {'type': 'string'}},
+    'textarea': {'value': {'type': 'string'}},
+}

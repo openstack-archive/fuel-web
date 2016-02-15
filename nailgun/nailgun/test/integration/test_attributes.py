@@ -15,20 +15,18 @@
 #    under the License.
 
 from mock import patch
+from oslo_serialization import jsonutils
 import six
 
-from oslo_serialization import jsonutils
-
 from nailgun import consts
-from nailgun import objects
-
 from nailgun.db.sqlalchemy.models import Release
+from nailgun import objects
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
 
-class TestAttributes(BaseIntegrationTest):
+class TestClusterAttributes(BaseIntegrationTest):
 
     def test_attributes_creation(self):
         cluster = self.env.create_cluster(api=True)

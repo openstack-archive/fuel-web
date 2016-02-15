@@ -1127,6 +1127,37 @@ class TestNeutronManager70(BaseNetworkManagerTest):
     def test_get_network_manager(self):
         self.assertIs(self.net_manager, NeutronManager70)
 
+    def test_purge_stalled_vips(self):
+        # assign VIPs based on default network metadata
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
+        vips_before = self.net_manager.get_assigned_vips(self.cluster)
+
+        net_name = next(six.iterkeys(vips_before))
+        vips_to_remove = vips_before[net_name]
+
+        # remove network role information from release metadata in order
+        # to omit processing of VIPs for this role
+        new_nroles_meta = []
+        for net_role in self.cluster.release.network_roles_metadata:
+            if net_role.get('properties', {}).get('vip', []):
+                vip_info = net_role['properties']['vip']
+                if set(ip['name'] for ip in vip_info) == \
+                        set(six.iterkeys(vips_to_remove)):
+                        continue
+            new_nroles_meta.append(net_role)
+
+        self.cluster.release.network_roles_metadata = new_nroles_meta
+
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
+        vips_after = self.net_manager.get_assigned_vips(self.cluster)
+
+        self.assertNotIn(net_name, vips_after)
+
+        # check that information about VIPs for other networks is not affected
+        # after purging
+        del vips_before[net_name]
+        self.assertEqual(vips_before, vips_after)
+
     def test_get_network_group_for_role(self):
         net_template = self.env.read_fixtures(['network_template_70'])[0]
         objects.Cluster.set_network_template(self.cluster, net_template)

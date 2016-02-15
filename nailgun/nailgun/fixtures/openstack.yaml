@@ -1049,6 +1049,15 @@
           method:
             type: "hidden"
             value: "image"
+        cgroups:
+          metadata:
+            label: "Cgroups conguration for services"
+            weight: 90
+            group: "general"
+            always_editable: true
+            restrictions:
+              - condition: "true"
+                action: "hide"
         external_dns:
           metadata:
             label: "Host OS DNS Servers"

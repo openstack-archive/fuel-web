@@ -432,11 +432,13 @@ class TestHandlers(BaseIntegrationTest):
             'group1': {
                 'metadata': {},
                 'comp1': {
-                    'value': 42
+                    'type': 'text',
+                    'value': '42'
                 }
             },
             'group2': {
                 'comp2': {
+                    'type': 'text',
                     'value': 'value1'
                 }
             }
@@ -445,7 +447,8 @@ class TestHandlers(BaseIntegrationTest):
         update_attributes = {
             'group1': {
                 'comp1': {
-                    'value': 41
+                    'type': 'text',
+                    'value': '41'
                 }
             }
         }
@@ -454,6 +457,6 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps(update_attributes),
             headers=self.default_headers)
 
-        fake_attributes['group1']['comp1']['value'] = 41
+        fake_attributes['group1']['comp1']['value'] = '41'
         self.assertEqual(200, resp.status_code)
         self.assertEqual(fake_attributes, resp.json_body)

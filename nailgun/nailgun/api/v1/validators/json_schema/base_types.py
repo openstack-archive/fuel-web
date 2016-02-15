@@ -217,3 +217,107 @@ UI_SETTINGS = {
         },
     }
 }
+
+
+ATTRIBUTE_SCHEMA = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'title': 'Schema for single editable attribute',
+    'type': 'object',
+    'properties': {
+        'type': {
+            'enum': [
+                'checkbox',
+                'custom_repo_configuration',
+                'hidden',
+                'password',
+                'radio',
+                'select',
+                'text',
+                'textarea',
+                'file',
+                'text_list',
+                'textarea_list',
+                'custom_hugepages'
+            ]
+        },
+        # 'value': None,  # custom validation depending on type
+        'restrictions': RESTRICTIONS,
+        'weight': {
+            'type': 'integer',
+            'minimum': 0,
+        },
+    },
+    'required': ['type', 'value'],
+}
+
+# Schema with allowed values for 'radio' and 'select' attribute types
+ALLOWED_VALUES_SCHEMA = {
+    'value': {
+        'type': 'string',
+    },
+    'values': {
+        'type': 'array',
+        'minItems': 1,
+        'items': [
+            {
+                'type': 'object',
+                'properties': {
+                    'data': {'type': 'string'},
+                    'label': {'type': 'string'},
+                    'description': {'type': 'string'},
+                    'restrictions': RESTRICTIONS,
+                },
+                'required': ['data', 'label'],
+            },
+        ],
+    },
+}
+
+# Schema with a structure of multiple text fields setting value
+MULTIPLE_TEXT_FIELDS_SCHEMA = {
+    'value': {
+        'type': 'array',
+        'minItems': 1,
+        'items': {'type': 'string'},
+    },
+    'min': {
+        'type': 'integer',
+        'minimum': 1,
+    },
+    'max': {
+        'type': 'integer',
+        'minimum': 1,
+    }
+}
+
+# Additional properties definitions for 'attirbute_schema'
+# depending on 'type' property
+ATTRIBUTE_TYPE_SCHEMAS = {
+    'checkbox': {'value': {'type': 'boolean'}},
+    'custom_repo_configuration': {
+        'value': {
+            'type': 'array',
+            'minItems': 1,
+            'items': [
+                {
+                    'type': 'object',
+                    'properties': {
+                        'name': {'type': 'string'},
+                        'priority': {'type': ['integer', 'null']},
+                        'section': {'type': 'string'},
+                        'suite': {'type': 'string'},
+                        'type': {'type': 'string'},
+                        'uri': {'type': 'string'},
+                    }
+                }
+            ],
+        },
+    },
+    'password': {'value': {'type': 'string'}},
+    'radio': ALLOWED_VALUES_SCHEMA,
+    'select': ALLOWED_VALUES_SCHEMA,
+    'text': {'value': {'type': 'string'}},
+    'textarea': {'value': {'type': 'string'}},
+    'text_list': MULTIPLE_TEXT_FIELDS_SCHEMA,
+    'textarea_list': MULTIPLE_TEXT_FIELDS_SCHEMA
+}

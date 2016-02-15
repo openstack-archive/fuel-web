@@ -645,9 +645,8 @@ class Node(NailgunObject):
                          instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
-        # (dshulyak) change this verification to NODE_STATUSES.deploying
-        # after we will reuse ips from dhcp range
-        if data.get('ip'):
+        if not cls.is_interfaces_configuration_locked(instance) \
+                and data.get('ip'):
             if instance.cluster_id:
                 update_status = cls.check_ip_belongs_to_own_admin_network(
                     instance, data['ip'])

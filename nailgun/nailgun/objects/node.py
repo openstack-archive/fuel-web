@@ -605,15 +605,7 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def update_by_agent(cls, instance, data):
-        """Update Node instance with some specific cases for agent.
-
-        * don't update provisioning or error state back to discover
-        * don't update volume information if disks arrays is empty
-
-        :param data: dictionary of key-value pairs as object fields
-        :returns: Node instance
-        """
+    def __update_status(cls, instance, data):
         # don't update provisioning and error back to discover
         data_status = data.get('status')
         if instance.status in ('provisioning', 'error'):
@@ -627,24 +619,8 @@ class Node(NailgunObject):
 
                 data.pop('status', None)
 
-        meta = data.get('meta', {})
-        # don't update volume information, if agent has sent an empty array
-        if len(meta.get('disks', [])) == 0 and instance.meta.get('disks'):
-
-            logger.warning(
-                u'Node {0} has received an empty disks array - '
-                u'volume information will not be updated'.format(
-                    instance.human_readable_name
-                )
-            )
-            meta['disks'] = instance.meta['disks']
-
-        # don't update volume information, if it is locked by node status
-        if 'disks' in meta and cls.hardware_info_locked(instance):
-            logger.debug("Volume information is locked for update on node %s",
-                         instance.human_readable_name)
-            meta['disks'] = instance.meta['disks']
-
+    @classmethod
+    def __update_ip(cls, instance, data):
         # (dshulyak) change this verification to NODE_STATUSES.deploying
         # after we will reuse ips from dhcp range
         if data.get('ip'):
@@ -665,6 +641,40 @@ class Node(NailgunObject):
                         instance.status = consts.NODE_STATUSES.discover
             else:
                 data.pop('status', None)
+    @classmethod
+    def __update_disk_meta(cls, instance, data):
+        meta = data.get('meta', {})
+        # don't update volume information, if agent has sent an empty array
+        if len(meta.get('disks', [])) == 0 and instance.meta.get('disks'):
+
+            logger.warning(
+                u'Node {0} has received an empty disks array - '
+                u'volume information will not be updated'.format(
+                    instance.human_readable_name
+                )
+            )
+            meta['disks'] = instance.meta['disks']
+
+        # don't update volume information, if it is locked by node status
+        if 'disks' in meta and cls.hardware_info_locked(instance):
+            logger.debug("Volume information is locked for update on node %s",
+                         instance.human_readable_name)
+            meta['disks'] = instance.meta['disks']
+
+    @classmethod
+    def update_by_agent(cls, instance, data):
+        """Update Node instance with some specific cases for agent.
+
+        * don't update provisioning or error state back to discover
+        * don't update volume information if disks arrays is empty
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Node instance
+        """
+        # don't update provisioning and error back to discover
+        cls.__update_status(instance, data)
+        cls.__update_disk_meta(instance, data)
+        cls.__update_ip(instance, data)
         return cls.update(instance, data)
 
     @classmethod

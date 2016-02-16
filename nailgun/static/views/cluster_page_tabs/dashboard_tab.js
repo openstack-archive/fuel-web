@@ -654,32 +654,29 @@ var ClusterInfo = React.createClass({
     );
   },
   renderClusterCapacity() {
-    var cores = 0;
-    var hdds = 0;
-    var ram = 0;
     var ns = namespace + 'cluster_info_fields.';
-
-    this.props.cluster.get('nodes').each((node) => {
-      cores += node.resource('ht_cores');
-      hdds += node.resource('hdd');
-      ram += node.resource('ram');
-    }, this);
-
+    var capacity = this.props.cluster.getCapacity();
     return (
       <div className='row capacity-block content-elements'>
         <div className='title'>{i18n(ns + 'capacity')}</div>
         <div className='col-xs-12 capacity-items'>
           <div className='col-xs-4 cpu capacity-item'>
             <span>{i18n(ns + 'cpu_cores')}</span>
-            <span className='capacity-value pull-right'>{cores}</span>
-          </div>
-          <div className='col-xs-4 hdd capacity-item'>
-            <span>{i18n(ns + 'hdd')}</span>
-            <span className='capacity-value pull-right'>{utils.showDiskSize(hdds)}</span>
+            <span className='capacity-value pull-right'>
+              {capacity.cores} ({capacity.ht_cores})
+            </span>
           </div>
           <div className='col-xs-4 ram capacity-item'>
             <span>{i18n(ns + 'ram')}</span>
-            <span className='capacity-value pull-right'>{utils.showDiskSize(ram)}</span>
+            <span className='capacity-value pull-right'>
+              {utils.showDiskSize(capacity.ram)}
+            </span>
+          </div>
+          <div className='col-xs-4 hdd capacity-item'>
+            <span>{i18n(ns + 'hdd')}</span>
+            <span className='capacity-value pull-right'>
+              {utils.showDiskSize(capacity.hdd)}
+            </span>
           </div>
         </div>
       </div>

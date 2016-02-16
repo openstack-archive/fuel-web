@@ -367,6 +367,32 @@ models.Cluster = BaseModel.extend({
     return this.get('release').get('state') !== 'unavailable' && !!nodes.length &&
       (nodes.hasChanges() || this.needsRedeployment()) &&
         !this.task({group: 'deployment', active: true});
+  },
+  getCapacity() {
+    var resourceToRoleGroupMap = {
+      'cores': 'compute',
+      'ht_cores': 'compute',
+      'ram': 'compute',
+      'hdd': 'storage'
+    };
+    var groupedRoles = {};
+    _.each(['compute', 'storage'], (group) => {
+      groupedRoles[group] = this.get('roles')
+        .where({group: group})
+        .map((role) => role.get('name'));
+    });
+    var result = {
+      'cores': 0,
+      'ht_cores': 0,
+      'ram': 0,
+      'hdd': 0
+    };
+    this.get('nodes').each((node) => {
+      _.each(resourceToRoleGroupMap, (group, resourceName) => {
+        if (node.hasRole(groupedRoles[group])) result[resourceName] += node.resource(resourceName);
+      });
+    });
+    return result;
   }
 });
 
@@ -425,10 +451,11 @@ models.Node = BaseModel.extend({
     // and useless management of roles, disks, interfaces, etc.
     return this.get('status') !== 'removing';
   },
-  hasRole(role, onlyDeployedRoles) {
-    var roles = onlyDeployedRoles ? this.get('roles') :
-      _.union(this.get('roles'), this.get('pending_roles'));
-    return _.contains(roles, role);
+  hasRole(roles = [], onlyDeployedRoles = false) {
+    if (_.isString(roles)) roles = [roles];
+    var nodeRoles = this.get('roles');
+    if (!onlyDeployedRoles) nodeRoles = nodeRoles.concat(this.get('pending_roles'));
+    return !!_.intersection(nodeRoles, roles).length;
   },
   hasChanges() {
     return this.get('pending_addition') ||

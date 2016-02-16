@@ -1924,7 +1924,6 @@
           value: 0
         dpdk:
           value: 0
-      hugepages: {}
 - pk: 2
   extend: *base_release
   fields:

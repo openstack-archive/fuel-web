@@ -839,6 +839,8 @@ DUMP:
       - type: command
         command: pcs status
         to_file: pcs_status.txt
+      - type: file
+        path: /var/log/pacemaker.log
       - type: command
         command: rabbitmqctl report
         to_file: rabbitmqctl_report.txt

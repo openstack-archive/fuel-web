@@ -209,14 +209,14 @@ var Node = React.createClass({
           {this.props.node.resource('cores') || '0'} ({_.isUndefined(htCores) ? '?' : htCores})
         </span>
         <span>
-          {i18n('node_details.hdd')}
-          {': '}
-          {_.isUndefined(hdd) ? '?' + i18n('common.size.gb') : utils.showDiskSize(hdd)}
-        </span>
-        <span>
           {i18n('node_details.ram')}
           {': '}
           {_.isUndefined(ram) ? '?' + i18n('common.size.gb') : utils.showMemorySize(ram)}
+        </span>
+        <span>
+          {i18n('node_details.hdd')}
+          {': '}
+          {_.isUndefined(hdd) ? '?' + i18n('common.size.gb') : utils.showDiskSize(hdd)}
         </span>
       </div>
     );

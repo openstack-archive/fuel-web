@@ -19,8 +19,10 @@ Node-related objects and collections
 """
 
 import itertools
+import math
 import operator
 from oslo_serialization import jsonutils
+import six
 import traceback
 
 from datetime import datetime
@@ -1010,6 +1012,65 @@ class Node(NailgunObject):
             vm['created'] = False
         # Was changed second level data in 'vms_conf'
         node.attributes.vms_conf.changed()
+
+    @classmethod
+    def calc_node_cpu_pinning(cls, instance):
+        """Distributes which CPUs should not be used by Operating System
+
+        :return: dict with list of CPUs ids (int) total and per component
+        """
+
+        total_cpus_number = 0
+        components = []
+        for attr_name, attr in six.iteritems(instance.attributes):
+            if 'cpu_pinning' in attr_name:
+                number = int(attr['value'])
+                total_cpus_number += number
+                component = attr_name[:-len('_cpu_pinning')]
+                components.append({'name': component,
+                                   'number': number,
+                                   'cpus': []})
+
+        # Since the number of components is small we can use simple algorithm.
+        # Components will be sorted by number of required CPUs from the largest
+        # to smallest. Then for per NUMA node: number of CPUs for component
+        # will be distributed in the approximate proportion. Because of
+        # number of CPUs will be float number it will be round downward and
+        # remainder will be added to the next component
+
+        components = sorted(components,
+                            key=lambda x: (-x['number'], x['name']))
+
+        for numa_node in instance.meta['numa_topology']['numa_nodes']:
+            if not total_cpus_number:
+                break
+            remainder = min(len(numa_node['cpus']),
+                            total_cpus_number)
+            numa_node_cpus = numa_node['cpus'][:remainder]
+            factor = float(remainder) / total_cpus_number
+            carry = 0.0
+            for component in components:
+                float_cpus_number = component['number'] * factor + carry
+                # add epsilon to handle float calculation problem
+                float_cpus_number += 1e-10
+                int_cpus_number = int(min(component['number'],
+                                          math.floor(float_cpus_number)))
+                carry = float_cpus_number - int_cpus_number
+                component['cpus'].extend(numa_node_cpus[:int_cpus_number])
+                numa_node_cpus = numa_node_cpus[int_cpus_number:]
+                component['number'] -= int_cpus_number
+                total_cpus_number -= int_cpus_number
+                if not len(numa_node_cpus):
+                    break
+
+        isolated_cpus = []
+        for component in components:
+            isolated_cpus.extend(component['cpus'])
+            component.pop('number')
+
+        isolated_cpus = sorted(isolated_cpus)
+        return {'components': components,
+                'isolated_cpus': isolated_cpus}
 
 
 class NodeCollection(NailgunCollection):

@@ -640,6 +640,64 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertRaises(
             errors.CannotUpdate, objects.Node.update, node_0, data)
 
+    def test_calc_node_cpu_pinning(self):
+        node = self.env.create_node()
+        node.meta['numa_topology'] = {
+            'numa_nodes': [
+                {'cpus': [0, 1, 2, 3]},
+                {'cpus': [4, 5, 6, 7]}
+            ]
+        }
+        node.attributes.update({
+            'comp1_cpu_pinning': {
+                'value': '5'
+            },
+            'comp2_cpu_pinning': {
+                'value': '2'
+            }
+        })
+        expected_data = {
+            'components': [
+                {'name': 'comp1',
+                 'cpus': [0, 1, 4, 5, 6]},
+                {'name': 'comp2',
+                 'cpus': [2, 3]}
+            ],
+            'isolated_cpus': [0, 1, 2, 3, 4, 5, 6]
+        }
+        self.assertDictEqual(
+            expected_data,
+            objects.Node.calc_node_cpu_pinning(node))
+
+    def test_calc_node_cpu_pinning_empty(self):
+        node = self.env.create_node()
+        node.meta['numa_topology'] = {
+            'numa_nodes': [
+                {'cpus': [0, 1, 2, 3]},
+                {'cpus': [4, 5, 6, 7]}
+            ]
+        }
+        node.attributes.update({
+            'comp1_cpu_pinning': {
+                'value': '0'
+            },
+            'comp2_cpu_pinning': {
+                'value': '0'
+            }
+        })
+        expected_data = {
+            'components': [
+                {'name': 'comp1',
+                 'cpus': []},
+                {'name': 'comp2',
+                 'cpus': []}
+            ],
+            'isolated_cpus': []
+        }
+        self.assertDictEqual(
+            expected_data,
+            objects.Node.calc_node_cpu_pinning(node))
+
 
 class TestTaskObject(BaseIntegrationTest):
 

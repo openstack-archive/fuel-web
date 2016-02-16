@@ -564,6 +564,11 @@ models.NodesStatistics = BaseModel.extend({
   urlRoot: '/api/nodes/allocation/stats'
 });
 
+models.NodeAttributes = BaseModel.extend({
+  constructorName: 'NodeAttributes',
+
+});
+
 models.Task = BaseModel.extend({
   constructorName: 'Task',
   urlRoot: '/api/tasks',

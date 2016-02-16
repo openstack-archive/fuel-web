@@ -153,7 +153,7 @@
                         ],
                         "pxe": false
                     },
-                  {
+                    {
                         "mac": "00:25:90:6a:b1:11",
                         "max_speed": 1000,
                         "name": "eth1",
@@ -161,7 +161,7 @@
                         "ip": "10.20.0.168",
                         "driver": "igb",
                         "bus_info": "0000:02:00.0",
-                        "offloading_modes":[
+                        "offloading_modes": [
                             {
                                 "name": "tx-checksumming",
                                 "state": null,
@@ -326,6 +326,58 @@
                         {
                             "type": "Flash",
                             "size": 16777216
+                        }
+                    ]
+                },
+                "nfv_attributes": {
+                    "nova_hugepages": [
+                        {
+                            "weight": 20,
+                            "description": "Nova Huge Pages configuration",
+                            "label": "Nova Huge Pages",
+                            "type": "custom_hugepages",
+                            "value": {
+                                "1G": 10,
+                                "1M": 2
+                            }
+                        },
+                        {
+                            "weight": 10,
+                            "description": "Nova CPU pinning",
+                            "label": "Nova CPU pinning",
+                            "type": "text",
+                            "value": "1",
+                            "name": "nova_cpu_pinning",
+                            "regex": {
+                                "source": "\\S",
+                                "error": "Incorrect value"
+                            }
+                        }
+                    ],
+                    "dpdk_hugepages": [
+                        {
+                            "weight": 20,
+                            "description": "DPDK Huge Pages per NUMA node in MB",
+                            "label": "DPDK memory",
+                            "type": "text",
+                            "value": "1M",
+                            "name": "dpdk_memory",
+                            "regex": {
+                                "source": "\\S",
+                                "error": "Incorrect value"
+                            }
+                        },
+                        {
+                            "weight": 10,
+                            "description": "DPDK CPU pinning",
+                            "label": "DPDK CPU pinning",
+                            "type": "text",
+                            "value": "1",
+                            "name": "dpdk_cpu_pinning",
+                            "regex": {
+                                "source": "\\S",
+                                "error": "Incorrect value"
+                            }
                         }
                     ]
                 }

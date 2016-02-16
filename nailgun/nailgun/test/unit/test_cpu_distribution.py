@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -78,7 +78,7 @@ class TestGroupCpuDistributor(base.BaseTestCase):
         for required, component in zip(required_cpus, distributor.components):
             self.assertEquals(required, component.required)
 
-    def test_consume_and_result(self):
+    def test_consume(self):
         required_cpus = [1, 2, 2]
         distributor = self._create_group_distributor(*required_cpus)
         cpus = [0, 1, 2, 3, 4]
@@ -86,6 +86,7 @@ class TestGroupCpuDistributor(base.BaseTestCase):
         self.assertFalse(distributor.consume(cpus))
         self.assertEquals([], cpus)
         self.assertEquals(0, distributor.total_required)
+
         expected = {'isolated_cpus': [0, 1, 2, 3, 4],
                     'components': {
                         'comp0': [0],
@@ -93,7 +94,11 @@ class TestGroupCpuDistributor(base.BaseTestCase):
                         'comp2': [3, 4]}}
         result = {'isolated_cpus': [],
                   'components': {}}
-        distributor.add_to_result(result)
+
+        for component in distributor.components:
+            result['isolated_cpus'].extend(component.cpus)
+            result['components'][component.name] = component.cpus
+
         self.assertEquals(expected, result)
 
 

@@ -3442,6 +3442,48 @@ input[type=range] {
       }
     }
   }
+
+  // NFV styles
+  .nfv-component {
+    padding: 10px;
+    .form-group {
+      label {
+        display: block;
+      }
+      input[type=text] {
+        float: left;
+        width: 200px;
+      }
+      .help-block {
+        display: inline-block;
+        margin-left: 10px;
+      }
+      &.pages-size {
+        height: 88px;
+        width: 40px;
+        p {
+          margin-top: 13px;
+        }
+      }
+    }
+    .huge-pages {
+      margin-bottom: 10px;
+      .labels {
+        margin-left: 0px;
+      }
+      .contents {
+        .row {
+          margin-left: 0;
+        }
+        p {
+          margin-top: 10px;
+        }
+        input[type=text] {
+          width: 155px;
+        }
+      }
+    }
+  }
 }
 
 // Disks styles

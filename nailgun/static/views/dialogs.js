@@ -26,6 +26,7 @@ import dispatcher from 'dispatcher';
 import {Input, ProgressBar} from 'views/controls';
 import {backboneMixin, renamingMixin} from 'component_mixins';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
+import NFVComponent from 'views/nfv_component';
 
 function getActiveDialog() {
   return app.dialog;
@@ -981,7 +982,7 @@ export var ShowNodeInfoDialog = React.createClass({
     var {node} = this.props;
     var meta = node.get('meta');
 
-    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
+    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces', 'nfv_attributes'];
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
     if (this.state.VMsConf) groups.push('config');
 
@@ -1000,7 +1001,6 @@ export var ShowNodeInfoDialog = React.createClass({
           }
           var subEntries = _.isPlainObject(groupEntries) ?
             _.find(_.values(groupEntries), _.isArray) : [];
-
           return (
             <div className='panel panel-default' key={group}>
               <div
@@ -1051,7 +1051,7 @@ export var ShowNodeInfoDialog = React.createClass({
                       })}
                     </div>
                   }
-                  {_.isPlainObject(groupEntries) &&
+                  {_.isPlainObject(groupEntries) && group !== 'nfv_attributes' &&
                     <div>
                       {_.map(groupEntries, (propertyValue, propertyName) => {
                         if (
@@ -1113,6 +1113,12 @@ export var ShowNodeInfoDialog = React.createClass({
                         {i18n('common.save_settings_button')}
                       </button>
                     </div>
+                  }
+                  {group === 'nfv_attributes' &&
+                    <NFVComponent
+                      config={groupEntries}
+                      node={this.props.node}
+                    />
                   }
                 </div>
               </div>

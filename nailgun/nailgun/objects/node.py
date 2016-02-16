@@ -1066,10 +1066,21 @@ class Node(NailgunObject):
     def get_kernel_params(cls, instance):
         """Get kernel params.
 
-        Return cluster kernel_params if they weren't replaced by custom params.
+        Assembly kernel_params if they weren't replaced by custom params.
         """
-        return (instance.kernel_params or
-                Cluster.get_default_kernel_params(instance.cluster))
+
+        if instance.kernel_params:
+            return instance.kernel_params
+
+        kernel_params = Cluster.get_default_kernel_params(instance.cluster)
+
+        isolated_cpus = NodeAttributes.distribute_node_cpus(
+            instance)['isolated_cpus']
+        if isolated_cpus and 'isolcpus' not in kernel_params:
+            kernel_params += " isolcpus={0}".format(
+                ",".join(map(str, isolated_cpus)))
+
+        return kernel_params
 
     @classmethod
     def remove_replaced_params(cls, instance):

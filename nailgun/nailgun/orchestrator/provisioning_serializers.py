@@ -403,4 +403,28 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
 
 
 class ProvisioningSerializer90(ProvisioningSerializer80):
-    pass
+
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        serialized_node = super(ProvisioningSerializer80, cls).serialize_node(
+            cluster_attrs, node)
+        cls.serialize_node_attributes(serialized_node, node)
+
+        return serialized_node
+
+    @classmethod
+    def serialize_node_attributes(cls, serialized_node, node):
+        cls._serialize_node_cpu_pinning(serialized_node, node)
+
+    @classmethod
+    def _serialize_node_cpu_pinning(cls, serialized_node, node):
+        isolated_cpus = objects.Node.distribute_node_cpus(
+            node)['isolated_cpus']
+
+        additional_params = ""
+        if isolated_cpus:
+            additional_params = " isolcpus={1}".format(",".join(
+                map(str, isolated_cpus)))
+
+        serialized_node['ks_meta']['pm_data']['kernel_params'] += \
+            additional_params

@@ -1198,8 +1198,7 @@ class Node(NailgunObject):
 
         total_required_cpus = 0
         components = []
-        cpu_pinning_attrs = cls.get_attributes(instance).get(
-            'cpu_pinning', {})
+        cpu_pinning_attrs = cls.get_attributes(instance)['cpu_pinning']
         for name, attrs in six.iteritems(cpu_pinning_attrs):
             required_cpus = int(attrs['value'])
             total_required_cpus += required_cpus

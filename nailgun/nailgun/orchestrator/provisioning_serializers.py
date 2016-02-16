@@ -408,5 +408,17 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
     def serialize_node(cls, cluster_attrs, node):
         serialized_node = super(ProvisioningSerializer80, cls).serialize_node(
             cluster_attrs, node)
+        serialized_node = cls._serialize_node_attributes(serialized_node, node)
+
+        return serialized_node
+
+    @classmethod
+    def _serialize_node_attributes(cls, serialized_node, node):
+        kernel_params = serialized_node['ks_meta']['pm_data']['kernel_params']
+        data = objects.Node.calc_node_cpu_pinning(node)
+        if data['isolated_cpus']:
+            kernel_params = "{0} isolcpus={1}".format(
+                kernel_params, ",".join(map(str, data['isolated_cpus'])))
+        serialized_node['ks_meta']['pm_data']['kernel_params'] = kernel_params
 
         return serialized_node

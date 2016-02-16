@@ -606,17 +606,8 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def update_by_agent(cls, instance, data):
-        """Update Node instance with some specific cases for agent.
-
-        * don't update provisioning or error state back to discover
-        * don't update volume information if disks arrays is empty
-
-        :param data: dictionary of key-value pairs as object fields
-        :returns: Node instance
-        """
+    def _check_discover(cls, instance, data):
         # don't update provisioning and error back to discover
-        data_status = data.get('status')
         if instance.status in ('provisioning', 'error'):
             if data.get('status', 'discover') == 'discover':
                 logger.debug(
@@ -628,6 +619,31 @@ class Node(NailgunObject):
 
                 data.pop('status', None)
 
+    @classmethod
+    def _update_ip(cls, instance, data):
+        if not cls.is_interfaces_configuration_locked(instance) \
+                and data.get('ip'):
+            if instance.cluster_id:
+                update_status = cls.check_ip_belongs_to_own_admin_network(
+                    instance, data['ip'])
+            else:
+                update_status = cls.check_ip_belongs_to_any_admin_network(
+                    instance, data['ip'])
+            if update_status:
+                data_status = data.get('status')
+                if instance.status == consts.NODE_STATUSES.error and \
+                        instance.error_type == consts.NODE_ERRORS.discover:
+                    # accept the status from agent if the node had wrong IP
+                    # previously
+                    if data_status:
+                        instance.status = data_status
+                    else:
+                        instance.status = consts.NODE_STATUSES.discover
+            else:
+                data.pop('status', None)
+
+    @classmethod
+    def _update_disk_meta(cls, instance, data):
         meta = data.get('meta', {})
         # don't update volume information, if agent has sent an empty array
         if len(meta.get('disks', [])) == 0 and instance.meta.get('disks'):
@@ -646,25 +662,20 @@ class Node(NailgunObject):
                          instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
-        if not cls.is_interfaces_configuration_locked(instance) \
-                and data.get('ip'):
-            if instance.cluster_id:
-                update_status = cls.check_ip_belongs_to_own_admin_network(
-                    instance, data['ip'])
-            else:
-                update_status = cls.check_ip_belongs_to_any_admin_network(
-                    instance, data['ip'])
-            if update_status:
-                if instance.status == consts.NODE_STATUSES.error and \
-                        instance.error_type == consts.NODE_ERRORS.discover:
-                    # accept the status from agent if the node had wrong IP
-                    # previously
-                    if data_status:
-                        instance.status = data_status
-                    else:
-                        instance.status = consts.NODE_STATUSES.discover
-            else:
-                data.pop('status', None)
+    @classmethod
+    def update_by_agent(cls, instance, data):
+        """Update Node instance with some specific cases for agent.
+
+        * don't update provisioning or error state back to discover
+        * don't update volume information if disks arrays is empty
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Node instance
+        """
+        # don't update provisioning and error back to discover
+        cls._check_discover(instance, data)
+        cls._update_disk_meta(instance, data)
+        cls._update_ip(instance, data)
         return cls.update(instance, data)
 
     @classmethod

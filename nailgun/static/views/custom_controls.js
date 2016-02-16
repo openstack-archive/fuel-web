@@ -238,6 +238,7 @@ customControls.text_list = customControls.textarea_list = React.createClass({
   },
   getDefaultProps() {
     return {
+      type: 'text_list',
       min: 1,
       max: null,
       tooltipIcon: 'glyphicon-warning-sign',

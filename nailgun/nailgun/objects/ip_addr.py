@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
@@ -25,6 +26,14 @@ class IPAddr(NailgunObject):
 
     model = models.IPAddr
     serializer = IPAddrSerializer
+
+    @classmethod
+    def get_intersecting_ip(cls, instance, addr):
+        """Get ip that intersects by ip_addr with given."""
+        return db.query(cls.model).filter(
+            cls.model.ip_addr == addr,
+            cls.model.id != instance.id
+        ).first()
 
 
 class IPAddrCollection(NailgunCollection):

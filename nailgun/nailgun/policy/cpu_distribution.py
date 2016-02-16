@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -44,8 +44,7 @@ class CpuDistributor(object):
 class GroupCpuDistributor(object):
     def __init__(self, components):
         self.components = [CpuDistributor(c) for c in components]
-        self.total_required = reduce(lambda x, y: x + y.required,
-                                     self.components, 0)
+        self.total_required = sum(x.required for x in self.components)
 
     def consume(self, cpus):
         """Assign required number of cpus to components
@@ -67,13 +66,6 @@ class GroupCpuDistributor(object):
 
         self.total_required -= cpus_len - len(cpus)
         return self.total_required > 0
-
-    def add_to_result(self, result):
-        for component in self.components:
-            result['isolated_cpus'].extend(component.cpus)
-            result['components'][component.name] = component.cpus
-
-        return result
 
 
 def distribute_node_cpus(numa_nodes, components):
@@ -97,7 +89,9 @@ def distribute_node_cpus(numa_nodes, components):
             if not distributor.consume(current_cpus):
                 break
 
-        distributor.add_to_result(result)
+        for component in distributor.components:
+            result['isolated_cpus'].extend(component.cpus)
+            result['components'][component.name] = component.cpus
 
     result['isolated_cpus'].sort()
     return result

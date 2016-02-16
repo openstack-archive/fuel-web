@@ -1071,6 +1071,7 @@ class Node(NailgunObject):
 
         Assemble kernel_params if they weren't replaced by custom params.
         """
+
         if instance.kernel_params:
             return instance.kernel_params
 
@@ -1087,6 +1088,12 @@ class Node(NailgunObject):
 
         if 'hugepages' not in kernel_params:
             kernel_params += NodeAttributes.hugepages_kernel_opts(instance)
+
+        isolated_cpus = NodeAttributes.distribute_node_cpus(
+            instance)['isolated_cpus']
+        if isolated_cpus and 'isolcpus' not in kernel_params:
+            kernel_params += " isolcpus={0}".format(
+                ",".join(six.moves.map(str, isolated_cpus)))
 
         return kernel_params
 

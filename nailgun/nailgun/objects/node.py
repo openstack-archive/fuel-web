@@ -1069,6 +1069,7 @@ class Node(NailgunObject):
 
         Assemble kernel_params if they weren't replaced by custom params.
         """
+
         if instance.kernel_params:
             return instance.kernel_params
 
@@ -1082,6 +1083,13 @@ class Node(NailgunObject):
                 if 'amd_iommu=' not in kernel_params:
                     kernel_params += ' amd_iommu=on'
                 break
+
+        isolated_cpus = NodeAttributes.distribute_node_cpus(
+            instance)['isolated_cpus']
+        if isolated_cpus and 'isolcpus' not in kernel_params:
+            kernel_params += " isolcpus={0}".format(
+                ",".join(map(str, isolated_cpus)))
+
         return kernel_params
 
     @classmethod

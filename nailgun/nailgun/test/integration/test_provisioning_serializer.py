@@ -496,3 +496,19 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
                 node['ks_meta']['user_accounts'],
                 user_accounts
             )
+
+    def test_serialize_node_cpu_pinning(self):
+        self.env.create(
+            api=False,
+            release_kwargs={'operating_system': consts.RELEASE_OS.ubuntu},
+            nodes_kwargs=[
+                {'roles': ['compute']}])
+
+        node = self.env.nodes[0]
+
+        node.attributes['cpu_pinning']['nova']['value'] = 2
+        serialized_info = self.serializer.serialize(node.cluster, [node])
+
+        serialized_node = serialized_info['nodes'][0]
+        kernel_opts = serialized_node['ks_meta']['pm_data']['kernel_params']
+        self.assertIn(" isolcpus=0,1", kernel_opts)

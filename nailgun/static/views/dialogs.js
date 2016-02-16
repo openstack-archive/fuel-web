@@ -26,6 +26,7 @@ import dispatcher from 'dispatcher';
 import {Input, ProgressBar} from 'views/controls';
 import {backboneMixin, renamingMixin} from 'component_mixins';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
+import NFVComponent from 'views/nfv_component';
 
 function getActiveDialog() {
   return app.dialog;
@@ -721,7 +722,8 @@ export var ShowNodeInfoDialog = React.createClass({
       title: i18n('dialog.show_node.default_dialog_title'),
       VMsConf: null,
       VMsConfValidationError: null,
-      hostnameChangingError: null
+      hostnameChangingError: null,
+      nodeAttributesConf: null
     };
   },
   goToConfigurationScreen(url) {
@@ -811,6 +813,30 @@ export var ShowNodeInfoDialog = React.createClass({
           });
         });
     }
+    if (this.props.node.get('pending_addition')) {
+      this.nodeAttributesModel = new models.NodeAttributes();
+      this.nodeAttributesModel.url = _.result(this.props.node, 'url') + '/attributes';
+      this.setState({actionInProgress: true});
+      this.nodeAttributesModel.fetch()
+        .always(() => {
+          this.setState({
+            actionInProgress: false,
+            nodeAttributesConf: this.nodeAttributesModel
+          });
+        });
+    }
+  },
+  onNodeAttributesChange(name, value) {
+    var newAttributtes = _.clone(this.state.nodeAttributesConf.attributes);
+    var splittedName = name.split('.');
+    newAttributtes[splittedName[0]][splittedName[1]].value = value;
+    this.nodeAttributesModel.set(newAttributtes);
+    this.setState({
+      nodeAttributesConf: this.nodeAttributesModel
+    });
+  },
+  saveNodeAttributes() {
+    this.state.nodeAttributesConf.save();
   },
   setDialogTitle() {
     var name = this.props.node && this.props.node.get('name');
@@ -964,13 +990,13 @@ export var ShowNodeInfoDialog = React.createClass({
     var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
     if (this.state.VMsConf) groups.push('config');
+    if (this.state.nodeAttributesConf) groups.push('nfv');
 
     var sortOrder = {
       disks: ['name', 'model', 'size'],
       interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed',
         'driver', 'bus_info']
     };
-
     return (
       <div className='panel-group' id='accordion' role='tablist' aria-multiselectable='true'>
         {_.map(groups, (group, groupIndex) => {
@@ -1095,6 +1121,13 @@ export var ShowNodeInfoDialog = React.createClass({
                         {i18n('common.save_settings_button')}
                       </button>
                     </div>
+                  }
+                  {group === 'nfv' &&
+                    <NFVComponent
+                      nodeAttributes={this.state.nodeAttributesConf}
+                      onNodeAttributesChange={this.onNodeAttributesChange}
+                      saveNodeAttributes={this.saveNodeAttributes}
+                    />
                   }
                 </div>
               </div>

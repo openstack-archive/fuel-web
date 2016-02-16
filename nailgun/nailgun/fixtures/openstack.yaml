@@ -1909,7 +1909,9 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-    node_attributes: {}
+    node_attributes:
+      cpu_pinning: {}
+      hugepages: {}
 - pk: 2
   extend: *base_release
   fields:

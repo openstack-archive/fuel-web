@@ -328,6 +328,12 @@
                             "size": 16777216
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]}
+                    ]
                 }
             },
             "timestamp": "",
@@ -546,6 +552,12 @@
                             "frequency": 2201
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0, 1, 2, 3, 4, 5, 6, 7]}
+                    ]
                 }
             },
             "timestamp": "",
@@ -743,6 +755,12 @@
                             "frequency": 3201
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0, 1, 2, 3, 4, 5, 6, 7]}
+                    ]
                 }
             },
             "timestamp": "",
@@ -873,6 +891,12 @@
                             "model": "Intel(R) Xeon(R) CPU E31230 @ 3.20GHz",
                             "frequency": 3201
                         }
+                    ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0, 1, 2, 3, 4, 5, 6, 7]}
                     ]
                 }
             },
@@ -1006,6 +1030,12 @@
                             "frequency": 3201
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0, 1, 2, 3, 4, 5, 6, 7]}
+                    ]
                 }
             },
             "timestamp": "",
@@ -1094,6 +1124,12 @@
                             "model": "Intel(R) Core(TM) i7-2670QM CPU @ 2.20GHz",
                             "frequency": 2185
                         }
+                    ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0]}
                     ]
                 }
             },
@@ -1206,6 +1242,12 @@
                             "model": "QEMU Virtual CPU version 1.0",
                             "frequency": 1999
                         }
+                    ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0]}
                     ]
                 }
             },
@@ -1486,6 +1528,12 @@
                             "type": "DDR3",
                             "size": 8589934592
                         }
+                    ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {"id": 0,
+                         "cpus": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]}
                     ]
                 }
             },

@@ -300,7 +300,7 @@ class TestAttributes(BaseIntegrationTest):
                     c_attrs, r_attrs))
             for index in range(0, len(r_attrs)):
                 self._compare_editable(r_attrs[index], c_attrs[index], cluster)
-        elif isinstance(c_attrs, six.string_types) and \
+        elif isinstance(c_attrs, six.string_types + (list, tuple)) and \
                 isinstance(r_attrs, dict):
             self.assertIn("generator", r_attrs)
         elif isinstance(c_attrs, six.string_types) and \

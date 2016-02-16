@@ -660,3 +660,23 @@ class TestTaskProcessor(BaseTestCase):
             self.processor.ensure_task_based_deploy_allowed,
             {'id': 'task', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
         )
+        self.assertNotRaises(
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
+            self.processor.ensure_task_based_deploy_allowed,
+            {
+                'id': 'task',
+                'version': '1.2.3',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.stage
+            }
+        )
+        self.assertNotRaises(
+            task_based_deployment.errors.TaskBaseDeploymentNotAllowed,
+            self.processor.ensure_task_based_deploy_allowed,
+            {
+                'id': 'task',
+                'version': consts.TASK_CROSS_DEPENDENCY,
+                'type': consts.ORCHESTRATOR_TASK_TYPES.stage
+            }
+        )
+
+

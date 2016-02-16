@@ -25,6 +25,7 @@ import dispatcher from 'dispatcher';
 import {CreateNodeNetworkGroupDialog, RemoveNodeNetworkGroupDialog} from 'views/dialogs';
 import {backboneMixin, dispatcherMixin, unsavedChangesMixin, renamingMixin} from 'component_mixins';
 import {Input, RadioGroup, Table, Popover} from 'views/controls';
+import customControls from 'views/custom_controls';
 import SettingSection from 'views/cluster_page_tabs/setting_section';
 import CSSTransitionGroup from 'react-addons-transition-group';
 
@@ -60,26 +61,27 @@ var NetworkModelManipulationMixin = {
 
 var NetworkInputsMixin = {
   composeProps(attribute, isRange, isInteger) {
-    var network = this.props.network;
+    var {network, disabled, cluster, verificationErrorField} = this.props;
     var ns = network ? networkTabNS + 'network.' : parametersNS;
-    var error = this.getError(attribute) || null;
 
+    var error = this.getError(attribute) || null;
     // in case of verification error we need to pass an empty string to highlight the field only
     // but not overwriting validation error
-    if (!error && _.contains(this.props.verificationErrorField, attribute)) {
+    if (!error && _.contains(verificationErrorField, attribute)) {
       error = '';
     }
+
     return {
       key: attribute,
       onChange: _.partialRight(this.setValue, {isInteger: isInteger}),
-      disabled: this.props.disabled,
       name: attribute,
       label: i18n(ns + attribute),
       value: this.getModel().get(attribute),
-      network: network,
-      cluster: this.props.cluster,
       wrapperClassName: isRange ? attribute : false,
-      error: error
+      network,
+      cluster,
+      disabled,
+      error
     };
   },
   renderInput(attribute, isInteger, additionalProps = {}) {
@@ -1602,7 +1604,7 @@ var NetworkingL3Parameters = React.createClass({
           <div className='network-description'>
             {i18n(networkTabNS + 'networking_parameters.dns_servers_description')}
           </div>
-          <MultipleValuesInput {...this.composeProps('dns_nameservers', true)} />
+          <customControls.text_list {...this.composeProps('dns_nameservers', true)} />
         </div>
       </div>
     );

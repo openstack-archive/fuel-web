@@ -28,6 +28,7 @@ from nailgun import objects
 from nailgun.orchestrator.base_serializers import MellanoxMixin
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
 from nailgun.orchestrator import tasks_templates
+from nailgun.policy import node_attributes
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -440,4 +441,20 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
         serialized_node['ks_meta']['service_user'] = service_user_dict
         serialized_node['ks_meta']['root_password'] = root_password
 
+        if not node.replaced_provisioning_info:
+            cls.serialize_node_attributes(serialized_node, node)
+
         return serialized_node
+
+    @classmethod
+    def serialize_node_attributes(cls, serialized_node, node):
+        cls._serialize_node_cpu_pinning(serialized_node, node)
+
+    @classmethod
+    def _serialize_node_cpu_pinning(cls, serialized_node, node):
+        isolated_cpus = node_attributes.distribute_node_cpus(
+            node)['isolated_cpus']
+
+        if isolated_cpus:
+            serialized_node['ks_meta']['pm_data']['kernel_params'] += (
+                " isolcpus={0}".format(",".join(map(str, isolated_cpus))))

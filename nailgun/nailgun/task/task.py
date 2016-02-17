@@ -28,9 +28,6 @@ from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import object_mapper
 
-import nailgun.rpc as rpc
-
-from nailgun import objects
 
 from nailgun import consts
 from nailgun.db import db
@@ -42,6 +39,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
 from nailgun.network.manager import NetworkManager
+from nailgun import objects
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
@@ -49,11 +47,13 @@ from nailgun.orchestrator import stages
 from nailgun.orchestrator import task_based_deployment
 from nailgun.orchestrator import tasks_serializer
 from nailgun.orchestrator import tasks_templates
+import nailgun.rpc as rpc
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
+from nailgun.utils.role_resolver import RoleResolver
 from nailgun.utils.zabbix import ZabbixManager
 
 
@@ -209,12 +209,15 @@ class DeploymentTask(object):
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
+        role_resolver = RoleResolver(nodes)
         serialized_cluster = deployment_serializers.serialize(
             orchestrator_graph, task.cluster, nodes)
         pre_deployment = stages.pre_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes)
+            orchestrator_graph, task.cluster, nodes,
+            role_resolver=role_resolver)
         post_deployment = stages.post_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes)
+            orchestrator_graph, task.cluster, nodes,
+            role_resolver=role_resolver)
 
         return {
             'deployment_info': serialized_cluster,

@@ -30,6 +30,7 @@ from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
 from nailgun.policy.name_match import NameMatchingPolicy
+from nailgun.utils.role_resolver import RoleResolver
 
 
 class DeploymentGraph(nx.DiGraph):
@@ -417,13 +418,15 @@ class AstuteGraph(object):
         :param nodes: list of node db objects
         """
         serialized = []
+        role_resolver = RoleResolver(nodes)
+
         for task in tasks:
 
             if self.graph.should_exclude_task(task['id']):
                 continue
 
             serializer = self.serializers.get_stage_serializer(task)(
-                task, self.cluster, nodes)
+                task, self.cluster, nodes, role_resolver)
 
             if not serializer.should_execute():
                 continue

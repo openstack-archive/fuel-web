@@ -1424,6 +1424,10 @@ class BaseIntegrationTest(BaseTestCase):
     def tearDownClass(cls):
         super(BaseIntegrationTest, cls).tearDownClass()
 
+    def disable_task_deploy_engine(self, cluster):
+        cluster.attributes.editable['common']['task_deploy']['value'] = False
+        self.db().flush()
+
     def _wait_for_threads(self):
         # wait for fake task thread termination
         import threading

@@ -100,7 +100,41 @@ def fake_cast(queue, messages, **kwargs):
         make_thread_task_in_orchestrator(messages)
 
 
-class DeploymentTask(object):
+class BaseDeploymentTask(object):
+    @classmethod
+    def _get_deployment_method(cls, cluster, ignore_task_deploy=False):
+        """Get deployment method name based on cluster version
+
+        :param cluster: Cluster db object
+        :param ignore_task_deploy: do not check that task deploy enabled
+        :returns: string - deploy/granular_deploy
+        """
+        if not ignore_task_deploy and \
+                objects.Cluster.is_task_deploy_enabled(cluster):
+            return "task_deploy"
+        if objects.Release.is_granular_enabled(cluster.release):
+            return 'granular_deploy'
+        return 'deploy'
+
+    @classmethod
+    def call_deployment_method(cls, task, *args, **kwargs):
+        """Calls the deployment method with fallback.
+
+        :param task: the Task object instance
+        :param args: the positional arguments
+        :param kwargs: the keyword arguments
+        """
+        for flag in (False, True):
+            try:
+                method = cls._get_deployment_method(task.cluster, flag)
+                message = getattr(cls, method)(task, *args, **kwargs)
+                return method, message
+            except errors.TaskBaseDeploymentNotAllowed:
+                logger.warning("Task deploy is not allowed, "
+                               "fallback to granular deploy.")
+
+
+class DeploymentTask(BaseDeploymentTask):
     """Task for applying changes to cluster
 
     LOGIC
@@ -139,21 +173,6 @@ class DeploymentTask(object):
     """
 
     @classmethod
-    def _get_deployment_method(cls, cluster, ignore_task_deploy=False):
-        """Get deployment method name based on cluster version
-
-        :param cluster: Cluster db object
-        :param ignore_task_deploy: do not check that task deploy enabled
-        :returns: string - deploy/granular_deploy
-        """
-        if not ignore_task_deploy and \
-                objects.Cluster.is_task_deploy_enabled(cluster):
-            return "task_deploy"
-        if objects.Release.is_granular_enabled(cluster.release):
-            return 'granular_deploy'
-        return 'deploy'
-
-    @classmethod
     def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
                 reexecutable_filter=None):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
@@ -174,18 +193,9 @@ class DeploymentTask(object):
                 n.progress = 0
         db().flush()
 
-        deployment_mode = cls._get_deployment_method(task.cluster)
-        while True:
-            try:
-                message = getattr(cls, deployment_mode)(
-                    task, nodes, affected_nodes, task_ids, reexecutable_filter
-                )
-                break
-            except errors.TaskBaseDeploymentNotAllowed:
-                deployment_mode = cls._get_deployment_method(
-                    task.cluster, True
-                )
-                logger.warning("fallback to %s deploy.", deployment_mode)
+        deployment_mode, message = cls.call_deployment_method(
+            task, nodes, affected_nodes, task_ids, reexecutable_filter
+        )
 
         # After serialization set pending_addition to False
         for node in nodes:
@@ -1819,39 +1829,53 @@ class UpdateDnsmasqTask(object):
         )
 
 
-class UpdateOpenstackConfigTask(object):
+class UpdateOpenstackConfigTask(BaseDeploymentTask):
+
+    @staticmethod
+    def task_deploy(task, nodes, update_configs):
+        tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+        events = task_based_deployment.TaskEvents(
+            'refresh_on', update_configs
+        )
+        executable_tasks = task_based_deployment.TasksSerializer.serialize(
+            task.cluster, [], tasks, nodes, events=events
+        )
+        return make_astute_message(
+            task, "task_deploy", "update_config_resp", {
+                "deployment_tasks": executable_tasks
+            }
+        )
+
+    @staticmethod
+    def granular_deploy(task, nodes, update_configs):
+        refreshable_tasks = objects.Cluster.get_refreshable_tasks(
+            task.cluster, update_configs
+        )
+        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        task_ids = [t['id'] for t in refreshable_tasks]
+        orchestrator_graph.only_tasks(task_ids)
+        deployment_tasks = orchestrator_graph.stage_tasks_serialize(
+            orchestrator_graph.graph.topology, nodes
+        )
+        return make_astute_message(
+            task, 'execute_tasks', 'update_config_resp', {
+                'tasks': deployment_tasks,
+            })
 
     @classmethod
     def message(cls, task, cluster, nodes):
         configs = objects.OpenstackConfigCollection.find_configs_for_nodes(
             cluster, nodes)
-
-        refresh_on = set()
+        updated_configs = set()
         for config in configs:
-            refresh_on.update(config.configuration)
+            updated_configs.update(config.configuration)
 
-        refreshable_tasks = objects.Cluster.get_refreshable_tasks(
-            cluster, refresh_on)
+        if updated_configs:
+            updated_configs.add('*')  # '*' means any config
+        else:
+            raise errors.NoChanges()
 
-        upload_serializer = tasks_serializer.UploadConfiguration(
-            task, task.cluster, nodes, configs)
-        tasks_to_execute = list(upload_serializer.serialize())
-
-        if refreshable_tasks:
-            orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-            task_ids = [t['id'] for t in refreshable_tasks]
-            orchestrator_graph.only_tasks(task_ids)
-
-            deployment_tasks = orchestrator_graph.stage_tasks_serialize(
-                orchestrator_graph.graph.topology, nodes)
-            tasks_to_execute.extend(deployment_tasks)
-
-        rpc_message = make_astute_message(
-            task, 'execute_tasks', 'update_config_resp', {
-                'tasks': tasks_to_execute,
-            })
-
-        return rpc_message
+        return cls.call_deployment_method(task, nodes, updated_configs)[1]
 
 
 if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:

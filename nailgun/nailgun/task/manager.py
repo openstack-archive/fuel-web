@@ -62,6 +62,11 @@ class TaskManager(object):
             TaskHelper.update_action_log(task, al)
 
             return to_return
+        except errors.NoChanges as e:
+            data = {'status': consts.TASK_STATUSES.ready,
+                    'progress': 100,
+                    'message': str(e)}
+            objects.Task.update(task, data)
         except Exception as exc:
             err = str(exc)
             if any([
@@ -1294,6 +1299,10 @@ class OpenstackConfigTaskManager(TaskManager):
             fail_if_not_found=True,
             lock_for_update=True
         )
+
+        if task.status == consts.TASK_STATUSES.error:
+            return task
+
         # locking nodes
         objects.NodeCollection.lock_nodes(nodes_to_update)
 

@@ -682,7 +682,14 @@ class NetworkManager(object):
     def get_default_interface_properties(cls):
         return {
             'mtu': None,
-            'disable_offloading': False
+            'disable_offloading': False,
+            'sriov': {
+                'enabled': False,
+                'sriov_numvfs': 0,
+                'sriov_totalvfs': 0,
+                'available': False,
+                'pci_id': ''
+            }
         }
 
     @classmethod
@@ -1147,6 +1154,10 @@ class NetworkManager(object):
         elif not interface.interface_properties:
             interface.interface_properties = \
                 cls.get_default_interface_properties()
+
+        sriov = interface_attrs.get('sriov')
+        if sriov:
+            interface.interface_properties['sriov'].update(sriov)
 
         new_offloading_modes = interface_attrs.get('offloading_modes')
         old_modes_states = interface.\

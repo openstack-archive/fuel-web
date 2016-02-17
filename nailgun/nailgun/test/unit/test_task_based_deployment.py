@@ -450,7 +450,7 @@ class TestDeploymentTaskSerializer(BaseUnitTest):
                 factory.get_stage_serializer(
                     self.make_task('upload_repos')
                 ),
-                task_based_deployment.StandartConfigRolesHook
+                task_based_deployment.StandardConfigRolesHook
             )
         )
 

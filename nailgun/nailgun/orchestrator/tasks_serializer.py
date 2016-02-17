@@ -23,49 +23,11 @@ import yaml
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.expression import Expression
-from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
-from nailgun.utils.role_resolver import BaseRoleResolver
-
-
-def get_uids_for_roles(nodes, roles):
-    """Returns list of uids for nodes that matches roles
-
-    :param nodes: list of nodes
-    :param roles: list of roles or consts.TASK_ROLES.all
-    :returns: list of strings
-    """
-
-    uids = set()
-
-    if roles == consts.TASK_ROLES.all:
-        uids.update([n.uid for n in nodes])
-    elif roles == consts.TASK_ROLES.master:
-        return [consts.MASTER_NODE_UID]
-    elif isinstance(roles, list):
-        for node in nodes:
-            if set(roles) & set(objects.Node.all_roles(node)):
-                uids.add(node.uid)
-    else:
-        logger.warn(
-            'Wrong roles format, `roles` should be a list or "*": %s',
-            roles)
-
-    return list(uids)
-
-
-class LegacyRoleResolver(BaseRoleResolver):
-    """The role resolver that implements legacy behaviour."""
-
-    # TODO(bgaifullin): remove this in 9.0
-    def __init__(self, nodes):
-        self.nodes = nodes
-
-    def resolve(self, roles, policy=None):
-        return get_uids_for_roles(self.nodes, roles)
+from nailgun.utils.role_resolver import RoleResolver
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -122,13 +84,13 @@ class PuppetHook(GenericNodeHook):
         yield templates.make_puppet_task([self.node['uid']], self.task)
 
 
-class StandartConfigRolesHook(ExpressionBasedTask):
+class StandardConfigRolesHook(ExpressionBasedTask):
     """Role hooks that serializes task based on config file only."""
 
     def __init__(self, task, cluster, nodes, role_resolver=None):
-        super(StandartConfigRolesHook, self).__init__(task, cluster)
+        super(StandardConfigRolesHook, self).__init__(task, cluster)
         self.nodes = nodes
-        self.role_resolver = role_resolver or LegacyRoleResolver(nodes)
+        self.role_resolver = role_resolver or RoleResolver(nodes)
 
     def get_uids(self):
         return self.role_resolver.resolve(
@@ -141,7 +103,7 @@ class StandartConfigRolesHook(ExpressionBasedTask):
             yield templates.make_generic_task(uids, self.task)
 
 
-class GenericRolesHook(StandartConfigRolesHook):
+class GenericRolesHook(StandardConfigRolesHook):
 
     identity = abc.abstractproperty
 
@@ -502,4 +464,4 @@ class TaskSerializers(object):
         if task['id'] in self._stage_serializers_map:
             return self._stage_serializers_map[task['id']]
         else:
-            return StandartConfigRolesHook
+            return StandardConfigRolesHook

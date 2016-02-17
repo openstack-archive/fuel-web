@@ -85,3 +85,7 @@ class Task(Base):
         self.subtasks.append(task)
         db().flush()
         return task
+
+    def is_completed(self):
+        return self.status == consts.TASK_STATUSES.error or \
+            self.status == consts.TASK_STATUSES.ready

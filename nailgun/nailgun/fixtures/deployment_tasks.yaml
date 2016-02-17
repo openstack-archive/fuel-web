@@ -184,3 +184,13 @@
     puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/globals/globals.pp
     puppet_modules: /etc/puppet/modules
     timeout: 3600
+
+- id: upload_configuration
+  type: upload_file
+  version: 2.0.0
+  role: '*'
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment_end]
+  parameters:
+    timeout: 180
+  refresh_on: ['*']

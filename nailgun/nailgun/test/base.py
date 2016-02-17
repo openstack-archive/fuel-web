@@ -510,7 +510,8 @@ class EnvironmentManager(object):
         if cluster:
             cluster.plugins.append(plugin)
             ClusterPlugins.set_attributes(
-                cluster.id, plugin.id, enabled=enabled
+                cluster.id, plugin.id, enabled=enabled,
+                attrs=plugin.attributes_metadata or {}
             )
         return plugin
 

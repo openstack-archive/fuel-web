@@ -450,6 +450,20 @@ class TestDeploymentAttributesSerialization80(
             self.assertItemsEqual(
                 expected_plugins_list, node['plugins'])
 
+    def test_common_attributes_contains_plugin_metadata(self):
+        plugin = self.env.create_plugin(
+            cluster=self.cluster_db,
+            name='test_plugin',
+            package_version='4.0.0',
+            fuel_version=['8.0']
+        )
+        attrs = self.serializer.get_common_attrs(self.cluster_db)
+        self.assertIn('test_plugin', attrs)
+        self.assertIn('metadata', attrs['test_plugin'])
+        self.assertEqual(
+            plugin.id, attrs['test_plugin']['metadata']['plugin_id']
+        )
+
 
 class TestMultiNodeGroupsSerialization80(BaseDeploymentSerializer):
     env_version = 'liberty-8.0'

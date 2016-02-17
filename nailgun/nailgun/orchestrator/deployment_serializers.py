@@ -106,6 +106,9 @@ class DeploymentMultinodeSerializer(object):
     def get_common_attrs(self, cluster):
         """Cluster attributes."""
         attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
+        plugins = objects.ClusterPlugins.get_enabled(cluster.id)
+        for plugin in plugins:
+            attrs = utils.dict_merge(attrs, plugin.attributes)
         release = self.current_release(cluster)
 
         attrs['deployment_mode'] = cluster.mode

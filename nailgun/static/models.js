@@ -1455,30 +1455,6 @@ models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
   }
 });
 
-models.MirantisLoginForm = models.MirantisCredentials.extend({
-  constructorName: 'MirantisLoginForm',
-  url() {
-    return this.baseUrl + 'login';
-  },
-  nailgunUrl: 'api/tracking/login'
-});
-
-models.MirantisRegistrationForm = models.MirantisCredentials.extend({
-  constructorName: 'MirantisRegistrationForm',
-  url() {
-    return this.baseUrl + 'registration';
-  },
-  nailgunUrl: 'api/tracking/registration'
-});
-
-models.MirantisRetrievePasswordForm = models.MirantisCredentials.extend({
-  constructorName: 'MirantisRetrievePasswordForm',
-  url() {
-    return this.baseUrl + 'restore_password';
-  },
-  nailgunUrl: 'api/tracking/restore_password'
-});
-
 models.NodeNetworkGroup = BaseModel.extend({
   constructorName: 'NodeNetworkGroup',
   urlRoot: '/api/nodegroups',

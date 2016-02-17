@@ -29,7 +29,10 @@ from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
 from nailgun import objects
+from nailgun.plugins.manager import PluginManager
+from nailgun.settings import settings
 from nailgun import utils
+from nailgun.utils import traverse, AttributesGenerator
 from nailgun.utils.ceph import get_pool_pg_count
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
@@ -106,6 +109,12 @@ class DeploymentMultinodeSerializer(object):
     def get_common_attrs(self, cluster):
         """Cluster attributes."""
         attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
+        plugin_attrs = PluginManager.get_plugins_attributes(cluster)
+        plugin_attrs = traverse(plugin_attrs, AttributesGenerator, {
+            'cluster': cluster,
+            'settings': settings,
+        })
+        attrs.update(plugin_attrs)
         release = self.current_release(cluster)
 
         attrs['deployment_mode'] = cluster.mode

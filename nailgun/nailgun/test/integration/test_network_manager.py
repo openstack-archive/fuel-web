@@ -211,6 +211,73 @@ class TestNetworkManager(BaseIntegrationTest):
             consts.NETWORK_VIP_NAMES_V6_1.haproxy
         )
 
+    def change_ranges_and_update_vip(self, vip, vip_data):
+        ip_range = vip.network_data.ip_ranges[0]
+
+        new_first = '172.16.0.10'
+        new_last = '172.16.0.20'
+
+        # VIP address is outside of the new range
+        new_vip_addr = '172.16.0.21'
+
+        update_data = {
+            'first': new_first,
+            'last': new_last
+        }
+        objects.NailgunObject.update(ip_range, update_data)
+
+        update_data = {
+            'ip_addr': new_vip_addr,
+            'is_user_defined': True
+        }
+        update_data.update(vip_data)
+        objects.IPAddr.update(vip, update_data)
+
+    def get_cluster_and_vip(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[0]
+
+        vip = self.db.query(IPAddr).filter(
+            IPAddr.vip_name.isnot(None)
+        ).first()
+
+        return cluster, vip
+
+    def test_assign_vip_fail_for_user_defined_w_namespace_outside_net(self):
+        cluster, vip = self.get_cluster_and_vip()
+
+        updated_namespace = {
+            'vip_namespace': 'test_namespace',
+        }
+        self.change_ranges_and_update_vip(vip, updated_namespace)
+
+        self.assertRaises(
+            errors.IPDoesNotBelongToNetwork,
+            self.env.network_manager.assign_vips_for_net_groups,
+            cluster
+        )
+
+    def test_assign_vip_return_user_defined_wo_namespace_outside_net(self):
+        cluster, vip = self.get_cluster_and_vip()
+
+        update_data = {
+            'vip_namespace': None,
+        }
+        self.change_ranges_and_update_vip(vip, update_data)
+
+        ip_before = vip.ip_addr
+
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
+
+        vips_after = self.env.network_manager.get_assigned_vips(cluster)
+
+        needed_vip_ip = [
+            vip_info for network, vip_info in six.iteritems(vips_after)
+            if vip.network_data.name == network and vip.vip_name in vip_info
+        ][0][vip.vip_name]
+
+        self.assertEqual(needed_vip_ip, ip_before)
+
     def test_vip_for_admin_network_is_free(self):
         admin_net_id = self.env.network_manager.get_admin_network_group_id()
         self.db.query(IPAddrRange).filter_by(

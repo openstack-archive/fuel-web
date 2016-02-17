@@ -100,10 +100,8 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 "meta": {"disks": disks}
             }]
         )
-        self.env.wait_ready(
-            self.env.launch_deployment())
-        self.env.wait_ready(
-            self.env.reset_environment())
+        self.env.wait_ready(self.env.launch_deployment([200, 202]))
+        self.env.wait_ready(self.env.reset_environment([200, 202]))
 
         node_db = self.env.nodes[0]
 

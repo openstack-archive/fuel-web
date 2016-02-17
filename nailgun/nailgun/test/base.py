@@ -511,7 +511,8 @@ class EnvironmentManager(object):
         if cluster:
             cluster.plugins.append(plugin)
             ClusterPlugins.set_attributes(
-                cluster.id, plugin.id, enabled=enabled
+                cluster.id, plugin.id, enabled=enabled,
+                attrs=plugin.attributes_metadata or {}
             )
         return plugin
 
@@ -932,8 +933,11 @@ class EnvironmentManager(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 expect_errors=True,
                 headers=self.default_headers)
-            self.tester.assertEqual(resp.status_code, expect_http)
-            if not str(expect_http).startswith("2"):
+            if isinstance(expect_http, (list, tuple)):
+                self.tester.assertIn(resp.status_code, expect_http)
+            else:
+                self.tester.assertEqual(resp.status_code, expect_http)
+            if resp.status_code >= 400:
                 return resp.body
             return self.db.query(Task).filter_by(
                 uuid=resp.json_body['uuid']

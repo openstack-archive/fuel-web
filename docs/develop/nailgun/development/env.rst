@@ -11,11 +11,13 @@ Preparing Development Environment
 .. warning:: Nailgun requires Python 2.7. Please check
     installed Python version using ``python --version``.
 
+One can use
+`prepare_fake_env.sh <https://github.com/openstack/fuel-web/blob/master/nailgun/prepare_fake_env.sh>`_
+to prepare development environment or follow the steps described bellow:
+
 #. Nailgun can be found in fuel-web/nailgun
 
-#. Install and configure PostgreSQL database. Please note that
-   Ubuntu 12.04 requires postgresql-server-dev-9.1 while
-   Ubuntu 14.04 requires postgresql-server-dev-9.3::
+#. Install and configure PostgreSQL database::
 
     sudo apt-get install --yes postgresql postgresql-server-dev-all
 
@@ -42,13 +44,16 @@ Preparing Development Environment
 
     sudo apt-get install --yes python-dev python-pip
 
+#. Install dependency packages::
+
+    sudo apt-get install --yes libjpeg-dev libyaml-dev
+
 #. Install virtualenv. This step increases flexibility
    when dealing with environment settings and package installation::
 
-    sudo pip install virtualenv virtualenvwrapper
-    . /usr/local/bin/virtualenvwrapper.sh  # you can save this to .bashrc
-    mkvirtualenv fuel # you can use any name instead of 'fuel'
-    workon fuel  # command selects the particular environment
+    sudo apt-get install python-virtualenv virtualenvwrapper
+    mkvirtualenv fuel   # you can use any name instead of 'fuel'
+    workon fuel         # select the particular virtual environment
 
 #. Install Python dependencies. This section assumes that you use virtual environment.
    Otherwise, you must install all packages globally.
@@ -76,12 +81,8 @@ Preparing Development Environment
 
 #. Install NodeJS and JS dependencies::
 
-    sudo apt-get remove --yes nodejs nodejs-legacy
-    sudo apt-get install --yes software-properties-common
-    sudo add-apt-repository --yes ppa:chris-lea/node.js
-    sudo apt-get update
-    sudo apt-get install --yes nodejs
-    sudo npm install -g gulp
+    sudo apt-get install --yes nodejs nodejs-legacy npm
+    npm install gulp
     sudo chown -R `whoami`.`whoami` ~/.npm
     cd nailgun
     npm install
@@ -234,12 +235,12 @@ Running Nailgun in Fake Mode
 #. Start application in "fake" mode, when no real calls to orchestrator
    are performed::
 
-    python manage.py run -p 8000 --fake-tasks | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun.log 2>&1 &
+    python manage.py run -p 8000 --fake-tasks | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun/nailgun.log 2>&1 &
 
 #. (optional) You can also use --fake-tasks-amqp option if you want to
    make fake environment use real RabbitMQ instead of fake one::
 
-    python manage.py run -p 8000 --fake-tasks-amqp | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun.log 2>&1 &
+    python manage.py run -p 8000 --fake-tasks-amqp | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun/nailgun.log 2>&1 &
 
 #. If you plan to use Fuel UI:
 
@@ -250,7 +251,8 @@ Running Nailgun in Fake Mode
   * If you don't plan to modify Fuel UI, you may want just to build static
     version which is served by nailgun::
 
-      gulp build
+      cd nailgun
+      node_modules/.bin/gulp build
 
     Please note that after pulling updates from fuel-web repo you may need to
     run this command again.
@@ -258,29 +260,29 @@ Running Nailgun in Fake Mode
     To specify custom output directory location use
     `static-dir` option::
 
-      gulp build --static-dir=static_compressed
+      node_modules/.bin/gulp build --static-dir=static_compressed
 
     To speed up build process you may also want to disable uglification and
     source maps generation::
 
-      gulp build --no-uglify --no-sourcemaps
+      node_modules/.bin/gulp build --no-uglify --no-sourcemaps
 
   * If you plan to modify Fuel UI, there is more convenient option --
     a development server. It watches for file changes and automatically
     rebuilds changed modules (significantly faster than full rebuild)
     and triggers page refresh in browsers::
 
-      gulp dev-server
+      node_modules/.bin/gulp build dev-server
 
     By default it runs on port 8080 and assumes that nailgun runs on
     port 8000. You can override this by using the following options::
 
-      gulp dev-server --dev-server-host=127.0.0.1 --dev-server-port=8080 --nailgun-host=127.0.0.1 --nailgun-port=8000
+      node_modules/.bin/gulp build dev-server --dev-server-host=127.0.0.1 --dev-server-port=8080 --nailgun-host=127.0.0.1 --nailgun-port=8000
 
     If you don't want to use a development server but would like to recompile
     the bundle on any change, use::
 
-      gulp build --watch
+      node_modules/.bin/gulp build --watch
 
     If automatic rebuild on change doesn't work, most likely you need to
     increase the limit of inotify watches::

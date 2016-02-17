@@ -440,6 +440,23 @@ class NetAssignmentValidator(BasicValidator):
         return interfaces_data
 
     @classmethod
+    def _verify_sriov_properties(cls, iface, data, node_id):
+        non_changeable = ['sriov_totalvfs', 'available', 'pci_id']
+        sriov_new = data['interface_properties']['sriov']
+        check_for_changes = [n for n in sriov_new if n in non_changeable]
+        if not check_for_changes:
+            return
+        sriov_db = iface.interface_properties['sriov']
+        for param_name in check_for_changes:
+            if sriov_db[param_name] != sriov_new[param_name]:
+                raise errors.InvalidData(
+                    "Node '{0}' interface '{1}': SR-IOV parameter '{2}' cannot"
+                    " be changed through API".format(
+                        node_id, iface.name, param_name),
+                    log_message=True
+                )
+
+    @classmethod
     def verify_data_correctness(cls, node):
         db_node = db().query(Node).filter_by(id=node['id']).first()
         if not db_node:
@@ -499,6 +516,8 @@ class NetAssignmentValidator(BasicValidator):
                                                             iface['name']),
                             log_message=True
                         )
+                if iface.get('interface_properties', {}).get('sriov'):
+                    cls._verify_sriov_properties(db_iface, iface, node['id'])
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 pxe_iface_present = False
                 for slave in iface['slaves']:

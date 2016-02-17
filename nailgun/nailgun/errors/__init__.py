@@ -93,6 +93,7 @@ default_messages = {
                                    "Please try again after a few seconds."),
     "NovaNetworkNotSupported": ("Nova network is not supported in current "
                                 "release"),
+    "IPDoesNotBelongToNetwork": "Given IP does not belong to network",
 
     # RPC errors
     "CannotFindTask": "Cannot find task",

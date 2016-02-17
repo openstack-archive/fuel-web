@@ -23,6 +23,7 @@ from mock import patch
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
+from netaddr import iter_iprange
 import six
 from sqlalchemy import not_
 import yaml
@@ -230,6 +231,76 @@ class TestNetworkManager(BaseNetworkManagerTest):
             'non-existing-network',
             consts.NETWORK_VIP_NAMES_V6_1.haproxy
         )
+
+    def change_ranges_and_update_vip(self, vip, vip_data):
+        ip_range = vip.network_data.ip_ranges[0]
+        new_range = list(iter_iprange(ip_range.first, ip_range.last))
+        new_range, new_vip_addr = new_range[:-1], new_range[-1]
+
+        ip_range.first = new_range[0].format(),
+        ip_range.last = new_range[-1].format()
+
+        update_data = {
+            'first': new_range[0].format(),
+            'last': new_range[-1].format()
+        }
+        objects.NailgunObject.update(ip_range, update_data)
+
+        update_data = {
+            'ip_addr': new_vip_addr.format(),
+            'is_user_defined': True
+        }
+        update_data.update(vip_data)
+        objects.IPAddr.update(vip, update_data)
+
+    def test_assign_vip_fail_for_user_defined_w_namespace_outside_net(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[0]
+
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
+
+        vip = self.db.query(IPAddr).filter(
+            IPAddr.vip_name.isnot(None)
+        ).first()
+
+        updated_namespace = {
+            'namespace': 'test_namespace',
+        }
+        self.change_ranges_and_update_vip(vip, updated_namespace)
+
+        self.assertRaises(
+            errors.IPDoesNotBelongToNetwork,
+            self.env.network_manager.assign_vips_for_net_groups,
+            cluster
+        )
+
+    def test_assign_vip_return_user_defined_wo_namespace_outside_net(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[0]
+
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
+
+        vip = self.db.query(IPAddr).filter(
+            IPAddr.vip_name.isnot(None)
+        ).first()
+
+        update_data = {
+            'namespace': None,
+        }
+        self.change_ranges_and_update_vip(vip, update_data)
+
+        ip_before = vip.ip_addr
+
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
+
+        vips_after = self.env.network_manager.get_assigned_vips(cluster)
+
+        needed_vip_ip = [
+            vip_info for network, vip_info in six.iteritems(vips_after)
+            if vip.network_data.name == network and vip.vip_name in vip_info
+        ][0][vip.vip_name]
+
+        self.assertEqual(needed_vip_ip, ip_before)
 
     def test_vip_for_admin_network_is_free(self):
         admin_net_id = self.env.network_manager.get_admin_network_group_id()

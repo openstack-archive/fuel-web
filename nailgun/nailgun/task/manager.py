@@ -62,28 +62,29 @@ class TaskManager(object):
             TaskHelper.update_action_log(task, al)
 
             return to_return
+        except errors.NoChanges as e:
+            self._finish_task(task, al, consts.TASK_STATUSES.ready, str(e))
         except Exception as exc:
-            err = str(exc)
             if any([
                 not hasattr(exc, "log_traceback"),
                 hasattr(exc, "log_traceback") and exc.log_traceback
             ]):
                 logger.error(traceback.format_exc())
+            self._finish_task(task, al, consts.TASK_STATUSES.error, str(exc))
 
-            # update task entity with given data
-            data = {'status': 'error',
-                    'progress': 100,
-                    'message': err}
-            objects.Task.update(task, data)
-            # NOTE(romcheg): Flushing the data is required to unlock
-            # tasks in order to temporary fix issues with
-            # the deadlock detection query in tests and let the tests pass.
-            # TODO(akislitsky): Get rid of this flush as soon as
-            # task locking issues are resolved.
-            db().flush()
-            TaskHelper.update_action_log(task, al)
+    def _finish_task(self, task, log_item, status, message):
+        data = {'status': status, 'progress': 100, 'message': message}
+        # update task entity with given data
+        objects.Task.update(task, data)
+        # NOTE(romcheg): Flushing the data is required to unlock
+        # tasks in order to temporary fix issues with
+        # the deadlock detection query in tests and let the tests pass.
+        # TODO(akislitsky): Get rid of this flush as soon as
+        # task locking issues are resolved.
+        db().flush()
+        TaskHelper.update_action_log(task, log_item)
 
-            db().commit()
+        db().commit()
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(
@@ -1304,6 +1305,10 @@ class OpenstackConfigTaskManager(TaskManager):
             fail_if_not_found=True,
             lock_for_update=True
         )
+
+        if task.is_completed():
+            return task
+
         # locking nodes
         objects.NodeCollection.lock_nodes(nodes_to_update)
 

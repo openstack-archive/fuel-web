@@ -123,6 +123,9 @@ class TestTaskDeploy(BaseIntegrationTest):
         )
         self.assertIsNotNone(compute_uid)
         compute_tasks = message['args']['deployment_tasks'][compute_uid]
+        # check that plugin attributes in deployment_info
+        cluster_attrs = message['args']['deployment_info'][0]
+        self.assertIn('testing_plugin', cluster_attrs)
 
         expected_tasks = {
             consts.PLUGIN_PRE_DEPLOYMENT_HOOK + "_start",

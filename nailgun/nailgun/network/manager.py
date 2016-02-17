@@ -322,7 +322,7 @@ class NetworkManager(object):
         cluster_vip = cluster_vip_q.first()
 
         if cluster_vip:
-            return cluster_vip.ip_addr
+            return cluster_vip
 
     @classmethod
     def assign_vip(cls, nodegroup, network_name, vip_name):
@@ -352,9 +352,22 @@ class NetworkManager(object):
         network = cls.get_network_by_name_and_nodegroup(network_name,
                                                         nodegroup)
 
-        if already_assigned is not None and \
-                cls.check_ip_belongs_to_net(already_assigned, network):
-            return already_assigned
+        if already_assigned:
+            ip_belongs_to_network = cls.check_ip_belongs_to_net(
+                already_assigned.ip_addr, network)
+
+            if ip_belongs_to_network:
+                return already_assigned.ip_addr
+
+            elif already_assigned.is_user_defined is True and \
+                    already_assigned.namespace is not None:
+                raise errors.IPDoesNotBelongToNetwork(
+                    "User defined VIP with id {0}, name '{1}', ip address {2} "
+                    "and namespace '{3}' does not belong to network '{4}'"
+                    .format(already_assigned.id, already_assigned.vip_name,
+                            already_assigned.ip_addr,
+                            already_assigned.namespace, network.name)
+                )
 
         if network is None:
             raise errors.CanNotFindNetworkForNodeGroup(
@@ -1931,12 +1944,13 @@ class AllocateVIPs70Mixin(object):
                 in cls.get_node_groups_info(cluster):
 
             net_mgr = objects.Cluster.get_network_manager(cluster)
-            vip_addr = net_mgr.get_assigned_vip(nodegroup, net_group, vip_name)
+            assigned_vip = net_mgr.get_assigned_vip(
+                nodegroup, net_group, vip_name)
 
-            if vip_addr is None:
+            if assigned_vip is None:
                 continue
 
-            yield role, vip_info, vip_addr
+            yield role, vip_info, assigned_vip.ip_addr
 
     @classmethod
     def get_node_groups_info(cls, cluster):

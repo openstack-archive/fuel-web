@@ -231,6 +231,45 @@ class TestNetworkManager(BaseNetworkManagerTest):
             consts.NETWORK_VIP_NAMES_V6_1.haproxy
         )
 
+    def test_assign_vip_fail_if_user_defined_vip_is_not_belongs_to_net(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[0]
+
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
+
+        vip = self.db.query(IPAddr).filter(
+            IPAddr.vip_name.isnot(None)
+        ).first()
+
+        from netaddr import iter_iprange
+
+        ip_range = vip.network_data.ip_ranges[0]
+        new_range = list(iter_iprange(ip_range.first, ip_range.last))
+        new_range, new_vip_addr = new_range[:-1], new_range[-1]
+
+        ip_range.first = new_range[0].format(),
+        ip_range.last = new_range[-1].format()
+
+        update_data = {
+            'first': new_range[0].format(),
+            'last': new_range[-1].format()
+        }
+        objects.NailgunObject.update(ip_range, update_data)
+
+        update_data = {
+            'ip_addr': new_vip_addr.format(),
+            'namespace': 'test_namespace',
+            'is_user_defined': True
+        }
+
+        objects.IPAddr.update(vip, update_data)
+
+        self.assertRaises(
+            errors.IPDoesNotBelongToNetwork,
+            self.env.network_manager.assign_vips_for_net_groups,
+            cluster
+        )
+
     def test_vip_for_admin_network_is_free(self):
         admin_net_id = self.env.network_manager.get_admin_network_group_id()
         self.db.query(IPAddrRange).filter_by(

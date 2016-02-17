@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
 import mock
 
 from nailgun import consts
@@ -39,16 +38,10 @@ class TestTaskDeploy(BaseIntegrationTest):
             ],
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': '2015.1.0-8.0',
+                'version': 'liberty-9.0',
             },
         )
         self.cluster = self.env.clusters[-1]
-
-    def disable_task_deploy(self):
-        cluster_attrs = copy.deepcopy(self.cluster.attributes.editable)
-        cluster_attrs['common']['task_deploy']['value'] = False
-        self.cluster.attributes.editable = cluster_attrs
-        self.db().flush()
 
     def add_plugin_with_tasks(self, task_id):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks(
@@ -98,7 +91,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         ensure_allowed.assert_called_once_with(mock.ANY)
 
     def test_granular_deploy_if_not_enabled(self):
-        self.disable_task_deploy()
+        self.disable_task_deploy_engine(self.cluster)
         message = self.get_deploy_message()
         self.assertEqual("granular_deploy", message["method"])
         self.assertItemsEqual(

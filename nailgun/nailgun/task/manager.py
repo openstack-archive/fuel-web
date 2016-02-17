@@ -1349,6 +1349,10 @@ class OpenstackConfigTaskManager(TaskManager):
             fail_if_not_found=True,
             lock_for_update=True
         )
+
+        if task.status == consts.TASK_STATUSES.error:
+            return task
+
         # locking nodes
         objects.NodeCollection.lock_nodes(nodes_to_update)
 

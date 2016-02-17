@@ -27,10 +27,10 @@ define([
     constructor: GenericLib,
 
     gotoPage: function(pageName) {
-      var pageSelector = {'Environments': 'clusters-page', 'Equipment': 'equipment-page',
-        'Releases': 'releases-page', 'Plugins': 'plugins-page', 'Support': 'support-page'};
-      var pageTitle = {'Environments': /My OpenStack Environments/i, 'Equipment': /Equipment/i,
-        'Releases': /Releases/i, 'Plugins': /Installed Plugins/i, 'Support': /Support/i};
+      var pageSelector = {Environments: 'clusters-page', Equipment: 'equipment-page',
+        Releases: 'releases-page', Plugins: 'plugins-page', Support: 'support-page'};
+      var pageTitle = {Environments: /My OpenStack Environments/i, Equipment: /Equipment/i,
+        Releases: /Releases/i, Plugins: /Installed Plugins/i, Support: /Support/i};
       var activeName = RegExp(pageName, 'i');
       if (!(pageName in pageSelector)) {
         throw new Error('Invalid input value. Check pageName: "' + pageName +

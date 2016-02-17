@@ -34,6 +34,7 @@
     no-spaced-func: 2
     object-curly-spacing: 2
     padded-blocks: [2, never]
+    quote-props: [2, as-needed]
     quotes: [2, single, avoid-escape]
     space-before-function-paren: [2, never]
     space-before-keywords: 2

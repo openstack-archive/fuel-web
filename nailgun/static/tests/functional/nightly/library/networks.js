@@ -523,7 +523,7 @@ define([
       var cidrSelector = netSelector + 'div.cidr input[type="checkbox"]';
       var ipStartSelector = netSelector + 'div.ip_ranges input[name*="range-start"]';
       var ipEndSelector = netSelector + 'div.ip_ranges input[name*="range-end"]';
-      var defaultIpRange = {'Storage': '1', 'Management': '0', 'Private': '2'};
+      var defaultIpRange = {Storage: '1', Management: '0', Private: '2'};
       return this.remote
         .assertElementEnabled(cidrSelector,
           networkName + ' "Use the whole CIDR" checkbox is enabled before changing')
@@ -643,7 +643,7 @@ define([
       var initValue = '192.168.';
       var errorValue = '192.168.5.0/24';
       var errorValues = ['.*', '.279', '.254', '.1', '.5'];
-      var defaultIpRange = {'Storage': '1', 'Management': '0', 'Private': '2'};
+      var defaultIpRange = {Storage: '1', Management: '0', Private: '2'};
       return this.remote
         .assertElementEnabled(cidrSelector, networkName + ' "CIDR" textfield is enabled')
         .assertElementEnabled(ipStartSelector, networkName + ' "Start IP Range" txtfld is enabled')

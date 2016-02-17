@@ -1943,7 +1943,8 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
-- pk: 2
+- &ubuntu_base
+  pk: 2
   extend: *base_release
   fields:
     name: "Liberty on Ubuntu 14.04"
@@ -2097,3 +2098,8 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
+- pk: 3
+  extend: *ubuntu_base
+  fields:
+    name: "Mitaka on Ubuntu 14.04"
+    version: "Mitaka"

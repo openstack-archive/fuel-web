@@ -462,9 +462,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         nic = resp.json_body[0]
-        self.assertEqual(nic['interface_properties'],
-                         {'disable_offloading': False,
-                          'mtu': None})
+        self.assertEqual(
+            nic['interface_properties'],
+            self.env.network_manager.get_default_interface_properties()
+        )
         # change mtu
         nic['interface_properties']['mtu'] = 1500
         nodes_list = [{'id': node['id'], 'interfaces': [nic]}]
@@ -486,9 +487,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         resp_nic = resp.json_body[0]
-        self.assertEqual(resp_nic['interface_properties'],
-                         {'disable_offloading': False,
-                          'mtu': 1500})
+        self.assertEqual(resp_nic['interface_properties']['mtu'], 1500)
 
     def test_nic_adds_by_agent(self):
         meta = self.env.default_metadata()

@@ -423,17 +423,20 @@ class TestDeploymentAttributesSerialization80(
         self.env.create_plugin(
             cluster=self.cluster_db,
             name='plugin_1',
+            attributes_metadata={'name': 'plugin_1'},
             package_version='4.0.0',
             fuel_version=['8.0'])
         self.env.create_plugin(
             cluster=self.cluster_db,
             name='plugin_2',
+            attributes_metadata={'name': 'plugin_2'},
             package_version='4.0.0',
             fuel_version=['8.0'])
         self.env.create_plugin(
             cluster=self.cluster_db,
             enabled=False,
             name='plugin_3',
+            attributes_metadata={'name': 'plugin_3'},
             package_version='4.0.0',
             fuel_version=['8.0'])
 
@@ -449,6 +452,31 @@ class TestDeploymentAttributesSerialization80(
             self.assertIn('plugins', node)
             self.assertItemsEqual(
                 expected_plugins_list, node['plugins'])
+            self.assertTrue(all(name in node for name
+                                in expected_plugins_list))
+
+    def test_common_attributes_contains_plugin_metadata(self):
+        expected_value = 'check_value'
+        plugin = self.env.create_plugin(
+            cluster=self.cluster_db,
+            name='test_plugin',
+            package_version='4.0.0',
+            fuel_version=['8.0'],
+            attributes_metadata={
+                'config': {
+                    'description': "Description",
+                    'weight': 52,
+                    'value': expected_value
+                }
+            }
+        )
+        attrs = self.serializer.get_common_attrs(self.cluster_db)
+        self.assertIn('test_plugin', attrs)
+        self.assertIn('metadata', attrs['test_plugin'])
+        self.assertEqual(
+            plugin.id, attrs['test_plugin']['metadata']['plugin_id']
+        )
+        self.assertEqual(expected_value, attrs['test_plugin']['config'])
 
 
 class TestMultiNodeGroupsSerialization80(BaseDeploymentSerializer):

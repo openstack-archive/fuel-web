@@ -21,10 +21,10 @@ import itertools
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.orchestrator.tasks_serializer import LegacyRoleResolver
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
+from nailgun.utils.role_resolver import RoleResolver
 
 
 class BasePluginDeploymentHooksSerializer(object):
@@ -40,7 +40,7 @@ class BasePluginDeploymentHooksSerializer(object):
 
         self.cluster = cluster
         self.nodes = nodes
-        self.role_resolver = role_resolver or LegacyRoleResolver(nodes)
+        self.role_resolver = role_resolver or RoleResolver(nodes)
 
     def deployment_tasks(self, plugins, stage):
         plugin_tasks = []

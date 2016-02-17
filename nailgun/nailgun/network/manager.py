@@ -33,6 +33,7 @@ from nailgun.network import utils
 from nailgun import objects
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
 from nailgun.settings import settings
+from nailgun.utils import dict_merge
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
 
@@ -510,7 +511,14 @@ class NetworkManager(object):
     def get_default_interface_properties(cls):
         return {
             'mtu': None,
-            'disable_offloading': False
+            'disable_offloading': False,
+            'sriov': {
+                'enabled': False,
+                'sriov_numvfs': 0,
+                'sriov_totalvfs': 0,
+                'available': False,
+                'pci_id': ''
+            }
         }
 
     @classmethod
@@ -754,7 +762,10 @@ class NetworkManager(object):
             objects.NIC.assign_networks(current_iface, nets_to_assign)
             update = {}
             if 'interface_properties' in iface:
-                update['interface_properties'] = iface['interface_properties']
+                update['interface_properties'] = dict_merge(
+                    current_iface.interface_properties,
+                    iface['interface_properties']
+                )
             if 'offloading_modes' in iface:
                 update['offloading_modes'] = iface['offloading_modes']
 
@@ -828,7 +839,7 @@ class NetworkManager(object):
                 cls.__update_existing_interface(interface_db, interface,
                                                 update_by_agent)
             else:
-                cls.__add_new_interface(node, interface)
+                cls.__add_new_interface(node, interface, update_by_agent)
 
         cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
         if node.cluster:
@@ -923,7 +934,7 @@ class NetworkManager(object):
         return False
 
     @classmethod
-    def __add_new_interface(cls, node, interface_attrs):
+    def __add_new_interface(cls, node, interface_attrs, update_by_agent):
         data = {
             'node_id': node.id,
             'mac': interface_attrs['mac'],
@@ -931,7 +942,8 @@ class NetworkManager(object):
         }
 
         interface = objects.NIC.create(data)
-        cls.__set_interface_attributes(interface, interface_attrs)
+        cls.__set_interface_attributes(interface, interface_attrs,
+                                       update_by_agent)
         objects.NIC.update(interface, {})
 
     @classmethod
@@ -955,12 +967,14 @@ class NetworkManager(object):
         interface.driver = interface_attrs.get('driver')
         interface.bus_info = interface_attrs.get('bus_info')
         interface.pxe = interface_attrs.get('pxe', False)
-        if interface_attrs.get('interface_properties'):
-            interface.interface_properties = \
-                interface_attrs['interface_properties']
-        elif not interface.interface_properties:
+        if not interface.interface_properties:
             interface.interface_properties = \
                 cls.get_default_interface_properties()
+        if interface_attrs.get('interface_properties'):
+            interface.interface_properties = dict_merge(
+                interface.interface_properties,
+                interface_attrs['interface_properties']
+            )
 
         new_offloading_modes = interface_attrs.get('offloading_modes')
         old_modes_states = interface.\

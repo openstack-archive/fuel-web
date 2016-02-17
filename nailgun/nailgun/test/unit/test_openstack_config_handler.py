@@ -214,14 +214,62 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.assertEqual(resp.status_code, 405)
 
+    @mock.patch('objects.Cluster.get_deployment_tasks')
     @mock.patch('nailgun.task.task.rpc.cast')
-    def test_openstack_config_execute(self, _):
+    def execute_update_open_stack_config(self, mock_rpc, tasks_mock):
+        tasks_mock.return_value = [{
+            'id': 'upload_configuration',
+            'type': 'upload_file',
+            'version': '2.0.0',
+            'role': '*',
+            'parameters': {
+                'timeout': 180,
+            },
+            'refresh_on': ['*']
+        }]
         data = {'cluster_id': self.clusters[0].id}
         resp = self.app.put(
             reverse('OpenstackConfigExecuteHandler'),
             jsonutils.dumps(data), headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 202)
+        return mock_rpc.call_args_list[0][0][1]
+
+    def test_openstack_config_execute_with_granular_deploy(self):
+        self.disable_task_deploy_engine(self.clusters[0])
+        message = self.execute_update_open_stack_config()
+        self.assertEqual('execute_tasks', message['method'])
+        self.assertEqual('update_config_resp', message['respond_to'])
+        # there is no task deduplication in granular deployment
+        # and some of tasks can be included
+        # to result list more than 1 times
+        self.assertItemsEqual(
+            ((n.uid, 'upload_file') for n in self.clusters[0].nodes),
+            {(t['uids'][0], t['type']) for t in message['args']['tasks']}
+        )
+
+    def test_openstack_config_execute_with_task_deploy(self):
+        message = self.execute_update_open_stack_config()
+        self.assertEqual('task_deploy', message['method'])
+        self.assertEqual('update_config_resp', message['respond_to'])
+        tasks = message['args']['deployment_tasks']
+        nodes = [n.uid for n in self.clusters[0].nodes]
+        nodes.append(None)
+        self.assertItemsEqual(nodes, tasks)
+        self.assertEqual(
+            'upload_file',
+            tasks[nodes[0]][0]['type']
+        )
+
+    @mock.patch('objects.OpenstackConfigCollection.find_configs_for_nodes')
+    def test_openstack_config_does_not_run_if_no_configs_updated(self, m_conf):
+        m_conf.return_value = []
+        message = self.execute_update_open_stack_config()
+        self.assertEqual('task_deploy', message['method'])
+        self.assertEqual('update_config_resp', message['respond_to'])
+        tasks = message['args']['deployment_tasks']
+        # the null node adds always
+        self.assertItemsEqual([None], tasks)
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_openstack_config_execute_force(self, _):

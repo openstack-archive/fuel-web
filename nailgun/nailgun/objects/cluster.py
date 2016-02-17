@@ -87,7 +87,7 @@ class Attributes(NailgunObject):
         """
         return dict_merge(
             instance.generated,
-            instance.editable
+            Cluster.get_editable_attributes(instance)
         )
 
     @classmethod

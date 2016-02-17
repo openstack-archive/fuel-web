@@ -17,9 +17,24 @@
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestDeploymentHASerializer80
 
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestDeploymentAttributesSerialization80
 
-class TestDeploymentHASerializer90(TestDeploymentHASerializer80):
+
+class TestSerializer90Mixin(object):
     env_version = "liberty-9.0"
 
+
+class TestDeploymentAttributesSerialization90(
+    TestSerializer90Mixin,
+    TestDeploymentAttributesSerialization80
+):
+    pass
+
+
+class TestDeploymentHASerializer90(
+    TestSerializer90Mixin,
+    TestDeploymentHASerializer80
+):
     def test_glance_properties(self):
         self.check_no_murano_data()

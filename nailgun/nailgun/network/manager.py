@@ -322,7 +322,51 @@ class NetworkManager(object):
         cluster_vip = cluster_vip_q.first()
 
         if cluster_vip:
-            return cluster_vip.ip_addr
+            return cluster_vip
+
+    @classmethod
+    def check_keep_assigned_vip(cls, assigned_vip, network):
+        """Check that already assigned VIP should be keeped
+
+        The check takes into consideration two crucial aspects
+        related to VIP entity: whether it is defined by user
+        and that it belongs to network for which it was assigned
+        previously.
+
+        The rules of processing are following:
+        a) if VIP is user defined, but has empty namespace attribute,
+            such VIP must be kept as is without checking that it
+            belongs to the network;
+        b) if VIP is user defined, has non-empty namespace attribute, but
+            does not comply to check for belonging to the network, exception
+            must be raised as Nailgun should not make any assumption about
+            user defined data;
+        c) whether VIP is user defined (w/ non-empty namespace) or
+            automatically allocated it must be kept if check for belonging to
+            the network is successful.
+
+        More details can be found in the relevant blueprint:
+        https://blueprints.launchpad.net/fuel/+spec/allow-any-vip
+        """
+        if assigned_vip.is_user_defined and \
+                assigned_vip.namespace is None:
+            return True
+
+        if cls.check_ip_belongs_to_net(assigned_vip.ip_addr, network):
+            return True
+
+        if assigned_vip.is_user_defined and \
+                assigned_vip.namespace is not None:
+
+            raise errors.IPDoesNotBelongToNetwork(
+                "User defined VIP with id {0}, name '{1}', ip address "
+                "{2} and namespace '{3}' does not belong to network "
+                "'{4}'"
+                .format(assigned_vip.id, assigned_vip.vip_name,
+                        assigned_vip.ip_addr,
+                        assigned_vip.namespace, network.name))
+
+        return False
 
     @classmethod
     def assign_vip(cls, nodegroup, network_name, vip_name):
@@ -352,9 +396,9 @@ class NetworkManager(object):
         network = cls.get_network_by_name_and_nodegroup(network_name,
                                                         nodegroup)
 
-        if already_assigned is not None and \
-                cls.check_ip_belongs_to_net(already_assigned, network):
-            return already_assigned
+        if already_assigned is not None \
+                and cls.check_keep_assigned_vip(already_assigned, network):
+            return already_assigned.ip_addr
 
         if network is None:
             raise errors.CanNotFindNetworkForNodeGroup(
@@ -1931,12 +1975,13 @@ class AllocateVIPs70Mixin(object):
                 in cls.get_node_groups_info(cluster):
 
             net_mgr = objects.Cluster.get_network_manager(cluster)
-            vip_addr = net_mgr.get_assigned_vip(nodegroup, net_group, vip_name)
+            assigned_vip = net_mgr.get_assigned_vip(
+                nodegroup, net_group, vip_name)
 
-            if vip_addr is None:
+            if assigned_vip is None:
                 continue
 
-            yield role, vip_info, vip_addr
+            yield role, vip_info, assigned_vip.ip_addr
 
     @classmethod
     def get_node_groups_info(cls, cluster):

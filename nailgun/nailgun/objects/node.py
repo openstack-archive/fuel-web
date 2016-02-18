@@ -18,15 +18,16 @@
 Node-related objects and collections
 """
 
+import copy
+from datetime import datetime
 import itertools
 import operator
-from oslo_serialization import jsonutils
 import traceback
-
-from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from oslo_serialization import jsonutils
+import six
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -1182,11 +1183,93 @@ class Node(NailgunObject):
 
     @classmethod
     def get_attributes(cls, instance):
-        return instance.attributes
+        return copy.deepcopy(instance.attributes)
 
     @classmethod
     def update_attributes(cls, instance, attrs):
         instance.attributes = utils.dict_merge(instance.attributes, attrs)
+
+    @classmethod
+    def node_cpu_pinning_info(cls, instance):
+        """Return dict with required CPUs number total and per component
+
+        :return: dict
+        """
+
+        total_required_cpus = 0
+        components = []
+        cpu_pinning_attrs = cls.get_attributes(instance).get(
+            'cpu_pinning', {})
+        for name, attrs in six.iteritems(cpu_pinning_attrs):
+            required_cpus = int(attrs['value'])
+            total_required_cpus += required_cpus
+            components.append({'name': name,
+                               'required_cpus': required_cpus,
+                               'cpus': []})
+        components = sorted(components, key=operator.itemgetter('name'))
+        return {'total_required_cpus': total_required_cpus,
+                'components': components}
+
+    @classmethod
+    def distribute_node_cpus(cls, instance):
+        """Distributes which CPUs should be used only by service or component
+
+        Since the number of components is small we can use simple algorithm.
+        Components will be sorted by number of required CPUs from the largest
+        to smallest. Then for per NUMA node we have: number of required CPUs
+        for components and number of CPUs in NUMA node. Distribution will be
+        done in approximate proportion.
+        Let's assume that NUMA node has M CPUs and components require x0, x1
+        ..., xk CPUs sum of all required CPUs is N, then scale xi-th to NUMA
+        node by multiplying on (M / N) and take integer part, real part will
+        be added to the next component (thus we guarantee that all CPUs will
+        be allocated). All real calculation is done without float numbers.
+
+        :return: dict with list of CPUs ids (int) total and per component
+        """
+
+        cpu_pinning_info = cls.node_cpu_pinning_info(instance)
+        components = cpu_pinning_info['components']
+        total_required_cpus = cpu_pinning_info['total_required_cpus']
+
+        components = sorted(components,
+                            key=operator.itemgetter('required_cpus'),
+                            reverse=True)
+
+        for numa_node in instance.meta['numa_topology']['numa_nodes']:
+            if not total_required_cpus:
+                break
+            numa_cpus = numa_node['cpus']
+            cpus_number = min(len(numa_cpus), total_required_cpus)
+            numa_cpus = numa_node['cpus'][:cpus_number]
+
+            # remaider from previous component
+            carry = 0
+            for component in components:
+                if not len(numa_cpus):
+                    break
+                numerator = component['required_cpus'] * cpus_number + carry
+                cpus_to_allocate = min(numerator / total_required_cpus,
+                                       component['required_cpus'])
+                carry = numerator % total_required_cpus
+
+                component['cpus'].extend(numa_cpus[:cpus_to_allocate])
+                numa_cpus = numa_cpus[cpus_to_allocate:]
+                component['required_cpus'] -= cpus_to_allocate
+                total_required_cpus -= cpus_to_allocate
+
+        isolated_cpus = []
+        for component in components:
+            isolated_cpus.extend(component['cpus'])
+            if component['required_cpus']:
+                raise errors.CPUPinningAllocationError(
+                    "Not all required CPUs are pinned for {0} component"
+                    .format(component['name']))
+            component['required_cpus'] = len(component['cpus'])
+
+        isolated_cpus = sorted(isolated_cpus)
+        return {'components': components,
+                'isolated_cpus': isolated_cpus}
 
 
 class NodeCollection(NailgunCollection):

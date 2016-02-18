@@ -1804,18 +1804,30 @@ Role = React.createClass({
     });
   },
   togglePopover(isVisible) {
-    if (!isVisible) this.stopCountdown();
+    this.stopCountdown();
     this.setState({
       isPopoverVisible: isVisible,
       isPopoverForceHidden: false
     });
   },
+  onKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.forceHidePopover();
+      this.props.onClick();
+    }
+  },
+  onClick() {
+    ReactDOM.findDOMNode(this).blur();
+    this.props.onClick();
+  },
   render() {
-    var {role, selected, indeterminated, restrictions, isRolePanelDisabled, onClick} = this.props;
+    var {role, selected, indeterminated, restrictions, isRolePanelDisabled} = this.props;
     var disabled = isRolePanelDisabled || restrictions.result;
     var {warnings} = restrictions;
     return (
       <div
+        tabIndex={disabled ? -1 : 0}
         className={utils.classNames({
           'role-block': true,
           [role.get('name')]: true,
@@ -1823,13 +1835,16 @@ Role = React.createClass({
           indeterminated,
           disabled
         })}
+        onFocus={this.resetCountdown}
+        onBlur={() => this.togglePopover(false)}
         onMouseEnter={this.startCountdown}
         onMouseMove={this.resetCountdown}
         onMouseLeave={() => this.togglePopover(false)}
+        onKeyDown={!disabled && this.onKeyDown}
       >
         <div className='popover-binder'/>
         <div onClick={this.forceHidePopover}>
-          <div className='role' onClick={!disabled && onClick}>
+          <div className='role' onClick={!disabled && this.onClick}>
             <i
               className={utils.classNames({
                 glyphicon: true,

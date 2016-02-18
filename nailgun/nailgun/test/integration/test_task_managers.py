@@ -54,14 +54,14 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_deletion": True,
                  'status': NODE_STATUSES.provisioned},
             ]
         )
-        supertask = self.env.launch_deployment()
+        supertask = self.env.launch_deployment(cluster['id'])
         self.env.refresh_nodes()
         self.assertEqual(supertask.name, TASK_NAMES.deploy)
         self.assertIn(
@@ -84,16 +84,25 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(
             supertask,
             60,
-            u"Successfully removed 1 node(s). No errors occurred\n"
-            u"Provision of environment '{0}' is done. \n"
-            u"Deployment of environment '{0}' is done. ".format(
-                self.env.clusters[0].name
-            )
+            None
+        )
+        cluster_name = cluster['name']
+        self.assertIn(
+            u"Successfully removed 1 node(s). No errors occurred",
+            supertask.message
+        )
+        self.assertIn(
+            u"Provision of environment '{0}' is done.".format(cluster_name),
+            supertask.message
+        )
+        self.assertIn(
+            u"Provision of environment '{0}' is done.".format(cluster_name),
+            supertask.message
         )
         self.env.wait_for_nodes_status(wait_nodes, NODE_STATUSES.ready)
         self.env.refresh_nodes()
         for n in filter(
-            lambda n: n.cluster_id == self.env.clusters[0].id,
+            lambda n: n.cluster_id == cluster['id'],
             self.env.nodes
         ):
             self.assertEqual(n.status, NODE_STATUSES.ready)

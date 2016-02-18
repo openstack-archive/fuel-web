@@ -202,7 +202,7 @@ class TestNodeInterfacesDbModels(BaseTestCase):
         ]
 
         nics = []
-        for i in xrange(2):
+        for i in range(2):
             nic_data = copy.deepcopy(self.sample_nic_interface_data)
             nic_data['offloading_modes'] = \
                 self.unchanged_modes + different_modes[i]
@@ -226,7 +226,7 @@ class TestNodeInterfacesDbModels(BaseTestCase):
         bond_modes = bond.offloading_modes
         self.assertListEqual(self.changed_modes, bond_modes)
 
-        for i in xrange(2):
+        for i in range(2):
             self.assertListEqual(self.changed_modes + different_modes[i],
                                  nics[i].offloading_modes)
 

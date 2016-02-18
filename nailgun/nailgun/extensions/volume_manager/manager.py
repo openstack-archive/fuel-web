@@ -21,6 +21,7 @@ All sizes in megabytes.
 
 from copy import deepcopy
 from functools import partial
+import six
 
 from oslo_serialization import jsonutils
 
@@ -1027,7 +1028,7 @@ class VolumeManager(object):
             self.allowed_volumes)
 
     def expand_generators(self, value):
-        if isinstance(value, (str, unicode, int, float, long)):
+        if isinstance(value, six.string_types + six.integer_types + (float,)):
             return value
         elif isinstance(value, dict):
             generator = value.get("generator")

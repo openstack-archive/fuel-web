@@ -368,3 +368,43 @@ class TestHandlers(BaseIntegrationTest):
                              'ip': ipaddress}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
+
+    def test_do_not_update_interfaces_on_incorrect_ip(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'api': False, 'status': consts.NODE_STATUSES.ready},
+            ])
+        node = self.env.nodes[0]
+        node.interfaces[1].ip_addr = '172.16.0.2'   # set public net ip
+
+        # get node representation
+        resp = self.app.get(
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        node_json = resp.json
+
+        # deployed nodes have ip=null and pxe=false
+        for iface in node_json['meta']['interfaces']:
+            iface.pop('ip', None)
+            iface['pxe'] = False
+
+        # pick not-admin interface, and pass its ip & mac on node level
+        node_json.update({
+            'ip': node.interfaces[1].ip_addr,
+            'mac': node.interfaces[1].mac,
+        })
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(node_json),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        # check that nothing is broken: admin network isn't jumped to
+        # another interface
+        self.assertIsNotNone(
+            next((net for net in node.interfaces[0].assigned_networks
+                 if net['name'] == consts.NETWORKS.fuelweb_admin), None))
+        self.assertIsNone(
+            next((net for net in node.interfaces[1].assigned_networks
+                 if net['name'] == consts.NETWORKS.fuelweb_admin), None))

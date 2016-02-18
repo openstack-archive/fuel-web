@@ -19,7 +19,7 @@ import itertools
 import jinja2
 import os.path
 import Queue
-from six import StringIO
+import six
 import sys
 import yaml
 
@@ -63,7 +63,7 @@ def template_fixture(fileobj, **kwargs):
     if not kwargs.get('settings'):
         kwargs["settings"] = settings
     t = jinja2.Template(fileobj.read())
-    return StringIO(t.render(**kwargs))
+    return six.StringIO(t.render(**kwargs))
 
 
 def load_fixture(fileobj, loader=None):
@@ -259,7 +259,7 @@ def dump_fixture(model_name):
                 if value is None:
                     continue
                 if not isinstance(value, (
-                        list, dict, str, unicode, int, float, bool)):
+                        list, dict, str, six.text_type, int, float, bool)):
                     value = ""
                 obj_dump['fields'][field] = value
     sys.stdout.write(jsonutils.dumps(dump, indent=4))

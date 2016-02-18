@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.graph import TaskDeploymentValidator
 from nailgun.api.v1.validators.json_schema import base_types
@@ -44,8 +46,9 @@ class MetaInterfacesValidator(BasicValidator):
 
         def filter_valid_nic(nic):
             for key in ('mac', 'name'):
-                if key not in nic or not isinstance(nic[key], basestring)\
-                        or not nic[key]:
+                if (key not in nic or
+                        not isinstance(nic[key], six.string_types) or
+                        not nic[key]):
                     return False
             return True
 
@@ -177,8 +180,8 @@ class NodeValidator(BasicValidator):
     def validate_roles(cls, data, node):
         if 'roles' in data:
             if not isinstance(data['roles'], list) or \
-                    any(not isinstance(role, (
-                        str, unicode)) for role in data['roles']):
+                    any(not isinstance(role, six.string_types)
+                        for role in data['roles']):
                 raise errors.InvalidData(
                     "Role list must be list of strings",
                     log_message=True
@@ -215,7 +218,7 @@ class NodeValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance=None):
-        if isinstance(data, (str, unicode)):
+        if isinstance(data, six.string_types):
             d = cls.validate_json(data)
         else:
             d = data

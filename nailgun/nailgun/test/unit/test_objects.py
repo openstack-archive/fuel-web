@@ -200,6 +200,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(new_group.id, node.group_id)
         self.assertEqual([], node.roles)
         self.assertItemsEqual(roles, node.pending_roles)
+        self.assertEqual(node.attributes, cluster.release.node_attributes)
 
     def test_update_cluster_assignment_with_templates_80(self):
         cluster = self.env.create(
@@ -401,6 +402,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(node_db.roles, [])
         self.assertEqual(node_db.pending_roles, [])
         self.assertFalse(config.is_active)
+        self.assertEqual(node_db.attributes, {})
 
         exclude_fields = [
             "group_id",

@@ -1846,6 +1846,7 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/centos_65_x86_64-boot.img.gz"
               format: "ext2"
               container: "gzip"
+    node_attributes: {}
 - pk: 2
   extend: *base_release
   fields:
@@ -2000,3 +2001,53 @@
               uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
+    node_attributes:
+      cpu_pinning:
+        metadata:
+          group: "nfv"
+          label: "CPU pinning"
+          weight: 10
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              action: "hide"
+        nova:
+          weight: 10
+          description: "Number of CPUs for Nova usage"
+          label: "Nova CPU pinning"
+          type: "text"
+          value: "0"
+          regex:
+            source: '^\d+$'
+            error: "Incorrect value"
+        dpdk:
+          weight: 20
+          description: "Number of CPUs for DPDK usage"
+          label: "DPDK CPU pinning"
+          type: "text"
+          value: "0"
+          regex:
+            source: '^\d+$'
+            error: "Incorrect value"
+      hugepages:
+        metadata:
+          group: "nfv"
+          label: "Huge Pages"
+          weight: 20
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              action: "hide"
+        nova:
+          weight: 10
+          description: "Nova Huge Pages configuration"
+          label: "Nova Huge Pages"
+          type: "custom_hugepages"
+          value: {}
+        dpdk:
+          weight: 20
+          description: "DPDK Huge Pages per NUMA node in MB"
+          label: "DPDK Huge Pages"
+          type: "text"
+          value: "0"
+          regex:
+            source: '^\d+$'
+            error: "Incorrect value"

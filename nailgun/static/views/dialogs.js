@@ -981,6 +981,7 @@ export var ShowNodeInfoDialog = React.createClass({
           var subEntries = _.isPlainObject(groupEntries) ?
             _.find(_.values(groupEntries), _.isArray) : [];
 
+          if (_.contains(['pci_devices', 'numa_topology'], group)) return null;
           return (
             <div className='panel panel-default' key={group}>
               <div

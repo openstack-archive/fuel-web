@@ -676,6 +676,128 @@ class TestNodeObject(BaseIntegrationTest):
         }
         self.assertDictEqual(expected_attributes, node.attributes)
 
+    def test_distribute_node_cpus(self):
+        node = self.env.create_node()
+        node.meta['numa_topology'] = {
+            'numa_nodes': [
+                {'cpus': [0, 1, 2, 3]},
+                {'cpus': [4, 5, 6, 7]}
+            ]
+        }
+        node.attributes.update({
+            'cpu_pinning': {
+                'nova': {
+                    'value': '5'
+                },
+                'dpdk': {
+                    'value': '2'
+                }
+            }
+        })
+        expected_data = {
+            'components': {
+                'nova': [0, 1, 3, 5, 6],
+                'dpdk': [2, 4]
+            },
+            'isolated_cpus': [0, 1, 3, 5, 6, 2, 4]
+        }
+        from nailgun.policy import node_attributes
+        data = node_attributes.distribute_node_cpus(node)
+
+        self.assertEquals(
+            expected_data,
+            data)
+
+    def test_distribute_node_cpus_one_component(self):
+        node = self.env.create_node()
+        node.meta['numa_topology'] = {
+            'numa_nodes': [
+                {'cpus': [0, 1, 2]},
+                {'cpus': [3, 4, 5]}
+            ]
+        }
+        node.attributes.update({
+            'cpu_pinning': {
+                'dpdk': {
+                    'value': '0'
+                },
+                'nova': {
+                    'value': '5'
+                }
+            }
+        })
+        expected_data = {
+            'components': {
+                'nova': [0, 1, 2, 3, 4],
+                'dpdk': []
+            },
+            'isolated_cpus': [0, 1, 2, 3, 4]
+        }
+        from nailgun.policy import node_attributes
+        self.assertEquals(
+            expected_data,
+            node_attributes.distribute_node_cpus(node))
+
+    def test_distribute_node_cpus_few_required(self):
+        node = self.env.create_node()
+        node.meta['numa_topology'] = {
+            'numa_nodes': [
+                {'cpus': [0, 1, 2]},
+                {'cpus': [3, 4, 5]}
+            ]
+        }
+        node.attributes.update({
+            'cpu_pinning': {
+                'nova': {
+                    'value': '1'
+                },
+                'dpdk': {
+                    'value': '1'
+                }
+            }
+        })
+        expected_data = {
+            'components': {
+                'dpdk': [0],
+                'nova': [1]
+            },
+            'isolated_cpus': [0, 1]
+        }
+        from nailgun.policy import node_attributes
+        self.assertEquals(
+            expected_data,
+            node_attributes.distribute_node_cpus(node))
+
+    def test_distribute_node_cpus_empty(self):
+        node = self.env.create_node()
+        node.meta['numa_topology'] = {
+            'numa_nodes': [
+                {'cpus': [0, 1, 2, 3]},
+                {'cpus': [4, 5, 6, 7]}
+            ]
+        }
+        node.attributes.update({
+            'cpu_pinning': {
+                'nova': {
+                    'value': '0'
+                },
+                'dpdk': {
+                    'value': '0'
+                }
+            }
+        })
+        expected_data = {
+            'components': {
+                'dpdk': [],
+                'nova': []
+            },
+            'isolated_cpus': []
+        }
+        from nailgun.policy import node_attributes
+        self.assertEquals(
+            expected_data,
+            node_attributes.distribute_node_cpus(node))
+
 
 class TestTaskObject(BaseIntegrationTest):
 

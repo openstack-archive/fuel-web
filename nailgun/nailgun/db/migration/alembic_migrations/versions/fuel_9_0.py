@@ -42,9 +42,11 @@ def upgrade():
     upgrade_node_roles_metadata()
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
+    upgrade_remove_wizard_metadata_from_releases()
 
 
 def downgrade():
+    downgrade_remove_wizard_metadata_from_releases()
     downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
     downgrade_node_roles_metadata()
@@ -663,3 +665,18 @@ def upgrade_node_attributes():
 def downgrade_node_attributes():
     op.drop_column('releases', 'node_attributes')
     op.drop_column('nodes', 'attributes')
+
+
+def upgrade_remove_wizard_metadata_from_releases():
+    op.drop_column('releases', 'wizard_metadata')
+
+
+def downgrade_remove_wizard_metadata_from_releases():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'wizard_metadata',
+            fields.JSON(),
+            nullable=True
+        )
+    )

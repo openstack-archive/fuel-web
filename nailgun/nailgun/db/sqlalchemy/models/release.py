@@ -58,7 +58,6 @@ class Release(Base):
     roles_metadata = Column(MutableDict.as_mutable(JSON), default={})
     network_roles_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
-    wizard_metadata = Column(MutableDict.as_mutable(JSON), default={})
     deployment_tasks = Column(MutableList.as_mutable(JSON), default=[])
     vmware_attributes_metadata = Column(
         MutableDict.as_mutable(JSON), default={})

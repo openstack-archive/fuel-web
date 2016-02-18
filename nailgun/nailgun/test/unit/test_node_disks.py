@@ -16,6 +16,7 @@
 
 from copy import deepcopy
 from mock import patch
+import six
 import string
 
 from oslo_serialization import jsonutils
@@ -493,7 +494,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
             self.assertTrue(type(volume['min_size']) == int)
             self.assertGreaterEqual(volume['min_size'], 0)
             # and label
-            self.assertTrue(type(volume['label']) in (str, unicode))
+            self.assertTrue(type(volume['label']) in (str, six.text_type))
             self.assertGreater(volume['label'], 0)
 
     def test_volumes_information_for_cinder_role(self):

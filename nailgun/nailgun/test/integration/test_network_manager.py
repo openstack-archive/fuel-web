@@ -751,9 +751,9 @@ class TestNetworkManager(BaseIntegrationTest):
             filter_by(network_group_id=admin_ng_id).all()[0]
 
         map(
-            lambda (x, y): self.assertIn(
+            lambda x: self.assertIn(
                 IPAddress(
-                    rpc_nodes_provision[x]['interfaces'][y]['ip_address']
+                    rpc_nodes_provision[x[0]]['interfaces'][x[1]]['ip_address']
                 ),
                 IPRange(
                     admin_network_range.first,

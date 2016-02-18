@@ -26,7 +26,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.orchestrator import plugins_serializers
 from nailgun.orchestrator.tasks_serializer import CreateVMsOnCompute
-from nailgun.orchestrator.tasks_serializer import StandartConfigRolesHook
+from nailgun.orchestrator.tasks_serializer import StandardConfigRolesHook
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
 from nailgun.orchestrator.tasks_templates import make_noop_task
 from nailgun.utils.role_resolver import NameMatchingPolicy
@@ -34,7 +34,7 @@ from nailgun.utils.role_resolver import NullResolver
 from nailgun.utils.role_resolver import RoleResolver
 
 
-class NoopSerializer(StandartConfigRolesHook):
+class NoopSerializer(StandardConfigRolesHook):
     """Serializes tasks that should be skipped by astute."""
     def should_execute(self):
         return True
@@ -51,7 +51,7 @@ class NoopSerializer(StandartConfigRolesHook):
         yield make_noop_task(uids, self.task)
 
 
-class PluginTaskSerializer(StandartConfigRolesHook):
+class PluginTaskSerializer(StandardConfigRolesHook):
     serializer_class = None
 
     def should_execute(self):

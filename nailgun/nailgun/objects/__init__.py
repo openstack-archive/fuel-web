@@ -46,6 +46,7 @@ from nailgun.objects.ip_addr import IPAddrCollection
 from nailgun.objects.ip_addr import IPAddrRange
 
 from nailgun.objects.node import Node
+from nailgun.objects.node import NodeAttributes
 from nailgun.objects.node import NodeCollection
 
 from nailgun.objects.capacity import CapacityLog

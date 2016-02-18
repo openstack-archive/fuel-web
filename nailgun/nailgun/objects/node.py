@@ -18,15 +18,16 @@
 Node-related objects and collections
 """
 
+import copy
+from datetime import datetime
 import itertools
 import operator
-from oslo_serialization import jsonutils
 import traceback
-
-from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from oslo_serialization import jsonutils
+import six
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -48,6 +49,7 @@ from nailgun.objects import NailgunObject
 from nailgun.objects import NetworkGroup
 from nailgun.objects import Notification
 from nailgun.objects.serializers.node import NodeSerializer
+from nailgun.policy import cpu_distribution
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -1187,7 +1189,7 @@ class Node(NailgunObject):
 
     @classmethod
     def get_attributes(cls, instance):
-        return instance.attributes
+        return copy.deepcopy(instance.attributes)
 
     @classmethod
     def update_attributes(cls, instance, attrs):
@@ -1260,3 +1262,27 @@ class NodeCollection(NailgunCollection):
             models.Node.id).filter_by(status=consts.NODE_STATUSES.discover)
 
         return [_id for (_id,) in q_discovery]
+
+
+class NodeAttributes(object):
+
+    @classmethod
+    def distribute_node_cpus(cls, node):
+        return cpu_distribution.distribute_node_cpus(
+            node.meta['numa_topology']['numa_nodes'],
+            six.itervalues(cls.node_cpu_pinning_info(node)['components']))
+
+    @classmethod
+    def node_cpu_pinning_info(cls, node):
+        total_required_cpus = 0
+        components = {}
+        cpu_pinning_attrs = Node.get_attributes(node)['cpu_pinning']
+        for name, attrs in six.iteritems(cpu_pinning_attrs):
+            # skip meta
+            if 'value' in attrs:
+                required_cpus = int(attrs['value'])
+                total_required_cpus += required_cpus
+                components[name] = {'name': name,
+                                    'required_cpus': required_cpus}
+        return {'total_required_cpus': total_required_cpus,
+                'components': components}

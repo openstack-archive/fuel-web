@@ -981,6 +981,8 @@ export var ShowNodeInfoDialog = React.createClass({
           var subEntries = _.isPlainObject(groupEntries) ?
             _.find(_.values(groupEntries), _.isArray) : [];
 
+          // (morale): whitelisting renderable parameters
+          if (!_.contains(['cpu', 'disks', 'interfaces', 'memory', 'system'], group)) return null;
           return (
             <div className='panel panel-default' key={group}>
               <div

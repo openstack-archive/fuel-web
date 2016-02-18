@@ -87,7 +87,7 @@ var SupportPageElement = React.createClass({
 
 var DocumentationLink = React.createClass({
   render() {
-    var ns = 'support_page.community_';
+    var ns = 'support_page.documentation_';
     return (
       <SupportPageElement
         className='img-documentation-link'
@@ -100,7 +100,7 @@ var DocumentationLink = React.createClass({
             href='https://www.mirantis.com/openstack-documentation/'
             target='_blank'
           >
-            {i18n('support_page.documentation_link')}
+            {i18n(ns + 'link')}
           </a>
         </p>
       </SupportPageElement>

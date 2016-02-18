@@ -36,14 +36,18 @@ var WelcomePage = React.createClass({
   },
   onStartButtonClick() {
     this.props.settings.get('statistics').user_choice_saved.value = true;
+    this.setState({locked: true});
     this.saveSettings()
       .done(() => app.navigate('', {trigger: true}))
-      .fail(() => this.props.settings.get('statistics').user_choice_saved.value = false);
+      .fail(() => {
+        this.setState({locked: false});
+        this.props.settings.get('statistics').user_choice_saved.value = false;
+      });
   },
   render() {
     var ns = 'welcome_page.';
     var statsCollectorLink = 'https://stats.fuel-infra.org/';
-    var disabled = this.state.actionInProgress;
+    var disabled = this.state.actionInProgress || this.state.locked;
     var buttonProps = {
       disabled: disabled,
       onClick: this.onStartButtonClick,
@@ -52,7 +56,7 @@ var WelcomePage = React.createClass({
     return (
       <div className='welcome-page tracking'>
         <div className='col-md-8 col-md-offset-2 col-xs-10 col-xs-offset-1'>
-          <h1 className='text-center'>{this.getText(ns + 'title')}</h1>
+          <h1 className='text-center'>{i18n(ns + 'title')}</h1>
           <div>
             {this.renderIntro()}
             {this.renderInput('send_anonymous_statistic', 'welcome-checkbox-box')}
@@ -68,7 +72,7 @@ var WelcomePage = React.createClass({
               </button>
             </div>
           </div>
-          <div className='welcome-text-box'>{this.getText(ns + 'thanks')}</div>
+          <div className='welcome-text-box'>{i18n(ns + 'thanks')}</div>
         </div>
       </div>
     );

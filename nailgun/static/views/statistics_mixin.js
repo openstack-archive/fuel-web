@@ -57,9 +57,6 @@ export default {
   getError(model, name) {
     return (model.validationError || {})[model.makePath('statistics', name)];
   },
-  getText(key) {
-    return i18n(key + '_community');
-  },
   renderInput(settingName, wrapperClassName, disabledState) {
     var settings = this.props.settings;
     var setting = settings.get(settings.makePath('statistics', settingName));
@@ -76,7 +73,7 @@ export default {
       key={settingName}
       type={setting.type}
       name={settingName}
-      label={setting.label && this.getText(setting.label)}
+      label={setting.label && i18n(setting.label)}
       checked={!disabled && setting.value}
       value={setting.value}
       disabled={disabled}
@@ -138,7 +135,7 @@ export default {
       <div>
         <div className='statistics-text-box'>
           <div>
-            {this.getText(ns + 'help_to_improve')}
+            {i18n(ns + 'help_to_improve')}
           </div>
           <button
             className='btn-link'

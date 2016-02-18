@@ -154,7 +154,7 @@
                 "http_warning_link": "Switch to HTTPS"
             },
             "statistics": {
-                "help_to_improve_community": "Help us to improve your experience by sending information about the settings, features, and deployment actions when you use Fuel and OpenStack.",
+                "help_to_improve": "Help us to improve your experience by sending information about the settings, features, and deployment actions when you use Fuel and OpenStack.",
                 "learn_whats_collected": "Learn what's collected",
                 "statistics_user_info": "Note, that if you agree to send statistics, a new user \"fuel_stats_user\" will be added to your OpenStack environment. The fuel_stats_user will collect information about OpenStack workloads.",
                 "statistics_includes_full": "Usage statistics includes the following. Confidential information, such as passwords, IP addresses, node names, and so on, is not included into statistics.",
@@ -195,8 +195,8 @@
                     "openstack_version": "OpenStack version info"
                 },
                 "setting_labels": {
-                    "send_anonymous_statistic_community": "Send usage statistics",
-                    "send_user_info_community": "Identify my error reports, so that Mirantis Support can assist me with resolving",
+                    "send_anonymous_statistic": "Send usage statistics",
+                    "send_user_info": "Identify my error reports, so that Mirantis Support can assist me with resolving",
                     "name": "Name",
                     "email": "Email",
                     "company": "Company"
@@ -208,9 +208,9 @@
                 }
             },
             "welcome_page": {
-                "title_community": "Welcome to Fuel and OpenStack!",
+                "title": "Welcome to Fuel and OpenStack!",
                 "start_fuel": "Start Using Fuel",
-                "thanks_community": "Thanks for helping to improve Fuel and OpenStack!",
+                "thanks": "Thanks for helping to improve Fuel and OpenStack!",
                 "statistics_collector": "Web UI for collected statistics is under development and will be available at "
             },
             "navbar": {
@@ -265,8 +265,8 @@
                 "send_statistics_title": "Send Statistics About Usage",
                 "save_changes": "Save Changes",
                 "documentation_link": "Go to Documentation",
-                "community_title": "Fuel Documentation",
-                "community_text": "The page contains the most recent Fuel documentation. You can read it online or download in PDF."
+                "documentation_title": "Fuel Documentation",
+                "documentation_text": "The page contains the most recent Fuel documentation. You can read it online or download in PDF."
             },
             "release_page": {
                 "title": "Releases",
@@ -1655,7 +1655,7 @@
                 "title": "ログイン"
             },
             "statistics": {
-                "help_to_improve_community": "FuelとOpenStackを使用した設定、機能、そして、デプロイアクションの情報を送信して、製品をより良いものにする手助けをしてください。",
+                "help_to_improve": "FuelとOpenStackを使用した設定、機能、そして、デプロイアクションの情報を送信して、製品をより良いものにする手助けをしてください。",
                 "learn_whats_collected": "収集される情報について",
                 "statistics_user_info": "統計情報を送信することに同意する場合は、\"fuel_stats_user\"の名前で、新しいユーザーがOpenStackの環境に追加されることに注意してください。 fuel_stats_userは、OpenStackのワークロードに関する情報を収集します。",
                 "statistics_includes_full": "利用統計には以下の情報が含まれます。パスワードやIPアドレス、ノード名は含まれません。",
@@ -1696,8 +1696,8 @@
                     "openstack_version": "OpenStackバージョン情報"
                 },
                 "setting_labels": {
-                    "send_anonymous_statistic_community": "統計情報を送信",
-                    "send_user_info_community": "Mirantisサポートが私を手助けできるようにエラーレポートに私を特定できる情報を含めます",
+                    "send_anonymous_statistic": "統計情報を送信",
+                    "send_user_info": "Mirantisサポートが私を手助けできるようにエラーレポートに私を特定できる情報を含めます",
                     "name": "お名前",
                     "email": "Email",
                     "company": "会社名"
@@ -1709,9 +1709,9 @@
                 }
             },
             "welcome_page": {
-                "title_community": "FuelとOpenStackへようこそ",
+                "title": "FuelとOpenStackへようこそ",
                 "start_fuel": "Fuelの使用を開始",
-                "thanks_community": "FuelとOpenStackの向上に貢献してくれてありがとうございます！",
+                "thanks": "FuelとOpenStackの向上に貢献してくれてありがとうございます！",
                 "statistics_collector": "収集した統計情報のためのWeb UIを開発中です。次で利用できるようになります"
             },
             "navbar": {
@@ -1758,8 +1758,8 @@
                 "send_statistics_title": "仕様統計情報を送信",
                 "save_changes": "変更を保存",
                 "documentation_link": "ドキュメントに移動",
-                "community_title": "Fuelドキュメント",
-                "community_text": "このページには、最新のFuelドキュメントが含まれています。あなたはそれをオンラインで読むか、PDFでダウンロードすることができます。"
+                "documentation_title": "Fuelドキュメント",
+                "documentation_text": "このページには、最新のFuelドキュメントが含まれています。あなたはそれをオンラインで読むか、PDFでダウンロードすることができます。"
             },
             "release_page": {
                 "title": "リリース",

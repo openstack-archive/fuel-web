@@ -174,16 +174,16 @@ class TestNetworkManager(BaseIntegrationTest):
         nodegroup = objects.Cluster.get_controllers_node_group(
             self.env.clusters[0])
 
-        vip = self.env.network_manager.assign_vip(
+        vip = self.env.network_manager._assign_vip(
             nodegroup,
             consts.NETWORKS.management,
             consts.NETWORK_VIP_NAMES_V6_1.haproxy
-        )
-        vip2 = self.env.network_manager.assign_vip(
+        ).ip_addr
+        vip2 = self.env.network_manager._assign_vip(
             nodegroup,
             consts.NETWORKS.management,
             consts.NETWORK_VIP_NAMES_V6_1.haproxy
-        )
+        ).ip_addr
 
         self.assertEqual(vip, vip2)
 
@@ -192,10 +192,10 @@ class TestNetworkManager(BaseIntegrationTest):
         nodegroup = objects.Cluster.get_controllers_node_group(
             self.env.clusters[0])
 
-        self.env.network_manager.assign_vip(
+        self.env.network_manager._assign_vip(
             nodegroup,
             consts.NETWORKS.fuelweb_admin,
-            consts.NETWORK_VIP_NAMES_V6_1.haproxy)
+            consts.NETWORK_VIP_NAMES_V6_1.haproxy).ip_addr
 
     def test_assign_vip_throws_not_found_exception(self):
         self.env.create_cluster(api=True)
@@ -205,7 +205,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertRaisesRegexp(
             errors.CanNotFindNetworkForNodeGroup,
             "Network 'non-existing-network' for nodegroup='[\w-]+' not found.",
-            self.env.network_manager.assign_vip,
+            self.env.network_manager._assign_vip,
             nodegroup,
             'non-existing-network',
             consts.NETWORK_VIP_NAMES_V6_1.haproxy
@@ -240,11 +240,11 @@ class TestNetworkManager(BaseIntegrationTest):
         self.env.create_node(ip="10.20.0.8")
 
         self.env.network_manager.assign_admin_ips(cluster.nodes)
-        admin_vip = self.env.network_manager.assign_vip(
+        admin_vip = self.env.network_manager._assign_vip(
             objects.Cluster.get_controllers_node_group(cluster),
             consts.NETWORKS.fuelweb_admin,
             consts.NETWORK_VIP_NAMES_V6_1.haproxy
-        )
+        ).ip_addr
 
         node_ips = [n.ip for n in self.env.nodes]
         self.assertNotIn(admin_vip, node_ips)
@@ -1148,15 +1148,16 @@ class TestNeutronManager70(BaseIntegrationTest):
             'default_net_group')
 
     def test_get_endpoint_ip(self):
-        vip = '172.16.0.1'
+        vip = Mock()
+        vip.ip_addr = '172.16.0.1'
 
-        with patch.object(NeutronManager70, 'assign_vip',
+        with patch.object(NeutronManager70, '_assign_vip',
                           return_value=vip) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
                 mock.ANY, vip_name='public')
-            self.assertEqual(endpoint_ip, vip)
+            self.assertEqual(endpoint_ip, vip.ip_addr)
 
     def test_assign_vips_for_net_groups_for_api(self):
         expected_aliases = [
@@ -1325,15 +1326,16 @@ class TestNovaNetworkManager70(TestNeutronManager70):
             'default_net_group')
 
     def test_get_endpoint_ip(self):
-        vip = '172.16.0.1'
+        vip = Mock()
+        vip.ip_addr = '172.16.0.1'
 
-        with patch.object(NovaNetworkManager70, 'assign_vip',
+        with patch.object(NovaNetworkManager70, '_assign_vip',
                           return_value=vip) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
                 mock.ANY, vip_name='public')
-            self.assertEqual(endpoint_ip, vip)
+            self.assertEqual(endpoint_ip, vip.ip_addr)
 
 
 class TestTemplateManager70(BaseIntegrationTest):

@@ -84,8 +84,9 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(
             supertask,
             60,
-            u"Successfully removed 1 node(s). No errors occurred; "
-            "Deployment of environment '{0}' is done".format(
+            u"Successfully removed 1 node(s). No errors occurred\n"
+            u"Provision of environment '{0}' is done. \n"
+            u"Deployment of environment '{0}' is done. ".format(
                 self.env.clusters[0].name
             )
         )

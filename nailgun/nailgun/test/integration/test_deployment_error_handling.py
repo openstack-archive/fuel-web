@@ -41,7 +41,7 @@ class TestErrors(BaseIntegrationTest):
         )
         supertask = self.env.launch_deployment()
         self.env.wait_error(supertask, 60, re.compile(
-            "Deployment has failed\. Check these nodes:\n'(First|Second)'"
+            "Provision has failed\. Check these nodes:\n'(First|Second)'"
         ))
         self.env.refresh_nodes()
         self.env.refresh_clusters()
@@ -58,7 +58,7 @@ class TestErrors(BaseIntegrationTest):
         )
         self.assertEqual(supertask.cluster.status, 'error')
 
-    @fake_tasks(error="provisioning", error_msg="Terrible error")
+    @fake_tasks(error="deployment", error_msg="Terrible error")
     def test_deployment_error_from_orchestrator(self):
         self.env.create(
             cluster_kwargs={},
@@ -70,9 +70,7 @@ class TestErrors(BaseIntegrationTest):
                  "pending_addition": True},
                 {"name": "Third",
                  "roles": ["compute"],
-                 "status": "error",
-                 "error_type": "provision",
-                 "error_msg": "I forgot about teapot!"}
+                 "pending_addition": True}
             ]
         )
         supertask = self.env.launch_deployment()
@@ -81,19 +79,17 @@ class TestErrors(BaseIntegrationTest):
         self.assertIsNotNone(
             self.db.query(Notification).filter_by(message=err_msg).first()
         )
-        self.assertIsNotNone(
-            self.db.query(Notification).filter_by(
-                node_id=self.env.nodes[2].id,
-                message="Failed to deploy node 'Third': I forgot about teapot!"
-            ).first()
-        )
         self.env.refresh_nodes()
         self.env.refresh_clusters()
-        n_error = lambda n: (n.status, n.error_type) == ('error', 'provision')
-        self.assertIn(
-            sum(map(n_error, self.env.nodes)),
-            [1, 2]
-        )
+        failed_nodes = [
+            n.id for n in self.env.nodes
+            if n.status == 'error' and n.error_type == 'deploy'
+        ]
+        self.assertGreater(len(failed_nodes), 0)
+        err_notification = self.db.query(Notification).filter(
+            Notification.node_id.in_(failed_nodes)
+        ).first()
+        self.assertIsNotNone(err_notification)
         self.assertEqual(supertask.cluster.status, 'error')
 
     @fake_tasks(error="deployment")

@@ -103,6 +103,7 @@ def test_db_driver(handler):
 
 
 class EnvironmentManager(object):
+    _regex_type = type(re.compile("regex"))
 
     def __init__(self, app, session=None):
         self.db = session or db()
@@ -1162,9 +1163,9 @@ class EnvironmentManager(object):
                                   consts.TASK_STATUSES.pending)
         self._wait_task_status(task, timeout, wait_until_in_statuses)
         self.tester.assertEqual(task.progress, 100)
-        if isinstance(message, type(re.compile("regexp"))):
-            self.tester.assertIsNotNone(re.match(message, task.message))
-        elif isinstance(message, str):
+        if isinstance(message, self._regex_type):
+            self.tester.assertRegexpMatches(task.message, message)
+        elif isinstance(message, six.string_types):
             self.tester.assertEqual(task.message, message)
 
     def wait_ready(self, task, timeout=60, message=None):

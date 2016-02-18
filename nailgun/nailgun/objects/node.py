@@ -18,15 +18,15 @@
 Node-related objects and collections
 """
 
+import copy
+from datetime import datetime
 import itertools
 import operator
-from oslo_serialization import jsonutils
 import traceback
-
-from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from oslo_serialization import jsonutils
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -1187,7 +1187,7 @@ class Node(NailgunObject):
 
     @classmethod
     def get_attributes(cls, instance):
-        return instance.attributes
+        return copy.deepcopy(instance.attributes)
 
     @classmethod
     def update_attributes(cls, instance, attrs):

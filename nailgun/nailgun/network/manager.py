@@ -301,7 +301,7 @@ class NetworkManager(object):
             db().flush()
 
     @classmethod
-    def get_assigned_vip(cls, nodegroup, network_name, vip_name):
+    def _get_assigned_vip(cls, nodegroup, network_name, vip_name):
         """Get VIP address, if it was assigned already
 
         :param nodegroup: Name of the node group.
@@ -322,10 +322,10 @@ class NetworkManager(object):
         cluster_vip = cluster_vip_q.first()
 
         if cluster_vip:
-            return cluster_vip.ip_addr
+            return cluster_vip
 
     @classmethod
-    def assign_vip(cls, nodegroup, network_name, vip_name):
+    def _assign_vip(cls, nodegroup, network_name, vip_name, namespace):
         """Idempotent assignment of VirtualIP addresses to nodegroup.
 
         Returns VIP for given nodegroup and network.
@@ -347,8 +347,8 @@ class NetworkManager(object):
         :raises: Exception
 
         """
-        already_assigned = cls.get_assigned_vip(nodegroup,
-                                                network_name, vip_name)
+        already_assigned = cls._get_assigned_vip(nodegroup,
+                                                 network_name, vip_name)
         network = cls.get_network_by_name_and_nodegroup(network_name,
                                                         nodegroup)
 
@@ -358,7 +358,7 @@ class NetworkManager(object):
                     network_name, nodegroup.name))
 
         if already_assigned is not None and \
-                cls.check_ip_belongs_to_net(already_assigned, network):
+                cls.check_ip_belongs_to_net(already_assigned.ip_addr, network):
             return already_assigned
 
         cluster_vip = db().query(IPAddr).filter_by(
@@ -379,7 +379,8 @@ class NetworkManager(object):
 
         # IP address has not been assigned, let's do it
         vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
-        ne_db = IPAddr(network=network.id, ip_addr=vip, vip_name=vip_name)
+        ne_db = IPAddr(network=network.id, ip_addr=vip,
+                       vip_name=vip_name, vip_namespace=namespace)
 
         # delete stalled VIP address after new one was found.
         if cluster_vip:
@@ -388,7 +389,11 @@ class NetworkManager(object):
         db().add(ne_db)
         db().flush()
 
-        return vip
+        return ne_db
+
+    @classmethod
+    def assign_vip(cls, nodegroup, network_name, vip_name):
+        return cls._assign_vip(nodegroup, network_name, vip_name, None).ip_addr
 
     @classmethod
     def assign_vips_for_net_groups(cls, cluster):
@@ -1769,9 +1774,9 @@ class NetworkManager(object):
 class AllocateVIPs70Mixin(object):
 
     @classmethod
-    def _build_advanced_vip_info(cls, vip_info, role, address):
+    def _build_advanced_vip_info(cls, vip_info, role, address, namespace):
         return {'network_role': role['id'],
-                'namespace': vip_info.get('namespace'),
+                'namespace': namespace,
                 'ipaddr': address,
                 'node_roles': vip_info.get('node_roles',
                                            ['controller',
@@ -1814,7 +1819,8 @@ class AllocateVIPs70Mixin(object):
 
         for nodegroup, net_group, vip_name, role, vip_info\
                 in cls.get_node_groups_info(cluster):
-            vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
+            vip_addr = cls._assign_vip(nodegroup, net_group,
+                                       vip_name, vip_info.get('namespace'))
 
             if vip_addr is None:
                 continue
@@ -1847,15 +1853,16 @@ class AllocateVIPs70Mixin(object):
 
             vip_name = vip_info['name']
 
-            vips['vips'][vip_name] = cls._build_advanced_vip_info(vip_info,
-                                                                  role,
-                                                                  vip_addr)
+            info = cls._build_advanced_vip_info(vip_info, role,
+                                                vip_addr.ip_addr,
+                                                vip_addr.vip_namespace)
+            vips['vips'][vip_name] = info           
 
             # Add obsolete configuration.
             # TODO(romcheg): Remove this in the 8.0 release
             alias = vip_info.get('alias')
             if alias:
-                vips[alias] = vip_addr
+                vips[alias] = vip_addr.ip_addr
 
         return vips
 
@@ -1883,7 +1890,7 @@ class AllocateVIPs70Mixin(object):
                 cluster):
             vip_name = vip_info['name']
             vips[vip_name] = cls._build_advanced_vip_info(
-                vip_info, role, vip_addr
+                vip_info, role, vip_addr.ip_addr, vip_addr.vip_namespace
             )
         return vips
 
@@ -1925,7 +1932,8 @@ class AllocateVIPs70Mixin(object):
                 in cls.get_node_groups_info(cluster):
 
             net_mgr = objects.Cluster.get_network_manager(cluster)
-            vip_addr = net_mgr.get_assigned_vip(nodegroup, net_group, vip_name)
+            vip_addr = net_mgr._get_assigned_vip(nodegroup, net_group,
+                                                 vip_name)
 
             if vip_addr is None:
                 continue
@@ -1989,9 +1997,9 @@ class AllocateVIPs70Mixin(object):
 class AllocateVIPs80Mixin(object):
 
     @classmethod
-    def _build_advanced_vip_info(cls, vip_info, role, address):
+    def _build_advanced_vip_info(cls, vip_info, role, address, namespace):
         info = AllocateVIPs70Mixin._build_advanced_vip_info(
-            vip_info, role, address)
+            vip_info, role, address, namespace)
         info['vendor_specific'] = vip_info.get('vendor_specific')
         return info
 

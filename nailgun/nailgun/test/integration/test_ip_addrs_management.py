@@ -54,28 +54,28 @@ class BaseIPAddrTest(BaseIntegrationTest):
                 'node': None,
                 'ip_addr': '192.168.0.1',
                 'is_user_defined': False,
-                'vip_namespace': None
+                'vip_namespace': 'vrouter'
             },
             {
                 'vip_name': 'management',
                 'node': None,
                 'ip_addr': '192.168.0.2',
                 'is_user_defined': False,
-                'vip_namespace': None
+                'vip_namespace': 'haproxy'
             },
             {
                 'ip_addr': '172.16.0.3',
                 'is_user_defined': False,
                 'node': None,
                 'vip_name': 'public',
-                'vip_namespace': None
+                'vip_namespace': 'haproxy'
             },
             {
                 'ip_addr': '172.16.0.2',
                 'is_user_defined': False,
                 'node': None,
                 'vip_name': 'vrouter_pub',
-                'vip_namespace': None
+                'vip_namespace': 'vrouter'
             },
 
         ]
@@ -243,14 +243,14 @@ class TestIPAddrList(BaseIPAddrTest):
                 'is_user_defined': True,
                 'vip_name': self.management_vips[0]["vip_name"],
                 'ip_addr': '192.168.0.44',
-                'vip_namespace': None
+                'vip_namespace': 'vrouter'
             },
             {
                 'id': self.vip_ids[1],
                 'is_user_defined': False,
                 'vip_name': self.management_vips[1]["vip_name"],
                 'ip_addr': '192.168.0.43',
-                'vip_namespace': None
+                'vip_namespace': 'haproxy'
             }
         ]
         resp = self.app.patch(

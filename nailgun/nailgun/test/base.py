@@ -25,6 +25,7 @@ import mock
 import os
 import re
 import six
+from six.moves import range
 import time
 import uuid
 
@@ -366,7 +367,7 @@ class EnvironmentManager(object):
 
     def create_nodes(self, count, *args, **kwargs):
         """Helper to generate specific number of nodes."""
-        return [self.create_node(*args, **kwargs) for _ in xrange(count)]
+        return [self.create_node(*args, **kwargs) for _ in range(count)]
 
     def create_nodes_w_interfaces_count(self,
                                         nodes_count, if_count=2, **kwargs):
@@ -594,12 +595,12 @@ class EnvironmentManager(object):
         return item.get('fields').get('meta', {})
 
     def generate_random_mac(self):
-        mac = [randint(0x00, 0x7f) for _ in xrange(6)]
+        mac = [randint(0x00, 0x7f) for _ in range(6)]
         return ':'.join(map(lambda x: "%02x" % x, mac)).lower()
 
     def generate_interfaces_in_meta(self, amount):
         nics = []
-        for i in xrange(amount):
+        for i in range(amount):
             nics.append(
                 {
                     'name': 'eth{0}'.format(i),
@@ -663,7 +664,7 @@ class EnvironmentManager(object):
         networks_to_assign = \
             list(node.cluster.network_groups) if node.cluster else []
 
-        for i in xrange(count):
+        for i in range(count):
             interface = NodeNICInterface(
                 node_id=node_id,
                 name='eth{0}'.format(i),
@@ -1559,7 +1560,7 @@ class DeploymentTasksTestMixin(object):
 def datadiff(data1, data2, branch, p=True):
     def iterator(data1, data2):
         if isinstance(data1, (list,)) and isinstance(data2, (list,)):
-            return xrange(max(len(data1), len(data2)))
+            return range(max(len(data1), len(data2)))
         elif isinstance(data1, (dict,)) and isinstance(data2, (dict,)):
             return (set(data1.keys()) | set(data2.keys()))
         else:

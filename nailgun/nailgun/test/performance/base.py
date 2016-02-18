@@ -15,6 +15,7 @@
 
 from collections import defaultdict
 import functools
+import io
 import os.path
 import shutil
 import six
@@ -73,7 +74,7 @@ class BaseLoadTestCase(BaseTestCase):
             # Write list of the slowest calls
             file_path = (settings.LOAD_TESTS_PATHS['load_tests_base'] +
                          'slowest_calls.txt')
-            with file(file_path, 'w') as file_o:
+            with io.open(file_path, 'w', encoding='utf-8') as file_o:
                 exec_times = sorted(cls.slowest_calls.keys(), reverse=True)
                 for exec_time in exec_times:
                     line = '\t'.join([str(exec_time),

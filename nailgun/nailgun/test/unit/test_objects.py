@@ -41,6 +41,7 @@ from nailgun.errors import errors
 
 from nailgun import consts
 
+from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import Task
@@ -981,6 +982,61 @@ class TestClusterObject(BaseTestCase):
         }
 
         return dict_merge(network_role, kwargs)
+
+    def test_create_cluster_triggers_vips_allocation(self):
+        vips = objects.IPAddrCollection.get_vips_by_cluster_id(
+            self.cluster.id
+        ).all()
+
+        self.assertIsNotNone(vips)
+
+    @mock.patch('nailgun.objects.cluster.PluginManager.'
+                'enable_plugins_by_components')
+    @mock.patch('nailgun.objects.cluster.ClusterPlugins')
+    def test_create_cluster_vips_allocation_considers_plugins_vips(
+            self, *_):
+        network_roles = [self._get_network_role_metadata()]
+        plugin_data = self.env.get_default_plugin_metadata(
+            network_roles_metadata=network_roles)
+        plugin = objects.Plugin.create(plugin_data)
+
+        with mock.patch('nailgun.plugins.manager.ClusterPlugins') as cp_mock:
+            cp_mock.get_enabled = mock.Mock(return_value=[plugin])
+
+            cluster = self.env.create(
+                release_kwargs={'version': '1111-8.0'},
+                cluster_kwargs={'api': False}
+            )
+
+        plugin_vip = objects.IPAddrCollection.get_vips_by_cluster_id(
+            cluster.id
+        ).filter(IPAddr.vip_name == 'test_vip_a').first()
+
+        self.assertIsNotNone(plugin_vip)
+
+    @mock.patch('nailgun.objects.Cluster.update_nodes')
+    @mock.patch('nailgun.objects.Cluster.add_pending_changes')
+    @mock.patch('nailgun.objects.Cluster.get_network_manager')
+    def test_create_cluster_fail_if_vips_cannot_be_allocated(self,
+                                                             get_nm_mock,
+                                                             *_):
+        expected_errors = [
+            errors.CanNotFindCommonNodeGroup,
+            errors.CanNotFindNetworkForNodeGroup,
+            errors.DuplicatedVIPNames,
+        ]
+        for exc in expected_errors:
+            net_manager_mock = mock.Mock(
+                assign_vips_for_net_groups=mock.Mock(side_effect=exc)
+            )
+            get_nm_mock.return_value = net_manager_mock
+
+            self.assertRaises(
+                errors.CannotCreate,
+                objects.Cluster.create,
+                {'name': uuid.uuid4().hex,
+                 'release_id': self.env.releases[0].id}
+            )
 
     # FIXME(aroma): remove this test when stop action will be reworked for ha
     # cluster. To get more details, please, refer to [1]

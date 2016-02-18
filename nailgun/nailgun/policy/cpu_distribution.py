@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from functools import reduce
 import itertools
 
 KNOWN_GROUPS = {"nova": "nova_dpdk", "dpdk": "nova_dpdk"}

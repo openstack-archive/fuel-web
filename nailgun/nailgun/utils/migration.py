@@ -113,7 +113,7 @@ def upgrade_release_attributes_51_to_60(attrs_meta):
     def convert_restrictions(restrictions):
         result = []
         for restriction in restrictions:
-            if isinstance(restriction, basestring):
+            if isinstance(restriction, six.string_types):
                 restriction = remove_question_operator(restriction)
             else:
                 restriction['condition'] = remove_question_operator(

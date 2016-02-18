@@ -161,7 +161,7 @@ class TestOSWLCollector(BaseTestCase):
         removed['time'] = last.updated_time.isoformat()
         removed_data = [removed]
         # check data is not duplicated in removed on several collects
-        for _ in xrange(10):
+        for _ in range(10):
             oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
         last = OpenStackWorkloadStats.get_last_by(
             cls_id, consts.OSWL_RESOURCE_TYPES.vm)

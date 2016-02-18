@@ -939,18 +939,11 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
 
-        map(
-            lambda (x, y): self.assertIn(
-                IPAddress(
-                    rpc_nodes_provision[x]['interfaces'][y]['ip_address']
-                ),
-                IPRange(
-                    admin_network_range.first,
-                    admin_network_range.last
-                )
-            ),
-            itertools.product((0, 1), ('eth0',))
-        )
+        for x, y in itertools.product((0, 1), ('eth0',)):
+            ip = IPAddress(
+                rpc_nodes_provision[x]['interfaces'][y]['ip_address'])
+            rng = IPRange(admin_network_range.first, admin_network_range.last)
+            self.assertIn(ip, rng)
 
     def test_restricted_networks(self):
         rel = self.env.create_release()

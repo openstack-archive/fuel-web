@@ -21,6 +21,7 @@ from collections import OrderedDict
 import netaddr
 import re
 import six
+from six.moves import range
 
 from nailgun import consts
 from nailgun.db import db
@@ -282,7 +283,7 @@ class NeutronNetworkDeploymentSerializer(
                     cluster.network_config.segmentation_type == \
                         consts.NEUTRON_SEGMENT_TYPES.vlan:
                     vlan_range = cluster.network_config.vlan_range
-                    trunks.extend(xrange(*vlan_range))
+                    trunks.extend(range(*vlan_range))
                     trunks.append(vlan_range[1])
                 else:
                     if ng.vlan_start in (0, None):

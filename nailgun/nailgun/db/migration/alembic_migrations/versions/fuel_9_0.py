@@ -550,7 +550,9 @@ def downgrade_ip_address():
 
 def upgrade_node_roles_metadata():
     connection = op.get_bind()
-    select_query = sa.sql.text("SELECT id, roles_metadata FROM releases")
+    select_query = sa.sql.text(
+        "SELECT id, roles_metadata FROM releases "
+        "WHERE roles_metadata IS NOT NULL")
     update_query = sa.sql.text(
         "UPDATE releases SET roles_metadata = :roles_metadata WHERE id = :id")
 
@@ -581,7 +583,9 @@ def upgrade_node_roles_metadata():
 
 def downgrade_node_roles_metadata():
     connection = op.get_bind()
-    select_query = sa.sql.text("SELECT id, roles_metadata FROM releases")
+    select_query = sa.sql.text(
+        "SELECT id, roles_metadata FROM releases "
+        "WHERE roles_metadata IS NOT NULL")
     update_query = sa.sql.text(
         "UPDATE releases SET roles_metadata = :roles_metadata WHERE id = :id")
 

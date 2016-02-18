@@ -164,7 +164,8 @@ var ClusterPage = React.createClass({
   getInitialState() {
     var tabs = this.constructor.getTabs();
     var states = {
-      selectedNodeIds: {}
+      selectedNodeIds: {},
+      showAllNetworks: false
     };
     _.each(tabs, (tabData) => {
       if (tabData.tab.checkSubroute) _.extend(states, tabData.tab.checkSubroute(this.props));
@@ -227,7 +228,9 @@ var ClusterPage = React.createClass({
   componentWillReceiveProps(newProps) {
     var tab = _.find(this.constructor.getTabs(), {url: newProps.activeTab}).tab;
     if (tab.checkSubroute) {
-      this.setState(tab.checkSubroute(newProps));
+      this.setState(tab.checkSubroute(_.extend({}, newProps, {
+        showAllNetworks: this.state.showAllNetworks
+      })));
     }
   },
   changeLogSelection(selectedLogs) {

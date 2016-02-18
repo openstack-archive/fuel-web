@@ -181,9 +181,12 @@ define([
           .clickByCssSelector('.btn-revert-changes')
           .clickByCssSelector('.verify-networks-btn')
           .waitForElementDeletion('.animation-box .success.connect-1', 6000)
-          .assertElementAppears('.alert-success', 6000, 'Success verification message appears')
-          .assertElementContainsText('.alert-success', 'Verification succeeded',
-            'Success verification message appears with proper text')
+          .assertElementAppears('.alert-success', 10000, 'Success verification message appears')
+          .assertElementContainsText(
+            '.alert-success',
+            'Verification succeeded',
+            'Success verification message appears with proper text'
+          )
           .then(function() {
             return clusterPage.goToTab('Dashboard');
           })
@@ -270,7 +273,7 @@ define([
         return this.remote
           .clickByCssSelector('.subtab-link-network_settings')
           .setInputValue('input[name=dns_list]', 'blablabla')
-          .assertElementAppears('.subtab-link-network_settings .glyphicon-danger-sign', 1000,
+          .assertElementAppears('.subtab-link-network_settings .glyphicon-danger-sign', 2000,
             'Warning icon for "Other" section appears');
       }
     };
@@ -331,6 +334,85 @@ define([
             'New Node Network group title is shown'
           );
       },
+      'Show all networks': function() {
+        return this.remote
+          .clickByCssSelector('.show-all-networks')
+          .waitForCssSelector('.networks li.active.all', 2000)
+          .assertElementTextEquals(
+            '.networks li.active',
+            'All Networks',
+            'Active pill is called "All Networks"'
+          )
+          .assertElementsExist(
+            '.network-group-name',
+            2,
+            'Two node network group titles are shown'
+          )
+          .assertElementsExist('.forms-box.public', 2, 'Two Public networks are shown')
+          .assertElementsExist('.forms-box.storage', 2, 'Two Storage networks are shown')
+          .assertElementsExist('.forms-box.management', 2, 'Two Management networks are shown')
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'network/group/all',
+                'Subtab url is changed after clicking  "Show All Networks"'
+              );
+            })
+          .assertElementSelected(
+            '.show-all-networks',
+            'Show All Networks checkbox is checked'
+          )
+          .then(function() {
+            return networkPage.addNodeNetworkGroup('temp');
+          })
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'network/group/all',
+                'Subtab url is not changed after adding new node network group'
+              );
+            })
+          .clickByCssSelector('.subtab-link-neutron_l3')
+          .assertElementTextEquals(
+            '.nav-pills.networks li.all',
+            'All Networks',
+            'Navigation pill text is not changed when switching to neutron_l3 tab'
+          )
+          .clickByCssSelector('.subtab-link-all')
+          .then(function() {
+            return networkPage.removeNodeNetworkGroup('temp');
+          })
+          .then(function() {
+            return networkPage.removeNodeNetworkGroup('Node_Network_Group_1');
+          })
+          .setInputValue('.storage .cidr input[type=text]', '192.168.1.0/')
+          .assertElementAppears('.storage .has-error input[name=cidr]', 1000,
+            'Error class style is applied to invalid input field in "Show All Networks" mode')
+          .clickByCssSelector('.btn-revert-changes')
+          .then(function() {
+            return networkPage.addNodeNetworkGroup('Node_Network_Group_1');
+          })
+          .waitForCssSelector('.network-group-name[data-name=Node_Network_Group_1]', 2000)
+          .clickLinkByText('default')
+          .assertElementsExist(
+            '.node_network_groups li',
+            3,
+            'Title and Node Network groups pills are shown after clicking "Show all networks"'
+          )
+          .assertElementsExist('.forms-box.public', 1, 'One Public network is shown')
+          .assertElementsExist('.forms-box.storage', 1, 'One Storage network is shown')
+          .assertElementsExist('.forms-box.management', 1, 'One Management network is shown')
+          .getCurrentUrl()
+            .then(function(url) {
+              assert.include(
+                url,
+                'network/group/2',
+                'Subtab url is changed after clicking  "Show Node Network Groups"'
+              );
+            });
+      },
       'Verification is disabled for multirack': function() {
         return this.remote
           .clickByCssSelector('.subtab-link-network_verification')
@@ -340,6 +422,7 @@ define([
       'Node network group renaming': function() {
         this.timeout = 100000;
         return this.remote
+          .clickLinkByText('Node_Network_Group_1')
           .then(function() {
             return networkPage.renameNodeNetworkGroup(
               'Node_Network_Group_1',
@@ -359,7 +442,7 @@ define([
             return clusterPage.goToTab('Networks');
           })
           .then(function() {
-            return networkPage.addNodeNetworkGroup('1');
+            return networkPage.addNodeNetworkGroup('new_1');
           })
           .clickLinkByText('Environments')
           .then(function() {
@@ -369,7 +452,7 @@ define([
             return clusterPage.goToTab('Networks');
           })
           .then(function() {
-            return networkPage.addNodeNetworkGroup('1');
+            return networkPage.addNodeNetworkGroup('new_1');
           })
           .then(function() {
             return networkPage.goToNodeNetworkGroup('default');

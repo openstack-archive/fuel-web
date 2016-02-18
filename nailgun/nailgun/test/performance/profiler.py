@@ -78,14 +78,15 @@ class Profiler(object):
         callgraph_file = pref_filename + 'dot'
 
         # write pstats
-        with file(stats_file, 'w') as file_o:
+        with open(stats_file, 'w') as file_o:
             stats = Stats(self.profiler, stream=file_o)
             stats.sort_stats('time', 'cumulative').print_stats()
 
         # write callgraph in dot format
         parser = gprof2dot.PstatsParser(self.profiler)
 
-        def get_function_name((filename, line, name)):
+        def get_function_name(arg):
+            filename, line, name = arg
             module = os.path.splitext(filename)[0]
             module_pieces = module.split(os.path.sep)
             return "{module:s}:{line:d}:{name:s}".format(
@@ -103,5 +104,5 @@ class Profiler(object):
 
         # write calltree
         call_tree = pyprof2calltree.CalltreeConverter(stats)
-        with file(tree_file, 'wb') as file_o:
+        with open(tree_file, 'wb') as file_o:
             call_tree.output(file_o)

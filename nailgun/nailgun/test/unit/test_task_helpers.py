@@ -245,3 +245,12 @@ class TestTaskHelpers(BaseTestCase):
         kwargs = TaskHelper.prepare_action_log_kwargs(check_task)
         self.assertIn('actor_id', kwargs)
         self.assertEqual(actor_id, kwargs['actor_id'])
+
+    def test_format_offline_nodes_message(self):
+        nodes = ["node1", "node2", "node3"]
+        message = TaskHelper.format_offline_nodes_message(nodes, 2)
+        self.assertIn('"node1, node2, ..."', message)
+        message = TaskHelper.format_offline_nodes_message(nodes, 0)
+        self.assertIn('"..."', message)
+        message = TaskHelper.format_offline_nodes_message(nodes, 3)
+        self.assertIn('"node1, node2, node3"', message)

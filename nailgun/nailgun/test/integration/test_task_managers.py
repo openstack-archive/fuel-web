@@ -336,6 +336,60 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(self.env.clusters[0].status, 'new')
 
     @fake_tasks()
+    def test_provision_fails_if_node_offline(self):
+        cluster = self.env.create_cluster(api=True)
+        self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["controller"],
+            pending_addition=True)
+        offline_node = self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["compute"],
+            online=False,
+            name="Offline node",
+            pending_addition=True)
+        self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["compute"],
+            pending_addition=True)
+        task = self.env.launch_provisioning_selected(
+            cluster_id=cluster['id']
+        )
+        self.env.wait_error(
+            task,
+            5,
+            'Nodes "{0}" are offline. Remove them from environment '
+            'and try again.'.format(offline_node.full_name)
+        )
+        # Do not move cluster to error state
+        # in case if cluster new and before
+        # validation failed
+        self.assertEqual(self.env.clusters[0].status, 'new')
+
+    @fake_tasks()
+    def test_provision_offline_nodes_with_force(self):
+        cluster = self.env.create_cluster(api=True)
+        self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["controller"],
+            pending_addition=True)
+        self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["compute"],
+            online=False,
+            name="Offline node",
+            pending_addition=True)
+        self.env.create_node(
+            cluster_id=cluster['id'],
+            roles=["compute"],
+            pending_addition=True)
+        self.env.wait_ready(
+            self.env.launch_provisioning_selected(
+                cluster_id=cluster['id'], force=1
+            )
+        )
+
+    @fake_tasks()
     def test_deployment_fails_if_node_to_redeploy_is_offline(self):
         cluster = self.env.create_cluster(
             api=True,

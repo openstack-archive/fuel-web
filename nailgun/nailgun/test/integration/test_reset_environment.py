@@ -66,7 +66,6 @@ class TestResetEnvironment(BaseIntegrationTest):
             cluster_db.attributes.generated['deployed_before']['value'])
 
         for n in cluster_db.nodes:
-            self.assertEqual(n.online, False)
             self.assertEqual(n.status, "discover")
             self.assertEqual(n.pending_addition, True)
             self.assertEqual(n.roles, [])

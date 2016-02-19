@@ -750,7 +750,6 @@ class Node(NailgunObject):
         :returns: None
         """
         node_data = {
-            "online": False,
             "status": consts.NODE_STATUSES.discover,
             "pending_addition": True,
             "pending_deletion": False,

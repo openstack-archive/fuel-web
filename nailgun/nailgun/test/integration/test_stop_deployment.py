@@ -64,7 +64,6 @@ class TestStopDeployment(BaseIntegrationTest):
         self.assertEqual(stop_task.progress, 100)
 
         for n in self.cluster.nodes:
-            self.assertEqual(n.online, False)
             self.assertEqual(n.roles, [])
             self.assertNotEqual(n.pending_roles, [])
 

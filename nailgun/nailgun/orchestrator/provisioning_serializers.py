@@ -440,4 +440,15 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
         serialized_node['ks_meta']['service_user'] = service_user_dict
         serialized_node['ks_meta']['root_password'] = root_password
 
+        cls.serialize_node_attributes(serialized_node, node)
+
         return serialized_node
+
+    @classmethod
+    def serialize_node_attributes(cls, serialized_node, node):
+        cls._serialize_node_hugepages(serialized_node, node)
+
+    @classmethod
+    def _serialize_node_hugepages(cls, serialized_node, node):
+        serialized_node['ks_meta']['pm_data']['kernel_params'] += (
+            objects.NodeAttributes.hugepages_kernel_opts(node))

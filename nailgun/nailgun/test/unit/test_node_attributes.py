@@ -1,0 +1,60 @@
+# -*- coding: utf-8 -*-
+
+#    Copyright 2014 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+import mock
+
+from nailgun import objects
+from nailgun.test import base
+
+
+class TestNodeAttributes(base.BaseUnitTest):
+
+    def test_total_hugepages(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'comp1': {
+                        'type': 'custom_hugepages',
+                        'value': {
+                            '2048': '14',
+                            '1048576': '2'}},
+                    'comp2': {
+                        'type': 'text',
+                        'value': '20'}}},
+            meta={'numa_topology': {'numa_nodes': [{'id': 0}]}})
+        expected = {
+            '2048': 24,
+            '1048576': 2}
+        self.assertDictEqual(
+            expected,
+            objects.NodeAttributes.total_hugepages(node))
+
+    def test_hugepages_kernel_opts(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'comp1': {
+                        'type': 'custom_hugepages',
+                        'value': {
+                            '1048576': '2'}},
+                    'comp2': {
+                        'type': 'text',
+                        'value': '10'}}},
+            meta={'numa_topology': {'numa_nodes': [{'id': '0'}]}})
+        expected = " hugepagesz=2M hugepages=5 hugepagesz=1G hugepages=2"
+        self.assertEqual(
+            expected,
+            objects.NodeAttributes.hugepages_kernel_opts(node))

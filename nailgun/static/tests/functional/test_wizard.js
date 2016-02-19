@@ -48,7 +48,9 @@ define([
       },
       afterEach: function() {
         return this.remote
-          .clickByCssSelector('.close');
+          .then(function() {
+            return modal.close();
+          });
       },
       'Test steps manipulations': function() {
         return this.remote

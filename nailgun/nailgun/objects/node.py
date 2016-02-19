@@ -18,6 +18,7 @@
 Node-related objects and collections
 """
 
+import collections
 import copy
 from datetime import datetime
 import itertools
@@ -52,6 +53,8 @@ from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.policy import cpu_distribution
 from nailgun.settings import settings
 from nailgun import utils
+
+HUGE_PAGES_SIZE_MAP = [('2048', '2M'), ('1048576', '1G')]
 
 
 class Node(NailgunObject):
@@ -1172,6 +1175,18 @@ class Node(NailgunObject):
             return
 
         instance.attributes = instance.cluster.release.node_attributes
+        cls._set_default_hugepages(instance)
+
+    @classmethod
+    def _set_default_hugepages(cls, instance):
+        supported_hugepages = \
+            instance.meta['numa_topology']['supported_hugepages']
+
+        hugepages_attributes = instance.attributes['hugepages']
+        for name, attrs in six.iteritems(hugepages_attributes):
+            if attrs.get('type') == 'custom_hugepages':
+                attrs['value'] = dict(
+                    (x, 0) for x in supported_hugepages)
 
     @classmethod
     def get_attributes(cls, instance):
@@ -1272,3 +1287,39 @@ class NodeAttributes(object):
                                     'required_cpus': required_cpus}
         return {'total_required_cpus': total_required_cpus,
                 'components': components}
+
+    @classmethod
+    def total_hugepages(cls, instance):
+        hugepages = collections.defaultdict(int)
+        numa_count = len(instance.meta['numa_topology']['numa_nodes'])
+
+        hugepages_attributes = Node.get_attributes(instance)['hugepages']
+        for name, attrs in six.iteritems(hugepages_attributes):
+            if attrs.get('type') == 'custom_hugepages':
+                value = attrs['value']
+                for size, count in six.iteritems(value):
+                    hugepages[size] += int(count)
+            elif attrs.get('type') == 'text':
+                # type text means that value is the number of memory in MB
+                # per NUMA node which should be covered by 2M hugepages
+                size = '2048'
+                # round up
+                count_per_numa_node = (int(attrs['value']) + 1) // 2
+                hugepages[size] += count_per_numa_node * numa_count
+
+        return dict(hugepages)
+
+    @classmethod
+    def hugepages_kernel_opts(cls, instance):
+        hugepages = cls.total_hugepages(instance)
+
+        kernel_opts = ""
+        for size, human_size in HUGE_PAGES_SIZE_MAP:
+            if size in hugepages and hugepages[size]:
+                # extend kernel params with lines for huge pages
+                # hugepagesz is the size (2M, 1G, etc.)
+                # hugepages is the number of pages for specific size
+                kernel_opts += " hugepagesz={0} hugepages={1}".format(
+                    human_size, hugepages[size])
+
+        return kernel_opts

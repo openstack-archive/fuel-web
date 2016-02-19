@@ -19,6 +19,7 @@ from distutils.version import StrictVersion
 import traceback
 
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
@@ -552,18 +553,19 @@ class SpawnVMsTaskManager(ApplyChangesTaskManager):
 
 
 class ProvisioningTaskManager(TaskManager):
+    @staticmethod
+    def _check_before_provision(nodes_to_provision):
+        offline_nodes_names = [
+            n.full_name for n in nodes_to_provision if n.offline
+        ]
+        if offline_nodes_names:
+            raise errors.NodeOffline(
+                TaskHelper.format_offline_nodes_message(offline_nodes_names)
+            )
 
-    def execute(self, nodes_to_provision):
+    def execute(self, nodes_to_provision, force=False):
         """Run provisioning task on specified nodes."""
         # locking nodes
-        nodes_ids = [node.id for node in nodes_to_provision]
-        nodes = objects.NodeCollection.filter_by_list(
-            None,
-            'id',
-            nodes_ids,
-            order_by='id'
-        )
-
         logger.debug('Nodes to provision: {0}'.format(
             ' '.join([objects.Node.get_node_fqdn(n)
                       for n in nodes_to_provision])))
@@ -572,12 +574,20 @@ class ProvisioningTaskManager(TaskManager):
                               status=consts.TASK_STATUSES.pending,
                               cluster=self.cluster)
         db().add(task_provision)
+        if not force:
+            try:
+                self._check_before_provision(nodes_to_provision)
+            except Exception as e:
+                # do not use Task.update, because we do not need
+                # update of cluster status
+                task_provision.status = consts.TASK_STATUSES.error
+                task_provision.progress = 100
 
-        for node in nodes:
-            objects.Node.reset_vms_created_state(node)
+                task_provision.message = six.text_type(e)
+                db().commit()
+                return task_provision
 
         db().commit()
-
         provision_message = self._call_silently(
             task_provision,
             tasks.ProvisionTask,
@@ -591,9 +601,10 @@ class ProvisioningTaskManager(TaskManager):
             lock_for_update=True
         )
         task_provision.cache = provision_message
-        objects.NodeCollection.lock_for_update(nodes).all()
 
+        objects.NodeCollection.lock_nodes(nodes_to_provision)
         for node in nodes_to_provision:
+            objects.Node.reset_vms_created_state(node)
             node.pending_addition = False
             node.status = consts.NODE_STATUSES.provisioning
             node.progress = 0

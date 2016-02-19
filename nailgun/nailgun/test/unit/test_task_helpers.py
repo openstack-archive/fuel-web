@@ -245,3 +245,30 @@ class TestTaskHelpers(BaseTestCase):
         kwargs = TaskHelper.prepare_action_log_kwargs(check_task)
         self.assertIn('actor_id', kwargs)
         self.assertEqual(actor_id, kwargs['actor_id'])
+
+    def test_format_offline_nodes_message(self):
+        nodes = ["node1", "node2", "node3"]
+        message = TaskHelper.format_offline_nodes_message(nodes, 2)
+        self.assertEqual(
+            u'Nodes "node1, node2, ..." are offline. '
+            u'Please remove them from environment and try again.',
+            message
+        )
+        message = TaskHelper.format_offline_nodes_message(nodes, 0)
+        self.assertEqual(
+            u'Nodes "..." are offline. '
+            u'Please remove them from environment and try again.',
+            message
+        )
+        message = TaskHelper.format_offline_nodes_message(nodes, 3)
+        self.assertEqual(
+            u'Nodes "node1, node2, node3" are offline. '
+            u'Please remove them from environment and try again.',
+            message
+        )
+        message = TaskHelper.format_offline_nodes_message(nodes[:1], 1)
+        self.assertEqual(
+            u'Node "node1" is offline. '
+            u'Please remove it from environment and try again.',
+            message
+        )

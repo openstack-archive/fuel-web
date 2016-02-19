@@ -134,7 +134,8 @@ var ClusterWizardPanesMixin = {
   },
   processRestrictions(paneComponents, types, stopList = []) {
     this.processIncompatible(paneComponents, types, stopList);
-    this.processRequires(paneComponents, types);
+    //this.processRequires(paneComponents, types);
+    this.props.allComponents.processPaneRequires(this.constructor.componentType);
   },
   processCompatible(allComponents, paneComponents, types, stopList = []) {
     // all previously enabled components
@@ -253,6 +254,13 @@ var ClusterWizardPanesMixin = {
     if (active) {
       active.set({enabled: false});
     }
+  },
+  renderWarnings() {
+    if (!this.props.allComponents.warnings) {
+      return null;
+    }
+    return _.map(this.props.allComponents.warnings,
+        (warning) => <div className='alert alert-warning'>{warning}</div>);
   }
 };
 
@@ -357,25 +365,25 @@ var Compute = React.createClass({
   },
   updateRestrictions() {
     this.processRestrictions(this.components, ['hypervisor']);
-    this.checkVCenterDisabled(this.props.allComponents);
+    //this.checkVCenterDisabled(this.props.allComponents);
   },
-  checkVCenterDisabled(allComponents) {
-    // TODO remove this hack in 9.0
-    var hasCompatibleBackends = _.any(allComponents.models, (component) => {
-      return _.contains(this.constructor.vCenterNetworkBackends, component.id);
-    });
-    if (!hasCompatibleBackends) {
-      var vCenter = _.find(allComponents.models, (component) => {
-        return component.id === this.constructor.vCenterPath;
-      });
-      vCenter.set({
-        disabled: true,
-        warnings: i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')
-      });
-      return true;
-    }
-    return false;
-  },
+  //checkVCenterDisabled(allComponents) {
+  //  // TODO remove this hack in 9.0
+  //  var hasCompatibleBackends = _.any(allComponents.models, (component) => {
+  //    return _.contains(this.constructor.vCenterNetworkBackends, component.id);
+  //  });
+  //  if (!hasCompatibleBackends) {
+  //    var vCenter = _.find(allComponents.models, (component) => {
+  //      return component.id === this.constructor.vCenterPath;
+  //    });
+  //    vCenter.set({
+  //      disabled: true,
+  //      warnings: i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')
+  //    });
+  //    return true;
+  //  }
+  //  return false;
+  //},
   render() {
     return (
       <div className='wizard-compute-pane'>
@@ -384,7 +392,7 @@ var Compute = React.createClass({
           components={this.components}
           onChange={this.props.onChange}
         />
-        {this.checkVCenterDisabled(this.props.allComponents) &&
+        {false && this.checkVCenterDisabled(this.props.allComponents) &&
           <div className='alert alert-warning vcenter-locked'>
             <div>
               {i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')}
@@ -400,6 +408,7 @@ var Compute = React.createClass({
             {i18n('dialog.create_cluster_wizard.compute.empty_choice')}
           </div>
         }
+        {this.renderWarnings()}
       </div>
     );
   }
@@ -483,6 +492,7 @@ var Network = React.createClass({
             {i18n('dialog.create_cluster_wizard.network.ml2_empty_choice')}
           </div>
         }
+        {this.renderWarnings()}
       </div>
     );
   }
@@ -764,6 +774,7 @@ var CreateClusterWizard = React.createClass({
     this.components.fetch().done(() => {
       this.components.invoke('expandWildcards', this.components);
       this.components.invoke('restoreDefaultValue', this.components);
+      this.components.invoke('preprocessRequires', this.components);
       this.setState({loading: false});
     });
   },

@@ -1625,9 +1625,90 @@ models.ComponentModel = BaseModel.extend({
 
     this.set({
       compatible: expandProperty('compatible', components),
-      incompatible: expandProperty('incompatible', components),
-      requires: expandProperty('requires', components)
+      incompatible: expandProperty('incompatible', components)
     });
+  },
+  predicates: {
+    one_of: (processedComponents = [], forthcomingComponents = []) => {
+      var enabledLength =
+          _.filter(processedComponents, (component) => component.get('enabled')).length;
+      var processedLength = processedComponents.length;
+      var comingLength = forthcomingComponents.length;
+      return {
+        matched: (enabledLength === 0 && comingLength > 0) || enabledLength === 1,
+        invalid: processedLength === 0 && comingLength === 0
+      };
+    },
+    none_of: (processedComponents = []) => {
+      var enabledLength =
+          _.filter(processedComponents, (component) => component.get('enabled')).length;
+      return {
+        matched: enabledLength === 0,
+        invalid: false
+      };
+    },
+    any_of: (processedComponents = [], forthcomingComponents = []) => {
+      var enabledLength =
+          _.filter(processedComponents, (component) => component.get('enabled')).length;
+      var processedLength = processedComponents.length;
+      var comingLength = forthcomingComponents.length;
+      return {
+        matched: (enabledLength === 0 && comingLength > 0) || enabledLength >= 1,
+        invalid: processedLength === 0 && comingLength === 0
+      };
+    },
+    all_of: (processedComponents = [], forthcomingComponents = []) => {
+      var processedLength = processedComponents.length;
+      var comingLength = forthcomingComponents.length;
+      return {
+        matched: _.all(processedComponents, (component) => component.get('enabled')),
+        invalid: processedLength === 0 && comingLength === 0
+      };
+    }
+  },
+  preprocessRequires(components) {
+    var componentIndex = {};
+    components.each((component) => {
+      componentIndex[component.id] = component;
+    });
+
+    var requires = _.map(this.get('requires'), (require) => {
+      var condition = {};
+      _.any(['one_of', 'none_of', 'any_of', 'all_of'], (predicate) => {
+        if (!_.isObject(require[predicate])) {
+          return false;
+        }
+        condition = _.extend(require[predicate], {predicate: predicate});
+        condition.items = _.map(condition.items, (name) => componentIndex[name]);
+        return true;
+      });
+      return condition;
+    });
+    this.set({requires: requires});
+  },
+  processRequires(currentPaneIndex, paneMap) {
+    var result = [];
+    _.each(this.get('requires'), (require) => {
+      var groupedComponents = _.groupBy(require.items, (item) => {
+        if (!item) {
+          return 'null';
+        }
+        var index = paneMap[item.get('type')];
+        return index <= currentPaneIndex ? 'processed' : 'forthcoming';
+      });
+      var predicate = this.predicates[require.predicate];
+      var predicateResult = predicate(groupedComponents.processed, groupedComponents.forthcoming);
+      var message = predicateResult.invalid ? require.message_invalid : require.message;
+      result.push(_.merge(predicateResult, {message: predicateResult.matched ? null : message}));
+    });
+    this.set({
+      requireFail: _.any(result, (item) => !item.matched),
+      invalid: _.any(result, (item) => item.invalid)
+    });
+    return {
+      matched: _.all(result, (item) => item.matched),
+      warnings: _.compact(_.map(result, (item) => i18n(item.message))).join(' ')
+    };
   },
   restoreDefaultValue() {
     this.set({enabled: this.get('default')});
@@ -1645,6 +1726,10 @@ models.ComponentsCollection = BaseCollection.extend({
   allTypes: ['hypervisor', 'network', 'storage', 'additional_service'],
   initialize(models, options) {
     this.releaseId = options.releaseId;
+    this.paneMap = {};
+    _.each(this.allTypes, (type, index) => {
+      this.paneMap[type] = index;
+    });
   },
   url() {
     return '/api/v1/releases/' + this.releaseId + '/components';
@@ -1668,6 +1753,50 @@ models.ComponentsCollection = BaseCollection.extend({
   },
   toJSON() {
     return _.compact(_.map(this.models, (model) => model.toJSON()));
+  },
+  processPaneRequires(paneType) {
+    var currentPaneIndex = this.paneMap[paneType];
+    this.each((component) => {
+      var componentPaneIndex = this.paneMap[component.get('type')];
+      if (component.get('disabled') || componentPaneIndex > currentPaneIndex) {
+        return;
+      }
+      var result = component.processRequires(currentPaneIndex, this.paneMap);
+      var isDisabled = !result.matched;
+      if (componentPaneIndex === currentPaneIndex) {
+        // current pane handling
+        component.set({
+          disabled: isDisabled,
+          warnings: isDisabled ? result.warnings : null,
+          enabled: isDisabled ? false : component.get('enabled'),
+          availability: 'incompatible'
+        });
+      } else if (!result.matched) {
+        // previous pane handling
+        component.set({
+          warnings: result.warnings
+        });
+      }
+    });
+  },
+  validate(paneType) {
+    // all the past panes should have all restrictions matched
+    // when not, errors dictionary is set
+    this.validationError = null;
+    var errors = [];
+    var currentPaneIndex = this.paneMap[paneType];
+    this.each((component) => {
+      var componentPaneIndex = this.paneMap[component.get('type')];
+      if (componentPaneIndex >= currentPaneIndex) {
+        return;
+      }
+      if (component.get('enabled') && component.get('requireFail')) {
+        errors.push(component.get('warnings'));
+      }
+    });
+    if (errors.length > 0 ) {
+      this.validationError = errors;
+    }
   }
 });
 

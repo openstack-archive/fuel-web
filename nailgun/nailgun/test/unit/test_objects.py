@@ -643,6 +643,50 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertRaises(
             errors.CannotUpdate, objects.Node.update, node_0, data)
 
+    def test_set_default_hugepages(self):
+        fake_hugepages = ['0', '1', '2', '3']
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'nova': {}}},
+            meta={
+                'numa_topology': {
+                    'supported_hugepages': fake_hugepages}}
+        )
+        objects.Node._set_default_hugepages(node)
+        expected = dict((x, 0) for x in fake_hugepages)
+        self.assertDictEqual(expected, node.attributes['hugepages']['nova'])
+
+    def test_get_total_hugepages(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'comp1': {'value': {
+                        '2048': '14',
+                        '1048576': '2'}},
+                    'comp2': {'value': {
+                        '1048576': '25'}}}})
+        expected = {
+            '2048': 14,
+            '1048576': 27}
+        self.assertDictEqual(
+            expected,
+            objects.Node.get_total_hugepages(node))
+
+    def test_hugepages_kernel_opts(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                   'comp1': {'value': {
+                       '1048576': '2'}},
+                   'comp2': {'value': {
+                       '2048': '15'}}}})
+        expected = "hugepagesz=2M hugepages=15 hugepagesz=1G hugepages=2"
+        self.assertEqual(
+            expected,
+            objects.Node.get_hugepages_kernel_opts(node))
+
+
 
 class TestTaskObject(BaseIntegrationTest):
 

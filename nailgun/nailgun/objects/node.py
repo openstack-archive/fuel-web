@@ -18,9 +18,11 @@
 Node-related objects and collections
 """
 
+import collections
 import itertools
 import operator
 from oslo_serialization import jsonutils
+import six
 import traceback
 
 from datetime import datetime
@@ -993,6 +995,41 @@ class Node(NailgunObject):
             return
 
         instance.attributes = instance.cluster.release.node_attributes
+        cls._set_default_hugepages(instance)
+
+    @classmethod
+    def _set_default_hugepages(cls, instance):
+        if 'hugepages' not in instance.attributes:
+            #in case of CentOS
+            return
+        supported_hugepages = instance.meta.get(
+            'numa_topology', {}).get('supported_hugepages', [])
+
+        instance.attributes['hugepages']['nova'] = dict(
+            (x, 0) for x in supported_hugepages)
+
+    @classmethod
+    def get_total_hugepages(cls, instance):
+        hugepages = collections.defaultdict(lambda: 0)
+        for name, attrs in six.iteritems(instance.attributes['hugepages']):
+            value = attrs['value']
+            for size, count in six.iteritems(value):
+                hugepages[size] += int(count)
+
+        return dict(hugepages)
+
+    @classmethod
+    def get_hugepages_kernel_opts(cls, instance):
+        sizemap = collections.OrderedDict({'2048': '2M', '1048576': '1G'})
+        hugepages = cls.get_total_hugepages(instance)
+
+        def convert():
+            for size, human_size in six.iteritems(sizemap):
+                if hugepages.get(size):
+                    yield "hugepagesz={0} hugepages={1}".format(
+                        human_size, hugepages[size])
+
+        return " ".join(convert())
 
 
 class NodeCollection(NailgunCollection):

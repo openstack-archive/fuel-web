@@ -399,6 +399,7 @@ class TestInstallationInfo(BaseTestCase):
             ('workloads_collector', 'user'), ('zabbix', 'password'),
             ('zabbix', 'username'),
             ('common', 'use_vcenter'),  # removed attribute
+            ('murano_settings', 'murano_repo_url'),
             ('use_fedora_lt', 'kernel'),
             ('public_ssl', 'cert_data'), ('public_ssl', 'hostname'),
             ('operator_user', 'name'),

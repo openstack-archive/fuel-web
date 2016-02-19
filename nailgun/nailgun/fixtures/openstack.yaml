@@ -694,7 +694,7 @@
       editable:
         access:
           metadata:
-            label: "Access"
+            label: "OpenStack Access"
             weight: 10
             group: "general"
           user:
@@ -733,6 +733,67 @@
             regex:
               source: &non_empty_string '\S'
               error: "Empty password"
+        operator_user:
+          metadata:
+            label: "Operating System Access"
+            weight: 15
+            group: "general"
+          name:
+            label: "Username"
+            description: ""
+            weight: 50
+            type: 'text'
+            value: 'fueladmin'
+            regex:
+              source: *non_empty_string
+              error: "Empty username"
+          password:
+            label: "Password"
+            description: ""
+            weight: 60
+            type: 'password'
+            value: 'fueladmin'
+            regex:
+              source: *non_empty_string
+              error: "Empty password"
+          homedir:
+            label: "Home directory"
+            description: ""
+            weight: 70
+            type: 'text'
+            value: '/home/fueladmin'
+            regex:
+              source: '^/\S'
+              error: "Invalid path"
+          authkeys:
+            label: "Authorized SSH keys"
+            description: ""
+            weight: 80
+            type: 'textarea'
+            value: ''
+          sudo:
+            label: "Sudoers configuration"
+            description: ""
+            weight: 90
+            type: 'textarea'
+            value: ''
+        service_user:
+          metadata:
+            label: "Service user account"
+            weight: 10
+            group: "general"
+            restrictions:
+              - condition: "true"
+                action: "hide"
+          name:
+            type: 'hidden'
+            value: 'fuel'
+          sudo:
+            type: 'hidden'
+            value: 'ALL=(ALL) NOPASSWD: ALL'
+          homedir:
+            type: 'hidden'
+            value: '/var/lib/fuel'
         workloads_collector:
           metadata:
             label: "Workloads Collector User"
@@ -917,7 +978,7 @@
             group: "security"
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
-            type: "textarea"
+            type: "hidden"
           task_deploy:
             value: true
             label: "Enable task based deploy"
@@ -1215,6 +1276,11 @@
               source: '^[1-9]\d*$'
               error: "Invalid number"
       generated:
+        service_user:
+          password:
+            generator: "password"
+          root_password:
+            generator: "password"
         mysql:
           root_password:
             generator: "password"

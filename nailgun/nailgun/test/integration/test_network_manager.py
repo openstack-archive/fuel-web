@@ -1265,25 +1265,17 @@ class TestNeutronManager70(BaseIntegrationTest):
         self.assertEqual(expected_vips, vips)
 
     def test_assign_given_vips_for_net_groups(self):
-        vips_to_create = {
-            'management': {
-                'vrouter': '192.168.0.1',
-            },
-            'public': {
-                'vrouter_pub': '172.16.0.2',
-            },
-        }
+        # rewrite VIPs allocated on creation of cluster
         vips_to_assign = {
             'management': {
-                'vrouter': '192.168.0.2',
-                'management': '192.168.0.3',
+                'vrouter': '192.168.0.4',
+                'management': '192.168.0.5',
             },
             'public': {
                 'vrouter_pub': '172.16.0.4',
                 'public': '172.16.0.5',
             },
         }
-        self.env.create_ip_addrs_by_rules(self.cluster, vips_to_create)
         self.net_manager.assign_given_vips_for_net_groups(
             self.cluster, vips_to_assign)
         vips = self.net_manager.get_assigned_vips(self.cluster)

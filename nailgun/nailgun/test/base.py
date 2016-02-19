@@ -922,7 +922,8 @@ class EnvironmentManager(object):
         raise Exception(
             'Cluster with ID "{0}" was not found.'.format(cluster_id))
 
-    def launch_provisioning_selected(self, nodes_uids=None, cluster_id=None):
+    def launch_provisioning_selected(
+            self, nodes_uids=None, cluster_id=None, force=False):
         if self.clusters:
             cluster = self._get_cluster_by_id(cluster_id)
             if not nodes_uids:
@@ -930,14 +931,14 @@ class EnvironmentManager(object):
             action_url = reverse(
                 'ProvisionSelectedNodes',
                 kwargs={'cluster_id': cluster.id}
-            ) + '?nodes={0}'.format(','.join(nodes_uids))
+            ) + '?nodes={0}&force={1}'.format(','.join(nodes_uids), int(force))
             resp = self.app.put(
                 action_url,
                 '{}',
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEqual(202, resp.status_code)
+            self.tester.assertIn(resp.status_code, (200, 202))
             response = resp.json_body
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']

@@ -437,3 +437,26 @@ class TaskHelper(object):
                            consts.TASK_STATUSES.running):
             task.status = consts.TASK_STATUSES.ready
         cls.update_action_log(task)
+
+    @classmethod
+    def format_offline_nodes_message(cls, offline_node_names, limit=3):
+        """Gets the message about offline nodes.
+
+        :param offline_node_names: the names of offline nodes
+        :param limit: the max number of names that can be included to message
+        :return: the message
+        """
+
+        if len(offline_node_names) > limit:
+            names = u", ".join(offline_node_names[:limit] + ["..."])
+        else:
+            names = u", ".join(offline_node_names)
+
+        if len(offline_node_names) == 1:
+            return u'Node "{0}" is offline.' \
+                   u' Please remove it from environment and try again.' \
+                   .format(names)
+
+        return u'Nodes "{0}" are offline. ' \
+               u'Please remove them from environment and try again.' \
+               .format(names)

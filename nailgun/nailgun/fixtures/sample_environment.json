@@ -347,7 +347,10 @@
                         }
                     ],
                     "supported_hugepages": [2048, 1048576],
-                    "distances": []
+                    "distances": [
+                        ["1.0", "2.1"],
+                        ["2.1", "1.0"]
+                    ]
                 }
             },
             "timestamp": "",
@@ -576,7 +579,9 @@
                         }
                     ],
                     "supported_hugepages": [2048, 1048576],
-                    "distances": []
+                    "distances": [
+                        ["1.0"]
+                    ]
                 }
             },
             "timestamp": "",
@@ -784,7 +789,9 @@
                         }
                     ],
                     "supported_hugepages": [2048, 1048576],
-                    "distances": []
+                    "distances": [
+                        ["1.0"]
+                    ]
                 }
             },
             "timestamp": "",
@@ -926,7 +933,9 @@
                         }
                     ],
                     "supported_hugepages": [2048, 1048576],
-                    "distances": []
+                    "distances": [
+                        ["1.0"]
+                    ]
                 }
             },
             "timestamp": "",
@@ -1069,7 +1078,9 @@
                         }
                     ],
                     "supported_hugepages": [2048, 1048576],
-                    "distances": []
+                    "distances": [
+                        ["1.0"]
+                    ]
                 }
             },
             "timestamp": "",
@@ -1169,7 +1180,9 @@
                         }
                     ],
                     "supported_hugepages": [2048],
-                    "distances": []
+                    "distances": [
+                        ["1.0"]
+                    ]
                 }
             },
             "timestamp": "",
@@ -1292,7 +1305,9 @@
                         }
                     ],
                     "supported_hugepages": [2048],
-                    "distances": []
+                    "distances": [
+                        ["1.0"]
+                    ]
                 }
             },
             "timestamp": "",
@@ -1592,7 +1607,10 @@
                         }
                     ],
                     "supported_hugepages": [2048, 1048576],
-                    "distances": []
+                    "distances": [
+                        ["1.0", "2.1"],
+                        ["2.1", "1.0"]
+                    ]
                 }
             },
             "timestamp": "",

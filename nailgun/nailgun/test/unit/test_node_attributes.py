@@ -51,3 +51,40 @@ class TestNodeAttributes(base.BaseUnitTest):
                  'comp2': {'name': 'comp2',
                            'required_cpus': 3}}},
             objects.NodeAttributes.node_cpu_pinning_info(node))
+
+    def test_total_hugepages(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'comp1': {
+                        'type': 'custom_hugepages',
+                        'value': {
+                            '2048': 14,
+                            '1048576': '2'}},
+                    'comp2': {
+                        'type': 'text',
+                        'value': 20}}},
+            meta={'numa_topology': {'numa_nodes': [{'id': 0}]}})
+        expected = {
+            '2048': 24,
+            '1048576': 2}
+        self.assertDictEqual(
+            expected,
+            objects.NodeAttributes.total_hugepages(node))
+
+    def test_hugepages_kernel_opts(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'comp1': {
+                        'type': 'custom_hugepages',
+                        'value': {
+                            '1048576': 2}},
+                    'comp2': {
+                        'type': 'text',
+                        'value': '10'}}},
+            meta={'numa_topology': {'numa_nodes': [{'id': '0'}]}})
+        expected = " hugepagesz=2M hugepages=5 hugepagesz=1G hugepages=2"
+        self.assertEqual(
+            expected,
+            objects.NodeAttributes.hugepages_kernel_opts(node))

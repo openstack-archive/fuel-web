@@ -426,7 +426,7 @@ class AstuteGraph(object):
                 continue
 
             serializer = self.serializers.get_stage_serializer(task)(
-                task, self.cluster, nodes, role_resolver)
+                task, self.cluster, nodes, role_resolver=role_resolver)
 
             if not serializer.should_execute():
                 continue

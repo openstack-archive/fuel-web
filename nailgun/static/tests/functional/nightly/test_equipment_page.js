@@ -251,6 +251,45 @@ define([
           })
           .clickByCssSelector('button.btn-clear-search');
       },
+      'Labels support for "Equipment" page': function() {
+        var labelName = 'Boost_label';
+        var labelValue = '1.5';
+        var btnLabelsSelector = 'button.btn-labels';
+        var btnAddLabelSelector = 'button.btn-add-label';
+        var btnApplySelector = 'button.btn-success';
+        var nameSelector = 'input[label="Name"]';
+        var valueSelector = 'input[label="Value"]';
+        var labelSelector = nodeSelector + ' div.node-labels button.btn-link';
+        var popoverSelector = 'div.popover ';
+        var labelPaneSelector = 'div.labels ';
+        var labelCheckboxSelector = labelPaneSelector + 'input[type="checkbox"]';
+        return this.remote
+          .assertElementsExist(nodeSelector + 'input', '"Controller" node exists')
+          .clickByCssSelector(nodeSelector + 'input')
+          // Add label
+          .assertElementEnabled(btnLabelsSelector, '"Manage Labels" button is enabled')
+          .clickByCssSelector(btnLabelsSelector)
+          .assertElementsAppear(labelPaneSelector, 1000, '"Manage Labels" pane appears')
+          .assertElementEnabled(btnAddLabelSelector, '"Add Label" button is enabled')
+          .clickByCssSelector(btnAddLabelSelector)
+          .assertElementEnabled(nameSelector, '"Name" textfield is enabled')
+          .assertElementEnabled(valueSelector, '"Value" textfield is enabled')
+          .setInputValue(nameSelector, labelName)
+          .setInputValue(valueSelector, labelValue)
+          .assertElementEnabled(btnApplySelector, '"Apply" button is enabled')
+          .clickByCssSelector(btnApplySelector)
+          .assertElementsAppear(labelSelector, 2000, '"Controller" node label appears')
+          .clickByCssSelector(labelSelector)
+          .assertElementsAppear(popoverSelector, 1000, 'Node label appears')
+          .assertElementContainsText(popoverSelector + 'li.label',
+            labelName + ' "' + labelValue + '"', 'True label message is observed')
+          // Remove label
+          .clickByCssSelector(btnLabelsSelector)
+          .assertElementsAppear(labelCheckboxSelector, 1000, '"Current label" checkbox appears')
+          .clickByCssSelector(labelCheckboxSelector)
+          .clickByCssSelector(btnApplySelector)
+          .assertElementDisappears(labelSelector, 2000, '"Controller" node label dissappears');
+      },
       'Sorting support for "Equipment" page': function() {
         return this.remote
           .assertElementsExist('button.btn-sorters', '"Sort Nodes" button is exists')

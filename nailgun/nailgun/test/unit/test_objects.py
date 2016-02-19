@@ -643,6 +643,60 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertRaises(
             errors.CannotUpdate, objects.Node.update, node_0, data)
 
+    def test_set_default_hugepages(self):
+        fake_hugepages = ['0', '1', '2', '3']
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'nova': {'type': 'custom_hugepages'}}},
+            meta={
+                'numa_topology': {
+                    'supported_hugepages': fake_hugepages,
+                    'numa_nodes': []}}
+        )
+        objects.Node._set_default_hugepages(node)
+        expected = dict((x, 0) for x in fake_hugepages)
+        self.assertDictEqual(
+            expected,
+            node.attributes['hugepages']['nova']['value'])
+
+    def test_total_hugepages(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'comp1': {
+                        'type': 'custom_hugepages',
+                        'value': {
+                            '2048': '14',
+                            '1048576': '2'}},
+                    'comp2': {
+                        'type': 'text',
+                        'value': '20'}}},
+            meta={'numa_topology':{'numa_nodes': [{'id': 0}]}})
+        expected = {
+            '2048': 24,
+            '1048576': 2}
+        self.assertDictEqual(
+            expected,
+            objects.Node.total_hugepages(node))
+
+    def test_hugepages_kernel_opts(self):
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'comp1': {
+                        'type': 'custom_hugepages',
+                        'value': {
+                            '1048576': '2'}},
+                    'comp2': {
+                        'type': 'text',
+                        'value': '10'}}},
+            meta={'numa_topology':{'numa_nodes': [{'id': '0'}]}})
+        expected = " hugepagesz=2M hugepages=5 hugepagesz=1G hugepages=2"
+        self.assertEqual(
+            expected,
+            objects.Node.hugepages_kernel_opts(node))
+
 
 class TestTaskObject(BaseIntegrationTest):
 

@@ -431,3 +431,28 @@ class TestProvisioningSerializer80(BaseIntegrationTest):
                 'fuel-bootstrap-image' in task['parameters']['cmd'],
                 'ironic.pub' in task['parameters']['cmd']]),
             serialized_info['pre_provision']))
+
+
+class TestProvisioningSerializer90(BaseIntegrationTest):
+
+    serializer = ps.ProvisioningSerializer90
+
+    def test_serialize_node_attributes(self):
+        release = self.env.create_release(
+            api=False,
+            operating_system=consts.RELEASE_OS.ubuntu)
+        cluster = self.env.create_cluster(
+            api=False,
+            release_id=release.id)
+        node = self.env.create_node(
+            api=False,
+            cluster_id=cluster.id,
+            roles=['compute'])
+
+        node.attributes['hugepages']['nova']['value'] = {'2048': 5}
+        serialized_info = self.serializer.serialize(cluster, [node])
+
+        serialized_node = serialized_info['nodes'][0]
+        kernel_opts = serialized_node['ks_meta']['pm_data']['kernel_params']
+        self.assertIn(" hugepagesz=2M hugepages=5", kernel_opts)
+

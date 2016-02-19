@@ -913,7 +913,9 @@
                         "qemu_description": "Select this option if you want to use QEMU as a hypervisor with capability of KVM acceleration.",
                         "vcenter_description": "Select this option if you run OpenStack on VMware vCenter.",
                         "vcenter_warning": "vCenter can't be deployed without QEMU-KVM option selected.",
-                        "vcenter_requires_network_backend": "Plugin for DVS/NSX is required to create an environment with vCenter and Neutron.",
+                        "qemu_requires_network_backend": "QEMU requires VLAN segmentation or tunneling segmentation network backend enabled",
+                        "vcenter_requires_network_plugins": "Plugin for DVS/NSX is required to create an environment with vCenter and Neutron.",
+                        "vcenter_requires_network_backend": "vCenter requires DVS or NSX network plugins",
                         "vcenter_plugins_page": "Please visit Fuel plugins page for details.",
                         "empty_choice":  "Please select at least one hypervisor type"
                     },

@@ -210,7 +210,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
             logger.warn(
                 u'Cannot execute %s task nodes: %s',
                 task_manager.__class__.__name__, traceback.format_exc())
-            raise self.http(400, message=six.text_type(exc))
+            raise self.http(400, msg=six.text_type(exc))
 
         self.raise_task(task)
 
@@ -251,7 +251,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
         # we use it here is to follow dry rule and do not convert exceptions
         # into http status codes again.
         self.checked_data(self.validator.validate_provision, cluster=cluster)
-        return self.handle_task(cluster)
+        force = bool(web.input(force=None).force not in (None, '', '0'))
+        return self.handle_task(cluster, force=force)
 
 
 class BaseDeploySelectedNodes(SelectedNodesBase):

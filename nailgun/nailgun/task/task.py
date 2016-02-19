@@ -1186,13 +1186,13 @@ class CheckBeforeDeploymentTask(object):
             if n.status == consts.NODE_STATUSES.ready and n in nodes_to_deploy]
 
         if offline_nodes_not_ready or offline_nodes_to_redeploy:
-            node_names = ','.join(
-                map(lambda n: n.full_name,
-                    offline_nodes_not_ready + offline_nodes_to_redeploy))
+            node_names = [
+                n.full_name
+                for n in offline_nodes_not_ready + offline_nodes_to_redeploy
+            ]
             raise errors.NodeOffline(
-                u'Nodes "{0}" are offline.'
-                ' Remove them from environment '
-                'and try again.'.format(node_names))
+                TaskHelper.format_offline_nodes_message(node_names)
+            )
 
     @classmethod
     def _check_disks(cls, task):

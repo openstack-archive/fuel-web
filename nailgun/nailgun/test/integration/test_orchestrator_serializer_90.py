@@ -58,13 +58,12 @@ class TestDeploymentAttributesSerialization90(
     TestDeploymentAttributesSerialization80
 ):
     def test_attributes_cpu_pinning(self):
-        meta = {'numa_topology': {
-            'numa_nodes': [{'id': 1, 'cpus': [1, 2, 3, 4]},
-                           {'id': 2, 'cpus': [5, 6, 7, 8]}]
-        }}
+        numa_nodes = [{'id': 1, 'cpus': [1, 2, 3, 4]},
+                      {'id': 2, 'cpus': [5, 6, 7, 8]}]
         node = self.env.create_node(cluster_id=self.cluster_db.id,
-                                    roles=['compute'],
-                                    meta=meta)
+                                    roles=['compute'])
+
+        node.meta['numa_topology']['numa_nodes'] = numa_nodes
         node.attributes.update({
             'cpu_pinning': {
                 'nova': {'value': 2},

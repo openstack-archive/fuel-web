@@ -18,9 +18,11 @@
 Node-related objects and collections
 """
 
+import collections
 import copy
 from datetime import datetime
 import itertools
+import math
 import operator
 import traceback
 
@@ -1082,6 +1084,10 @@ class Node(NailgunObject):
                 if 'amd_iommu=' not in kernel_params:
                     kernel_params += ' amd_iommu=on'
                 break
+
+        if 'hugepages' not in kernel_params:
+            kernel_params += NodeAttributes.hugepages_kernel_opts(instance)
+
         return kernel_params
 
     @classmethod
@@ -1186,6 +1192,17 @@ class Node(NailgunObject):
             return
 
         instance.attributes = instance.cluster.release.node_attributes
+        cls._set_default_hugepages(instance)
+
+    @classmethod
+    def _set_default_hugepages(cls, instance):
+        supported_hugepages = \
+            instance.meta['numa_topology']['supported_hugepages']
+
+        hugepages_attributes = instance.attributes['hugepages']
+        for name, attrs in six.iteritems(hugepages_attributes):
+            if attrs.get('type') == 'custom_hugepages':
+                attrs['value'] = dict.fromkeys(supported_hugepages, 0)
 
     @classmethod
     def get_attributes(cls, instance):
@@ -1290,3 +1307,53 @@ class NodeAttributes(object):
     @classmethod
     def is_nova_cpu_pinning_enabled(cls, node):
         return bool(Node.get_attributes(node)['cpu_pinning']['nova']['value'])
+
+    @classmethod
+    def total_hugepages(cls, instance):
+        """Return total hugepages for the instance
+
+        Iterate over hugepages attributes and sum them
+        according their type: custom_hugepages - contains
+        items (size: count), text - this is the number of
+        memory in MB which must be allocated as hugepages
+        on each NUMA node (default hugepages size 2M will
+        be used and count will be calculated according to
+        number of specified memory).
+
+        :return: Dictionary with (size: count) items
+        """
+
+        hugepages = collections.defaultdict(int)
+        numa_count = len(instance.meta['numa_topology']['numa_nodes'])
+
+        hugepages_attributes = Node.get_attributes(instance)['hugepages']
+        for name, attrs in six.iteritems(hugepages_attributes):
+            if attrs.get('type') == 'custom_hugepages':
+                value = attrs['value']
+                for size, count in six.iteritems(value):
+                    hugepages[size] += int(count)
+            elif attrs.get('type') == 'text':
+                # type text means that value is the number of memory in MB
+                # per NUMA node which should be covered by 2M hugepages
+                # for python3 capabilites we have to use int() and float()
+                count_per_numa_node = int(math.ceil(float(attrs['value']) / 2))
+                hugepages[consts.DEFAULT_HUGEPAGE_SIZE] += (
+                    count_per_numa_node * numa_count)
+
+        return hugepages
+
+    @classmethod
+    def hugepages_kernel_opts(cls, instance):
+        hugepages = cls.total_hugepages(instance)
+
+        kernel_opts = ""
+        for size, human_size in consts.HUGE_PAGES_SIZE_MAP:
+            hugepage_size = hugepages.get(size, 0)
+            if hugepage_size:
+                # extend kernel params with lines for huge pages
+                # hugepagesz is the size (2M, 1G, etc.)
+                # hugepages is the number of pages for specific size
+                kernel_opts += " hugepagesz={0} hugepages={1}".format(
+                    human_size, hugepage_size)
+
+        return kernel_opts

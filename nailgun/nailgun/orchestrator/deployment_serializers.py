@@ -105,9 +105,7 @@ class DeploymentMultinodeSerializer(object):
 
     def get_common_attrs(self, cluster):
         """Cluster attributes."""
-
-        attrs = objects.Cluster.get_attributes(cluster)
-        attrs = objects.Attributes.merged_attrs_values(attrs)
+        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
         release = self.current_release(cluster)
 
         attrs['deployment_mode'] = cluster.mode

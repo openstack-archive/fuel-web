@@ -403,4 +403,22 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
 
 
 class ProvisioningSerializer90(ProvisioningSerializer80):
-    pass
+
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        serialized_node = super(ProvisioningSerializer80, cls).serialize_node(
+            cluster_attrs, node)
+
+        if not bool(node.replaced_provisioning_info):
+            cls.serialize_node_attributes(serialized_node, node)
+
+        return serialized_node
+
+    @classmethod
+    def serialize_node_attributes(cls, serialized_node, node):
+        cls._serialize_node_hugepages(serialized_node, node)
+
+    @classmethod
+    def _serialize_node_hugepages(cls, serialized_node, node):
+        serialized_node['ks_meta']['pm_data']['kernel_params'] += \
+            objects.Node.hugepages_kernel_opts(node)

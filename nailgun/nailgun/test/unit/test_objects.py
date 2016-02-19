@@ -676,6 +676,23 @@ class TestNodeObject(BaseIntegrationTest):
         }
         self.assertEqual(expected_attributes, node.attributes)
 
+    def test_set_default_hugepages(self):
+        fake_hugepages = ['0', '1', '2', '3']
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'nova': {'type': 'custom_hugepages'}}},
+            meta={
+                'numa_topology': {
+                    'supported_hugepages': fake_hugepages,
+                    'numa_nodes': []}}
+        )
+        objects.Node._set_default_hugepages(node)
+        expected = dict((x, 0) for x in fake_hugepages)
+        self.assertDictEqual(
+            expected,
+            node.attributes['hugepages']['nova']['value'])
+
 
 class TestTaskObject(BaseIntegrationTest):
 

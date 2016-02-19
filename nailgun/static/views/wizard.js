@@ -127,14 +127,14 @@ var ClusterWizardPanesMixin = {
     var allComponentsExclusive = _.all(components, (component) => {
       var peerIds = _.pluck(_.reject(components, {id: component.id}), 'id');
       var incompatibleIds = _.pluck(_.pluck(component.get('incompatible'), 'component'), 'id');
-      // peerIds should be subset of incompatibleIds to have exclusiveness property
+      // peerIds should be subset of incompatibleIds to have exclusiveness property.
       return peerIds.length === _.intersection(peerIds, incompatibleIds).length;
     });
     return allComponentsExclusive;
   },
   processRestrictions(paneComponents, types, stopList = []) {
     this.processIncompatible(paneComponents, types, stopList);
-    this.processRequires(paneComponents, types);
+    this.props.allComponents.processPaneRequires(this.constructor.componentType);
   },
   processCompatible(allComponents, paneComponents, types, stopList = []) {
     // all previously enabled components
@@ -205,42 +205,6 @@ var ClusterWizardPanesMixin = {
       });
     });
   },
-  processRequires(paneComponents, types) {
-    // if component has requires,
-    // it is disabled until all requires are already enabled
-    _.each(paneComponents, (component) => {
-      // skip already disabled components
-      if (component.get('disabled')) {
-        return;
-      }
-      var requires = component.get('requires') || [];
-      if (!requires.length) {
-        // no requires
-        component.set({isRequired: false});
-        return;
-      }
-      var isDisabled = false;
-      var warnings = [];
-      _.each(requires, (require) => {
-        var type = require.component.get('type');
-        if (!_.contains(types, type)) {
-          // ignore forward requires
-          return;
-        }
-        if (!require.component.get('enabled')) {
-          isDisabled = true;
-          warnings.push(require.message);
-        }
-      });
-      component.set({
-        disabled: isDisabled,
-        isRequired: true,
-        warnings: isDisabled ? warnings.join(' ') : null,
-        enabled: isDisabled ? false : component.get('enabled'),
-        availability: 'incompatible'
-      });
-    });
-  },
   selectActiveComponent(components) {
     var active = _.find(components, (component) => component.get('enabled'));
     if (active && !active.get('disabled')) {
@@ -253,6 +217,13 @@ var ClusterWizardPanesMixin = {
     if (active) {
       active.set({enabled: false});
     }
+  },
+  renderWarnings() {
+    if (!this.props.allComponents.validationError) {
+      return null;
+    }
+    return _.map(this.props.allComponents.validationError,
+        (warning, index) => <div key={index} className='alert alert-warning'>{warning}</div>);
   }
 };
 
@@ -348,6 +319,10 @@ var Compute = React.createClass({
     vCenterNetworkBackends: ['network:neutron:core:nsx', 'network:neutron:ml2:dvs'],
     hasErrors(wizard) {
       var allComponents = wizard.get('components');
+      allComponents.validate(this.componentType);
+      if (allComponents.validationError) {
+        return true;
+      }
       var components = allComponents.getComponentsByType(this.componentType, {sorted: true});
       return !_.any(components, (component) => component.get('enabled'));
     }
@@ -357,26 +332,9 @@ var Compute = React.createClass({
   },
   updateRestrictions() {
     this.processRestrictions(this.components, ['hypervisor']);
-    this.checkVCenterDisabled(this.props.allComponents);
-  },
-  checkVCenterDisabled(allComponents) {
-    // TODO remove this hack in 9.0
-    var hasCompatibleBackends = _.any(allComponents.models, (component) => {
-      return _.contains(this.constructor.vCenterNetworkBackends, component.id);
-    });
-    if (!hasCompatibleBackends) {
-      var vCenter = _.find(allComponents.models, (component) => {
-        return component.id === this.constructor.vCenterPath;
-      });
-      vCenter.set({
-        disabled: true,
-        warnings: i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')
-      });
-      return true;
-    }
-    return false;
   },
   render() {
+    var vcenter = this.props.allComponents.findWhere({id: 'hypervisor:vmware'});
     return (
       <div className='wizard-compute-pane'>
         <ComponentCheckboxGroup
@@ -384,7 +342,7 @@ var Compute = React.createClass({
           components={this.components}
           onChange={this.props.onChange}
         />
-        {this.checkVCenterDisabled(this.props.allComponents) &&
+        {vcenter && vcenter.get('invalid') &&
           <div className='alert alert-warning vcenter-locked'>
             <div>
               {i18n('dialog.create_cluster_wizard.compute.vcenter_requires_network_backend')}
@@ -400,6 +358,7 @@ var Compute = React.createClass({
             {i18n('dialog.create_cluster_wizard.compute.empty_choice')}
           </div>
         }
+        {this.renderWarnings()}
       </div>
     );
   }
@@ -415,13 +374,10 @@ var Network = React.createClass({
     ml2CorePath: 'network:neutron:core:ml2',
     hasErrors(wizard) {
       var allComponents = wizard.get('components');
-      var components = allComponents.getComponentsByType(this.componentType, {sorted: true});
-      var ml2core = _.find(components, (component) => component.id === this.ml2CorePath);
-      if (ml2core && ml2core.get('enabled')) {
-        var ml2 = _.filter(components, (component) => component.isML2Driver());
-        return !_.any(ml2, (ml2driver) => ml2driver.get('enabled'));
+      allComponents.validate(this.componentType);
+      if (allComponents.validationError) {
+        return true;
       }
-      return false;
     }
   },
   componentWillMount() {
@@ -478,11 +434,7 @@ var Network = React.createClass({
         <div className='ml2'>
           {this.renderML2DriverControls()}
         </div>
-        {this.constructor.hasErrors(this.props.wizard) &&
-          <div className='alert alert-warning'>
-            {i18n('dialog.create_cluster_wizard.network.ml2_empty_choice')}
-          </div>
-        }
+        {this.renderWarnings()}
       </div>
     );
   }
@@ -494,7 +446,14 @@ var Storage = React.createClass({
     paneName: 'Storage',
     panesForRestrictions: ['hypervisor', 'network', 'storage'],
     componentType: 'storage',
-    title: i18n('dialog.create_cluster_wizard.storage.title')
+    title: i18n('dialog.create_cluster_wizard.storage.title'),
+    hasErrors(wizard) {
+      var allComponents = wizard.get('components');
+      allComponents.validate(this.componentType);
+      if (allComponents.validationError) {
+        return true;
+      }
+    }
   },
   componentWillMount() {
     this.updateRestrictions();
@@ -545,6 +504,7 @@ var Storage = React.createClass({
             {this.renderSection(this.components, 'ephemeral', this.props.onChange)}
           </div>
         </div>
+        {this.renderWarnings()}
       </div>
     );
   }
@@ -556,7 +516,14 @@ var AdditionalServices = React.createClass({
     paneName: 'AdditionalServices',
     panesForRestrictions: ['hypervisor', 'network', 'storage', 'additional_service'],
     componentType: 'additional_service',
-    title: i18n('dialog.create_cluster_wizard.additional.title')
+    title: i18n('dialog.create_cluster_wizard.additional.title'),
+    hasErrors(wizard) {
+      var allComponents = wizard.get('components');
+      allComponents.validate(this.componentType);
+      if (allComponents.validationError) {
+        return true;
+      }
+    }
   },
   componentWillMount() {
     this.updateRestrictions();
@@ -577,6 +544,7 @@ var AdditionalServices = React.createClass({
           components={this.components}
           onChange={this.props.onChange}
         />
+        {this.renderWarnings()}
       </div>
     );
   }
@@ -764,6 +732,7 @@ var CreateClusterWizard = React.createClass({
     this.components.fetch().done(() => {
       this.components.invoke('expandWildcards', this.components);
       this.components.invoke('restoreDefaultValue', this.components);
+      this.components.invoke('preprocessRequires', this.components);
       this.setState({loading: false});
     });
   },

@@ -18,22 +18,21 @@
 Node-related objects and collections
 """
 
+import collections
+from datetime import datetime
 import itertools
 import operator
-from oslo_serialization import jsonutils
 import traceback
 
-from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from oslo_serialization import jsonutils
+import six
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
 from nailgun import consts
-
-from nailgun.objects.serializers.node import NodeSerializer
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -43,15 +42,15 @@ from nailgun.extensions import fire_callback_on_node_delete
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.logger import logger
-
+from nailgun.network.template import NetworkTemplate
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Notification
-
+from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.settings import settings
 
-from nailgun.network.template import NetworkTemplate
+HUGE_PAGES_SIZE_MAP = [('2048', '2M'), ('1048576', '1G')]
 
 
 class Node(NailgunObject):
@@ -993,6 +992,40 @@ class Node(NailgunObject):
             return
 
         instance.attributes = instance.cluster.release.node_attributes
+        cls._set_default_hugepages(instance)
+
+    @classmethod
+    def _set_default_hugepages(cls, instance):
+        if 'hugepages' not in instance.attributes:
+            # in case of CentOS
+            return
+        supported_hugepages = instance.meta.get(
+            'numa_topology', {}).get('supported_hugepages', [])
+
+        instance.attributes['hugepages']['nova'] = dict(
+            (x, 0) for x in supported_hugepages)
+
+    @classmethod
+    def get_total_hugepages(cls, instance):
+        hugepages = collections.defaultdict(lambda: 0)
+        for name, attrs in six.iteritems(instance.attributes['hugepages']):
+            value = attrs['value']
+            for size, count in six.iteritems(value):
+                hugepages[size] += int(count)
+
+        return dict(hugepages)
+
+    @classmethod
+    def get_hugepages_kernel_opts(cls, instance):
+        hugepages = cls.get_total_hugepages(instance)
+
+        def convert():
+            for size, human_size in HUGE_PAGES_SIZE_MAP:
+                if hugepages.get(size):
+                    yield "hugepagesz={0} hugepages={1}".format(
+                        human_size, hugepages[size])
+
+        return " ".join(convert())
 
 
 class NodeCollection(NailgunCollection):

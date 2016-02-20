@@ -375,6 +375,7 @@ define([
               );
             })
           .clickByCssSelector('.subtab-link-neutron_l3')
+          .waitForCssSelector('.nav-pills.networks li.all', 1000)
           .assertElementTextEquals(
             '.nav-pills.networks li.all',
             'All Networks',
@@ -394,7 +395,6 @@ define([
           .then(function() {
             return networkPage.addNodeNetworkGroup('Node_Network_Group_1');
           })
-          .waitForCssSelector('.network-group-name[data-name=Node_Network_Group_1]', 2000)
           .clickLinkByText('default')
           .assertElementsExist(
             '.node_network_groups li',

@@ -29,10 +29,32 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_enum
 
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
+
+node_statuses_old = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+)
+
+node_statuses_new = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+    'stopped',
+)
 
 
 def upgrade():
@@ -42,9 +64,11 @@ def upgrade():
     upgrade_node_roles_metadata()
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
+    upgrade_node_status_attributes()
 
 
 def downgrade():
+    downgrade_node_status_attributes()
     downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
     downgrade_node_roles_metadata()
@@ -660,6 +684,21 @@ def upgrade_node_attributes():
     )
 
 
-def downgrade_node_attributes():
-    op.drop_column('releases', 'node_attributes')
-    op.drop_column('nodes', 'attributes')
+def upgrade_node_status_attributes():
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_old,          # old options
+        node_statuses_new           # new options
+    )
+
+
+def downgrade_node_status_attributes():
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_new,          # old options
+        node_statuses_old           # new options
+    )

@@ -677,8 +677,7 @@ class NailgunReceiver(object):
 
             message = (
                 u"Deployment of environment '{0}' was successfully stopped. "
-                u"Please make changes and reset the environment "
-                u"if you want to redeploy it."
+                u"Please make changes."
                 .format(task.cluster.name or task.cluster_id)
             )
 

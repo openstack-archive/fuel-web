@@ -119,6 +119,29 @@ class TestTaskHelpers(BaseTestCase):
         computes = self.filter_by_role(nodes, 'compute')
         self.assertEqual(len(computes), 2)
 
+    def test_redeploy_with_stopped_nodes(self):
+        cluster = self.create_env([
+            {'roles': ['controller'], 'status': 'error'},
+            {'roles': ['controller'], 'status': 'stopped'},
+            {'roles': ['controller'], 'status': 'stopped'},
+            {'roles': ['compute', 'cinder'], 'status': 'stopped'},
+            {'roles': ['compute'], 'status': 'error',
+             'error_type': 'stop_deployment'},
+            {'roles': ['cinder'], 'status': 'error',
+             'error_type': 'deploy'}])
+
+        nodes = TaskHelper.nodes_to_deploy(cluster)
+        self.assertEqual(len(nodes), 6)
+
+        controllers = self.filter_by_role(nodes, 'controller')
+        self.assertEqual(len(controllers), 3)
+
+        cinders = self.filter_by_role(nodes, 'cinder')
+        self.assertEqual(len(cinders), 2)
+
+        computes = self.filter_by_role(nodes, 'compute')
+        self.assertEqual(len(computes), 2)
+
     # TODO(aroma): move it to utils testing code
     def test_recalculate_deployment_task_progress(self):
         cluster = self.create_env([

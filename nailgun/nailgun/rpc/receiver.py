@@ -649,7 +649,7 @@ class NailgunReceiver(object):
             task.cluster.status = consts.CLUSTER_STATUSES.stopped
 
             if stop_tasks:
-                map(db().delete, stop_tasks)
+                objects.Task.bulk_delete([x.id for x in stop_tasks])
 
             node_uids = [n['uid'] for n in itertools.chain(nodes, ia_nodes)]
             q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
@@ -658,7 +658,6 @@ class NailgunReceiver(object):
                 cluster_id=task.cluster_id
             )
             q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
-            q_nodes = objects.NodeCollection.lock_for_update(q_nodes)
 
             # locking Nodes for update
             update_nodes = objects.NodeCollection.lock_for_update(
@@ -677,13 +676,49 @@ class NailgunReceiver(object):
 
             message = (
                 u"Deployment of environment '{0}' was successfully stopped. "
-                u"Please make changes and reset the environment "
-                u"if you want to redeploy it."
                 .format(task.cluster.name or task.cluster_id)
             )
 
             notifier.notify(
                 "done",
+                message,
+                task.cluster_id
+            )
+        elif status == consts.TASK_STATUSES.error:
+            task.cluster.status = consts.CLUSTER_STATUSES.error
+
+            if stop_tasks:
+                objects.Task.bulk_delete([x.id for x in stop_tasks])
+
+            q_nodes = objects.NodeCollection.filter_by(
+                None,
+                cluster_id=task.cluster_id
+            )
+            q_nodes = objects.NodeCollection.filter_by(
+                q_nodes,
+                status=consts.NODE_STATUSES.deploying
+            )
+            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+
+            # locking Nodes for update
+            update_nodes = objects.NodeCollection.lock_for_update(
+                q_nodes
+            ).all()
+
+            for node_db in update_nodes:
+                node_db.status = consts.NODE_STATUSES.error
+                node_db.progress = 100
+                node_db.error_type = consts.TASK_NAMES.stop_deployment
+
+            db().flush()
+            message = (
+                u"Deployment of environment '{0}' was failed to stop: {1}. "
+                u"Please check logs for details."
+                .format(task.cluster.name or task.cluster_id, message)
+            )
+
+            notifier.notify(
+                "error",
                 message,
                 task.cluster_id
             )

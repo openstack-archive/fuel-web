@@ -29,10 +29,49 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_enum
 
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
+
+node_statuses_old = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+)
+
+
+node_statuses_new = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+    'stopped',
+)
+
+
+node_errors_old = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+)
+
+node_errors_new = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+    'stop_deployment',
+)
 
 
 def upgrade():
@@ -43,9 +82,13 @@ def upgrade():
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
     upgrade_remove_wizard_metadata_from_releases()
+    upgrade_node_status_attributes()
+    add_node_stop_deployment_error_upgrade()
 
 
 def downgrade():
+    add_node_stop_deployment_error_downgrade()
+    downgrade_node_status_attributes()
     downgrade_remove_wizard_metadata_from_releases()
     downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
@@ -679,4 +722,44 @@ def downgrade_remove_wizard_metadata_from_releases():
             fields.JSON(),
             nullable=True
         )
+    )
+
+
+def upgrade_node_status_attributes():
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_old,          # old options
+        node_statuses_new           # new options
+    )
+
+
+def downgrade_node_status_attributes():
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_new,          # old options
+        node_statuses_old           # new options
+    )
+
+
+def add_node_stop_deployment_error_upgrade():
+    upgrade_enum(
+        "nodes",
+        "error_type",
+        "node_error_type",
+        node_errors_old,
+        node_errors_new
+    )
+
+
+def add_node_stop_deployment_error_downgrade():
+    upgrade_enum(
+        "nodes",
+        "error_type",
+        "node_error_type",
+        node_errors_new,
+        node_errors_old
     )

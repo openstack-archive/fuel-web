@@ -1108,7 +1108,10 @@
                     "deploying": "部署中",
                     "operational": "可操作",
                     "error": "错误",
-                    "removing": "移除中"
+                    "removing": "移除中",
+                    "stopped": "已停止",
+                    "update": "更新",
+                    "update_error": "更新错误"
                 }
             },
             "network": {

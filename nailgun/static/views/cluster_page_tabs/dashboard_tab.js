@@ -48,6 +48,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                 modelOrCollection: function(props) {return props.cluster.get('pluginLinks');},
                 renderOn: 'update change'
             }),
+            componentMixins.backboneMixin({
+                modelOrCollection: function(props) {return props.cluster.get('networkConfiguration');}
+            }),
             componentMixins.backboneMixin('cluster', 'change'),
             componentMixins.pollingMixin(20, true)
         ],

@@ -97,7 +97,6 @@ define([
             .type('\uE00C')
             .end()
           .clickLinkByText('Environments')
-          .waitForCssSelector(clustersPage.clusterSelector, 2000)
           .then(function() {
             return clustersPage.goToEnvironment(initialName);
           });

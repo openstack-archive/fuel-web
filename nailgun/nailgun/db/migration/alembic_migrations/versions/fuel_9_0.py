@@ -42,7 +42,7 @@ cluster_statuses_old = (
     'error',
     'remove',
     'update',
-    'update_error'
+    'update_error',
 )
 cluster_statuses_new = (
     'new',
@@ -51,6 +51,38 @@ cluster_statuses_new = (
     'operational',
     'error',
     'remove',
+)
+node_statuses_old = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+)
+node_statuses_new = (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error',
+    'removing',
+    'stopped',
+)
+node_errors_old = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+)
+node_errors_new = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+    'stop_deployment',
 )
 
 
@@ -63,9 +95,13 @@ def upgrade():
     upgrade_node_attributes()
     upgrade_remove_wizard_metadata_from_releases()
     drop_legacy_patching()
+    upgrade_node_status_attributes()
+    add_node_stop_deployment_error_upgrade()
 
 
 def downgrade():
+    add_node_stop_deployment_error_downgrade()
+    downgrade_node_status_attributes()
     restore_legacy_patching()
     downgrade_remove_wizard_metadata_from_releases()
     downgrade_node_attributes()
@@ -750,4 +786,42 @@ def restore_legacy_patching():
         "cluster_status",           # ENUM name
         cluster_statuses_new,       # new options
         cluster_statuses_old,       # old options
+
+def upgrade_node_status_attributes():
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_old,          # old options
+        node_statuses_new           # new options
+    )
+
+
+def downgrade_node_status_attributes():
+    upgrade_enum(
+        "nodes",                    # table
+        "status",                   # column
+        "node_status",              # ENUM name
+        node_statuses_new,          # old options
+        node_statuses_old           # new options
+    )
+
+
+def add_node_stop_deployment_error_upgrade():
+    upgrade_enum(
+        "nodes",
+        "error_type",
+        "node_error_type",
+        node_errors_old,
+        node_errors_new
+    )
+
+
+def add_node_stop_deployment_error_downgrade():
+    upgrade_enum(
+        "nodes",
+        "error_type",
+        "node_error_type",
+        node_errors_new,
+        node_errors_old
     )

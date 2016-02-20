@@ -75,8 +75,7 @@ class TestStopDeployment(BaseIntegrationTest):
 
         self.assertRegexpMatches(
             notification.message,
-            'Please make changes and reset the environment '
-            'if you want to redeploy it.')
+            'Please make changes.')
 
     # FIXME(aroma): remove when stop action will be reworked for ha
     # cluster. To get more details, please, refer to [1]

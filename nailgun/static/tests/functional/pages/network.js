@@ -79,7 +79,8 @@ define([
         .then(function() {
           return self.modal.waitToClose();
         })
-        .waitForElementDeletion('.network-group-name[data-name=' + name + ']', 2000);
+        .waitForElementDeletion('.network-group-name[data-name=' + name + ']', 2000)
+        .sleep(3000); // unconditionally sleep to wait until update_dnsmasq task is finished
     }
   };
   return NetworkPage;

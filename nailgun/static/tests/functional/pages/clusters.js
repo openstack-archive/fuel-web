@@ -63,6 +63,7 @@ define([
     goToEnvironment: function(clusterName) {
       var self = this;
       return this.remote
+        .waitForCssSelector(self.clusterSelector, 2000)
         .findAllByCssSelector(self.clusterSelector)
         .then(function(divs) {
           return divs.reduce(

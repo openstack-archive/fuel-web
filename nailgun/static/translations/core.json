@@ -1122,6 +1122,11 @@
                     "neutron_tun": "Neutron 并使用 Tunneling"
                 }
             },
+            "controls": {
+                "files": {
+                    "placeholder": "未选择文件"
+                }
+            },
             "node_details": {
                 "cpu": "CPU",
                 "system": "系统",

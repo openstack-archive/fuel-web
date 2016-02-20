@@ -994,6 +994,22 @@ class Node(NailgunObject):
 
         instance.attributes = instance.cluster.release.node_attributes
 
+    @classmethod
+    def transite_to_provisioning(cls, node):
+        node.pending_addition = False
+        node.status = consts.NODE_STATUSES.provisioning
+        node.progress = 0
+
+    @classmethod
+    def transite_to_deploying(cls, node):
+        node.status = consts.NODE_STATUSES.deploying
+        node.progress = 0
+
+    @classmethod
+    def transite_to_removing(cls, node):
+        node.status = consts.NODE_STATUSES.removing
+        node.pending_deletion = True
+
 
 class NodeCollection(NailgunCollection):
     """Node collection"""
@@ -1061,3 +1077,19 @@ class NodeCollection(NailgunCollection):
             models.Node.id).filter_by(status=consts.NODE_STATUSES.discover)
 
         return [_id for (_id,) in q_discovery]
+
+    @classmethod
+    def transite_to_provisioning(self, nodes):
+        objects.NodeCollection.lock_for_update(nodes).all()
+        for node in nodes:
+            Node.transite_to_provisioning(node)
+
+    @classmethod
+    def transite_to_deploying(self, nodes):
+        for node in nodes:
+            Node.transite_to_deploying(node)
+
+    @classmethod
+    def transite_to_removing(self, nodes):
+        for node in nodes:
+            Node.transite_to_removing(node)

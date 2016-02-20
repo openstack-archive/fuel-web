@@ -427,13 +427,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             task_messages.append(task_message)
             db().commit()
 
-        if nodes_to_provision:
-            nodes_to_provision = objects.NodeCollection.lock_nodes(
-                nodes_to_provision
-            )
-            for node in nodes_to_provision:
-                node.status = consts.NODE_STATUSES.provisioning
-            db().commit()
+        NodeCollection.transite_to_provisioning(nodes_to_provision)
 
         objects.Cluster.get_by_uid(
             self.cluster.id,
@@ -591,12 +585,7 @@ class ProvisioningTaskManager(TaskManager):
             lock_for_update=True
         )
         task_provision.cache = provision_message
-        objects.NodeCollection.lock_for_update(nodes).all()
-
-        for node in nodes_to_provision:
-            node.pending_addition = False
-            node.status = consts.NODE_STATUSES.provisioning
-            node.progress = 0
+        objects.NodeCollection.transite_to_provisioning(nodes_to_provision)
 
         db().commit()
 
@@ -639,10 +628,7 @@ class DeploymentTaskManager(TaskManager):
 
         task_deployment.cache = deployment_message
 
-        for node in nodes_to_deployment:
-            node.status = 'deploying'
-            node.progress = 0
-
+        objects.NodeCollection.transite_to_deploying(nodes_to_deployment)
         db().commit()
 
         rpc.cast('naily', deployment_message)
@@ -847,11 +833,7 @@ class UpdateEnvironmentTaskManager(TaskManager):
             method_name='message')
 
         db().refresh(task_update)
-
-        for node in nodes_to_change:
-            node.status = 'deploying'
-            node.progress = 0
-
+        objects.NodeCollection.transite_to_deploying(nodes_to_deployment)
         db().commit()
         rpc.cast('naily', deployment_message)
 
@@ -1113,9 +1095,7 @@ class ClusterDeletionManager(TaskManager):
         db().flush()
 
         logger.debug("Labeling cluster nodes to delete")
-        for node in self.cluster.nodes:
-            node.pending_deletion = True
-            db().add(node)
+        NodeCollection.transite_to_removing(self.cluster.nodes)
         db().flush()
 
         self.cluster.status = consts.CLUSTER_STATUSES.remove
@@ -1221,10 +1201,7 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
         task = Task(name=consts.TASK_NAMES.node_deletion,
                     cluster=self.cluster)
         db().add(task)
-        for node in nodes_to_delete:
-            objects.Node.update(node,
-                                {'status': consts.NODE_STATUSES.removing,
-                                 'pending_deletion': True})
+        NodeCollection.transite_to_removing(nodes_to_delete)
         db().flush()
 
         nodes_to_deploy = []
@@ -1387,10 +1364,7 @@ class OpenstackConfigTaskManager(TaskManager):
         task.cache = copy.copy(message)
         task.cache['nodes'] = [n.id for n in nodes_to_update]
 
-        for node in nodes_to_update:
-            node.status = consts.NODE_STATUSES.deploying
-            node.progress = 0
-
+        objects.NodeCollection.transite_to_deploying(nodes_to_update)
         db().commit()
 
         rpc.cast('naily', message)

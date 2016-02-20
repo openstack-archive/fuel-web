@@ -1095,6 +1095,11 @@
                 "node_plural":"__count__个节点",
                 "important": "重要"
             },
+            "controls": {
+                "files": {
+                    "placeholder": "未选择文件"
+                }
+            },
             "node_details": {
                 "cpu": "CPU",
                 "system": "系统",

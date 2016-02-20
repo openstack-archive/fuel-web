@@ -127,6 +127,7 @@ NODE_STATUSES = Enum(
     'deploying',
     'error',
     'removing',
+    'stopped',
 )
 
 NODE_ERRORS = Enum(

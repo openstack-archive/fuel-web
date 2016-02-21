@@ -98,3 +98,21 @@ class TestOSWLObject(BaseTestCase):
             consts.OSWL_RESOURCE_TYPES.vm
         )
         self.assertIsNotNone(untouched_obj)
+
+    def test_version_info_serialized(self):
+        version_info = {'release': '9.0'}
+        dt = datetime.datetime.utcnow()
+        obj = OpenStackWorkloadStats.create(
+            {
+                'cluster_id': 1,
+                'resource_type': consts.OSWL_RESOURCE_TYPES.vm,
+                'created_date': dt.date(),
+                'updated_time': dt.time(),
+                'resource_checksum': "",
+                'version_info': version_info
+            }
+        )
+        self.assertEqual(
+            version_info,
+            OpenStackWorkloadStats.to_dict(obj)['version_info']
+        )

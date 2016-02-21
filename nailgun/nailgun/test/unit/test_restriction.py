@@ -22,6 +22,7 @@ from nailgun import objects
 from nailgun.settings import settings
 from nailgun.test import base
 from nailgun.utils.restrictions import AttributesRestriction
+from nailgun.utils.restrictions import ComponentsRestrictions
 from nailgun.utils.restrictions import LimitsMixin
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.restrictions import VmwareAttributesRestriction
@@ -464,3 +465,337 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
             metadata=vmware_attributes['editable']['metadata'],
             data=vmware_attributes['editable']['value'])
         self.assertItemsEqual(errs, [])
+
+
+class TestComponentsRestrictions(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestComponentsRestrictions, self).setUp()
+        self.release = self.env.create_release(
+            version='2015.1-8.0',
+            operating_system='Ubuntu',
+            components_metadata=[
+                {
+                    'name': 'hypervisor:test_hypervisor'
+                },
+                {
+                    'name': 'network:core:test_network_1',
+                    'incompatible': [
+                        {'name': 'hypervisor:test_hypervisor'}
+                    ]
+                },
+                {
+                    'name': 'network:core:test_network_2'
+                },
+                {
+                    'name': 'network:ml2:test_network_3'
+                },
+                {
+                    'name': 'storage:test_storage',
+                    'compatible': [
+                        {'name': 'hypervisor:test_hypervisor'}
+                    ],
+                    'requires': [
+                        {'name': 'hypervisor:test_hypervisor'}
+                    ]
+                },
+                {
+                    'name': 'storage:test_storage_2'
+                }
+            ])
+
+    def test_components_not_in_available_components(self):
+        self._validate_with_expected_errors(
+            ['storage:not_existing_component'],
+            "['storage:not_existing_component'] components are not related to "
+            "used release."
+        )
+
+    def test_not_all_mandatory_types_components(self):
+        mandatory_types_set = set(['hypervisor', 'network', 'storage'])
+        selected_components_list = [
+            'hypervisor:test_hypervisor',
+            'network:core:test_network_2',
+            'storage:test_storage_2'
+        ]
+        ComponentsRestrictions.validate_components(
+            selected_components_list, self.release.components_metadata)
+
+        while selected_components_list:
+            selected_components_list.pop()
+            self._validate_with_expected_errors(
+                selected_components_list,
+                "Components with {0} types are required but wasn't found "
+                "in data".format(sorted(
+                    mandatory_types_set - set(
+                        [x.split(':')[0] for x in selected_components_list])
+                ))
+            )
+
+    def test_incompatible_components_found(self):
+        self._validate_with_expected_errors(
+            ['hypervisor:test_hypervisor', 'network:core:test_network_1'],
+            "Incompatible components were found: 'network:core:test_network_1'"
+            " incompatible with ['hypervisor:test_hypervisor']."
+        )
+
+    def test_requires_components_not_found(self):
+        self._validate_with_expected_errors(
+            ['storage:test_storage'],
+            "Requires [u'hypervisor:test_hypervisor'] for "
+            "'storage:test_storage' components were not satisfied."
+        )
+
+    def test_requires_mixed_format(self):
+        self.release.components_metadata.append({
+            'name': 'storage:wrong_storage',
+            'requires': [
+                {'any_of': {
+                    'items': ['network:core:*']
+                }},
+                {'name': 'hypervisor:test_hypervisor'}
+            ]
+        })
+        self._validate_with_expected_errors(
+            ['storage:wrong_storage'],
+            "Component storage:wrong_storage has mixed format of requires."
+        )
+
+    def test_requires_any_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'requires': [
+                {'any_of': {
+                    'items': ['network:core:*']
+                }},
+                {'any_of': {
+                    'items': [
+                        'storage:test_storage_2', 'hypervisor:test_hypervisor'
+                    ],
+                }}
+            ]
+        })
+        self._validate_with_expected_errors(
+            ['additional_service:test_service', 'network:ml2:test_network_3'],
+            "Require any_of(['network:core:*']) for "
+            "'additional_service:test_service' component was not satisfied."
+        )
+
+        self._validate_with_expected_errors(
+            ['additional_service:test_service', 'network:core:test_network_2'],
+            "Require any_of(['hypervisor:test_hypervisor', "
+            "'storage:test_storage_2']) for 'additional_service:test_service' "
+            "component was not satisfied."
+        )
+
+        ComponentsRestrictions.validate_components(
+            ['additional_service:test_service', 'network:core:test_network_2',
+             'hypervisor:test_hypervisor', 'storage:test_storage_2'],
+            self.release.components_metadata
+        )
+
+    def test_requires_one_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'requires': [
+                {'one_of': {
+                    'items': ['network:core:*']
+                }},
+                {'one_of': {
+                    'items': [
+                        'storage:test_storage_2', 'hypervisor:test_hypervisor'
+                    ]
+                }}
+            ]
+        })
+        selected_components_list = ['additional_service:test_service',
+                                    'network:core:test_network_1',
+                                    'network:core:test_network_2',
+                                    'storage:test_storage_2']
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Require one_of(['network:core:*']) for "
+            "'additional_service:test_service' component was not satisfied."
+        )
+
+        self._validate_with_expected_errors(
+            ['additional_service:test_service', 'network:core:test_network_1'],
+            "Require one_of(['hypervisor:test_hypervisor', "
+            "'storage:test_storage_2']) for 'additional_service:test_service' "
+            "component was not satisfied."
+        )
+
+        ComponentsRestrictions.validate_components(
+            ['additional_service:test_service', 'network:core:test_network_2',
+             'hypervisor:test_hypervisor', 'storage:test_storage'],
+            self.release.components_metadata
+        )
+
+    def test_requires_none_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'requires': [{
+                'none_of': {
+                    'items': ['network:core:*', 'storage:test_storage']
+                }
+            }]
+        })
+        selected_components_list = ['additional_service:test_service',
+                                    'network:core:test_network_1']
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Require none_of(['network:core:*', "
+            "'storage:test_storage']) for 'additional_service:test_service' "
+            "component was not satisfied."
+        )
+
+        ComponentsRestrictions.validate_components(
+            ['additional_service:test_service', 'network:ml2:test_network_3',
+             'storage:test_storage_2', 'hypervisor:test_hypervisor'],
+            self.release.components_metadata
+        )
+
+    def test_requires_all_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'requires': [{
+                'all_of': {
+                    'items': [
+                        'network:core:test_network_2',
+                        'storage:*',
+                        'hypervisor:test_hypervisor'
+                    ]
+                }
+            }]
+        })
+        selected_components_list = ['additional_service:test_service',
+                                    'network:core:test_network_2',
+                                    'storage:test_storage_2',
+                                    'hypervisor:test_hypervisor']
+
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Require all_of(['hypervisor:test_hypervisor', "
+            "'network:core:test_network_2', 'storage:*']) for "
+            "'additional_service:test_service' component was not satisfied."
+        )
+
+        selected_components_list.append('storage:test_storage')
+        ComponentsRestrictions.validate_components(
+            selected_components_list, self.release.components_metadata)
+
+    def test_incompatibles_any_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'incompatible': [
+                {'any_of': {
+                    'items': ['network:core:*']
+                }},
+                {'any_of': {
+                    'items': ['storage:test_storage_2']
+                }}
+            ]
+        })
+        selected_components_list = ['additional_service:test_service',
+                                    'network:core:test_network_2']
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Incompatible require any_of(['network:core:*']) for "
+            "'additional_service:test_service' component was satisfied."
+        )
+
+        selected_components_list = ['additional_service:test_service',
+                                    'network:ml2:test_network_3',
+                                    'storage:test_storage_2']
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Incompatible require any_of(['storage:test_storage_2']) for "
+            "'additional_service:test_service' component was satisfied."
+        )
+
+        selected_components_list = ['additional_service:test_service',
+                                    'network:ml2:test_network_3',
+                                    'storage:test_storage',
+                                    'hypervisor:test_hypervisor']
+        ComponentsRestrictions.validate_components(
+            selected_components_list, self.release.components_metadata)
+
+    def test_incompatibles_one_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'incompatible': [{
+                'one_of': {
+                    'items': ['storage:*']
+                }
+            }]
+        })
+        selected_components_list = ['additional_service:test_service',
+                                    'storage:test_storage_2']
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Incompatible require one_of(['storage:*']) for "
+            "'additional_service:test_service' component was satisfied."
+        )
+
+        selected_components_list = ['additional_service:test_service',
+                                    'storage:test_storage',
+                                    'storage:test_storage_2',
+                                    'network:core:test_network_2',
+                                    'hypervisor:test_hypervisor']
+        ComponentsRestrictions.validate_components(
+            selected_components_list, self.release.components_metadata)
+
+    def test_incompatibles_none_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'incompatible': [{
+                'none_of': {
+                    'items': ['network:core:*']
+                }
+            }]
+        })
+        selected_components_list = ['additional_service:test_service',
+                                    'network:ml2:test_network_3']
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Incompatible require none_of(['network:core:*']) for "
+            "'additional_service:test_service' component was satisfied."
+        )
+
+        selected_components_list = ['additional_service:test_service',
+                                    'storage:test_storage',
+                                    'network:core:test_network_2',
+                                    'hypervisor:test_hypervisor']
+        ComponentsRestrictions.validate_components(
+            selected_components_list, self.release.components_metadata)
+
+    def test_incompatibles_all_of_predicate(self):
+        self.release.components_metadata.append({
+            'name': 'additional_service:test_service',
+            'incompatible': [{
+                'all_of': {
+                    'items': ['network:core:*']
+                }
+            }]
+        })
+        selected_components_list = ['additional_service:test_service',
+                                    'network:core:test_network_1',
+                                    'network:core:test_network_2']
+        self._validate_with_expected_errors(
+            selected_components_list,
+            "Incompatible require all_of(['network:core:*']) for "
+            "'additional_service:test_service' component was satisfied."
+        )
+
+        selected_components_list = ['additional_service:test_service',
+                                    'storage:test_storage',
+                                    'network:core:test_network_2',
+                                    'hypervisor:test_hypervisor']
+        ComponentsRestrictions.validate_components(
+            selected_components_list, self.release.components_metadata)
+
+    def _validate_with_expected_errors(self, components_list, error_msg):
+        with self.assertRaises(errors.InvalidData) as exc_cm:
+            ComponentsRestrictions.validate_components(
+                components_list, self.release.components_metadata)
+        self.assertEqual(exc_cm.exception.message, error_msg)

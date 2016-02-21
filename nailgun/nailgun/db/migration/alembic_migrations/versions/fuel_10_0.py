@@ -37,9 +37,11 @@ def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
+    upgrade_release_required_component_types()
 
 
 def downgrade():
+    downgrade_release_required_component_types()
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
@@ -226,6 +228,24 @@ def upgrade_plugin_with_nics_and_nodes_attributes():
     )
 
 
+def upgrade_release_required_component_types():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'required_component_types',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        )
+    )
+    connection = op.get_bind()
+    connection.execute(
+        sa.sql.text(
+            "UPDATE releases SET required_component_types = :required_types"),
+        required_types=jsonutils.dumps(['hypervisor', 'network', 'storage'])
+    )
+
+
 def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_table('node_cluster_plugins')
     op.drop_table('node_bond_interface_cluster_plugins')
@@ -281,3 +301,7 @@ def upgrade_node_deployment_info():
 
 def downgrade_node_deployment_info():
     op.drop_table('node_deployment_info')
+
+
+def downgrade_release_required_component_types():
+    op.drop_column('releases', 'required_component_types')

@@ -302,6 +302,7 @@ class TestStatisticsSender(BaseTestCase):
             'resource_checksum': '',
             'master_node_uid': None,
             'resource_data': None,
+            'version_info': {}
         }]}
         send_data_to_url.assert_called_once_with(
             url=sender.build_collector_url("COLLECTOR_OSWL_INFO_URL"),

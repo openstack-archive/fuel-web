@@ -60,6 +60,8 @@ class Release(Base):
         MutableDict.as_mutable(JSON), default={})
     components_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
+    required_component_types = Column(MutableList.as_mutable(JSON),
+                                      default=[], nullable=False)
     modes = Column(MutableList.as_mutable(JSON), default=[])
     clusters = relationship(
         "Cluster",

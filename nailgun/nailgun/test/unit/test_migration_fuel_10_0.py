@@ -17,6 +17,7 @@ import datetime
 import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
+from sqlalchemy.exc import IntegrityError
 
 from nailgun.db import db
 from nailgun.db import dropdb
@@ -323,6 +324,7 @@ def prepare():
         }]
     )
 
+    TestRequiredComponentTypesField.prepare(meta)
     db.commit()
 
 
@@ -421,3 +423,49 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
                 'node_id': node_id,
                 'attributes': jsonutils.dumps({'test_attr': 'test'})
             }])
+
+
+class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
+    release_name = 'test_release'
+    version = '2015.1-10.0'
+
+    @classmethod
+    def prepare(cls, meta):
+        db.execute(
+            meta.tables['releases'].insert(),
+            [{
+                'name': cls.release_name,
+                'version': cls.version,
+                'operating_system': 'ubuntu',
+                'state': 'available',
+                'roles_metadata': '{}',
+                'is_deployable': True
+            }])
+
+    def test_upgrade_release_required_component_types(self):
+        releases_table = self.meta.tables['releases']
+        result = db.execute(
+            sa.select([releases_table.c.required_component_types]).
+            where(releases_table.c.name == self.release_name).
+            where(releases_table.c.version == self.version)).fetchone()
+        self.assertEqual(jsonutils.loads(result['required_component_types']),
+                         ['hypervisor', 'network', 'storage'])
+
+    def test_not_nullable_required_component_types(self):
+        with self.assertRaisesRegexp(
+                IntegrityError,
+                'null value in column "required_component_types" '
+                'violates not-null constraint'
+        ):
+            db.execute(
+                self.meta.tables['releases'].insert(),
+                {
+                    'name': 'test_release',
+                    'version': '2015.1-10.0',
+                    'operating_system': 'ubuntu',
+                    'state': 'available',
+                    'roles_metadata': '{}',
+                    'is_deployable': True,
+                    'required_component_types': None
+                })
+        db.rollback()

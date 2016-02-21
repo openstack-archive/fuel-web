@@ -17,6 +17,7 @@ import datetime
 import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
+from sqlalchemy.exc import IntegrityError
 
 from nailgun.db import db
 from nailgun.db import dropdb
@@ -421,3 +422,44 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
                 'node_id': node_id,
                 'attributes': jsonutils.dumps({'test_attr': 'test'})
             }])
+
+
+class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
+
+    def test_upgrade_release_required_component_types(self):
+        releases_table = self.meta.tables['releases']
+        db.execute(
+            releases_table.insert(),
+            [{
+                'name': 'test_release',
+                'version': '2015.1-10.0',
+                'operating_system': 'ubuntu',
+                'state': 'available',
+                'roles_metadata': '{}',
+                'is_deployable': True,
+                'required_component_types': ['network']
+            }])
+        result = db.execute(
+            sa.select([releases_table.c.required_component_types]).
+            where(releases_table.c.name == 'test_release').
+            where(releases_table.c.version == '2015.1-10.0')).fetchone()
+        self.assertEqual(result['required_component_types'], '{network}')
+
+    def test_not_nullable_required_component_types(self):
+        with self.assertRaisesRegexp(
+                IntegrityError,
+                'null value in column "required_component_types" '
+                'violates not-null constraint'
+        ):
+            db.execute(
+                self.meta.tables['releases'].insert(),
+                {
+                    'name': 'test_release',
+                    'version': '2015.1-10.0',
+                    'operating_system': 'ubuntu',
+                    'state': 'available',
+                    'roles_metadata': '{}',
+                    'is_deployable': True,
+                    'required_component_types': None
+                })
+        db.rollback()

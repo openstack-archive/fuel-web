@@ -1455,117 +1455,243 @@
                 "loading": "加载..."
             },
             "dialog": {
+                "nailgun_unavailability": {
+                    "title": "Nailgun 不可用",
+                    "retry_now": "马上重试",
+                    "unavailability_message": "无法启动 Fuel UI。Nailgun 不可用。",
+                    "retry_delay_message": "__count__ 秒钟后重连...",
+                    "retry_delay_message_plural": "__count__ 秒钟后重连...",
+                    "retrying": "正在重连...",
+                    "unavailability_reasons": [
+                        "如果你刚刚安装、重启或升级主节点, Nailgun 需要花费几分钟来启动。",
+                        "如果几分钟后 Nailgun 还是不可用，那么请查看日志。"
+                    ]
+                },
                 "create_cluster_wizard": {
-                    "title": "新建OpenStack环境",
+                    "title": "新建 OpenStack 环境",
                     "prev": "后退",
                     "next": "前进",
                     "create": "新建",
+                    "configuration_failed_warning": "你的 OpenStack 环境已经创建，但是设置失败了。你可以手动进行设置。",
+                    "compatible": "这个组件与所选的组件都经过了测试。",
+                    "incompatible_list": "这个组件好下列组件未经过测试：",
                     "name_release": {
                         "title": "名称和版本",
                         "name": "名称",
-                        "release_label": "OpenStack版本"
+                        "release_label": "OpenStack 版本",
+                        "existing_environment": "名字为“__name__”的环境已经存在",
+                        "Ubuntu_connectivity_alert": "默认情况下，Fuel 使用外网来为 Fuel 的从属节点安装和更新软件包。所以请确认 Fuel 的主节点能够连接外网。如果 Fuel 的主节点不能连接外网，你需要在本地创建一个包含所需软件的镜像源，并且在部署 OpenStack 环境前配置 Fuel 使用本地镜像。",
+                        "CentOS_connectivity_alert": "默认情况下，Fuel 使用外网来为 Fuel 的从属节点安装和更新软件包。所以请确认 Fuel 的主节点能够连接外网。如果 Fuel 的主节点不能连接外网，你需要在本地创建一个包含所需软件的镜像源，并且在部署 OpenStack 环境前配置 Fuel 使用本地镜像。"
                     },
                     "mode": {
                         "title": "部署模式"
                     },
                     "compute": {
                         "title": "计算",
-                        "kvm_description": "如果在硬件上运行OpenStack，请选择该管理器类型",
-                        "qemu_description": "如果在虚机上运行OpenStack，请选择该管理器类型"
+                        "qemu": "QEMU-KVM",
+                        "vcenter": "vCenter",
+                        "qemu_description": "如果要使用 QUME 虚拟化和相应的 KVM 加速，请选择此项。",
+                        "vcenter_description": "如果要在 VMware vCenter 上运行 OpenStack，请选择此项。",
+                        "vcenter_warning": "vCenter 不能和 QUME-KVM 一起部署。",
+                        "vcenter_requires_network_backend": "需要 DVS/NSX 插件来创建 vCenter 和 Neutron 网络环境",
+                        "vcenter_plugins_page": "详细信息请访问 Fuel 插件页面",
+                        "empty_choice": "请至少选择一种虚拟化类型"
                     },
                     "network": {
-                        "title": "网络",
-                        "release_alert": "__releaseName__不支持Neutron"
+                        "title": "网络设置",
+                        "description": "请选择虚拟机内网的方案。一旦完成设置，你将不能更改这个选项。更多信息，请看",
+                        "description_link": "Mirantis OpenStack 的网络拓扑计划指南",
+                        "release_alert": "__NameAndRelease.release_name__ 不支持 Neutron。",
+                        "hypervisor_alert": "你已经选择了 vCenter 作为虚拟化方案，不能再选择 Neutron",
+                        "neutron_gre_description": "你的网络硬件必须支持 GRE。这个选项支持 65535 个网络。",
+                        "neutron_vlan": "Neutron 并使用 VLAN（默认）",
+                        "neutron_vlan_description": "你的网络硬件必须支持 VLAN。这个选项支持 4095 个网络。",
+                        "neutron_tun_description": "默认会使用 VXLAN tunnels。这个选项支持百万个租户网络。",
+                        "neutron_ml2": "Neutron 并使用 ML2 插件",
+                        "neutron_ml2_description": "能利用驱动同时实现二层网络技术的框架。",
+                        "vlan_tun_alert": "VLAN 和 Tunneling 不能同时选择。",
+                        "ml2_empty_choice": "请至少选择一个 ML2 驱动"
                     },
                     "storage": {
                         "title": "后端存储",
-                        "alert": "__releaseName__不支持Ceph",
+                        "alert": "__releaseName__ 不支持 Ceph",
+                        "ceph_description": "使用 Ceph 作为存储？",
+                        "ceph_enable": "是，使用 Ceph",
+                        "ceph_disable": "不，使用默认的存储",
+                        "ceph_provider": "使用 Ceph 作为存储",
+                        "default_provider": "使用默认的存储",
+                        "ceph_block": "使用 Ceph 作为 Cinder 卷存储的后端",
+                        "ceph_object": "使用 Ceph 作为 Swift 对象存储的后端",
+                        "ceph_ephemeral": "使用 Ceph 作为 Nova 的后端",
+                        "ceph_image": "使用 Ceph 作为 Glance 镜像存储的后端",
                         "default": "默认",
                         "ceph": "Ceph",
+                        "lvm": "LVM",
+                        "swift": "Swift 对象存储",
                         "cinder": "Cinder",
-                        "cinder_help": "Cinder块存储默认使用LVM卷和iSCSI共享存储。Ceph后端需要2个或更多Ceph-OSD节点与KVM管理器。",
+                        "cinder_help": "默认情况下，Cinder 块存储使用 LVM 卷并通过 iSCSI 共享。Ceph 后端需要 2 个及以上的 Ceph-OSD 节点并且使用 KVM 虚拟化。",
                         "glance": "Glance",
-                        "glance_help": "在HA部署模式中，Glance Image服务默认使用Swift对象存储, 在简单多节点模式中，使用控制节点的本地存储。Ceph后端需要2个或更多Ceph-OSD节点。"
+                        "glance_help": "默认情况下，Glance 镜像服务使用 Swift 对象存储。Ceph 后端需要 2 个及以上的 Ceph-OSD 节点",
+                        "block": "块存储：",
+                        "object": "对象存储：",
+                        "image": "镜像存储：",
+                        "ephemeral": "临时存储："
                     },
                     "additional": {
                         "title": "附加服务",
-                        "release_alert": "__releaseName__不支持附加服务",
-                        "install_sahara": "安装Sahara",
-                        "install_sahara_description": "利用Sahara能在各大版本厂商的OpenStack上的部署Hadoop集群。"
+                        "release_alert": "__releaseName__ 不支持附加服务",
+                        "install_sahara": "安装 Sahara",
+                        "install_sahara_description": "利用 Sahara 能在各大厂商的 OpenStack 发行版上部署 Hadoop 集群。",
+                        "install_ceilometer": "安装 Ceilometer（OpenStack 计费）",
+                        "install_ceilometer_description": "Ceilometer 能对 OpenStack 云计算进行计量和监控。",
+                        "install_ironic": "安装 Ironic",
+                        "install_ironic_description": "Ironic 能管理物理机。",
+                        "ironic_network_mode_alert": "Ironic 需要使用 VLAN 模式的  Neutron 网络。",
+                        "ironic_storage_mode_alert": "Ironic 需要使用 Swift 对象存储作为 Glance 镜像服务的后端。"
                     },
                     "ready": {
                         "title": "完成",
-                        "env_select_deploy": "部署准备就绪！请选择",
-                        "or_make_config_choice": "或者更多配置，请前往",
+                        "env_select_deploy": "部署准备就绪！单击新建按钮后，你可以",
+                        "or_make_config_choice": "。如果要修改更多配置，请前往 Fuel 的",
                         "console": "控制面板。",
                         "deploy": "立即部署",
                         "env": "环境"
+                    },
+                    "create_cluster_error": {
+                        "title": "OpenStack 环境创建出错"
                     }
                 },
                 "dismiss_settings": {
                     "title": "确认",
                     "important": "重要",
-                    "stay_button": "留在本页",
-                    "leave_button": "离开并放弃变更",
-                    "default_message": "设置变更未保存，您想放弃变更并离开么？"
+                    "stay_button": "取消",
+                    "leave_button": "放弃变更",
+                    "apply_and_proceed_button": "保存并更改",
+                    "default_message": "你有尚未保存的变更。选择“取消”留在本页，“放弃变更”离开本页，或者“保存并更改”使配置生效。",
+                    "no_saving_message": "你有尚未保存的变更。选择“取消”留在本页或者“放弃变更”离开本页",
+                    "saving_failed_message": "保存失败。请修复错误后再保存。",
+                    "no_discard_message": "你有尚未保存的变更。选择“取消”留在本页，或者“保存并更改”使配置生效。"
                 },
                 "display_changes": {
                     "title": "部署变更",
-                    "added_node": "增加__count__个节点。",
-                    "added_node_plural": "增加__count__个节点。",
-                    "deleted_node": "删除__count__个节点。",
-                    "deleted_node_plural": "删除__count__个节点。",
+                    "added_node": "增加 __count__ 个节点。",
+                    "added_node_plural": "增加 __count__ 个节点。",
+                    "deleted_node": "删除 __count__ 个节点。",
+                    "deleted_node_plural": "删除 __count__ 个节点。",
+                    "provisioned_node": "配置了 __count__ 个节点",
+                    "provisioned_node_plural": "配置了 __count__ 个节点",
                     "settings_changes": {
-                        "attributes": "OpenStack设置",
-                        "networks": "网络设置",
-                        "disks": "以下节点的磁盘配置变更："
+                        "attributes": "OpenStack 设置已改变。",
+                        "networks": "网络设置已改变。",
+                        "disks": "以下节点的磁盘配置已改变：",
+                        "interfaces": "以下节点的接口配置已改变："
                     },
                     "warnings": {
+                        "no_deployment": "环境配置有误，无法开始部署。请检查下面的错误。",
+                        "connectivity_alert": "软件包和更新所用的镜像源定义在设置标签页中。如果你的环境使用默认的镜像源，请检查 Fuel 的主节点能访问外网。如果 Fuel 的主节点没有连接外网，你必须搭建一个本地的镜像源，并配置 Fuel 从本地镜像源获取软件包。Fuel 必须能通过网络访问本地镜像源。"
                     },
                     "deploy": "部署",
-                    "redeployment_needed": "某些节点配置后状态错误，需要重新部署。"
+                    "redeployment_needed": "某些节点配置后状态错误，需要重新部署。",
+                    "verification_not_performed": "请在部署前检测网络。",
+                    "verification_in_progress": "正在进行网络检测。",
+                    "verification_failed": "网络检测遇到问题。",
+                    "get_more_info": "更多信息请访问",
+                    "networks_link": "网络标签页",
+                    "invalid_settings": "环境设置有误。",
+                    "settings_link": "设置标签页",
+                    "tls_not_enabled": "没有启用 TLS。强烈建议启用并设置 TLS。",
+                    "tls_for_horizon_not_enabled": "Horizon 公共接入点没有启用 TLS。强烈建议为 Horizon 启用和配置 TLS。",
+                    "tls_for_services_not_enabled": "OpenStack 公共接入点没有启用 TLS。强烈建议启用和配置 TLS。",
+                    "are_you_sure_deploy": "点击部署开始部署，或者点击取消。",
+                    "offline_nodes": "有些节点离线。"
+                },
+                "provision_vms": {
+                    "title": "配置 VM",
+                    "text": "你确定要在 __count__ 个节点上开始配置 VM 吗？",
+                    "text_plural": "你确定要在 __count__ 个节点上开始配置 VM 吗？",
+                    "provision_vms_error": "无法开始配置 VM。"
                 },
                 "show_node": {
                     "manufacturer_label": "设备",
-                    "mac_address_label": "MAC地址",
+                    "mac_address_label": "MAC 地址",
                     "fqdn_label": "FQDN",
-                    "ssh_console": "SSH控制台",
-                    "network_configuration_button": "网络配置",
-                    "disk_configuration_button": "磁盘配置",
+                    "management_ip": "管理 IP",
+                    "public_ip": "公网 IP",
+                    "hostname_label": "主机名",
+                    "ssh_console": "SSH 控制台",
+                    "network_configuration": "接口配置",
+                    "disk_configuration": "磁盘配置",
+                    "network_configuration_action": "配置接口",
+                    "disk_configuration_action": "配置磁盘",
+                    "default_dialog_title": "节点信息",
                     "close_button": "关闭",
                     "total": "全部",
                     "bytes": "字节",
                     "drive": "驱动",
                     "drive_plural": "驱动",
-                    "name": "名称",
-                    "model": "型号",
-                    "disk": "磁盘",
-                    "size": "容量",
-                    "ip": "IP",
-                    "max_speed": "最高速率",
-                    "current_speed": "当前速率",
-                    "netmask": "网络掩码",
-                    "slots":"插槽",
-                    "maximum_capacity":"最大",
-                    "type":"类型",
-                    "frequency":"主频",
-                    "real":"物理",
-                    "serial":"序列号",
-                    "manufacturer":"制造商",
-                    "product":"产品",
-                    "family":"系列",
-                    "version":"版本"
+                    "node_network_group": "节点网络组",
+                    "cluster": "环境"
+                },
+                "delete_nodes": {
+                    "title": "删除节点",
+                    "common_message": "你确定要从当前环境中删除所选节点吗？" ,
+                    "common_message_plural": "你确定要从当前环境中删除所选节点吗？" ,
+                    "not_deployed_nodes_message": "未部署的节点会重新变为未分配的节点。",
+                    "not_deployed_nodes_message_plural": "未部署的节点会重新变为未分配的节点。",
+                    "deployed_nodes_message": "已部署的节点会被标记为删除，当前环境重新部署后会从中移除。",
+                    "deployed_nodes_message_plural": "已部署的节点会被标记为删除，当前环境重新部署后会从中移除。"
                 },
                 "discard_changes": {
                     "title": "放弃变更",
                     "discard_button": "放弃",
-                    "alert_text": "确定要放弃所有变更吗？",
-                    "cant_discard": ""
+                    "discard_addition": "你确定要放弃增加节点吗？",
+                    "discard_deletion": "你确定要放弃删除节点吗？",
+                    "cant_discard": "不能放弃变更。"
+                },
+                "remove_node": {
+                    "default_message": "Fuel 会从数据库中删除这个节点。这个操作不会删除节点的 MBR 及任何数据。如果你开启这个节点，它会进入（发现）系统，这个节点会重新成为 Fuel 未分配节点。",
+                    "title": "删除节点"
                 },
                 "remove_cluster": {
                     "title": "删除环境",
-                    "incomplete_actions_text": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
-                    "node_returned_text": "每个节点都将被删除并放回未非配节点池。"
+                    "incomplete_actions_text": "这个环境有操作未完成，删除环境可能失败，并导致状态不一致。",
+                    "node_returned_text": "每个节点都将被删除并放回未分配节点池。所有被删除节点的日志也将一并删除。",
+                    "default_text": "你确定要删除这个环境吗？",
+                    "enter_environment_name": "请输入这个环境的名字（__name__）以确认。",
+                    "stop_deployment_is_running": "正在停止这个环境的部署。现在这个环境里的节点可能会重启，删除这个环境会给离线的节点造成问题。部署操作停止后再删除这个环境会更安全。"
+                },
+                "stop_deployment": {
+                    "title": "停止部署",
+                    "text": "你确定要停止这次的部署吗？你可能无法再重新部署这个 OpenStack 环境，除非重置它。请谨慎操作！",
+                    "provisioning_warning": "你确定要在系统部署阶段中断这次部署吗？Fuel 还未完成节点部署，所有对节点的改动会被丢弃，节点会被重置成部署前的状态。",
+                    "redeployment_warning": "请等待 20 分钟再重新部署，以确保前面的部署已彻底停止。",
+                    "stop_deployment_error": {
+                        "title": "停止部署出错",
+                        "stop_deployment_warning": "无法停止部署"
+                    }
+                },
+                "reset_environment": {
+                    "title": "重置环境",
+                    "text": "你确定要重置这个环境吗？这个环境所有的节点都会被重置成部署前的状态，这个环境会被删除。环境配置和网络配置会被保留。",
+                    "enter_environment_name": "请输入这个环境的名字（__name__）以确认。"
+                },
+                "error_dialog": {
+                    "title": "错误",
+                    "server_error": "发生了系统错误，请联系你的系统管理员。",
+                    "server_unavailable": "Nailgun 服务不可用，请检查你的连接并联系你的系统管理员。"
+                },
+                "change_password": {
+                    "title": "更换密码",
+                    "current_password": "当前密码",
+                    "new_password": "新密码",
+                    "confirm_new_password": "确认新密码",
+                    "wrong_current_password": "当前密码错误",
+                    "new_password_mismatch": "密码不一致"
+                },
+                "remove_node_network_group": {
+                    "title": "删除节点网络组",
+                    "confirmation": "你确定要删除节点的网络组吗？",
+                    "unsaved_changes_alert": "当前页有未保存的配置，网络组被删除后他们将被重置。"
                 }
             }
         }

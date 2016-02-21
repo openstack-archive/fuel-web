@@ -51,6 +51,7 @@ def prepare():
             'roles': '{}',
             'roles_metadata': '{}',
             'is_deployable': True,
+            'required_component_types': ['network', 'storage']
         }]
     )
 
@@ -101,3 +102,10 @@ class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):
                 [sa.func.count(self.meta.tables['cluster_plugin_links'].c.id)]
             )).fetchone()[0]
         self.assertEqual(links_count, 2)
+
+
+class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_release_required_component_types(self):
+        releases_table = self.meta.tables['releases']
+        self.assertNotIn('required_component_types', releases_table.c)

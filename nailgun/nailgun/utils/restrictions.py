@@ -19,6 +19,7 @@ Classes for checking data restrictions and limits
 """
 
 from functools import partial
+from itertools import groupby
 import re
 import six
 
@@ -27,6 +28,14 @@ from nailgun.expression import Expression
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import flatten
+
+
+PREDICATE_FUNCTION_MAP = {
+    'one_of': lambda x, y: len(x) == 1,
+    'any_of': lambda x, y: len(x) > 0,
+    'none_of': lambda x, y: len(x) == 0,
+    'all_of': lambda x, y: x == y
+}
 
 
 class LimitsMixin(object):
@@ -393,7 +402,7 @@ class VmwareAttributesRestriction(RestrictionBase):
         :type metadata: list|dict
         :param data: vmware attributes data(value) object
         :type data: list|dict
-        :retruns: func -- generator which produces errors
+        :returns: func -- generator which produces errors
         """
         root_key = camel_to_snake_case(cls.__name__)
 
@@ -459,3 +468,184 @@ class VmwareAttributesRestriction(RestrictionBase):
                         yield result
 
         return find
+
+
+class ComponentsRestrictions(object):
+
+    @classmethod
+    def validate_components(cls, components_names, available_components,
+                            required_component_types):
+        """Check if selected components is valid and suitable for each other.
+
+        :param components_names: list of component names for validation
+        :type components_names: list
+        :param available_components: list of all available components
+        :type available_components: list of dict
+        :param required_component_types: list of all required components types
+        :type required_component_types: list
+        :raises: errors.InvalidData
+        """
+        components_names = set(components_names)
+        available_components_names = set()
+        found_components = []
+
+        for component in available_components:
+            available_components_names.add(component['name'])
+            if component['name'] in components_names:
+                found_components.append(component)
+
+        if len(components_names) != len(found_components):
+            raise errors.InvalidData(
+                '{0} components are not related to used release.'.format(
+                    sorted(components_names - available_components_names)
+                ),
+                log_message=True
+            )
+
+        components_types_set = set()
+        for component in found_components:
+            cls._check_component_incompatibles(component, components_names)
+            cls._check_component_requires(
+                component, components_names, available_components_names)
+            components_types_set.add(cls._get_component_type(component))
+
+        cls._check_required_component_types(components_types_set,
+                                            set(required_component_types))
+
+    @classmethod
+    def _check_component_incompatibles(cls, component, components_names):
+        """Check if component has incompatible components.
+
+        :param component: target component for checking
+        :type component: dict
+        :param components_names: list of components names for checking
+        :type components_names: list
+        :raises: errors.InvalidData
+        """
+        for incompatible in component.get('incompatible', []):
+            incompatible_component_names = list(
+                cls._resolve_names_for_dependency(components_names,
+                                                  incompatible['name'])
+            )
+            if incompatible_component_names:
+                raise errors.InvalidData(
+                    "Incompatible components were found: "
+                    "'{0}' incompatible with {1}.".format(
+                        component['name'],
+                        incompatible_component_names),
+                    log_message=True
+                )
+
+    @classmethod
+    def _check_component_requires(cls, component, components_names,
+                                  available_components_names):
+        """Check if all component's requires is satisfied.
+
+        :param component: target component for checking
+        :type component: dict
+        :param components_names: list of components names for checking
+        :type components_names: list
+        :param available_components_names: names of all available components
+        :type available_components_names: list
+        :raises: errors.InvalidData
+        """
+        component_requires = component.get('requires', [])
+        requires_without_predicates = [
+            r.get('name') for r in component_requires]
+        if all(requires_without_predicates):
+            for c_type, group in groupby(sorted(component_requires,
+                                                key=cls._get_component_type),
+                                         cls._get_component_type):
+                group_components = list(group)
+                for require in group_components:
+                    if cls._resolve_names_for_dependency(
+                            components_names, require['name']):
+                        break
+                else:
+                    raise errors.InvalidData(
+                        "Component '{0}' requires any of components from {1} "
+                        "set.".format(
+                            component['name'],
+                            sorted([c['name'] for c in group_components])),
+                        log_message=True
+                    )
+        elif any(requires_without_predicates):
+            raise errors.InvalidData("Component '{0}' has mixed format of "
+                                     "requires.".format(component['name']))
+        else:
+            check_result = cls._check_predicates(component_requires,
+                                                 components_names,
+                                                 available_components_names)
+            if check_result:
+                raise errors.InvalidData(
+                    "Requirements was not satisfied for component '{0}': "
+                    "{1}({2})".format(
+                        component['name'],
+                        check_result['failed_predicate'],
+                        sorted(item for item in check_result['items'])),
+                    log_message=True
+                )
+
+    @classmethod
+    def _check_predicates(cls, requires, components_names_set,
+                          available_components_names):
+        """Check that all predicate conditions are satisfied.
+
+        :param requires: list of predicates condition data
+        :type requires: list of dicts
+        :param components_names_set: list of components names for checking
+        :type components_names_set: list
+        :param available_components_names: names of all available components
+        :type available_components_names: list
+        :returns: dict -- failed predicate in format:
+                    {
+                        'failed_predicate': 'one_of|any_of|none_of|all_of'
+                        'items': <list of predicate items names>
+                    }
+        """
+        for require in requires:
+            for predicate in require:
+                predicate_func = PREDICATE_FUNCTION_MAP[predicate]
+                matched_components = set()
+                matched_available_components = set()
+                predicate_items = require[predicate]['items']
+                for item in predicate_items:
+                    matched_components.update(
+                        cls._resolve_names_for_dependency(
+                            components_names_set, item)
+                    )
+                    matched_available_components.update(
+                        cls._resolve_names_for_dependency(
+                            available_components_names, item)
+                    )
+                predicate_result = predicate_func(
+                    matched_components,
+                    matched_available_components
+                )
+                if not predicate_result:
+                    return {'failed_predicate': predicate,
+                            'items': predicate_items}
+
+    @staticmethod
+    def _check_required_component_types(components_types_set,
+                                        required_components_types_set):
+        missed_types_set = required_components_types_set - components_types_set
+        if missed_types_set:
+            raise errors.InvalidData(
+                "Components with {0} types are required but wasn't found "
+                "in data.".format(sorted(missed_types_set)),
+                log_message=True
+            )
+
+    @staticmethod
+    def _resolve_names_for_dependency(components_names, dependency_name):
+        if '*' in dependency_name:
+            prefix = dependency_name.split('*', 1)[0]
+            return set(name for name in components_names
+                       if name.startswith(prefix))
+        return set(name for name in components_names
+                   if name == dependency_name)
+
+    @staticmethod
+    def _get_component_type(component):
+        return component['name'].split(':', 1)[0]

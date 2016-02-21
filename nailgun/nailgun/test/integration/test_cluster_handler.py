@@ -14,12 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.errors import errors
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -341,6 +343,17 @@ class TestClusterComponents(BaseIntegrationTest):
             'mode': consts.CLUSTER_MODES.ha_compact
         }
 
+    def test_component_validation_failed(self):
+        error_msg = "Component validation error"
+        self.cluster_data.update(
+            {'components': ['hypervisor:test_hypervisor']})
+        with mock.patch('nailgun.utils.restrictions.ComponentsRestrictions.'
+                        'validate_components') as validate_mock:
+            validate_mock.side_effect = errors.InvalidData(error_msg)
+            resp = self._create_cluster_with_expected_errors(self.cluster_data)
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(error_msg, resp.json_body['message'])
+
     def test_components_not_in_release(self):
         self.cluster_data.update(
             {'components': ['storage:not_existing_component']})
@@ -348,7 +361,7 @@ class TestClusterComponents(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             u"[u'storage:not_existing_component'] components are not "
-            "related to release \"release_name_2015.1-8.0\".",
+            "related to used release.",
             resp.json_body['message']
         )
 

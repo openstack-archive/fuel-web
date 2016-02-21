@@ -34,11 +34,13 @@ down_revision = '675105097a69'
 def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_release_required_component_types()
 
 
 def downgrade():
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
+    downgrade_release_required_component_types()
 
 
 def upgrade_plugin_links_constraints():
@@ -222,6 +224,17 @@ def upgrade_plugin_with_nics_and_nodes_attributes():
     )
 
 
+def upgrade_release_required_component_types():
+    op.add_column(
+        'releases',
+        sa.Column(
+            'required_component_types',
+            fields.JSON(),
+            nullable=False
+        )
+    )
+
+
 def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_table('node_cluster_plugins')
     op.drop_table('node_bond_interface_cluster_plugins')
@@ -234,3 +247,7 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+def downgrade_release_required_component_types():
+    op.drop_column('releases', 'required_component_types')

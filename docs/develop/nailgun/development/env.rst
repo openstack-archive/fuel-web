@@ -43,7 +43,7 @@ Preparing Development Environment
     sudo apt-get install --yes python-dev python-pip
 
 #. Install virtualenv. This step increases flexibility
-   when dealing with environment settings and package installation:
+   when dealing with environment settings and package installation::
 
     sudo pip install virtualenv virtualenvwrapper
     . /usr/local/bin/virtualenvwrapper.sh  # you can save this to .bashrc
@@ -58,6 +58,15 @@ Preparing Development Environment
     git clone https://github.com/openstack/fuel-web.git
     cd fuel-web
     pip install --allow-all-external -r nailgun/test-requirements.txt
+
+#. Install Nailgun in the developers mode by running the command below in the
+   `nailgun` folder. Thanks to that, Nailgun extensions will be discovered::
+
+    python setup.py develop
+
+   Or if you are using pip::
+
+    pip install -e .
 
 #. Create required folder for log files::
 

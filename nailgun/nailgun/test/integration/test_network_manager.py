@@ -546,34 +546,33 @@ class TestNetworkManager(BaseIntegrationTest):
                 self.assertEquals(admin_ng_id, net.id)
 
     def test_get_assigned_vips(self):
-        vips_to_create = {
-            consts.NETWORKS.management: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',
-                consts.NETWORK_VIP_NAMES_V6_1.vrouter: '192.168.0.2',
-            },
-            consts.NETWORKS.public: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '172.16.0.2',
-                consts.NETWORK_VIP_NAMES_V6_1.vrouter: '172.16.0.3',
-            },
-        }
         cluster = self.env.create_cluster(api=False)
-        self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
-        vips = self.env.network_manager.get_assigned_vips(cluster)
-        self.assertEqual(vips_to_create, vips)
+        cluster_vips = objects.IPAddrCollection.get_by_cluster_id(
+            cluster.id).all()
+
+        result_vips = self.env.network_manager.get_assigned_vips(cluster)
+
+        # check that quantity of VIPs in database is equal to quantity
+        # of those returned by the method
+        self.assertEqual(
+            len(cluster_vips),
+            sum([len(ips) for network, ips in six.iteritems(result_vips)])
+        )
+
+        # check that ip addresses of VIPs in database are presented correctly
+        # in the result
+        for vip in cluster_vips:
+            vips_for_network = [vips_info for network, vips_info
+                                in six.iteritems(result_vips)
+                                if network == vip.network_data.name][0]
+            self.assertIn(vip.vip_name, vips_for_network)
+            self.assertEqual(vip.ip_addr, vips_for_network[vip.vip_name])
 
     def test_assign_given_vips_for_net_groups(self):
-        vips_to_create = {
-            consts.NETWORKS.management: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',
-            },
-            consts.NETWORKS.public: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '172.16.0.2',
-            },
-        }
         vips_to_assign = {
             consts.NETWORKS.management: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',
-                consts.NETWORK_VIP_NAMES_V6_1.vrouter: '192.168.0.2',
+                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.4',
+                consts.NETWORK_VIP_NAMES_V6_1.vrouter: '192.168.0.5',
             },
             consts.NETWORKS.public: {
                 consts.NETWORK_VIP_NAMES_V6_1.haproxy: '172.16.0.4',
@@ -581,7 +580,8 @@ class TestNetworkManager(BaseIntegrationTest):
             },
         }
         cluster = self.env.create_cluster(api=False)
-        self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
+
+        # override VIPs assigned on creation of the cluster
         self.env.network_manager.assign_given_vips_for_net_groups(
             cluster, vips_to_assign)
         vips = self.env.network_manager.get_assigned_vips(cluster)
@@ -589,8 +589,10 @@ class TestNetworkManager(BaseIntegrationTest):
 
     def test_assign_given_vips_for_net_groups_idempotent(self):
         cluster = self.env.create_cluster(api=False)
-        self.env.network_manager.assign_vips_for_net_groups(cluster)
+
+        # get VIPs assigned on creation of the cluster
         expected_vips = self.env.network_manager.get_assigned_vips(cluster)
+
         self.env.network_manager.assign_given_vips_for_net_groups(
             cluster, expected_vips)
         self.env.network_manager.assign_vips_for_net_groups(cluster)
@@ -1250,7 +1252,7 @@ class TestNeutronManager70(BaseIntegrationTest):
         )
 
     def test_get_assigned_vips(self):
-        self.net_manager.assign_vips_for_net_groups(self.cluster)
+        # get VIPs assigned on cluster creation
         vips = self.net_manager.get_assigned_vips(self.cluster)
         expected_vips = {
             'management': {

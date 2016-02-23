@@ -1180,13 +1180,20 @@
                 "irc_text": "如果您有任何问题，可通过IRC（freenode.net网络的 #fuel 频道）联系开发者。",
                 "log_text": "如果您在使用Fuel Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
                 "contact_support": "联系支持",
+                "master_node_uuid": "主节点UUID",
+                "manage_account": "管理账户",
                 "download_diagnostic_snapshot_text": "下载诊断快照",
                 "gen_logs_snapshot_text": "生成日志快照...",
                 "gen_diagnostic_snapshot_text": "生成诊断快照",
                 "diagnostic_snapshot": "诊断快照",
                 "capacity_audit": "性能审计",
                 "capacity_audit_text": "查看和下载性能日志。",
-                "view_capacity_audit": "查看性能日志"
+                "view_capacity_audit": "查看性能日志",
+                "send_statistics_title": "发送使用过程的统计信息",
+                "save_changes": "保存更改",
+                "documentation_link": "查看文档",
+                "documentation_title": "Fuel文档",
+                "documentation_text": "该页面包含最新的Fuel文档，您可以在线阅读或下载PDF版本。"
             },
             "release_page": {
                 "title": "版本",

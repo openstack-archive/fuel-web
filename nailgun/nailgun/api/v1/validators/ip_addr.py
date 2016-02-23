@@ -34,6 +34,34 @@ class IPAddrValidator(BasicValidator):
     )
 
     @classmethod
+    def validate_create(cls, data, cluster):
+        if isinstance(data, six.string_types):
+            data = cls.validate_json(data)
+
+        cls.validate_schema(data, ip_addr.VIP_CREATE_SCHEMA)
+
+        network_id = data["network"]
+        network_db = objects.NetworkGroup.get_by_uid(network_id)
+
+        if network_db.nodegroup.cluster_id != cluster.id:
+            raise errors.CannotCreate(
+                "VIP cannot be created "
+                "as there is no network with id {0} assigned to any "
+                "of nodegroups of cluster with id {1}"
+                .format(network_id, cluster.id)
+            )
+
+        ip_db = objects.IPAddrCollection.get_all_by_addr(data['ip_addr'])\
+            .first()
+        if ip_db is not None:
+            raise errors.CannotCreate(
+                "VIP cannot be created as ip address {0} is already in use"
+                .format(data['ip_addr'])
+            )
+
+        return data
+
+    @classmethod
     def validate_update(cls, data, existing_obj):
         """Validate single IP address entry update information.
 
@@ -86,8 +114,10 @@ class IPAddrValidator(BasicValidator):
         :param obj_id: id of the VIP being updated
         :param addr: new ip address for VIP
         """
-        intersecting_ip = objects.IPAddr.get_intersecting_ip(ip_instance, addr)
-        if intersecting_ip:
+        intersecting_ip = objects.IPAddrCollection.get_all_by_addr(addr)\
+            .first()
+
+        if intersecting_ip is not None and intersecting_ip is not ip_instance:
             err_msg = (
                 "IP address {0} is already allocated within "
                 "{1} network with CIDR {2}"

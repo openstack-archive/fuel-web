@@ -1202,6 +1202,23 @@
                     "manageonly": "仅管理"
                 }
             },
+            "plugins_page": {
+                "title": "已安装插件",
+                "groups": "Groups",
+                "releases": "发行版",
+                "version": "插件版本",
+                "description": "描述",
+                "homepage": "主页",
+                "authors": "作者",
+                "licenses": "许可协议",
+                "links": "链接",
+                "ubuntu": "Ubuntu",
+                "centos": "CentOS",
+                "more_info": "详情请访问：",
+                "plugins_catalog": "插件类别",
+                "plugins_documentation": "插件文档",
+                "no_plugins": "未安装插件。"
+            },
             "clusters_page": {
                 "title":"我的OpenStack环境",
                 "create_cluster_text": "新建OpenStack环境",

@@ -1262,10 +1262,14 @@
                 "title": "版本",
                 "name": "名称",
                 "version": "发布",
+                "state": "可用于新的部署",
                 "no_releases_message": "没有发布信息",
                 "release": {
+                    "available": "可用",
                     "error": "错误",
-                    "not_available": "不存在"
+                    "not_available": "不存在",
+                    "unavailable": "不可用",
+                    "manageonly": "仅管理"
                 }
             },
             "clusters_page": {

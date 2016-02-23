@@ -145,7 +145,7 @@ How to execute my tests?
 Simplest way is to install Fuel, and OSTF will be installed as part of it.
   - install virtualbox
   - build Fuel ISO: :ref:`building-fuel-iso`
-  - use `virtualbox scripts to run an ISO <https://github.com/openstack/fuel-main/tree/master/virtualbox>`_
+  - use `virtualbox scripts to run an ISO <https://github.com/openstack/fuel-virtualbox/tree/master/>`_
   - once the installation is finished, go to Fuel UI (usually it's 10.20.0.2:8000) and create a new cluster with necessary configuration
   - execute::
 

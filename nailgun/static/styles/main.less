@@ -1,103 +1,6 @@
+@version-name: "mirantis";
 @import "../../node_modules/bootstrap/dist/css/bootstrap.css";
-
-// COLOR SETTINGS
-
-// Base Settings
-@page-width: 1170px;
-@default-input-width: 280px;
-@default-label-width: 200px;
-
-// Base Palette
-@base-dark-color:  #415766;
-@base-light-color: @base-dark-color + #7a746c;
-@base-text-color:  #525960;
-
-// Node Colors
-@base-node-color: #e1e4e6;
-@base-node-border: @base-node-color - 30%;  // - #1e1f1f;
-
-// Node Selected
-@node-color-selected: @base-node-color - 15%; //#101010;
-@node-border-color-selected: @base-node-color - 15%; //#101010;
-
-// Node Unallocated
-@node-color-discover: @white;
-@node-border-color-discover: @base-node-border;
-@node-color-discover-hover: @base-node-color + 15%; //#141414;
-
-// Node Error
-@node-color-error: @red + 160%; //#decace;
-@node-border-color-error: @red + 10%;
-
-// Node New
-@node-color-pending_addition: @base-node-color;
-@node-border-color-pending_addition: @green - 20%;
-
-// Pending deletion node
-@node-color-pending_deletion: @base-node-color;
-@node-border-color-pending_deletion: @orange - 20%;
-
-// Node Offline
-@node-color-offline: @base-node-color;
-@node-border-color-offline: @base-node-border;
-
-// Other Colors
-@white:      #ffffff;
-@black:      #000000;
-@red:        #c94b4b;
-@pure-red:   #ff0000;
-@green:      #54a854;
-@blue:       #4e85aa;
-@orange:     #bc6e12;
-@gray:       #8c8c8c;
-
-// Buttons Colors
-@btn-default: #d4d5d6;
-@btn-success: #48a565;
-@btn-primary: #3d7eaa;
-@btn-warning: #d3a541;
-@btn-danger:  #b85d51;
-@btn-info:    #7ab0cc;
-
-// Background colors
-@light-blue:       #eaf0f2;
-@pale-blue:        #c9e4ee;
-@light-green:      #d0f2dd;
-@light-yellow:     #f7e4bf;
-@light-red:        #f6c4c3;
-@aquamarine:       #bbedcf;
-@rose:             #f2aaa9;
-@coral:            #ea7170;
-@emergency-red:    #a34f4e;
-
-@alert-success-bg: #cae8c6;
-@alert-info-bg:    #c1d4e1;
-@alert-warning-bg: #f2e0b9;
-@alert-danger-bg:  #e8c6c6;
-
-// Disk colors
-@disk-orange: #c1684a;
-@disk-blue:   #1c7695;
-@disk-green:  #43968a;
-@disk-red:    #C46054;
-@disk-violet: #9a4aae;
-@disk-yellow: #F2CA5B;
-@disk-cyan:   #359CBF;
-
-@link-color: saturate(lighten(@base-dark-color, 20%), 30%);
-@link-color-hover: saturate(lighten(@base-dark-color, 10%), 15%);
-@navbar-color: saturate(lighten(@base-dark-color, 20%), 15%);
-@navbar-color-active: saturate(lighten(@base-dark-color, 20%), 15%);
-@navbar-icon-color: @base-dark-color + #203c4c;
-@shadow-color: rgba(0,0,0,0.5);
-
-// Tabs & Content Settings
-@tab-color: desaturate(lighten(@base-dark-color, 55%), 20%);
-@tab-color-hover: desaturate(lighten(@base-dark-color, 50%), 20%);
-@tab-color-active: @white;
-
-@range-color: @tab-color - 50%;
-@slider-color: @tab-color + 20%;
+@import "@{version-name}-color-theme.less";
 
 // Fonts and Weight
 @import "../../node_modules/open-sans-fontface/open-sans.css";
@@ -287,8 +190,26 @@
   .icon-default-styles(-13px, -812px);
 }
 
+.glyphicon-lock {
+  .icon-default-styles(-12px, -1011px);
+  width: 16px;
+  height: 16px;
+}
+
+.glyphicon-user {
+  .icon-default-styles(-54px, -1012px);
+  width: 12px;
+  height: 14px;
+}
+
+.glyphicon-off {
+  .icon-default-styles(-54px, -812px);
+  width: 13px;
+  height: 14px;
+}
+
 .base-btn-link-colors() {
-  @base-btn-link-color: #5988A5;
+  @base-btn-link-color: @link-color;
   color: @base-btn-link-color;
   &:hover {
     color: @base-btn-link-color - 15%;
@@ -365,6 +286,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
   }
 }
 
+.form-control:focus {
+  border-color: @navbar-color;
+  outline: 0;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(red(@navbar-color), green(@navbar-color), blue(@navbar-color), 0.6);
+}
+
 .btn-success {
   .button-mixin(@btn-success);
 }
@@ -379,6 +306,12 @@ button, .btn:not(.btn-link) {.font-semibold;}
 }
 .btn-info {
   .button-mixin(@btn-info);
+}
+.btn-link {
+  color: @link-color;
+  &:hover {
+    color: @link-color-hover;
+  }
 }
 
 
@@ -677,12 +610,12 @@ input[type=range] {
         -webkit-font-smoothing: antialiased;
         &:hover {
           color: @white;
-          background-color: @base-light-color;
+          background-color: @navbar-color-hover;
           border-radius: 4px;
         }
         &:focus {
           color: @white;
-          background-color: @base-light-color;
+          background-color: @navbar-color-hover;
           border-radius: 4px;
         }
       }
@@ -714,7 +647,7 @@ input[type=range] {
   padding: 0px;
   margin-top: 2px;
   width: 166px;
-  background: url(../img/logos/fuel-logo.svg) no-repeat top left;
+  background: url("../img/logos/@{version-name}-logo.svg") no-repeat top left;
 }
 
 .navbar-icons {
@@ -985,7 +918,7 @@ input[type=range] {
   li {
     display: inline-block;
     a {
-      color: @blue + 60%;
+      color: lighten(@link-color, 20%);
     }
   }
   li + li {
@@ -1073,6 +1006,9 @@ input[type=range] {
       &:hover {
         background-color: @navbar-color-active;
       }
+      &:focus {
+        background-color: @navbar-color-active;
+    }
     }
   }
   & > a {
@@ -1082,7 +1018,7 @@ input[type=range] {
     font-weight: 600;
     &:hover {
       color: @white;
-      background-color: @base-light-color;
+      background-color: @navbar-color-hover;
     }
   }
   &.group-title {
@@ -1364,7 +1300,7 @@ input[type=range] {
 .cluster-page {
   .page-title {
     .title-node-count {
-      color: @blue + 60%;
+      color: @navbar-color + 60%;
       display: inline-block;
       font-size: @base-font-size + 4;
       left: 18px;
@@ -2057,7 +1993,7 @@ input[type=range] {
         background-color: @node-color-pending_addition;
         border-color: @node-border-color-pending_addition;
         &:hover {
-          background-color: @node-color-pending_addition + 10%;
+          background-color: @node-color-pending_addition + 7%;
         }
       }
       &.pending_deletion {
@@ -2235,7 +2171,7 @@ input[type=range] {
           }
           .btn-link {
             padding: 0;
-            color: @blue;
+            color: @link-color;
             font-size: @base-font-size - 2;
             &:hover, &:focus {
               text-decoration: none;
@@ -2607,9 +2543,8 @@ input[type=range] {
 
 .login-page {
   @login-indent: 20px;
-  @logo-circle-size: 160px;
   .container {
-    margin-top: @logo-circle-size / 2;
+    margin-top: 80px;
     .box {
       position: relative;
       background-color: @white;
@@ -2617,24 +2552,26 @@ input[type=range] {
       border-radius: 18px;
       margin-top: 10%;
       box-shadow: 0 1px 1px @shadow-color;
-      .logo-circle {
-        background-color: @white;
+      .login-head {
         position: relative;
-        width: @logo-circle-size;
-        height: @logo-circle-size;
-        top: -@logo-circle-size / 2;
-        border-radius: @logo-circle-size / 2;
-        margin: 0 auto;
+        display: block;
+        width: 100%;
+        height: 160px;
+        background: url(../img/login-bg.jpg) no-repeat top left;
+        background-size: cover;
+        border-radius: 12px 12px 0px 0px;
       }
       .logo {
-        @logo-width: 200px;
-        @logo-height: 260px;
-        background: url(../img/fuel-big-logo.svg) repeat scroll 0 0 rgba(0, 0, 0, 0);
+        @logo-width: 100%;
+        @logo-height: 160px;
+        background: url("../img/@{version-name}-big-logo.svg") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
+        background-size: contain;
+        background-position: center;
         position: relative;
-        top: -@logo-height + @login-indent;
+        top: -@logo-height;
         width: @logo-width;
         height: @logo-height;
-        margin: 0 auto -(@logo-height - 40px) auto;
+        margin: 0 auto -(@logo-height - 20px) auto;
       }
       .fields-box {
         overflow: hidden;
@@ -2702,7 +2639,7 @@ input[type=range] {
       background-color: @base-node-color;
       text-decoration: none;
       .name {
-        color: @blue;
+        color: @link-color;
       }
     }
     .name {
@@ -2765,14 +2702,12 @@ input[type=range] {
     text-decoration: none;
     background: url(../img/icons/new-environment.svg) no-repeat center 20px;
     text-align: center;
-    color: @blue;
     text-decoration: none;
     box-sizing: border-box;
     .font-bold;
     &:hover {
       background: @white url(../img/icons/new-environment.svg) no-repeat center 20px;
       text-decoration: none;
-      color: @blue;
     }
     span {
       display: block;
@@ -2801,7 +2736,7 @@ input[type=range] {
     float: left;
     box-sizing: border-box;
 
-    @support-icon-background-color: #4e85aa;
+    @support-icon-background-color: @navbar-color;
     background: @support-icon-background-color;
     .support-icon-sprite-index(@index) {
         background: @support-icon-background-color url(../img/icons/support-images.svg) no-repeat 0 -120px * @index;
@@ -4012,7 +3947,7 @@ input[type=range] {
       .btn-link {
         text-decoration: none;
         cursor: default;
-        color: #337ab7;
+        color: @link-color;
       }
     }
     .node-group-renaming {
@@ -4305,7 +4240,7 @@ input[type=range] {
   }
 
   .cluster-information {
-    background-color: rgb(231, 240, 242);
+    background-color: @base-light-color;
     width: @page-width;
     margin: 0 0 @dashboard-offset -@dashboard-offset * 2;
     padding: @dashboard-offset @dashboard-offset * 2;

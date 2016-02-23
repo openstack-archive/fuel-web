@@ -909,6 +909,10 @@ class NeutronNetworkDeploymentSerializer70(
         return transformations
 
     @classmethod
+    def generate_vendor_specific_for_endpoint(cls, netgroup):
+        return {}
+
+    @classmethod
     def generate_network_scheme(cls, node, networks):
         """Create a data structure and fill it with static values.
 
@@ -958,6 +962,9 @@ class NeutronNetworkDeploymentSerializer70(
             netgroup = nm.get_network_by_netname(ngname, networks)
             if netgroup.get('ip'):
                 attrs['endpoints'][brname] = {'IP': [netgroup['ip']]}
+                vs = cls.generate_vendor_specific_for_endpoint(netgroup)
+                if bool(vs):
+                    attrs['endpoints'][brname]['vendor_specific'] = vs
             netgroups[ngname] = netgroup
             nets_by_ifaces[netgroup['dev']].append({
                 'br_name': brname,
@@ -1393,13 +1400,24 @@ class NeutronNetworkTemplateSerializer80(
     pass
 
 
+class VendorSpecificMixin90(object):
+    @classmethod
+    def generate_vendor_specific_for_endpoint(cls, netgroup):
+        vendor_specific = {}
+        if netgroup.get('gateway') and netgroup.get('cidr'):
+            vendor_specific['provider_gateway'] = netgroup.get('gateway')
+        return vendor_specific
+
+
 class NeutronNetworkDeploymentSerializer90(
+    VendorSpecificMixin90,
     NeutronNetworkDeploymentSerializer80
 ):
     pass
 
 
 class NeutronNetworkTemplateSerializer90(
+    VendorSpecificMixin90,
     NeutronNetworkTemplateSerializer80
 ):
     pass

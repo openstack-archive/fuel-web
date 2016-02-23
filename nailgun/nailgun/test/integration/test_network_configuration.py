@@ -547,8 +547,10 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         nm = objects.Cluster.get_network_manager(self.cluster)
         nodegroup = objects.Cluster.get_default_group(self.cluster)
         self.assertEqual(
-            nm.assign_vip(nodegroup, consts.NETWORKS.fuelweb_admin, 'my-vip'),
-            resp.json_body['vips']['my-vip']['ipaddr'])
+            resp.json_body['vips']['my-vip']['ipaddr'],
+            nm.assign_vip(nodegroup,
+                          consts.NETWORKS.fuelweb_admin, 'my-vip').ip_addr,
+        )
 
     def test_not_enough_ip_addresses_return_200_on_get(self):
         # restrict public network to have only 2 ip addresses
@@ -713,7 +715,8 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
                 nodegroup,
                 'management',
                 consts.NETWORK_VIP_NAMES_V6_1.haproxy
-            ))
+            ).ip_addr
+        )
 
         self.assertEqual(
             resp['public_vip'],
@@ -721,7 +724,8 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
                 nodegroup,
                 'public',
                 consts.NETWORK_VIP_NAMES_V6_1.haproxy
-            ))
+            ).ip_addr
+        )
 
 
 class TestAdminNetworkConfiguration(BaseIntegrationTest):

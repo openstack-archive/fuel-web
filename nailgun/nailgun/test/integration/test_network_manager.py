@@ -1179,7 +1179,7 @@ class TestNeutronManager70(BaseIntegrationTest):
         vip = '172.16.0.1'
 
         with patch.object(NeutronManager70, 'assign_vip',
-                          return_value=vip) as assign_vip_mock:
+                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
@@ -1348,7 +1348,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
         vip = '172.16.0.1'
 
         with patch.object(NovaNetworkManager70, 'assign_vip',
-                          return_value=vip) as assign_vip_mock:
+                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),

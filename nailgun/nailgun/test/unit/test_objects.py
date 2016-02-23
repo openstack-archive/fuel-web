@@ -1871,31 +1871,19 @@ class TestOpenstackConfig(BaseTestCase):
 
 class TestIPAddrObject(BaseTestCase):
 
-    def test_get_intersecting_ip(self):
-        admin_netg = self.db.query(objects.NetworkGroup.model).filter_by(
-            name=consts.NETWORKS.fuelweb_admin
-        ).first()
-
-        ip_addr_one = objects.IPAddr.model(
-            ip_addr='10.20.0.3',
-            network=admin_netg.id
-        )
-
-        ip_addr_two = objects.IPAddr.model(
-            ip_addr='10.20.0.4',
-            network=admin_netg.id
-        )
-        self.db.add_all([ip_addr_one, ip_addr_two])
+    def test_get_by_ip_addr(self):
+        ng = objects.NetworkGroup.model(name='test')
+        self.db.add(ng)
         self.db.flush()
 
-        intersect = objects.IPAddr.get_intersecting_ip(ip_addr_two,
-                                                       '10.20.0.3')
-        self.assertEqual(intersect, ip_addr_one)
+        addr = '10.20.0.10'
+        ip_addr = objects.IPAddr.model(
+            ip_addr=addr,
+            network=ng.id
+        )
+        self.db.add(ip_addr)
+        self.db.flush()
 
-        intersect = objects.IPAddr.get_intersecting_ip(ip_addr_two,
-                                                       '10.20.0.5')
-        self.assertIsNone(intersect, ip_addr_one)
-
-        intersect = objects.IPAddr.get_intersecting_ip(ip_addr_one,
-                                                       '10.20.0.3')
-        self.assertIsNone(intersect)
+        found = objects.IPAddrCollection.get_all_by_addr(addr).first()
+        self.assertIsNotNone(found)
+        self.assertEqual(found.ip_addr, addr)

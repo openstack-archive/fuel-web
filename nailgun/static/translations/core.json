@@ -1204,6 +1204,12 @@
                     "company": "请输入您的公司名称。"
                 }
             },
+            "welcome_page": {
+                "title": "欢迎来到Fuel与OpenStack！",
+                "start_fuel": "开始使用Fuel",
+                "thanks": "感谢您帮助改进Fuel与OpenStack!",
+                "statistics_collector": "用于收集统计信息的Web UI正在开发中，将可通过以下链接访问"
+            },
             "navbar": {
                 "environments": "环境",
                 "releases": "版本",

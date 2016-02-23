@@ -34,14 +34,6 @@ class IPAddr(NailgunObject):
     serializer = IPAddrSerializer
 
     @classmethod
-    def get_intersecting_ip(cls, instance, addr):
-        """Get ip that intersects by ip_addr with given."""
-        return db.query(cls.model).filter(
-            cls.model.ip_addr == addr,
-            cls.model.id != instance.id
-        ).first()
-
-    @classmethod
     def get_ips_except_admin(cls, node_id=None,
                              network_id=None, include_network_data=False):
         """Get all non-admin IP addresses for node or network.
@@ -171,6 +163,11 @@ class IPAddrRange(NailgunObject):
 class IPAddrCollection(NailgunCollection):
 
     single = IPAddr
+
+    @classmethod
+    def get_all_by_addr(cls, ip_addr):
+        """Get all IPs with given ip address."""
+        return cls.all().filter(cls.single.model.ip_addr == ip_addr)
 
     @classmethod
     def get_by_cluster_id(cls, cluster_id):

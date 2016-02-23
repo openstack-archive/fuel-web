@@ -39,12 +39,12 @@ class BaseIPAddrTest(BaseIntegrationTest):
         )
 
         net_manager = objects.Cluster.get_network_manager(self.cluster)
-        management_net = net_manager.get_network_by_netname(
+        self.management_net = net_manager.get_network_by_netname(
             consts.NETWORKS.management, self.cluster.network_groups
         )
         self.management_vips = self.db.query(IPAddr).filter(
             IPAddr.vip_name.isnot(None),
-            IPAddr.network == management_net.id
+            IPAddr.network == self.management_net.id
         ).all()
         self.vip_ids = [v.id for v in self.management_vips]
 
@@ -155,6 +155,52 @@ class TestIPAddrList(BaseIPAddrTest):
 
     handler_name = 'ClusterVIPCollectionHandler'
 
+    def check_create_vip(self, create_data):
+        resp = self.app.post(
+            reverse(
+                self.handler_name,
+                kwargs={'cluster_id': self.cluster['id']}
+            ),
+            params=jsonutils.dumps(create_data),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(resp.status_code, 200)
+
+        return resp
+
+    def test_create_vip_for_cluster(self):
+        create_data = {
+            'ip_addr': "192.168.0.15",
+            'network': self.management_net.id,
+            'vip_name': 'management',
+            'is_user_defined': True
+        }
+
+        self.check_create_vip(create_data)
+
+    def test_create_vip_for_cluster_wo_is_user_defined_flag(self):
+        create_data = {
+            'ip_addr': "192.168.0.15",
+            'network': self.management_net.id,
+            'vip_name': 'management',
+        }
+
+        create_resp = self.check_create_vip(create_data)
+
+        get_resp = self.app.get(
+            reverse(
+                'ClusterVIPHandler',
+                kwargs={
+                    'cluster_id': self.cluster['id'],
+                    'ip_addr_id': create_resp.json_body['id']
+                }
+            ),
+            headers=self.default_headers
+        )
+
+        self.assertTrue(get_resp.json_body['is_user_defined'])
+
     def test_vips_list_for_cluster(self):
         resp = self.app.get(
             reverse(
@@ -209,21 +255,6 @@ class TestIPAddrList(BaseIPAddrTest):
             expect_errors=True
         )
         self.assertEqual(404, resp.status_code)
-
-    def test_create_fail(self):
-        resp = self.app.post(
-            reverse(
-                self.handler_name,
-                kwargs={
-                    'cluster_id': self.cluster['id'],
-                    'ip_addr_id': self.vip_ids[0]
-                }
-            ),
-            {"some": "params"},
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(405, resp.status_code)
 
     def test_update(self):
         update_data = [

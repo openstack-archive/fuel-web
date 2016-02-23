@@ -47,6 +47,10 @@ IP_ADDR_UPDATE_SCHEMA = _get_ip_addr_schema()
 
 IP_ADDR_UPDATE_WITH_ID_SCHEMA = _get_ip_addr_schema("id")
 
+VIP_CREATE_SCHEMA = _get_ip_addr_schema("ip_addr",
+                                        "network",
+                                        "vip_name")
+
 IP_ADDRS_UPDATE_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "array",

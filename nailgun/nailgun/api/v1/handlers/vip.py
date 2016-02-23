@@ -142,12 +142,30 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
             )
         )
 
+    @content
     def POST(self, cluster_id):
-        """Create method disallowed.
+        """Create (allocate) VIP
 
-        :http: * 405 (method not supported)
+        :http: * 200 (VIP created)
+               * 400 (VIP cannot be created)
+               * 404 (cluster object not found)
         """
-        raise self.http(405, 'Create is not supported for this entity')
+        cluster = self.get_object_or_404(objects.Cluster, int(cluster_id))
+
+        data = self.checked_data(
+            self.validator.validate_create,
+            cluster=cluster
+        )
+
+        # all VIPs created by this method must have set
+        # 'is_user_defined' flag whether it has been supplied
+        # in input data or not (though if it has, and have value == False
+        # validation will raise an exception)
+        data['is_user_defined'] = True
+
+        vip = self.collection.create(data)
+
+        raise self.http(200, self.collection.single.to_json(vip))
 
     @content
     def PUT(self, cluster_id):

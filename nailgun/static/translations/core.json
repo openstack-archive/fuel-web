@@ -1147,6 +1147,60 @@
                 "management": "管理",
                 "storage": "存储"
             },
+            "statistics": {
+                "help_to_improve": "通过发送您在使用Fuel和OpenStack过程中的设置、功能、部署操作等信息，帮助我们改进您的使用体验。",
+                "learn_whats_collected": "了解何种信息会被收集",
+                "statistics_user_info": "注意，如果您同意发送统计信息，一个名为\"fuel_states_user\"的新用户将会被添加至您的OpenStack环境，该用户将会收集OpenStack的负载信息",
+                "statistics_includes_full": "使用过程的统计信息包含下列信息。密码，IP地址，节点名称等保密信息不会包含在统计信息内。",
+                "actions_title": "操作：",
+                "actions": {
+                    "operation_type": "操作类型（添加集群，添加节点，部署OpenStack环境，移除节点，等等）",
+                    "operation_time": "操作的起止时间",
+                    "actual_time": "完成操作的实际用时",
+                    "network_verification": "网络验证结果",
+                    "ostf_results": "OSTF测试结果"
+                },
+                "settings_title": "环境设置：",
+                "settings": {
+                    "envronments_amount": "环境数量",
+                    "distribution": "发行版/操作系统",
+                    "network_type": "网络类型",
+                    "kernel_parameters": "内核参数",
+                    "admin_network_parameters": "管理网络参数",
+                    "pxe_parameters": "PXE参数",
+                    "dns_parameters": "DNS参数",
+                    "storage_options": "存储选项",
+                    "related_projects": "相关项目",
+                    "modified_settings": "在设置选项卡中修改的设置",
+                    "networking_configuration": "网络配置"
+                },
+                "node_settings_title": "节点设置：",
+                "node_settings": {
+                    "deployed_nodes_amount": "已部署节点数量",
+                    "deployed_roles": "每个节点的角色",
+                    "disk_layout": "Disk layout",
+                    "interfaces_configuration": "接口配置"
+                },
+                "system_info_title": "系统信息：",
+                "system_info": {
+                    "hypervisor": "Hypervisor",
+                    "hardware_info": "硬件信息",
+                    "fuel_version": "Fuel版本信息",
+                    "openstack_version": "OpenStack版本信息"
+                },
+                "setting_labels": {
+                    "send_anonymous_statistic": "发送使用过程的统计信息",
+                    "send_user_info": "对我的错误报告进行认证，以便Mirantis技术支持协助我解决问题",
+                    "name": "姓名",
+                    "email": "邮箱",
+                    "company": "公司"
+                },
+                "errors": {
+                    "name": "请输入您的姓名。",
+                    "email": "请输入您的邮件地址。",
+                    "company": "请输入您的公司名称。"
+                }
+            },
             "navbar": {
                 "environments": "环境",
                 "releases": "版本",

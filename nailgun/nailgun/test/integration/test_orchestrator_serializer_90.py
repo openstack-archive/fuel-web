@@ -36,7 +36,7 @@ from nailgun.test.integration.test_orchestrator_serializer_80 import \
 
 
 class TestSerializer90Mixin(object):
-    env_version = "liberty-9.0"
+    env_version = "mitaka-9.0"
 
 
 class TestBlockDeviceDevicesSerialization90(

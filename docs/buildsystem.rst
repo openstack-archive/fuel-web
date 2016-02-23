@@ -139,12 +139,6 @@ pieces of Fuel build system:
 
 * **iso** - contains **make** scripts for building Fuel ISO file.
 
-**Fuel-main** also contains a set of directories which are not directly
-related to Fuel build processes:
-
-* **virtualbox** - contains a set of shell scripts
-  which allow one to deploy Fuel demo lab easily using VirtualBox.
-
 
 .. _build-targets:
 
@@ -207,14 +201,6 @@ They are defined in **config.mk** file:
 * **ISO_PATH** - used to specify Fuel ISO full path instead of defining
   just ISO name.
   By default, it is **$(ARTS_DIR)/$(ISO_NAME).iso**.
-
-* **VBOX_SCRIPTS_NAME** - defines the name of the archive with
-  VirtualBox scripts.
-  By default, it is placed into **$(VBOX_SCRIPTS_NAME).zip**.
-
-* **VBOX_SCRIPTS_PATH** - defines full path for
-  VirtualBox scripts archive.
-  By default, it is **$(ARTS_DIR)/$(VBOX_SCRIPTS_NAME).zip**
 
 * Fuel ISO contains some default settings for the
   Fuel Master node. These settings can be customized

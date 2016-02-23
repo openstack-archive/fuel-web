@@ -1226,14 +1226,14 @@ class TestNeutronManager70(BaseIntegrationTest):
         vip = '172.16.0.1'
 
         with patch.object(NeutronManager70, 'assign_vip',
-                          return_value=vip) as assign_vip_mock:
+                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),
                 mock.ANY, vip_name='public')
             self.assertEqual(endpoint_ip, vip)
 
-    def test_assign_vips_for_net_groups_for_api(self):
+    def assign_vips_for_api_and_check_configuration(self, allocate):
         expected_aliases = [
             'management_vip', 'management_vrouter_vip',
             'public_vip', 'public_vrouter_vip'
@@ -1247,13 +1247,81 @@ class TestNeutronManager70(BaseIntegrationTest):
         ]
 
         assigned_vips = self.net_manager.assign_vips_for_net_groups_for_api(
-            self.cluster)
+            self.cluster, allocate=allocate)
 
         self._check_vip_configuration(expected_vips, assigned_vips['vips'])
 
         # Also check that the configuration in the old format is included
         for a in expected_aliases:
             self.assertIn(a, assigned_vips)
+
+        return assigned_vips
+
+    def check_assigned_vips_against_db_data(self, assigned_vips):
+        vips_db = objects.IPAddrCollection.get_by_cluster_id(
+            self.cluster.id
+        )
+
+        vip_info = assigned_vips['vips']
+        for vip in vips_db:
+            self.assertIn(vip.vip_name, vip_info)
+
+            info = vip_info[vip.vip_name]
+            self.assertEqual(info['ipaddr'], vip.ip_addr)
+            self.assertEqual(info['is_user_defined'], vip.is_user_defined)
+
+    def test_assign_vips_for_net_groups_for_api_w_allocation(self):
+        assigned_vips = self.assign_vips_for_api_and_check_configuration(
+            allocate=True)
+        self.check_assigned_vips_against_db_data(assigned_vips)
+
+    def test_assign_vips_for_net_groups_for_api_wo_allocation(self):
+        # if anything, delete already assigned VIPs
+        objects.IPAddrCollection.all().delete(synchronize_session='fetch')
+
+        assigned_vips = self.assign_vips_for_api_and_check_configuration(
+            allocate=False)
+
+        # check that the action didn't triggered VIP allocation
+        cluster_vips_db = objects.IPAddrCollection.get_by_cluster_id(
+            self.cluster.id).all()
+        self.assertFalse(cluster_vips_db)
+
+        vip_info = assigned_vips['vips']
+        for vip_name, info in six.iteritems(vip_info):
+            self.assertIsNone(info['ipaddr'])
+            self.assertFalse(info['is_user_defined'])
+
+    def test_assign_vips_for_net_groups_for_api_contains_removed_vip(self):
+        # allocate VIPs, if anything
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
+
+        # remember details of removed VIP to check against them later
+        removed_vip = objects.IPAddrCollection.get_by_cluster_id(
+            self.cluster.id
+        ).first()
+
+        vip_name = removed_vip.vip_name
+
+        self.db.delete(removed_vip)
+        self.db.flush()
+
+        assigned_vips = self.assign_vips_for_api_and_check_configuration(
+            allocate=False)
+
+        self.check_assigned_vips_against_db_data(assigned_vips)
+
+        # check that removed VIP is serialized and it is done properly
+        self.assertIn(vip_name, assigned_vips['vips'])
+        self.assertIsNone(assigned_vips['vips'][vip_name]['ipaddr'])
+        self.assertFalse(assigned_vips['vips'][vip_name]['is_user_defined'])
+
+        # check that removed VIP is restored (as its info is present in
+        # network roles metadata for the cluster) after auto allocation
+        # executed
+        assigned_vips = self.assign_vips_for_api_and_check_configuration(
+            allocate=True)
+        self.check_assigned_vips_against_db_data(assigned_vips)
 
     def test_assign_vips_for_net_groups(self):
         expected_vips = [
@@ -1395,7 +1463,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
         vip = '172.16.0.1'
 
         with patch.object(NovaNetworkManager70, 'assign_vip',
-                          return_value=vip) as assign_vip_mock:
+                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
             endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
             assign_vip_mock.assert_called_once_with(
                 objects.Cluster.get_controllers_node_group(self.cluster),

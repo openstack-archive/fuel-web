@@ -362,7 +362,7 @@ class NetworkManager(object):
             if already_assigned.is_user_defined is True or \
                     cls.check_ip_belongs_to_net(already_assigned.ip_addr,
                                                 network):
-                return already_assigned.ip_addr
+                return already_assigned
 
         cluster_vip = db().query(IPAddr).filter_by(
             network=network.id,
@@ -382,16 +382,16 @@ class NetworkManager(object):
 
         # IP address has not been assigned, let's do it
         vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
-        ne_db = IPAddr(network=network.id, ip_addr=vip, vip_name=vip_name)
+        vip_obj = IPAddr(network=network.id, ip_addr=vip, vip_name=vip_name)
 
         # delete stalled VIP address after new one was found.
         if cluster_vip:
             db().delete(cluster_vip)
 
-        db().add(ne_db)
+        db().add(vip_obj)
         db().flush()
 
-        return vip
+        return vip_obj
 
     @classmethod
     def assign_vips_for_net_groups(cls, cluster):
@@ -412,7 +412,8 @@ class NetworkManager(object):
                 else:
                     key = '{0}_{1}_vip'.format(ng.name, vip_name)
 
-                result[key] = cls.assign_vip(nodegroup, ng.name, vip_name)
+                vip_obj = cls.assign_vip(nodegroup, ng.name, vip_name)
+                result[key] = vip_obj.ip_addr
 
         return result
 
@@ -1269,7 +1270,7 @@ class NetworkManager(object):
         ip = None
         if cluster_db.is_ha_mode:
             nodegroup = objects.Cluster.get_controllers_node_group(cluster_db)
-            ip = cls.assign_vip(nodegroup, "public")
+            ip = cls.assign_vip(nodegroup, consts.NETWORKS.public).ip_addr
         elif cluster_db.mode in ('singlenode', 'multinode'):
             controller = db().query(Node).filter_by(
                 cluster_id=cluster_id
@@ -1764,10 +1765,11 @@ class NetworkManager(object):
 class AllocateVIPs70Mixin(object):
 
     @classmethod
-    def _build_advanced_vip_info(cls, vip_info, role, address):
+    def _build_advanced_vip_info(cls, vip_info, role):
         return {'network_role': role['id'],
                 'namespace': vip_info.get('namespace'),
-                'ipaddr': address,
+                'ipaddr': vip_info.get('ip_addr'),
+                'is_user_defined': vip_info.get('is_user_defined'),
                 'node_roles': vip_info.get('node_roles',
                                            ['controller',
                                             'primary-controller'])}
@@ -1800,7 +1802,9 @@ class AllocateVIPs70Mixin(object):
             cluster_db, node_group.name)
         net_group = cls.get_network_group_for_role(
             net_role, net_group_mapping)
-        return cls.assign_vip(node_group, net_group, vip_name='public')
+        return cls.assign_vip(node_group,
+                              net_group,
+                              vip_name='public').ip_addr
 
     @classmethod
     def _get_vip_to_preserve(cls, vips_db, nodegroup,
@@ -1867,6 +1871,44 @@ class AllocateVIPs70Mixin(object):
             ).delete(synchronize_session='fetch')
 
     @classmethod
+    def _build_vip_info(cls, vip_info, vip_addr):
+        """Update VIP info by database entry values
+
+        VIPs that are not yet allocated must still be serialized
+        so that user could see the data will be used in deployment process
+        and change it accordingly.
+
+        Combinations of 'is_user_defined' flag and value of 'ip_addr'
+        attribute in the result of the method indicates various states
+        of VIP entity:
+        - 'ip_addr' is None - VIP is not allocated yet (not present in
+            data base), it can be created using corresponding Nailgun API
+            entry points or will be auto allocated otherwise;
+        - 'is_user_defined' == False - VIP is auto allocated; it is checked
+            and maintained by Nailgun networking logic, so there is guarantee
+            it always has valid state;
+        - 'ip_addr' has value - there is record in data base and the value will
+            be used in deployment; may be changed for both manual and auto
+            allocated VIPs by user (latter become manually allocated in such
+            case and 'is_user_defined' flag must be set for them in order to
+            get them preserved);
+        - 'is_user_defined' == True - VIP is allocated manually by user, it is
+            not validated as user wholly takes responsibility for submitted
+            data
+
+        :param vip_info: dictionary with VIP information
+        :param vip_addr: SQLAlchemy ORM object of VIP
+        """
+        if vip_addr is None:
+            vip_info['is_user_defined'] = False
+            vip_info['ip_addr'] = None
+        else:
+            vip_info['is_user_defined'] = vip_addr.is_user_defined
+            vip_info['ip_addr'] = vip_addr.ip_addr
+
+        return vip_info
+
+    @classmethod
     def _assign_vips_for_net_groups(cls, cluster):
         # check VIPs names overlapping before assigning them
         cls.check_unique_vip_names_for_cluster(cluster)
@@ -1879,10 +1921,9 @@ class AllocateVIPs70Mixin(object):
 
             vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
 
-            if vip_addr is None:
-                continue
+            vip_info = cls._build_vip_info(vip_info, vip_addr)
 
-            yield role, vip_info, vip_addr
+            yield role, vip_info
 
     @classmethod
     def assign_vips_for_net_groups_for_api(cls, cluster, allocate=True):
@@ -1906,19 +1947,18 @@ class AllocateVIPs70Mixin(object):
         else:
             allocated_vips_data = cls._get_vips_for_net_groups(cluster)
 
-        for role, vip_info, vip_addr in allocated_vips_data:
+        for role, vip_info in allocated_vips_data:
 
             vip_name = vip_info['name']
 
-            vips['vips'][vip_name] = cls._build_advanced_vip_info(vip_info,
-                                                                  role,
-                                                                  vip_addr)
+            vips['vips'][vip_name] = \
+                cls._build_advanced_vip_info(vip_info, role)
 
             # Add obsolete configuration.
             # TODO(romcheg): Remove this in the 8.0 release
             alias = vip_info.get('alias')
             if alias:
-                vips[alias] = vip_addr
+                vips[alias] = vip_info.get('ip_addr')
 
         return vips
 
@@ -1942,12 +1982,11 @@ class AllocateVIPs70Mixin(object):
         :return: dict with vip definitions
         """
         vips = {}
-        for role, vip_info, vip_addr in cls._assign_vips_for_net_groups(
+        for role, vip_info in cls._assign_vips_for_net_groups(
                 cluster):
             vip_name = vip_info['name']
-            vips[vip_name] = cls._build_advanced_vip_info(
-                vip_info, role, vip_addr
-            )
+            vips[vip_name] = cls._build_advanced_vip_info(vip_info, role)
+
         return vips
 
     @classmethod
@@ -1988,13 +2027,12 @@ class AllocateVIPs70Mixin(object):
                 in cls.get_node_groups_info(cluster):
 
             net_mgr = objects.Cluster.get_network_manager(cluster)
-            assigned_vip = net_mgr.get_assigned_vip(
+            vip_addr = net_mgr.get_assigned_vip(
                 nodegroup, net_group, vip_name)
 
-            if assigned_vip is None:
-                continue
+            vip_info = cls._build_vip_info(vip_info, vip_addr)
 
-            yield role, vip_info, assigned_vip.ip_addr
+            yield role, vip_info
 
     @classmethod
     def get_node_groups_info(cls, cluster):
@@ -2060,9 +2098,8 @@ class AllocateVIPs70Mixin(object):
 class AllocateVIPs80Mixin(object):
 
     @classmethod
-    def _build_advanced_vip_info(cls, vip_info, role, address):
-        info = AllocateVIPs70Mixin._build_advanced_vip_info(
-            vip_info, role, address)
+    def _build_advanced_vip_info(cls, vip_info, role):
+        info = AllocateVIPs70Mixin._build_advanced_vip_info(vip_info, role)
         info['vendor_specific'] = vip_info.get('vendor_specific')
         return info
 

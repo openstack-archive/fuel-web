@@ -605,6 +605,29 @@ class Node(NailgunObject):
         cls.set_default_attributes(instance)
         db().flush()
 
+    @staticmethod
+    def _normalize_disk_metadata(data):
+        normalized_data = [
+            disk for disk in data
+            if not disk['dmsetup_info']
+            or disk['dmsetup_info'].get('DM_SUBSYSTEM', '') == 'mpath']
+
+        underlying_disks = set()
+        topology = {}
+        for disk in normalized_data:
+            topology[disk['disk']] = disk['dmsetup_info'].get('DM_BLKDEVS_USED')
+            if topology[disk['disk']]:
+                underlying_disks.update(topology[disk['disk']])
+        normalized_data = [disk for disk in normalized_data
+                           if disk['name'] not in underlying_disks]
+
+        for disk in normalized_data:
+            del disk['dmsetup_info']
+            if topology[disk['disk']]:
+                disk['multipaths'] = topology[disk['disk']]
+
+        return normalized_data
+
     @classmethod
     def update_by_agent(cls, instance, data):
         """Update Node instance with some specific cases for agent.
@@ -645,6 +668,9 @@ class Node(NailgunObject):
             logger.debug("Volume information is locked for update on node %s",
                          instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
+
+        if meta['disks'] and 'dmsetup_info' in meta['disks'][0]:
+            meta['disks'] = cls._normalize_disk_metadata(meta['disks'])
 
         if not cls.is_interfaces_configuration_locked(instance) \
                 and data.get('ip'):

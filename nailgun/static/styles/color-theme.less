@@ -1,0 +1,95 @@
+// COLOR SETTINGS
+
+// Base Palette
+@base-dark-color:  #415766;
+@base-light-color: lighten(desaturate(@base-dark-color, 10%), 60%);
+@base-text-color:  #525960;
+@link-color: @navbar-color;
+@link-color-hover: darken(@link-color, 10%);
+
+// Navbar Palette
+@navbar-color: #5a8fb3;
+@navbar-color-active: @navbar-color;
+@navbar-color-hover: lighten(@navbar-color-active, 20%);
+@navbar-icon-color: @navbar-color;
+@shadow-color: rgba(0,0,0,0.5);
+
+// Tabs & Content Settings
+@tab-color: #dfe0e0;
+@tab-color-hover: #d2d3d4;
+@tab-color-active: @white;
+
+// Node Colors
+@base-node-color: #e9ecee;
+@base-node-border: @base-node-color - 30%;
+
+// Node Selected
+@node-color-selected: @base-node-color - 15%;
+@node-border-color-selected: @base-node-color - 15%;
+
+// Node Unallocated
+@node-color-discover: @white;
+@node-border-color-discover: @base-node-border;
+@node-color-discover-hover: @base-node-color + 15%;
+
+// Node Error
+@node-color-error: @red + 160%;
+@node-border-color-error: @red + 10%;
+
+// Node New
+@node-color-pending_addition: @base-node-color;
+@node-border-color-pending_addition: @green - 20%;
+
+// Pending deletion node
+@node-color-pending_deletion: @base-node-color;
+@node-border-color-pending_deletion: @orange - 20%;
+
+// Node Offline
+@node-color-offline: @base-node-color;
+@node-border-color-offline: @base-node-border;
+
+// Other Colors
+@white:      #ffffff;
+@black:      #000000;
+@red:        #c94b4b;
+@pure-red:   #ff0000;
+@green:      #54a854;
+@blue:       #4e85aa;
+@orange:     #bc6e12;
+@gray:       #8c8c8c;
+
+// Buttons Colors
+@btn-default: #d4d5d6;
+@btn-success: #48a565;
+@btn-primary: #3d7eaa;
+@btn-warning: #d3a541;
+@btn-danger:  #b85d51;
+@btn-info:    #7ab0cc;
+
+// Background colors
+@light-blue:       #eaf0f2;
+@pale-blue:        #c9e4ee;
+@light-green:      #d0f2dd;
+@light-yellow:     #f7e4bf;
+@light-red:        #f6c4c3;
+@aquamarine:       #bbedcf;
+@rose:             #f2aaa9;
+@coral:            #ea7170;
+@emergency-red:    #a34f4e;
+
+@alert-success-bg: #cae8c6;
+@alert-info-bg:    #c1d4e1;
+@alert-warning-bg: #f2e0b9;
+@alert-danger-bg:  #e8c6c6;
+
+// Disk colors
+@disk-orange: #c1684a;
+@disk-blue:   #1c7695;
+@disk-green:  #43968a;
+@disk-red:    #C46054;
+@disk-violet: #9a4aae;
+@disk-yellow: #F2CA5B;
+@disk-cyan:   #359CBF;
+
+@range-color: @tab-color - 50%;
+@slider-color: @tab-color + 20%;

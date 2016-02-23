@@ -1,5 +1,5 @@
 html, body {
-  background-color: #415766; /* @base-dark-color from main.less */
+  background-color: #445766; /* @base-dark-color from main.less */
   color: white; /* for loading errors, overridden in main.less */
 }
 

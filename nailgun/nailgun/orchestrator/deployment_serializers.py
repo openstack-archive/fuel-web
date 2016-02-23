@@ -538,6 +538,13 @@ class DeploymentHASerializer80(DeploymentHASerializer70):
 
 class DeploymentHASerializer90(DeploymentHASerializer80):
 
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return NeutronNetworkTemplateSerializer90
+        else:
+            return NeutronNetworkDeploymentSerializer90
+
     def inject_murano_settings(self, data):
         return data
 

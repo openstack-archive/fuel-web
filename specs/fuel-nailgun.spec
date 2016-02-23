@@ -98,6 +98,7 @@ mkdir -p %{buildroot}/etc/fuel
 install -m 755 %{_builddir}/%{name}-%{version}/bin/fencing-agent.rb %{buildroot}/opt/nailgun/bin/fencing-agent.rb
 install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/etc/cron.d/fencing-agent
 install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/download-debian-installer %{buildroot}%{_bindir}/download-debian-installer
+install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/send2syslog.py %{buildroot}%{_bindir}/send2syslog.py
 install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml %{buildroot}%{_datadir}/fuel-openstack-metadata/openstack.yaml
 python -c "import yaml; print filter(lambda r: r['fields'].get('name'), yaml.safe_load(open('%{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml')))[0]['fields']['version']" > %{buildroot}%{_sysconfdir}/fuel_openstack_version
 
@@ -172,3 +173,26 @@ for Openstack. For more info go to http://wiki.openstack.org/Fuel
 %files -n fuel-provisioning-scripts
 %defattr(-,root,root)
 %{_bindir}/download-debian-installer
+
+
+%package -n fuel-send2syslog-script
+
+Summary: send2syslog.py script
+Version: %{version}
+Release: %{release}
+URL:     http://mirantis.com
+License: Apache
+BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
+Prefix: %{_prefix}
+BuildArch: noarch
+Requires: python
+
+%description -n fuel-send2syslog-script
+This script send2syslog.py is used to send lines
+that are written to files to syslog.
+This is a part of Fuel All-in-one Controle plane
+for Openstack. For more info go to http://wiki.openstack.org/Fuel
+
+%files -n fuel-send2syslog-script
+%defattr(-,root,root)
+%{_bindir}/send2syslog.py

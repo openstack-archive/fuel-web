@@ -49,7 +49,8 @@ class BaseTaskSerializationTest(base.BaseTestCase):
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
-        self.cluster.deployment_tasks = yaml.load(self.TASKS)
+        graph = objects.DeploymentGraph.create(yaml.load(self.TASKS))
+        objects.DeploymentGraph.attach_to_model(graph, self.cluster)
 
 
 class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
@@ -76,7 +77,8 @@ class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
-        self.cluster.deployment_tasks = yaml.load(self.TASKS)
+        graph = objects.DeploymentGraph.create(yaml.load(self.TASKS))
+        objects.DeploymentGraph.attach_to_model(graph, self.cluster)
 
     def tearDown(self):
         self._requests_mock.stop()
@@ -663,10 +665,8 @@ class TestConditionalTasksSerializers(BaseTaskSerializationTest):
         self.cluster.status = 'operational'
         self.cluster.attributes.editable = {'enabled': True}
         self.db.flush()
-
         tasks = self.graph.pre_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 2)
-
         self.assertEqual(tasks[0]['type'], 'upload_file')
         self.assertEqual(tasks[1]['type'], 'sync')
 

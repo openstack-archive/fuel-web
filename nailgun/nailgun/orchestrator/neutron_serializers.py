@@ -564,8 +564,13 @@ class NeutronNetworkDeploymentSerializer61(
         # Dance around Neutron segmentation type.
         if node.cluster.network_config.segmentation_type == \
                 consts.NEUTRON_SEGMENT_TYPES.vlan:
+            vendor_specific = None
+            dpdk_configured = objects.Node.dpdk_configured(node)
+            if dpdk_configured:
+                vendor_specific = {'datapath_type': 'netdev'}
             transformations.append(
-                cls.add_bridge('br-prv', provider='ovs'))
+                cls.add_bridge('br-prv', provider='ovs',
+                               vendor_specific=vendor_specific))
 
             if not prv_base_ep:
                 prv_base_ep = 'br-aux'
@@ -575,6 +580,20 @@ class NeutronNetworkDeploymentSerializer61(
                 bridges=['br-prv', prv_base_ep],
                 provider='ovs',
                 mtu=65000))
+            if dpdk_configured:
+                dpdk_drivers = nm.get_supported_dpdk_drivers(node)
+                for iface in node.nic_interfaces:
+                    dpdk = iface.interface_properties.get('dpdk', {})
+                    if dpdk.get('enabled'):
+                        dpdk_driver = nm.get_dpdk_driver(
+                            iface,
+                            dpdk_drivers)
+                        transformations.append(cls.add_port(
+                            name=iface.name,
+                            bridge='br-prv',
+                            provider='dpdkovs',
+                            vendor_specific={'dpdk_driver': dpdk_driver}
+                        ))
 
         elif node.cluster.network_config.segmentation_type in \
                 (consts.NEUTRON_SEGMENT_TYPES.gre,

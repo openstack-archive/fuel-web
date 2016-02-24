@@ -155,7 +155,7 @@ class TestPluginBase(base.BaseTestCase):
                     getattr(self.plugin, key), val)
 
     def test_get_deployment_tasks(self):
-        self.plugin.deployment_tasks = \
+        self.plugin_adapter.deployment_tasks = \
             self.env.get_default_plugin_deployment_tasks()
 
         depl_task = self.plugin_adapter.deployment_tasks[0]
@@ -164,7 +164,7 @@ class TestPluginBase(base.BaseTestCase):
 
     def test_get_deployment_tasks_params_not_changed(self):
         expected = 'path/to/some/dir'
-        self.plugin.deployment_tasks = \
+        self.plugin_adapter.deployment_tasks = \
             self.env.get_default_plugin_deployment_tasks(
                 parameters={'cwd': expected}
             )
@@ -225,6 +225,7 @@ class TestPluginV3(TestPluginBase):
     package_version = '3.0.0'
 
     def test_sync_metadata_to_db(self):
+        self.maxDiff = None
         plugin_metadata = self.env.get_default_plugin_metadata()
         attributes_metadata = self.env.get_default_plugin_env_config()
         roles_metadata = self.env.get_default_plugin_node_roles_config()
@@ -260,9 +261,16 @@ class TestPluginV3(TestPluginBase):
             self.assertEqual(
                 self.plugin.volumes_metadata, volumes_metadata)
             self.assertEqual(
-                self.plugin.deployment_tasks, deployment_tasks)
-            self.assertEqual(
                 self.plugin.tasks, tasks)
+            # deployment tasks returning all non-defined fields, so check
+            # should differ from JSON-stored fields
+            for k, v in six.iteritems(deployment_tasks[0]):
+                # this field is updated by plugin adapter
+                if k is 'parameters':
+                    v.update({
+                        'cwd': '/etc/fuel/plugins/testing_plugin-0.1/'
+                    })
+                self.assertEqual(self.plugin_adapter.deployment_tasks[0][k], v)
 
 
 class TestPluginV4(TestPluginBase):
@@ -308,11 +316,18 @@ class TestPluginV4(TestPluginBase):
             self.assertEqual(
                 self.plugin.volumes_metadata, volumes_metadata)
             self.assertEqual(
-                self.plugin.deployment_tasks, deployment_tasks)
-            self.assertEqual(
                 self.plugin.tasks, tasks)
             self.assertEqual(
                 self.plugin.components_metadata, components_metadata)
+            # deployment tasks returning all non-defined fields, so check
+            # should differ from JSON-stored fields
+            for k, v in six.iteritems(deployment_tasks[0]):
+                # this field is updated by plugin adapter
+                if k is 'parameters':
+                    v.update({
+                        'cwd': '/etc/fuel/plugins/testing_plugin-0.1/'
+                    })
+                self.assertEqual(self.plugin_adapter.deployment_tasks[0][k], v)
 
 
 class TestClusterCompatibilityValidation(base.BaseTestCase):

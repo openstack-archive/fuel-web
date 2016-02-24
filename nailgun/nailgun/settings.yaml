@@ -7,7 +7,7 @@ AUTH:
   # - none - authentication is disabled
   # - fake - no keystone required, credentials: admin/admin
   # - keystone - authentication enabled.
-  AUTHENTICATION_METHOD: "fake"
+  AUTHENTICATION_METHOD: "none"
   # use only if AUTHENTICATION_METHOD is set to "keystone"
   auth_host: "127.0.0.1"
   auth_protocol: "http"

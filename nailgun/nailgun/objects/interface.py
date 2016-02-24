@@ -13,8 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-
+import six
 from sqlalchemy.sql import not_
 
 from nailgun.db import db
@@ -41,6 +40,18 @@ class NIC(NailgunObject):
         """
         instance.assigned_networks_list = networks
         db().flush()
+
+    @classmethod
+    def get_dpdk_driver(cls, instance, dpdk_drivers):
+        pci_id = instance.interface_properties.get('pci_id', '')
+        for driver, device_ids in six.iteritems(dpdk_drivers):
+            if pci_id.lower() in device_ids:
+                return driver
+        return None
+
+    @classmethod
+    def dpdk_available(cls, instance, dpdk_drivers):
+        return cls.get_dpdk_driver(instance, dpdk_drivers) is not None
 
 
 class NICCollection(NailgunCollection):

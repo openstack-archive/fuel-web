@@ -1273,3 +1273,7 @@ class NodeAttributes(object):
                                     'required_cpus': required_cpus}
         return {'total_required_cpus': total_required_cpus,
                 'components': components}
+
+    @classmethod
+    def is_nova_cpu_pinning_enabled(cls, node):
+        return bool(Node.get_attributes(node)['cpu_pinning']['nova']['value'])

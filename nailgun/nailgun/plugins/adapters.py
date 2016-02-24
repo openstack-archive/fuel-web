@@ -263,6 +263,7 @@ class PluginAdapterV3(PluginAdapterV2):
             'roles_metadata': self.node_roles_config_name,
             'volumes_metadata': self.volumes_config_name,
             'network_roles_metadata': self.network_roles_config_name,
+            # todo will be replaced with deployment_graph fk
             'deployment_tasks': self.deployment_tasks_config_name,
             'tasks': self.task_config_name
         }

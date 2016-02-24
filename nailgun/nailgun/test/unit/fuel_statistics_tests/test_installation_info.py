@@ -401,6 +401,14 @@ class TestInstallationInfo(BaseTestCase):
             ('common', 'use_vcenter'),  # removed attribute
             ('use_fedora_lt', 'kernel'),
             ('public_ssl', 'cert_data'), ('public_ssl', 'hostname'),
+            ('operator_user', 'name'),
+            ('operator_user', 'password'),
+            ('operator_user', 'homedir'),
+            ('operator_user', 'authkeys'),
+            ('operator_user', 'sudo'),
+            ('service_user', 'name'),
+            ('service_user', 'sudo'),
+            ('service_user', 'homedir'),
         )
         return filter(lambda x: x not in private_paths, leafs_paths)
 

@@ -468,6 +468,12 @@ class EnvironmentManager(object):
             self.db.flush()
         return created_ips
 
+    def disable_task_deploy(self, cluster):
+        cluster_attrs = copy.deepcopy(cluster.attributes.editable)
+        cluster_attrs['common']['task_deploy']['value'] = False
+        cluster.attributes.editable = cluster_attrs
+        self.db().flush()
+
     def delete_node_group(self, ng_id, status_code=200, api=True):
         if api:
             return self.app.delete(

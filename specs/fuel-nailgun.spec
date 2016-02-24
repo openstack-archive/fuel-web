@@ -65,6 +65,7 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 BuildRequires: systemd-units
 %endif
+Requires(pre): shadow-utils
 
 %description
 Nailgun package
@@ -75,13 +76,22 @@ Nailgun package
 %build
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py build
 
+%pre
+USERNAME=nailgun
+GROUPNAME=$USERNAME
+HOMEDIR=/home/$USERNAME
+getent group $GROUPNAME >/dev/null || groupadd -r $GROUPNAME
+getent passwd $USERNAME >/dev/null || useradd -r -g $GROUPNAME -G $GROUPNAME -r -s /sbin/nologin -c "Nailgun Daemon" $USERNAME
+
 %install
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
 mkdir -p %{buildroot}/opt/nailgun/bin
-mkdir -p %{buildroot}/etc/cron.d
-mkdir -p %{buildroot}/etc/fuel
+mkdir -p %{buildroot}/%{_sysconfdir}/cron.d
+mkdir -p %{buildroot}/%{_sysconfdir}/fuel
+mkdir -p %{buildroot}/%{_sysconfdir}/nailgun
+mkdir -p %{buildroot}%{_localstatedir}/log/nailgun
 install -m 755 %{_builddir}/%{name}-%{version}/bin/fencing-agent.rb %{buildroot}/opt/nailgun/bin/fencing-agent.rb
-install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/etc/cron.d/fencing-agent
+install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/%{_sysconfdir}/cron.d/fencing-agent
 install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/download-debian-installer %{buildroot}%{_bindir}/download-debian-installer
 install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml %{buildroot}%{_datadir}/fuel-openstack-metadata/openstack.yaml
 python -c "import yaml; print filter(lambda r: r['fields'].get('name'), yaml.safe_load(open('%{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml')))[0]['fields']['version']" > %{buildroot}%{_sysconfdir}/fuel_openstack_version
@@ -95,6 +105,8 @@ install -D -m644 %{_builddir}/%{name}-%{version}/systemd/*.service %{buildroot}/
 rm -rf $RPM_BUILD_ROOT
 
 %files -f %{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
+%config(noreplace) %attr(-, nailgun, nailgun) %{_sysconfdir}/nailgun
+%dir %attr(0755,nailgun,root) %{_localstatedir}/log/nailgun
 %defattr(0755,root,root)
 
 %if %{defined _unitdir}

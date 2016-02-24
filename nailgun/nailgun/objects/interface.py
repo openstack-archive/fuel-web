@@ -13,8 +13,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import copy
 
-
+import six
 from sqlalchemy.sql import not_
 
 from nailgun.db import db
@@ -24,7 +25,32 @@ from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.base import BasicSerializer
 
 
-class NIC(NailgunObject):
+class DPDKMixin(object):
+
+    @classmethod
+    def dpdk_available(cls, instance, dpdk_drivers):
+        raise NotImplementedError
+
+    @classmethod
+    def dpdk_enabled(cls, instance):
+        dpdk = instance.interface_properties.get('dpdk')
+        return dpdk and dpdk.get('enabled')
+
+    @classmethod
+    def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
+        interface_properties = copy.deepcopy(interface.interface_properties)
+        dpdk_properties = interface_properties.get('dpdk', {})
+        dpdk_properties['available'] = cls.dpdk_available(interface,
+                                                          dpdk_drivers)
+        if (not dpdk_properties['available'] and
+                dpdk_properties.get('enabled')):
+            dpdk_properties['enabled'] = False
+        interface_properties.update({'dpdk': dpdk_properties})
+        cls.update(interface,
+                   {'interface_properties': interface_properties})
+
+
+class NIC(DPDKMixin, NailgunObject):
 
     model = models.NodeNICInterface
     serializer = BasicSerializer
@@ -41,6 +67,18 @@ class NIC(NailgunObject):
         """
         instance.assigned_networks_list = networks
         db().flush()
+
+    @classmethod
+    def get_dpdk_driver(cls, instance, dpdk_drivers):
+        pci_id = instance.interface_properties.get('pci_id', '')
+        for driver, device_ids in six.iteritems(dpdk_drivers):
+            if pci_id.lower() in device_ids:
+                return driver
+        return None
+
+    @classmethod
+    def dpdk_available(cls, instance, dpdk_drivers):
+        return cls.get_dpdk_driver(instance, dpdk_drivers) is not None
 
     @classmethod
     def is_sriov_enabled(cls, instance):

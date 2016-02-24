@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+
 from oslo_serialization import jsonutils
 import yaml
 
@@ -22,6 +23,7 @@ from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator.deployment_graph import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import DeploymentTasksTestMixin
 from nailgun.utils import reverse
 
 
@@ -157,7 +159,7 @@ class BaseGraphTasksTests(BaseIntegrationTest):
         return yaml.load(yaml_tasks)
 
 
-class TestReleaseGraphHandler(BaseGraphTasksTests):
+class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
     def test_get_deployment_tasks(self):
         resp = self.app.get(
@@ -179,7 +181,7 @@ class TestReleaseGraphHandler(BaseGraphTasksTests):
         )
         release_tasks = objects.Release.get_deployment_tasks(
             self.cluster.release)
-        self.assertEqual(release_tasks, resp.json)
+        self._compare_tasks(resp.json, release_tasks)
 
     def test_upload_tasks_without_type(self):
         tasks = self.get_corrupted_tasks()
@@ -238,7 +240,7 @@ class TestReleaseGraphHandler(BaseGraphTasksTests):
         self.assertEqual(resp.status_code, 405)
 
 
-class TestClusterGraphHandler(BaseGraphTasksTests):
+class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
     def test_get_deployment_tasks(self):
         resp = self.app.get(
@@ -268,7 +270,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests):
             headers=self.default_headers,
         )
         cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
-        self.assertEqual(cluster_tasks, resp.json)
+        self._compare_tasks(resp.json, cluster_tasks)
 
     def test_upload_tasks_without_type(self):
         tasks = self.get_corrupted_tasks()

@@ -334,7 +334,7 @@ class TestInstallationInfo(BaseTestCase):
         remove_fields = (
             'tasks', 'cluster_changes', 'nodegroups',
             'releases', 'replaced_provisioning_info', 'notifications',
-            'deployment_tasks', 'name', 'replaced_deployment_info',
+            'cluster_deployment_graphs', 'name', 'replaced_deployment_info',
             'ui_settings'
         )
         for field in remove_fields:

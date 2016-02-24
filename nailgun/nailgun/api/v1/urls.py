@@ -96,6 +96,7 @@ from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodesWithTasks
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
+from nailgun.api.v1.handlers.orchestrator import SerializedTasksHandler
 from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
 
 from nailgun.api.v1.handlers.registration import FuelLoginForm
@@ -196,6 +197,9 @@ urls = (
     DefaultPrePluginsHooksInfo,
     r'/clusters/(?P<cluster_id>\d+)/orchestrator/plugins_post_hooks/?$',
     DefaultPostPluginsHooksInfo,
+    r'/clusters/(?P<cluster_id>\d+)/serialized_tasks/?$',
+    SerializedTasksHandler,
+
 
     r'/clusters/(?P<cluster_id>\d+)/provision/?$',
     ProvisionSelectedNodes,

@@ -708,3 +708,13 @@ class VmwareAttributesValidator(BasicValidator):
         # TODO(apopovych): write validation processing from
         # openstack.yaml for vmware
         return d
+
+
+class DeploymentEngineValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, cluster):
+        if not objects.Cluster.is_task_deploy_enabled(cluster):
+            raise errors.NotSupported(
+                'Current method is only supported with cluster managed'
+                ' by task based deployment')

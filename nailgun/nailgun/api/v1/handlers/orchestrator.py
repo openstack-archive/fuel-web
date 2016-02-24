@@ -21,6 +21,7 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.validators.cluster import DeploymentEngineValidator
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.graph import GraphVisualizationValidator
 from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
@@ -37,6 +38,7 @@ from nailgun.orchestrator import graph_visualization
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator.stages import post_deployment_serialize
 from nailgun.orchestrator.stages import pre_deployment_serialize
+from nailgun.orchestrator import task_based_deployment
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
 
@@ -366,3 +368,33 @@ class TaskDeployGraph(BaseHandler):
                                               parents_for=parents_for,
                                               remove=remove)
         return dotgraph.to_string()
+
+
+class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
+
+    def get_default_nodes(self, cluster):
+        return TaskHelper.nodes_to_deploy(cluster)
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: serialized tasks in json format
+
+        :http: * 200 (serialized tasks returned)
+               * 400 (task based deployment is not enabled for cluster)
+               * 400 (some nodes belong to different cluster)
+               * 404 (cluster is not found)
+               * 404 (nodes are not found)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        self.checked_data(DeploymentEngineValidator.validate, data=cluster)
+        nodes = self.get_nodes(cluster)
+        self.checked_data(self.validator.validate_placement,
+                          data=nodes, cluster=cluster)
+        tasks = web.input(tasks=None).tasks
+        task_ids = tasks.split(',') if tasks else None
+        return task_based_deployment.TasksSerializer.serialize(
+            cluster,
+            self.get_nodes(cluster),
+            objects.Cluster.get_deployment_tasks(cluster),
+            task_ids=task_ids
+        )

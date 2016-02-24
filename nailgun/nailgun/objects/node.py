@@ -959,6 +959,7 @@ class Node(NailgunObject):
         cls.assign_group(instance)
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
+        network_manager.refresh_dpdk_properties(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
         cls.set_default_attributes(instance)
@@ -1178,6 +1179,13 @@ class Node(NailgunObject):
             return
 
         instance.attributes = instance.cluster.release.node_attributes
+
+    @classmethod
+    def dpdk_configured(cls, instance):
+        for iface in instance.interfaces:
+            if iface.interface_properties.get('dpdk', {}).get('enabled'):
+                return True
+        return False
 
     @classmethod
     def get_attributes(cls, instance):

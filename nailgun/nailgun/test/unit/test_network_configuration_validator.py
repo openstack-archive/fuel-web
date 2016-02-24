@@ -622,7 +622,8 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
 
     def test_net_l23_provider_invalid_type(self):
         self.nc['networking_parameters']['net_l23_provider'] = 'x'
-        self.assertRaisesInvalidEnum(self.nc, "'x'", "['ovs', 'nsx']")
+        self.assertRaisesInvalidEnum(
+            self.nc, "'x'", "['ovs', 'nsx', 'dpdkovs']")
 
     def test_segmentation_type_invalid_type(self):
         self.nc['networking_parameters']['segmentation_type'] = 'x'

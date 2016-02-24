@@ -359,7 +359,7 @@ class NetworkDeploymentSerializer(object):
         return str(admin_ip)
 
     @classmethod
-    def add_bridge(cls, name, provider=None):
+    def add_bridge(cls, name, provider=None, vendor_specific=None):
         """Add bridge to schema
 
         It will take global provider if it is omitted here
@@ -370,6 +370,8 @@ class NetworkDeploymentSerializer(object):
         }
         if provider:
             bridge['provider'] = provider
+        if vendor_specific:
+            bridge['vendor_specific'] = vendor_specific
         return bridge
 
     @classmethod

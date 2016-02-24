@@ -1414,6 +1414,15 @@ class Cluster(NailgunObject):
 
         return query
 
+    @classmethod
+    def is_nova_cpu_pinning_enabled(cls, cluster):
+        from nailgun.objects.node import NodeAttributes
+        for node in cluster.nodes:
+            pinning_info = NodeAttributes.node_cpu_pinning_info(node)
+            if pinning_info['components']['nova']['required_cpus']:
+                return True
+        return False
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

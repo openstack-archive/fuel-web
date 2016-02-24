@@ -115,8 +115,10 @@ class Cluster(Base):
         MutableDict.as_mutable(JSON), default={})
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
-    deployment_tasks = Column(
-        MutableList.as_mutable(JSON), default=[])
+    deployment_graphs = relationship(
+        "ClusterDeploymentGraph",
+        back_populates="cluster",
+        lazy="dynamic")
     components = Column(
         MutableList.as_mutable(JSON),
         default=[],

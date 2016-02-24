@@ -333,6 +333,23 @@ class NodesFilterValidator(BasicValidator):
 
         return node_ids
 
+    @classmethod
+    def validate_placement(cls, nodes, cluster):
+        """Validates that given nodes placed in given cluster
+
+        :param nodes: list of objects.Node instances
+        :param cluster: objects.Cluster instance
+        """
+        wrongly_placed_uids = []
+        for node in nodes:
+            if node.cluster_id != cluster.id:
+                wrongly_placed_uids.append(node.uid)
+
+        if wrongly_placed_uids:
+            raise errors.InvalidData(
+                'Nodes {} do not belong to cluster {}'.format(
+                    ', '.join(wrongly_placed_uids), cluster.id))
+
 
 class ProvisionSelectedNodesValidator(NodesFilterValidator):
 

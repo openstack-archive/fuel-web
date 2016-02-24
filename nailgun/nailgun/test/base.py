@@ -22,6 +22,7 @@ except ImportError:
 
 import copy
 import mock
+import operator
 import os
 import re
 import six
@@ -1516,6 +1517,26 @@ def fake_tasks(fake_rpc=True,
             )(func)
         return func
     return wrapper
+
+
+class DeploymentTasksTestMixin(object):
+
+    def _compare_tasks(self, reference, result):
+        """Compare deployment tasks.
+
+        Considering legacy format and compatible validator output with extra
+        fields where legacy fields is converted to new syntax.
+
+        :param reference: list of tasks
+        :type reference: list
+        :param result: list of tasks
+        :type result: list
+        """
+        reference.sort(key=operator.attrgetter('id'))
+        result.sort(key=operator.attrgetter('id'))
+        for ref, res in six.moves.zip(reference, result):
+            for field in ref:
+                self.assertEqual(ref.get(field), (res or {}).get(field))
 
 
 # this method is for development and troubleshooting purposes

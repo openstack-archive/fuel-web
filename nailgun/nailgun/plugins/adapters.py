@@ -25,6 +25,7 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.objects.plugin import ClusterPlugins
 from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
@@ -127,8 +128,10 @@ class PluginAdapterBase(object):
 
     @property
     def deployment_tasks(self):
+        graph = DeploymentGraph.get_for_model(self.plugin)
+        # todo(ikutukov): cleanup
         deployment_tasks = []
-        for task in self.plugin.deployment_tasks:
+        for task in DeploymentGraph.get_tasks(graph).to_list():
             if task.get('parameters'):
                 task['parameters'].setdefault('cwd', self.slaves_scripts_path)
             deployment_tasks.append(task)
@@ -263,6 +266,7 @@ class PluginAdapterV3(PluginAdapterV2):
             'roles_metadata': self.node_roles_config_name,
             'volumes_metadata': self.volumes_config_name,
             'network_roles_metadata': self.network_roles_config_name,
+            # todo will be replaced with deployment_graph fk
             'deployment_tasks': self.deployment_tasks_config_name,
             'tasks': self.task_config_name
         }

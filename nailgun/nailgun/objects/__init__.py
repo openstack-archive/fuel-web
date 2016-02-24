@@ -47,6 +47,12 @@ from nailgun.objects.ip_addr import IPAddr
 from nailgun.objects.ip_addr import IPAddrCollection
 from nailgun.objects.ip_addr import IPAddrRange
 
+from nailgun.objects.interface import NIC
+from nailgun.objects.interface import NICCollection
+
+from nailgun.objects.bond import Bond
+from nailgun.objects.bond import BondCollection
+
 from nailgun.objects.node import Node
 from nailgun.objects.node import NodeAttributes
 from nailgun.objects.node import NodeCollection
@@ -69,9 +75,3 @@ from nailgun.objects.cluster_plugin_link import ClusterPluginLink
 from nailgun.objects.cluster_plugin_link import ClusterPluginLinkCollection
 from nailgun.objects.openstack_config import OpenstackConfig
 from nailgun.objects.openstack_config import OpenstackConfigCollection
-
-from nailgun.objects.interface import NIC
-from nailgun.objects.interface import NICCollection
-
-from nailgun.objects.bond import Bond
-from nailgun.objects.bond import BondCollection

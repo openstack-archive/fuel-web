@@ -234,6 +234,19 @@ class Release(NailgunObject):
         prefixes = (comp['name'].split('*', 1)[0] for comp in components)
         return any(name.startswith(x) for x in prefixes)
 
+    @classmethod
+    def get_supported_dpdk_drivers(cls, instance):
+        """Get all supported DPDK drivers
+
+        Returns dictionary, where keys are names of supported drivers and
+        values are lists of supported device IDs for each driver.
+
+        :param instance: Release instance
+        :return: supported DPDK drivers and devices
+        """
+        metadata = instance.networks_metadata
+        return metadata.get('dpdk_drivers', {})
+
 
 class ReleaseCollection(NailgunCollection):
     """Release collection"""

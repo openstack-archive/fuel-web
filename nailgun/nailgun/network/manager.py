@@ -33,7 +33,7 @@ from nailgun.network import utils
 from nailgun import objects
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
 from nailgun.settings import settings
-from nailgun.utils import dict_merge
+from nailgun import utils as nailgun_utils
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
 
@@ -518,6 +518,10 @@ class NetworkManager(object):
                 'sriov_totalvfs': 0,
                 'available': False,
                 'pci_id': ''
+            },
+            'dpdk': {
+                'available': False,
+                'enabled': False
             }
         }
 
@@ -594,8 +598,10 @@ class NetworkManager(object):
         for nic in node.nic_interfaces:
             nic_dict = NodeInterfacesSerializer.serialize(nic)
             if 'interface_properties' in nic_dict:
+                default_properties = cls.get_default_interface_properties()
                 nic_dict['interface_properties'] = \
-                    cls.get_default_interface_properties()
+                    nailgun_utils.dict_merge(nic_dict['interface_properties'],
+                                             default_properties)
             nic_dict['assigned_networks'] = []
 
             if to_assign_ids:
@@ -762,7 +768,7 @@ class NetworkManager(object):
             objects.NIC.assign_networks(current_iface, nets_to_assign)
             update = {}
             if 'interface_properties' in iface:
-                update['interface_properties'] = dict_merge(
+                update['interface_properties'] = nailgun_utils.dict_merge(
                     current_iface.interface_properties,
                     iface['interface_properties']
                 )
@@ -840,6 +846,8 @@ class NetworkManager(object):
                                                 update_by_agent)
             else:
                 cls.__add_new_interface(node, interface, update_by_agent)
+        if update_by_agent:
+            objects.Node.refresh_dpdk_properties(node)
 
         cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
         if node.cluster:
@@ -971,7 +979,7 @@ class NetworkManager(object):
             interface.interface_properties = \
                 cls.get_default_interface_properties()
         if interface_attrs.get('interface_properties'):
-            interface.interface_properties = dict_merge(
+            interface.interface_properties = nailgun_utils.dict_merge(
                 interface.interface_properties,
                 interface_attrs['interface_properties']
             )

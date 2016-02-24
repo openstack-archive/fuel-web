@@ -333,7 +333,9 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             [node_to_deploy.uid]
         )
         # overwriting default made in EnvironmentManager
-        self.cluster.release.deployment_tasks = []
+
+        self.cluster.release.deployment_graphs.delete()
+        self.db().flush()
 
         resp = self.send_put(deploy_action_url)
         resp_msg = jsonutils.loads(resp.body)['message']

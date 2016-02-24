@@ -72,6 +72,15 @@ node_statuses_new = (
     'removing',
     'stopped',
 )
+neutron_l23_providers_old = (
+    'ovs',
+    'nsx'
+)
+neutron_l23_providers_new = (
+    'ovs',
+    'nsx',
+    'dpdkovs'
+)
 node_errors_old = (
     'deploy',
     'provision',
@@ -98,11 +107,13 @@ def upgrade():
     upgrade_deployment_graph()
     drop_legacy_patching()
     upgrade_node_status_attributes()
+    upgrade_neutron_l23_providers()
     upgrade_node_stop_deployment_error_type()
 
 
 def downgrade():
     downgrade_node_stop_deployment_error_type()
+    downgrade_neutron_l23_providers()
     downgrade_node_status_attributes()
     restore_legacy_patching()
     downgrade_deployment_graph()
@@ -496,6 +507,26 @@ def add_foreign_key_ondelete():
         'tasks', 'tasks',
         ['parent_id'], ['id'],
         ondelete='CASCADE'
+    )
+
+
+def upgrade_neutron_l23_providers():
+    upgrade_enum(
+        "neutron_config",           # table
+        "net_l23_provider",         # column
+        "net_l23_provider",         # ENUM name
+        neutron_l23_providers_old,  # old options
+        neutron_l23_providers_new   # new options
+    )
+
+
+def downgrade_neutron_l23_providers():
+    upgrade_enum(
+        "neutron_config",           # table
+        "net_l23_provider",         # column
+        "net_l23_provider",         # ENUM name
+        neutron_l23_providers_new,  # old options
+        neutron_l23_providers_old   # new options
     )
 
 

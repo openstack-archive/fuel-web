@@ -564,17 +564,9 @@ class NeutronNetworkDeploymentSerializer61(
         # Dance around Neutron segmentation type.
         if node.cluster.network_config.segmentation_type == \
                 consts.NEUTRON_SEGMENT_TYPES.vlan:
-            transformations.append(
-                cls.add_bridge('br-prv', provider='ovs'))
-
-            if not prv_base_ep:
-                prv_base_ep = 'br-aux'
-                transformations.append(cls.add_bridge(prv_base_ep))
-
-            transformations.append(cls.add_patch(
-                bridges=['br-prv', prv_base_ep],
-                provider='ovs',
-                mtu=65000))
+            cls.configure_private_network(node, nm,
+                                          transformations,
+                                          prv_base_ep, nets_by_ifaces)
 
         elif node.cluster.network_config.segmentation_type in \
                 (consts.NEUTRON_SEGMENT_TYPES.gre,
@@ -777,6 +769,24 @@ class NeutronNetworkDeploymentSerializer61(
         else:
             phys = [netgroup['dev']]
         return phys
+
+    @classmethod
+    def configure_private_network(cls, node, nm, transformations, prv_base_ep,
+                                  nets_by_ifaces):
+        """This method configures transformations for private network.
+
+        It is used for VLAN segmentation type only.
+        """
+
+        transformations.append(cls.add_bridge('br-prv', provider='ovs'))
+        if not prv_base_ep:
+            prv_base_ep = 'br-aux'
+            transformations.append(cls.add_bridge(prv_base_ep))
+
+        transformations.append(cls.add_patch(
+            bridges=['br-prv', prv_base_ep],
+            provider='ovs',
+            mtu=65000))
 
 
 class NeutronNetworkDeploymentSerializer70(
@@ -1393,13 +1403,88 @@ class NeutronNetworkTemplateSerializer80(
     pass
 
 
+class DPDKSerializerMixin90(object):
+    @classmethod
+    def generate_driver_information(cls, node, network_scheme, nm, networks):
+        network_scheme = super(
+            DPDKSerializerMixin90,
+            cls).generate_driver_information(node,
+                                             network_scheme,
+                                             nm, networks)
+
+        dpdk_interfaces = []
+        transformations = network_scheme['transformations']
+        for t in transformations:
+            action = t.get('action')
+            name = t.get('name', '')
+            if action == 'add-port' and t.get('provider') == 'dpdkovs':
+                dpdk_interfaces.append(name)
+            if action == 'add-bond' and t.get('provider') == 'dpdkovs':
+                dpdk_interfaces.extend(t.get('interfaces'))
+
+        dpdk_drivers = objects.Node.get_supported_dpdk_drivers(node)
+
+        for iface in node.nic_interfaces:
+            if iface.name not in dpdk_interfaces:
+                continue
+            driver = objects.NIC.get_dpdk_driver(iface, dpdk_drivers)
+            vendor_specific = network_scheme['interfaces'][iface.name].get(
+                'vendor_specific', {})
+            vendor_specific.update({'dpdk_driver': driver})
+            network_scheme['interfaces'][iface.name][
+                'vendor_specific'] = vendor_specific
+        return network_scheme
+
+    @classmethod
+    def network_provider_node_attrs(cls, cluster, node):
+        attrs = super(DPDKSerializerMixin90, cls).network_provider_node_attrs(
+            cluster, node)
+        if objects.Node.dpdk_enabled(node):
+            attrs['dpdk'] = {'enabled': True}
+        return attrs
+
+
 class NeutronNetworkDeploymentSerializer90(
+    DPDKSerializerMixin90,
     NeutronNetworkDeploymentSerializer80
 ):
-    pass
+    @classmethod
+    def configure_private_network(cls, node, nm, transformations, prv_base_ep,
+                                  nets_by_ifaces):
+
+        if not objects.Node.dpdk_enabled(node):
+            super(NeutronNetworkDeploymentSerializer90,
+                  cls).configure_private_network(
+                node, nm, transformations, prv_base_ep, nets_by_ifaces)
+            return
+
+        transformations.append(cls.add_bridge(
+            'br-prv', provider='ovs',
+            vendor_specific={'datapath_type': 'netdev'}))
+
+        for iface in node.nic_interfaces:
+            dpdk = iface.interface_properties.get('dpdk', {})
+            if dpdk.get('enabled') and not iface.bond:
+                transformations.append(cls.add_port(
+                    name=iface.name,
+                    bridge=consts.DEFAULT_BRIDGES_NAMES.br_prv,
+                    provider='dpdkovs'
+                ))
+        for iface in node.bond_interfaces:
+            dpdk = iface.interface_properties.get('dpdk', {})
+            if dpdk.get('enabled'):
+                nets_by_ifaces.pop(iface.name, {})
+                bond_params = {
+                    'bond_properties': nm.get_lnx_bond_properties(iface),
+                    'interface_properties': nm.get_iface_properties(iface),
+                    'bridge': consts.DEFAULT_BRIDGES_NAMES.br_prv,
+                    'provider': 'dpdkovs'
+                }
+                transformations.append(cls.add_bond(iface, bond_params))
 
 
 class NeutronNetworkTemplateSerializer90(
+    DPDKSerializerMixin90,
     NeutronNetworkTemplateSerializer80
 ):
     pass

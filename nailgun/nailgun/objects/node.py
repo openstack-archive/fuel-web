@@ -42,11 +42,13 @@ from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.logger import logger
 from nailgun.network.template import NetworkTemplate
+from nailgun.objects import Bond
 from nailgun.objects import Cluster
 from nailgun.objects import IPAddr
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import NetworkGroup
+from nailgun.objects import NIC
 from nailgun.objects import Notification
 from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.policy import cpu_distribution
@@ -953,6 +955,7 @@ class Node(NailgunObject):
         cls.assign_group(instance)
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
+        cls.refresh_dpdk_properties(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
         cls.set_default_attributes(instance)
@@ -1174,12 +1177,58 @@ class Node(NailgunObject):
         instance.attributes = instance.cluster.release.node_attributes
 
     @classmethod
+    def dpdk_enabled(cls, instance):
+        for iface in instance.interfaces:
+            if iface.interface_properties.get('dpdk', {}).get('enabled'):
+                return True
+        return False
+
+    @classmethod
     def get_attributes(cls, instance):
         return copy.deepcopy(instance.attributes)
 
     @classmethod
     def update_attributes(cls, instance, attrs):
         instance.attributes = utils.dict_merge(instance.attributes, attrs)
+
+    @classmethod
+    def refresh_dpdk_properties(cls, instance):
+        dpdk_drivers = cls.get_supported_dpdk_drivers(instance)
+        for interface in instance.interfaces:
+            cls.refresh_interface_dpdk_properties(interface, dpdk_drivers)
+
+    @classmethod
+    def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
+        interface_properties = interface.interface_properties
+        if interface.type == consts.NETWORK_INTERFACE_TYPES.bond:
+            object_class = Bond
+        else:
+            object_class = NIC
+        dpdk_properties = interface_properties.get('dpdk', {})
+        dpdk_properties['available'] = \
+            object_class.dpdk_available(interface, dpdk_drivers)
+        if not dpdk_properties['available'] \
+                and dpdk_properties.get('enabled'):
+            dpdk_properties['enabled'] = False
+        interface_properties.update({'dpdk': dpdk_properties})
+        object_class.update(interface,
+                            {'interface_properties': interface_properties})
+
+    @classmethod
+    def get_supported_dpdk_drivers(cls, instance):
+        """Get all supported DPDK drivers
+
+        Returns dictionary, where keys are names of supported drivers and
+        values are lists of supported device IDs for each driver.
+
+        :param instance: Node instance
+        :return: supported DPDK drivers and devices
+        """
+        if not instance.cluster:
+            return {}
+        release = instance.cluster.release
+        metadata = release.networks_metadata
+        return metadata.get('dpdk_drivers', {})
 
 
 class NodeCollection(NailgunCollection):

@@ -548,6 +548,77 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         else:
             return NeutronNetworkDeploymentSerializer90
 
+    def serialize_nodes(self, nodes):
+        nodes = list(nodes)
+        serialized_nodes = super(
+            DeploymentHASerializer90, self).serialize_nodes(nodes)
+        return self.generate_cpu_pinning(nodes, serialized_nodes)
+
+    @classmethod
+    def generate_cpu_pinning(cls, nodes, serialized_nodes):
+        nova_pinning_enabled = cls._is_nova_cpu_pinning_enabled(nodes)
+        result = []
+        for node, serialized_node in zip(nodes, serialized_nodes):
+            if node.replaced_deployment_info:
+                continue
+            cpu_pinning = cls._generate_cpu_pinning_for_node(
+                node, nova_pinning_enabled)
+            result.append(
+                utils.dict_merge(serialized_node, cpu_pinning))
+        return result
+
+    @staticmethod
+    def _is_nova_cpu_pinning_enabled(nodes):
+        """Checks if cpu pinning should be enabled for nova.
+
+        Cpu pinning is enabled if at least one node has required cpus set.
+        """
+        for node in nodes:
+            pinning_info = objects.NodeAttributes.node_cpu_pinning_info(node)
+            if pinning_info['components']['nova']['required_cpus']:
+                return True
+        return False
+
+    @classmethod
+    def _generate_cpu_pinning_for_node(cls, node, nova_pinning_enabled):
+        pinning_info = objects.NodeAttributes.distribute_node_cpus(node)
+        cpu_pinning = pinning_info['components']
+
+        data = {}
+        data.update(cls._generate_nova_cpu_pinning(
+            cpu_pinning['nova'], nova_pinning_enabled))
+        data.update(cls._generate_dpdk_cpu_pinning(cpu_pinning['dpdk']))
+        return data
+
+    @staticmethod
+    def _generate_nova_cpu_pinning(cpus, pinning_enabled):
+        if pinning_enabled:
+            return {'nova': {
+                'enable_cpu_pinning': True,
+                'cpu_pinning': cpus,
+            }}
+        else:
+            return {'nova': {
+                'enable_cpu_pinning': False
+            }}
+
+    @staticmethod
+    def _generate_dpdk_cpu_pinning(cpus):
+        if not cpus:
+            return {}
+
+        ovs_core_mask = 1 << cpus[0]
+        ovs_pmd_core_mask = 0
+        for cpu in cpus[1:]:
+            ovs_pmd_core_mask |= 1 << cpu
+
+        return {
+            'dpdk': {
+                'ovs_core_mask': hex(ovs_core_mask),
+                'ovs_pmd_core_mask': hex(ovs_pmd_core_mask)
+            }
+        }
+
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.

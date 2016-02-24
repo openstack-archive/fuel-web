@@ -624,8 +624,9 @@ class DeploymentTasksHandler(SingleHandler):
             self.validator.validate_update,
             instance=obj
         )
-        self.single.update(obj, {'deployment_tasks': data})
-        return self.single.get_deployment_tasks(obj)
+        deployment_graph_instance = objects.DeploymentGraph.create(data)
+        objects.DeploymentGraph.attach_to_model(deployment_graph_instance, obj)
+        return objects.DeploymentGraph.get_tasks(deployment_graph_instance)
 
     def POST(self, obj_id):
         """Creation of metadata disallowed

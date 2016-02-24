@@ -360,7 +360,7 @@ class NetworkDeploymentSerializer(object):
         return str(admin_ip)
 
     @classmethod
-    def add_bridge(cls, name, provider=None):
+    def add_bridge(cls, name, provider=None, vendor_specific=None):
         """Add bridge to schema
 
         It will take global provider if it is omitted here
@@ -371,10 +371,12 @@ class NetworkDeploymentSerializer(object):
         }
         if provider:
             bridge['provider'] = provider
+        if vendor_specific:
+            bridge['vendor_specific'] = vendor_specific
         return bridge
 
     @classmethod
-    def add_port(cls, name, bridge, provider=None):
+    def add_port(cls, name, bridge, provider=None, vendor_specific=None):
         """Add port to schema
 
         Bridge name may be None, port will not be connected to any bridge then
@@ -391,6 +393,8 @@ class NetworkDeploymentSerializer(object):
             port['bridge'] = bridge
         if provider:
             port['provider'] = provider
+        if vendor_specific:
+            port['vendor_specific'] = vendor_specific
         return port
 
     @classmethod

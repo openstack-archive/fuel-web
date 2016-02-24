@@ -748,7 +748,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             for iface in interfaces:
                 self.assertEqual(iface['interface_properties'], {
                                  'mtu': None,
-                                 'disable_offloading': False
+                                 'disable_offloading': False,
+                                 'dpdk': {'enabled': False}
                                  })
                 if iface['name'] == 'eth0':
                     iface['interface_properties'] = {

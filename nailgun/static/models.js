@@ -26,6 +26,12 @@ import 'deep-model';
 
 var models = {};
 
+var makePathMixin = {
+  makePath(...args) {
+    return args.join('.');
+  }
+};
+
 var superMixin = models.superMixin = {
   _super(method, args) {
     var object = this;
@@ -363,9 +369,10 @@ models.Cluster = BaseModel.extend({
     return !this.get('is_locked');
   },
   isDeploymentPossible() {
-    return this.get('release').get('state') !== 'unavailable' &&
-      !this.task({group: 'deployment', active: true}) &&
-      (this.get('status') !== 'operational' || this.get('nodes').hasChanges());
+    var nodes = this.get('nodes');
+    return this.get('release').get('state') !== 'unavailable' && !!nodes.length &&
+      (nodes.hasChanges() || this.needsRedeployment()) &&
+        !this.task({group: 'deployment', active: true});
   },
   getCapacity() {
     var result = {
@@ -457,14 +464,10 @@ models.Node = BaseModel.extend({
     if (!onlyDeployedRoles) nodeRoles = nodeRoles.concat(this.get('pending_roles'));
     return !!_.intersection(nodeRoles, roles).length;
   },
-  isProvisioningPossible() {
-    var status = this.get('status');
-    return status === 'discover' || status === 'error' && this.get('error_type') === 'provisioning';
-  },
   hasChanges() {
     return this.get('pending_addition') ||
       this.get('pending_deletion') ||
-      !!this.get('cluster') && !!this.get('pending_roles').length;
+      this.get('cluster') && !!this.get('pending_roles').length;
   },
   areDisksConfigurable() {
     var status = this.get('status');
@@ -567,6 +570,24 @@ models.NodesStatistics = BaseModel.extend({
   urlRoot: '/api/nodes/allocation/stats'
 });
 
+models.NodeAttributes = Backbone.DeepModel.extend(restrictionMixin).extend(makePathMixin).extend({
+  constructorName: 'NodeAttributes',
+  validate(attrs) {
+    var errors = {};
+    var listOfFields = ['dpdk', 'nova'];
+    _.each(attrs, (group, groupName) => {
+      _.each(listOfFields, (field) => {
+        var groupSetting = group[field];
+        if (!(groupSetting.regex || {}).source) return;
+        if (!new RegExp(groupSetting.regex.source).test(groupSetting.value)) {
+          errors[this.makePath(groupName, field)] = groupSetting.regex.error;
+        }
+      });
+    });
+    return _.isEmpty(errors) ? null : errors;
+  }
+});
+
 models.Task = BaseModel.extend({
   constructorName: 'Task',
   urlRoot: '/api/tasks',
@@ -579,9 +600,7 @@ models.Task = BaseModel.extend({
   },
   groups: {
     network: ['verify_networks', 'check_networks'],
-    deployment: [
-      'update', 'stop_deployment', 'deploy', 'provision', 'reset_environment', 'spawn_vms'
-    ]
+    deployment: ['update', 'stop_deployment', 'deploy', 'reset_environment', 'spawn_vms']
   },
   extendGroups(filters) {
     var names = utils.composeList(filters.name);
@@ -633,13 +652,11 @@ models.Tasks = BaseCollection.extend({
   },
   comparator: 'id',
   filterTasks(filters) {
-    return _.chain(this.model.prototype.extendGroups(filters))
-      .map((name) => {
-        return this.filter((task) => task.match(_.extend(_.omit(filters, 'group'), {name: name})));
-      })
-      .flatten()
-      .compact()
-      .value();
+    return _.flatten(_.map(this.model.prototype.extendGroups(filters), (name) => {
+      return this.filter((task) => {
+        return task.match(_.extend(_.omit(filters, 'group'), {name: name}));
+      });
+    }));
   },
   findTask(filters) {
     return this.filterTasks(filters)[0];
@@ -664,6 +681,7 @@ models.Settings = Backbone.DeepModel
   .extend(superMixin)
   .extend(cacheMixin)
   .extend(restrictionMixin)
+  .extend(makePathMixin)
   .extend({
     constructorName: 'Settings',
     urlRoot: '/api/clusters/',
@@ -743,9 +761,6 @@ models.Settings = Backbone.DeepModel
         });
       });
       return _.isEmpty(errors) ? null : errors;
-    },
-    makePath(...args) {
-      return args.join('.');
     },
     getValueAttribute(settingName) {
       return settingName === 'metadata' ? 'enabled' : 'value';
@@ -1468,7 +1483,7 @@ models.WizardModel = Backbone.DeepModel.extend({
   }
 });
 
-models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
+models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend(makePathMixin).extend({
   constructorName: 'MirantisCredentials',
   baseUrl: 'https://software.mirantis.com/wp-content/themes/' +
   'mirantis_responsive_v_1_0/scripts/fuel_forms_api/',
@@ -1484,9 +1499,6 @@ models.MirantisCredentials = Backbone.DeepModel.extend(superMixin).extend({
       });
     });
     return _.isEmpty(errors) ? null : errors;
-  },
-  makePath(...args) {
-    return args.join('.');
   }
 });
 

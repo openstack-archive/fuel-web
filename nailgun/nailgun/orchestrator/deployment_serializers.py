@@ -548,6 +548,41 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         else:
             return NeutronNetworkDeploymentSerializer90
 
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer90, self).serialize_node(node, role)
+        self.generate_cpu_pinning(node, serialized_node)
+        return serialized_node
+
+    def generate_cpu_pinning(self, node, serialized_node):
+        pinning_info = objects.NodeAttributes.distribute_node_cpus(node)
+        cpu_pinning = pinning_info['components']
+
+        self._generate_nova_cpu_pinning(serialized_node, cpu_pinning['nova'])
+        self._generate_dpdk_cpu_pinning(serialized_node, cpu_pinning['dpdk'])
+
+    @staticmethod
+    def _generate_nova_cpu_pinning(serialized_node, cpus):
+        if not cpus:
+            return
+
+        serialized_node.setdefault('nova', {})['cpu_pinning'] = cpus
+
+    @staticmethod
+    def _generate_dpdk_cpu_pinning(serialized_node, cpus):
+        if not cpus:
+            return
+
+        ovs_core_mask = 1 << cpus[0]
+        ovs_pmd_core_mask = 0
+        for cpu in cpus[1:]:
+            ovs_pmd_core_mask |= 1 << cpu
+
+        serialized_node.setdefault('dpdk', {}).update({
+            'ovs_core_mask': hex(ovs_core_mask),
+            'ovs_pmd_core_mask': hex(ovs_pmd_core_mask)
+        })
+
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.

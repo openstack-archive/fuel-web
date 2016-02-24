@@ -328,6 +328,24 @@
                             "size": 16777216
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [
+                                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+                            ]
+                        },
+                        {
+                            "id": 1,
+                            "cpus": [
+                                12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+                            ]
+                        }
+                    ],
+                    "supported_hugepages": [2048, 1048576],
+                    "distances": []
                 }
             },
             "timestamp": "",
@@ -546,6 +564,16 @@
                             "frequency": 2201
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [0, 1, 2, 3, 4, 5, 6, 7]
+                        }
+                    ],
+                    "supported_hugepages": [2048, 1048576],
+                    "distances": []
                 }
             },
             "timestamp": "",
@@ -743,6 +771,16 @@
                             "frequency": 3201
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [0, 1, 2, 3, 4, 5, 6, 7]
+                        }
+                    ],
+                    "supported_hugepages": [2048, 1048576],
+                    "distances": []
                 }
             },
             "timestamp": "",
@@ -874,6 +912,16 @@
                             "frequency": 3201
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [0, 1, 2, 3, 4, 5, 6, 7]
+                        }
+                    ],
+                    "supported_hugepages": [2048, 1048576],
+                    "distances": []
                 }
             },
             "timestamp": "",
@@ -1006,6 +1054,16 @@
                             "frequency": 3201
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [0, 1, 2, 3, 4, 5, 6, 7]
+                        }
+                    ],
+                    "supported_hugepages": [2048, 1048576],
+                    "distances": []
                 }
             },
             "timestamp": "",
@@ -1095,6 +1153,16 @@
                             "frequency": 2185
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [0]
+                        }
+                    ],
+                    "supported_hugepages": [2048],
+                    "distances": []
                 }
             },
             "timestamp": "",
@@ -1207,6 +1275,16 @@
                             "frequency": 1999
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [0]
+                        }
+                    ],
+                    "supported_hugepages": [2048],
+                    "distances": []
                 }
             },
             "timestamp": "",
@@ -1487,6 +1565,24 @@
                             "size": 8589934592
                         }
                     ]
+                },
+                "numa_topology": {
+                    "numa_nodes": [
+                        {
+                            "id": 0,
+                            "cpus": [
+                                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+                            ]
+                        },
+                        {
+                            "id": 1,
+                            "cpus": [
+                                12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+                            ]
+                        }
+                    ],
+                    "supported_hugepages": [2048, 1048576],
+                    "distances": []
                 }
             },
             "timestamp": "",

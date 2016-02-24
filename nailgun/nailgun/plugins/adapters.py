@@ -25,6 +25,7 @@ import yaml
 
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.objects.plugin import ClusterPlugins
 from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
@@ -125,14 +126,24 @@ class PluginAdapterBase(object):
         return settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
             plugin_name=self.path_name)
 
+    # todo(ikutukov): actually getter-setter approach don't allow us to
+    # work with graph types on plugins level.
+    # Should be reworked to getters and setters
     @property
     def deployment_tasks(self):
         deployment_tasks = []
-        for task in self.plugin.deployment_tasks:
-            if task.get('parameters'):
-                task['parameters'].setdefault('cwd', self.slaves_scripts_path)
-            deployment_tasks.append(task)
+        graph_instance = DeploymentGraph.get_for_model(self.plugin)
+        if graph_instance:
+            for task in DeploymentGraph.get_tasks(graph_instance):
+                if task.get('parameters'):
+                    task['parameters'].setdefault('cwd', self.slaves_scripts_path)
+                deployment_tasks.append(task)
         return deployment_tasks
+
+    @deployment_tasks.setter
+    def deployment_tasks(self, value):
+        deployment_graph = DeploymentGraph.create(value)
+        DeploymentGraph.attach_to_model(deployment_graph, self.plugin)
 
     @property
     def volumes_metadata(self):
@@ -263,7 +274,6 @@ class PluginAdapterV3(PluginAdapterV2):
             'roles_metadata': self.node_roles_config_name,
             'volumes_metadata': self.volumes_config_name,
             'network_roles_metadata': self.network_roles_config_name,
-            'deployment_tasks': self.deployment_tasks_config_name,
             'tasks': self.task_config_name
         }
 
@@ -283,6 +293,16 @@ class PluginAdapterV3(PluginAdapterV2):
                 data_to_update[attribute] = attribute_data
 
         Plugin.update(self.plugin, data_to_update)
+
+        # update deployment tasks
+        deployment_tasks_file_path = os.path.join(
+            self.plugin_path,
+            self.deployment_tasks_config_name)
+        deployment_tasks_data = self._load_config(deployment_tasks_file_path)
+        if deployment_tasks_data:
+            # fixme(ikutukov) rework to getters and setters to be able to
+            # change deployment graph type
+            self.deployment_tasks = deployment_tasks_data
 
 
 class PluginAdapterV4(PluginAdapterV3):

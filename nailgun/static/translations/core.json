@@ -1160,7 +1160,48 @@
                 "public": "公开",
                 "floating": "浮动",
                 "management": "管理",
-                "storage": "存储"
+                "storage": "存储",
+                "private": "私有",
+                "baremetal": "裸机",
+                "descriptions": {
+                    "public": "公共网络允许从外部网络（例如Internet）到虚拟机的向内网络连接，以及从虚拟机到外部网络的向外网络连接。",
+                    "storage": "存储网络用于提供存储服务，例如Ceph的复制流量。管理网络用于Ceph的公开流量。",
+                    "management": "管理网络主要用于OpenStack云的管理，它被用来访问OpenStack服务（nova-api，OpenStack控制面板等等）。",
+                    "internal": "内部网络将环境内所有OpenStack节点连接起来。一个OpenStack环境内的所有组件都通过内部网络相互通信。",
+                    "floating": "该网络用于为租户虚拟机分配浮动IP。",
+                    "private": "私有网络用于辅助每个租户的各个虚拟机之间的通信。私有网络地址空间不是公开网络地址空间的一部分，虚拟实例的固定IP无法被公开网络的其他部分直接访问。",
+                    "baremetal": "由OpenStack Ironic管理的裸机节点所在的单独网络。该IP段被分配给OpenStack服务节点。",
+                    "fuelweb_admin": "Fuel主节点使用Admin（PXE）网络来提供和编排为节点提供DNS、DHCP和网关服务的OpenStack环境。"
+                },
+                "requirements": {
+                    "public": [
+                        "公共IP与浮动IP必须具有相同的CIDR。",
+                        "每个控制器节点需要公共IP段内的一个IP地址。",
+                        "此外，每个OpenStack环境需要两个用于虚拟IP的IP地址以及一个用于默认网关的IP地址。",
+                        "如果您已经启用了Neutron DVR并计划使用浮动IP地址，请为每个计算节点分配一个IP地址。",
+                        "如需更多关于公共IP要求的信息，请查看Plugin文档。"
+                    ],
+                    "storage": "这是内部网络，因此请分配一个私有的IP段。",
+                    "management": "这是内部网络，因此请分配一个私有的IP段。",
+                    "private": "该设置被用于指定用于GRE隧道的IP地址段。",
+                    "internal": "出于安全考虑，请将该网络与公开网络和私有网络相隔离。",
+                    "fuelweb_admin": "出于安全考虑，请将该网络与公开网络和私有网络相隔离。",
+                    "floating": [
+                        "每个被定义的租户，包括Admin租户，都需要一个浮动IP段内的IP地址。该IP地址被用于该租户虚拟路由器的虚拟接口。",
+                        "每个连接至外部网络的虚拟机实例都需要一个浮动IP段内的IP地址。",
+                        "浮动IP段不应与公共IP段相互重叠。"
+                    ],
+                    "dns_nameservers": "该设置被用于指定当默认域名服务器未被选择时用户所偏好的域名服务器。",
+                    "l2_configuration_vlan": "每个租户网络需要一个唯一的VLAN ID。",
+                    "l2_configuration_tun": "每个租户网络需要一个唯一的Tunnel ID。",
+                    "baremetal": [
+                        "裸机IP段与Ironic IP段必须具有相同的CIDR。",
+                        "裸机IP段用于OpenStack服务节点（“controller”与“ironic”角色）。",
+                        "Ironic IP段是Neutron扁平网络的地址分配池。",
+                        "每个已部署的控制器节点都需要Baremetal IP段的一个IP地址。",
+                        "一个额外的IP地址被用作环境的虚拟IP。"
+                    ]
+                }
             },
             "login_page": {
                 "username": "用户名",

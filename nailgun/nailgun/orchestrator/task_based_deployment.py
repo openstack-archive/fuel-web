@@ -401,6 +401,7 @@ class TasksSerializer(object):
                          If None, all tasks will be executed
         :return: the list of serialized task per node
         """
+
         serializer = cls(cluster, nodes, task_ids)
         serializer.resolve_nodes(add_plugin_deployment_hooks(tasks), nodes)
         serializer.resolve_dependencies()
@@ -429,7 +430,6 @@ class TasksSerializer(object):
                     task, nodes, lambda _: self.role_resolver,
                     skip=not self.task_filter(task['id'])
                 )
-
         self.expand_task_groups(groups, tasks_mapping)
         # make sure that null node is present
         self.tasks_per_node.setdefault(None, dict())

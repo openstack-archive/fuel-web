@@ -369,6 +369,7 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'skipped',
     'reboot',
     'copy_files',
+    'role'
 )
 
 INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
@@ -487,3 +488,16 @@ IRONIC_BOOTSTRAP_PKGS = ('openssh-server',
                          'linux-firmware-nonfree',
                          'xz-utils',
                          'linux-headers-generic')
+
+DEPLOYMENT_TASK_NAME_MAX_LEN = 255
+DEPLOYMENT_TASK_GROUP_NAME_MAX_LEN = 255
+NAILGUN_EVENT_NAME_MAX_LEN = 255
+DEPLOYMENT_GRAPH_TYPE_MAX_LEN = 255
+DEPLOYMENT_GRAPH_NAME_MAX_LEN = 255
+DEPLOYMENT_TASK_VERSION_MAX_LEN = 255
+NODE_ROLE_NAME_MAX_LEN = 255
+DEPLOYMENT_TASK_DEFAULT_VERSION = '1.0.0'
+
+DEPLOYMENT_GRAPH_TYPES = Enum(
+    'default',
+)

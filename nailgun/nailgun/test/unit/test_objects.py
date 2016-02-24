@@ -400,7 +400,7 @@ class TestNodeObject(BaseIntegrationTest):
         node2_db = self.env.create_node()
         objects.Node.remove_from_cluster(node_db)
         self.db().refresh(config)
-        self.assertEqual(node_db.cluster_id, None)
+        self.assertIsNone(node_db.cluster_id)
         self.assertEqual(node_db.roles, [])
         self.assertEqual(node_db.pending_roles, [])
         self.assertFalse(config.is_active)
@@ -504,7 +504,7 @@ class TestNodeObject(BaseIntegrationTest):
 
         # Checking nothing to be sorted
         nodes = objects.NodeCollection.order_by(None, 'id')
-        self.assertEquals(None, nodes)
+        self.assertIsNone(nodes)
 
         iterable = ['b', 'a']
         nodes = objects.NodeCollection.order_by(iterable, ())

@@ -82,7 +82,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEqual(node.cluster, None)
+        self.assertIsNone(node.cluster)
         self.assertEqual(node.pending_roles, [])
 
         # Test with invalid node ids

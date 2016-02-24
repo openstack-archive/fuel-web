@@ -153,7 +153,7 @@ class TestHandlers(BaseIntegrationTest):
         if not forbidden:
             self.assertEqual(resp.status_code, 204)
             resp = self.get_template(cluster.id)
-            self.assertEquals(None, resp.json_body)
+            self.assertIsNone(resp.json_body)
         else:
             self.assertEqual(resp.status_code, 403)
 

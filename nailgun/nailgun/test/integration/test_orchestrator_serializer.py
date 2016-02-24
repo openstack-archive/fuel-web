@@ -1214,7 +1214,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 br_set
             )
             for name, descr in six.iteritems(endpoints):
-                self.assertTrue(set(['IP', 'routes']) <= set(descr.keys()))
+                self.assertLessEqual(set(['IP', 'routes']), set(descr.keys()))
                 self.assertEqual(len(descr['routes']), 1)
                 for route in descr['routes']:
                     self.assertEqual(set(['net', 'via']), set(route.keys()))

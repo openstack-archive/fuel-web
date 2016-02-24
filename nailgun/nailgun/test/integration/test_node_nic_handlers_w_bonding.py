@@ -256,7 +256,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
 
-        self.assertEqual(node.cluster, None)
+        self.assertIsNone(node.cluster)
         resp = self.env.node_nics_get(node.id)
         self.assertEqual(resp.status_code, 200)
 
@@ -277,7 +277,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 200)
 
-        self.assertEqual(node.cluster, None)
+        self.assertIsNone(node.cluster)
         resp = self.env.node_nics_get(node.id)
         self.assertEqual(resp.status_code, 200)
 

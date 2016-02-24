@@ -19,6 +19,7 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun import objects
+from nailgun.orchestrator.task_based_deployment import TaskProcessor
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.test.base import BaseIntegrationTest
@@ -405,3 +406,77 @@ class TestDeployMethodVersioning(BaseSelectedNodesTest):
     @patch('nailgun.task.task.rpc.cast')
     def test_granular_is_used_in_61(self, mcast):
         self.assert_deployment_method('2014.2-6.1', 'granular_deploy', mcast)
+
+
+class TestSerializedTasksHandler(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestSerializedTasksHandler, self).setUp()
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True}])
+        self.cluster = self.env.clusters[-1]
+        self.nodes = self.cluster.nodes
+        objects.Cluster.prepare_for_deployment(
+            self.cluster, self.cluster.nodes)
+
+    def get_serialized_tasks(self, cluster_id, nodes_ids=None):
+        uri = reverse(
+            "SerializedTasksHandler",
+            kwargs={'cluster_id': cluster_id})
+        if nodes_ids:
+            uri += make_orchestrator_uri(nodes_ids)
+        return self.app.get(uri, expect_errors=True)
+
+    def before(self, obj):
+        return str(obj.id - 1)
+
+    @patch.object(TaskProcessor, 'ensure_task_based_deploy_allowed')
+    def test_serialized_tasks_returned(self, _):
+        nodes_uids = [n.uid for n in self.nodes]
+        resp = self.get_serialized_tasks(self.cluster.id, nodes_uids)
+        self.assertEqual(resp.status_code, 200)
+        self.assertItemsEqual(nodes_uids + ['null'], resp.json.keys())
+        expected_tasks = ['netconfig', 'globals', 'deploy_legacy',
+                          'upload_nodes_info', 'update_hosts']
+        for n in nodes_uids:
+            self.assertItemsEqual(
+                [t['id'] for t in resp.json[n]], expected_tasks)
+        self.assertItemsEqual(
+            [t['id'] for t in resp.json['null']],
+            ['post_deployment_start', 'post_deployment_end',
+             'deploy_start', 'deploy_end',
+             'pre_deployment_start', 'pre_deployment_end'])
+
+    @patch.object(TaskProcessor, 'ensure_task_based_deploy_allowed')
+    def test_pending_nodes_serialized(self, _):
+        resp = self.get_serialized_tasks(self.cluster.id)
+        self.assertEqual(resp.status_code, 200)
+        expected = set((n.uid for n in self.nodes))
+        expected.add('null')
+        self.assertTrue(expected, resp.json.keys())
+
+    def test_404_if_cluster_doesnt_exist(self):
+        resp = self.get_serialized_tasks(self.before(self.cluster))
+        self.assertEqual(resp.status_code, 404)
+        self.assertIn("Cluster not found", resp.body)
+
+    def test_404_if_node_doesnt_exist(self):
+        resp = self.get_serialized_tasks(self.cluster.id,
+                                         [self.before(self.nodes[0])])
+        self.assertEqual(resp.status_code, 404)
+        self.assertIn("NodeCollection not found", resp.body)
+
+    def test_400_if_node_not_in_this_cluster(self):
+        node = self.env.create_node()
+        resp = self.get_serialized_tasks(self.cluster.id,
+                                         [node['uid']])
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("do not belong to cluster", resp.body)
+
+    def test_400_if_task_based_not_allowed(self):
+        self.env.disable_task_deploy(self.cluster)
+        resp = self.get_serialized_tasks(self.cluster.id)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("The task-based deployment is not allowed", resp.body)

@@ -24,6 +24,8 @@ from nailgun.objects.action_log import ActionLogCollection
 from nailgun.objects.oswl import OpenStackWorkloadStats
 from nailgun.objects.oswl import OpenStackWorkloadStatsCollection
 
+from nailgun.objects.deployment_graph import DeploymentGraph
+
 from nailgun.objects.release import Release
 from nailgun.objects.release import ReleaseCollection
 
@@ -72,3 +74,4 @@ from nailgun.objects.interface import NICCollection
 
 from nailgun.objects.bond import Bond
 from nailgun.objects.bond import BondCollection
+

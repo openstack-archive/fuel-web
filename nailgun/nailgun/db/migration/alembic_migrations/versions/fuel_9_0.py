@@ -23,13 +23,14 @@ Create Date: 2015-12-15 17:20:49.519542
 from alembic import op
 import six
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql as psql
 
 from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
-
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
@@ -62,11 +63,13 @@ def upgrade():
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
     upgrade_remove_wizard_metadata_from_releases()
+    upgrade_deployment_graph()
     drop_legacy_patching()
 
 
 def downgrade():
     restore_legacy_patching()
+    downgrade_deployment_graph()
     downgrade_remove_wizard_metadata_from_releases()
     downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
@@ -751,3 +754,312 @@ def restore_legacy_patching():
         cluster_statuses_new,       # new options
         cluster_statuses_old,       # old options
     )
+
+
+def upgrade_deployment_graph():
+    deployment_graph_table = op.create_table(
+        'deployment_graphs',
+
+        sa.Column(
+            'id',
+            sa.INTEGER(),
+            nullable=False,
+            autoincrement=True,
+            primary_key=True),
+
+        sa.Column(
+            'verbose_name',
+            sa.VARCHAR(length=consts.DEPLOYMENT_GRAPH_NAME_MAX_LEN),
+            nullable=True),
+    )
+
+    deployment_graph_tasks_table = op.create_table(
+        'deployment_graph_tasks',
+
+        sa.Column(
+            'id',
+            sa.INTEGER(),
+            nullable=False,
+            autoincrement=True,
+            primary_key=True),
+
+        sa.Column(
+            'deployment_graph_id',
+            sa.INTEGER(),
+            autoincrement=False,
+            nullable=False),
+        sa.ForeignKeyConstraint(
+            ['deployment_graph_id'],
+            ['deployment_graphs.id'],
+            ondelete='CASCADE'),
+
+        sa.Column(
+            'task_name',
+            sa.VARCHAR(length=consts.DEPLOYMENT_TASK_NAME_MAX_LEN),
+            nullable=False),
+        sa.UniqueConstraint(
+            'deployment_graph_id',
+            'task_name',
+            name='_task_name_deployment_graph_id_uc'),
+
+        sa.Column(
+            'version',
+            sa.VARCHAR(consts.DEPLOYMENT_TASK_VERSION_MAX_LEN),
+            nullable=False,
+            server_default=consts.DEPLOYMENT_TASK_DEFAULT_VERSION,
+            default=consts.DEPLOYMENT_TASK_DEFAULT_VERSION),
+
+        sa.Column(
+            'condition',
+            sa.Text(),
+            nullable=True),
+
+        sa.Column(
+            'test_post',
+            sa.Text(),
+            nullable=True),
+
+        sa.Column(
+            'test_pre',
+            sa.Text(),
+            nullable=True),
+
+        sa.Column(
+            'type',
+            sa.Enum(
+                *consts.ORCHESTRATOR_TASK_TYPES,
+                name='deployment_graph_tasks_type'),
+            nullable=False),
+
+        sa.Column(
+            'groups',
+            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_GROUP_NAME_MAX_LEN)),
+            default=[],
+            nullable=False,
+            server_default='{}'),
+
+        sa.Column(
+            'tasks',
+            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+            default=[],
+            nullable=False,
+            server_default='{}'),
+
+        sa.Column(
+            'roles',
+            psql.ARRAY(sa.String(consts.NODE_ROLE_NAME_MAX_LEN)),
+            default=[],
+            nullable=False,
+            server_default='{}'),
+
+        sa.Column(
+            'reexecute_on',
+            psql.ARRAY(sa.String(consts.NAILGUN_EVENT_NAME_MAX_LEN)),
+            default=[],
+            nullable=False,
+            server_default='{}'),
+
+        sa.Column(
+            'refresh_on',
+            psql.ARRAY(sa.String(consts.NAILGUN_EVENT_NAME_MAX_LEN)),
+            default=[],
+            nullable=False,
+            server_default='{}'),
+
+        sa.Column(
+            'required_for',
+            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+            default=[],
+            nullable=False,
+            server_default='{}'),
+
+        sa.Column(
+            'requires',
+            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+            default=[],
+            nullable=False,
+            server_default='{}'),
+
+        sa.Column(
+            'cross_depended_by',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'),
+
+        sa.Column(
+            'cross_depends',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'),
+
+
+        sa.Column(
+            'parameters',
+            fields.JSON(),
+            default={},
+            server_default='{}'),
+
+    )
+
+    def create_graph_relation_table(name, fk_field, fk_points_to):
+        """Generate m2m relations for deployment graphs."""
+        return op.create_table(
+            name,
+            sa.Column(
+                'id',
+                sa.INTEGER(),
+                nullable=False,
+                autoincrement=True,
+                primary_key=True),
+
+            sa.Column(
+                'type',
+                sa.VARCHAR(length=consts.DEPLOYMENT_GRAPH_TYPE_MAX_LEN),
+                nullable=False),
+
+            sa.Column(
+                'deployment_graph_id',
+                sa.INTEGER(),
+                nullable=False,
+                index=True),
+            sa.ForeignKeyConstraint(
+                ['deployment_graph_id'],
+                ['deployment_graphs.id'],
+                ondelete='CASCADE'),
+
+            sa.Column(
+                fk_field,
+                sa.INTEGER(),
+                nullable=False,
+                index=True),
+            sa.ForeignKeyConstraint(
+                [fk_field],
+                [fk_points_to],
+                ondelete='CASCADE'),
+
+            sa.UniqueConstraint(
+                'type',
+                fk_field,
+                name='type_{0}_uc'.format(fk_field))
+        )
+
+    create_graph_relation_table(
+        name='release_deployment_graphs',
+        fk_field='release_id',
+        fk_points_to='releases.id')
+
+    create_graph_relation_table(
+        name='plugin_deployment_graphs',
+        fk_field='plugin_id',
+        fk_points_to='plugins.id')
+
+    create_graph_relation_table(
+        name='cluster_deployment_graphs',
+        fk_field='cluster_id',
+        fk_points_to='clusters.id')
+
+    connection = op.get_bind()
+
+    def create_graph_from_json_tasks(json_tasks):
+        deployment_graph_id = connection.execute(
+            deployment_graph_table.insert(),
+            {'verbose_name': consts.DEPLOYMENT_GRAPH_TYPES.default}
+        ).inserted_primary_key[0]
+        fields_mapping = {
+            'id': 'task_name',
+            'cross-depends': 'cross_depends',
+            'cross-depended-by': 'cross_depended_by',
+            'role': 'roles'
+        }
+        jsonize_fields = ('cross-depends', 'cross-depended-by', 'parameters',)
+        for json_task in json_tasks:
+            table_task = {}
+            for field in json_task:
+                value = json_task[field]
+                if field in jsonize_fields:
+                    value = jsonutils.dumps(value)
+                # remap fields
+                if field in fields_mapping:
+                    # wrap string role to array
+                    if field == 'role' and isinstance(value, six.string_types):
+                        value = [value]
+                    table_task[fields_mapping[field]] = value
+                else:
+                    table_task[field] = value
+            table_task['deployment_graph_id'] = deployment_graph_id
+            connection.execute(
+                deployment_graph_tasks_table.insert(),
+                table_task
+            )
+        return deployment_graph_id
+
+    for entity_name in ['cluster', 'plugin', 'release']:
+        query = sa.text(
+            "SELECT id, deployment_tasks "
+            "FROM {0}s "
+            "WHERE deployment_tasks IS NOT NULL".format(entity_name)
+        )
+        tasks_by_record = dict(
+            (record_id, tasks) for (record_id, tasks)
+            in connection.execute(query)
+        )
+        for entity_id, tasks in six.iteritems(tasks_by_record):
+
+            tasks = jsonutils.loads(tasks)
+            if not tasks:
+                continue
+            deployment_graph_id = create_graph_from_json_tasks(tasks)
+
+            insert_relation_query = sa.text('''
+                INSERT INTO {0}_deployment_graphs
+                    (deployment_graph_id, {0}_id, type)
+                VALUES
+                    (:deployment_graph_id, :target_id, :type)
+            '''.format(entity_name))
+
+            connection.execute(
+                insert_relation_query,
+                deployment_graph_id=deployment_graph_id,
+                target_id=entity_id,
+                type=consts.DEPLOYMENT_GRAPH_TYPES.default
+            )
+
+    op.drop_column('plugins', 'deployment_tasks')
+    op.drop_column('releases', 'deployment_tasks')
+    op.drop_column('clusters', 'deployment_tasks')
+
+
+def downgrade_deployment_graph():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'deployment_tasks',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        )
+    )
+    op.add_column(
+        'releases',
+        sa.Column(
+            'deployment_tasks',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        )
+    )
+    op.add_column(
+        'clusters',
+        sa.Column(
+            'deployment_tasks',
+            fields.JSON(),
+            nullable=False,
+            server_default='[]'
+        )
+    )
+    op.drop_table('cluster_deployment_graphs')
+    op.drop_table('plugin_deployment_graphs')
+    op.drop_table('release_deployment_graphs')
+    op.drop_table('deployment_graph_tasks')
+    drop_enum('deployment_graph_tasks_type')
+    op.drop_table('deployment_graphs')

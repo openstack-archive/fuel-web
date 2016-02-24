@@ -322,7 +322,7 @@ class NetworkManager(object):
         cluster_vip = cluster_vip_q.first()
 
         if cluster_vip:
-            return cluster_vip.ip_addr
+            return cluster_vip
 
     @classmethod
     def assign_vip(cls, nodegroup, network_name, vip_name):
@@ -357,9 +357,12 @@ class NetworkManager(object):
                 u"Network '{0}' for nodegroup='{1}' not found.".format(
                     network_name, nodegroup.name))
 
-        if already_assigned is not None and \
-                cls.check_ip_belongs_to_net(already_assigned, network):
-            return already_assigned
+        # user defined VIPs must be returned without additional check
+        if already_assigned is not None:
+            if already_assigned.is_user_defined is True or \
+                    cls.check_ip_belongs_to_net(already_assigned.ip_addr,
+                                                network):
+                return already_assigned.ip_addr
 
         cluster_vip = db().query(IPAddr).filter_by(
             network=network.id,
@@ -1985,12 +1988,13 @@ class AllocateVIPs70Mixin(object):
                 in cls.get_node_groups_info(cluster):
 
             net_mgr = objects.Cluster.get_network_manager(cluster)
-            vip_addr = net_mgr.get_assigned_vip(nodegroup, net_group, vip_name)
+            assigned_vip = net_mgr.get_assigned_vip(
+                nodegroup, net_group, vip_name)
 
-            if vip_addr is None:
+            if assigned_vip is None:
                 continue
 
-            yield role, vip_info, vip_addr
+            yield role, vip_info, assigned_vip.ip_addr
 
     @classmethod
     def get_node_groups_info(cls, cluster):

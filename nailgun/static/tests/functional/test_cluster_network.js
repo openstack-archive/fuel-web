@@ -375,12 +375,14 @@ define([
               );
             })
           .clickByCssSelector('.subtab-link-neutron_l3')
+          .waitForCssSelector('.nav-pills.networks li.all', 1000)
           .assertElementTextEquals(
             '.nav-pills.networks li.all',
             'All Networks',
             'Navigation pill text is not changed when switching to neutron_l3 tab'
           )
           .clickByCssSelector('.subtab-link-all')
+          .waitForCssSelector('.network-group-name', 2000)
           .then(function() {
             return networkPage.removeNodeNetworkGroup('temp');
           })
@@ -394,7 +396,6 @@ define([
           .then(function() {
             return networkPage.addNodeNetworkGroup('Node_Network_Group_1');
           })
-          .waitForCssSelector('.network-group-name[data-name=Node_Network_Group_1]', 2000)
           .clickLinkByText('default')
           .assertElementsExist(
             '.node_network_groups li',

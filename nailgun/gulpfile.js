@@ -55,7 +55,7 @@ function shutdownSelenium() {
   }
 }
 
-var SELENIUM_VERSION = '2.45.0';
+var SELENIUM_VERSION = '2.52.0';
 var SELENIUM_DRIVERS = {chrome: {version: '2.20'}};
 
 gulp.task('selenium:fetch', function(cb) {

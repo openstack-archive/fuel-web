@@ -19,6 +19,17 @@ from nailgun.db.sqlalchemy.models.oswl import OpenStackWorkloadStats
 
 from nailgun.db.sqlalchemy.models.base import CapacityLog
 
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    DeploymentGraph
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    DeploymentGraphTask
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    ReleaseDeploymentGraph
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    PluginDeploymentGraph
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    ClusterDeploymentGraph
+
 from nailgun.db.sqlalchemy.models.cluster import Attributes
 from nailgun.db.sqlalchemy.models.cluster import Cluster
 from nailgun.db.sqlalchemy.models.cluster import ClusterChanges

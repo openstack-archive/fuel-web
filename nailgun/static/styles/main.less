@@ -3309,6 +3309,49 @@ input[type=range] {
       }
     }
   }
+
+  // Node Attributes styles
+  .node-attributes {
+    @typical-node-attributes-padding: 10px;
+    padding: @typical-node-attributes-padding;
+    .form-group {
+      label {
+        display: block;
+      }
+      input[type=text] {
+        float: left;
+        width: 200px;
+      }
+      .help-block {
+        display: inline-block;
+        margin-left: @typical-node-attributes-padding;
+      }
+      &.pages-size {
+        height: 88px;
+        width: 40px;
+        p {
+          margin-top: 13px;
+        }
+      }
+    }
+    .huge-pages {
+      margin-bottom: @typical-node-attributes-padding;
+      .labels {
+        margin-left: 0;
+      }
+      .contents {
+        .row {
+          margin-left: 0;
+        }
+        p {
+          margin-top: @typical-node-attributes-padding;
+        }
+        input[type=text] {
+          width: 155px;
+        }
+      }
+    }
+  }
 }
 
 // Disks styles

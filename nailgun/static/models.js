@@ -564,6 +564,24 @@ models.NodesStatistics = BaseModel.extend({
   urlRoot: '/api/nodes/allocation/stats'
 });
 
+models.NodeAttributes = Backbone.DeepModel.extend(restrictionMixin).extend({
+  constructorName: 'NodeAttributes',
+  validate(attrs) {
+    var errors = {};
+    var listOfFields = ['dpdk', 'nova'];
+    _.each(attrs, (group, groupName) => {
+      _.each(listOfFields, (field) => {
+        var groupSetting = group[field];
+        if (!(groupSetting.regex || {}).source) return;
+        if (!new RegExp(groupSetting.regex.source).test(groupSetting.value)) {
+          errors[([groupName, field].join('.'))] = groupSetting.regex.error;
+        }
+      });
+    });
+    return _.isEmpty(errors) ? null : errors;
+  }
+});
+
 models.Task = BaseModel.extend({
   constructorName: 'Task',
   urlRoot: '/api/tasks',

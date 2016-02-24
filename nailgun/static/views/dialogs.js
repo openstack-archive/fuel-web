@@ -26,6 +26,7 @@ import dispatcher from 'dispatcher';
 import {Input, ProgressBar} from 'views/controls';
 import {backboneMixin, renamingMixin} from 'component_mixins';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
+import customControls from 'views/custom_controls';
 
 function getActiveDialog() {
   return app.dialog;
@@ -721,7 +722,10 @@ export var ShowNodeInfoDialog = React.createClass({
       title: i18n('dialog.show_node.default_dialog_title'),
       VMsConf: null,
       VMsConfValidationError: null,
-      hostnameChangingError: null
+      hostnameChangingError: null,
+      nodeAttributes: null,
+      initialNodeAttributes: null,
+      nodeAttributesError: null
     };
   },
   goToConfigurationScreen(url) {
@@ -811,6 +815,51 @@ export var ShowNodeInfoDialog = React.createClass({
           });
         });
     }
+    if (this.props.node.get('pending_addition')) {
+      var nodeAttributesModel = new models.NodeAttributes();
+      nodeAttributesModel.url = _.result(this.props.node, 'url') + '/attributes';
+      this.setState({actionInProgress: true});
+      nodeAttributesModel.fetch()
+        .always(() => {
+          nodeAttributesModel.isValid();
+          this.setState({
+            actionInProgress: false,
+            nodeAttributes: nodeAttributesModel,
+            initialNodeAttributes: _.clone(nodeAttributesModel.attributes),
+            nodeAttributesError: nodeAttributesModel.validationError
+          });
+        });
+    }
+  },
+  onNodeAttributesChange(name, value, hugePageValue) {
+    this.setState({nodeAttributesError: null});
+    var attributesModel = this.state.nodeAttributes;
+    var newAttributes = attributesModel.attributes;
+    _.set(newAttributes, name + '.value' + (hugePageValue ? hugePageValue : ''), value);
+    attributesModel.set(newAttributes, {validate: true});
+    this.setState({
+      nodeAttributes: attributesModel,
+      nodeAttributesError: attributesModel.validationError
+    });
+  },
+  saveNodeAttributes() {
+    this.setState({actionInProgress: true});
+    this.state.nodeAttributes.save(this.state.nodeAttributes.attributes, {method: 'PUT'})
+      .fail((response) => {
+        this.setState({nodeAttributesError: utils.getResponseText(response)});
+      })
+      .done(() => {
+        this.setState({initialNodeAttributes: _.clone(this.state.nodeAttributes.attributes)});
+      })
+      .always(() => {
+        this.setState({actionInProgress: false});
+      });
+  },
+  hasNodeAttributesChanges() {
+    return _.isEqual(
+      this.state.nodeAttributes.attributes,
+      this.state.initialNodeAttributes
+    );
   },
   setDialogTitle() {
     var name = this.props.node && this.props.node.get('name');
@@ -960,10 +1009,39 @@ export var ShowNodeInfoDialog = React.createClass({
   renderNodeHardware() {
     var {node} = this.props;
     var meta = node.get('meta');
-
     var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
+    var nodeAttributes = this.state.nodeAttributes;
+    var sortedAttributes, attributeFields, commonInputProps, nodeAttributesError;
     if (this.state.VMsConf) groups.push('config');
+    if (nodeAttributes &&
+      // if both dpdk and nova are hidden - not show attributes group at all
+      !(nodeAttributes.checkRestrictions(
+        {settings: this.props.cluster.get('settings')},
+        'hide',
+        nodeAttributes.get('cpu_pinning').metadata
+      ).result ||
+      nodeAttributes.checkRestrictions(
+        {settings: this.props.cluster.get('settings')},
+        'hide',
+        nodeAttributes.get('hugepages').metadata
+      ).result)
+    ) {
+      groups.push('attributes');
+      sortedAttributes = _.sortBy(
+        _.keys(nodeAttributes.attributes), (name) => {
+          return this.state.nodeAttributes.get(name + '.metadata.weight');
+        }
+      );
+      attributeFields = ['nova', 'dpdk'];
+      commonInputProps = {
+        placeholder: 'None',
+        onChange: this.onNodeAttributesChange,
+        error: null,
+        type: 'text'
+      };
+      nodeAttributesError = this.state.nodeAttributesError;
+    }
 
     var sortOrder = {
       disks: ['name', 'model', 'size'],
@@ -982,7 +1060,12 @@ export var ShowNodeInfoDialog = React.createClass({
             _.find(_.values(groupEntries), _.isArray) : [];
 
           // (morale): whitelisting renderable parameters
-          if (!_.contains(['cpu', 'disks', 'interfaces', 'memory', 'system'], group)) return null;
+          if (!_.contains([
+            'cpu', 'disks', 'interfaces', 'memory', 'system', 'attributes'
+          ], group)) {
+            return null;
+          }
+
           return (
             <div className='panel panel-default' key={group}>
               <div
@@ -1091,6 +1174,68 @@ export var ShowNodeInfoDialog = React.createClass({
                         onClick={this.saveVMsConf}
                         disabled={this.state.VMsConfValidationError ||
                           this.state.actionInProgress}
+                      >
+                        {i18n('common.save_settings_button')}
+                      </button>
+                    </div>
+                  }
+                  {group === 'attributes' &&
+                    <div className='node-attributes'>
+                      {_.map(sortedAttributes, (section) => {
+                        return _.map(attributeFields, (field) => {
+                          var restrictionsHideCheck = nodeAttributes.checkRestrictions(
+                            {settings: this.props.cluster.get('settings')},
+                            'hide',
+                            nodeAttributes.get(section).metadata
+                          );
+                          if (restrictionsHideCheck.result) return null;
+                          var restrictionsDisabledCheck = nodeAttributes.checkRestrictions(
+                            {settings: this.props.cluster.get('settings')},
+                            'disabled',
+                            nodeAttributes.get(section).metadata
+                          );
+                          var nodeAttributesSectionConfig =
+                            nodeAttributes.get(section + '.' + field);
+                          var error = nodeAttributesError &&
+                            nodeAttributesError[section + '.' + field];
+                          if (nodeAttributesSectionConfig.type === 'custom_hugepages') {
+                            return <customControls.custom_hugepages
+                              config={nodeAttributesSectionConfig}
+                              onChange={this.onNodeAttributesChange}
+                              name='hugepages.nova'
+                              error={error}
+                              disabled={restrictionsDisabledCheck.result}
+                            />;
+                          }
+                          return (
+                            <div className='row'>
+                              <div className='col-xs-12'>
+                                <div className='alert-danger'>
+                                  {_.compact([
+                                    restrictionsHideCheck.message,
+                                    restrictionsDisabledCheck.message
+                                  ]).join(' ')}
+                                </div>
+                                <Input
+                                  {...commonInputProps}
+                                  {...nodeAttributesSectionConfig}
+                                  name={section + '.' + field}
+                                  error={error}
+                                  disabled={restrictionsDisabledCheck.result}
+                                />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })}
+                      <button
+                        className='btn btn-success'
+                        onClick={this.saveNodeAttributes}
+                        disabled={
+                          !!nodeAttributesError ||
+                          !this.hasNodeAttributesChanges() ||
+                          this.state.actionInProgress
+                        }
                       >
                         {i18n('common.save_settings_button')}
                       </button>

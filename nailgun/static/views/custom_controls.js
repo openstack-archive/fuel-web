@@ -361,4 +361,58 @@ customControls.text_list = customControls.textarea_list = React.createClass({
   }
 });
 
+customControls.custom_hugepages = React.createClass({
+  render() {
+    var inputProps = {
+      placeholder: 'None',
+      error: this.props.error,
+      description: null,
+      type: 'text',
+      name: this.props.name,
+      disabled: this.props.disabled
+    };
+    return (
+      <div className='row huge-pages'>
+        <div className='col-xs-12'>
+          <label>
+            {i18n('dialog.show_node.nova_hugepages')}
+          </label>
+        </div>
+        <div className='row labels'>
+          <div className='col-xs-1'>
+            {i18n('common.size_label')}
+          </div>
+          <div className='col-xs-11'>
+            {i18n('common.count_label')}
+          </div>
+        </div>
+        <div className='contents'>
+          {_.map(
+            _.isEmpty(this.props.config.value) ? {'0M': 0} : this.props.config.value,
+            (value, name) => {
+              return (
+                <div className='row' key={name}>
+                  <div className='col-xs-1'>
+                    <p>
+                      {name}
+                    </p>
+                  </div>
+                  <div className='col-xs-11'>
+                    <Input
+                      {...inputProps}
+                      value={value}
+                      key={value}
+                      onChange={_.partialRight(this.props.onChange, name)}
+                    />
+                  </div>
+                </div>
+              );
+            }
+          )}
+        </div>
+      </div>
+    );
+  }
+});
+
 export default customControls;

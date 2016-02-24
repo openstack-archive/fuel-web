@@ -542,12 +542,58 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def inject_murano_settings(self, data):
         return data
 
+    def get_common_attrs(self, cluster):
+        attrs = super(DeploymentHASerializer90, self).get_common_attrs(cluster)
+
+        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
+            name = objects.Node.get_slave_name(node)
+            node_attrs = attrs['network_metadata']['nodes'][name]
+
+            node_attrs['nova_cpu_pinning_enabled'] = \
+                objects.NodeAttributes.is_nova_cpu_pinning_enabled(node)
+        return attrs
+
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
             return NeutronNetworkTemplateSerializer90
         else:
             return NeutronNetworkDeploymentSerializer90
+
+    def serialize_node(self, node, role):
+        serialized_node = super(
+            DeploymentHASerializer90, self).serialize_node(node, role)
+        self.generate_cpu_pinning(node, serialized_node)
+        return serialized_node
+
+    def generate_cpu_pinning(self, node, serialized_node):
+        pinning_info = objects.NodeAttributes.distribute_node_cpus(node)
+        cpu_pinning = pinning_info['components']
+
+        self._generate_nova_cpu_pinning(serialized_node, cpu_pinning['nova'])
+        self._generate_dpdk_cpu_pinning(serialized_node, cpu_pinning['dpdk'])
+
+    @staticmethod
+    def _generate_nova_cpu_pinning(serialized_node, cpus):
+        if not cpus:
+            return
+
+        serialized_node.setdefault('nova', {})['cpu_pinning'] = cpus
+
+    @staticmethod
+    def _generate_dpdk_cpu_pinning(serialized_node, cpus):
+        if not cpus:
+            return
+
+        ovs_core_mask = 1 << cpus[0]
+        ovs_pmd_core_mask = 0
+        for cpu in cpus[1:]:
+            ovs_pmd_core_mask |= 1 << cpu
+
+        serialized_node.setdefault('dpdk', {}).update({
+            'ovs_core_mask': hex(ovs_core_mask),
+            'ovs_pmd_core_mask': hex(ovs_pmd_core_mask)
+        })
 
 
 def get_serializer_for_cluster(cluster):

@@ -265,7 +265,9 @@ class TestDeploymentAttributesSerialization80(
     def setUp(self):
         super(TestDeploymentAttributesSerialization80, self).setUp()
         self.cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
+            release_kwargs={
+                'version': self.env_version,
+                'operating_system': consts.RELEASE_OS.ubuntu},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,

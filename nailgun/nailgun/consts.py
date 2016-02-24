@@ -80,7 +80,8 @@ CLUSTER_NET_PROVIDERS = Enum(
 
 NEUTRON_L23_PROVIDERS = Enum(
     'ovs',
-    'nsx'
+    'nsx',
+    'dpdkovs'
 )
 
 NEUTRON_SEGMENT_TYPES = Enum(

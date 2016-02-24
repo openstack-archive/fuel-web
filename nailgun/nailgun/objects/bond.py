@@ -16,12 +16,14 @@
 
 
 from nailgun.db.sqlalchemy import models
+from nailgun.objects.interface import DPDKMixin
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects import NIC
 from nailgun.objects.serializers.base import BasicSerializer
 
 
-class Bond(NailgunObject):
+class Bond(DPDKMixin, NailgunObject):
 
     model = models.NodeBondInterface
     serializer = BasicSerializer
@@ -49,6 +51,11 @@ class Bond(NailgunObject):
         instance.update(data)
         instance.offloading_modes = data.get('offloading_modes', {})
         return instance
+
+    @classmethod
+    def dpdk_available(cls, instance, dpdk_drivers):
+        return all(NIC.get_dpdk_driver(iface, dpdk_drivers)
+                   for iface in instance.slaves)
 
 
 class BondCollection(NailgunCollection):

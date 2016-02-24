@@ -21,7 +21,7 @@ from itertools import groupby
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
+from nailgun.objects import NailgunCollection, DeploymentGraph
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.plugin import PluginSerializer
 
@@ -33,7 +33,13 @@ class Plugin(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        # accidental because i've seen this way of tasks creation only in tests
+        accidental_deployemnt_tasks = data.pop('deployment_tasks', None)
         new_plugin = super(Plugin, cls).create(data)
+        if accidental_deployemnt_tasks is not None:
+            deployment_graph = DeploymentGraph.create(
+                accidental_deployemnt_tasks)
+            DeploymentGraph.attach_to_model(deployment_graph, new_plugin)
 
         # FIXME (vmygal): This is very ugly hack and it must be fixed ASAP.
         # Need to remove the syncing of plugin metadata from here.

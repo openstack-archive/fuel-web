@@ -611,7 +611,8 @@ class DeploymentTasksHandler(SingleHandler):
         return tasks
 
     @content
-    def PUT(self, obj_id):
+    def PUT(self, obj_id,
+            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
         """:returns:  Deployment tasks
 
         :http: * 200 (OK)
@@ -624,8 +625,10 @@ class DeploymentTasksHandler(SingleHandler):
             self.validator.validate_update,
             instance=obj
         )
-        self.single.update(obj, {'deployment_tasks': data})
-        return self.single.get_deployment_tasks(obj)
+        deployment_graph_instance = objects.DeploymentGraph.create(data)
+        objects.DeploymentGraph.attach_to_model(
+            deployment_graph_instance, obj, graph_type=graph_type)
+        return objects.DeploymentGraph.get_tasks(deployment_graph_instance)
 
     def POST(self, obj_id):
         """Creation of metadata disallowed

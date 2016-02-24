@@ -997,6 +997,70 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 transformations
             )
 
+    @mock.patch('nailgun.network.manager.NetworkManager.'
+                'get_supported_dpdk_drivers')
+    def test_vlan_schema_with_dpdk(self, drivers_mock):
+        drivers_mock.return_value = {
+            'driver_1': ['test_id:1', 'test_id:2']
+        }
+        cluster = self.create_env(segment_type='vlan')
+        self.add_nics_properties(cluster)
+        for node in cluster.nodes:
+            node.nic_interfaces[0].interface_properties.update(
+                {
+                    'dpdk': {'enabled': True, 'available': True},
+                    'pci_id': 'test_id:2'
+                }
+            )
+        serializer = get_serializer_for_cluster(cluster)
+        facts = serializer(AstuteGraph(cluster)).serialize(
+            cluster, cluster.nodes)
+
+        self.check_vlan_schema(facts, [
+            {'action': 'add-br',
+             'name': 'br-fw-admin'},
+            {'action': 'add-br',
+             'name': 'br-mgmt'},
+            {'action': 'add-br',
+             'name': 'br-storage'},
+            {'action': 'add-br',
+             'name': 'br-ex'},
+            {'action': 'add-br',
+             'name': 'br-floating',
+             'provider': 'ovs'},
+            {'action': 'add-patch',
+             'mtu': 65000,
+             'bridges': ['br-floating', 'br-ex'],
+             'provider': 'ovs'},
+            {'action': 'add-br',
+             'name': 'br-prv',
+             'provider': 'ovs',
+             'vendor_specific':
+                 {'datapath_type': 'netdev'}},
+            {'action': 'add-patch',
+             'mtu': 65000,
+             'bridges': ['br-prv', 'br-fw-admin'],
+             'provider': 'ovs'},
+            {'action': 'add-port',
+             'bridge': 'br-prv',
+             'provider': 'dpdkovs',
+             'name': 'eth0',
+             'vendor_specific':
+                 {'dpdk_driver': 'driver_1'}},
+            {'action': 'add-port',
+             'bridge': 'br-fw-admin',
+             'name': 'eth0'},
+            {'action': 'add-port',
+             'bridge': 'br-storage',
+             'name': 'eth0.102'},
+            {'action': 'add-port',
+             'bridge': 'br-mgmt',
+             'name': 'eth0.101'},
+            {'action': 'add-port',
+             'bridge': 'br-ex',
+             'name': 'eth1'},
+        ])
+
     def test_gre_schema(self):
         cluster = self.create_env(segment_type='gre')
         self.add_nics_properties(cluster)

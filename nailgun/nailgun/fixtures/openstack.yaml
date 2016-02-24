@@ -2008,3 +2008,7 @@
           regex:
             source: '^\d+$'
             error: "Incorrect value"
+    networks_metadata:
+      dpdk_drivers:
+      # TODO(fzhadaev): add correct list of supported devices and drivers
+          igb_uio: ["8086:1010", "8086:1012"]

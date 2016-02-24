@@ -15,6 +15,7 @@
 from mock import patch
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import DeploymentGraphTask
 from nailgun.orchestrator.tasks_templates import make_generic_task
 from nailgun.task.manager import OpenstackConfigTaskManager
 from nailgun.test import base
@@ -41,19 +42,23 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
         self.cluster = self.env.clusters[0]
         self.nodes = self.env.nodes
 
+        # this mock configuration is used to insert into DB
         self.refreshable_task = {
-            'id': 'test_task',
+            'task_name': 'test_task',
             'type': 'puppet',
             'groups': ['primary-controller', 'controller'],
             'refresh_on': ['keystone_config'],
             'parameters': {},
         }
 
-        self.release.deployment_tasks = self.release.deployment_tasks + [
-            self.refreshable_task
-        ]
-        self.db().flush()
+        # add refreshable deployment task
+        task = DeploymentGraphTask(**self.refreshable_task)
+        deployment_graph_assoc = self.release.deployment_graphs.first()
+        deployment_graph_assoc.deployment_graph.tasks.append(task)
 
+        self.db().flush()
+        # this field is expected to be added for compatibility
+        self.refreshable_task['id'] = 'test_task'
         self.env.create_openstack_config(
             cluster_id=self.cluster.id,
             configuration={

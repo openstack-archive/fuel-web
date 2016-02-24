@@ -119,7 +119,11 @@ default_messages = {
     "UnknownError": "Unknown error",
     "UnresolvableConflict": "Unresolvable conflict",
     "NodeNotBelongToCluster": "The Node doesn't belong to the Cluster",
-    "TaskBaseDeploymentNotAllowed": "The task-based deployment is not allowed"
+    "TaskBaseDeploymentNotAllowed": "The task-based deployment is not allowed",
+
+    # Deployment graph
+    "AllowedOnlyForDeploymentGraph": "This operation allowed only for the "
+                                     "DeploymentGraph entity"
 }
 
 

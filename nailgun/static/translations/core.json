@@ -79,7 +79,8 @@
                 "offline": "Offline",
                 "config": "VM Configurations",
                 "vms_config_msg": "You can define a custom virtual machine configuration in a JSON file.",
-                "invalid_vms_conf_msg": "Invalid JSON object"
+                "invalid_vms_conf_msg": "Invalid JSON object",
+                "numa_topology": "NUMA topology"
             },
             "cluster": {
                 "status": {

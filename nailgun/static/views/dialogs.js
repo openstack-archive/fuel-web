@@ -961,7 +961,7 @@ export var ShowNodeInfoDialog = React.createClass({
     var {node} = this.props;
     var meta = node.get('meta');
 
-    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
+    var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces', 'numa_topology'];
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
     if (this.state.VMsConf) groups.push('config');
 
@@ -982,7 +982,14 @@ export var ShowNodeInfoDialog = React.createClass({
             _.find(_.values(groupEntries), _.isArray) : [];
 
           // (morale): whitelisting renderable parameters
-          if (!_.contains(['cpu', 'disks', 'interfaces', 'memory', 'system'], group)) return null;
+          if (!_.contains([
+              'cpu', 'disks', 'interfaces', 'memory', 'system', 'numa_topology'
+            ], group)) {
+            return null;
+          }
+
+          var specificRenderAttributes = ['numa_topology'];
+          var isSpecificRenderAttribute = _.contains(specificRenderAttributes, group);
           return (
             <div className='panel panel-default' key={group}>
               <div
@@ -1010,7 +1017,7 @@ export var ShowNodeInfoDialog = React.createClass({
                 ref={'togglable_' + groupIndex}
               >
                 <div className='panel-body enable-selection'>
-                  {_.isArray(groupEntries) &&
+                  {_.isArray(groupEntries) && !isSpecificRenderAttribute &&
                     <div>
                       {_.map(groupEntries, (entry, entryIndex) => {
                         return (
@@ -1033,7 +1040,7 @@ export var ShowNodeInfoDialog = React.createClass({
                       })}
                     </div>
                   }
-                  {_.isPlainObject(groupEntries) &&
+                  {_.isPlainObject(groupEntries) && !isSpecificRenderAttribute &&
                     <div>
                       {_.map(groupEntries, (propertyValue, propertyName) => {
                         if (
@@ -1074,6 +1081,7 @@ export var ShowNodeInfoDialog = React.createClass({
                     !_.isPlainObject(groupEntries) &&
                     !_.isArray(groupEntries) &&
                     !_.isUndefined(groupEntries) &&
+                    !isSpecificRenderAttribute &&
                       <div>{groupEntries}</div>
                   }
                   {group === 'config' &&
@@ -1094,6 +1102,21 @@ export var ShowNodeInfoDialog = React.createClass({
                       >
                         {i18n('common.save_settings_button')}
                       </button>
+                    </div>
+                  }
+                  {group === 'numa_topology' &&
+                    <div className='numa-topology'>
+                      {_.map(groupEntries.numa_nodes, (numaNode, numaIndex) => {
+                        return (
+                          <div
+                            className='nested-object'
+                            key={'subentries_' + groupIndex + numaIndex}
+                          >
+                            {this.renderNodeInfo('CPUS', '[' + numaNode.cpus + ']')}
+                            {this.renderNodeInfo('Memory', utils.showMemorySize(numaNode.memory))}
+                          </div>
+                        );
+                      })}
                     </div>
                   }
                 </div>

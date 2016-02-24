@@ -652,10 +652,7 @@
                                 "sriov_numvfs": 0,
                                 "sriov_totalvfs": 2
                             },
-                            "dpdk": {
-                                "available": true,
-                                "enabled": false
-                            }
+                            "pci_id": "8086:100e"
                         }
                     },
                     {

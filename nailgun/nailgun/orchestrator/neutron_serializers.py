@@ -561,17 +561,9 @@ class NeutronNetworkDeploymentSerializer61(
         # Dance around Neutron segmentation type.
         if node.cluster.network_config.segmentation_type == \
                 consts.NEUTRON_SEGMENT_TYPES.vlan:
-            transformations.append(
-                cls.add_bridge('br-prv', provider='ovs'))
-
-            if not prv_base_ep:
-                prv_base_ep = 'br-aux'
-                transformations.append(cls.add_bridge(prv_base_ep))
-
-            transformations.append(cls.add_patch(
-                bridges=['br-prv', prv_base_ep],
-                provider='ovs',
-                mtu=65000))
+            cls.configure_private_network(node, nm,
+                                          transformations,
+                                          prv_base_ep, nets_by_ifaces)
 
         elif node.cluster.network_config.segmentation_type in \
                 (consts.NEUTRON_SEGMENT_TYPES.gre,
@@ -596,25 +588,30 @@ class NeutronNetworkDeploymentSerializer61(
                                 sub_iface, net['br_name']))
                     transformations.extend(tagged)
             elif iface.type == iface_types.bond:
-                # Add bonds and connect untagged networks' bridges to them.
-                # There can be no more than one untagged network on each bond.
-                bond_params = {
-                    'bond_properties': nm.get_lnx_bond_properties(iface),
-                    'interface_properties': nm.get_iface_properties(iface)
-                }
-                bond_ports = []
-                if iface.name in nets_by_ifaces:
-                    for net in nets_by_ifaces[iface.name]:
-                        if net['vlan_id']:
-                            bond_ports.append(cls.add_port(
-                                cls.subiface_name(iface.name, net),
-                                net['br_name']))
-                        else:
-                            bond_params['bridge'] = net['br_name']
-                transformations.append(cls.add_bond(iface, bond_params))
-                transformations.extend(bond_ports)
+                cls.add_bond_interface(transformations, iface, nets_by_ifaces,
+                                       nm)
 
         return transformations
+
+    @classmethod
+    def add_bond_interface(cls, transformations, iface, nets_by_ifaces, nm):
+        # Add bonds and connect untagged networks' bridges to them.
+        # There can be no more than one untagged network on each bond.
+        bond_params = {
+            'bond_properties': nm.get_lnx_bond_properties(iface),
+            'interface_properties': nm.get_iface_properties(iface)
+        }
+        bond_ports = []
+        if iface.name in nets_by_ifaces:
+            for net in nets_by_ifaces[iface.name]:
+                if net['vlan_id']:
+                    bond_ports.append(cls.add_port(
+                        cls.subiface_name(iface.name, net),
+                        net['br_name']))
+                else:
+                    bond_params['bridge'] = net['br_name']
+        transformations.append(cls.add_bond(iface, bond_params))
+        transformations.extend(bond_ports)
 
     @classmethod
     def generate_network_scheme(cls, node, networks):
@@ -774,6 +771,26 @@ class NeutronNetworkDeploymentSerializer61(
         else:
             phys = [netgroup['dev']]
         return phys
+
+    @classmethod
+    def configure_private_network(cls, node, nm, transformations, prv_base_ep,
+                                  nets_by_ifaces):
+        """This method configures transformations for private network.
+
+        It is used for VLAN segmentation type only.
+        """
+
+        transformations.append(cls.add_bridge(
+            consts.DEFAULT_BRIDGES_NAMES.br_prv,
+            provider=consts.NEUTRON_L23_PROVIDERS.ovs))
+        if not prv_base_ep:
+            prv_base_ep = consts.DEFAULT_BRIDGES_NAMES.br_aux
+            transformations.append(cls.add_bridge(prv_base_ep))
+
+        transformations.append(cls.add_patch(
+            bridges=[consts.DEFAULT_BRIDGES_NAMES.br_prv, prv_base_ep],
+            provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+            mtu=65000))
 
 
 class NeutronNetworkDeploymentSerializer70(
@@ -1401,6 +1418,61 @@ class NeutronNetworkTemplateSerializer80(
     pass
 
 
+class DPDKSerializerMixin90(object):
+    @classmethod
+    def generate_driver_information(cls, node, network_scheme, nm, networks):
+        network_scheme = super(
+            DPDKSerializerMixin90,
+            cls).generate_driver_information(node,
+                                             network_scheme,
+                                             nm, networks)
+
+        dpdk_interfaces = []
+        transformations = network_scheme['transformations']
+        for t in transformations:
+            action = t.get('action')
+            name = t.get('name', '')
+            if (action == 'add-port' and
+                    t.get('provider') == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
+                dpdk_interfaces.append(name)
+            if (action == 'add-bond' and
+                    t.get('provider') == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
+                dpdk_interfaces.extend(t.get('interfaces'))
+
+        if not node.cluster:
+            dpdk_drivers = {}
+        else:
+            dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
+                node.cluster.release)
+
+        for iface in node.nic_interfaces:
+            if iface.name not in dpdk_interfaces:
+                continue
+            driver = objects.NIC.get_dpdk_driver(iface, dpdk_drivers)
+            vendor_specific = network_scheme['interfaces'][iface.name].get(
+                'vendor_specific', {})
+            vendor_specific.update({'dpdk_driver': driver})
+            network_scheme['interfaces'][iface.name][
+                'vendor_specific'] = vendor_specific
+        return network_scheme
+
+    @classmethod
+    def network_provider_node_attrs(cls, cluster, node):
+        attrs = super(DPDKSerializerMixin90, cls).network_provider_node_attrs(
+            cluster, node)
+        if objects.Node.dpdk_enabled(node):
+            attrs['dpdk'] = {'enabled': True}
+        return attrs
+
+    @classmethod
+    def add_bond_interface(cls, transformations, iface, nets_by_ifaces, nm):
+        if objects.Bond.dpdk_enabled(iface):
+            # It's already added, so just skipping.
+            return
+        super(DPDKSerializerMixin90, cls).add_bond_interface(
+            transformations, iface, nets_by_ifaces, nm)
+
+
 class VendorSpecificMixin90(object):
     @classmethod
     def generate_vendor_specific_for_endpoint(cls, netgroup):
@@ -1427,9 +1499,44 @@ class SriovSerializerMixin90(object):
 
 class NeutronNetworkDeploymentSerializer90(
     VendorSpecificMixin90,
+    DPDKSerializerMixin90,
     SriovSerializerMixin90,
     NeutronNetworkDeploymentSerializer80
 ):
+    @classmethod
+    def configure_private_network(cls, node, nm, transformations, prv_base_ep,
+                                  nets_by_ifaces):
+
+        if not objects.Node.dpdk_enabled(node):
+            super(NeutronNetworkDeploymentSerializer90,
+                  cls).configure_private_network(
+                node, nm, transformations, prv_base_ep, nets_by_ifaces)
+            return
+
+        transformations.append(cls.add_bridge(
+            consts.DEFAULT_BRIDGES_NAMES.br_prv,
+            provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+            vendor_specific={'datapath_type': 'netdev'}))
+
+        for iface in node.nic_interfaces:
+            nets_by_ifaces.pop(iface.name, {})
+            if objects.NIC.dpdk_enabled(iface) and not iface.bond:
+                transformations.append(cls.add_port(
+                    name=iface.name,
+                    bridge=consts.DEFAULT_BRIDGES_NAMES.br_prv,
+                    provider=consts.NEUTRON_L23_PROVIDERS.dpdkovs
+                ))
+        for iface in node.bond_interfaces:
+            if objects.Bond.dpdk_enabled(iface):
+                nets_by_ifaces.pop(iface.name, {})
+                bond_params = {
+                    'bond_properties': nm.get_lnx_bond_properties(iface),
+                    'interface_properties': nm.get_iface_properties(iface),
+                    'bridge': consts.DEFAULT_BRIDGES_NAMES.br_prv,
+                    'provider': consts.NEUTRON_L23_PROVIDERS.dpdkovs
+                }
+                transformations.append(cls.add_bond(iface, bond_params))
+
     @classmethod
     def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
                                  prv_base_ep):
@@ -1457,6 +1564,7 @@ class NeutronNetworkDeploymentSerializer90(
 
 class NeutronNetworkTemplateSerializer90(
     VendorSpecificMixin90,
+    DPDKSerializerMixin90,
     SriovSerializerMixin90,
     NeutronNetworkTemplateSerializer80
 ):

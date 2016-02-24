@@ -670,7 +670,11 @@ var NodeInterface = React.createClass({
       value = convertToNullIfNaN(value);
     }
     var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
-    interfaceProperties[name] = value;
+    if (name === 'dpdk') {
+      interfaceProperties.dpdk.enabled = value;
+    } else {
+      interfaceProperties[name] = value;
+    }
     this.props.interface.set('interface_properties', interfaceProperties);
   },
   render() {
@@ -843,6 +847,17 @@ var NodeInterface = React.createClass({
 
           {interfaceProperties &&
             <div className='ifc-properties clearfix forms-box'>
+              {interfaceProperties.dpdk.available &&
+                <Input
+                  type='checkbox'
+                  label={i18n(ns + 'enable_dpdk')}
+                  checked={interfaceProperties.dpdk.enabled}
+                  name='dpdk'
+                  onChange={this.onInterfacePropertiesChange}
+                  disabled={locked}
+                  wrapperClassName='pull-left'
+                />
+              }
               <Input
                 type='text'
                 label={i18n(ns + 'mtu')}

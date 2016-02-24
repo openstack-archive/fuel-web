@@ -674,7 +674,13 @@ class NetworkManager(object):
     def get_default_interface_properties(cls):
         return {
             'mtu': None,
-            'disable_offloading': False
+            'disable_offloading': False,
+            'dpdk': {
+                'enabled': False,
+                'available': True
+            },
+            'pci_id': '1id',
+            'numa_node': 2
         }
 
     @classmethod

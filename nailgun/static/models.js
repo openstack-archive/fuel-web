@@ -910,6 +910,14 @@ models.Interface = BaseModel.extend({
       }
     }
 
+    if (interfaceProperties &&
+      interfaceProperties.dpdk.enabled &&
+      !(networks.any({name: 'private'}) && networks.length === 1) &&
+      attrs.networkingParameters.segmentation_type !== 'vlan'
+    ) {
+      errors.push(i18n(ns + 'dpdk_placement_error'));
+    }
+
     // check interface networks have the same vlan id
     var vlans = _.reject(networks.pluck('vlan_start'), _.isNull);
     if (_.uniq(vlans).length < vlans.length) errors.push(i18n(ns + 'networks_with_the_same_vlan'));

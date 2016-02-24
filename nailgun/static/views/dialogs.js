@@ -26,6 +26,7 @@ import dispatcher from 'dispatcher';
 import {Input, ProgressBar} from 'views/controls';
 import {backboneMixin, renamingMixin} from 'component_mixins';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
+import customControls from 'views/custom_controls';
 
 function getActiveDialog() {
   return app.dialog;
@@ -721,7 +722,8 @@ export var ShowNodeInfoDialog = React.createClass({
       title: i18n('dialog.show_node.default_dialog_title'),
       VMsConf: null,
       VMsConfValidationError: null,
-      hostnameChangingError: null
+      hostnameChangingError: null,
+      nodeAttributesConf: null
     };
   },
   goToConfigurationScreen(url) {
@@ -811,6 +813,40 @@ export var ShowNodeInfoDialog = React.createClass({
           });
         });
     }
+    if (this.props.node.get('pending_addition')) {
+      this.nodeAttributesModel = new models.NodeAttributes();
+      this.nodeAttributesModel.url = _.result(this.props.node, 'url') + '/attributes';
+      this.setState({actionInProgress: true});
+      this.nodeAttributesModel.fetch()
+        .always(() => {
+          this.setState({
+            actionInProgress: false,
+            nodeAttributesConf: this.nodeAttributesModel
+          });
+        });
+    }
+  },
+  onNovaHugePagesChange(name, value, hugePageValue) {
+    var newAttributtes = _.clone(this.state.nodeAttributesConf.attributes);
+    var splittedName = name.split('.');
+    var hugePagesValues = newAttributtes[splittedName[0]][splittedName[1]].value;
+    hugePagesValues[hugePageValue] = value;
+    this.nodeAttributesModel.set(newAttributtes);
+    this.setState({
+      nodeAttributesConf: this.nodeAttributesModel
+    });
+  },
+  onNodeAttributesChange(name, value) {
+    var newAttributtes = _.clone(this.state.nodeAttributesConf.attributes);
+    var splittedName = name.split('.');
+    newAttributtes[splittedName[0]][splittedName[1]].value = value;
+    this.nodeAttributesModel.set(newAttributtes);
+    this.setState({
+      nodeAttributesConf: this.nodeAttributesModel
+    });
+  },
+  saveNodeAttributes() {
+    this.state.nodeAttributesConf.save();
   },
   setDialogTitle() {
     var name = this.props.node && this.props.node.get('name');
@@ -960,10 +996,27 @@ export var ShowNodeInfoDialog = React.createClass({
   renderNodeHardware() {
     var {node} = this.props;
     var meta = node.get('meta');
-
     var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
+    var nodeAttributes, sortedAttributes, attributeFields, commonInputProps;
     if (this.state.VMsConf) groups.push('config');
+    if (this.state.nodeAttributesConf) {
+      groups.push('attributes');
+      nodeAttributes = this.state.nodeAttributesConf.attributes;
+      sortedAttributes = _.sortBy(
+        _.keys(nodeAttributes), (name) => {
+          return this.state.nodeAttributesConf.get(name + '.metadata.weight');
+        }
+      );
+      attributeFields = ['nova', 'dpdk'];
+      commonInputProps = {
+        placeholder: 'None',
+        className: 'form-control',
+        onChange: this.onNodeAttributesChange,
+        error: null,
+        type: 'text'
+      };
+    }
 
     var sortOrder = {
       disks: ['name', 'model', 'size'],
@@ -982,7 +1035,11 @@ export var ShowNodeInfoDialog = React.createClass({
             _.find(_.values(groupEntries), _.isArray) : [];
 
           // (morale): whitelisting renderable parameters
-          if (!_.contains(['cpu', 'disks', 'interfaces', 'memory', 'system'], group)) return null;
+          if (!_.contains([
+            'cpu', 'disks', 'interfaces', 'memory', 'system', 'attributes'
+          ], group)) {
+            return null;
+          }
           return (
             <div className='panel panel-default' key={group}>
               <div
@@ -1091,6 +1148,38 @@ export var ShowNodeInfoDialog = React.createClass({
                         onClick={this.saveVMsConf}
                         disabled={this.state.VMsConfValidationError ||
                           this.state.actionInProgress}
+                      >
+                        {i18n('common.save_settings_button')}
+                      </button>
+                    </div>
+                  }
+                  {group === 'attributes' &&
+                    <div className='node-attributes'>
+                      {_.map(sortedAttributes, (section) => {
+                        return _.map(attributeFields, (field) => {
+                          if (nodeAttributes[section][field].type === 'custom_hugepages') {
+                            return <customControls.custom_hugepages
+                              config={nodeAttributes[section][field]}
+                              onChange={this.onNovaHugePagesChange}
+                              name='hugepages.nova'
+                            />;
+                          }
+                          return (
+                            <div className='row'>
+                              <div className='col-xs-12'>
+                                <Input
+                                  {...commonInputProps}
+                                  {...nodeAttributes[section][field]}
+                                  name={section + '.' + field}
+                                />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })}
+                      <button
+                        className='btn btn-success'
+                        onClick={this.saveNodeAttributes}
                       >
                         {i18n('common.save_settings_button')}
                       </button>

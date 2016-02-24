@@ -258,7 +258,9 @@ class TestHandlers(BaseIntegrationTest):
                      'sriov_totalvfs': 8,
                      'available': True,
                      'pci_id': '1234:5678'
-                 }
+                 },
+                 'pci_id': '8765:4321',
+                 'numa_node': 1
              }}]
         )
         node_data = {'mac': node['mac'], 'meta': new_meta, 'is_agent': True}
@@ -289,8 +291,57 @@ class TestHandlers(BaseIntegrationTest):
                 'pci_id': '1234:5678',
                 'physnet': 'physnet2'
             })
+        self.assertEqual(
+            resp_nic['interface_properties']['dpdk'],
+            {
+                'enabled': False,
+                'available': False
+            })
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
+
+    @patch('nailgun.objects.Release.get_supported_dpdk_drivers')
+    def test_update_dpdk_availability(self, drivers_mock):
+        drivers_mock.return_value = {
+            'driver_1': ['8765:4321']
+        }
+        cluster = self.env.create_cluster()
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
+             'state': 'up'}])
+        node = self.env.create_node(api=True, meta=meta,
+                                    cluster_id=cluster['id'])
+        new_meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(new_meta, [
+            {'name': 'eth0',
+             'mac': '00:00:00:00:00:00',
+             'current_speed': 10,
+             'max_speed': 10,
+             'state': 'up',
+             'interface_properties': {
+                 'pci_id': '8765:4321',
+                 'numa_node': 1
+             }}]
+        )
+        node_data = {'mac': node['mac'], 'meta': new_meta, 'is_agent': True}
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(node_data),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json_body), 1)
+        resp_nic = resp.json_body[0]
+        self.assertEqual(
+            resp_nic['interface_properties']['dpdk'],
+            {
+                'enabled': False,
+                'available': True
+            })
 
     def test_NIC_offloading_modes(self):
         meta = self.env.default_metadata()

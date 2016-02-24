@@ -24,8 +24,10 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models import ClusterPluginsDeploymentGraph
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableList
+from nailgun.db.sqlalchemy.models import PluginDeploymentGraph
 
 
 class ClusterPlugins(Base):
@@ -50,6 +52,11 @@ class ClusterPlugins(Base):
     attributes = Column(MutableDict.as_mutable(JSON),
                         nullable=False,
                         server_default='{}')
+
+    deployment_graphs = relationship(
+        "ClusterPluginsDeploymentGraph",
+        back_populates="cluster_plugin",
+        lazy="dynamic")
 
 
 class Plugin(Base):
@@ -85,16 +92,22 @@ class Plugin(Base):
         MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     components_metadata = Column(
         MutableList.as_mutable(JSON), server_default='[]')
-    deployment_tasks = Column(
-        MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     # TODO(apopovych): To support old plugins versions we need separate
     # tasks which runs directly during deployment(stored in `deployment_tasks`
     # attribute) and which executes before/after of deployment process
     # (also called pre/post deployment tasks and stored in `tasks`
     # attribute). In future `deployment_tasks` and `tasks` should have
     # one format and this attribute will be removed.
+    # Will be deprecated since plugins v5
+
+    # (ikutukov) tasks yaml will stay here till fuel EOL to support upgrades
+    # with old environments and old plugins.
     tasks = Column(
         MutableList.as_mutable(JSON), server_default='[]', nullable=False)
+    deployment_graphs = relationship(
+        "PluginDeploymentGraph",
+        back_populates="plugin",
+        lazy="dynamic")
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")

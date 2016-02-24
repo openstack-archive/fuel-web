@@ -189,10 +189,11 @@ def make_puppet_task(uids, task):
 def make_generic_task(uids, task):
     task = {
         'id': task.get('id'),
+        'task_name': task.get('task_name'),
         'type': task['type'],
         'uids': uids,
         'fail_on_error': task.get('fail_on_error', True),
-        'parameters': task['parameters']
+        'parameters': task.get('parameters', {})
     }
 
     task['parameters'].setdefault('cwd', '/')

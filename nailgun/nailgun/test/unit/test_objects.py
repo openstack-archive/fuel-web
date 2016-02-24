@@ -41,6 +41,7 @@ from nailgun.utils import reverse
 from nailgun.errors import errors
 
 from nailgun import consts
+from nailgun import plugins
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NodeBondInterface
@@ -1244,10 +1245,14 @@ class TestClusterObject(BaseTestCase):
         depl_task_id = deployment_tasks[0]['id']
         self.assertIn(depl_task_id, tasks_ids)
 
-        default_tasks_count = len(cluster.release.deployment_tasks)
-        self.assertEqual(len(cluster_deployment_tasks),
-                         default_tasks_count +
-                         len(cluster.plugins[0].deployment_tasks))
+        default_tasks_count = len(objects.Release.get_deployment_tasks(cluster.release))
+        plugin_tasks_count = len(plugins.adapters.wrap_plugin(
+                cluster.plugins[0]
+            ).deployment_tasks)
+
+        self.assertEqual(
+            len(cluster_deployment_tasks),
+            default_tasks_count + plugin_tasks_count)
 
     def test_get_deployment_tasks_overlapping_error(self):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()

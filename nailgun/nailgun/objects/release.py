@@ -25,6 +25,7 @@ import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
+from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
@@ -53,7 +54,13 @@ class Release(NailgunObject):
         # roles array. since fuel 7.0 we don't use it anymore, and
         # we don't require it even for old releases.
         data.pop("roles", None)
-        return super(Release, cls).create(data)
+        deployment_tasks = data.pop("deployment_tasks", None)
+        release_obj = super(Release, cls).create(data)
+
+        if deployment_tasks:
+            deployment_graph = DeploymentGraph.create(deployment_tasks)
+            DeploymentGraph.attach_to_model(deployment_graph, release_obj)
+        return release_obj
 
     @classmethod
     def update(cls, instance, data):
@@ -67,7 +74,13 @@ class Release(NailgunObject):
         # roles array. since fuel 7.0 we don't use it anymore, and
         # we don't require it even for old releases.
         data.pop("roles", None)
-        return super(Release, cls).update(instance, data)
+        deployment_tasks = data.pop("deployment_tasks", None)
+
+        release_obj = super(Release, cls).update(instance, data)
+        if deployment_tasks:
+            deployment_graph = DeploymentGraph.create(deployment_tasks)
+            DeploymentGraph.attach_to_model(deployment_graph, release_obj)
+        return release_obj
 
     @classmethod
     def update_role(cls, instance, role):
@@ -137,17 +150,34 @@ class Release(NailgunObject):
                 StrictVersion(consts.FUEL_MULTIPLE_FLOATING_IP_RANGES))
 
     @classmethod
-    def get_deployment_tasks(cls, instance):
-        """Get deployment graph based on release version."""
-        env_version = instance.environment_version
-        if instance.deployment_tasks:
-            return instance.deployment_tasks
-        elif env_version.startswith('5.0'):
-            return yaml.load(graph_configuration.DEPLOYMENT_50)
-        elif env_version.startswith('5.1') or env_version.startswith('6.0'):
-            return yaml.load(graph_configuration.DEPLOYMENT_51_60)
+    def get_deployment_tasks(cls, instance,
+                             graph_type=consts.DEPLOYMENT_GRAPH_TYPES.default):
+        """Get deployment graph based on release version.
 
-        return []
+        :param instance: Release instance
+        :type instance: models.Release
+        :returns: list of deployment tasks
+        :rtype: list
+        """
+        env_version = instance.environment_version
+        deployment_graph = DeploymentGraph.get_for_model(instance, graph_type)
+        # fixme(ikutukov) in theory this code could be simpler
+        if not deployment_graph:
+            if graph_type == consts.DEPLOYMENT_GRAPH_TYPES.default:
+                # upload default graph
+                if env_version.startswith('5.0'):
+                    deployment_graph = DeploymentGraph.create(
+                        yaml.load(graph_configuration.DEPLOYMENT_50))
+                elif env_version.startswith('5.1') or env_version.startswith('6.0'):
+                    deployment_graph = DeploymentGraph.create(
+                        yaml.load(graph_configuration.DEPLOYMENT_51_60))
+                else:
+                    return []
+            else:
+                return []
+            DeploymentGraph.attach_to_model(
+                deployment_graph, instance, graph_type=graph_type)
+        return DeploymentGraph.get_tasks(deployment_graph)
 
     @classmethod
     def get_min_controller_count(cls, instance):

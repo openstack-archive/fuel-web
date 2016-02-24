@@ -16,13 +16,16 @@
 
 import mock
 import os
+
 from oslo_serialization import jsonutils
 from six import StringIO
 import yaml
 
+from nailgun import objects
 from nailgun.db.sqlalchemy import fixman
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.test.base import DeploymentTasksTestMixin
 from nailgun.test.base import BaseIntegrationTest
 
 
@@ -43,9 +46,10 @@ class TestExtensionsCallback(BaseIntegrationTest):
         self.assertEqual(self.callback_mock.call_count, 8)
 
 
-class TestFixture(BaseIntegrationTest):
+class TestFixture(BaseIntegrationTest, DeploymentTasksTestMixin):
 
     fixtures = ['admin_network', 'sample_environment']
+    maxDiff = None
 
     def test_upload_working(self):
         check = self.db.query(Node).all()
@@ -59,9 +63,11 @@ class TestFixture(BaseIntegrationTest):
             deployment_tasks = yaml.load(f)
 
         fixman.load_fake_deployment_tasks()
-
         for rel in self.db.query(Release).all():
-            self.assertEqual(rel.deployment_tasks, deployment_tasks)
+            deployment_graph = objects.DeploymentGraph.get_for_model(rel)
+            db_deployment_tasks = objects.DeploymentGraph.get_tasks(
+                deployment_graph)
+            self._compare_tasks(deployment_tasks, db_deployment_tasks)
 
     def test_json_fixture(self):
         data = '''[{

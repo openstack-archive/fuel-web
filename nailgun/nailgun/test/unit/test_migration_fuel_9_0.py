@@ -17,11 +17,18 @@ import datetime
 import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
+from sqlalchemy.exc import DataError, IntegrityError
 
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
+from nailgun.objects import Cluster
+from nailgun.objects import ClusterCollection
+from nailgun.objects import PluginCollection
+from nailgun.objects import Release
+from nailgun.objects import ReleaseCollection
+from nailgun.plugins.adapters import wrap_plugin
 from nailgun.test import base
 
 _prepare_revision = '43b2cb64dae6'
@@ -34,6 +41,62 @@ def setup_module():
     prepare()
     alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
 
+JSON_TASKS = [
+    {
+        'id': 'post_deployment_end',
+        'type': 'stage',
+        'requires': ['post_deployment_start']
+    },
+    {
+        'id': 'primary-controller',
+        'parameters': {'strategy': {'type': 'one_by_one'}},
+        'required_for': ['deploy_end'],
+        'requires': ['deploy_start'],
+        'role': ['primary-controller'],  # legacy notation should be converted
+                                         # to `roles`
+        'type': 'group'
+    },
+    {
+        'id': 'cross-dep-test',
+        'type': 'puppet',
+        'cross-depended-by': ['a', 'b'],
+        'cross-depends': ['c', 'd']
+    }
+]
+
+JSON_TASKS_AFTER_DB = [
+    {
+        'task_name': 'post_deployment_end',
+        'id': 'post_deployment_end',
+        'type': 'stage',
+        'requires': ['post_deployment_start'],
+        'version': '1.0.0'
+
+    },
+    {
+        'task_name': 'primary-controller',
+        'id': 'primary-controller',
+        'parameters': {'strategy': {'type': 'one_by_one'}},
+        'required_for': ['deploy_end'],
+        'requires': ['deploy_start'],
+        'roles': ['primary-controller'],
+        'role': ['primary-controller'],  # legacy notation should be converted
+                                         # to `roles`
+        'type': 'group',
+        'version': '1.0.0'
+    },
+    {
+        'task_name': 'cross-dep-test',
+        'id': 'cross-dep-test',
+        'type': 'puppet',
+        'cross_depended_by': ['a', 'b'],
+        'cross-depended-by': ['a', 'b'],
+        'cross_depends': ['c', 'd'],
+        'cross-depends': ['c', 'd'],
+        'version': '1.0.0'
+    }
+]
+
 
 def prepare():
     meta = base.reflect_db_metadata()
@@ -45,6 +108,7 @@ def prepare():
             'version': '2015.1-8.0',
             'operating_system': 'ubuntu',
             'state': 'available',
+            'deployment_tasks': jsonutils.dumps(JSON_TASKS),
             'roles': jsonutils.dumps([
                 'controller',
                 'compute',
@@ -141,6 +205,7 @@ def prepare():
             'net_provider': 'neutron',
             'grouping': 'roles',
             'fuel_version': '8.0',
+            'deployment_tasks': jsonutils.dumps(JSON_TASKS)
         }])
 
     db.execute(
@@ -228,6 +293,7 @@ def prepare():
             'releases': jsonutils.dumps([
                 {'repository_path': 'repositories/ubuntu'}
             ]),
+            'deployment_tasks': jsonutils.dumps(JSON_TASKS),
             'fuel_version': jsonutils.dumps(['8.0']),
             'network_roles_metadata': jsonutils.dumps([{
                 'id': 'admin/vip',
@@ -456,3 +522,169 @@ class TestRemoveWizardMetadata(base.BaseAlembicMigrationTest):
     def test_wizard_metadata_does_not_exist_in_releases(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('wizard_metadata', releases_table.c)
+
+
+class TestDeploymentGraphMigration(base.BaseAlembicMigrationTest):
+
+    def setUp(self):
+        self.meta = base.reflect_db_metadata()
+
+    def _insert_deployment_graph(self):
+        result = db.execute(
+            self.meta.tables['deployment_graphs'].insert(),
+            [{'verbose_name': 'test_graph'}]
+        )
+        db.commit()
+        deployment_graph_id = result.inserted_primary_key[0]
+        return deployment_graph_id
+
+    def test_deployment_graph_creation(self):
+        result = db.execute(
+            self.meta.tables['deployment_graphs'].insert(),
+            [{'verbose_name': 'test_graph'}]
+        )
+        db.commit()
+        graph_key = result.inserted_primary_key[0]
+        result = db.execute(
+            sa.select([
+                self.meta.tables['deployment_graphs']
+            ]))
+        self.assertIn((graph_key, u'test_graph'), list(result))
+
+    def test_deployment_graph_tasks_creation_success(self):
+        self.maxDiff = None
+        deployment_graph_id = self._insert_deployment_graph()
+        tasks = [
+            {
+                'task_name': 'task1',
+                'deployment_graph_id': deployment_graph_id,
+                'version': '2.0.0',
+                'type': 'puppet',
+                'condition': None,
+                'test_post': None,
+                'test_pre': None,
+                'requires': ['a', 'b'],
+                'required_for': ['c', 'd'],
+                'refresh_on': ['r1', 'r2'],
+                'cross_depends': jsonutils.dumps(
+                    [{'name': 'a'}, {'name': 'b'}]),
+                'cross_depended_by': jsonutils.dumps(
+                    [{'name': 'c'}, {'name': 'd'}]),
+                'reexecute_on': ["nailgun_event1", "nailgun_event2"],
+                'groups': ['group1', 'group2'],
+                'roles': ['role1', 'role2'],
+                'tasks': ['t1', 't2'],
+                'parameters': jsonutils.dumps({'param1': 'val1'}),
+                '_custom': jsonutils.dumps({}),
+            },
+            {
+                'task_name': 'task2',
+                'deployment_graph_id': deployment_graph_id,
+                'version': '2.0.0',
+                'type': 'puppet',
+                'condition': None,
+                'test_post': None,
+                'test_pre': None,
+                'requires': ['task1'],
+                'required_for': ['c', 'd'],
+                'refresh_on': [],
+                'cross_depends': jsonutils.dumps(
+                    [{'name': 'task1'}]),
+                'cross_depended_by': jsonutils.dumps(
+                    [{'name': 'c'}, {'name': 'd'}]),
+                'reexecute_on': ["nailgun_event3", "nailgun_event4"],
+                'groups': ['group3', 'group4'],
+                'roles': ['role3', 'role4'],
+                'tasks': [],
+                'parameters': jsonutils.dumps({'param2': 'val2'}),
+                '_custom': jsonutils.dumps({}),
+            }
+        ]
+        db.execute(self.meta.tables['deployment_graph_tasks'].insert(), tasks)
+        db.commit()
+
+        result = db.execute(
+            sa.select([self.meta.tables['deployment_graph_tasks']]).where(
+                sa.text(
+                    'deployment_graph_tasks.deployment_graph_id = {0}'.format(
+                        deployment_graph_id)
+                )
+            )
+        )
+
+        db_tasks = [dict(r) for r in result]
+        for d in db_tasks:
+            d.pop('id', None)
+
+        self.assertItemsEqual(tasks, db_tasks)
+
+    def test_minimal_task_creation_success(self):
+        deployment_graph_id = self._insert_deployment_graph()
+        db.execute(
+            self.meta.tables['deployment_graph_tasks'].insert(),
+            {
+                'deployment_graph_id': deployment_graph_id,
+                'task_name': 'minimal task',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.puppet
+            },
+        )
+
+    def test_task_with_missing_required_fields_fail(self):
+        deployment_graph_id = self._insert_deployment_graph()
+        with self.assertRaisesRegexp(
+            IntegrityError,
+            'null value in column "type" violates not-null constraint'
+        ):
+            db.execute(
+                self.meta.tables['deployment_graph_tasks'].insert(),
+                {
+                    'deployment_graph_id': deployment_graph_id,
+                    'task_name': 'minimal task'
+                })
+        db.rollback()
+        with self.assertRaisesRegexp(
+            IntegrityError,
+            'null value in column "task_name" violates not-null constraint'
+        ):
+            db.execute(
+                self.meta.tables['deployment_graph_tasks'].insert(),
+                {
+                    'deployment_graph_id': deployment_graph_id,
+                    'type': consts.ORCHESTRATOR_TASK_TYPES.puppet
+                })
+        db.rollback()
+
+    def test_task_with_wrong_type_fail(self):
+        deployment_graph_id = self._insert_deployment_graph()
+        with self.assertRaisesRegexp(
+            DataError,
+            'invalid input value for enum deployment_graph_tasks_type'
+        ):
+            db.execute(
+                self.meta.tables['deployment_graph_tasks'].insert(),
+                {
+                    'deployment_graph_id': deployment_graph_id,
+                    'type': 'NOT EXISTING TYPE'
+                })
+        db.rollback()
+
+    def test_release_graphs_is_created_from_json_tasks(self):
+        release_instance = ReleaseCollection.filter_by(
+            None, name='test_name').first()
+        tasks = Release.get_deployment_tasks(release_instance)
+        self.assertItemsEqual(tasks, JSON_TASKS_AFTER_DB)
+
+    def test_plugins_graphs_is_created_from_json_tasks(self):
+        plugin_instance = PluginCollection.filter_by(
+            None, name='test_plugin_a').first()
+        tasks = wrap_plugin(plugin_instance).deployment_tasks
+        for task in tasks:
+            # remove plugin adapter side-effect
+            task.get('parameters', {}).pop('cwd', None)
+        self.assertItemsEqual(tasks, JSON_TASKS_AFTER_DB)
+
+    def test_cluster_graphs_is_created_from_json_tasks(self):
+        cluster_instance = ClusterCollection.filter_by(
+            None, name='test_env').first()
+        tasks = Cluster.get_own_deployment_tasks(cluster_instance)
+        self.assertItemsEqual(tasks, JSON_TASKS_AFTER_DB)

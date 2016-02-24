@@ -34,6 +34,7 @@ from nailgun.errors import errors
 from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.logger import logger
+from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.plugin import ClusterPlugins
@@ -161,12 +162,18 @@ class Cluster(NailgunObject):
             enabled_editable_attributes = enabled_core_attributes['editable']
 
         data["fuel_version"] = settings.VERSION["release"]
+        deployment_tasks = data.pop("deployment_tasks", None)
+
         cluster = super(Cluster, cls).create(data)
         cls.create_default_group(cluster)
 
         cls.create_attributes(cluster, enabled_editable_attributes)
         cls.create_vmware_attributes(cluster)
         cls.create_default_extensions(cluster)
+
+        if deployment_tasks:
+            deployment_graph = DeploymentGraph.create(deployment_tasks)
+            DeploymentGraph.attach_to_model(deployment_graph, cluster)
 
         try:
             net_manager = cls.get_network_manager(cluster)
@@ -538,8 +545,14 @@ class Cluster(NailgunObject):
 
         nodes = data.pop("nodes", None)
         changes = data.pop("changes", None)
+        deployment_tasks = data.pop("deployment_tasks", None)
 
         super(Cluster, cls).update(instance, data)
+
+        if deployment_tasks:
+            deployment_graph = DeploymentGraph.create(deployment_tasks)
+            DeploymentGraph.attach_to_model(deployment_graph, instance)
+
         if nodes is not None:
             cls.update_nodes(instance, nodes)
         if changes is not None:
@@ -963,7 +976,17 @@ class Cluster(NailgunObject):
         return node_group
 
     @classmethod
-    def get_deployment_tasks(cls, instance):
+    def get_own_deployment_tasks(
+            cls, instance, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+        """Return only cluster own deployment graph."""
+        cluster_deployment_graph = DeploymentGraph.get_for_model(
+            instance, graph_type=graph_type)
+        if cluster_deployment_graph:
+            return DeploymentGraph.get_tasks(cluster_deployment_graph)
+
+    @classmethod
+    def get_deployment_tasks(
+            cls, instance, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
         """Return deployment graph for cluster based on cluster attributes
 
             - if there is deployment_graph defined by user - use it instead of
@@ -971,14 +994,19 @@ class Cluster(NailgunObject):
             - else return default for release and enabled plugins
               deployment graph
         """
-        if instance.deployment_tasks:
-            return instance.deployment_tasks
-        else:
-            release_deployment_tasks = \
-                Release.get_deployment_tasks(instance.release)
-            plugin_deployment_tasks = \
-                PluginManager.get_plugins_deployment_tasks(instance)
-            return release_deployment_tasks + plugin_deployment_tasks
+        cluster_deployment_tasks = cls.get_own_deployment_tasks(
+            instance, graph_type=graph_type)
+
+        if cluster_deployment_tasks is not None:
+            return cluster_deployment_tasks
+
+        release_deployment_tasks = Release.get_deployment_tasks(
+            instance.release, graph_type=graph_type)
+        # graph types not supported by plugin manager interface yet
+        plugin_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
+            instance)
+
+        return release_deployment_tasks + plugin_deployment_tasks
 
     @classmethod
     def get_refreshable_tasks(cls, instance, filter_by_configs=None):

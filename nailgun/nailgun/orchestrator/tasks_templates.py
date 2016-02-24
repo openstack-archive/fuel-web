@@ -192,7 +192,7 @@ def make_generic_task(uids, task):
         'type': task['type'],
         'uids': uids,
         'fail_on_error': task.get('fail_on_error', True),
-        'parameters': task['parameters']
+        'parameters': task.get('parameters', {})
     }
 
     task['parameters'].setdefault('cwd', '/')

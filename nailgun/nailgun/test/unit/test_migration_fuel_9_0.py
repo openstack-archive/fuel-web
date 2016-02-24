@@ -438,3 +438,10 @@ class TestNodeAttributesMigration(base.BaseAlembicMigrationTest):
             db_values = db.execute(sa.select([column])).fetchone()
             for db_value in db_values:
                 self.assertEqual(db_value, '{}')
+
+
+class TestRemoveWizardMetadata(base.BaseAlembicMigrationTest):
+
+    def test_wizard_metadata_does_not_exist_in_releases(self):
+        releases_table = self.meta.tables['releases']
+        self.assertNotIn('wizard_metadata', releases_table.c)

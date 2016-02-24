@@ -183,6 +183,18 @@ class Release(NailgunObject):
         return components
 
     @classmethod
+    def get_supported_dpdk_drivers(cls, instance):
+        """Get all supported DPDK drivers
+
+        Returns dictionary, where keys are names of supported drivers and
+        values are lists of supported device IDs for each driver.
+
+        :param instance: Release instance
+        :return: supported DPDK drivers and devices
+        """
+        return instance.networks_metadata.get('dpdk_drivers', {})
+
+    @classmethod
     def _check_relation(cls, a, b, relation):
         """Helper function to check commutative property for relations"""
         return (cls._contain(a.get(relation, []), b['name']) and not

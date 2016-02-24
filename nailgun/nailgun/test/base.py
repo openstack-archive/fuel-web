@@ -1518,6 +1518,26 @@ def fake_tasks(fake_rpc=True,
     return wrapper
 
 
+class DeploymentTasksTestMixin(object):
+
+    def _compare_tasks(self, reference, result):
+        """Compare deployment tasks.
+
+        Considering legacy format and compatible validator output with extra
+        fields where legacy fields is converted to new syntax.
+
+        :param reference: list of tasks
+        :type reference: list
+        :param result: list of tasks
+        :type result: list
+        """
+        reference.sort(key=lambda r: r['id'])
+        result.sort(key=lambda r: r['id'])
+        for ref, res in six.moves.zip(reference, result):
+            for field in ref:
+                self.assertEqual(ref.get(field), (res or {}).get(field))
+
+
 # this method is for development and troubleshooting purposes
 def datadiff(data1, data2, branch, p=True):
     def iterator(data1, data2):

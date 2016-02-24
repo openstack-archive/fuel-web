@@ -245,11 +245,11 @@ class BaseIntegrationLoadTestCase(BaseLoadTestCase):
     def tearDown(self):
         super(BaseIntegrationLoadTestCase, self).tearDown()
         exec_time = self.stop_time - self.start_time
-        self.assertTrue(exec_time <= self.total_time,
-                        "Execution time: {exec_time} is greater, "
-                        "than expected: {max_exec_time}".format(
-                            exec_time=exec_time,
-                            max_exec_time=self.total_time))
+        self.assertLessEqual(exec_time, self.total_time,
+                             "Execution time: {exec_time} is greater, "
+                             "than expected: {max_exec_time}".format(
+                                 exec_time=exec_time,
+                                 max_exec_time=self.total_time))
         self.db.remove()
 
 

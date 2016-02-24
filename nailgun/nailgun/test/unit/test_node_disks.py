@@ -184,7 +184,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         self.assertGreater(len(disks), 0)
         for disk in disks:
-            self.assertTrue(type(disk['size']) == int)
+            self.assertEqual(type(disk['size']), int)
             self.assertGreaterEqual(disk['size'], 0)
             self.assertEqual(len(disk['volumes']), 0)
 
@@ -490,7 +490,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
             volume = filter(
                 lambda volume: volume['name'] == volume_id, volumes)[0]
             # min_size
-            self.assertTrue(type(volume['min_size']) == int)
+            self.assertEqual(type(volume['min_size']), int)
             self.assertGreaterEqual(volume['min_size'], 0)
             # and label
             self.assertTrue(type(volume['label']) in (str, unicode))
@@ -607,7 +607,7 @@ class TestVolumeManager(BaseIntegrationTest):
         return self.env.nodes[-1]
 
     def non_zero_size(self, size):
-        self.assertTrue(type(size) == int)
+        self.assertEqual(type(size), int)
         self.assertGreater(size, 0)
 
     def os_size(self, disks, with_lvm_meta=True):

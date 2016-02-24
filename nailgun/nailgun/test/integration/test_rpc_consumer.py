@@ -864,7 +864,7 @@ class TestClusterUpdate(BaseReciverTestCase):
         self.assertEqual(self.task.status, consts.TASK_STATUSES.ready)
         self.assertEqual(self.cluster.status,
                          consts.CLUSTER_STATUSES.operational)
-        self.assertEqual(self.cluster.pending_release_id, None)
+        self.assertIsNone(self.cluster.pending_release_id)
 
     def test_node_deploy_resp_node_error(self):
         node1, node2 = self.env.nodes

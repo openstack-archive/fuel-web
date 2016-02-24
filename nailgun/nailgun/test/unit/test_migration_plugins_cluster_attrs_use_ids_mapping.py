@@ -64,5 +64,5 @@ class TestMigrationPluginsClusterAttrs(BaseTestCase):
         connection = self.db.connection()
         upgrade_6_0_to_6_1_plugins_cluster_attrs_use_ids_mapping(connection)
         plugin_attr = self.cluster.attributes.editable['some_plugin_name']
-        self.assertEqual(plugin_attr['metadata']['plugin_id'], None)
+        self.assertIsNone(plugin_attr['metadata']['plugin_id'])
         self.assertNotIn('plugin_version', plugin_attr['metadata'])

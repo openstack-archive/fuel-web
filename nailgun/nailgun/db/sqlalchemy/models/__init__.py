@@ -54,3 +54,16 @@ from nailgun.db.sqlalchemy.models.plugins import ClusterPlugins
 from nailgun.db.sqlalchemy.models.plugins import Plugin
 
 from nailgun.db.sqlalchemy.models.openstack_config import OpenstackConfig
+
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    DeploymentGraph
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    DeploymentGraphTasks
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    ReleaseDeploymentGraph
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    PluginDeploymentGraph
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    ClusterDeploymentGraph
+from nailgun.db.sqlalchemy.models.deployment_graph import \
+    ClusterPluginDeploymentGraph

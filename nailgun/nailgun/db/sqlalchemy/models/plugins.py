@@ -85,6 +85,7 @@ class Plugin(Base):
         MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     components_metadata = Column(
         MutableList.as_mutable(JSON), server_default='[]')
+    # todo will be replaced with deployment_graph fk
     deployment_tasks = Column(
         MutableList.as_mutable(JSON), server_default='[]', nullable=False)
     # TODO(apopovych): To support old plugins versions we need separate

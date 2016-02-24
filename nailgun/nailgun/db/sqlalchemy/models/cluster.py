@@ -116,6 +116,7 @@ class Cluster(Base):
         MutableDict.as_mutable(JSON), default={})
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
+    # todo will be replaced with deployment_graph fk
     deployment_tasks = Column(
         MutableList.as_mutable(JSON), default=[])
     components = Column(

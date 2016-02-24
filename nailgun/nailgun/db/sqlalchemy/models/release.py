@@ -29,6 +29,7 @@ from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
+from nailgun.db.sqlalchemy.models import ReleaseDeploymentGraph
 
 
 class Release(Base):
@@ -56,12 +57,15 @@ class Release(Base):
     roles_metadata = Column(MutableDict.as_mutable(JSON), default={})
     network_roles_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
-    deployment_tasks = Column(MutableList.as_mutable(JSON), default=[])
     vmware_attributes_metadata = Column(
         MutableDict.as_mutable(JSON), default={})
     components_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
     modes = Column(MutableList.as_mutable(JSON), default=[])
+    deployment_graphs = relationship(
+        "ReleaseDeploymentGraph",
+        back_populates="release",
+        lazy="dynamic")
     clusters = relationship(
         "Cluster",
         primaryjoin="Release.id==Cluster.release_id",

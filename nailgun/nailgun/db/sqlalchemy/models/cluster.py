@@ -34,6 +34,7 @@ from nailgun import consts
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models import ClusterDeploymentGraph
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.db.sqlalchemy.models.node import Node
@@ -115,8 +116,10 @@ class Cluster(Base):
         MutableDict.as_mutable(JSON), default={})
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
-    deployment_tasks = Column(
-        MutableList.as_mutable(JSON), default=[])
+    deployment_graphs = relationship(
+        "ClusterDeploymentGraph",
+        back_populates="cluster",
+        lazy="dynamic")
     components = Column(
         MutableList.as_mutable(JSON),
         default=[],

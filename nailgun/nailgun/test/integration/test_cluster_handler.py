@@ -174,8 +174,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(self.db.query(Node).count(), 2)
         for node in self.db.query(Node):
             self.assertEqual(node.status, 'discover')
-            self.assertEqual(node.cluster_id, None)
-            self.assertEqual(node.group_id, None)
+            self.assertIsNone(node.cluster_id)
+            self.assertIsNone(node.group_id)
             self.assertEqual(node.roles, [])
             self.assertFalse(node.pending_deletion)
             self.assertFalse(node.pending_addition)
@@ -200,7 +200,7 @@ class TestHandlers(BaseIntegrationTest):
 
         node = self.db.query(Node).first()
         self.assertEqual(node.status, 'discover')
-        self.assertEqual(node.cluster_id, None)
+        self.assertIsNone(node.cluster_id)
 
     def test_cluster_deletion_delete_networks(self):
         cluster = self.env.create_cluster(api=True)

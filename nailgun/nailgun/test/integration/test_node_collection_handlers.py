@@ -363,7 +363,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_http=400,
             expected_error="No mac address specified"
         )
-        self.assertEqual(node, None)
+        self.assertIsNone(node)
 
     def test_node_create_with_invalid_disk_model(self):
         meta = self.env.default_metadata()
@@ -469,7 +469,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(1, len(resp.json_body))
         self.assertEqual(node.id, resp.json_body[0]['id'])
         self.assertEqual(node.name, node_name)
-        self.assertEqual(node.cluster, None)
+        self.assertIsNone(node.cluster)
         self.assertEqual(node.pending_roles, [])
 
     def test_discovered_node_unified_name(self):

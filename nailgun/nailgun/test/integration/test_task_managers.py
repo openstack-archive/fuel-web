@@ -783,7 +783,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         for node in q_nodes:
             self.assertEqual(node.status, 'discover')
-            self.assertEqual(node.cluster_id, None)
+            self.assertIsNone(node.cluster_id)
 
     @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node_when_cluster_has_only_one_node(self):

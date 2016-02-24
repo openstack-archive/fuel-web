@@ -1180,6 +1180,13 @@ class Node(NailgunObject):
         instance.attributes = instance.cluster.release.node_attributes
 
     @classmethod
+    def dpdk_configured(cls, instance):
+        for iface in instance.interfaces:
+            if iface.interface_properties.get('dpdk', {}).get('enabled'):
+                return True
+        return False
+
+    @classmethod
     def get_attributes(cls, instance):
         return instance.attributes
 

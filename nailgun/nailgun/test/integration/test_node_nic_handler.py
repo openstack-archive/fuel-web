@@ -258,7 +258,8 @@ class TestHandlers(BaseIntegrationTest):
                      'sriov_totalvfs': 8,
                      'available': True,
                      'pci_id': '1234:5678'
-                 }
+                 },
+                 'pci_id': '8765:4321'
              }}]
         )
         node_data = {'mac': node['mac'], 'meta': new_meta, 'is_agent': True}
@@ -287,6 +288,12 @@ class TestHandlers(BaseIntegrationTest):
                 'sriov_totalvfs': 8,
                 'available': True,
                 'pci_id': '1234:5678'
+            })
+        self.assertEqual(
+            resp_nic['interface_properties']['dpdk'],
+            {
+                'enabled': False,
+                'available': False
             })
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])

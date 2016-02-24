@@ -557,6 +557,68 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def inject_murano_settings(self, data):
         return data
 
+    def serialize_nodes(self, nodes):
+        serialized_nodes = super(
+            DeploymentHASerializer90, self).serialize_nodes(nodes)
+
+        cpu_pinning_enabled = self._is_nova_cpu_pinning_enabled(nodes)
+        for node, serialized_node in zip(nodes, serialized_nodes):
+            cpu_pinning = objects.Node.distribute_node_cpus(node)
+            cpu_pinning = dict((item['name'], item)
+                               for item in cpu_pinning['components'])
+            nova_pinning = None if cpu_pinning_enabled else cpu_pinning['nova']
+            serialized_node.update(
+                self.generate_nova_cpu_pinning(nova_pinning))
+            serialized_node.update(
+                self.generate_dpdk_cpu_pinning(cpu_pinning['dpdk']))
+
+        return serialized_nodes
+
+    @staticmethod
+    def _is_nova_cpu_pinning_enabled(nodes):
+        """Checks if cpu pinning should be enabled.
+
+        Cpu pinning is enabled if at least one node has required cpus set.
+        """
+        for node in nodes:
+            node_pinning = objects.Node.node_cpu_pinning_info(node)
+            cpu_pinning = dict((item['name'], item)
+                               for item in node_pinning['components'])
+            if cpu_pinning['nova']['required_cpus']:
+                return True
+        return False
+
+    @staticmethod
+    def generate_nova_cpu_pinning(cpu_pinning):
+        if cpu_pinning is None:
+            data = {
+                'enable_cpu_pinning': False
+            }
+        else:
+            data = {
+                'enable_cpu_pinning': True,
+                'cpu_pinning': cpu_pinning['cpus'],
+            }
+        return {'nova': data}
+
+    @staticmethod
+    def generate_dpdk_cpu_pinning(cpu_pinning):
+        cpus = cpu_pinning['cpus']
+        if not cpus:
+            return {}
+
+        ovs_core_mask = 1 << cpus[0]
+        ovs_pmd_core_mask = 0
+        for cpu in cpus[1:]:
+            ovs_pmd_core_mask |= 1 << cpu
+
+        return {
+            'dpdk': {
+                'ovs_core_mask': ovs_core_mask,
+                'ovs_pmd_core_mask': ovs_pmd_core_mask
+            }
+        }
+
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.

@@ -92,6 +92,7 @@
                     "error": "Error",
                     "remove": "Removing",
                     "stopped": "Stopped",
+                    "partially_deployed": "Partially Deployed",
                     "update": "Update",
                     "update_error": "Update Error"
                 }

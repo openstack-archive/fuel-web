@@ -505,20 +505,6 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def create_attributes(cls, instance):
-        """Create attributes for Node instance.
-
-        :param instance: Node instance
-        :returns: NodeAttributes instance
-        """
-        new_attributes = models.NodeAttributes()
-        instance.attributes = new_attributes
-        db().add(new_attributes)
-        db().add(instance)
-        db().flush()
-        return new_attributes
-
-    @classmethod
     def is_interfaces_configuration_locked(cls, instance):
         """Returns true if update of network configuration is not allowed.
 

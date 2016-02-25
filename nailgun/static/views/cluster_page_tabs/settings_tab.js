@@ -317,7 +317,6 @@ var SettingsTab = React.createClass({
                   _.compact(_.map(settings.get(sectionName), (setting, settingName) => {
                     if (
                       settingName !== 'metadata' &&
-                      setting.type !== 'hidden' &&
                       !this.checkRestrictions('hide', setting).result
                     ) return settingName;
                   }));

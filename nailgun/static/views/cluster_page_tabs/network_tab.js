@@ -1739,7 +1739,6 @@ var NetworkSettings = React.createClass({
                   if (
                     (section.metadata.group || setting.group === 'network') &&
                     settingName !== 'metadata' &&
-                    setting.type !== 'hidden' &&
                     !this.checkRestrictions('hide', setting).result
                   ) return settingName;
                 }));

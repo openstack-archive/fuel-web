@@ -89,6 +89,7 @@
                     "error": "Error",
                     "remove": "Removing",
                     "stopped": "Stopped",
+                    "inconsistent": "Inconsistent",
                     "update": "Update",
                     "update_error": "Update Error"
                 }

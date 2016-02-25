@@ -397,7 +397,7 @@ export var DeployChangesDialog = React.createClass({
     var cluster = this.props.cluster;
     return (
       <div className='display-changes-dialog'>
-        {!cluster.needsRedeployment() && _.contains(['new', 'stopped'], cluster.get('status')) &&
+        {!cluster.needsRedeployment() && _.contains(['new', 'stopped', 'inconsistent'], cluster.get('status')) &&
           <div>
             <div className='text-warning'>
               <i className='glyphicon glyphicon-warning-sign' />

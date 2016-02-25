@@ -1073,6 +1073,18 @@ class TestClusterObject(BaseTestCase):
                  'release_id': self.env.releases[0].id}
             )
 
+    def test_create_cluster_fills_vips_namespaces(self):
+        new_cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            release_kwargs={'version': 'liberty-7.0'},
+        )
+        vips = objects.IPAddrCollection.get_vips_by_cluster_id(
+            new_cluster.id
+        ).all()
+
+        for vip in vips:
+            self.assertIsNotNone(vip.vip_namespace)
+
     # FIXME(aroma): remove this test when stop action will be reworked for ha
     # cluster. To get more details, please, refer to [1]
     # [1]: https://bugs.launchpad.net/fuel/+bug/1529691

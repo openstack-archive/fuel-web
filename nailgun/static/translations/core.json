@@ -1128,11 +1128,26 @@
                 }
             },
             "node_details": {
-                "cpu": "CPU",
+                "cpu": "处理器",
+                "hdd": "硬盘",
+                "ram": "内存",
                 "system": "系统",
                 "memory": "内存",
                 "disks": "磁盘",
-                "interfaces": "接口"
+                "interfaces": "接口",
+                "interfaces_amount": "__count__个接口",
+                "interfaces_amount_plural": "__count__个接口",
+                "disks_amount": "__count__个硬盘 (容量__size__)",
+                "disks_amount_plural": "__count__个硬盘 (容量__size__)",
+                "cpu_details": "实际使用__real__个(共计__total__个) 处理器",
+                "cores": "实际使用__count__个处理器",
+                "ht_cores": "共计__count__个处理器",
+                "total_hdd": "共计__total__硬盘",
+                "total_ram": "共计__total__内存",
+                "offline": "下线",
+                "config": "VM配置文件",
+                "vms_config_msg": "可在JSON文件中自定义VM配置。",
+                "invalid_vms_conf_msg": "无效的JSON对象"
             },
             "cluster": {
                 "status": {

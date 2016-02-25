@@ -325,7 +325,7 @@ class NetworkManager(object):
             return cluster_vip
 
     @classmethod
-    def assign_vip(cls, nodegroup, network_name, vip_name):
+    def assign_vip(cls, nodegroup, network_name, vip_name, namespace=None):
         """Idempotent assignment of VirtualIP addresses to nodegroup.
 
         Returns VIP for given nodegroup and network.
@@ -343,6 +343,8 @@ class NetworkManager(object):
         :type  network_name: str
         :param vip_name: Name of VIP
         :type  vip_name: str
+        :param namespace: Net namespace of VIP
+        :type namespace: str
         :returns: assigned VIP (string)
         :raises: Exception
 
@@ -382,7 +384,8 @@ class NetworkManager(object):
 
         # IP address has not been assigned, let's do it
         vip = cls.get_free_ips(network, ips_in_use=ips_in_use)[0]
-        vip_obj = IPAddr(network=network.id, ip_addr=vip, vip_name=vip_name)
+        vip_obj = IPAddr(network=network.id, ip_addr=vip,
+                         vip_name=vip_name, vip_namespace=namespace)
 
         # delete stalled VIP address after new one was found.
         if cluster_vip:
@@ -1905,6 +1908,7 @@ class AllocateVIPs70Mixin(object):
         else:
             vip_info['is_user_defined'] = vip_addr.is_user_defined
             vip_info['ip_addr'] = vip_addr.ip_addr
+            vip_info['namespace'] = vip_addr.vip_namespace
 
         return vip_info
 
@@ -1919,7 +1923,8 @@ class AllocateVIPs70Mixin(object):
         for nodegroup, net_group, vip_name, role, vip_info\
                 in net_role_vip_mappings:
 
-            vip_addr = cls.assign_vip(nodegroup, net_group, vip_name)
+            vip_addr = cls.assign_vip(nodegroup, net_group,
+                                      vip_name, vip_info.get('namespace'))
 
             vip_info = cls._build_vip_info(vip_info, vip_addr)
 

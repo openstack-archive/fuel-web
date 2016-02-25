@@ -65,7 +65,8 @@ class TestSnapshotConf(base.TestCase):
             self.fail("A `postgres` object MUST BE in `local` objects!")
 
     @mock.patch('nailgun.task.task.db')
-    def test_slave_generating(self, mock_db):
+    @mock.patch('nailgun.task.task.objects.Cluster')
+    def test_slave_generating(self, mock_cluster, mock_db):
 
         (
             mock_db.return_value.query.return_value.filter.return_value.
@@ -75,22 +76,33 @@ class TestSnapshotConf(base.TestCase):
             mock.Mock(hostname='node2', ip="10.109.0.5", roles=[]),
         ]
 
+        mock_cluster.get_editable_attributes.return_value = {
+            'service_user': {
+                'name': {
+                    'value': 'fuel',
+                    'type': 'hidden'
+                }
+            }
+        }
         conf = task.DumpTask.conf()
 
         self.assertIn({
             'hostname': 'node1',
             'address': '10.109.0.2',
+            'ssh-user': 'fuel',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['slave']['hosts'])
 
         self.assertIn({
             'hostname': 'node2',
             'address': '10.109.0.5',
+            'ssh-user': 'fuel',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['slave']['hosts'])
 
     @mock.patch('nailgun.task.task.db')
-    def test_controller_generating(self, mock_db):
+    @mock.patch('nailgun.task.task.objects.Cluster')
+    def test_controller_generating(self, mock_cluster, mock_db):
 
         (
             mock_db.return_value.query.return_value.filter.return_value.
@@ -101,15 +113,56 @@ class TestSnapshotConf(base.TestCase):
             mock.Mock(hostname='node2', roles=['compute']),
         ]
 
+        mock_cluster.get_editable_attributes.return_value = {
+            'service_user': {
+                'name': {
+                    'value': 'fuel',
+                    'type': 'hidden'
+                }
+            }
+        }
         conf = task.DumpTask.conf()
 
         self.assertIn({
             'hostname': 'node1',
             'address': '10.109.0.1',
+            'ssh-user': 'fuel',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['controller']['hosts'])
 
         self.assertNotIn({
             'hostname': 'node2',
+            'ssh-user': 'fuel',
             'ssh-key': settings.SHOTGUN_SSH_KEY,
         }, conf['dump']['controller']['hosts'])
+
+    @mock.patch('nailgun.task.task.db')
+    @mock.patch('nailgun.task.task.objects.Cluster')
+    def test_falling_back_to_root_ssh(self, mock_cluster, mock_db):
+
+        (
+            mock_db.return_value.query.return_value.filter.return_value.
+            all.return_value
+        ) = [
+            mock.Mock(hostname='node1', ip="10.109.0.2", roles=[]),
+            mock.Mock(hostname='node2', ip="10.109.0.5", roles=[]),
+        ]
+
+        mock_cluster.get_editable_attributes.return_value = {
+            'editable': {}
+        }
+        conf = task.DumpTask.conf()
+
+        self.assertIn({
+            'hostname': 'node1',
+            'address': '10.109.0.2',
+            'ssh-user': 'root',
+            'ssh-key': settings.SHOTGUN_SSH_KEY,
+        }, conf['dump']['slave']['hosts'])
+
+        self.assertIn({
+            'hostname': 'node2',
+            'address': '10.109.0.5',
+            'ssh-user': 'root',
+            'ssh-key': settings.SHOTGUN_SSH_KEY,
+        }, conf['dump']['slave']['hosts'])

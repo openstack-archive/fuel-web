@@ -274,8 +274,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Check uncommon attrs
         # Convert ids to int to have correct order in the set
         node_uids = sorted(set([int(n['uid']) for n in node_list]))
-        man_ip = [str(ip) for ip in IPRange('192.168.0.3', '192.168.0.7')]
-        pub_ip = [str(ip) for ip in IPRange('172.16.0.4', '172.16.0.9')]
+        man_ip = [str(ip) for ip in IPRange('192.168.0.1', '192.168.0.5')]
+        pub_ip = [str(ip) for ip in IPRange('172.16.0.2', '172.16.0.6')]
         sto_ip = [str(ip) for ip in IPRange('192.168.1.1', '192.168.1.5')]
         expected_list = [
             {'roles': ['controller', 'cinder']},
@@ -1363,8 +1363,8 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEqual(attrs['management_vip'], '192.168.0.1')
-        self.assertEqual(attrs['public_vip'], '172.16.0.2')
+        self.assertEqual(attrs['management_vip'], '192.168.0.8')
+        self.assertEqual(attrs['public_vip'], '172.16.0.9')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)
@@ -2243,7 +2243,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEqual(attrs['management_vip'], '192.168.0.1')
+        self.assertEqual(attrs['management_vip'], '192.168.0.7')
         self.assertTrue(
             re.compile('172.16.0.[1-9]').match(attrs['public_vip']))
 

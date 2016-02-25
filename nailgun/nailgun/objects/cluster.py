@@ -894,7 +894,8 @@ class Cluster(NailgunObject):
         #   above, because returning default node group doesn't look like
         #   a right choice here.
         if not nodegroups:
-            return cls.get_default_group(instance)
+            # return cls.get_default_group(instance)
+            return
 
         if len(nodegroups) > 1:
             raise errors.CanNotFindCommonNodeGroup(

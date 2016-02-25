@@ -35,17 +35,22 @@ class BaseIPAddrTest(BaseIntegrationTest):
         super(BaseIPAddrTest, self).setUp()
         self.cluster = self.env.create(
             release_kwargs={'version': '1111-8.0'},
-            cluster_kwargs={'api': False}
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'roles': ['controller']}]
         )
 
         net_manager = objects.Cluster.get_network_manager(self.cluster)
-        management_net = net_manager.get_network_by_netname(
+        net_manager.assign_vips_for_net_groups(self.cluster)
+
+        self.management_net = net_manager.get_network_by_netname(
             consts.NETWORKS.management, self.cluster.network_groups
         )
+
         self.management_vips = self.db.query(IPAddr).filter(
             IPAddr.vip_name.isnot(None),
-            IPAddr.network == management_net.id
+            IPAddr.network == self.management_net.id
         ).all()
+
         self.vip_ids = [v.id for v in self.management_vips]
 
         self.expected_vips = [
@@ -134,7 +139,7 @@ class BaseIPAddrTest(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 409)
 
         net_group = self.db.query(NetworkGroup)\
-            .filter_by(id=self.management_vips[0].network)\
+            .filter_by(id=self.management_net.id)\
             .first()
 
         err_msg = (

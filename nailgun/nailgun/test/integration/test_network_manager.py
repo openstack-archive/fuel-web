@@ -169,10 +169,18 @@ class TestNetworkManager(BaseIntegrationTest):
             1
         )
 
+    def create_env_w_controller(self):
+        # environment must be created with nodes in order
+        # to VIP be assigned (without nodes there will be no
+        # node group which network VIP must be allocated in)
+        return self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'roles': ['controller']}]
+        )
+
     def test_assign_vip_is_idempotent(self):
-        self.env.create_cluster(api=True)
-        nodegroup = objects.Cluster.get_controllers_node_group(
-            self.env.clusters[0])
+        cluster = self.create_env_w_controller()
+        nodegroup = objects.Cluster.get_controllers_node_group(cluster)
 
         vip = self.env.network_manager.assign_vip(
             nodegroup,
@@ -188,9 +196,8 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEqual(vip, vip2)
 
     def test_assign_vip_for_admin_network(self):
-        self.env.create_cluster(api=True)
-        nodegroup = objects.Cluster.get_controllers_node_group(
-            self.env.clusters[0])
+        cluster = self.create_env_w_controller()
+        nodegroup = objects.Cluster.get_controllers_node_group(cluster)
 
         self.env.network_manager.assign_vip(
             nodegroup,
@@ -198,9 +205,8 @@ class TestNetworkManager(BaseIntegrationTest):
             consts.NETWORK_VIP_NAMES_V6_1.haproxy)
 
     def test_assign_vip_throws_not_found_exception(self):
-        self.env.create_cluster(api=True)
-        nodegroup = objects.Cluster.get_controllers_node_group(
-            self.env.clusters[0])
+        cluster = self.create_env_w_controller()
+        nodegroup = objects.Cluster.get_controllers_node_group(cluster)
 
         self.assertRaisesRegexp(
             errors.CanNotFindNetworkForNodeGroup,
@@ -233,8 +239,8 @@ class TestNetworkManager(BaseIntegrationTest):
         objects.IPAddr.update(vip, update_data)
 
     def get_cluster_and_vip(self):
-        self.env.create_cluster(api=True)
-        cluster = self.env.clusters[0]
+        cluster = self.create_env_w_controller()
+        self.env.network_manager.assign_vips_for_net_groups(cluster)
 
         vip = objects.IPAddrCollection.get_by_cluster_id(cluster.id).first()
 
@@ -259,7 +265,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEqual(needed_vip_ip, ip_before)
 
     def test_assign_vip_throws_out_of_ips_error(self):
-        cluster = self.env.create_cluster(api=False)
+        cluster = self.create_env_w_controller()
         pub_net = objects.NetworkGroup.get_by_cluster(cluster.id).filter(
             objects.NetworkGroup.model.name == consts.NETWORKS.public
         ).first()
@@ -623,7 +629,7 @@ class TestNetworkManager(BaseIntegrationTest):
                 consts.NETWORK_VIP_NAMES_V6_1.vrouter: '172.16.0.3',
             },
         }
-        cluster = self.env.create_cluster(api=False)
+        cluster = self.create_env_w_controller()
         self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
         vips = self.env.network_manager.get_assigned_vips(cluster)
         self.assertEqual(vips_to_create, vips)
@@ -1100,12 +1106,16 @@ class TestNeutronManager70(BaseIntegrationTest):
     def _create_env(self):
         release = self._prepare_release()
 
+        # environment must be created with nodes in order
+        # to VIP be assigned (without nodes there will be no
+        # node group which network VIP must be allocated in)
         return self.env.create(
             cluster_kwargs={
                 'api': False,
                 'release_id': release.id,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
-            }
+            },
+            nodes_kwargs=[{'roles': ['controller']}]
         )
 
     def _prepare_release(self):
@@ -1189,6 +1199,7 @@ class TestNeutronManager70(BaseIntegrationTest):
         self.assertIs(self.net_manager, NeutronManager70)
 
     def test_purge_stalled_vips(self):
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
         vips_before = self.net_manager.get_assigned_vips(self.cluster)
 
         net_name = next(six.iterkeys(vips_before))
@@ -1246,17 +1257,6 @@ class TestNeutronManager70(BaseIntegrationTest):
                     id='role_not_in_template',
                     default_mapping='default_net_group'), net_group_mapping),
             'default_net_group')
-
-    def test_get_endpoint_ip(self):
-        vip = '172.16.0.1'
-
-        with patch.object(NeutronManager70, 'assign_vip',
-                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
-            endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
-            assign_vip_mock.assert_called_once_with(
-                objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_name='public')
-            self.assertEqual(endpoint_ip, vip)
 
     def assign_vips_for_api_and_check_configuration(self, allocate):
         expected_aliases = [
@@ -1455,12 +1455,16 @@ class TestNovaNetworkManager70(TestNeutronManager70):
     def _create_env(self):
         release = self._prepare_release()
 
+        # environment must be created with nodes in order
+        # to VIP be assigned (without nodes there will be no
+        # node group which network VIP must be allocated in)
         return self.env.create(
             cluster_kwargs={
                 'release_id': release.id,
                 'api': False,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
-            }
+            },
+            nodes_kwargs=[{'roles': ['controller']}]
         )
 
     def test_get_network_manager(self):
@@ -1483,17 +1487,6 @@ class TestNovaNetworkManager70(TestNeutronManager70):
                     id='role_not_in_template',
                     default_mapping='default_net_group'), net_group_mapping),
             'default_net_group')
-
-    def test_get_endpoint_ip(self):
-        vip = '172.16.0.1'
-
-        with patch.object(NovaNetworkManager70, 'assign_vip',
-                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
-            endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
-            assign_vip_mock.assert_called_once_with(
-                objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_name='public')
-            self.assertEqual(endpoint_ip, vip)
 
 
 class TestTemplateManager70(BaseIntegrationTest):
@@ -1655,12 +1648,16 @@ class TestNeutronManager80(BaseIntegrationTest):
         self.net_manager = objects.Cluster.get_network_manager(self.cluster)
 
     def _create_env(self):
+        # environment must be created with nodes in order
+        # to VIP be assigned (without nodes there will be no
+        # node group which network VIP must be allocated in)
         return self.env.create(
             release_kwargs={'version': '1111-8.0'},
             cluster_kwargs={
                 'api': False,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
-            }
+            },
+            nodes_kwargs=[{'roles': ['controller']}]
         )
 
     def _check_nic_mapping(self, node, expected_mapping):
@@ -1717,15 +1714,20 @@ class TestNeutronManager80(BaseIntegrationTest):
             'bond0': ['storage', 'public', 'management', 'private'],
         }
 
+        cluster = self.env.create(
+            release_kwargs={'version': 'test-8.0'},
+            cluster_kwargs={'api': False}
+        )
+
         self.env.create_nodes_w_interfaces_count(
             1, 3,
             roles=['controller'],
-            cluster_id=self.cluster['id']
+            cluster_id=cluster.id
         )
-        node = self.env.nodes[0]
+        node = cluster.nodes[0]
         net_template = self.env.read_fixtures(['network_template_80'])[2]
         objects.Cluster.set_network_template(
-            self.cluster,
+            cluster,
             net_template
         )
 

@@ -261,7 +261,11 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                 'api': True,
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'
-            }
+            },
+            # environment must be created with nodes in order
+            # to VIP be assigned (without nodes there will be no
+            # node group which network VIP must be allocated in)
+            nodes_kwargs=[{'roles': ['controller']}]
         )
         self.cluster = self.env.clusters[0]
 
@@ -609,13 +613,21 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
 
     def test_assign_vip_in_correct_node_group(self):
+        cluster = self.env.create(
+            release_kwargs={'version': 'test-8.0'},
+            cluster_kwargs={'api': False}
+        )
+
         # prepare two nodes that are in different node groups
         self.env.create_node(
-            cluster_id=self.cluster.id, pending_roles=['controller'])
+            cluster_id=cluster.id, pending_roles=['controller'])
         self.env.create_node(
-            cluster_id=self.cluster.id, pending_roles=['compute'])
-        group_id = self.env.create_node_group().json_body['id']
-        self.env.nodes[1].group_id = group_id
+            cluster_id=cluster.id, pending_roles=['compute'])
+
+        group_id = self.env.create_node_group(
+            cluster_id=cluster.id
+        ).json_body['id']
+        cluster.nodes[1].group_id = group_id
 
         # configure management net to have custom range on compute nodes
         management_net = self.db.query(models.NetworkGroup)\
@@ -638,14 +650,17 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                 }]
             }
         }
-        self.env.clusters[0].release.network_roles_metadata.append(nrm)
+        cluster.release.network_roles_metadata.append(nrm)
+
         self.db.flush()
 
-        self.env.neutron_networks_put(self.cluster.id, {})
+        self.env.neutron_networks_put(cluster.id, {})
 
-        self.assign_vips_for_cluster()
+        nm = objects.Cluster.get_network_manager(cluster)
+        nm.assign_vips_for_net_groups(cluster)
 
-        resp = self.env.neutron_networks_get(self.cluster.id)
+        resp = self.env.neutron_networks_get(cluster.id)
+
         self.assertEqual(200, resp.status_code)
         ipaddr = resp.json_body['vips']['my-vip']['ipaddr']
         self.assertEqual('10.42.0.2', ipaddr)
@@ -683,11 +698,16 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNovaNetworkConfigurationHandlerHA, self).setUp()
-        cluster = self.env.create_cluster(
-            api=True,
-            mode='ha_compact',
-            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
-        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
+            },
+            # environment must be created with nodes in order
+            # to VIP be assigned (without nodes there will be no
+            # node group which network VIP must be allocated in)
+            nodes_kwargs=[{'roles': ['controller']}]
+        )
         self.net_manager = objects.Cluster.get_network_manager(self.cluster)
 
     def test_returns_management_vip_and_public_vip(self):

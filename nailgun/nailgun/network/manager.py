@@ -680,7 +680,7 @@ class NetworkManager(object):
                 'enabled': False,
                 'sriov_numvfs': 0,
                 'sriov_totalvfs': 0,
-                'available': False,
+                'available': True,
                 'pci_id': ''
             }
         }

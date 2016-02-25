@@ -670,8 +670,18 @@ var NodeInterface = React.createClass({
       value = convertToNullIfNaN(value);
     }
     var interfaceProperties = _.cloneDeep(this.props.interface.get('interface_properties') || {});
-    interfaceProperties[name] = value;
+
+    if (_.contains(name, '.')) {
+      _.set(interfaceProperties, name, value);
+    } else {
+      interfaceProperties[name] = value;
+    }
     this.props.interface.set('interface_properties', interfaceProperties);
+  },
+  toggleSRIOV() {
+    var interfaceProperties = this.props.interface.get('interface_properties');
+    var name = 'sriov.enabled';
+    this.onInterfacePropertiesChange(name, !_.get(interfaceProperties, name));
   },
   render() {
     var ifc = this.props.interface;
@@ -843,6 +853,14 @@ var NodeInterface = React.createClass({
 
           {interfaceProperties &&
             <div className='ifc-properties clearfix forms-box'>
+              {interfaceProperties.sriov.available &&
+                <SRIOVControl
+                  toggleSRIOV={this.toggleSRIOV}
+                  locked={locked}
+                  onInterfacePropertiesChange={this.onInterfacePropertiesChange}
+                  interfaceProperties={interfaceProperties}
+                />
+              }
               <Input
                 type='text'
                 label={i18n(ns + 'mtu')}
@@ -869,6 +887,34 @@ var NodeInterface = React.createClass({
           }
         </div>
         {this.props.errors && <div className='ifc-error'>{this.props.errors}</div>}
+      </div>
+    );
+  }
+});
+
+var SRIOVControl = React.createClass({
+  render() {
+    var {interfaceProperties, locked} = this.props;
+    return (
+      <div className='sriov-control pull-left'>
+        <button
+          onClick={this.props.toggleSRIOV}
+          disabled={locked}
+          className='btn btn-default toggle-sriov'>
+          {i18n(ns + (interfaceProperties.sriov.enabled ? 'enabled_sriov' :
+              'disabled_sriov'))}
+        </button>
+        {interfaceProperties.sriov.enabled &&
+          <Input
+            type='number'
+            label={i18n(ns + 'virtual_functions')}
+            value={interfaceProperties.sriov.sriov_numvfs || ''}
+            name='sriov.sriov_numvfs'
+            onChange={this.props.onInterfacePropertiesChange}
+            disabled={locked}
+            wrapperClassName='pull-right'
+          />
+        }
       </div>
     );
   }

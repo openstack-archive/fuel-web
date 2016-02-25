@@ -1473,9 +1473,20 @@ class DumpTask(object):
 
         dump_conf = deepcopy(settings.DUMP)
         for node in nodes:
+            editable_attributes = objects.Cluster.get_attributes(
+                node.cluster
+            )['editable']
+            try:
+                ssh_user = editable_attributes['service_user']['name']
+            except KeyError:
+                logger.info(("This environment doesn't support non-root "
+                             "accounts on the slave nodes, falling back "
+                             "to root"))
+                ssh_user = "root"
             host = {
                 'hostname': objects.Node.get_slave_name(node),
                 'address': node.ip,
+                'ssh-user': ssh_user,
                 'ssh-key': settings.SHOTGUN_SSH_KEY,
             }
 

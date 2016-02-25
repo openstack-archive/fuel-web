@@ -271,7 +271,7 @@ var HealthcheckTabContent = React.createClass({
           </div>
         }
         <div>
-          {(this.props.cluster.get('status') === 'new') &&
+          {(this.props.cluster.get('status') !== 'operational') &&
             <div className='alert alert-warning'>
               {i18n('cluster_page.healthcheck_tab.deploy_alert')}
             </div>

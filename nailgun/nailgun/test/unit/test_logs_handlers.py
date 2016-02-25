@@ -430,6 +430,7 @@ class TestLogs(BaseIntegrationTest):
                         'hostname': 'node111',
                         'address': '10.109.0.2',
                         'ssh-key': '/root/.ssh/id_rsa',
+                        'ssh-user': 'root',
                     }],
                     'objects': [],
                 },

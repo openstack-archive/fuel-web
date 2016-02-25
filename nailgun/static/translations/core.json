@@ -1167,6 +1167,17 @@
                 "management": "管理",
                 "storage": "存储"
             },
+            "login_page": {
+                "username": "用户名",
+                "password": "密码",
+                "login_error": "无法登陆",
+                "keystone_unavailable_error": "无法登陆，Keystone服务不可用。",
+                "credentials_error": "无效凭据",
+                "log_in": "登录",
+                "title": "登录",
+                "http_warning": "正使用不安全的网络连接。",
+                "http_warning_link": "切换至HTTPS"
+            },
             "navbar": {
                 "environments": "环境",
                 "releases": "版本",

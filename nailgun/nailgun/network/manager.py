@@ -300,6 +300,10 @@ class NetworkManager(object):
         result = {}
 
         nodegroup = objects.Cluster.get_controllers_node_group(cluster)
+
+        if nodegroup is None:
+            return result
+
         for ng in cluster.network_groups:
             for vip_name in ng.meta.get('vips', ()):
                 # used for backwards compatibility
@@ -1546,23 +1550,6 @@ class AllocateVIPs70Mixin(object):
         return None
 
     @classmethod
-    def get_end_point_ip(cls, cluster_id):
-        cluster_db = objects.Cluster.get_by_uid(cluster_id)
-        net_role = cls.find_network_role_by_id(cluster_db, 'public/vip')
-        if not net_role:
-            raise errors.CanNotDetermineEndPointIP(
-                u'Can not determine end point IP for cluster {0}'.format(
-                    cluster_db.full_name))
-        node_group = objects.Cluster.get_controllers_node_group(cluster_db)
-        net_group_mapping = cls.build_role_to_network_group_mapping(
-            cluster_db, node_group.name)
-        net_group = cls.get_network_group_for_role(
-            net_role, net_group_mapping)
-        return cls.assign_vip(node_group,
-                              net_group,
-                              vip_name='public').ip_addr
-
-    @classmethod
     def _get_vip_to_preserve(cls, vips_db, nodegroup,
                              net_group_name, vip_name):
         """Get VIP that meets defined criteria
@@ -1815,10 +1802,20 @@ class AllocateVIPs70Mixin(object):
                 # calculate node group just once, cache and use cached
                 # value in order to reduce number of SQL queries.
                 if noderoles not in noderole_nodegroup:
-                    noderole_nodegroup[noderoles] = \
+                    nodegroup = \
                         objects.Cluster.get_common_node_group(cluster,
                                                               noderoles)
-                nodegroup = noderole_nodegroup[noderoles]
+
+                    # NOTE(aroma): when no nodes that holds given 'noderoles'
+                    # has been found, there is no point in VIP allocation, as
+                    # w/o nodes there will not be any interface to which
+                    # allocated VIP could be assigned
+                    if nodegroup is None:
+                        continue
+
+                    noderole_nodegroup[noderoles] = nodegroup
+                else:
+                    nodegroup = noderole_nodegroup[noderoles]
 
                 # Since different node roles may have the same node group,
                 # it'd be ridiculous to build "role-to-network-group" mapping

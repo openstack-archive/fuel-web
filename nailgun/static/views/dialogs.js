@@ -511,6 +511,72 @@ export var ProvisionNodesDialog = React.createClass({
   }
 });
 
+export var DeployNodesDialog = React.createClass({
+  mixins: [dialogMixin],
+  getDefaultProps() {
+    return {title: i18n('dialog.deploy_nodes.title')};
+  },
+  ns: 'dialog.deploy_nodes.',
+  deployNodes() {
+    this.setState({actionInProgress: true});
+    dispatcher.trigger('deploymentTasksUpdated');
+    var task = new models.Task();
+    task.save({}, {url: _.result(this.props.cluster, 'url') + '/deploy', type: 'PUT'})
+      .done(() => {
+        this.close();
+        dispatcher.trigger('deploymentTaskStarted');
+      })
+      .fail(this.showError);
+  },
+  renderBody() {
+    return (
+      <div className='deploy-nodes-dialog'>
+        <div className='text-warning'>
+          <i className='glyphicon glyphicon-warning-sign' />
+          <div className='instruction'>
+            {i18n(this.ns + 'locked_node_settings_alert') + ' '}
+          </div>
+        </div>
+        <div className='text-warning'>
+          <i className='glyphicon glyphicon-warning-sign' />
+          <div className='instruction'>
+            {i18n('cluster_page.dashboard_tab.package_information') + ' '}
+            <a
+              target='_blank'
+              href={utils.composeDocumentationLink('operations.html#troubleshooting')}
+            >
+              {i18n('cluster_page.dashboard_tab.operations_guide')}
+            </a>
+            {i18n('cluster_page.dashboard_tab.for_more_information_configuration')}
+          </div>
+        </div>
+        <div className='confirmation-question'>
+          {i18n(this.ns + 'are_you_sure_deploy')}
+        </div>
+      </div>
+    );
+  },
+  renderFooter() {
+    return ([
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
+      <button key='nodes-deployment'
+        className='btn start-nodes-deployment-btn btn-success'
+        disabled={this.state.actionInProgress}
+        onClick={this.deployNodes}
+      >
+        {i18n(this.ns + 'start_deployment')}
+      </button>
+    ]);
+  }
+});
+
 export var ProvisionVMsDialog = React.createClass({
   mixins: [dialogMixin],
   getDefaultProps() {

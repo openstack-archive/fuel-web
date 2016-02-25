@@ -23,7 +23,7 @@ import dispatcher from 'dispatcher';
 import {Input, ProgressBar, Tooltip} from 'views/controls';
 import {
   DiscardNodeChangesDialog, DeployClusterDialog, ProvisionVMsDialog, ProvisionNodesDialog,
-  RemoveClusterDialog, ResetEnvironmentDialog, StopDeploymentDialog
+  DeployNodesDialog, RemoveClusterDialog, ResetEnvironmentDialog, StopDeploymentDialog
 } from 'views/dialogs';
 import {backboneMixin, pollingMixin, renamingMixin} from 'component_mixins';
 
@@ -315,7 +315,7 @@ var DocumentationLinks = React.createClass({
 var ClusterActionsPanel = React.createClass({
   getDefaultProps() {
     return {
-      actions: ['spawn_vms', 'deploy', 'provision']
+      actions: ['spawn_vms', 'deploy', 'provision', 'deployment']
     };
   },
   getInitialState() {
@@ -497,6 +497,18 @@ var ClusterActionsPanel = React.createClass({
             }
           }
         ];
+      case 'deployment':
+        return [
+          checkForUnpovisionedVirtNodes,
+          // check if some provisioned nodes are offline
+          function(cluster) {
+            if (cluster.get('nodes').any(
+              (node) => node.isDeploymentPossible() && !node.get('online')
+            )) {
+              return {blocker: [i18n(ns + 'offline_nodes')]};
+            }
+          }
+        ];
       case 'spawn_vms':
         return [
           // check if some virt nodes are offline
@@ -540,6 +552,10 @@ var ClusterActionsPanel = React.createClass({
         return !this.validate(action).blocker.length && cluster.get('nodes').any(
           (node) => node.isProvisioningPossible()
         );
+      case 'deployment':
+        return !this.validate(action).blocker.length && cluster.get('nodes').any(
+          (node) => node.isDeploymentPossible()
+        );
       case 'spawn_vms':
         return cluster.get('nodes').any(
           (node) => node.hasRole('virt') && node.get('status') === 'discover'
@@ -564,12 +580,16 @@ var ClusterActionsPanel = React.createClass({
         description='provisioning_cannot_be_started'
         isAlert
       />,
+      deployment: <InstructionElement
+        description='deployment_of_nodes_cannot_be_started'
+        isAlert
+      />,
       spawn_vms: <InstructionElement
         description='provisioning_cannot_be_started'
         isAlert
       />,
       deploy: <InstructionElement
-        description='deployment_cannot_be_started'
+        description='deployment_of_environment_cannot_be_started'
         isAlert
         link={{
           url: 'user-guide.html#add-nodes-ug',
@@ -645,6 +665,30 @@ var ClusterActionsPanel = React.createClass({
             <button
               {... getButtonProps('btn-provision')}
               onClick={() => this.showDialog(ProvisionNodesDialog)}
+            >
+              {i18n(actionNs + 'button_title')}
+            </button>
+          </div>,
+          alertList
+        ];
+      case 'deployment':
+        var nodesToDeploy = nodes.filter((node) => node.isDeploymentPossible());
+        return [
+          !nodesToDeploy.length &&
+            <div className='no-nodes' key='no-nodes'>
+              {i18n(actionNs + 'no_nodes_to_deploy')}
+            </div>,
+          <div className='col-xs-3 changes-list' key='changes-list'>
+            {!!nodesToDeploy.length &&
+              <ul>
+                <li>
+                  {i18n(actionNs + 'nodes_to_deploy', {count: nodesToDeploy.length})}
+                </li>
+              </ul>
+            }
+            <button
+              {... getButtonProps('btn-deploy-nodes')}
+              onClick={() => this.showDialog(DeployNodesDialog)}
             >
               {i18n(actionNs + 'button_title')}
             </button>

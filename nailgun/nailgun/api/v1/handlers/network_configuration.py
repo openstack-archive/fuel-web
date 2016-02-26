@@ -18,8 +18,6 @@
 Handlers dealing with network configurations
 """
 
-import six
-
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 
@@ -116,18 +114,7 @@ class ProviderHandler(BaseHandler):
         admin_nets = nm.get_admin_networks()
         nm.update(cluster, data)
 
-        try:
-            network_config = self.serializer.serialize_for_cluster(cluster,
-                                                                   True)
-        except errors.DuplicatedVIPNames as exc:
-            raise self.http(400, six.text_type(exc))
-        except errors.OutOfIPs as exc:
-            network_id = getattr(exc, 'network_id', None)
-            raise self.http(
-                400,
-                six.text_type(exc),
-                err_list=[{"errors": ["ip_ranges"], "ids": [network_id]}]
-            )
+        network_config = self.serializer.serialize_for_cluster(cluster)
 
         if admin_nets != nm.get_admin_networks():
             try:

@@ -647,6 +647,24 @@ LOGS:
     <<: *remote_openstack_log_format
     <<: *os_log_group
     path: "heat-manage.log"
+  - id: 'os/murano-api'
+    name: "murano-api"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "murano-api.log"
+  - id: 'os/murano-cfapi'
+    name: "murano-cfapi"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "murano-cfapi.log"
+  - id: 'os/murano-manage'
+    name: "murano-manage"
+    <<: *remote_openstack_log_type
+    <<: *remote_openstack_log_format
+    <<: *os_log_group
+    path: "murano-manage.log"
   - id: 'os/sahara-api'
     name: "sahara-api"
     <<: *remote_openstack_log_type

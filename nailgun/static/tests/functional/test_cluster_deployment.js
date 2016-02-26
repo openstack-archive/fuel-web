@@ -74,8 +74,8 @@ define([
           .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
           .clickByCssSelector('.actions-panel .nav .dropdown-menu li.provision button')
           .assertElementContainsText(
-            '.actions-panel .changes-list ul li',
-            '1 node to be provisioned.',
+            '.btn-provision',
+            'Provision 1 Node',
             '1 node to be provisioned'
           )
           .clickByCssSelector('.btn-provision')
@@ -131,9 +131,6 @@ define([
             return modal.waitToOpen();
           })
           .then(function() {
-            return modal.checkTitle('Provision Nodes');
-          })
-          .then(function() {
             return modal.clickFooterButton('Start Provisioning');
           })
           .then(function() {
@@ -143,6 +140,7 @@ define([
           .assertElementDisappears('div.deploy-process div.progress', 5000, 'Provisioning finished')
           .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
           .clickByCssSelector('.actions-panel .nav .dropdown-menu li.deployment button')
+          .assertElementContainsText('.btn-deploy-nodes', 'Deploy 1 Node', '1 node to be deployed')
           .clickByCssSelector('.btn-deploy-nodes')
           .then(function() {
             return modal.waitToOpen();

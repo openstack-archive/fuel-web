@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from nailgun import consts
-from nailgun.objects import ClusterPlugins
+from nailgun.objects import ClusterPlugin
 from nailgun.objects import Plugin
 from nailgun.objects import PluginCollection
 from nailgun.test import base
@@ -95,7 +95,7 @@ class TestPluginCollection(ExtraFunctions):
             self.assertNotEqual(plugin.name, 'incompatible_plugin')
 
 
-class TestClusterPlugins(ExtraFunctions):
+class TestClusterPlugin(ExtraFunctions):
 
     def test_connect_to_cluster(self):
         meta = base.reflect_db_metadata()
@@ -111,8 +111,8 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin = ClusterPlugins.get_connected_plugins(cluster).first()
-        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
+        plugin = ClusterPlugin.get_connected_plugins(cluster).first()
+        ClusterPlugin.set_attributes(cluster.id, plugin.id, enabled=True)
 
         columns = meta.tables['cluster_plugins'].c
         enabled = self.db.execute(
@@ -126,21 +126,21 @@ class TestClusterPlugins(ExtraFunctions):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
         number_of_connected_plugins_data_items =\
-            ClusterPlugins.get_connected_plugins_data(cluster.id).count()
+            ClusterPlugin.get_connected_plugins_data(cluster.id).count()
         self.assertEqual(7, number_of_connected_plugins_data_items)
 
     def test_get_all_connected_plugins(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
         number_of_connected_plugins =\
-            ClusterPlugins.get_connected_plugins(cluster).count()
+            ClusterPlugin.get_connected_plugins(cluster).count()
         self.assertEqual(7, number_of_connected_plugins)
 
     def test_get_connected_for_specific_plugins(self):
         plugin_ids = self._create_test_plugins()
         cluster = self._create_test_cluster()
         number_of_connected_plugins =\
-            ClusterPlugins.get_connected_plugins(
+            ClusterPlugin.get_connected_plugins(
                 cluster, plugin_ids[1:]).count()
         self.assertEqual(6, number_of_connected_plugins)
 
@@ -149,24 +149,24 @@ class TestClusterPlugins(ExtraFunctions):
         for _ in range(2):
             self._create_test_cluster()
         number_of_connected_clusters =\
-            ClusterPlugins.get_connected_clusters(plugin_id).count()
+            ClusterPlugin.get_connected_clusters(plugin_id).count()
         self.assertEqual(2, number_of_connected_clusters)
 
     def test_get_enabled(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin = ClusterPlugins.get_connected_plugins(cluster).first()
-        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
+        plugin = ClusterPlugin.get_connected_plugins(cluster).first()
+        ClusterPlugin.set_attributes(cluster.id, plugin.id, enabled=True)
 
-        enabled_plugin = ClusterPlugins.get_enabled(cluster.id).first()
+        enabled_plugin = ClusterPlugin.get_enabled(cluster.id).first()
         self.assertEqual(plugin.id, enabled_plugin.id)
 
     def test_is_plugin_used(self):
         self._create_test_plugins()
         cluster = self._create_test_cluster()
 
-        plugin = ClusterPlugins.get_connected_plugins(cluster).first()
-        self.assertFalse(ClusterPlugins.is_plugin_used(plugin.id))
-        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
-        self.assertTrue(ClusterPlugins.is_plugin_used(plugin.id))
+        plugin = ClusterPlugin.get_connected_plugins(cluster).first()
+        self.assertFalse(ClusterPlugin.is_plugin_used(plugin.id))
+        ClusterPlugin.set_attributes(cluster.id, plugin.id, enabled=True)
+        self.assertTrue(ClusterPlugin.is_plugin_used(plugin.id))

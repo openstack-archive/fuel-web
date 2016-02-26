@@ -1,0 +1,894 @@
+[{
+    "pk": 1,
+    "adv_net_template": {
+        "default": {
+            "network_assignments": {
+                "management": {
+                    "ep": "br-mgmt"
+                },
+                "storage": {
+                    "ep": "br-storage"
+                },
+                "public": {
+                    "ep": "br-ex"
+                },
+                "private": {
+                    "ep": "br-prv"
+                },
+                "fuelweb_admin": {
+                    "ep": "br-fw-admin"
+                }
+            },
+            "templates_for_node_role": {
+                "cinder": [
+                    "common",
+                    "storage"
+                ],
+                "controller": [
+                    "common",
+                    "public"
+                ],
+                "compute": [
+                    "common",
+                    "storage",
+                    "private"
+                ]
+            },
+            "nic_mapping": {
+                "default": {
+                    "if1": "eth0",
+                    "if2": "eth1",
+                    "if3": "eth2",
+                    "if4": "eth3",
+                    "if5": "eth4",
+                    "if6": "eth5",
+                    "if7": "eth6"
+                }
+            },
+            "network_scheme": {
+                "storage": {
+                    "priority": 300,
+                    "endpoints": [
+                        "br-storage"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-storage"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-storage",
+                            "name": "<% if3 %>"
+                        }
+                    ],
+                    "roles": {
+                        "storage": "br-storage",
+                        "swift/replication": "br-storage",
+                        "cinder/iscsi": "br-storage",
+                        "ceph/replication": "br-storage"
+                    }
+                },
+                "common": {
+                    "priority": 200,
+                    "endpoints": [
+                        "br-mgmt",
+                        "br-fw-admin"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-fw-admin"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-fw-admin",
+                            "name": "<% if1 %>"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-mgmt"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-mgmt",
+                            "name": "<% if2 %>.104"
+                        }
+                    ],
+                    "roles": {
+                        "keystone/api": "br-mgmt",
+                        "neutron/api": "br-mgmt",
+                        "mgmt/database": "br-mgmt",
+                        "sahara/api": "br-mgmt",
+                        "admin/pxe": "br-fw-admin",
+                        "fw-admin": "br-fw-admin",
+                        "ceilometer/api": "br-mgmt",
+                        "glance/api": "br-mgmt",
+                        "management": "br-mgmt",
+                        "swift/api": "br-mgmt",
+                        "heat/api": "br-mgmt",
+                        "cinder/api": "br-mgmt",
+                        "murano/api": "br-mgmt",
+                        "murano/cfapi": "br-mgmt",
+                        "nova/api": "br-mgmt",
+                        "horizon": "br-mgmt",
+                        "mgmt/memcache": "br-mgmt",
+                        "mgmt/messaging": "br-mgmt",
+                        "neutron/mesh": "br-mgmt",
+                        "mgmt/vip": "br-mgmt",
+                        "mgmt/corosync": "br-mgmt",
+                        "mongo/db": "br-mgmt",
+                        "nova/migration": "br-mgmt",
+                        "ceph/public": "br-mgmt",
+                        "ironic/api": "br-mgmt",
+                        "ironic/baremetal": "br-baremetal"
+
+                    }
+                },
+                "private": {
+                    "endpoints": [
+                        "br-prv"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-prv",
+                            "provider": "ovs",
+                            "vendor_specific": {
+                                "datapath_type": "netdev"
+                            }
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-aux"
+                        },
+                        {
+                            "action": "add-patch",
+                            "bridges": [
+                                "br-prv",
+                                "br-aux"
+                            ],
+                            "provider": "ovs",
+                            "mtu": 65000
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-prv",
+                            "name": "<% if4 %>.101",
+                            "provider": "dpdkovs"
+                        }
+                    ],
+                    "roles": {
+                        "neutron/private": "br-prv"
+                    }
+                },
+                "public": {
+                    "priority": 100,
+                    "endpoints": [
+                        "br-ex"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-ex"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-floating",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-patch",
+                            "bridges": [
+                                "br-floating",
+                                "br-ex"
+                            ],
+                            "provider": "ovs",
+                            "mtu": 65000
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-ex",
+                            "name": "<% if2 %>"
+                        },
+                        {
+                            "action": "add-bond",
+                            "name": "ovs-bond0",
+                            "bridge": "br-bond0",
+                            "interfaces": ["<% if5 %>", "<% if6 %>"],
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-exclude",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-exclude",
+                            "name": "<% if7 %>.201"
+                        }
+                    ],
+                    "roles": {
+                        "ex": "br-ex",
+                        "ceph/radosgw": "br-ex",
+                        "swift/public": "br-ex",
+                        "public/vip": "br-ex",
+                        "neutron/floating": "br-floating"
+                    }
+                }
+            }
+        },
+        "group-custom-1": {
+            "network_assignments": {
+                "management": {
+                    "ep": "br-mgmt"
+                },
+                "storage": {
+                    "ep": "br-storage"
+                },
+                "public": {
+                    "ep": "br-ex"
+                },
+                "private": {
+                    "ep": "br-prv"
+                },
+                "fuelweb_admin": {
+                    "ep": "br-fw-admin"
+                }
+            },
+            "templates_for_node_role": {
+                "cinder": [
+                    "common",
+                    "storage"
+                ],
+                "controller": [
+                    "public",
+                    "private",
+                    "storage",
+                    "common"
+                ],
+                "compute": [
+                    "common",
+                    "private",
+                    "storage"
+                ],
+                "ceph-osd": [
+                    "common",
+                    "storage"
+                ]
+            },
+            "network_scheme": {
+                "storage": {
+                    "endpoints": [
+                        "br-storage"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-storage"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-storage",
+                            "name": "<% if5 %>"
+                        }
+                    ],
+                    "roles": {
+                        "ceph/replication": "br-storage",
+                        "storage": "br-storage",
+                        "cinder/iscsi": "br-storage",
+                        "swift/replication": "br-storage"
+                    }
+                },
+                "public": {
+                    "endpoints": [
+                        "br-ex"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-ex"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-floating",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-patch",
+                            "bridges": [
+                                "br-floating",
+                                "br-ex"
+                            ],
+                            "mtu": 65000,
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-ex",
+                            "name": "<% if2 %>"
+                        }
+                    ],
+                    "roles": {
+                        "ceph/radosgw": "br-ex",
+                        "public/vip": "br-ex",
+                        "neutron/floating": "br-floating",
+                        "ex": "br-ex"
+                    }
+                },
+                "private": {
+                    "endpoints": [
+                        "br-prv"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-prv",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-aux"
+                        },
+                        {
+                            "action": "add-patch",
+                            "bridges": [
+                                "br-prv",
+                                "br-aux"
+                            ],
+                            "mtu": 65000,
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-aux",
+                            "name": "<% if4 %>"
+                        }
+                    ],
+                    "roles": {
+                        "neutron/private": "br-prv"
+                    }
+                },
+                "common": {
+                    "endpoints": [
+                        "br-fw-admin",
+                        "br-mgmt"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-fw-admin"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-fw-admin",
+                            "name": "<% if1 %>"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-mgmt"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-mgmt",
+                            "name": "<% if3 %>"
+                        }
+                    ],
+                    "roles": {
+                        "keystone/api": "br-mgmt",
+                        "neutron/api": "br-mgmt",
+                        "mgmt/database": "br-mgmt",
+                        "sahara/api": "br-mgmt",
+                        "ceilometer/api": "br-mgmt",
+                        "mgmt/vip": "br-mgmt",
+                        "ceph/public": "br-mgmt",
+                        "mgmt/messaging": "br-mgmt",
+                        "management": "br-mgmt",
+                        "swift/api": "br-mgmt",
+                        "mgmt/api": "br-mgmt",
+                        "mgmt/corosync": "br-mgmt",
+                        "cinder/api": "br-mgmt",
+                        "neutron/mesh": "br-mgmt",
+                        "admin/pxe": "br-fw-admin",
+                        "mongo/db": "br-mgmt",
+                        "fw-admin": "br-fw-admin",
+                        "glance/api": "br-mgmt",
+                        "heat/api": "br-mgmt",
+                        "murano/api": "br-mgmt",
+                        "murano/cfapi": "br-mgmt",
+                        "nova/api": "br-mgmt",
+                        "horizon": "br-mgmt",
+                        "nova/migration": "br-mgmt",
+                        "mgmt/memcache": "br-mgmt"
+                    }
+                }
+            },
+            "nic_mapping": {
+                "default": {
+                    "if4": "eth3",
+                    "if5": "eth4",
+                    "if1": "eth0",
+                    "if2": "eth1",
+                    "if3": "eth2"
+                }
+            }
+        }
+    }
+},
+
+{
+    "pk": 2,
+    "adv_net_template": {
+        "default": {
+            "network_assignments": {
+                "mongo": {
+                    "ep": "br-mongo"
+                },
+                "private": {
+                    "ep": "br-prv"
+                },
+                "fuelweb_admin": {
+                    "ep": "br-fw-admin"
+                },
+                "management": {
+                    "ep": "br-mgmt"
+                },
+                "keystone": {
+                    "ep": "br-keystone"
+                },
+                "public": {
+                    "ep": "br-ex"
+                },
+                "storage": {
+                    "ep": "br-storage"
+                },
+                "murano": {
+                    "ep": "<% if5 %>"
+                }
+            },
+            "templates_for_node_role": {
+                "cinder": [
+                    "common",
+                    "storage",
+                    "custom"
+                ],
+                "controller": [
+                    "public",
+                    "private",
+                    "storage",
+                    "common",
+                    "custom"
+                ],
+                "compute": [
+                    "common",
+                    "private",
+                    "storage",
+                    "custom"
+                ]
+            },
+            "nic_mapping": {
+                "default": {
+                    "if4": "eth4",
+                    "if5": "eth2",
+                    "if1": "eth0",
+                    "if2": "eth1",
+                    "if3": "eth3"
+                }
+            },
+            "network_scheme": {
+                "common": {
+                    "endpoints": [
+                        "br-fw-admin",
+                        "br-mgmt"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-fw-admin"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-fw-admin",
+                            "name": "<% if1 %>"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-mgmt"
+                        },
+                        {
+                            "action": "add-port",
+                            "name": "<% if3 %>.101"
+                        },
+                        {
+                            "action": "add-port",
+                            "name": "<% if4 %>.101"
+                        },
+                        {
+                            "action": "add-bond",
+                            "bridge": "br-mgmt",
+                            "interface_properties": {},
+                            "bond_properties": {
+                                "mode": "active-backup"
+                            },
+                            "interfaces": ["<% if3 %>.101", "<% if4 %>.101"],
+                            "name": "lnxbond0"
+                        }
+                    ],
+                    "roles": {
+                        "mgmt/api": "br-mgmt",
+                        "management": "br-mgmt",
+                        "admin/pxe": "br-fw-admin",
+                        "fw-admin": "br-fw-admin",
+                        "mgmt/vip": "br-mgmt"
+                    }
+                },
+                "storage": {
+                    "endpoints": [
+                        "br-storage"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-storage"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-storage",
+                            "name": "<% if2 %>.102"
+                        }
+                    ],
+                    "roles": {
+                        "storage": "br-storage",
+                        "ceph/public": "br-storage",
+                        "ceph/replication": "br-storage"
+                    }
+                },
+                "public": {
+                    "endpoints": [
+                        "br-ex"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-ex"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-floating",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-patch",
+                            "bridges": [
+                                "br-floating",
+                                "br-ex"
+                            ],
+                            "provider": "ovs",
+                            "mtu": 65000
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-ex",
+                            "name": "<% if2 %>"
+                        }
+                    ],
+                    "roles": {
+                        "public/vip": "br-ex",
+                        "ceph/radosgw": "br-ex",
+                        "neutron/floating": "br-floating",
+                        "ex": "br-ex"
+                    }
+                },
+                "private": {
+                    "endpoints": [
+                        "br-prv"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-prv",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-aux"
+                        },
+                        {
+                            "action": "add-patch",
+                            "bridges": [
+                                "br-prv",
+                                "br-aux"
+                            ],
+                            "provider": "ovs",
+                            "mtu": 65000
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-aux",
+                            "name": "<% if5 %>.103"
+                        }
+                    ],
+                    "roles": {
+                        "neutron/private": "br-prv"
+                    }
+                },
+                "custom": {
+                    "endpoints": [
+                        "br-mongo",
+                        "br-keystone",
+                        "<% if5 %>"
+                    ],
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-mongo"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-mongo",
+                            "name": "<% if4 %>.201"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-keystone"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-keystone",
+                            "name": "<% if4 %>.202"
+                        },
+                        {
+                            "action": "add-port",
+                            "name": "<% if5 %>"
+                        }
+                    ],
+                    "roles": {
+                        "murano/api": "<% if5 %>",
+                        "murano/cfapi": "<% if5 %>",
+                        "keystone/api": "br-keystone",
+                        "neutron/mesh": "br-mgmt",
+                        "mgmt/database": "br-mgmt",
+                        "sahara/api": "br-mgmt",
+                        "mongo/db": "br-mongo",
+                        "ceilometer/api": "br-mgmt",
+                        "mgmt/messaging": "br-mgmt",
+                        "glance/api": "br-mgmt",
+                        "swift/api": "br-mgmt",
+                        "heat/api": "br-mgmt",
+                        "cinder/api": "br-mgmt",
+                        "neutron/api": "br-mgmt",
+                        "mgmt/corosync": "br-mgmt",
+                        "nova/api": "br-mgmt",
+                        "horizon": "br-mgmt",
+                        "nova/migration": "br-mgmt",
+                        "mgmt/memcache": "br-mgmt",
+                        "cinder/iscsi": "br-mgmt",
+                        "swift/replication": "br-mgmt"
+                    }
+                }
+            }
+        }
+    }
+},
+
+{
+    "pk": 3,
+    "adv_net_template": {
+        "default": {
+            "network_assignments": {
+                "cluster": {
+                    "ep": "br-cluster"
+                },
+                "management": {
+                    "ep": "br-mgmt"
+                },
+                "storage": {
+                    "ep": "br-storage"
+                },
+                "public": {
+                    "ep": "br-ex"
+                },
+                "private": {
+                    "ep": "br-prv"
+                },
+                "fuelweb_admin": {
+                    "ep": "br-fw-admin"
+                }
+            },
+            "templates_for_node_role": {
+                "ceph-osd":[
+                    "common",
+                    "storage",
+                    "cluster"
+                ],
+                "controller":[
+                    "common",
+                    "public",
+                    "private",
+                    "storage",
+                    "cluster"
+                ],
+                "compute":[
+                    "common",
+                    "private",
+                    "storage"
+                ],
+                "mongo":[
+                    "common"
+                ]
+            },
+            "nic_mapping": {
+                "default": {
+                    "if0": "eth0",
+                    "if1": "eth1",
+                    "if2": "eth2"
+                }
+            },
+            "network_scheme": {
+                "cluster": {
+                    "endpoints":[
+                        "br-cluster"
+                    ],
+                    "transformations":[
+                        {
+                            "action": "add-br",
+                            "name": "br-cluster"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-cluster",
+                            "name": "bond0.343"
+                        }
+                    ],
+                    "roles": {
+                        "ceph/replication": "br-cluster"
+                    }
+                },
+                "storage": {
+                    "endpoints":[
+                        "br-storage"
+                    ],
+                    "transformations":[
+                        {
+                            "action": "add-br",
+                            "name": "br-storage"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-storage",
+                            "name": "bond0.344"
+                        }
+                    ],
+                    "roles": {
+                        "ceph/radosgw": "br-storage",
+                        "storage": "br-storage",
+                        "cinder/iscsi": "br-storage",
+                        "ceph/public": "br-storage"
+                    }
+                },
+                "common": {
+                    "endpoints":[
+                        "br-fw-admin",
+                        "br-mgmt"
+                    ],
+                    "transformations":[
+                        {
+                            "action": "add-br",
+                            "name": "br-fw-admin"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-mgmt"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-fw-admin",
+                            "name": "<%if0%>"
+                        },
+                        {
+                            "action": "add-bond",
+                            "interfaces":[
+                                "<%if1%>",
+                                "<%if2%>"
+                            ],
+                            "name": "bond0",
+                            "bridge": "br-aux",
+                            "bond_properties": {
+                                "mode": "active-backup"
+                            }
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-mgmt",
+                            "name": "bond0.345"
+                        }
+                    ],
+                    "roles": {
+                        "heat/api": "br-mgmt",
+                        "keystone/api": "br-mgmt",
+                        "neutron/api": "br-mgmt",
+                        "mgmt/database": "br-mgmt",
+                        "sahara/api": "br-mgmt",
+                        "admin/pxe": "br-fw-admin",
+                        "ironic/baremetal": "br-mgmt",
+                        "mongo/db": "br-mgmt",
+                        "ceilometer/api": "br-mgmt",
+                        "glance/api": "br-mgmt",
+                        "fw-admin": "br-fw-admin",
+                        "mgmt/messaging": "br-mgmt",
+                        "management": "br-mgmt",
+                        "swift/api": "br-mgmt",
+                        "mgmt/vip": "br-mgmt",
+                        "mgmt/memcache": "br-mgmt",
+                        "mgmt/api": "br-mgmt",
+                        "murano/api": "br-mgmt",
+                        "mgmt/corosync": "br-mgmt",
+                        "nova/api": "br-mgmt",
+                        "murano/cfapi": "br-mgmt",
+                        "horizon": "br-mgmt",
+                        "nova/migration": "br-mgmt",
+                        "cinder/api": "br-mgmt",
+                        "ironic/api": "br-mgmt",
+                        "swift/replication": "br-mgmt"
+                    }
+                },
+                "private": {
+                    "endpoints":[
+                        "br-prv"
+                    ],
+                    "transformations":[
+                        {
+                            "action": "add-br",
+                            "name": "br-prv"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-prv",
+                            "name": "bond0.342"
+                        }
+                    ],
+                    "roles": {
+                        "neutron/private":null,
+                        "neutron/mesh": "br-prv"
+                    }
+                },
+                "public": {
+                    "endpoints":[
+                        "br-ex"
+                    ],
+                    "transformations":[
+                        {
+                            "action": "add-br",
+                            "name": "br-ex"
+                        },
+                        {
+                            "action": "add-br",
+                            "name": "br-floating",
+                            "provider": "ovs"
+                        },
+                        {
+                            "action": "add-patch",
+                            "bridges":[
+                                "br-floating",
+                                "br-ex"
+                            ],
+                            "provider": "ovs",
+                            "mtu":65000
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-ex",
+                            "name": "bond0.3202"
+                        }
+                    ],
+                    "roles": {
+                        "public/vip": "br-ex",
+                        "neutron/floating": "br-floating",
+                        "ex": "br-ex"
+                    }
+                }
+            }
+        }
+    }
+}]

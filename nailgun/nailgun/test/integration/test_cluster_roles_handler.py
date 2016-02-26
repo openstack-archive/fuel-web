@@ -140,9 +140,9 @@ class TestClusterRolesHandler(base.BaseTestCase):
         plugin_data['roles_metadata'] = self.ROLES
         plugin = objects.Plugin.create(plugin_data)
         self.cluster.plugins.append(plugin)
-        objects.ClusterPlugins.set_attributes(self.cluster.id,
-                                              plugin.id,
-                                              enabled=True)
+        objects.ClusterPlugin.set_attributes(self.cluster.id,
+                                             plugin.id,
+                                             enabled=True)
         self.db.flush()
 
         roles = self.app.get(
@@ -164,9 +164,9 @@ class TestClusterRolesHandler(base.BaseTestCase):
         plugin_data['volumes_metadata'] = self.VOLUMES
         plugin = objects.Plugin.create(plugin_data)
         self.cluster.plugins.append(plugin)
-        objects.ClusterPlugins.set_attributes(self.cluster.id,
-                                              plugin.id,
-                                              enabled=True)
+        objects.ClusterPlugin.set_attributes(self.cluster.id,
+                                             plugin.id,
+                                             enabled=True)
         self.db.flush()
         plugin_adapter = adapters.wrap_plugin(plugin)
 

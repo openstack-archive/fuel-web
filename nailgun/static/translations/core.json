@@ -1386,6 +1386,7 @@
             },
             "cluster_page": {
                 "tabs": {
+                    "dashboard": "控制台",
                     "nodes": "节点",
                     "network": "网络",
                     "settings": "设置",
@@ -1397,26 +1398,183 @@
                     "roles": "角色",
                     "hardware_info": "硬件信息",
                     "roles_and_hardware_info": "角色和硬件信息",
+                    "sorters": {
+                        "roles": "角色",
+                        "status": "状态",
+                        "offline": "离线状态",
+                        "name": "名称",
+                        "mac": "MAC地址",
+                        "ip": "IP地址",
+                        "manufacturer": "制造商",
+                        "cores": "CPU核数",
+                        "ht_cores": "逻辑CPU核数",
+                        "hdd": "硬盘容量",
+                        "disks": "磁盘数量和大小",
+                        "ram": "内存大小",
+                        "interfaces": "接口数量",
+                        "group_id": "节点网络组",
+                        "cluster": "环境"
+                    },
+                    "filters": {
+                        "roles": "角色",
+                        "hdd": "硬盘总容量(GB)",
+                        "status": "状态",
+                        "manufacturer": "制造商",
+                        "cores": "CPU核数",
+                        "ht_cores": "逻辑CPU核数",
+                        "disks_amount": "磁盘数量",
+                        "ram": "内存总容量(GB)",
+                        "interfaces": "接口数量",
+                        "group_id": "节点网络组",
+                        "cluster": "环境",
+                        "prefixes": {
+                            "cores": "CPU核数",
+                            "ht_cores": "逻辑CPU核数",
+                            "hdd": "磁盘容量(GB)",
+                            "disks_amount": "磁盘数量",
+                            "ram": "内存容量(GB)",
+                            "interfaces": "接口数量"
+                        }
+                    },
+                    "filter_results_amount": "显示__count__ of __total__个结果",
+                    "filter_results_amount_plural": "显示__count__ of __total__个结果",
                     "assign_roles": "分配角色",
+                    "breadcrumbs": {
+                        "add": "添加节点",
+                        "edit": "编辑角色",
+                        "disks": "配置磁盘",
+                        "interfaces": "配置接口"
+                    },
                     "configure_interfaces": {
                         "title": "在__name__上配置接口",
                         "title_plural": "在__count__个节点上配置接口",
+                        "read_only_title": "__name__的接口配置",
+                        "read_only_title_plural": "__count__个节点的接口配置",
+                        "vlan_id": "VLAN ID",
+                        "vlan_id_plural": "VLAN IDs",
+                        "mac": "MAC地址",
+                        "name": "名称",
+                        "configuration_template_warning": "无法配置网络：网络配置模板正在被使用。",
+                        "bond_button": "绑定网络接口",
+                        "unbond_button": "解绑网络接口",
+                        "bond_speed_warning": "不推荐使用不同网络性能参数绑定网络接口。",
+                        "several_bonds_warning": "该网络接口已经与其它接口绑定。",
                         "speed": "速度",
-                        "drag_and_drop_description": "使用拖拽在物理接口之间移动逻辑网络"
+                        "all_modes": "所有模式",
+                        "bonding_mode": "模式",
+                        "bonding_modes": {
+                            "active-backup": "激活备份",
+                            "balance-slb": "balance-slb",
+                            "lacp-balance-tcp": "LACP Balance TCP",
+                            "balance-rr": "balance-rr",
+                            "balance-xor": "balance-xor",
+                            "balance-tlb": "balance-tlb",
+                            "balance-alb": "balance-alb",
+                            "broadcast": "广播",
+                            "802_3ad": "802.3ad(LACP)"
+                        },
+                        "hash_policy": {
+                            "layer2": "二层",
+                            "layer2+3": "二层和三层",
+                            "layer3+4": "三层和四层",
+                            "encap3+4": "encap3+4",
+                            "encap2+3": "encap2+3"
+                        },
+                        "lacp_rate": "LACP速率",
+                        "lacp_rates": {
+                            "slow": "慢速",
+                            "fast": "快速"
+                        },
+                        "drag_and_drop_description": "使用拖拽在物理接口之间移动逻辑网络",
+                        "configuration_error": {
+                            "title": "接口配置错误",
+                              "saving_warning": "无法应用更改。",
+                                "load_defaults_warning": "无法载入默认配置。"
+                        },
+                        "validation": {
+                            "too_many_untagged_networks": "无法分配未标注网络至同一接口。",
+                            "invalid_mtu": "非法MTU值",
+                            "networks_with_the_same_vlan": "无法分配相同VLAN ID的网络至同一接口。",
+                            "vlan_range_intersection": "网络VLAN ID范围不应包括分配给该接口的其它网络的VLAN ID。"
+                        },
+                        "disable_offloading": "禁用卸载",
+                        "default_offloading": "默认卸载",
+                        "offloading_modes": "卸载模式",
+                        "offloading_mode": "模式",
+                        "offloading_enabled": "启用",
+                        "offloading_disabled": "禁用",
+                        "offloading_default": "默认",
+                        "mtu": "MTU",
+                        "mtu_placeholder": "默认"
                     },
                     "configure_disks": {
+                        "no_disks": "没有未分配的磁盘可用。",
+                        "no_disks_plural": "没有未分配的磁盘可用。",
                         "title": "在__name__上配置磁盘",
                         "title_plural": "在__count__个节点上配置磁盘",
+                        "read_only_title": "__name__的磁盘配置",
+                        "read_only_title_plural": "__count__个节点的磁盘配置",
                         "disk_information": "磁盘信息",
                         "volume_groups": "卷组",
                         "total_space": "全部空间",
                         "unallocated": "未分配",
-                        "use_all_allowed_space": "使用全部可用空间"
+                        "use_all_allowed_space": "使用全部可用空间",
+                        "validation_error": "卷组总容量超过可用空间__size__ MB",
+                        "minimum_reached": "达到最小允许大小",
+                        "not_enough_space": "没有足够空间供卷组分配",
+                        "volume_error": "卷太小，至少分配 __size__ MB。",
+                        "configuration_error": {
+                            "title": "磁盘配置错误",
+                            "saving_warning": "无法应用更改。",
+                            "load_defaults_warning": "无法载入默认配置。"
+                        }
                     },
                     "node_management_panel": {
                         "group_by": "分组",
+                        "sort_by": "排序",
+                        "reset": "重置",
+                        "more": "更多",
+                        "standard_mode_tooltip": "标准节点试图",
+                        "compact_mode_tooltip": "简洁节点试图",
+                        "labels_tooltip": "管理标签",
+                        "sort_tooltip": "节点排序",
+                        "filter_tooltip": "过滤节点",
+                        "search_tooltip": "快速搜索",
+                        "filter_by": "过滤",
+                        "filter_placeholder": "节点名称/mac地址",
+                        "search_placeholder": "节点名称,MAC地址或IP地址",
                         "edit_roles_button": "编辑角色",
-                        "add_nodes_button": "增加节点"
+                        "add_nodes_button": "添加节点",
+                        "selected_options": "已选择__count__项",
+                        "select_all": "全选",
+                        "label_value_not_specified" : "没有指定值",
+                        "label_not_assigned": "未分配标签",
+                        "labels": {
+                            "manage_labels": "管理标签",
+                            "add_label": "添加标签",
+                            "not_assigned_label": "没有标签\"__label__\"",
+                            "not_specified_label" : "未指定标签\"__label__\"",
+                            "label_key": "名称",
+                            "label_value": "值",
+                            "empty_label_key": "标签名不能为空。",
+                            "existing_label": "该标签已存在。",
+                            "selected_nodes_amount": "已选择__count__个节点",
+                            "selected_nodes_amount_plural": "已选择__count__个节点",
+                            "bulk_label_action_start": "可以更改标签",
+                            "bulk_label_action_end": "使用复选框为选择的节点添加或删除标签，使用文本段为标签更新名称或值。",
+                            "label_value_warning": "标签在已选节点上又不同的值，若更改值，则会应用到所有具有改标签的选定节点。"
+                        },
+                        "node_management_error": {
+                            "title": "节点管理错误",
+                            "saving_warning": "无法应用更改。",
+                            "labels_warning": "无法应用标签。",
+                            "disks_configuration_warning": "已选节点磁盘容量不同。",
+                            "interfaces_configuration_warning": "已选节点网络接口数量不同。"
+                        },
+                        "labels_error": {
+                            "label_already_exists": "标签已存在。",
+                            "invalid_label": "非法标签"
+                        }
                     },
                     "node": {
                         "status": {
@@ -1426,171 +1584,144 @@
                             "pending_addition": "等待增加",
                             "pending_deletion": "等待删除",
                             "ready": "已就绪",
+                            "removing": "正在移除",
                             "provisioning": "正在安装__os__",
                             "provisioned": "__os__已安装",
                             "deploying": "正在安装OpenStack"
                         },
-                        "view_logs": "查看日志",
+                        "remove": "移除",
+                        "delete_node": "删除节点",
                         "discard_deletion": "取消删除",
-                        "discard_role_changes": "取消角色变更",
-                        "edit_name": "编辑名称"
+                        "cant_discard": "无法取消节点删除",
+                        "view_logs": "查看日志",
+                        "edit_name": "编辑名称",
+                        "more_info": "更多信息",
+                        "node_network_group": "节点网络组\"__group__\"",
+                        "no_node_network_group": "未指定节点网络组",
+                        "no_roles": "未制定规则",
+                        "cluster": "环境\"__cluster__\"",
+                        "unallocated": "未分配",
+                        "details": "详细信息"
                     },
                     "back_to_nodes_button": "返回节点列表",
                     "unallocated_nodes": "未分配节点",
                     "no_selected_nodes": "没有选择任何节点",
+                    "disk_configuration_reset_warning": "当你更改节点角色，磁盘配置将重置为默认值",
                     "no_nodes_in_environment": "选择想分配的节点并设置角色",
-                    "no_nodes_in_fuel": "这个操作需要拥有一个或多个未分配节点的节点池。配置节点从网络启动来将它添加到节点池(PXE booting)。Fuel会自动发现节点。"
+                    "no_nodes_in_fuel": "这个操作需要拥有一个或多个未分配节点的节点池。配置节点从网络启动来将它添加到节点池(PXE booting)。Fuel会自动发现节点。",
+                    "role_conflict": "该角色无法与所选角色相结合",
+                    "node_deletion_error": {
+                        "title": "删除节点错误",
+                        "node_deletion_warning": "无法删除节点."
+                    },
+                    "no_filtered_nodes_warning": "没有节点匹配过滤器",
+                    "filtered_nodes_count":"__count__个节点中过滤出__filteredNodesCount__个节点",
+                    "filtered_nodes_count_plural": "__count__个节点中过滤出__filteredNodesCount__个节点"
                 },
                 "settings_tab": {
+                    "settings_error": {
+                        "title": "OpenStack设置配置错误",
+                        "load_defaults_warning": "无法载入默认配置",
+                        "saving_warning": "无法应用更改"
+                    },
                     "title": "OpenStack设置",
-                    "access": {
-                        "label": "访问",
-                        "user": {
-                            "label": "用户名",
-                            "description": "管理员用户名"
+                    "groups": {
+                        "common": "Common",
+                        "general": "基础配置",
+                        "security": "安全配置",
+                        "compute": "计算配置",
+                        "storage": "存储配置",
+                        "logging": "日志配置",
+                        "network": "网络配置",
+                        "openstack_services": "OpenStack服务",
+                        "other": "其它配置"
+                    },
+                    "dependent_role_warning": "环境包含__roles__节点.",
+                    "dependent_role_warning_plural": "环境包含__roles__节点",
+                    "dependent_settings_warning": "__settings__已激活",
+                    "dependent_settings_warning_plural": "__settings__已激活",
+                    "images_ceph_warning": "环境包含controllers.",
+                    "custom_repo_configuration": {
+                        "add_repo_button": "添加额外源",
+                        "labels": {
+                            "name": "名称",
+                            "uri": "URI",
+                            "priority": "优先级"
                         },
-                        "email": {
-                            "label": "电子邮件",
-                            "description": "管理员电子邮件"
+                        "placeholders": {
+                            "priority": "无"
                         },
-                        "tenant": {
-                            "label": "租户",
-                            "description": "管理员租户名称"
-                        },
-                        "password": {
-                            "label": "密码",
-                            "description": "管理员密码"
+                        "errors": {
+                            "empty_name": "名称为空",
+                            "invalid_name": "非法名称",
+                            "invalid_repo": "非法源格式",
+                            "invalid_priority": "非法优先级"
                         }
                     },
-                    "additional_components": {
-                        "label": "额外组件",
-                        "sahara": {
-                            "label": "安装Sahara",
-                            "description": "如果选择，Sahara组件将被安装。"
-                        },
-                        "ceilometer": {
-                            "label": "安装Ceilometer",
-                            "description": "如果选择，Ceilometer组件将被安装。"
-                        }
-                    },
-                    "syslog": {
-                        "label": "系统日志",
-                        "syslog_transport": {
-                            "label": "系统日志传输协议",
-                            "values": {
-                                "udp": {
-                                    "label": "UDP"
-                                },
-                                "tcp": {
-                                    "label": "TCP"
-                                }
-                            }
-                        },
-                        "syslog_server": {
-                            "label": "主机名",
-                            "description": "远程系统日志主机名"
-                        },
-                        "syslog_port": {
-                            "label": "端口",
-                            "description": "远程系统日志端口"
-                        }
-                    },
-                    "storage": {
-                        "label": "存储",
-                        "volumes_lvm": {
-                            "label": "基于iSCSI的Cinder LVM卷",
-                            "description": "需要至少一个Cinder节点"
-                        },
-                        "volumes_ceph": {
-                            "label": "Ceph RBD卷",
-                            "description": "需要至少两个Ceph-OSD节点"
-                        },
-                        "images_ceph": {
-                            "label": "Ceph RBD映像",
-                            "description": "需要至少两个Ceph-OSD节点"
-                        },
-                        "objects_ceph": {
-                            "label": "Ceph rados-gw对象",
-                            "description": "需要至少两个Ceph-OSD节点，与Swift不兼容"
-                        },
-                        "osd_pool_size": {
-                            "label": "Ceph对象副本数量",
-                            "description": "定义Ceph池中的对象副本数量。需要部署至少相应数量的Ceph-OSD节点。"
-                        }
-                    },
-                    "common": {
-                        "label": "通用",
-                        "debug": {
-                            "label": "OpenStack调试日志",
-                            "description": "调试模式能够提供更多信息，但也需要更多磁盘空间。"
-                        },
-                        "auto_assign_floating_ip": {
-                            "label": "自动分配浮动IP",
-                            "description": "OpenStack将自动给新实例分配浮动IP"
-                        },
-                        "libvirt_type": {
-                            "label": "管理器类型",
-                            "values": {
-                                "kvm": {
-                                    "label": "KVM",
-                                    "description": "如果在硬件上运行OpenStack，选择该类型的管理器"
-                                },
-                                "qemu": {
-                                    "label": "QEMU",
-                                    "description": "如果您在虚拟机上运行OpenStack请选择该类型的管理器"
-                                }
-                            }
-                        },
-                        "start_guests_on_host_boot": {
-                            "label": "主机启动时运行客户机",
-                            "description": "在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启"
-                        },
-                        "use_cow_images": {
-                            "label": "为映像使用qcow格式",
-                            "description": "大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照"
-                        },
-                        "compute_scheduler_driver": {
-                            "label": "调度方式",
-                            "values": {
-                                "nova": {
-                                    "scheduler": {
-                                        "filter_scheduler": {
-                                            "FilterScheduler": {
-                                                "label": "过滤器调度",
-                                                "description": "TBD"
-                                            }
-                                        },
-                                        "simple": {
-                                            "SimpleScheduler": {
-                                                "label": "简单调度",
-                                                "description": "TBD"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "auth_key": {
-                            "label": "公开密钥",
-                            "description": "部署节点时包含在authorized_keys中的公钥"
-                        }
-                    },
-                    "vlan_splinters": {
-                        "vswitch":{
-                            "label": "打开'OVS VLAN splinters'特性（仅Neutron）",
-                            "description": "将VLAN splinters Open vSwitch方法使用到需要的网卡上。"
-                        }
-                    }
+                    "plugin_versions": "版本"
                 },
                 "dashboard_tab": {
                     "delete_environment": "删除环境",
                     "alert_delete": "清除每个节点并放回未分配节点池",
-                    "added_node": "增加 __count__ 个节点。",
-                    "added_node_plural": "增加 __count__ 个节点。",
-                    "deleted_node": "删除 __count__ 个节点。",
-                    "deleted_node_plural": "删除 __count__ 个节点。",
-                    "provisioned_node": "配置了 __count__ 个节点",
-                    "provisioned_node_plural": "配置了 __count__ 个节点"
+                    "reset_environment": "重置环境",
+                    "reset_environment_description": "允许修改设置并重新部署环境",
+                    "reset_environment_warning": "即将重置所有节点至部署前状态并删除该环境，环境设置和网络配置将会被保留。",
+                    "reset_disabled_for_deploying_cluster": "OpenStack环境仍在部署中，等待Fuel完成部署并再次尝试。",
+                    "repeated_reset_disabled": "环境已经在被重置",
+                    "no_changes_to_reset": "无法重置未部署的环境",
+                    "rename_error": {
+                        "title": "无法重命名OpenStack环境"
+                    },
+                    "current_task": "当前任务:",
+                    "cluster_info_fields": {
+                        "name": "名称",
+                        "status": "状态",
+                        "openstack_release": "OpenStack发行版",
+                        "operating_system": "操作系统",
+                        "compute": "计算",
+                        "network": "网络",
+                        "storage_backends": "后端存储",
+                        "cpu_cores": "CPU核数",
+                        "hdd": "硬盘",
+                        "ram": "内存",
+                        "capacity": "容量",
+                        "statistics": "节点统计",
+                        "total": "总节点数"
+                    },
+                    "mos_documentation": "Mirantis OpenStack Documentation",
+                    "openstack_documentation": "OpenStack文档",
+                    "documentation_description": "快速访问部署文档并配置您的OpenStack环境:",
+                    "no_nodes_warning_add_them": "该环境中无节点，请在节点选项卡添加节点并重试一次",
+                    "plugin_documentation": "插件文档",
+                    "technical_bulletins": "技术公告",
+                    "cluster_information": "集群信息",
+                    "summary": "总结",
+                    "changes_header": "更改列表:",
+                    "new_environment_welcome": "欢迎来到新的OpenStack环境!",
+                    "add_nodes": "为OpenStack环境添加节点",
+                    "not_deployed_instruction": "在继续前，请重新检查环境配置包括节点磁盘分区和网络配置，在Fuel部署完该OpenStack环境后这些设置均无法更改",
+                    "deployment_cannot_be_started": "由于非法环境配置部署无法启动，请检查并解决下方的warnings",
+                    "stop": "停止",
+                    "healthcheck": "查看OpenStack健康检查状态",
+                    "healthcheck_tab": "健康检查选项卡",
+                    "documentation": "文档",
+                    "go_to_nodes": "添加节点",
+                    "unsuccessful_deploy": "您的部署不成功，See the Troubleshooting section of the ",
+                    "no_nodes_instruction": "You must add at least one node to your environment in order to deploy. See the ",
+                    "locked_settings_alert": "在继续前，请重新检查环境配置包括节点磁盘分区和网络配置，在Fuel部署完该OpenStack环境后这些设置均无法更改",
+                    "package_information": "Packages and updates are fetched from the repositories defined in the Settings tab. If your environment uses the default external repositories, verify that the Fuel Master node can access the Internet. If the Fuel Master node is not connected to the Internet, you must set up a local mirror and configure Fuel to upload packages from the local mirror. Fuel must have network access to the local mirror. You may also configure alternate repositories for installation. For more information, see ",
+                    "user_guide": "用户指南",
+                    "operations_guide": "操作指南",
+                    "for_more_information_roles": "有关如何将角色分配给节点并将它们添加到OpenStack环境的详细信息",
+                    "for_more_information_configuration": "关于如何配置OpenStack环境和节点设置的详细信息",
+                    "and_vcenter": "和VCenter",
+                    "nova_with": "Nova Network with",
+                    "neutron_with": "Neutron with",
+                    "horizon": "Horizon",
+                    "horizon_description": "The OpenStack dashboard Horizon现在可用",
+                    "go_to_horizon": "Go to Horizon",
+                    "no_storage_enabled": "无存储选项可用",
+                    "http_plugin_link": "(HTTP)"
                 },
                 "network_tab": {
                     "title": "网络设置",
@@ -1600,9 +1731,29 @@
                     "untagged": "未标记",
                     "range_start": "开始",
                     "range_end": "结束",
+                    "show_all_networks": "显示所有网络",
+                    "add_node_network_group": "添加新节点网络组",
+                    "add": "添加组",
+                    "node_network_group_name": "名称",
+                    "node_network_group_duplicate_error": "该节点网络组名称已被占用",
+                    "node_network_group_empty_name": "节点网络组名称不能为空",
+                    "node_network_group_creation_error": "节点网络组创建错误",
+                    "node_network_group_deletion_error": "节点网络组删除错误",
+                    "default_node_network_group_info": "该节点网络组使用共享管理网络并不能被删除",
+                    "save_changes_warning": "在创建新节点网络组前请保存更改",
+                    "verification_multirack_warning": "对于包含多个节点网络组的环境网络验证无效",
+                    "not_enough_nodes": "为验证环境网络配置，至少需要两个在线节点",
                     "verify_networks": {
                         "step_0": "完成网络验证的4个步骤:",
+                        "step_1": "1. 环境中各节点的L2连通性检查",
+                        "step_2": "2. 各节点DHCP检查",
+                        "step_3": "3. Fuel主节点源连通性检查",
+                        "step_4": "4. 通过公网和管理(PXE)网络对Fuel从节点源连通性检查",
                         "success_alert": "验证成功。网络配置正确。",
+                        "verification_error": {
+                            "title": "网络验证错误",
+                            "start_verification_warning": "无法启动网络验证"
+                        },
                         "fail_alert": "验证失败。",
                         "node_name": "节点名称",
                         "node_mac_address": "节点MAC地址",
@@ -1617,10 +1768,77 @@
                         "use_vlan_tagging": "使用VLAN标记"
                     },
                     "networking_parameters": {
+                        "fixed_networks_cidr": "固定网络CIDR",
+                        "fixed_network_size": "固定网络大小",
+                        "fixed_networks_amount": "固定网络数量",
+                        "fixed_vlan_range": "固定VLAN ID范围",
+                        "use_vlan_tagging_fixed": "Use VLAN tagging for fixed networks",
+                        "nova_configuration": "Nova-network配置",
+                        "dns_nameservers": "宿主机操作系统DNS服务器",
                         "l2_configuration": "Neutron L2配置",
                         "l3_configuration": "Neutron L3配置",
-                        "base_mac": "基础MAC地址"
-                    }
+                        "l2_vlan_description": "Neutron支持不同种类的网络分段，例如VLAN、GRE、VXLAN等，这部分特定于VLAN相关参数，如用于租户隔离的VLAN ID范围和基础MAC地址",
+                        "l2_tun_description": "Neutron支持不同种类的网络分段，例如VLAN、GRE、VXLAN等，这部分特定于隧道相关参数，如用于租户隔离的Tunnel ID范围和基础MAC地址",
+                        "dns_servers_description": "该设置用于指定上游域名服务器，这些服务器用于向外部DNS服务器转发DNS请求",
+                        "baremetal_parameters_description": "裸机网络由OpenStack Ironic使用，OpenStack Ironic将管理连接到该网络的物理节点。它不是IPMI网络，该网络在neutron中被注册为provider网络并用于配置和访问裸机。",
+                        "gre_id_range": "Tunnel ID范围",
+                        "vlan_range": "VLAN ID范围",
+                        "base_mac": "基础MAC地址",
+                        "internal_cidr": "内网CIDR",
+                        "internal_gateway": "内网网关",
+                        "internal_name": "内网名称",
+                        "floating_name": "浮动网络名称",
+                        "floating_ranges": "浮动IP范围",
+                        "baremetal_gateway": "裸机网关",
+                        "baremetal_range": "裸机IP地址范围"
+                    },
+                    "validation": {
+                        "large_network": "网络过大",
+                        "small_network": "网络过小",
+                        "invalid_cidr": "非法CIDR",
+                        "invalid_ip": "非法IP地址",
+                        "invalid_ip_range": "起始IP地址必须小于结束IP地址",
+                        "empty_ip_range": "请至少指定一个IP地址范围",
+                        "ip_does_not_match_cidr": "IP address与网络CIDR不符",
+                        "floating_range_is_not_in_public_cidr": "浮动IP范围必须包含在公网CIDR中",
+                        "ip_ranges_intersection": "该IP范围与以下IP范围相重叠：",
+                        "floating_and_public_ip_ranges_intersection": "浮动IP范围不能与__network__网（__nodeNetworkGroup__节点网络组）的IP范围重叠：",
+                        "invalid_vlan": "非法VLAN ID",
+                        "forbidden_vlan": "该VLAN ID被其它网络占用，请选择其它VLAN ID",
+                        "invalid_netmask": "非法子网掩码",
+                        "invalid_gateway": "非法网关",
+                        "invalid_amount": "非法网络数",
+                        "gateway_does_not_match_cidr": "网关地址与网络CIDR不符",
+                        "need_more_vlan": "无法提供足够的VLAN ID，请确认VLAN ID范围中的网络数",
+                        "invalid_nameserver": "非法域名服务器",
+                        "invalid_id_start": "非法起始ID",
+                        "invalid_id_end": "非法结尾ID",
+                        "invalid_id_range": "起始ID比结束ID小",
+                        "not_enough_id": "ID范围需包含多余一个ID",
+                        "vlan_intersection": "VLAN ID范围与其他网络中使用的VLAN ID范围重叠，请设置不同的VLAN ID范围",
+                        "invalid_mac": "非法MAC地址",
+                        "ip_start_is_out_of_ip_range": "IP开头超出所选范围",
+                        "ip_end_is_out_of_ip_range": "IP结尾超出所选范围",
+                        "invalid_name": "非法网络名称"
+                    },
+                    "subtabs": {
+                        "nova_configuration": "Nova配置",
+                        "neutron_l2": "Neutron L2",
+                        "neutron_l3": "Neutron L3",
+                        "network_settings": "其它",
+                        "network_verification": "连通性检查",
+                        "all_networks": "所有网络",
+                        "groups": {
+                            "node_network_groups": "节点网络组",
+                            "settings": "设置",
+                            "network_verification": "网络验证",
+                            "networks": "网络"
+                        }
+                    },
+                    "floating_net": "浮动网络参数",
+                    "internal_net": "内网参数",
+                    "dns_nameservers": "宿主机操作系统DNS服务器",
+                    "baremetal_net": "裸机网络参数"
                 },
                 "logs_tab": {
                     "title": "日志",
@@ -1628,6 +1846,7 @@
                     "node": "节点",
                     "source": "来源",
                     "min_level": "最低严重性级别",
+                    "level": "级别",
                     "show": "显示",
                     "log_alert": "无法获取日志",
                     "source_alert": "无法获取日志来源",
@@ -1645,12 +1864,29 @@
                     "not_available_alert": "OSTF服务不可用",
                     "expected_duration": "预期的时长",
                     "actual_duration": "实际时长",
-                    "status": "状态"
+                    "status": "状态",
+                    "provide_credentials": "提供认证信息",
+                    "credentials_description": "若在部署后更改认证信息，请在运行健康检查时修改它们，Fuel不会存储凭证。",
+                    "password_label": "密码",
+                    "password_description": "Administrator的密码",
+                    "user_label": "用户名",
+                    "user_description": "Administrator的用户名",
+                    "tenant_label": "租户",
+                    "tenant_description": "Administrator的租户(项目)名称"
                 },
                 "deploy_changes": "部署变更",
+                "provision_vms": "提供虚拟机",
+                "deploy": "部署中",
+                "reset_environment": "重置中",
+                "stop_deployment": "正在终止",
+                "stop_deployment_button": "停止部署",
                 "deployment_mode": "部署模式：",
+                "show_details_button": "查看更多信息",
+                "hide_details_button": "隐藏更多信息",
                 "openstack_release": "OpenStack版本：",
-                "environment_status": "环境状态："
+                "environment_status": "环境状态：",
+                "cluster_was_modified_from_cli": "该部署环境中存在由Fuel CLI修改的参数，CLI的优先级高于使用Fuel Web接口修改的优先级，请谨慎操作。",
+                "unavailable_release": "__name__版本不可用，无法部署该OpenStack环境"
             },
             "capacity_page": {
                 "title": "性能审计",

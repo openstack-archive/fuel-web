@@ -52,7 +52,7 @@ class Plugin(NailgunObject):
         plugin_adapter = wrap_plugin(new_plugin)
         plugin_adapter.sync_metadata_to_db()
 
-        ClusterPlugins.add_compatible_clusters(new_plugin)
+        ClusterPlugin.add_compatible_clusters(new_plugin)
 
         return new_plugin
 
@@ -126,9 +126,9 @@ class PluginCollection(NailgunCollection):
         return sorted(release_plugins, key=lambda plugin: plugin.name)
 
 
-class ClusterPlugins(NailgunObject):
+class ClusterPlugin(NailgunObject):
 
-    model = models.ClusterPlugins
+    model = models.ClusterPlugin
 
     @classmethod
     def validate_compatibility(cls, cluster, plugin):

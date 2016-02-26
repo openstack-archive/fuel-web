@@ -27,6 +27,7 @@ from datetime import datetime
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
+import six
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -1186,6 +1187,34 @@ class Node(NailgunObject):
     @classmethod
     def update_attributes(cls, instance, attrs):
         instance.attributes = utils.dict_merge(instance.attributes, attrs)
+
+    @classmethod
+    def node_cpu_pinning_info(cls, node_or_attributes):
+        """Return dict with required CPUs number total and per component
+
+        Take Node model object or node attributes as argument
+        :return: dict
+        """
+
+        total_required_cpus = 0
+        components = []
+        if isinstance(node_or_attributes, models.Node):
+            cpu_pinning_attrs = (
+                cls.get_attributes(node_or_attributes)['cpu_pinning'])
+        else:
+            cpu_pinning_attrs = node_or_attributes['cpu_pinning']
+
+        for name, attrs in six.iteritems(cpu_pinning_attrs):
+            # skip meta
+            if 'value' in attrs:
+                required_cpus = int(attrs['value'])
+                total_required_cpus += required_cpus
+                components.append({'name': name,
+                                   'required_cpus': required_cpus,
+                                   'cpus': []})
+        components = sorted(components, key=operator.itemgetter('name'))
+        return {'total_required_cpus': total_required_cpus,
+                'components': components}
 
 
 class NodeCollection(NailgunCollection):

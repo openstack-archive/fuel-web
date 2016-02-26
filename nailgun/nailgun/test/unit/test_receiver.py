@@ -19,7 +19,7 @@ from mock import patch
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.objects import ClusterPlugins
+from nailgun.objects import ClusterPlugin
 from nailgun.objects import Plugin
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test import base
@@ -45,9 +45,9 @@ class TestNailgunReceiver(base.BaseTestCase):
 
             self.plugin = Plugin.create(meta)
             self.cluster.plugins.append(self.plugin)
-            ClusterPlugins.set_attributes(self.cluster.id,
-                                          self.plugin.id,
-                                          enabled=True)
+            ClusterPlugin.set_attributes(self.cluster.id,
+                                         self.plugin.id,
+                                         enabled=True)
 
         self.task = self.env.create_task(
             name=consts.TASK_NAMES.deployment,

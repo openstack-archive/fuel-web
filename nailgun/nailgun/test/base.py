@@ -65,7 +65,7 @@ from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
 from nailgun.objects import Cluster
-from nailgun.objects import ClusterPlugins
+from nailgun.objects import ClusterPlugin
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NetworkGroup
 from nailgun.objects import Node
@@ -549,7 +549,7 @@ class EnvironmentManager(object):
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
-            ClusterPlugins.set_attributes(
+            ClusterPlugin.set_attributes(
                 cluster.id, plugin.id, enabled=enabled,
                 attrs=plugin.attributes_metadata or {}
             )
@@ -726,6 +726,48 @@ class EnvironmentManager(object):
                     'description': kwargs.get('description', 'description'),
                     'weight': kwargs.get('weight', 25),
                     'label': kwargs.get('label', 'label')}}}
+
+    def get_default_plugin_nic_config(self, **kwargs):
+        nic_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        nic_attributes.update(kwargs)
+        return nic_attributes
+
+    def get_default_plugin_bond_config(self, **kwargs):
+        bond_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        bond_attributes.update(kwargs)
+        return bond_attributes
+
+    def get_default_plugin_node_config(self, **kwargs):
+        node_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        node_attributes.update(kwargs)
+        return node_attributes
 
     def get_default_plugin_node_roles_config(self, **kwargs):
         node_roles = {
@@ -1328,7 +1370,7 @@ class EnvironmentManager(object):
         }])
         plugin_data['network_roles_metadata'] = network_roles
         plugin = Plugin.create(plugin_data)
-        ClusterPlugins.set_attributes(cluster.id, plugin.id, enabled=True)
+        ClusterPlugin.set_attributes(cluster.id, plugin.id, enabled=True)
         return plugin
 
 

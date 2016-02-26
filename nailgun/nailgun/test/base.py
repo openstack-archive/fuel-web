@@ -65,7 +65,7 @@ from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
 from nailgun.objects import Cluster
-from nailgun.objects import ClusterPlugins
+from nailgun.objects import ClusterPlugin
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NetworkGroup
 from nailgun.objects import Node
@@ -542,6 +542,9 @@ class EnvironmentManager(object):
         deployment_tasks = plugin_data.pop('deployment_tasks', None)
         tasks = plugin_data.pop('tasks', None)
         components = plugin_data.pop('components', None)
+        nic_config = plugin_data.pop('nic_config', None)
+        bond_config = plugin_data.pop('bond_config', None)
+        node_config = plugin_data.pop('node_config', None)
 
         mocked_metadata = {
             'metadata.yaml': plugin_data,
@@ -551,7 +554,10 @@ class EnvironmentManager(object):
             'network_roles.yaml': network_roles,
             'deployment_tasks.yaml': deployment_tasks,
             'tasks.yaml': tasks,
-            'components.yaml': components
+            'components.yaml': components,
+            'nic_config.yaml': nic_config,
+            'bond_config.yaml': bond_config,
+            'node_config.yaml': node_config
         }
 
         m_load_conf.side_effect = lambda key: copy.deepcopy(
@@ -572,7 +578,7 @@ class EnvironmentManager(object):
         # Enable plugin for specific cluster
         if cluster:
             cluster.plugins.append(plugin)
-            ClusterPlugins.set_attributes(
+            ClusterPlugin.set_attributes(
                 cluster.id, plugin.id, enabled=enabled,
                 attrs=plugin.attributes_metadata or {}
             )
@@ -750,6 +756,48 @@ class EnvironmentManager(object):
                     'description': kwargs.get('description', 'description'),
                     'weight': kwargs.get('weight', 25),
                     'label': kwargs.get('label', 'label')}}}
+
+    def get_default_plugin_nic_config(self, **kwargs):
+        nic_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        nic_attributes.update(kwargs)
+        return nic_attributes
+
+    def get_default_plugin_bond_config(self, **kwargs):
+        bond_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        bond_attributes.update(kwargs)
+        return bond_attributes
+
+    def get_default_plugin_node_config(self, **kwargs):
+        node_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        node_attributes.update(kwargs)
+        return node_attributes
 
     def get_default_plugin_node_roles_config(self, **kwargs):
         node_roles = {

@@ -126,6 +126,8 @@ class Cluster(Base):
         nullable=False)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    cluster_plugins = relationship(
+        "ClusterPlugin", backref="cluster", cascade="delete")
 
     @property
     def changes(self):

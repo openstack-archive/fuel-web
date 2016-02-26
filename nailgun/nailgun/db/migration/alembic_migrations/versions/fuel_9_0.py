@@ -100,9 +100,11 @@ def upgrade():
     drop_legacy_patching()
     upgrade_node_status_attributes()
     upgrade_node_stop_deployment_error_type()
+    upgrade_plugin_with_nics_and_nodes_attributes()
 
 
 def downgrade():
+    downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_node_stop_deployment_error_type()
     downgrade_node_status_attributes()
     restore_legacy_patching()
@@ -1146,3 +1148,142 @@ def downgrade_deployment_graph():
     op.drop_table('deployment_graph_tasks')
     drop_enum('deployment_graph_tasks_type')
     op.drop_table('deployment_graphs')
+
+
+def upgrade_plugin_with_nics_and_nodes_attributes():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'nic_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'bond_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'node_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column(
+            'attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column(
+            'attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'releases',
+        sa.Column(
+            'nic_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'releases',
+        sa.Column(
+            'bond_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.create_table(
+        'node_nic_interface_cluster_plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'attributes', fields.JSON(), nullable=False, server_default='{}'),
+        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
+        sa.Column('interface_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['cluster_plugin_id'],
+            ['cluster_plugins.id'],
+            ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['interface_id'], ['node_nic_interfaces.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE')
+    )
+
+    op.create_table(
+        'node_bond_interface_cluster_plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'attributes', fields.JSON(), nullable=False, server_default='{}'),
+        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
+        sa.Column('bond_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['cluster_plugin_id'],
+            ['cluster_plugins.id'],
+            ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['bond_id'], ['node_bond_interfaces.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE')
+    )
+
+    op.create_table(
+        'node_cluster_plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'attributes', fields.JSON(), nullable=False, server_default='{}'),
+        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['cluster_plugin_id'],
+            ['cluster_plugins.id'],
+            ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE')
+    )
+
+
+def downgrade_plugin_with_nics_and_nodes_attributes():
+    op.drop_table('node_cluster_plugins')
+    op.drop_table('node_bond_interface_cluster_plugins')
+    op.drop_table('node_nic_interface_cluster_plugins')
+    op.drop_column('releases', 'bond_metadata'),
+    op.drop_column('releases', 'nic_metadata'),
+    op.drop_column('node_bond_interfaces', 'attributes')
+    op.drop_column('node_nic_interfaces', 'attributes')
+    op.drop_column('plugins', 'node_attributes_metadata')
+    op.drop_column('plugins', 'bond_attributes_metadata')
+    op.drop_column('plugins', 'nic_attributes_metadata')

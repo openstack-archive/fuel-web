@@ -335,7 +335,7 @@ class DeploymentMultinodeSerializer(object):
 
     @classmethod
     def inject_list_of_plugins(cls, attributes, cluster):
-        plugins = objects.ClusterPlugins.get_enabled(cluster.id)
+        plugins = objects.ClusterPlugin.get_enabled(cluster.id)
         attributes['plugins'] = [p['name'] for p in plugins]
 
 

@@ -48,7 +48,7 @@ class Plugin(NailgunObject):
         plugin_adapter = wrap_plugin(new_plugin)
         cls.update(new_plugin, plugin_adapter.get_metadata())
 
-        ClusterPlugins.add_compatible_clusters(new_plugin)
+        ClusterPlugin.add_compatible_clusters(new_plugin)
 
         return new_plugin
 
@@ -122,9 +122,9 @@ class PluginCollection(NailgunCollection):
         return sorted(release_plugins, key=lambda plugin: plugin.name)
 
 
-class ClusterPlugins(NailgunObject):
+class ClusterPlugin(NailgunObject):
 
-    model = models.ClusterPlugins
+    model = models.ClusterPlugin
 
     @classmethod
     def is_compatible(cls, cluster, plugin):

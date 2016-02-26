@@ -722,6 +722,48 @@ class EnvironmentManager(object):
                     'weight': kwargs.get('weight', 25),
                     'label': kwargs.get('label', 'label')}}}
 
+    def get_default_plugin_nic_config(self, **kwargs):
+        nic_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        nic_attributes.update(kwargs)
+        return nic_attributes
+
+    def get_default_plugin_bond_config(self, **kwargs):
+        bond_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        bond_attributes.update(kwargs)
+        return bond_attributes
+
+    def get_default_plugin_node_config(self, **kwargs):
+        node_attributes = {
+            'plugin_name_text': {
+                'value': 'value',
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
+            }
+        }
+
+        node_attributes.update(kwargs)
+        return node_attributes
+
     def get_default_plugin_node_roles_config(self, **kwargs):
         node_roles = {
             'testing_plugin': {

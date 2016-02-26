@@ -1002,13 +1002,22 @@ ManagementPanel = React.createClass({
     );
   },
   render() {
+    var {
+      cluster, nodes, screenNodes, filteredNodes, mode, locked,
+      viewMode, changeViewMode,
+      search,
+      activeSorters, availableSorters, labelSorters, defaultSorting, changeSortingOrder, addSorting,
+      activeFilters, availableFilters, labelFilters, changeFilter, getFilterOptions,
+      isLabelsPanelOpen, selectedNodeLabels,
+      revertChanges
+    } = this.props;
     var ns = 'cluster_page.nodes_tab.node_management_panel.';
 
     var disksConflict, interfaceConflict, inactiveSorters, canResetSorters,
       inactiveFilters, appliedFilters;
-    if (this.props.mode === 'list' && this.props.nodes.length) {
-      disksConflict = !this.props.nodes.areDisksConfigurable();
-      interfaceConflict = !this.props.nodes.areInterfacesConfigurable();
+    if (mode === 'list' && nodes.length) {
+      disksConflict = !nodes.areDisksConfigurable();
+      interfaceConflict = !nodes.areInterfacesConfigurable();
     }
 
     var managementButtonClasses = (isActive, className) => {
@@ -1020,37 +1029,37 @@ ManagementPanel = React.createClass({
       return classes;
     };
 
-    if (this.props.mode !== 'edit') {
+    if (mode !== 'edit') {
       var checkSorter = (sorter, isLabel) => {
-        return !_.any(this.props.activeSorters, {name: sorter.name, isLabel: isLabel});
+        return !_.any(activeSorters, {name: sorter.name, isLabel: isLabel});
       };
       inactiveSorters = _.union(
-        _.filter(this.props.availableSorters, _.partial(checkSorter, _, false)),
-        _.filter(this.props.labelSorters, _.partial(checkSorter, _, true))
+        _.filter(availableSorters, _.partial(checkSorter, _, false)),
+        _.filter(labelSorters, _.partial(checkSorter, _, true))
       )
         .sort((sorter1, sorter2) => {
           return utils.natsort(sorter1.title, sorter2.title, {insensitive: true});
         });
-      canResetSorters = _.any(this.props.activeSorters, {isLabel: true}) ||
-        !_(this.props.activeSorters)
+      canResetSorters = _.any(activeSorters, {isLabel: true}) ||
+        !_(activeSorters)
           .where({isLabel: false})
           .map(Sorter.toObject)
-          .isEqual(this.props.defaultSorting);
+          .isEqual(defaultSorting);
 
       var checkFilter = (filter, isLabel) => {
-        return !_.any(this.props.activeFilters, {name: filter.name, isLabel: isLabel});
+        return !_.any(activeFilters, {name: filter.name, isLabel: isLabel});
       };
       inactiveFilters = _.union(
-        _.filter(this.props.availableFilters, _.partial(checkFilter, _, false)),
-        _.filter(this.props.labelFilters, _.partial(checkFilter, _, true))
+        _.filter(availableFilters, _.partial(checkFilter, _, false)),
+        _.filter(labelFilters, _.partial(checkFilter, _, true))
       )
         .sort((filter1, filter2) => {
           return utils.natsort(filter1.title, filter2.title, {insensitive: true});
         });
-      appliedFilters = _.reject(this.props.activeFilters, (filter) => !filter.values.length);
+      appliedFilters = _.reject(activeFilters, (filter) => !filter.values.length);
     }
 
-    this.props.selectedNodeLabels.sort(_.partialRight(utils.natsort, {insensitive: true}));
+    selectedNodeLabels.sort(_.partialRight(utils.natsort, {insensitive: true}));
 
     return (
       <div className='row'>
@@ -1063,11 +1072,9 @@ ManagementPanel = React.createClass({
                     <Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
                       <label
                         className={utils.classNames(
-                          managementButtonClasses(mode === this.props.viewMode, mode)
+                          managementButtonClasses(mode === viewMode, mode)
                         )}
-                        onClick={mode !== this.props.viewMode &&
-                          _.partial(this.props.changeViewMode, 'view_mode', mode)
-                        }
+                        onClick={mode !== viewMode && _.partial(changeViewMode, 'view_mode', mode)}
                       >
                         <input type='radio' name='view_mode' value={mode} />
                         <i
@@ -1083,13 +1090,13 @@ ManagementPanel = React.createClass({
                 })}
               </div>
             </div>
-            {this.props.mode !== 'edit' && [
+            {mode !== 'edit' && [
               <Tooltip wrap key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
                 <button
-                  disabled={!this.props.nodes.length}
-                  onClick={this.props.nodes.length && this.toggleLabelsPanel}
+                  disabled={!nodes.length}
+                  onClick={nodes.length && this.toggleLabelsPanel}
                   className={utils.classNames(
-                    managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels')
+                    managementButtonClasses(isLabelsPanelOpen, 'btn-labels')
                   )}
                 >
                   <i className='glyphicon glyphicon-tag' />
@@ -1097,7 +1104,7 @@ ManagementPanel = React.createClass({
               </Tooltip>,
               <Tooltip wrap key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
                 <button
-                  disabled={!this.props.screenNodes.length}
+                  disabled={!screenNodes.length}
                   onClick={this.toggleSorters}
                   className={utils.classNames(
                     managementButtonClasses(this.state.areSortersVisible, 'btn-sorters')
@@ -1108,7 +1115,7 @@ ManagementPanel = React.createClass({
               </Tooltip>,
               <Tooltip wrap key='filters-btn' text={i18n(ns + 'filter_tooltip')}>
                 <button
-                  disabled={!this.props.screenNodes.length}
+                  disabled={!screenNodes.length}
                   onClick={this.toggleFilters}
                   className={utils.classNames(
                     managementButtonClasses(this.state.areFiltersVisible, 'btn-filters')
@@ -1120,7 +1127,7 @@ ManagementPanel = React.createClass({
               !this.state.activeSearch && (
                 <Tooltip wrap key='search-btn' text={i18n(ns + 'search_tooltip')}>
                   <button
-                    disabled={!this.props.screenNodes.length}
+                    disabled={!screenNodes.length}
                     onClick={this.activateSearch}
                     className={utils.classNames(managementButtonClasses(false, 'btn-search'))}
                   >
@@ -1134,9 +1141,9 @@ ManagementPanel = React.createClass({
                     type='text'
                     name='search'
                     ref='search'
-                    defaultValue={this.props.search}
+                    defaultValue={search}
                     placeholder={i18n(ns + 'search_placeholder')}
-                    disabled={!this.props.screenNodes.length}
+                    disabled={!screenNodes.length}
                     onChange={this.searchNodes}
                     onKeyDown={this.onSearchKeyDown}
                     autoFocus
@@ -1154,14 +1161,14 @@ ManagementPanel = React.createClass({
             ]}
           </div>
           <div className='control-buttons-box col-xs-7 text-right'>
-            {!!this.props.cluster && (
-              this.props.mode !== 'list' ?
+            {!!cluster && (
+              mode !== 'list' ?
                 <div className='btn-group' role='group'>
                   <button
                     className='btn btn-default'
                     disabled={this.state.actionInProgress}
                     onClick={() => {
-                      this.props.revertChanges();
+                      revertChanges();
                       this.changeScreen();
                     }}
                   >
@@ -1180,31 +1187,29 @@ ManagementPanel = React.createClass({
                   <div className='btn-group' role='group' key='configuration-buttons'>
                     <button
                       className='btn btn-default btn-configure-disks'
-                      disabled={!this.props.nodes.length}
+                      disabled={!nodes.length}
                       onClick={_.bind(this.goToConfigurationScreen, this, 'disks', disksConflict)}
                     >
                       {disksConflict && <i className='glyphicon glyphicon-danger-sign' />}
                       {i18n('dialog.show_node.disk_configuration' +
-                        (_.all(this.props.nodes.invoke('areDisksConfigurable')) ? '_action' : ''))
+                        (_.all(nodes.invoke('areDisksConfigurable')) ? '_action' : ''))
                       }
                     </button>
                     <button
                       className='btn btn-default btn-configure-interfaces'
-                      disabled={!this.props.nodes.length}
+                      disabled={!nodes.length}
                       onClick={_.bind(this.goToConfigurationScreen, this, 'interfaces',
                         interfaceConflict)
                       }
                     >
                       {interfaceConflict && <i className='glyphicon glyphicon-danger-sign' />}
                       {i18n('dialog.show_node.network_configuration' +
-                        (_.all(this.props.nodes.invoke('areInterfacesConfigurable')) ?
-                          '_action' : ''))
+                        (_.all(nodes.invoke('areInterfacesConfigurable')) ? '_action' : ''))
                       }
                     </button>
                   </div>,
                   <div className='btn-group' role='group' key='role-management-buttons'>
-                    {!this.props.locked && !!this.props.nodes.length &&
-                      this.props.nodes.any({pending_deletion: false}) &&
+                    {!locked && !!nodes.length && nodes.any({pending_deletion: false}) &&
                       <button
                         className='btn btn-danger btn-delete-nodes'
                         onClick={this.showDeleteNodesDialog}
@@ -1213,8 +1218,7 @@ ManagementPanel = React.createClass({
                         {i18n('common.delete_button')}
                       </button>
                     }
-                    {!!this.props.nodes.length &&
-                      !this.props.nodes.any({pending_addition: false}) &&
+                    {!!nodes.length && !nodes.any((node) => !node.get('pending_roles').length) &&
                       <button
                         className='btn btn-success btn-edit-roles'
                         onClick={_.partial(this.changeScreen, 'edit', true)}
@@ -1224,12 +1228,12 @@ ManagementPanel = React.createClass({
                       </button>
                     }
                   </div>,
-                  !this.props.locked &&
+                  !locked &&
                     <div className='btn-group' role='group' key='add-nodes-button'>
                       <button
                         className='btn btn-success btn-add-nodes'
                         onClick={_.partial(this.changeScreen, 'add', false)}
-                        disabled={this.props.locked}
+                        disabled={locked}
                       >
                         <i className='glyphicon glyphicon-plus' />
                         {i18n(ns + 'add_nodes_button')}
@@ -1238,11 +1242,11 @@ ManagementPanel = React.createClass({
                 ]
             )}
           </div>
-          {this.props.mode !== 'edit' && !!this.props.screenNodes.length && [
-            this.props.isLabelsPanelOpen &&
+          {mode !== 'edit' && !!screenNodes.length && [
+            isLabelsPanelOpen &&
               <NodeLabelsPanel {... _.pick(this.props, 'nodes', 'screenNodes')}
                 key='labels'
-                labels={this.props.selectedNodeLabels}
+                labels={selectedNodeLabels}
                 toggleLabelsPanel={this.toggleLabelsPanel}
               />,
             this.state.areSortersVisible && (
@@ -1259,7 +1263,7 @@ ManagementPanel = React.createClass({
                       </button>
                     }
                   </div>
-                  {this.props.activeSorters.map((sorter) => {
+                  {activeSorters.map((sorter) => {
                     var asc = sorter.order === 'asc';
                     return (
                       <div
@@ -1271,7 +1275,7 @@ ManagementPanel = React.createClass({
                       >
                         <button
                           className='btn btn-default'
-                          onClick={_.partial(this.props.changeSortingOrder, sorter)}
+                          onClick={_.partial(changeSortingOrder, sorter)}
                         >
                           {sorter.title}
                           <i
@@ -1282,9 +1286,7 @@ ManagementPanel = React.createClass({
                             })}
                           />
                         </button>
-                        {this.props.activeSorters.length > 1 &&
-                          this.renderDeleteSorterButton(sorter)
-                        }
+                        {activeSorters.length > 1 && this.renderDeleteSorterButton(sorter)}
                       </div>
                     );
                   })}
@@ -1292,7 +1294,7 @@ ManagementPanel = React.createClass({
                     name='sorter-more'
                     label={i18n(ns + 'more')}
                     options={inactiveSorters}
-                    onChange={this.props.addSorting}
+                    onChange={addSorting}
                     dynamicValues
                     isOpen= {this.state.isMoreSorterControlVisible}
                     toggle={this.toggleMoreSorterControl}
@@ -1314,7 +1316,7 @@ ManagementPanel = React.createClass({
                       </button>
                     }
                   </div>
-                  {_.map(this.props.activeFilters, (filter) => {
+                  {_.map(activeFilters, (filter) => {
                     var props = {
                       key: (filter.isLabel ? 'label-' : '') + filter.name,
                       ref: filter.name,
@@ -1326,7 +1328,7 @@ ManagementPanel = React.createClass({
                       }),
                       label: filter.title,
                       extraContent: this.renderDeleteFilterButton(filter),
-                      onChange: _.partial(this.props.changeFilter, filter),
+                      onChange: _.partial(changeFilter, filter),
                       prefix: i18n(
                         'cluster_page.nodes_tab.filters.prefixes.' + filter.name,
                         {defaultValue: ''}
@@ -1344,7 +1346,7 @@ ManagementPanel = React.createClass({
                     }
                     return <MultiSelectControl
                       {...props}
-                      options={this.props.getFilterOptions(filter)}
+                      options={getFilterOptions(filter)}
                     />;
                   })}
                   <MultiSelectControl
@@ -1360,7 +1362,7 @@ ManagementPanel = React.createClass({
               </div>
             )
           ]}
-          {this.props.mode !== 'edit' && !!this.props.screenNodes.length &&
+          {mode !== 'edit' && !!screenNodes.length &&
             <div className='col-xs-12'>
               {(!this.state.areSortersVisible || !this.state.areFiltersVisible &&
                 !!appliedFilters.length) &&
@@ -1370,12 +1372,11 @@ ManagementPanel = React.createClass({
                       <strong className='col-xs-1'>{i18n(ns + 'filter_by')}</strong>
                       <div className='col-xs-11'>
                         {i18n('cluster_page.nodes_tab.filter_results_amount', {
-                          count: this.props.filteredNodes.length,
-                          total: this.props.screenNodes.length
+                          count: filteredNodes.length,
+                          total: screenNodes.length
                         })}
                         {_.map(appliedFilters, (filter) => {
-                          var options = filter.isNumberRange ? null :
-                            this.props.getFilterOptions(filter);
+                          var options = filter.isNumberRange ? null : getFilterOptions(filter);
                           return (
                             <div key={filter.name}>
                               <strong>{filter.title}{!!filter.values.length && ':'} </strong>
@@ -1406,7 +1407,7 @@ ManagementPanel = React.createClass({
                     <div className='active-sorters row' onClick={this.toggleSorters}>
                       <strong className='col-xs-1'>{i18n(ns + 'sort_by')}</strong>
                       <div className='col-xs-11'>
-                        {this.props.activeSorters.map((sorter, index) => {
+                        {activeSorters.map((sorter, index) => {
                           var asc = sorter.order === 'asc';
                           return (
                             <span key={sorter.name + (sorter.isLabel && '-label')}>
@@ -1418,7 +1419,7 @@ ManagementPanel = React.createClass({
                                   'glyphicon-arrow-up': !asc
                                 })}
                               />
-                              {!!this.props.activeSorters[index + 1] && ' + '}
+                              {!!activeSorters[index + 1] && ' + '}
                             </span>
                           );
                         })}

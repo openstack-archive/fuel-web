@@ -18,7 +18,7 @@ from six.moves import map
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.plugins.adapters import wrap_plugin
@@ -45,7 +45,6 @@ class PluginManager(object):
         for k in list(attributes):
             if cls.is_plugin_data(attributes[k]):
                 plugins[k] = attributes.pop(k)['metadata']
-                cluster.attributes.editable.pop(k, None)
 
         for container in six.itervalues(plugins):
             default = container.get('default', False)
@@ -59,7 +58,7 @@ class PluginManager(object):
                     continue
                 enabled = container['enabled']\
                     and plugin_id == container['chosen_id']
-                ClusterPlugins.set_attributes(
+                ClusterPlugin.set_attributes(
                     cluster.id, plugin.id, enabled=enabled,
                     attrs=attrs if enabled or default else None
                 )
@@ -79,7 +78,7 @@ class PluginManager(object):
         :rtype: dict
         """
         plugins_attributes = {}
-        for plugin in ClusterPlugins.get_connected_plugins_data(cluster.id):
+        for plugin in ClusterPlugin.get_connected_plugins_data(cluster.id):
             default_attrs = plugin.attributes_metadata
 
             if all_versions:
@@ -160,7 +159,7 @@ class PluginManager(object):
     @classmethod
     def get_cluster_plugins_with_tasks(cls, cluster):
         cluster_plugins = []
-        for plugin_db in ClusterPlugins.get_enabled(cluster.id):
+        for plugin_db in ClusterPlugin.get_enabled(cluster.id):
             plugin_adapter = wrap_plugin(plugin_db)
             plugin_adapter.set_cluster_tasks()
             cluster_plugins.append(plugin_adapter)
@@ -178,7 +177,7 @@ class PluginManager(object):
         all_roles = dict((role['id'], role) for role in instance_roles)
         conflict_roles = dict()
 
-        for plugin in ClusterPlugins.get_enabled(cluster.id):
+        for plugin in ClusterPlugin.get_enabled(cluster.id):
             for role in plugin.network_roles_metadata:
                 role_id = role['id']
                 if role_id in all_roles:
@@ -208,7 +207,7 @@ class PluginManager(object):
         deployment_tasks = []
         processed_tasks = {}
 
-        enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
         for plugin_adapter in map(wrap_plugin, enabled_plugins):
             depl_tasks = plugin_adapter.get_deployment_tasks(graph_type)
 
@@ -234,7 +233,7 @@ class PluginManager(object):
         result = {}
         core_roles = set(cluster.release.roles_metadata)
 
-        for plugin_db in ClusterPlugins.get_enabled(cluster.id):
+        for plugin_db in ClusterPlugin.get_enabled(cluster.id):
             plugin_roles = wrap_plugin(plugin_db).normalized_roles_metadata
 
             # we should check all possible cases of roles intersection
@@ -274,7 +273,7 @@ class PluginManager(object):
         release_volumes_ids = [v['id'] for v in release_volumes]
         processed_volumes = {}
 
-        enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
         for plugin_adapter in map(wrap_plugin, enabled_plugins):
             metadata = plugin_adapter.volumes_metadata
 
@@ -362,7 +361,7 @@ class PluginManager(object):
         cluster_components = set(cluster.components)
         plugin_ids = [p.id for p in PluginCollection.all_newest()]
 
-        for plugin in ClusterPlugins.get_connected_plugins(
+        for plugin in ClusterPlugin.get_connected_plugins(
                 cluster, plugin_ids):
             plugin_adapter = wrap_plugin(plugin)
             plugin_components = set(
@@ -370,5 +369,5 @@ class PluginManager(object):
                 for component in plugin_adapter.components_metadata)
 
             if cluster_components & plugin_components:
-                ClusterPlugins.set_attributes(
+                ClusterPlugin.set_attributes(
                     cluster.id, plugin.id, enabled=True)

@@ -119,6 +119,47 @@ single_schema = {
                         "fqdn": {"type": "string"},
                     }
                 },
+                "numa_topology": {
+                    "type": "object",
+                    "properties": {
+                        "available_hugepages": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                        },
+                        "numa_nodes": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "integer"},
+                                    "cpus": {
+                                        "type": "array",
+                                        "items": {"type": "integer"},
+                                    },
+                                    "memory": {"type": "integer"},
+                                },
+                                "required": [
+                                    "id",
+                                    "cpus",
+                                    "memory",
+                                ]
+                            }
+                        },
+                        "distances": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            }
+                        }
+                    },
+                    "required": [
+                        "available_hugepages",
+                        "numa_nodes",
+                        "distances",
+                    ]
+                }
             }
         },
         "id": {"type": "integer"},

@@ -344,7 +344,7 @@ class DeploymentMultinodeSerializer(object):
         :param attributes: the serialized attributes
         :param cluster: the cluster object
         """
-        plugins = objects.ClusterPlugins.get_enabled(cluster.id)
+        plugins = objects.ClusterPlugin.get_enabled(cluster.id)
         attributes['plugins'] = [
             self.serialize_plugin(cluster, p) for p in plugins
         ]

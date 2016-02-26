@@ -853,6 +853,12 @@ class BaseNetworkVerification(object):
                     continue
                 if ng.name == consts.NETWORKS.public and not has_public:
                     continue
+                # After deployment we can't check VLAN traffic on SR-IOV
+                # enabled interface. So we should skip "Private" network from
+                # network verification after deployment.
+                if ng.name == consts.NETWORKS.private and \
+                        iface.interface_properties['sriov']['enabled']:
+                    continue
 
                 data_ng = filter(lambda i: i['name'] == ng.name,
                                  self.config)[0]

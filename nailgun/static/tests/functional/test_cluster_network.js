@@ -213,9 +213,6 @@ define([
           .then(function() {
             return networkPage.goToNodeNetworkGroup('default');
           })
-          .setInputValue('input[name=range-end_ip_ranges]', '172.16.0.2')
-          .clickByCssSelector(applyButtonSelector)
-          .assertElementAppears('.alert-danger.network-alert', 2000, 'Validation error appears')
           .setInputValue('.public input[name=cidr]', 'blablabla')
           .assertElementAppears('.public .has-error input[name=cidr]', 1000,
             'Error class style is applied to invalid input field')

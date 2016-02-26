@@ -117,17 +117,9 @@ class ProviderHandler(BaseHandler):
         nm.update(cluster, data)
 
         try:
-            network_config = self.serializer.serialize_for_cluster(cluster,
-                                                                   True)
+            network_config = self.serializer.serialize_for_cluster(cluster)
         except errors.DuplicatedVIPNames as exc:
             raise self.http(400, six.text_type(exc))
-        except errors.OutOfIPs as exc:
-            network_id = getattr(exc, 'network_id', None)
-            raise self.http(
-                400,
-                six.text_type(exc),
-                err_list=[{"errors": ["ip_ranges"], "ids": [network_id]}]
-            )
 
         if admin_nets != nm.get_admin_networks():
             try:

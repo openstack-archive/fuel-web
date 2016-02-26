@@ -25,4 +25,5 @@ class OpenStackWorkloadStatsSerializer(BasicSerializer):
         "resource_type",
         "resource_data",
         "resource_checksum",
+        "version_info"
     )

@@ -1906,6 +1906,7 @@
               gdisk
               grub-pc
               hpsa-dkms
+              hwloc
               i40e-dkms
               linux-firmware
               linux-firmware-nonfree

@@ -520,7 +520,9 @@ class TestInstallationInfo(BaseTestCase):
             # Related tables
             'clusters', 'cluster_changes',
             'nodegroups', 'ip_addrs', 'node_nic_interfaces',
-            'node_bond_interfaces', 'network_groups'
+            'node_bond_interfaces', 'network_groups',
+            'node_nic_interface_cluster_plugins',
+            'node_bond_interface_cluster_plugins', 'node_cluster_plugins'
         )
         for field in remove_fields:
             node_schema.pop(field)

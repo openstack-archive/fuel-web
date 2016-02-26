@@ -768,6 +768,9 @@ DUMP:
       - type: file
         path: /etc/fuel_build_number
       - type: command
+        command: shotgun2 report
+        to_file: shotgun2_report.txt
+      - type: command
         command: df -h
         to_file: df.txt
       - type: command

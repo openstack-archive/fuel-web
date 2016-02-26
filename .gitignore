@@ -20,9 +20,6 @@ nosetests.xml
 nailgun.log
 lock
 
-node_modules
-nailgun/static/build
-
 *.egg
 .testrepository
 .tox

@@ -14,10 +14,10 @@ Prefix: %{_prefix}
 BuildRequires:  python-setuptools
 BuildRequires:  python-yaml
 BuildRequires:  git
-#BuildRequires: nodejs
 BuildArch: noarch
 Requires:    fuel-openstack-metadata
 Requires:    fuel-release
+Requires:    fuel-ui
 Requires:    python-alembic >= 0.6.2
 Requires:    python-amqplib >= 1.0.2
 Requires:    python-anyjson >= 0.3.3
@@ -64,9 +64,6 @@ Requires:    python-argparse >= 1.2.1
 Requires:    python-ordereddict >= 1.1
 %endif
 
-BuildRequires: nodejs
-BuildRequires: nodejs-nailgun
-
 %if 0%{?fedora} > 16 || 0%{?rhel} > 6
 Requires(post): systemd-units
 Requires(preun): systemd-units
@@ -80,14 +77,7 @@ Nailgun package
 %prep
 %setup -cq -n %{name}-%{version}
 
-mkdir -p %{_builddir}/%{name}-%{version}/nailgun/node_modules/
-cp -pr /usr/lib/node_modules/ %{_builddir}/%{name}-%{version}/nailgun/
-cp -pr /usr/lib/node_modules/.bin %{_builddir}/%{name}-%{version}/nailgun/node_modules/
-
 %build
-cd %{_builddir}/%{name}-%{version}/nailgun && %{_builddir}/%{name}-%{version}/nailgun/node_modules/.bin/gulp build --static-dir=compressed_static
-[ -n %{_builddir} ] && rm -rf %{_builddir}/%{name}-%{version}/nailgun/static
-mv %{_builddir}/%{name}-%{version}/nailgun/compressed_static %{_builddir}/%{name}-%{version}/nailgun/static
 cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py build
 
 %install

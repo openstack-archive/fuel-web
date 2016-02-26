@@ -1391,3 +1391,15 @@ class NeutronNetworkTemplateSerializer80(
     NeutronNetworkTemplateSerializer70
 ):
     pass
+
+
+class NeutronNetworkDeploymentSerializer90(
+    NeutronNetworkDeploymentSerializer80
+):
+    pass
+
+
+class NeutronNetworkTemplateSerializer90(
+    NeutronNetworkTemplateSerializer80
+):
+    pass

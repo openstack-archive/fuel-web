@@ -15,14 +15,30 @@
 #    under the License.
 
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestDeploymentHASerializer80
-
+    TestBlockDeviceDevicesSerialization80
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestDeploymentAttributesSerialization80
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestDeploymentHASerializer80
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestDeploymentTasksSerialization80
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestMultiNodeGroupsSerialization80
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestNetworkTemplateSerializer80
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestSerializeInterfaceDriversData80
 
 
 class TestSerializer90Mixin(object):
     env_version = "liberty-9.0"
+
+
+class TestBlockDeviceDevicesSerialization90(
+    TestSerializer90Mixin,
+    TestBlockDeviceDevicesSerialization80
+):
+    pass
 
 
 class TestDeploymentAttributesSerialization90(
@@ -38,3 +54,31 @@ class TestDeploymentHASerializer90(
 ):
     def test_glance_properties(self):
         self.check_no_murano_data()
+
+
+class TestDeploymentTasksSerialization90(
+    TestSerializer90Mixin,
+    TestDeploymentTasksSerialization80
+):
+    pass
+
+
+class TestMultiNodeGroupsSerialization90(
+    TestSerializer90Mixin,
+    TestMultiNodeGroupsSerialization80
+):
+    pass
+
+
+class TestNetworkTemplateSerializer90(
+    TestSerializer90Mixin,
+    TestNetworkTemplateSerializer80
+):
+    pass
+
+
+class TestSerializeInterfaceDriversData90(
+    TestSerializer90Mixin,
+    TestSerializeInterfaceDriversData80
+):
+    pass

@@ -23,7 +23,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.expression import Expression
-from nailgun.objects import ClusterPlugins
+from nailgun.objects import ClusterPlugin
 from nailgun.objects import Plugin
 from nailgun.plugins import adapters
 from nailgun.settings import settings
@@ -337,6 +337,78 @@ class TestPluginV4(TestPluginBase):
                     ValueError, self.plugin_adapter.set_cluster_tasks)
 
 
+class TestPluginV5(TestPluginBase):
+
+    __test__ = True
+    package_version = '5.0.0'
+
+    def test_sync_metadata_to_db(self):
+        plugin_metadata = self.env.get_default_plugin_metadata()
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        nic_attributes_metadata = self.env.get_default_plugin_nic_config()
+        bond_attributes_metadata = self.env.get_default_plugin_bond_config()
+        node_attributes_metadata = self.env.get_default_plugin_node_config()
+        roles_metadata = self.env.get_default_plugin_node_roles_config()
+        volumes_metadata = self.env.get_default_plugin_volumes_config()
+        network_roles_metadata = self.env.get_default_network_roles_config()
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        tasks = self.env.get_default_plugin_tasks()
+        components_metadata = self.env.get_default_components()
+
+        mocked_metadata = {
+            self._find_path('metadata'): plugin_metadata,
+            self._find_path('environment_config'): attributes_metadata,
+            self._find_path('node_roles'): roles_metadata,
+            self._find_path('volumes'): volumes_metadata,
+            self._find_path('network_roles'): network_roles_metadata,
+            self._find_path('deployment_tasks'): deployment_tasks,
+            self._find_path('tasks'): tasks,
+            self._find_path('components'): components_metadata,
+            self._find_path('nic_config'): nic_attributes_metadata,
+            self._find_path('bond_config'): bond_attributes_metadata,
+            self._find_path('node_config'): node_attributes_metadata
+        }
+
+        with mock.patch.object(
+                self.plugin_adapter, '_load_config') as load_conf:
+            load_conf.side_effect = lambda key: mocked_metadata[key]
+            self.plugin_adapter.sync_metadata_to_db()
+
+            for key, val in six.iteritems(plugin_metadata):
+                self.assertEqual(
+                    getattr(self.plugin, key), val)
+
+            self.assertEqual(
+                self.plugin.attributes_metadata,
+                attributes_metadata['attributes'])
+            self.assertEqual(
+                self.plugin.roles_metadata, roles_metadata)
+            self.assertEqual(
+                self.plugin.volumes_metadata, volumes_metadata)
+            self.assertEqual(
+                self.plugin.tasks, tasks)
+            self.assertEqual(
+                self.plugin.components_metadata, components_metadata)
+            self.assertEqual(
+                self.plugin.nic_attributes_metadata,
+                nic_attributes_metadata)
+            self.assertEqual(
+                self.plugin.bond_attributes_metadata,
+                bond_attributes_metadata)
+            self.assertEqual(
+                self.plugin.node_attributes_metadata,
+                bond_attributes_metadata)
+            # deployment tasks returning all non-defined fields, so check
+            # should differ from JSON-stored fields
+            for k, v in six.iteritems(deployment_tasks[0]):
+                # this field is updated by plugin adapter
+                if k is 'parameters':
+                    v.update({
+                        'cwd': '/etc/fuel/plugins/testing_plugin-0.1/'
+                    })
+                self.assertEqual(self.plugin_adapter.deployment_tasks[0][k], v)
+
+
 class TestClusterCompatibilityValidation(base.BaseTestCase):
 
     def setUp(self):
@@ -355,7 +427,7 @@ class TestClusterCompatibilityValidation(base.BaseTestCase):
 
     def validate_with_cluster(self, **kwargs):
         cluster = self.cluster_mock(**kwargs)
-        return ClusterPlugins.is_compatible(cluster, self.plugin)
+        return ClusterPlugin.is_compatible(cluster, self.plugin)
 
     def test_validation_ubuntu_ha(self):
         self.assertTrue(self.validate_with_cluster(

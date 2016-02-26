@@ -300,9 +300,98 @@ var Node = React.createClass({
       </ul>
     );
   },
+  renderExtendedView(options) {
+    var {node, locked, renderActionButtons} = this.props;
+    var {ns, status, roles, logoClasses, statusClasses} = options;
+
+    return (
+      <Popover className='node-popover' toggle={this.toggleExtendedNodePanel}>
+        <div>
+          <div className='node-name clearfix'>
+            {this.renderNodeCheckbox()}
+            <div className='name pull-left'>
+              {this.props.nodeSelectionPossibleOnly ?
+                <div>{node.get('name') || node.get('mac')}</div>
+              :
+                this.renderNameControl()
+              }
+            </div>
+          </div>
+          <div className='node-stats'>
+            {!!roles.length &&
+              <div className='role-list'>
+                <i className='glyphicon glyphicon-pushpin' />
+                {this.renderRoleList(roles)}
+              </div>
+            }
+            {!_.isEmpty(node.get('labels')) &&
+              <div className='node-labels'>
+                <i className='glyphicon glyphicon-tags pull-left' />
+                {this.renderLabels()}
+              </div>
+            }
+            <div className={utils.classNames(statusClasses)}>
+              <i className='glyphicon glyphicon-time' />
+              {_.contains(['provisioning', 'deploying'], status) ?
+                <div>
+                  {this.renderStatusLabel(status)}
+                  <div className='node-buttons'>
+                    {this.renderLogsLink()}
+                  </div>
+                  {this.renderNodeProgress(status)}
+                </div>
+              :
+                <div>
+                  {this.renderStatusLabel(status)}
+                  {!this.props.nodeSelectionPossibleOnly &&
+                    <div className='node-buttons'>
+                      {status === 'offline' && this.renderRemoveButton()}
+                      {[
+                        !!node.get('cluster') && this.renderLogsLink(),
+                        renderActionButtons &&
+                          (node.get('pending_addition') || node.get('pending_deletion')) &&
+                          !locked &&
+                          <button
+                            className='btn btn-discard'
+                            key='btn-discard'
+                            onClick={node.get('pending_deletion') ?
+                              this.discardNodeDeletion
+                            :
+                              this.showDeleteNodesDialog
+                            }
+                          >
+                            {i18n(ns + (node.get('pending_deletion') ?
+                              'discard_deletion'
+                            :
+                              'delete_node'
+                            ))}
+                          </button>
+                      ]}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+          <div className='hardware-info clearfix'>
+            <div className={utils.classNames(logoClasses)} />
+            {this.renderNodeHardwareSummary()}
+          </div>
+          {!this.props.nodeSelectionPossibleOnly &&
+            <div className='node-popover-buttons'>
+              <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>
+                {i18n(ns + 'details')}
+              </button>
+            </div>
+          }
+        </div>
+      </Popover>
+    );
+  },
   renderCompactNode(options) {
-    var {node, checked, locked, onNodeSelection, renderActionButtons} = this.props;
-    var {ns, status, roles, nodePanelClasses, logoClasses, statusClasses, isSelectable} = options;
+    var {node, checked, onNodeSelection} = this.props;
+    var {ns, status, nodePanelClasses, statusClasses, isSelectable} = options;
+
     return (
       <div className='compact-node'>
         <div className={utils.classNames(nodePanelClasses)}>
@@ -345,79 +434,7 @@ var Node = React.createClass({
             </div>
           </label>
         </div>
-        {this.state.extendedView &&
-          <Popover className='node-popover' toggle={this.toggleExtendedNodePanel}>
-            <div>
-              <div className='node-name clearfix'>
-                {this.renderNodeCheckbox()}
-                <div className='name pull-left'>
-                  {this.renderNameControl()}
-                </div>
-              </div>
-              <div className='node-stats'>
-                {!!roles.length &&
-                  <div className='role-list'>
-                    <i className='glyphicon glyphicon-pushpin' />
-                    {this.renderRoleList(roles)}
-                  </div>
-                }
-                {!_.isEmpty(node.get('labels')) &&
-                  <div className='node-labels'>
-                    <i className='glyphicon glyphicon-tags pull-left' />
-                    {this.renderLabels()}
-                  </div>
-                }
-                <div className={utils.classNames(statusClasses)}>
-                  <i className='glyphicon glyphicon-time' />
-                  {_.contains(['provisioning', 'deploying'], status) ?
-                    <div>
-                      {this.renderStatusLabel(status)}
-                      <div className='node-buttons'>
-                        {this.renderLogsLink()}
-                      </div>
-                      {this.renderNodeProgress(status)}
-                    </div>
-                  :
-                    <div>
-                      {this.renderStatusLabel(status)}
-                      <div className='node-buttons'>
-                        {status === 'offline' && this.renderRemoveButton()}
-                        {[
-                          !!node.get('cluster') && this.renderLogsLink(),
-                          renderActionButtons &&
-                            (node.get('pending_addition') || node.get('pending_deletion')) &&
-                            !locked &&
-                            <button
-                              className='btn btn-discard'
-                              key='btn-discard'
-                              onClick={node.get('pending_deletion') ?
-                                this.discardNodeDeletion
-                              :
-                                this.showDeleteNodesDialog
-                              }
-                            >
-                              {i18n(ns +
-                                (node.get('pending_deletion') ? 'discard_deletion' : 'delete_node')
-                              )}
-                            </button>
-                        ]}
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-              <div className='hardware-info clearfix'>
-                <div className={utils.classNames(logoClasses)} />
-                {this.renderNodeHardwareSummary()}
-              </div>
-              <div className='node-popover-buttons'>
-                <button className='btn btn-default node-settings' onClick={this.showNodeDetails}>
-                  {i18n(ns + 'details')}
-                </button>
-              </div>
-            </div>
-          </Popover>
-        }
+        {this.state.extendedView && this.renderExtendedView(options)}
       </div>
     );
   },
@@ -431,7 +448,11 @@ var Node = React.createClass({
           <div className={utils.classNames(logoClasses)} />
           <div className='node-name'>
             <div className='name'>
-              {this.renderNameControl()}
+              {this.props.nodeSelectionPossibleOnly ?
+                <p>{node.get('name') || node.get('mac')}</p>
+              :
+                this.renderNameControl()
+              }
             </div>
             <div className='role-list'>
               {this.renderRoleList(roles)}
@@ -451,7 +472,7 @@ var Node = React.createClass({
             }
           </div>
           <div className='node-action'>
-            {[
+            {!this.props.nodeSelectionPossibleOnly && [
               !!node.get('cluster') && this.renderLogsLink(true),
               renderActionButtons &&
                 (node.get('pending_addition') || node.get('pending_deletion')) &&
@@ -484,7 +505,9 @@ var Node = React.createClass({
             }
           </div>
           {this.renderNodeHardwareSummary()}
-          <div className='node-settings' onClick={this.showNodeDetails} />
+          {!this.props.nodeSelectionPossibleOnly &&
+            <div className='node-settings' onClick={this.showNodeDetails} />
+          }
         </label>
       </div>
     );

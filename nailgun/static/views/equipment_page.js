@@ -120,6 +120,7 @@ EquipmentPage = React.createClass({
             filters={models.Nodes.prototype.filters}
             statusesToFilter={models.Node.prototype.statuses}
             defaultFilters={{status: []}}
+            showBatchActionButtons={false}
           />
         </div>
       </div>

@@ -287,6 +287,34 @@ def prepare():
         }]
     )
 
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [{
+            'id': 1,
+            'node_id': node_id,
+            'name': 'test_interface',
+            'mac': '00:00:00:00:00:01',
+            'max_speed': 200,
+            'current_speed': 100,
+            'ip_addr': '10.20.0.2',
+            'netmask': '255.255.255.0',
+            'state': 'test_state',
+            'interface_properties': jsonutils.dumps(
+                {'test_property': 'test_value'}),
+            'driver': 'test_driver',
+            'bus_info': 'some_test_info'
+        }])
+
+    db.execute(
+        meta.tables['node_bond_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'name': 'test_bond_interface',
+            'mode': 'active-backup',
+            'bond_properties': jsonutils.dumps(
+                {'test_property': 'test_value'})
+        }])
+
     db.commit()
 
 
@@ -445,3 +473,69 @@ class TestRemoveWizardMetadata(base.BaseAlembicMigrationTest):
     def test_wizard_metadata_does_not_exist_in_releases(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('wizard_metadata', releases_table.c)
+
+
+class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
+
+    def test_new_plugin_attributes_fields_exist(self):
+        plugin_table = self.meta.tables['plugins']
+        columns = [
+            plugin_table.c.nic_attributes_metadata,
+            plugin_table.c.bond_attributes_metadata,
+            plugin_table.c.node_attributes_metadata
+        ]
+
+        for column in columns:
+            db_values = db.execute(sa.select([column])).fetchone()
+            for db_value in db_values:
+                self.assertEqual(db_value, '{}')
+
+    def test_node_nic_interface_plugins_creation(self):
+        node_nic_interface_plugins = \
+            self.meta.tables['node_nic_interface_plugins']
+        plugins = self.meta.tables['plugins']
+        node_nic_interfaces = self.meta.tables['node_nic_interfaces']
+
+        plugin_id = db.execute(sa.select([plugins])).scalar()
+        interface_id = db.execute(sa.select([node_nic_interfaces])).scalar()
+
+        db.execute(
+            node_nic_interface_plugins.insert(),
+            [{
+                'plugin_id': plugin_id,
+                'interface_id': interface_id,
+                'attributes': jsonutils.dumps({'test_attr': 'test'})
+            }])
+
+    def test_node_bond_interface_plugins_creation(self):
+        node_bond_interface_plugins = \
+            self.meta.tables['node_bond_interface_plugins']
+        plugins = self.meta.tables['plugins']
+        node_bond_interfaces = self.meta.tables['node_bond_interfaces']
+
+        plugin_id = db.execute(sa.select([plugins])).scalar()
+        bond_id = db.execute(sa.select([node_bond_interfaces])).scalar()
+
+        db.execute(
+            node_bond_interface_plugins.insert(),
+            [{
+                'plugin_id': plugin_id,
+                'bond_id': bond_id,
+                'attributes': jsonutils.dumps({'test_attr': 'test'})
+            }])
+
+    def test_node_plugins_creation(self):
+        node_plugins = self.meta.tables['node_plugins']
+        plugins = self.meta.tables['plugins']
+        nodes = self.meta.tables['nodes']
+
+        plugin_id = db.execute(sa.select([plugins])).scalar()
+        node_id = db.execute(sa.select([nodes])).scalar()
+
+        db.execute(
+            node_plugins.insert(),
+            [{
+                'plugin_id': plugin_id,
+                'node_id': node_id,
+                'attributes': jsonutils.dumps({'test_attr': 'test'})
+            }])

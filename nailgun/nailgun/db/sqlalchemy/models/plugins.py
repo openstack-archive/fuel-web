@@ -52,6 +52,68 @@ class ClusterPlugins(Base):
                         server_default='{}')
 
 
+class NodeNICInterfaceClusterPlugin(Base):
+
+    __tablename__ = 'node_nic_interface_cluster_plugins'
+    id = Column(Integer, primary_key=True)
+    cluster_plugin_id = Column(
+        Integer,
+        ForeignKey('cluster_plugins.id', ondelete='CASCADE'),
+        nullable=False)
+    interface_id = Column(
+        Integer,
+        ForeignKey('node_nic_interfaces.id', ondelete='CASCADE'),
+        nullable=False)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete='CASCADE'),
+        nullable=False)
+    attributes = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=False,
+        server_default='{}')
+
+
+class NodeBondInterfaceClusterPlugin(Base):
+
+    __tablename__ = 'node_bond_interface_cluster_plugins'
+    id = Column(Integer, primary_key=True)
+    cluster_plugin_id = Column(
+        Integer,
+        ForeignKey('cluster_plugins.id', ondelete='CASCADE'),
+        nullable=False)
+    bond_id = Column(
+        Integer,
+        ForeignKey('node_bond_interfaces.id', ondelete='CASCADE'),
+        nullable=False)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete='CASCADE'),
+        nullable=False)
+    attributes = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=False,
+        server_default='{}')
+
+
+class NodeClusterPlugin(Base):
+
+    __tablename__ = 'node_cluster_plugins'
+    id = Column(Integer, primary_key=True)
+    cluster_plugin_id = Column(
+        Integer,
+        ForeignKey('cluster_plugins.id', ondelete='CASCADE'),
+        nullable=False)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete='CASCADE'),
+        nullable=False)
+    attributes = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=False,
+        server_default='{}')
+
+
 class Plugin(Base):
 
     __tablename__ = 'plugins'
@@ -83,6 +145,12 @@ class Plugin(Base):
         MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
     network_roles_metadata = Column(
         MutableList.as_mutable(JSON), server_default='[]', nullable=False)
+    nic_attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
+    bond_attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
+    node_attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
     components_metadata = Column(
         MutableList.as_mutable(JSON), server_default='[]')
     # TODO(apopovych): To support old plugins versions we need separate

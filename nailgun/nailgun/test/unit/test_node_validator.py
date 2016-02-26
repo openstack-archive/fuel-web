@@ -80,3 +80,67 @@ class TestNodeJsonSchemaValidation(base.BaseValidatorTest):
                 self.validator,
                 data,
                 node_schema.single_schema)
+
+    def test_cpu_pinning(self):
+        data = {
+            'meta': {
+                'numa_topology': {
+                    'supported_hugepages': [2048, 1048576],
+                    'numa_nodes': [
+                        {'id': 1, 'cpus': [0, 1, 2, 3], 'memory': 1024},
+                        {'id': 2, 'cpus': [4, 5, 6, 7], 'memory': 1024},
+                    ],
+                    'distances': [
+                        ['1.0', '2.1'],
+                        ['2.1', '1.0'],
+                    ]
+                },
+            }
+        }
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            self.validator,
+            data,
+            node_schema.single_schema
+        )
+
+    def test_cpu_pinning_fail(self):
+        tests_data = [
+            {
+                'data': {
+                    'meta': {
+                        'numa_topology': {},
+                        'distances': []}},
+                'message': "'supported_hugepages' is a required property"
+            },
+            {
+                'data': {
+                    'meta': {
+                        'numa_topology': {
+                            'numa_nodes': [],
+                            'supported_hugepages': [],
+                            'distances': []}}},
+                'message': "[] is too short"
+            },
+            {
+                'data': {
+                    'meta': {
+                        'numa_topology': {
+                            'numa_nodes': [
+                                {'id': 0, 'cpus': [0, 1, 2, 3]},
+                            ],
+                            'supported_hugepages': [],
+                            'distances': []}}},
+                'message': "'memory' is a required property"
+            }
+        ]
+
+        for test in tests_data:
+            self.assertRaisesWithMessageIn(
+                errors.InvalidData,
+                test['message'],
+                self.validator,
+                test['data'],
+                node_schema.single_schema
+            )

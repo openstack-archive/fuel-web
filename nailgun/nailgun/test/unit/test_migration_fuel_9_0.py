@@ -267,7 +267,7 @@ def prepare():
             'editable': jsonutils.dumps(editable)
         }])
 
-    db.execute(
+    result = db.execute(
         meta.tables['nodes'].insert(),
         [{
             'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',

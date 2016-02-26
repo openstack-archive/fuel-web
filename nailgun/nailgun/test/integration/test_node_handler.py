@@ -441,7 +441,8 @@ class TestHandlers(BaseIntegrationTest):
                     'type': 'text',
                     'value': 'value1'
                 }
-            }
+            },
+            'cpu_pinning': {},
         }
         node.attributes.update(fake_attributes)
         update_attributes = {

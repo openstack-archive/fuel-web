@@ -33,7 +33,6 @@ from nailgun.api.v1.handlers.cluster import ClusterGeneratedData
 from nailgun.api.v1.handlers.cluster import ClusterHandler
 from nailgun.api.v1.handlers.cluster import ClusterResetHandler
 from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
-from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
 from nailgun.api.v1.handlers.component import ComponentCollectionHandler
@@ -206,8 +205,6 @@ urls = (
     ClusterStopDeploymentHandler,
     r'/clusters/(?P<cluster_id>\d+)/reset/?$',
     ClusterResetHandler,
-    r'/clusters/(?P<cluster_id>\d+)/update/?$',
-    ClusterUpdateHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
 
@@ -318,7 +315,6 @@ urls = (
     OpenstackConfigHandler,
     r'/openstack-config/execute/?$',
     OpenstackConfigExecuteHandler,
-
 )
 
 feature_groups_urls = {

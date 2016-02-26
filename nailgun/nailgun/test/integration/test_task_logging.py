@@ -176,22 +176,6 @@ class TestTasksLogging(BaseIntegrationTest):
 
     @fake_tasks(god_mode=True)
     @patch.object(TaskHelper, 'update_action_log')
-    def test_update_task_logging(self, logger):
-        self.env.create(
-            nodes_kwargs=[
-                {"roles": ["controller"], "status": "ready"},
-                {"roles": ["cinder"], "status": "ready"},
-                {"roles": ["compute"], "status": "ready"},
-            ]
-        )
-        self.env.update_environment()
-
-        self.assertGreaterEqual(len(logger.call_args_list), 1)
-        self.check_task_name_and_sanitized_data(
-            -1, logger, consts.TASK_NAMES.update)
-
-    @fake_tasks(god_mode=True)
-    @patch.object(TaskHelper, 'update_action_log')
     def test_dump_task_logging(self, logger):
         resp = self.app.put(
             reverse('LogPackageHandler'), headers=self.default_headers

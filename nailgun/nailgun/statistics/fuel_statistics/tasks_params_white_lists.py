@@ -147,6 +147,15 @@ _task_output_white_list_template = {
                     "state_path": ""
                 },
                 "priority": "",
+                "murano": {
+                    "enabled": ""
+                },
+                "murano-cfapi": {
+                    "enabled": ""
+                },
+                "murano-glance-artifacts-plugin": {
+                    "enabled": ""
+                },
                 "role": "",
                 "online": "",
                 "auto_assign_floating_ip": "",

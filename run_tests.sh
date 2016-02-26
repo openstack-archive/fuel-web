@@ -177,7 +177,7 @@ function run_nailgun_tests {
   # # run tests
   TOXENV=$TOXENV \
   NAILGUN_CONFIG=$config \
-  tox -- $options $TESTS  || result=1
+  tox -- $options nailgun/test/performance/integration/test_cluster.py || result=1
   popd >> /dev/null
   return $result
 }

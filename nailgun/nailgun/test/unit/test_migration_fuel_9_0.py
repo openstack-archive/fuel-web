@@ -247,7 +247,7 @@ def prepare():
             'deployment_tasks': jsonutils.dumps(JSON_TASKS)
         }])
 
-    db.execute(
+    result = db.execute(
         meta.tables['nodes'].insert(),
         [{
             'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',

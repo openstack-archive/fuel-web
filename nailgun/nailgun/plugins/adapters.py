@@ -26,7 +26,7 @@ import yaml
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.deployment_graph import DeploymentGraph
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
 
@@ -157,6 +157,18 @@ class PluginAdapterBase(object):
         return self.plugin.components_metadata
 
     @property
+    def bond_attributes_metadata(self):
+        return self.plugin.bond_attributes_metadata
+
+    @property
+    def nic_attributes_metadata(self):
+        return self.plugin.bond_attributes_metadata
+
+    @property
+    def node_attributes_metadata(self):
+        return self.plugin.node_attributes_metadata
+
+    @property
     def releases(self):
         return self.plugin.releases
 
@@ -181,8 +193,8 @@ class PluginAdapterBase(object):
         release_info = filter(
             lambda r: (
                 r['os'] == rel_os and
-                ClusterPlugins.is_release_version_compatible(version,
-                                                             r['version'])),
+                ClusterPlugin.is_release_version_compatible(version,
+                                                            r['version'])),
             self.plugin.releases)
 
         return release_info[0]
@@ -325,6 +337,21 @@ class PluginAdapterV4(PluginAdapterV3):
 
 class PluginAdapterV5(PluginAdapterV4):
     """Plugin wrapper class for package version 5.0.0"""
+
+    nic_config_name = 'nic_config.yaml'
+    bond_config_name = 'bond_config.yaml'
+    node_config_name = 'node_config.yaml'
+
+    def sync_metadata_to_db(self):
+        super(PluginAdapterV5, self).sync_metadata_to_db()
+
+        db_config_metadata_mapping = {
+            'nic_attributes_metadata': self.nic_config_name,
+            'bond_attributes_metadata': self.bond_config_name,
+            'node_attributes_metadata': self.node_config_name
+        }
+
+        self._update_plugin(db_config_metadata_mapping)
 
 
 __version_mapping = {

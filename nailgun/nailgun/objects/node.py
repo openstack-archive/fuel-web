@@ -1260,10 +1260,15 @@ class NodeAttributes(object):
             six.itervalues(cls.node_cpu_pinning_info(node)['components']))
 
     @classmethod
-    def node_cpu_pinning_info(cls, node):
+    def node_cpu_pinning_info(cls, node_or_attributes):
         total_required_cpus = 0
         components = {}
-        cpu_pinning_attrs = Node.get_attributes(node)['cpu_pinning']
+        if isinstance(node_or_attributes, models.Node):
+            cpu_pinning_attrs = (
+                Node.get_attributes(node_or_attributes)['cpu_pinning'])
+        else:
+            cpu_pinning_attrs = node_or_attributes['cpu_pinning']
+
         for name, attrs in six.iteritems(cpu_pinning_attrs):
             # skip meta
             if 'value' in attrs:

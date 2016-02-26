@@ -45,7 +45,7 @@ function process_options {
 FUEL_WEB_ROOT=$(readlink -f $(dirname $0)/..)
 NAILGUN_ROOT=$FUEL_WEB_ROOT/nailgun
 
-ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
+ARTIFACTS=${ARTIFACTS:-`pwd`/test_run/ui_func}
 mkdir -p $ARTIFACTS
 
 export NAILGUN_STATIC=$ARTIFACTS/static

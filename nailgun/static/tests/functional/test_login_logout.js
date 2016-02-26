@@ -42,7 +42,7 @@ define([
           .then(function() {
             return loginPage.login('login', '*****');
           })
-          .assertElementAppears('div.login-error', 1000,
+          .assertElementAppears('div.login-error1', 1000,
             'Error message is expected to get displayed');
       },
       'Login with proper credentials': function() {

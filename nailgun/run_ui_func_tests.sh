@@ -42,7 +42,7 @@ function process_options {
   done
 }
 
-FUEL_WEB_ROOT=$(readlink -f $(dirname $0)/..)
+FUEL_WEB_ROOT=$(readlink -f ${FUEL_WEB_ROOT:-$(dirname $0)/..})
 NAILGUN_ROOT=$FUEL_WEB_ROOT/nailgun
 
 ARTIFACTS=${ARTIFACTS:-`pwd`/test_run/ui_func}

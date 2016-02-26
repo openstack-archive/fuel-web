@@ -41,7 +41,7 @@ from nailgun.logger import logger
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects import Release
 from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.plugins.manager import PluginManager
@@ -185,7 +185,7 @@ class Cluster(NailgunObject):
         cls.add_pending_changes(
             cluster, consts.CLUSTER_CHANGES.vmware_attributes)
 
-        ClusterPlugins.add_compatible_plugins(cluster)
+        ClusterPlugin.add_compatible_plugins(cluster)
         PluginManager.enable_plugins_by_components(cluster)
 
         fire_callback_on_cluster_create(cluster, data)

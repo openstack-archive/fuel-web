@@ -1755,6 +1755,8 @@ class AllocateVIPs70Mixin(object):
 
     @classmethod
     def _get_vips_for_net_groups(cls, cluster):
+        cls.check_unique_vip_names_for_cluster(cluster)
+
         for nodegroup, net_group, vip_name, role, vip_info \
                 in cls.get_node_groups_info(cluster):
 

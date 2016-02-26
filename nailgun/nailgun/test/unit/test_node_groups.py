@@ -537,8 +537,10 @@ class TestNodeGroups(BaseIntegrationTest):
             }})
         self.env.clusters[0].release.network_roles_metadata = net_roles
         self.db.flush()
-        # VIPs are allocated on this call
-        self.env.neutron_networks_put(self.cluster.id, {})
+
+        # allocate VIPs
+        net_manager = objects.Cluster.get_network_manager(self.cluster)
+        net_manager.assign_vips_for_net_groups(self.cluster)
 
         config = self.env.neutron_networks_get(self.cluster.id).json_body
         # Storage network has no GW by default

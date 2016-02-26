@@ -80,3 +80,27 @@ class TestNodeJsonSchemaValidation(base.BaseValidatorTest):
                 self.validator,
                 data,
                 node_schema.single_schema)
+
+    def test_cpu_pinning(self):
+        data = {
+            'meta': {
+                'numa_topology': {
+                    'available_hugepages': [2048, 1048576],
+                    'numa_nodes': [
+                        {'id': 1, 'cpus': [0, 1, 2, 3]},
+                        {'id': 2, 'cpus': [4, 5, 6, 7]}
+                    ],
+                    'distances': [
+                        ['1.0', '2.1'],
+                        ['2.1', '1.0'],
+                    ]
+                },
+            }
+        }
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            self.validator,
+            data,
+            node_schema.single_schema
+        )

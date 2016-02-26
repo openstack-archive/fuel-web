@@ -37,7 +37,7 @@ from nailgun.logger import logger
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects import Release
 from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.plugins.manager import PluginManager
@@ -189,7 +189,7 @@ class Cluster(NailgunObject):
             if assign_nodes:
                 cls.update_nodes(cluster, assign_nodes)
 
-            ClusterPlugins.add_compatible_plugins(cluster)
+            ClusterPlugin.add_compatible_plugins(cluster)
             PluginManager.enable_plugins_by_components(cluster)
 
             net_manager.assign_vips_for_net_groups(cluster)

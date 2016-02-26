@@ -315,7 +315,7 @@ class DeploymentMultinodeSerializer(object):
                 node['tasks'] = self.task_graph.deploy_task_serialize(node)
 
     def inject_list_of_plugins(self, attributes, cluster):
-        plugins = objects.ClusterPlugins.get_enabled(cluster.id)
+        plugins = objects.ClusterPlugin.get_enabled(cluster.id)
         attributes['plugins'] = [p['name'] for p in plugins]
 
 

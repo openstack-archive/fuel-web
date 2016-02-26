@@ -461,6 +461,10 @@ models.Node = BaseModel.extend({
     var status = this.get('status');
     return status === 'discover' || status === 'error' && this.get('error_type') === 'provisioning';
   },
+  isDeploymentPossible() {
+    var status = this.get('status');
+    return status === 'provisioned' || status === 'error' && this.get('error_type') === 'deploy';
+  },
   hasChanges() {
     return this.get('pending_addition') ||
       this.get('pending_deletion') ||
@@ -578,9 +582,17 @@ models.Task = BaseModel.extend({
     return id;
   },
   groups: {
-    network: ['verify_networks', 'check_networks'],
+    network: [
+      'verify_networks',
+      'check_networks'
+    ],
     deployment: [
-      'update', 'stop_deployment', 'deploy', 'provision', 'reset_environment', 'spawn_vms'
+      'stop_deployment',
+      'deploy',
+      'provision',
+      'deployment',
+      'reset_environment',
+      'spawn_vms'
     ]
   },
   extendGroups(filters) {

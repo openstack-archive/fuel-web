@@ -53,22 +53,24 @@ define([
       beforeEach: function() {
         return this.remote
           .then(function() {
+            return common.addNodesToCluster(1, ['Controller']);
+          })
+          .then(function() {
             return clusterPage.goToTab('Dashboard');
+          });
+      },
+      afterEach: function() {
+        return this.remote
+          .then(function() {
+            return clusterPage.resetEnvironment(clusterName);
+          })
+          .then(function() {
+            return dashboardPage.discardChanges();
           });
       },
       'Provision nodes': function() {
         this.timeout = 100000;
         return this.remote
-          .assertElementNotExists(
-            dashboardPage.deployButtonSelector,
-            'No deployment should be possible without nodes added'
-          )
-          .then(function() {
-            return common.addNodesToCluster(1, ['Controller']);
-          })
-          .then(function() {
-            return clusterPage.goToTab('Dashboard');
-          })
           .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
           .clickByCssSelector('.actions-panel .nav .dropdown-menu li.provision button')
           .assertElementContainsText(
@@ -114,20 +116,61 @@ define([
           .assertElementEnabled(
             dashboardPage.deployButtonSelector,
             'Provisioned nodes can be deployed'
-          )
+          );
+      },
+      'Deploy nodes': function() {
+        this.timeout = 100000;
+        return this.remote
+          .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
+          .clickByCssSelector('.actions-panel .nav .dropdown-menu li.deployment button')
+          .assertElementDisabled('.btn-deploy-nodes', 'There are no provisioned nodes to deploy')
+          .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
+          .clickByCssSelector('.actions-panel .nav .dropdown-menu li.provision button')
+          .clickByCssSelector('.btn-provision')
           .then(function() {
-            return clusterPage.resetEnvironment(clusterName);
-          });
+            return modal.waitToOpen();
+          })
+          .then(function() {
+            return modal.checkTitle('Provision Nodes');
+          })
+          .then(function() {
+            return modal.clickFooterButton('Start Provisioning');
+          })
+          .then(function() {
+            return modal.waitToClose();
+          })
+          .assertElementAppears('div.deploy-process div.progress', 2000, 'Provisioning started')
+          .assertElementDisappears('div.deploy-process div.progress', 5000, 'Provisioning finished')
+          .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
+          .clickByCssSelector('.actions-panel .nav .dropdown-menu li.deployment button')
+          .clickByCssSelector('.btn-deploy-nodes')
+          .then(function() {
+            return modal.waitToOpen();
+          })
+          .then(function() {
+            return modal.checkTitle('Deploy Nodes');
+          })
+          .then(function() {
+            return modal.clickFooterButton('Start Deployment');
+          })
+          .then(function() {
+            return modal.waitToClose();
+          })
+          .assertElementAppears('div.deploy-process div.progress', 2000, 'Deployment started')
+          .assertElementDisappears('div.deploy-process div.progress', 10000, 'Deployment finished')
+          .assertElementContainsText(
+            'div.alert-success strong',
+            'Success',
+            'Deployment successfully finished'
+          )
+          .assertElementNotExists(
+            dashboardPage.deployButtonSelector,
+            'There are no changes to deploy in the environment'
+          );
       },
       'Start/stop deployment': function() {
         this.timeout = 100000;
         return this.remote
-          .then(function() {
-            return common.addNodesToCluster(2, ['Controller']);
-          })
-          .then(function() {
-            return clusterPage.goToTab('Dashboard');
-          })
           .then(function() {
             return dashboardPage.startDeployment();
           })
@@ -154,17 +197,11 @@ define([
           .assertElementNotExists(
             '.go-to-healthcheck',
             'Healthcheck link is not visible after stopped deploy'
-          )
-          .then(function() {
-            return clusterPage.resetEnvironment(clusterName);
-          });
+          );
       },
       'Test tabs locking after deployment completed': function() {
         this.timeout = 100000;
         return this.remote
-          .then(function() {
-            return common.addNodesToCluster(1, ['Controller']);
-          })
           .then(function() {
             return clusterPage.isTabLocked('Networks');
           })
@@ -219,9 +256,6 @@ define([
           })
           .then(function() {
             return clusterPage.goToTab('Dashboard');
-          })
-          .then(function() {
-            return clusterPage.resetEnvironment(clusterName);
           });
       }
     };

@@ -315,6 +315,71 @@ class TestPluginV4(TestPluginBase):
                 self.plugin.components_metadata, components_metadata)
 
 
+class TestPluginV5(TestPluginBase):
+
+    __test__ = True
+    package_version = '5.0.0'
+
+    def test_sync_metadata_to_db(self):
+        plugin_metadata = self.env.get_default_plugin_metadata()
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        nic_attributes_metadata = self.env.get_default_plugin_nic_config()
+        bond_attributes_metadata = self.env.get_default_plugin_bond_config()
+        node_attributes_metadata = self.env.get_default_plugin_node_config()
+        roles_metadata = self.env.get_default_plugin_node_roles_config()
+        volumes_metadata = self.env.get_default_plugin_volumes_config()
+        network_roles_metadata = self.env.get_default_network_roles_config()
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        tasks = self.env.get_default_plugin_tasks()
+        components_metadata = self.env.get_default_components()
+
+        mocked_metadata = {
+            self._find_path('metadata'): plugin_metadata,
+            self._find_path('environment_config'): attributes_metadata,
+            self._find_path('node_roles'): roles_metadata,
+            self._find_path('volumes'): volumes_metadata,
+            self._find_path('network_roles'): network_roles_metadata,
+            self._find_path('deployment_tasks'): deployment_tasks,
+            self._find_path('tasks'): tasks,
+            self._find_path('components'): components_metadata,
+            self._find_path('nic_config'): nic_attributes_metadata,
+            self._find_path('bond_config'): bond_attributes_metadata,
+            self._find_path('node_config'): node_attributes_metadata
+        }
+
+        with mock.patch.object(
+                self.plugin_adapter, '_load_config') as load_conf:
+            load_conf.side_effect = lambda key: mocked_metadata[key]
+            self.plugin_adapter.sync_metadata_to_db()
+
+            for key, val in six.iteritems(plugin_metadata):
+                self.assertEqual(
+                    getattr(self.plugin, key), val)
+
+            self.assertEqual(
+                self.plugin.attributes_metadata,
+                attributes_metadata['attributes'])
+            self.assertEqual(
+                self.plugin.roles_metadata, roles_metadata)
+            self.assertEqual(
+                self.plugin.volumes_metadata, volumes_metadata)
+            self.assertEqual(
+                self.plugin.deployment_tasks, deployment_tasks)
+            self.assertEqual(
+                self.plugin.tasks, tasks)
+            self.assertEqual(
+                self.plugin.components_metadata, components_metadata)
+            self.assertEqual(
+                self.plugin.nic_attributes_metadata,
+                nic_attributes_metadata)
+            self.assertEqual(
+                self.plugin.bond_attributes_metadata,
+                bond_attributes_metadata)
+            self.assertEqual(
+                self.plugin.node_attributes_metadata,
+                bond_attributes_metadata)
+
+
 class TestClusterCompatibilityValidation(base.BaseTestCase):
 
     def setUp(self):

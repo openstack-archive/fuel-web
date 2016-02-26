@@ -71,6 +71,10 @@ class Release(Base):
                         default=[], nullable=False, server_default='{}')
     node_attributes = Column(MutableDict.as_mutable(JSON), default={},
                              server_default='{}', nullable=False)
+    nic_metadata = Column(MutableDict.as_mutable(JSON), default={},
+                          server_default='{}', nullable=False)
+    bond_metadata = Column(MutableDict.as_mutable(JSON), default={},
+                           server_default='{}', nullable=False)
 
     # TODO(enchantner): get rid of properties
 

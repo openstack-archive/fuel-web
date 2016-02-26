@@ -159,6 +159,12 @@ class InstallationInfo(object):
         WhiteListRule(('network_roles_metadata',),
                       'network_roles_metadata', None),
         WhiteListRule(('components_metadata',), 'components_metadata', None),
+        WhiteListRule(
+            ('nic_attributes_metadata',), 'nic_attributes_metadata', None),
+        WhiteListRule(
+            ('bond_attributes_metadata',), 'bond_attributes_metadata', None),
+        WhiteListRule(
+            ('node_attributes_metadata',), 'node_attributes_metadata', None),
         WhiteListRule(('deployment_tasks',), 'deployment_tasks', None),
         WhiteListRule(('tasks',), 'tasks', None),
     )

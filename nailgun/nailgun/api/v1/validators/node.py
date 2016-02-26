@@ -25,6 +25,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun import utils
 
 
 class MetaInterfacesValidator(base.BasicValidator):
@@ -424,4 +425,25 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
 
     @classmethod
     def validate(cls, data, node=None):
-        return super(NodeAttributesValidator, cls).validate(data)
+        attrs = cls.validate_json(data)
+
+        if node is not None:
+            full_data = utils.dict_merge(
+                objects.Node.get_attributes(node), attrs)
+        else:
+            full_data = data
+
+        attrs = cls.validate_attributes(full_data)
+
+        pining_info = objects.Node.node_cpu_pinning_info(attrs)
+
+        # check that we have at least one CPU for operating system
+        total_cpus = int(node.meta.get('cpu', {}).get('total', 0))
+
+        if pining_info['total_required_cpus'] + 1 > total_cpus:
+            raise errors.InvalidData(
+                'Operating system require at least one cpu '
+                'that must not be pinned.'
+            )
+
+        return attrs

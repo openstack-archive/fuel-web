@@ -23,7 +23,7 @@ from nailgun.objects import Cluster
 from nailgun.objects import ClusterCollection
 from nailgun.objects import MasterNodeSettings
 from nailgun.objects import NodeCollection
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import ClusterPlugin
 from nailgun.settings import settings
 from nailgun.statistics.utils import get_attr_value
 from nailgun.statistics.utils import WhiteListRule
@@ -176,6 +176,12 @@ class InstallationInfo(object):
         WhiteListRule(('network_roles_metadata',),
                       'network_roles_metadata', None),
         WhiteListRule(('components_metadata',), 'components_metadata', None),
+        WhiteListRule(
+            ('nic_attributes_metadata',), 'nic_attributes_metadata', None),
+        WhiteListRule(
+            ('bond_attributes_metadata',), 'bond_attributes_metadata', None),
+        WhiteListRule(
+            ('node_attributes_metadata',), 'node_attributes_metadata', None),
         WhiteListRule(('deployment_tasks',), 'deployment_tasks', None),
         WhiteListRule(('tasks',), 'tasks', None),
     )
@@ -251,14 +257,15 @@ class InstallationInfo(object):
                 'network_configuration': self.get_network_configuration_info(
                     cluster),
                 'installed_plugins': self.get_cluster_plugins_info(cluster),
-                'components': cluster.components
+                'components': cluster.components,
+                'cluster_plugins': cluster.cluster_plugins
             }
             clusters_info.append(cluster_info)
         return clusters_info
 
     def get_cluster_plugins_info(self, cluster):
         plugins_info = []
-        for plugin_inst in ClusterPlugins.get_enabled(cluster.id):
+        for plugin_inst in ClusterPlugin.get_enabled(cluster.id):
             plugin_info = self.get_attributes(plugin_inst.__dict__,
                                               self.plugin_info_white_list)
             plugins_info.append(plugin_info)

@@ -109,8 +109,14 @@ class Node(NailgunObject):
         :param ips_by_network_name: dict
         :returns: None
         """
-        ngs = cls.get_networks_ips(instance)
-        ngs = ngs.filter(models.NetworkGroup.name.in_(ips_by_network_name))
+        ngs = db().query(
+            models.NetworkGroup.name, models.IPAddr
+        ).filter(
+            models.NetworkGroup.group_id == instance.group_id,
+            models.IPAddr.network == models.NetworkGroup.id,
+            models.IPAddr.node == instance.id,
+            models.NetworkGroup.name.in_(ips_by_network_name)
+        )
         for ng_name, ip_addr in ngs:
             ip_addr.ip_addr = ips_by_network_name[ng_name]
         db().flush()

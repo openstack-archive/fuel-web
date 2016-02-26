@@ -171,7 +171,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertFalse(ips_db)
 
     def test_cannot_delete_admin_network_group(self):
-        admin = objects.Cluster.get_network_manager().get_admin_network_group()
+        admin = objects.NetworkGroup.get_admin_network_group()
         resp = self.app.delete(
             reverse(
                 'NetworkGroupHandler',
@@ -419,7 +419,7 @@ class TestHandlers(BaseIntegrationTest):
                                  'Network release could not be changed.')
 
     def test_modify_admin_network_group_with_wrong_group_id(self):
-        admin = objects.Cluster.get_network_manager().get_admin_network_group()
+        admin = objects.NetworkGroup.get_admin_network_group()
         admin_network_data = {
             'id': admin.id,
             'group_id': objects.Cluster.get_default_group(self.cluster).id,

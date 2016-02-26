@@ -265,6 +265,12 @@ class NodeNICInterface(Base):
     offloading_modes = Column(MutableList.as_mutable(JSON),
                               default=[], nullable=False,
                               server_default='[]')
+    attributes = Column(
+        MutableDict.as_mutable(JSON),
+        default={}, server_default='{}', nullable=False)
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        default={}, server_default='{}', nullable=False)
 
     @property
     def type(self):
@@ -329,6 +335,9 @@ class NodeBondInterface(Base):
         MutableDict.as_mutable(JSON), default={}, nullable=False,
         server_default='{}')
     slaves = relationship("NodeNICInterface", backref="bond")
+    attributes = Column(
+        MutableDict.as_mutable(JSON),
+        default={}, server_default='{}', nullable=False)
 
     @property
     def max_speed(self):

@@ -24,6 +24,7 @@ import utils from 'utils';
 import models from 'models';
 import dispatcher from 'dispatcher';
 import {Input, ProgressBar} from 'views/controls';
+import NodeListScreen from 'views/cluster_page_tabs/nodes_tab_screens/node_list_screen';
 import {backboneMixin, renamingMixin} from 'component_mixins';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import customControls from 'views/custom_controls';
@@ -456,7 +457,12 @@ export var ProvisionNodesDialog = React.createClass({
     this.setState({actionInProgress: true});
     dispatcher.trigger('deploymentTasksUpdated');
     var task = new models.Task();
-    task.save({}, {url: _.result(this.props.cluster, 'url') + '/provision', type: 'PUT'})
+    task
+      .save({}, {
+        url: _.result(this.props.cluster, 'url') + '/provision?nodes=' +
+          this.props.nodeIds.join(','),
+        type: 'PUT'
+      })
       .done(() => {
         this.close();
         dispatcher.trigger('deploymentTaskStarted');
@@ -506,7 +512,7 @@ export var ProvisionNodesDialog = React.createClass({
         disabled={this.state.actionInProgress}
         onClick={this.provisionNodes}
       >
-        {i18n(this.ns + 'start_provisioning')}
+        {i18n(this.ns + 'start_provisioning', {count: this.props.nodeIds.length})}
       </button>
     ]);
   }
@@ -522,12 +528,15 @@ export var DeployNodesDialog = React.createClass({
     this.setState({actionInProgress: true});
     dispatcher.trigger('deploymentTasksUpdated');
     var task = new models.Task();
-    task.save({}, {url: _.result(this.props.cluster, 'url') + '/deploy', type: 'PUT'})
-      .done(() => {
-        this.close();
-        dispatcher.trigger('deploymentTaskStarted');
-      })
-      .fail(this.showError);
+    task.save({}, {
+      url: _.result(this.props.cluster, 'url') + '/deploy?nodes=' + this.props.nodeIds.join(','),
+      type: 'PUT'
+    })
+    .done(() => {
+      this.close();
+      dispatcher.trigger('deploymentTaskStarted');
+    })
+    .fail(this.showError);
   },
   renderBody() {
     return (
@@ -572,7 +581,85 @@ export var DeployNodesDialog = React.createClass({
         disabled={this.state.actionInProgress}
         onClick={this.deployNodes}
       >
-        {i18n(this.ns + 'start_deployment')}
+        {i18n(this.ns + 'start_deployment', {count: this.props.nodeIds.length})}
+      </button>
+    ]);
+  }
+});
+
+export var SelectNodesDialog = React.createClass({
+  mixins: [dialogMixin],
+  getInitialState() {
+    var selectedNodeIds = {};
+    this.props.nodes.each((node) => selectedNodeIds[node.id] = true);
+    return {selectedNodeIds};
+  },
+  getDefaultProps() {
+    return {
+      title: i18n('dialog.select_nodes.title'),
+      modalClass: 'select-nodes-dialog'
+    };
+  },
+  ns: 'dialog.select_nodes.',
+  proceed() {
+    this.close();
+    this.props.callback(_.keys(this.state.selectedNodeIds));
+  },
+  selectNodes(ids = [], checked) {
+    if (ids.length) {
+      var nodeSelection = this.state.selectedNodeIds;
+      _.each(ids, (id) => {
+        if (checked) {
+          nodeSelection[id] = true;
+        } else {
+          delete nodeSelection[id];
+        }
+      });
+      this.setState({selectedNodeIds: nodeSelection});
+    } else {
+      this.setState({selectedNodeIds: {}});
+    }
+  },
+  renderBody() {
+    return <NodeListScreen
+      {...this.props}
+      ref='screen'
+      mode='list'
+      selectedNodeIds={this.state.selectedNodeIds}
+      selectNodes={this.selectNodes}
+      sorters={_.without(models.Nodes.prototype.sorters, 'cluster')}
+      defaultSorting={[{roles: 'asc'}]}
+      filters={_.without(models.Nodes.prototype.filters, 'cluster')}
+      statusesToFilter={['pending_addition', 'error']}
+      defaultFilters={{roles: [], status: []}}
+      showBatchActionButtons={false}
+      showLabeManagementButton={false}
+      isViewModeSwitchingPossible={false}
+      nodeSelectionPossibleOnly
+      viewMode='compact'
+    />;
+  },
+  renderFooter() {
+    var selectedNodesAmount = _.keys(this.state.selectedNodeIds).length;
+    return ([
+      <button
+        key='cancel'
+        className='btn btn-default'
+        onClick={this.close}
+        disabled={this.state.actionInProgress}
+      >
+        {i18n('common.cancel_button')}
+      </button>,
+      <button key='proceed'
+        className='btn btn-select-nodes btn-success'
+        disabled={this.state.actionInProgress || !selectedNodesAmount}
+        onClick={this.proceed}
+      >
+        {selectedNodesAmount ?
+          i18n(this.ns + 'proceed', {count: selectedNodesAmount})
+        :
+          i18n(this.ns + 'can_not_proceed')
+        }
       </button>
     ]);
   }

@@ -74,8 +74,8 @@ define([
           .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
           .clickByCssSelector('.actions-panel .nav .dropdown-menu li.provision button')
           .assertElementContainsText(
-            '.actions-panel .changes-list ul li',
-            '1 node to be provisioned.',
+            '.btn-provision',
+            'Provision 1 Node',
             '1 node to be provisioned'
           )
           .clickByCssSelector('.btn-provision')
@@ -86,7 +86,7 @@ define([
             return modal.checkTitle('Provision Nodes');
           })
           .then(function() {
-            return modal.clickFooterButton('Start Provisioning');
+            return modal.clickFooterButton('Provision 1 Node');
           })
           .then(function() {
             return modal.waitToClose();
@@ -116,7 +116,84 @@ define([
           .assertElementEnabled(
             dashboardPage.deployButtonSelector,
             'Provisioned nodes can be deployed'
-          );
+          )
+          .then(function() {
+            return common.addNodesToCluster(2, ['Controller']);
+          })
+          .then(function() {
+            return clusterPage.goToTab('Dashboard');
+          })
+          .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
+          .clickByCssSelector('.actions-panel .nav .dropdown-menu li.provision button')
+          .clickByCssSelector('.changes-list .dropdown-toggle')
+          .clickByCssSelector('.changes-list .btn-select-nodes')
+          .then(function() {
+            return modal.waitToOpen();
+          })
+          .then(function() {
+            return modal.checkTitle('Select Nodes');
+          })
+          .assertElementsExist(
+            '.modal .node.selected',
+            2,
+            'All available nodes are selected for provisioning'
+          )
+          .assertElementContainsText(
+            '.modal-footer .btn-success',
+            'Select 2 Nodes',
+            'Select Nodes dialog confirmation button has a proper text'
+          )
+          .assertElementNotExists(
+            '.modal .node-management-panel .control-buttons-box',
+            'There are no batch action buttons in Select Nodes dialog'
+          )
+          .clickByCssSelector('.modal .node-management-panel .btn-sorters')
+          .clickByCssSelector('.modal .sorters .dropdown-toggle')
+          .clickByCssSelector('.modal .sorters .popover input[name=manufacturer]')
+          .assertElementsExist(
+            '.modal .nodes-group',
+            2,
+            'Node sorting in Select nodes dialog works'
+          )
+          .clickByCssSelector('.modal .node-management-panel .btn-filters')
+          .clickByCssSelector('.modal .filters .dropdown-toggle')
+          .clickByCssSelector('.modal .filters .popover input[name=cpu]')
+          .setInputValue('.modal .filters .popover input[name=end]', '1')
+          .assertElementsExist(
+            '.modal .node',
+            1,
+            'Node filtering in Select nodes dialog works'
+          )
+          .clickByCssSelector('.modal .node')
+          .clickByCssSelector('.modal .filters .btn-reset-filters')
+          .clickByCssSelector('.modal .node.selected')
+          .assertElementDisabled(
+            '.modal-footer .btn-success',
+            'No nodes selected for provisioning'
+          )
+          .clickByCssSelector('.modal .node')
+          .then(function() {
+            return modal.clickFooterButton('Select 1 Node');
+          })
+          .then(function() {
+            return modal.waitToClose();
+          })
+          .then(function() {
+            return modal.waitToOpen();
+          })
+          .then(function() {
+            return modal.clickFooterButton('Provision 1 Node');
+          })
+          .then(function() {
+            return modal.waitToClose();
+          })
+          .then(function() {
+            return clusterPage.goToTab('Nodes');
+          })
+          .assertElementsExist('.node .node-status .progress', 1, 'Just onde node is provisioned')
+          .then(function() {
+            return clusterPage.goToTab('Dashboard');
+          });
       },
       'Deploy nodes': function() {
         this.timeout = 100000;
@@ -131,9 +208,6 @@ define([
             return modal.waitToOpen();
           })
           .then(function() {
-            return modal.checkTitle('Provision Nodes');
-          })
-          .then(function() {
             return modal.clickFooterButton('Start Provisioning');
           })
           .then(function() {
@@ -143,6 +217,7 @@ define([
           .assertElementDisappears('div.deploy-process div.progress', 5000, 'Provisioning finished')
           .clickByCssSelector('.actions-panel .nav button.dropdown-toggle')
           .clickByCssSelector('.actions-panel .nav .dropdown-menu li.deployment button')
+          .assertElementContainsText('.btn-deploy-nodes', 'Deploy 1 Node', '1 node to be deployed')
           .clickByCssSelector('.btn-deploy-nodes')
           .then(function() {
             return modal.waitToOpen();
@@ -151,7 +226,7 @@ define([
             return modal.checkTitle('Deploy Nodes');
           })
           .then(function() {
-            return modal.clickFooterButton('Start Deployment');
+            return modal.clickFooterButton('Deploy 1 Node');
           })
           .then(function() {
             return modal.waitToClose();

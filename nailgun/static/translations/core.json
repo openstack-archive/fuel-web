@@ -675,17 +675,21 @@
                         },
                         "provision": {
                             "title": "Advanced provisioning",
-                            "nodes_to_provision": "__count__ node to be provisioned.",
-                            "nodes_to_provision_plural": "__count__ nodes to be provisioned.",
+                            "description": "Provisioning installs an operating system on nodes.",
                             "no_nodes_to_provision": "No online discovered nodes to provision.",
-                            "button_title": "Provision Nodes"
+                            "button_title": "Provision __count__ Node",
+                            "button_title_plural": "Provision __count__ Nodes",
+                            "button_title_no_nodes": "Provision Nodes",
+                            "choose_nodes": "Select nodes for provisioning"
                         },
                         "deployment": {
                             "title": "Advanced deployment",
-                            "nodes_to_deploy": "__count__ node to be deployed.",
-                            "nodes_to_deploy_plural": "__count__ nodes to be deployed.",
+                            "description": "Deploys OpenStack on nodes.",
                             "no_nodes_to_deploy": "No online provisioned nodes to deploy.",
-                            "button_title": "Deploy Nodes"
+                            "button_title": "Deploy __count__ Node",
+                            "button_title_plural": "Deploy __count__ Nodes",
+                            "button_title_no_nodes": "Deploy Nodes",
+                            "choose_nodes": "Select nodes for deployment"
                         },
                         "spawn_vms": {
                             "title": "VMs provisioning",
@@ -1003,13 +1007,21 @@
                     "title": "Provision Nodes",
                     "locked_node_settings_alert": "Before you proceed, review the nodes configuration, including disk partitioning and interfaces configuration. You will not be able to change these settings after Fuel provisions the nodes.",
                     "are_you_sure_provision": "Click Start Provisioning to provision the operating system onto the environment nodes, or Cancel to make changes.",
-                    "start_provisioning": "Start Provisioning"
+                    "start_provisioning": "Provision __count__ Node",
+                    "start_provisioning_plural": "Provision __count__ Nodes"
                 },
                 "deploy_nodes": {
                     "title": "Deploy Nodes",
                     "locked_node_settings_alert": "Before you proceed, review role configuration of the nodes. You will not be able to change node roles after Fuel deploys it.",
                     "are_you_sure_deploy": "Click Start Deployment to start the deployment or Cancel to make changes.",
-                    "start_deployment": "Start Deployment"
+                    "start_deployment": "Deploy __count__ Node",
+                    "start_deployment_plural": "Deploy __count__ Nodes"
+                },
+                "select_nodes": {
+                    "title": "Select Nodes",
+                    "proceed": "Select __count__ Node",
+                    "proceed_plural": "Select __count__ Nodes",
+                    "can_not_proceed": "Select Nodes"
                 },
                 "provision_vms": {
                     "title": "Provision VMs",

@@ -110,7 +110,11 @@ NodeListScreen = React.createClass({
   getDefaultProps() {
     return {
       sorters: [],
-      filters: []
+      filters: [],
+      showBatchActionButtons: true,
+      showLabeManagementButton: true,
+      isViewModeSwitchingPossible: true,
+      nodeSelectionPossibleOnly: false
     };
   },
   getInitialState() {
@@ -141,7 +145,7 @@ NodeListScreen = React.createClass({
       );
 
     var search = cluster && this.props.mode === 'add' ? '' : uiSettings.search;
-    var viewMode = uiSettings.view_mode;
+    var viewMode = this.props.viewMode || uiSettings.view_mode;
     var isLabelsPanelOpen = false;
 
     var states = {search, activeSorters, activeFilters, availableSorters, availableFilters,
@@ -541,7 +545,8 @@ NodeListScreen = React.createClass({
           )}
           {... _.pick(
             this.props,
-            'cluster', 'mode', 'defaultSorting', 'statusesToFilter', 'defaultFilters'
+            'cluster', 'mode', 'defaultSorting', 'statusesToFilter', 'defaultFilters',
+            'showBatchActionButtons', 'showLabeManagementButton', 'isViewModeSwitchingPossible'
           )}
           {... _.pick(
             this,
@@ -571,7 +576,7 @@ NodeListScreen = React.createClass({
         <NodeList
           {... _.pick(this.state, 'viewMode', 'activeSorters', 'selectedRoles')}
           {... _.pick(this.props, 'cluster', 'mode', 'statusesToFilter', 'selectedNodeIds',
-            'clusters', 'roles', 'nodeNetworkGroups')
+            'clusters', 'roles', 'nodeNetworkGroups', 'nodeSelectionPossibleOnly')
           }
           {... _.pick(processedRoleData, 'maxNumberOfNodes', 'processedRoleLimits')}
           nodes={filteredNodes}
@@ -1051,50 +1056,52 @@ ManagementPanel = React.createClass({
     }
 
     this.props.selectedNodeLabels.sort(_.partialRight(utils.natsort, {insensitive: true}));
-
     return (
       <div className='row'>
         <div className='sticker node-management-panel'>
           <div className='node-list-management-buttons col-xs-5'>
-            <div className='view-mode-switcher'>
-              <div className='btn-group' data-toggle='buttons'>
-                {_.map(models.Nodes.prototype.viewModes, (mode) => {
-                  return (
-                    <Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
-                      <label
-                        className={utils.classNames(
-                          managementButtonClasses(mode === this.props.viewMode, mode)
-                        )}
-                        onClick={mode !== this.props.viewMode &&
-                          _.partial(this.props.changeViewMode, 'view_mode', mode)
-                        }
-                      >
-                        <input type='radio' name='view_mode' value={mode} />
-                        <i
-                          className={utils.classNames({
-                            glyphicon: true,
-                            'glyphicon-th-list': mode === 'standard',
-                            'glyphicon-th': mode === 'compact'
-                          })}
-                        />
-                      </label>
-                    </Tooltip>
-                  );
-                })}
+            {this.props.isViewModeSwitchingPossible &&
+              <div className='view-mode-switcher'>
+                <div className='btn-group' data-toggle='buttons'>
+                  {_.map(models.Nodes.prototype.viewModes, (mode) => {
+                    return (
+                      <Tooltip key={mode + '-view'} text={i18n(ns + mode + '_mode_tooltip')}>
+                        <label
+                          className={utils.classNames(
+                            managementButtonClasses(mode === this.props.viewMode, mode)
+                          )}
+                          onClick={mode !== this.props.viewMode &&
+                            _.partial(this.props.changeViewMode, 'view_mode', mode)
+                          }
+                        >
+                          <input type='radio' name='view_mode' value={mode} />
+                          <i
+                            className={utils.classNames({
+                              glyphicon: true,
+                              'glyphicon-th-list': mode === 'standard',
+                              'glyphicon-th': mode === 'compact'
+                            })}
+                          />
+                        </label>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            }
             {this.props.mode !== 'edit' && [
-              <Tooltip wrap key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
-                <button
-                  disabled={!this.props.nodes.length}
-                  onClick={this.props.nodes.length && this.toggleLabelsPanel}
-                  className={utils.classNames(
-                    managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels')
-                  )}
-                >
-                  <i className='glyphicon glyphicon-tag' />
-                </button>
-              </Tooltip>,
+              this.props.showLabeManagementButton &&
+                <Tooltip wrap key='labels-btn' text={i18n(ns + 'labels_tooltip')}>
+                  <button
+                    disabled={!this.props.nodes.length}
+                    onClick={this.props.nodes.length && this.toggleLabelsPanel}
+                    className={utils.classNames(
+                      managementButtonClasses(this.props.isLabelsPanelOpen, 'btn-labels')
+                    )}
+                  >
+                    <i className='glyphicon glyphicon-tag' />
+                  </button>
+                </Tooltip>,
               <Tooltip wrap key='sorters-btn' text={i18n(ns + 'sort_tooltip')}>
                 <button
                   disabled={!this.props.screenNodes.length}
@@ -1154,7 +1161,7 @@ ManagementPanel = React.createClass({
             ]}
           </div>
           <div className='control-buttons-box col-xs-7 text-right'>
-            {!!this.props.cluster && (
+            {this.props.showBatchActionButtons && (
               this.props.mode !== 'list' ?
                 <div className='btn-group' role='group'>
                   <button
@@ -2132,7 +2139,9 @@ NodeGroup = React.createClass({
         <div className='row'>
           {this.props.nodes.map((node) => {
             return <Node
-              {... _.pick(this.props, 'mode', 'viewMode', 'nodeNetworkGroups')}
+              {... _.pick(this.props,
+                'mode', 'viewMode', 'nodeNetworkGroups', 'nodeSelectionPossibleOnly'
+              )}
               key={node.id}
               node={node}
               renderActionButtons={!!this.props.cluster}

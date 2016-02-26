@@ -26,6 +26,7 @@ import dispatcher from 'dispatcher';
 import {Input, ProgressBar} from 'views/controls';
 import {backboneMixin, renamingMixin} from 'component_mixins';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
+import customControls from 'views/custom_controls';
 
 function getActiveDialog() {
   return app.dialog;
@@ -845,6 +846,7 @@ export var ShowNodeInfoDialog = React.createClass({
     backboneMixin('node'),
     renamingMixin('hostname')
   ],
+  renderableAttributes: ['cpu', 'disks', 'interfaces', 'memory', 'system', 'attributes'],
   getDefaultProps() {
     return {modalClass: 'always-show-scrollbar'};
   },
@@ -853,7 +855,11 @@ export var ShowNodeInfoDialog = React.createClass({
       title: i18n('dialog.show_node.default_dialog_title'),
       VMsConf: null,
       VMsConfValidationError: null,
-      hostnameChangingError: null
+      hostnameChangingError: null,
+      nodeAttributes: null,
+      initialNodeAttributes: null,
+      nodeAttributesError: null,
+      configModels: null
     };
   },
   goToConfigurationScreen(url) {
@@ -943,6 +949,53 @@ export var ShowNodeInfoDialog = React.createClass({
           });
         });
     }
+    var nodeAttributesModel = new models.NodeAttributes();
+    nodeAttributesModel.url = _.result(this.props.node, 'url') + '/attributes';
+    this.setState({actionInProgress: true});
+    nodeAttributesModel.fetch()
+      .always(() => {
+        nodeAttributesModel.isValid();
+        this.setState({
+          actionInProgress: false,
+          nodeAttributes: nodeAttributesModel,
+          initialNodeAttributes: _.cloneDeep(nodeAttributesModel.attributes),
+          nodeAttributesError: nodeAttributesModel.validationError,
+          configModels: this.props.cluster && {settings: this.props.cluster.get('settings')}
+        });
+      });
+  },
+  onNodeAttributesChange(name, value, nestedValue) {
+    this.setState({nodeAttributesError: null});
+    var attributesModel = this.state.nodeAttributes;
+    name = attributesModel.makePath(name, 'value');
+    if (nestedValue) {
+      name = attributesModel.makePath(name, nestedValue);
+    }
+    attributesModel.set(name, value);
+    attributesModel.isValid();
+    this.setState({
+      nodeAttributes: attributesModel,
+      nodeAttributesError: attributesModel.validationError
+    });
+  },
+  saveNodeAttributes() {
+    this.setState({actionInProgress: true});
+    this.state.nodeAttributes.save()
+      .fail((response) => {
+        this.setState({nodeAttributesError: utils.getResponseText(response)});
+      })
+      .done(() => {
+        this.setState({initialNodeAttributes: _.cloneDeep(this.state.nodeAttributes.attributes)});
+      })
+      .always(() => {
+        this.setState({actionInProgress: false});
+      });
+  },
+  hasNodeAttributesChanges() {
+    return !_.isEqual(
+      this.state.nodeAttributes.attributes,
+      this.state.initialNodeAttributes
+    );
   },
   setDialogTitle() {
     var name = this.props.node && this.props.node.get('name');
@@ -1092,10 +1145,43 @@ export var ShowNodeInfoDialog = React.createClass({
   renderNodeHardware() {
     var {node} = this.props;
     var meta = node.get('meta');
-
     var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'];
     var groups = _.sortBy(_.keys(meta), (group) => _.indexOf(groupOrder, group));
+    var nodeAttributes = this.state.nodeAttributes;
+    var isPendingAdditionNode = node.get('pending_addition');
+    var sortedAttributes, attributeFields, commonInputProps, nodeAttributesError;
     if (this.state.VMsConf) groups.push('config');
+    if (nodeAttributes && this.state.configModels) {
+      if (!_.isEmpty(nodeAttributes.attributes)) {
+        // sorting attributes
+        sortedAttributes = _.sortBy(
+          _.keys(nodeAttributes.attributes), (name) => {
+            return nodeAttributes.get(name + '.metadata.weight');
+          }
+        );
+        // processing hide restrictions
+        sortedAttributes = _.compact(_.map(sortedAttributes, (name) => {
+          if (!nodeAttributes.checkRestrictions(
+            this.state.configModels,
+            'hide',
+            nodeAttributes.get(name).metadata
+          ).result) {
+            return name;
+          }
+        }));
+        if (sortedAttributes.length) {
+          groups.push('attributes');
+          attributeFields = ['nova', 'dpdk'];
+          commonInputProps = {
+            placeholder: 'None',
+            onChange: this.onNodeAttributesChange,
+            error: null,
+            type: 'text'
+          };
+          nodeAttributesError = this.state.nodeAttributesError;
+        }
+      }
+    }
 
     var sortOrder = {
       disks: ['name', 'model', 'size'],
@@ -1113,10 +1199,12 @@ export var ShowNodeInfoDialog = React.createClass({
           var subEntries = _.isPlainObject(groupEntries) ?
             _.find(_.values(groupEntries), _.isArray) : [];
 
-          // (morale): whitelisting renderable parameters
-          if (!_.contains(['cpu', 'disks', 'interfaces', 'memory', 'system'], group)) return null;
+          if (!_.contains(this.renderableAttributes, group)) {
+            return null;
+          }
+
           return (
-            <div className='panel panel-default' key={group}>
+            <div className='panel panel-default' key={group + groupIndex}>
               <div
                 className='panel-heading'
                 role='tab'
@@ -1226,6 +1314,58 @@ export var ShowNodeInfoDialog = React.createClass({
                       >
                         {i18n('common.save_settings_button')}
                       </button>
+                    </div>
+                  }
+                  {group === 'attributes' &&
+                    <div className='node-attributes'>
+                      {_.map(sortedAttributes, (section) => {
+                        return _.map(attributeFields, (field) => {
+                          var disabled = !isPendingAdditionNode ||
+                            (nodeAttributes.checkRestrictions(
+                              this.state.configModels,
+                              'disabled',
+                              nodeAttributes.get(section).metadata
+                            ).result);
+                          var path = nodeAttributes.makePath(section, field);
+                          var nodeAttribute = nodeAttributes.get(path);
+                          var error = nodeAttributesError && nodeAttributesError[path];
+                          if (nodeAttribute.type === 'custom_hugepages') {
+                            return <customControls.custom_hugepages
+                              config={nodeAttribute}
+                              onChange={this.onNodeAttributesChange}
+                              name='hugepages.nova'
+                              error={error}
+                              disabled={disabled}
+                            />;
+                          }
+                          return (
+                            <div className='row'>
+                              <div className='col-xs-12'>
+                                <Input
+                                  {...commonInputProps}
+                                  {...nodeAttribute}
+                                  name={path}
+                                  error={error}
+                                  disabled={disabled}
+                                />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })}
+                      {isPendingAdditionNode &&
+                        <button
+                          className='btn btn-success'
+                          onClick={this.saveNodeAttributes}
+                          disabled={
+                            !_.isNull(nodeAttributesError) ||
+                            !this.hasNodeAttributesChanges() ||
+                            this.state.actionInProgress
+                          }
+                        >
+                          {i18n('common.save_settings_button')}
+                        </button>
+                      }
                     </div>
                   }
                 </div>

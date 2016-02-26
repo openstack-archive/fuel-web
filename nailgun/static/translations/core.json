@@ -52,7 +52,9 @@
                   "neutron_gre": "Neutron with GRE segmentation",
                   "neutron_vlan": "Neutron with VLAN segmentation",
                   "neutron_tun": "Neutron with tunneling segmentation"
-                }
+                },
+                "count_label": "Count",
+                "size_label": "Size"
             },
             "controls": {
                 "file": {
@@ -79,7 +81,8 @@
                 "offline": "Offline",
                 "config": "VM Configurations",
                 "vms_config_msg": "You can define a custom virtual machine configuration in a JSON file.",
-                "invalid_vms_conf_msg": "Invalid JSON object"
+                "invalid_vms_conf_msg": "Invalid JSON object",
+                "attributes": "Node Attributes"
             },
             "cluster": {
                 "status": {
@@ -1033,7 +1036,8 @@
                     "drive": "drive",
                     "drive_plural": "drives",
                     "node_network_group": "Node network group",
-                    "cluster": "Environment"
+                    "cluster": "Environment",
+                    "nova_hugepages": "Nova Huge pages"
                 },
                 "delete_nodes": {
                     "title": "Delete Nodes",

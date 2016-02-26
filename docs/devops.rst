@@ -379,6 +379,14 @@ Important notes for Sahara tests
    `savanna-0.3-vanilla-1.2.1-ubuntu-13.04.qcow2 <http://sahara-files.mirantis.com/savanna-0.3-vanilla-1.2.1-ubuntu-13.04.qcow2>`_
    (md5: 9ab37ec9a13bb005639331c4275a308d) in /tmp/ before start, otherwise
    (If Internet access is available) the image will download automatically.
+
+Important notes for Murano tests
+--------------------------------
+ * Murano is deprecated in Fuel 9.0.
+ * Put Murano image `ubuntu-murano-agent.qcow2 <http://sahara-files.mirantis.com/ubuntu-murano-agent.qcow2>`_
+   (md5: b0a0fdc0b4a8833f79701eb25e6807a3) in /tmp before start.
+ * Running Murano tests on instances without an Internet connection will fail.
+ * For Murano tests execute 'export SLAVE_NODE_MEMORY=5120' before starting.
  * If you need an image For Heat autoscale tests check
    `prebuilt-jeos-images <https://fedorapeople.org/groups/heat/prebuilt-jeos-images/>`_.
 

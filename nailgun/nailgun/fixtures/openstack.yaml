@@ -2008,3 +2008,207 @@
           regex:
             source: '^\d+$'
             error: "Incorrect value"
+
+- pk: 3
+  extend: *base_release
+  fields:
+    name: "Mitaka on Ubuntu 16.04"
+    version: "mitaka-10.0"
+    can_update_from_versions: []
+    operating_system: "Ubuntu"
+    description: "This option will install the OpenStack Mitaka packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      editable:
+        kernel_params:
+          kernel:
+            value: "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
+        repo_setup:
+          metadata:
+            label: "Repositories"
+            weight: 50
+            group: "general"
+            always_editable: true
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: null
+            description: |
+              Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
+              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
+              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-9.0/operations.html#external-ubuntu-ops).
+            value:
+              - type: "deb"
+                name: "ubuntu"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-updates"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial-updates"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-security"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial-security"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "mos"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
+                suite: "mos10.0"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-updates"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-updates"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-security"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-holdback"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-holdback"
+                section: "main restricted"
+                priority: 1100
+              - type: "deb"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
+                suite: "auxiliary"
+                section: "main restricted"
+                priority: 1150
+        provision:
+          metadata:
+            label: "Provision"
+            weight: 80
+            group: "general"
+            restrictions:
+              - condition: "false"
+                action: "hide"
+          packages:
+            label: "Initial packages"
+            weight: 10
+            type: "textarea"
+            value: |
+              acl
+              anacron
+              bash-completion
+              bridge-utils
+              bsdmainutils
+              build-essential
+              cloud-init
+              curl
+              daemonize
+              debconf-utils
+              gdisk
+              grub-pc
+              hpsa-dkms
+              i40e-dkms
+              linux-firmware
+              linux-firmware-nonfree
+              linux-image-generic
+              lvm2
+              mcollective
+              mdadm
+              nailgun-agent
+              nailgun-mcagents
+              network-checker
+              ntp
+              openssh-client
+              openssh-server
+              puppet
+              python-amqp
+              ruby-augeas
+              ruby-ipaddress
+              ruby-json
+              ruby-netaddr
+              ruby-openstack
+              ruby-shadow
+              ruby-stomp
+              telnet
+              ubuntu-minimal
+              ubuntu-standard
+              uuid-runtime
+              vim
+              virt-what
+              vlan
+      generated:
+        repo_setup:
+          installer_kernel:
+            remote_relative: "dists/xenial/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux"
+            local: "/var/www/nailgun/ubuntu/x86_64/images/linux"
+          installer_initrd:
+            remote_relative: "dists/xenial/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz"
+            local: "/var/www/nailgun/ubuntu/x86_64/images/initrd.gz"
+        cobbler:
+          profile:
+            generator_arg: "ubuntu_1604_x86_64"
+        provision:
+          codename: "trusty"
+          image_data:
+            /:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64.img.gz"
+              format: "ext4"
+              container: "gzip"
+            /boot:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64-boot.img.gz"
+              format: "ext2"
+              container: "gzip"
+    node_attributes:
+      cpu_pinning:
+        metadata:
+          group: "nfv"
+          label: "CPU pinning"
+          weight: 10
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              action: "hide"
+        nova:
+          weight: 10
+          description: "Number of CPUs for Nova usage"
+          label: "Nova CPU pinning"
+          type: "text"
+          value: "0"
+          regex:
+            source: '^\d+$'
+            error: "Incorrect value"
+        dpdk:
+          weight: 20
+          description: "Number of CPUs for DPDK usage"
+          label: "DPDK CPU pinning"
+          type: "text"
+          value: "0"
+          regex:
+            source: '^\d+$'
+            error: "Incorrect value"
+      hugepages:
+        metadata:
+          group: "nfv"
+          label: "Huge Pages"
+          weight: 20
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              action: "hide"
+        nova:
+          weight: 10
+          description: "Nova Huge Pages configuration"
+          label: "Nova Huge Pages"
+          type: "custom_hugepages"
+          value: {}
+        dpdk:
+          weight: 20
+          description: "DPDK Huge Pages per NUMA node in MB"
+          label: "DPDK Huge Pages"
+          type: "text"
+          value: "0"
+          regex:
+            source: '^\d+$'
+            error: "Incorrect value"

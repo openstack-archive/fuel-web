@@ -72,7 +72,7 @@ from nailgun.objects.node_group import NodeGroupCollection
 
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import ClusterPlugin
 
 from nailgun.objects.plugin_link import PluginLink
 from nailgun.objects.plugin_link import PluginLinkCollection

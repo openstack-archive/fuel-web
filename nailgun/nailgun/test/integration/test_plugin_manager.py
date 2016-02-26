@@ -19,7 +19,7 @@ import uuid
 
 from nailgun import consts
 from nailgun.errors import errors
-from nailgun.objects import ClusterPlugins
+from nailgun.objects import ClusterPlugin
 from nailgun.plugins.adapters import PluginAdapterV3
 from nailgun.plugins.manager import PluginManager
 from nailgun.test import base
@@ -287,7 +287,7 @@ class TestPluginManager(base.BaseIntegrationTest):
                     'hypervisor:test_hypervisor',
                     'storage:test_storage']})
 
-        enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
         self.assertItemsEqual([plugin], enabled_plugins)
 
     def test_get_plugins_attributes_when_cluster_is_locked(self):
@@ -477,7 +477,7 @@ class TestClusterPluginIntegration(base.BaseTestCase):
         plugin_a = self._create_plugin(**self._compat_meta)
         self._create_plugin(**self._uncompat_meta)
 
-        compat_plugins = ClusterPlugins.get_compatible_plugins(self.cluster)
+        compat_plugins = ClusterPlugin.get_compatible_plugins(self.cluster)
         self.assertItemsEqual(compat_plugins, [plugin_a])
 
     def test_get_compatible_plugins_for_new_cluster(self):
@@ -492,18 +492,18 @@ class TestClusterPluginIntegration(base.BaseTestCase):
             })
         cluster = self.env.clusters[1]
 
-        compat_plugins = ClusterPlugins.get_compatible_plugins(cluster)
+        compat_plugins = ClusterPlugin.get_compatible_plugins(cluster)
         self.assertItemsEqual(compat_plugins, [plugin_a, plugin_b])
 
     def test_get_enabled_plugins(self):
         plugin_a = self._create_plugin(**self._compat_meta)
         plugin_b = self._create_plugin(**self._compat_meta)
 
-        ClusterPlugins.set_attributes(
+        ClusterPlugin.set_attributes(
             self.cluster.id, plugin_a.id, enabled=True)
 
-        compat_plugins = ClusterPlugins.get_compatible_plugins(self.cluster)
+        compat_plugins = ClusterPlugin.get_compatible_plugins(self.cluster)
         self.assertItemsEqual(compat_plugins, [plugin_a, plugin_b])
 
-        enabled_plugins = ClusterPlugins.get_enabled(self.cluster.id)
+        enabled_plugins = ClusterPlugin.get_enabled(self.cluster.id)
         self.assertItemsEqual(enabled_plugins, [plugin_a])

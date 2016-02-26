@@ -385,7 +385,7 @@ class TestNeutronConfigInternalFloatingNames(base.BaseAlembicMigrationTest):
             self.assertEqual('net04_ext', neutron_config['floating_name'])
 
 
-class TestClusterPluginsMigration(base.BaseAlembicMigrationTest):
+class TestClusterPluginMigration(base.BaseAlembicMigrationTest):
 
     def _get_enabled(self, plugin_name):
         plugins = self.meta.tables['plugins']

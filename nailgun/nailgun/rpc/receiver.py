@@ -38,7 +38,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.network import connectivity_check
 from nailgun.network import utils as net_utils
-from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import ClusterPlugin
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import logs as logs_utils
 from nailgun.utils import reverse
@@ -581,7 +581,7 @@ class NailgunReceiver(object):
                 message, zabbix_url)
 
         plugins_msg = cls._make_plugins_success_message(
-            ClusterPlugins.get_enabled(task.cluster.id))
+            ClusterPlugin.get_enabled(task.cluster.id))
         if plugins_msg:
             message = '{0}\n\n{1}'.format(message, plugins_msg)
 

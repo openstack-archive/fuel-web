@@ -248,9 +248,20 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta)
         new_meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(new_meta, [
-            {'name': 'new_nic', 'mac': '00:00:00:00:00:00',
-             'current_speed': 10, 'max_speed': 10, 'state': 'down'}])
-        node_data = {'mac': node['mac'], 'meta': new_meta}
+            {'name': 'new_nic',
+             'mac': '00:00:00:00:00:00',
+             'current_speed': 10,
+             'max_speed': 10,
+             'state': 'down',
+             'interface_properties': {
+                 'sriov': {
+                     'sriov_totalvfs': 8,
+                     'available': True,
+                     'pci_id': '1234:5678'
+                 }
+             }}]
+        )
+        node_data = {'mac': node['mac'], 'meta': new_meta, 'is_agent': True}
         resp = self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps(node_data),
@@ -268,6 +279,15 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp_nic['current_speed'], nic['current_speed'])
         self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
         self.assertEqual(resp_nic['state'], nic['state'])
+        self.assertEqual(
+            resp_nic['interface_properties']['sriov'],
+            {
+                'enabled': False,
+                'sriov_numvfs': 0,
+                'sriov_totalvfs': 8,
+                'available': True,
+                'pci_id': '1234:5678'
+            })
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
 
@@ -463,9 +483,10 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         nic = resp.json_body[0]
-        self.assertEqual(nic['interface_properties'],
-                         {'disable_offloading': False,
-                          'mtu': None})
+        self.assertEqual(
+            nic['interface_properties'],
+            self.env.network_manager.get_default_interface_properties()
+        )
         # change mtu
         nic['interface_properties']['mtu'] = 1500
         nodes_list = [{'id': node['id'], 'interfaces': [nic]}]
@@ -487,9 +508,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         resp_nic = resp.json_body[0]
-        self.assertEqual(resp_nic['interface_properties'],
-                         {'disable_offloading': False,
-                          'mtu': 1500})
+        self.assertEqual(resp_nic['interface_properties']['mtu'], 1500)
 
     def test_nic_adds_by_agent(self):
         meta = self.env.default_metadata()
@@ -724,3 +743,66 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
         )
         self.assertEqual(resp.status_code, 200)
+
+    def test_get_update_sriov_properties(self):
+        self.env.create(
+            nodes_kwargs=[{"api": True}]
+        )
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0].id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov_default = \
+            self.env.network_manager.get_default_interface_properties()[
+                'sriov']
+        self.assertEqual(sriov, sriov_default)
+
+        sriov['enabled'] = True
+        sriov['sriov_numvfs'] = 8
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0].id}),
+            jsonutils.dumps(nics),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        sriov = resp.json_body[0]['interface_properties']['sriov']
+        self.assertEqual(sriov['enabled'], True)
+        self.assertEqual(sriov['sriov_numvfs'], 8)
+
+    def test_update_sriov_properties_failed(self):
+        self.env.create(
+            nodes_kwargs=[{"api": True}]
+        )
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0].id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov_default = \
+            self.env.network_manager.get_default_interface_properties()[
+                'sriov']
+        self.assertEqual(sriov, sriov_default)
+
+        sriov['available'] = True
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0].id}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json_body['message'],
+            "Node '{0}' interface '{1}': SR-IOV parameter 'available' cannot "
+            "be changed through API".format(
+                self.env.nodes[0].id, nics[0]['name']))

@@ -154,6 +154,18 @@ class PluginAdapterBase(object):
         return self.plugin.components_metadata
 
     @property
+    def bond_attributes_metadata(self):
+        return self.plugin.bond_attributes_metadata
+
+    @property
+    def nic_attributes_metadata(self):
+        return self.plugin.bond_attributes_metadata
+
+    @property
+    def node_attributes_metadata(self):
+        return self.plugin.node_attributes_metadata
+
+    @property
     def releases(self):
         return self.plugin.releases
 
@@ -331,6 +343,12 @@ class PluginAdapterV4(PluginAdapterV3):
 
 class PluginAdapterV5(PluginAdapterV4):
     """Plugin wrapper class for package version 5.0.0"""
+
+    def __init__(self, plugin):
+        super(PluginAdapterV5, self).__init__(plugin)
+        self.db_cfg_mapping['nic_attributes_metadata'] = 'nic_config.yaml'
+        self.db_cfg_mapping['bond_attributes_metadata'] = 'bond_config.yaml'
+        self.db_cfg_mapping['node_attributes_metadata'] = 'node_config.yaml'
 
 
 __version_mapping = {

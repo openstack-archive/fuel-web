@@ -1002,9 +1002,9 @@ class TestClusterObject(BaseTestCase):
         for kw in plugins_kw_list:
             plugin = objects.Plugin.create(kw)
             cluster.plugins.append(plugin)
-            objects.ClusterPlugins.set_attributes(cluster.id,
-                                                  plugin.id,
-                                                  enabled=True)
+            objects.ClusterPlugin.set_attributes(cluster.id,
+                                                 plugin.id,
+                                                 enabled=True)
         return cluster
 
     def _get_network_role_metadata(self, **kwargs):
@@ -1031,7 +1031,7 @@ class TestClusterObject(BaseTestCase):
 
     @mock.patch('nailgun.objects.cluster.PluginManager.'
                 'enable_plugins_by_components')
-    @mock.patch('nailgun.objects.cluster.ClusterPlugins')
+    @mock.patch('nailgun.objects.cluster.ClusterPlugin')
     def test_create_cluster_vips_allocation_considers_plugins_vips(
             self, *_):
         network_roles = [self._get_network_role_metadata()]
@@ -1039,7 +1039,7 @@ class TestClusterObject(BaseTestCase):
             network_roles_metadata=network_roles)
         plugin = objects.Plugin.create(plugin_data)
 
-        with mock.patch('nailgun.plugins.manager.ClusterPlugins') as cp_mock:
+        with mock.patch('nailgun.plugins.manager.ClusterPlugin') as cp_mock:
             cp_mock.get_enabled = mock.Mock(return_value=[plugin])
 
             cluster = self.env.create(
@@ -1622,9 +1622,9 @@ class TestClusterObjectGetRoles(BaseTestCase):
             roles_metadata=roles_metadata,
         ))
         self.cluster.plugins.append(plugin)
-        objects.ClusterPlugins.set_attributes(self.cluster.id,
-                                              plugin.id,
-                                              enabled=True)
+        objects.ClusterPlugin.set_attributes(self.cluster.id,
+                                             plugin.id,
+                                             enabled=True)
         self.db.refresh(plugin)
         return plugin
 

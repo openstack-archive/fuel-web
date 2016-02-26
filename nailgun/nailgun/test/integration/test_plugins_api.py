@@ -206,21 +206,21 @@ class TestPluginsApi(BasePluginTest):
         cluster = self.create_cluster()
         self.assertItemsEqual(
             [],
-            objects.ClusterPlugins.get_enabled(cluster.id)
+            objects.ClusterPlugin.get_enabled(cluster.id)
         )
 
         resp = self.enable_plugin(cluster, plugin.name, plugin.id)
         self.assertEqual(resp.status_code, 200)
         self.assertItemsEqual(
             [plugin],
-            objects.ClusterPlugins.get_enabled(cluster.id)
+            objects.ClusterPlugin.get_enabled(cluster.id)
         )
 
         resp = self.disable_plugin(cluster, plugin.name)
         self.assertEqual(resp.status_code, 200)
         self.assertItemsEqual(
             [],
-            objects.ClusterPlugins.get_enabled(cluster.id)
+            objects.ClusterPlugin.get_enabled(cluster.id)
         )
 
     def test_delete_plugin(self):
@@ -296,10 +296,10 @@ class TestPluginsApi(BasePluginTest):
             return response.json_body['id']
 
         def get_num_enabled(cluster_id):
-            return objects.ClusterPlugins.get_enabled(cluster_id).count()
+            return objects.ClusterPlugin.get_enabled(cluster_id).count()
 
         def get_enabled_version(cluster_id):
-            plugin = objects.ClusterPlugins.get_enabled(cluster_id).first()
+            plugin = objects.ClusterPlugin.get_enabled(cluster_id).first()
             return plugin.version
 
         plugin_ids = []

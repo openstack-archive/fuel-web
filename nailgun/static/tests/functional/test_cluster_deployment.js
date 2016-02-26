@@ -131,9 +131,6 @@ define([
             return modal.waitToOpen();
           })
           .then(function() {
-            return modal.checkTitle('Provision Nodes');
-          })
-          .then(function() {
             return modal.clickFooterButton('Start Provisioning');
           })
           .then(function() {

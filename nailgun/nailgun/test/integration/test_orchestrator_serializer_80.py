@@ -71,6 +71,8 @@ class TestNetworkTemplateSerializer80(
     BaseDeploymentSerializer
 ):
     env_version = 'liberty-8.0'
+    legacy_serializer = NeutronNetworkDeploymentSerializer80
+    template_serializer = NeutronNetworkTemplateSerializer80
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer80, self).setUp()
@@ -88,12 +90,12 @@ class TestNetworkTemplateSerializer80(
         self.cluster.network_config.configuration_template = None
 
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer80)
+        self.assertIs(net_serializer, self.legacy_serializer)
 
         self.cluster.network_config.configuration_template = \
             self.net_template
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkTemplateSerializer80)
+        self.assertIs(net_serializer, self.template_serializer)
 
     def test_baremetal_neutron_attrs(self):
         brmtl_template = deepcopy(

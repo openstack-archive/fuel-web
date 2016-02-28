@@ -795,6 +795,13 @@ DUMP:
         to_file: rabbitmqctl_report.txt
       - type: file
         path: /var/log/neutron/neutron-ns-metadata-proxy*.log
+      - type: dir
+        path: /etc/mysql
+      - type: dir
+        path: /var/log/mysql
+      - type: command
+        command: "ls -la /var/lib/mysql/ /var/run/mysqld/"
+        to_file: mysql_resources.txt
 
     slave:
       hosts: []

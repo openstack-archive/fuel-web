@@ -855,6 +855,13 @@ DUMP:
       - type: command
         command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} netstat -anp; done"
         to_file: netstat_ns.txt
+      - type: dir
+        path: /etc/mysql
+      - type: dir
+        path: /var/log/mysql
+      - type: command
+        command: "ls -la /var/lib/mysql/ /var/run/mysqld/"
+        to_file: mysql_resources.txt
 
     slave:
       hosts: []

@@ -189,6 +189,10 @@
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
       -
+        id: "aodh/api"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
         id: "ceilometer/api"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
@@ -936,8 +940,8 @@
             type: "hidden"
           ceilometer:
             value: false
-            label: "Install Ceilometer"
-            description: "If selected, Ceilometer component will be installed"
+            label: "Install Ceilometer and Aodh"
+            description: "If selected, Ceilometer and Aodh components will be installed"
             weight: 60
             type: "checkbox"
           mongo:
@@ -1396,6 +1400,11 @@
           user_password:
             generator: "password"
           rabbit_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+        aodh:
+          user_password:
             generator: "password"
           db_password:
             generator: "password"

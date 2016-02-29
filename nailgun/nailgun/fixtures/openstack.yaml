@@ -2009,6 +2009,8 @@
               lvm2
               mcollective
               mdadm
+              multipath-tools
+              multipath-tools-boot
               nailgun-agent
               nailgun-mcagents
               network-checker

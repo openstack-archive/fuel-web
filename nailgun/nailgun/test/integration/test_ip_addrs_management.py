@@ -54,28 +54,28 @@ class BaseIPAddrTest(BaseIntegrationTest):
                 'node': None,
                 'ip_addr': '192.168.0.1',
                 'is_user_defined': False,
-                'vip_namespace': None
+                'vip_namespace': 'vrouter'
             },
             {
                 'vip_name': 'management',
                 'node': None,
                 'ip_addr': '192.168.0.2',
                 'is_user_defined': False,
-                'vip_namespace': None
+                'vip_namespace': 'haproxy'
             },
             {
                 'ip_addr': '172.16.0.3',
                 'is_user_defined': False,
                 'node': None,
                 'vip_name': 'public',
-                'vip_namespace': None
+                'vip_namespace': 'haproxy'
             },
             {
                 'ip_addr': '172.16.0.2',
                 'is_user_defined': False,
                 'node': None,
                 'vip_name': 'vrouter_pub',
-                'vip_namespace': None
+                'vip_namespace': 'vrouter'
             },
 
         ]
@@ -274,14 +274,14 @@ class TestIPAddrList(BaseIPAddrTest):
                 'is_user_defined': True,
                 'vip_name': self.management_vips[0]["vip_name"],
                 'ip_addr': '192.168.0.44',
-                'vip_namespace': None
+                'vip_namespace': 'vrouter'
             },
             {
                 'id': self.vip_ids[1],
                 'is_user_defined': False,
                 'vip_name': self.management_vips[1]["vip_name"],
                 'ip_addr': '192.168.0.43',
-                'vip_namespace': None
+                'vip_namespace': 'haproxy'
             }
         ]
         resp = self.app.patch(
@@ -704,3 +704,32 @@ class TestIPAddrHandler(BaseIPAddrTest):
                 ['id', 'network', 'node']
             )
         )
+
+    def test_vip_namespase_update(self):
+        changed_vip = self.management_vips[0]
+
+        update_data = {
+            'is_user_defined': True,
+            'ip_addr': '192.168.0.100',
+            'vip_namespace': 'new-namespace',
+        }
+
+        resp = self.app.patch(
+            reverse(
+                self.handler_name,
+                kwargs={
+                    'cluster_id': self.cluster['id'],
+                    'ip_addr_id': changed_vip['id']
+                }
+            ),
+            params=jsonutils.dumps(update_data),
+            headers=self.default_headers
+        )
+
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        net_conf = resp.json_body
+
+        self.assertIn(changed_vip['vip_name'], net_conf['vips'])
+
+        vip = net_conf['vips'][changed_vip['vip_name']]
+        self.assertEqual(vip['namespace'], update_data['vip_namespace'])

@@ -77,13 +77,13 @@ define([
             return networksLib.checkVLANs('Network_Group_2', 'VLAN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_1');
           })
           .then(function() {
             return networksLib.checkVLANs('Network_Group_1', 'VLAN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .then(function() {
             return networksLib.checkVLANs('default', 'VLAN');
@@ -92,25 +92,25 @@ define([
       'Gateways appear for two or more node network groups': function() {
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_2');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_2');
           })
           .then(function() {
             return networksLib.checkGateways('Network_Group_2', 'VLAN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_1');
           })
           .then(function() {
             return networksLib.checkGateways('Network_Group_1', 'VLAN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .then(function() {
             return networksLib.checkGateways('default', 'VLAN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_1');
           })
           .then(function() {
             return networksLib.deleteNetworkGroup('Network_Group_1');
@@ -135,6 +135,18 @@ define([
       clusterName,
       networksLib,
       dashboardPage;
+    var networkName = 'Public';
+    var publicSelector = 'div.' + networkName.toLowerCase() + ' ';
+    var ipRangesSelector = publicSelector + 'div.ip_ranges ';
+    var startIpSelector = ipRangesSelector + 'input[name*="range-start"] ';
+    var gatewaySelector = publicSelector + 'input[name="gateway"] ';
+    var errorSelector = 'div.has-error';
+    var networkGroupsSelector = 'ul.node_network_groups';
+    var btnSaveSelector = 'button.apply-btn';
+    var addGroupSelector = 'button.add-nodegroup-btn';
+    var pencilSelector = '.glyphicon-pencil';
+    var renameSelector = 'div.network-group-name input[type="text"]';
+    var nameSelector = 'div.network-group-name button.btn-link';
 
     return {
       name: 'Neutron VLAN segmentation',
@@ -165,13 +177,13 @@ define([
           });
       },
       'Can not create node network group with the name of already existing group': function() {
+        var errorHelpSelector = 'div.has-error.node-group-name span.help-block';
         return this.remote
           .then(function() {
             return networksLib.createNetworkGroup('Network_Group_1');
           })
-          .assertElementEnabled('button.add-nodegroup-btn',
-            '"Add New Node Network Group" button is enabled')
-          .clickByCssSelector('button.add-nodegroup-btn')
+          .assertElementEnabled(addGroupSelector, '"Add New Node Network Group" button is enabled')
+          .clickByCssSelector(addGroupSelector)
           .then(function() {
             return modal.waitToOpen();
           })
@@ -183,9 +195,8 @@ define([
             .type('Network_Group_1')
             .type('\uE007')
             .end()
-          .assertElementAppears('div.has-error.node-group-name span.help-block', 1000,
-            'Error message appears')
-          .assertElementContainsText('div.has-error.node-group-name span.help-block',
+          .assertElementAppears(errorHelpSelector, 1000, 'Error message appears')
+          .assertElementContainsText(errorHelpSelector,
             'This node network group name is already taken', 'True error message presents')
           .then(function() {
             return modal.close();
@@ -194,7 +205,7 @@ define([
       'Node network group deletion': function() {
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .assertElementNotExists('.glyphicon-remove',
             'It is not possible to delete default node network group')
@@ -202,26 +213,8 @@ define([
             'This node network group uses a shared admin network and cannot be deleted',
             'Default node network group description presented')
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
-          })
-          .assertElementAppears('.glyphicon-remove', 1000, 'Remove icon is shown')
-          .clickByCssSelector('.glyphicon-remove')
-          .then(function() {
-            return modal.waitToOpen();
-          })
-          .assertElementContainsText('h4.modal-title', 'Remove Node Network Group',
-            'Remove Node Network Group modal expected')
-          .then(function() {
-            return modal.clickFooterButton('Delete');
-          })
-          .then(function() {
-            return modal.waitToClose();
-          })
-          .assertElementAppears('.network-group-name .explanation', 2000, 'Default subtab is shown')
-          .assertElementNotContainsText('ul.node_network_groups', 'Network_Group_1',
-            'Node network group disappears from network group list')
-          .assertElementNotContainsText('.network-group-name .btn-link', 'Network_Group_1',
-            'Node network group title disappears from "Networks" tab');
+            return networksLib.deleteNetworkGroup('Network_Group_1');
+          });
       },
       'Default network group the first in a list': function() {
         this.timeout = 60000;
@@ -259,8 +252,8 @@ define([
       },
       'Deletion of several node network groups one after another': function() {
         this.timeout = 60000;
+        var explanationSelector = '.network-group-name .explanation';
         return this.remote
-          .assertElementDisplayed('ul.node_network_groups', 'Node network groups list displayed')
           .then(function() {
             return networksLib.deleteNetworkGroup('+-934847fdjfjdbh');
           })
@@ -276,15 +269,14 @@ define([
           .then(function() {
             return command.refresh();
           })
-          .assertElementsAppear('.network-group-name .explanation', 5000,
-            'Page refreshed successfully')
-          .assertElementNotContainsText('ul.node_network_groups', '+-934847fdjfjdbh',
+          .assertElementsAppear(explanationSelector, 5000, 'Page refreshed successfully')
+          .assertElementNotContainsText(networkGroupsSelector, '+-934847fdjfjdbh',
             'Network group deleted successfully')
-          .assertElementNotContainsText('ul.node_network_groups', 'yrter',
+          .assertElementNotContainsText(networkGroupsSelector, 'yrter',
             'Network group deleted successfully')
-          .assertElementNotContainsText('ul.node_network_groups', '1234',
+          .assertElementNotContainsText(networkGroupsSelector, '1234',
             'Network group deleted successfully')
-          .assertElementNotContainsText('ul.node_network_groups', 'abc',
+          .assertElementNotContainsText(networkGroupsSelector, 'abc',
             'Network group deleted successfully')
           .then(function() {
             return networksLib.deleteNetworkGroup('test');
@@ -292,30 +284,28 @@ define([
           .then(function() {
             return command.refresh();
           })
-          .assertElementsAppear('.network-group-name .explanation', 5000,
-            'Page refreshed successfully')
-          .assertElementNotContainsText('ul.node_network_groups', 'test',
+          .assertElementsAppear(explanationSelector, 5000, 'Page refreshed successfully')
+          .assertElementNotContainsText(networkGroupsSelector, 'test',
             'Deletion of several node network groups one after another is successfull');
       },
       'Can not create node network group without saving changes': function() {
+        var errorTextSelector = 'div.text-error';
         var ipRangeStart = '172.16.0.25';
         return this.remote
-          .assertElementEnabled('div.public div.ip_ranges input[name*="range-start"]',
-            'Public "Start IP Range" textfield is enabled')
-          .setInputValue('div.public div.ip_ranges input[name*="range-start"]', ipRangeStart)
+          .assertElementEnabled(startIpSelector, 'Public "Start IP Range" textfield is enabled')
+          .setInputValue(startIpSelector, ipRangeStart)
           .assertElementAppears('button.add-nodegroup-btn i.glyphicon-danger-sign', 1000,
             'Error icon appears')
-          .assertElementEnabled('button.add-nodegroup-btn',
-            '"Add New Node Network Group" button is enabled')
-          .clickByCssSelector('button.add-nodegroup-btn')
+          .assertElementEnabled(addGroupSelector, '"Add New Node Network Group" button is enabled')
+          .clickByCssSelector(addGroupSelector)
           .then(function() {
             return modal.waitToOpen();
           })
           .then(function() {
             return modal.checkTitle('Node Network Group Creation Error');
           })
-          .assertElementDisplayed('div.text-error', 'Error message exists')
-          .assertElementContainsText('div.text-error',
+          .assertElementDisplayed(errorTextSelector, 'Error message exists')
+          .assertElementContainsText(errorTextSelector,
             'It is necessary to save changes before creating a new node network group',
             'True error message presents')
           .then(function() {
@@ -326,51 +316,50 @@ define([
           });
       },
       'Switching between node network groups without saved changes': function() {
-        var ipRangeStartChanged = '172.16.0.26';
-        var ipRangeStartDefault = '172.16.0.2';
+        var modalSelector = 'div.modal-dialog';
+        var group1Name = 'Network_Group_1';
+        var group2Name = 'Network_Group_2';
+        var startIpChanged = '172.16.0.26';
+        var startIpDefault = '172.16.0.2';
         return this.remote
           .then(function() {
-            return networksLib.createNetworkGroup('Network_Group_1');
+            return networksLib.createNetworkGroup(group1Name);
           })
           .then(function() {
-            return networksLib.createNetworkGroup('Network_Group_2');
+            return networksLib.createNetworkGroup(group2Name);
           })
-          .assertElementEnabled('div.public div.ip_ranges input[name*="range-start"]',
-            'Public "Start IP Range" textfield is enabled')
-          .setInputValue('div.public div.ip_ranges input[name*="range-start"]', ipRangeStartChanged)
-          .assertElementEnabled('button.apply-btn',
-            '"Save Settings" button is enabled for "Network_Group_2"')
+          .assertElementEnabled(startIpSelector, 'Public "Start IP Range" textfield is enabled')
+          .setInputValue(startIpSelector, startIpChanged)
+          .assertElementEnabled(btnSaveSelector,
+            '"Save Settings" button is enabled for ' + group2Name)
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
+            return networksLib.gotoNodeNetworkSubTab(group1Name);
           })
-          .assertElementNotExists('div.modal-dialog',
-            'No new dialogs appear for "Network_Group_1"')
-          .assertElementNotExists('div.has-error', 'No errors are observed for "Network_Group_1"')
-          .assertElementPropertyEquals('div.public div.ip_ranges input[name*="range-start"]',
-            'value', ipRangeStartDefault,
-            'Public "Start IP Range" textfield  has default value for "Network_Group_1"')
-          .assertElementEnabled('button.apply-btn',
-            '"Save Settings" button is enabled for "Network_Group_1"')
+          .assertElementNotExists(modalSelector, 'No new dialogs appear for ' + group1Name)
+          .assertElementNotExists(errorSelector, 'No errors are observed for ' + group1Name)
+          .assertElementPropertyEquals(startIpSelector, 'value', startIpDefault,
+            'Public "Start IP Range" textfield  has default value for ' + group1Name)
+          .assertElementEnabled(btnSaveSelector,
+            '"Save Settings" button is enabled for ' + group1Name)
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
-          .assertElementNotExists('div.modal-dialog',
+          .assertElementNotExists(modalSelector,
             'No new dialogs appear for "default" node network group')
-          .assertElementNotExists('div.has-error',
+          .assertElementNotExists(errorSelector,
             'No errors are observed for "default" node network group')
-          .assertElementPropertyEquals('div.public div.ip_ranges input[name*="range-start"]',
-            'value', ipRangeStartDefault,
+          .assertElementPropertyEquals(startIpSelector, 'value', startIpDefault,
             'Public "Start IP Range" textfield  has default value for "default" node network group')
-          .assertElementEnabled('button.apply-btn',
+          .assertElementEnabled(btnSaveSelector,
             '"Save Settings" button is enabled for "default" node network group')
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_2');
+            return networksLib.gotoNodeNetworkSubTab(group2Name);
           })
-          .assertElementNotExists('div.modal-dialog', 'No new dialogs appear for "Network_Group_2"')
-          .assertElementNotExists('div.has-error', 'No errors are observed for "Network_Group_2"')
-          .assertElementPropertyEquals('div.public div.ip_ranges input[name*="range-start"]',
-            'value', ipRangeStartChanged, 'Public "Start IP Range" textfield  has changed value')
-          .assertElementEnabled('button.apply-btn', '"Save Settings" button is enabled')
+          .assertElementNotExists(modalSelector, 'No new dialogs appear for ' + group2Name)
+          .assertElementNotExists(errorSelector, 'No errors are observed for ' + group2Name)
+          .assertElementPropertyEquals(startIpSelector, 'value', startIpChanged,
+            'Public "Start IP Range" textfield  has changed value')
+          .assertElementEnabled(btnSaveSelector, '"Save Settings" button is enabled')
           .then(function() {
             return networksLib.cancelChanges();
           });
@@ -378,7 +367,7 @@ define([
       'The same VLAN for different node network groups': function() {
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_1');
           })
           .then(function() {
             return networksLib.checkGateways('Network_Group_1', 'TUN');
@@ -387,13 +376,13 @@ define([
             return networksLib.checkVLANs('Network_Group_1', 'TUN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_2');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_2');
           })
           .then(function() {
             return networksLib.checkVLANs('Network_Group_2', 'TUN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .then(function() {
             return networksLib.checkVLANs('default', 'TUN');
@@ -402,25 +391,25 @@ define([
       'Gateways appear for two or more node network groups': function() {
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_2');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_2');
           })
           .then(function() {
             return networksLib.checkGateways('Network_Group_2', 'TUN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_1');
           })
           .then(function() {
             return networksLib.checkGateways('Network_Group_1', 'TUN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .then(function() {
             return networksLib.checkGateways('default', 'TUN');
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_1');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_1');
           })
           .then(function() {
             return networksLib.deleteNetworkGroup('Network_Group_1');
@@ -431,7 +420,7 @@ define([
           .then(function() {
             return networksLib.checkGateways('default', 'TUN');
           })
-          .assertElementEnabled('div.public input[name="gateway"]',
+          .assertElementEnabled(gatewaySelector,
             'Public "Gateway" field exists and enabled for "default" network group');
       },
       'Validation between default and non-default groups': function() {
@@ -442,7 +431,7 @@ define([
         var gatewayArray = '192.168.12.1';
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .assertElementEnabled('div.management  div.cidr input[type="text"]',
             'Management  "CIDR" textfield is enabled')
@@ -457,7 +446,7 @@ define([
             return networksLib.saveSettings();
           })
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_2');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_2');
           })
           .assertElementEnabled('div.storage  div.cidr input[type="text"]',
             'Storage  "CIDR" textfield is enabled')
@@ -468,8 +457,8 @@ define([
             'value', ipRangeEnd, 'Storage "End IP Range" textfield has true value')
           .assertElementPropertyEquals('div.storage input[name="gateway"]',
             'value', gatewayArray, 'Storage "Gateway" textfield has true value')
-          .assertElementEnabled('button.apply-btn', '"Save Settings" button is enabled')
-          .clickByCssSelector('button.apply-btn')
+          .assertElementEnabled(btnSaveSelector, '"Save Settings" button is enabled')
+          .clickByCssSelector(btnSaveSelector)
           .assertElementExists(networkAlertSelector, 'Error message is observed')
           .assertElementContainsText(networkAlertSelector,
             'Address space intersection between networks', 'True error message is displayed')
@@ -482,26 +471,26 @@ define([
           });
       },
       'Validation Floating IP range with non-default group with other CIDR': function() {
+        var endIpSelector = ipRangesSelector + 'input[name*="range-end"] ';
         var cidrArray = ['172.16.5.0/24', '172.16.6.0/24', '172.16.7.0/24'];
         var ipRangeStart = ['172.16.5.2', '172.16.5.130'];
         var ipRangeEnd = ['172.16.5.126', '172.16.5.254'];
         var gatewayValue = '172.16.5.1';
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_2');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_2');
           })
           .assertElementEnabled('div.public div.cidr input[type="text"]',
             'Public "CIDR" textfield is enabled')
           .setInputValue('div.public div.cidr input[type="text"]', cidrArray[0])
-          .assertElementEnabled('div.public div.ip_ranges input[name*="range-start"]',
+          .assertElementEnabled(startIpSelector,
             'Public "Start IP Range" textfield is enabled')
-          .setInputValue('div.public div.ip_ranges input[name*="range-start"]', ipRangeStart[0])
-          .assertElementEnabled('div.public div.ip_ranges input[name*="range-end"]',
-            'Public "End IP Range" textfield is enabled')
-          .setInputValue('div.public div.ip_ranges input[name*="range-end"]', ipRangeEnd[0])
-          .assertElementEnabled('div.public input[name="gateway"]',
+          .setInputValue(startIpSelector, ipRangeStart[0])
+          .assertElementEnabled(endIpSelector, 'Public "End IP Range" textfield is enabled')
+          .setInputValue(endIpSelector, ipRangeEnd[0])
+          .assertElementEnabled(gatewaySelector,
             'Public "Gateway" textfield is enabled')
-          .setInputValue('div.public input[name="gateway"]', gatewayValue)
+          .setInputValue(gatewaySelector, gatewayValue)
           .assertElementEnabled('div.storage div.cidr input[type="text"]',
             'Storage "CIDR" textfield is enabled')
           .setInputValue('div.storage div.cidr input[type="text"]', cidrArray[1])
@@ -515,88 +504,88 @@ define([
           .assertElementEnabled('div.floating_ranges input[name*="end"]',
             'Floating IP ranges "End" textfield is enabled')
           .setInputValue('div.floating_ranges input[name*="end"]', ipRangeEnd[1])
-          .assertElementNotExists('div.has-error', 'No errors are observed')
+          .assertElementNotExists(errorSelector, 'No errors are observed')
           .then(function() {
             return networksLib.saveSettings();
           });
       },
       'Renaming of Default and non-default network groups': function() {
+        var errorRenameSelector = '.has-error.node-group-renaming ';
         return this.remote
           // Can rename "default" node network group
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
-          .clickByCssSelector('.glyphicon-pencil')
-          .assertElementAppears('div.network-group-name input[type="text"]', 1000,
-            'Rename network group textfield appears')
-          .findByCssSelector('div.network-group-name input[type="text"]')
+          .clickByCssSelector(pencilSelector)
+          .assertElementAppears(renameSelector, 1000, 'Rename network group textfield appears')
+          .findByCssSelector(renameSelector)
             .clearValue()
             .type('new_default')
             .type('\uE007')
             .end()
-          .assertElementContainsText('ul.node_network_groups', 'new_default',
+          .assertElementContainsText(networkGroupsSelector, 'new_default',
             'New subtab title is shown')
-          .assertElementTextEquals('div.network-group-name button.btn-link', 'new_default',
+          .assertElementTextEquals(nameSelector, 'new_default',
             'It is possible to rename "default" node network group')
           // Can not rename non-default node network group to "default" name
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_2');
+            return networksLib.gotoNodeNetworkSubTab('Network_Group_2');
           })
-          .clickByCssSelector('.glyphicon-pencil')
-          .assertElementAppears('.network-group-name input[type=text]', 1000,
-            'Node network group renaming control is rendered')
-          .findByCssSelector('.node-group-renaming input[type=text]')
+          .clickByCssSelector(pencilSelector)
+          .assertElementAppears(renameSelector, 1000, 'Node network group renaming control exists')
+          .findByCssSelector(renameSelector)
             .clearValue()
             .type('new_default')
             .type('\uE007')
             .end()
-          .assertElementAppears('.has-error.node-group-renaming', 1000,
+          .assertElementAppears(errorRenameSelector, 1000,
             'Error is displayed in case of duplicate name')
-          .assertElementContainsText('div.has-error.node-group-renaming span.help-block',
+          .assertElementContainsText(errorRenameSelector + 'span.help-block',
             'This node network group name is already taken', 'True error message presents')
           // Rename non-default node network group
-          .findByCssSelector('.node-group-renaming input[type=text]')
+          .findByCssSelector(renameSelector)
             .clearValue()
             .type('Network_Group_3')
             .type('\uE007')
             .end()
-          .assertElementContainsText('ul.node_network_groups', 'Network_Group_3',
+          .assertElementContainsText(networkGroupsSelector, 'Network_Group_3',
             'New subtab title is shown')
-          .assertElementTextEquals('div.network-group-name button.btn-link', 'Network_Group_3',
+          .assertElementTextEquals(nameSelector, 'Network_Group_3',
             'New network group name "link" is shown');
       },
       'Correct bahaviour of long name for node network group': function() {
+        var oldName = 'Network_Group_3';
+        var newName = 'fgbhsjdkgbhsdjkbhsdjkbhfjkbhfbjhgjbhsfjgbhsfjgbhsg';
+        var activeSelector = networkGroupsSelector + ' li.active';
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('Network_Group_3');
+            return networksLib.gotoNodeNetworkSubTab(oldName);
           })
-          .assertElementTextEquals('ul.node_network_groups li.active', 'Network_Group_3',
-            '"Network_Group_3" node network group is selected')
-          .assertElementPropertyEquals('ul.node_network_groups li.active', 'offsetHeight', '37',
-            '"Network_Group_3" node network group has default height')
-          .assertElementPropertyEquals('ul.node_network_groups li.active', 'offsetWidth', '163',
-            '"Network_Group_3" node network group has default width')
-          .clickByCssSelector('.glyphicon-pencil')
-          .assertElementAppears('div.network-group-name input[type="text"]', 1000,
-            'Node network group Rename textfield appears')
-          .findByCssSelector('.node-group-renaming input[type=text]')
+          .assertElementTextEquals(activeSelector, oldName,
+            oldName + ' node network group is selected')
+          .assertElementPropertyEquals(activeSelector, 'offsetHeight', '37',
+            oldName + ' node network group has default height')
+          .assertElementPropertyEquals(activeSelector, 'offsetWidth', '163',
+            oldName + ' node network group has default width')
+          .clickByCssSelector(pencilSelector)
+          .assertElementAppears(renameSelector, 1000, 'Node network group Rename textfield appears')
+          .findByCssSelector(renameSelector)
             .clearValue()
-            .type('fgbhsjdkgbhsdjkbhsdjkbhfjkbhfbjhgjbhsfjgbhsfjgbhsg')
+            .type(newName)
             .type('\uE007')
             .end()
-          .assertElementTextEquals('ul.node_network_groups li.active',
-            'fgbhsjdkgbhsdjkbhsdjkbhfjkbhfbjhgjbhsfjgbhsfjgbhsg',
-            'New node network group is shown and selected')
-          .assertElementTextEquals('div.network-group-name button.btn-link',
-            'fgbhsjdkgbhsdjkbhsdjkbhfjkbhfbjhgjbhsfjgbhsfjgbhsg',
+          .assertElementTextEquals(activeSelector, newName,
+            'New node network group ' + newName + ' is shown and selected')
+          .assertElementTextEquals(nameSelector, newName,
             'New node network group name "link" is shown')
-          .assertElementPropertyEquals('ul.node_network_groups li.active', 'offsetHeight', '87',
+          .assertElementPropertyEquals(activeSelector, 'offsetHeight', '87',
             'Renamed node network group has correct height')
-          .assertElementPropertyEquals('ul.node_network_groups li.active', 'offsetWidth', '163',
+          .assertElementPropertyEquals(activeSelector, 'offsetWidth', '163',
             'Renamed node network group has correct width');
       },
       'User can add and cannot rename new node network group after deployment': function() {
         this.timeout = 60000;
+        var progressSelector = '.dashboard-block .progress';
         return this.remote
           .then(function() {
             return clusterPage.goToTab('Dashboard');
@@ -604,15 +593,15 @@ define([
           .then(function() {
             return dashboardPage.startDeployment();
           })
-          .assertElementExists('.dashboard-block .progress', 'Deployment is started')
-          .waitForElementDeletion('.dashboard-block .progress', 45000)
+          .assertElementExists(progressSelector, 'Deployment is started')
+          .waitForElementDeletion(progressSelector, 45000)
           .then(function() {
             return clusterPage.goToTab('Networks');
           })
           .then(function() {
             return networksLib.createNetworkGroup('Network_Group_1');
           })
-          .assertElementNotExists('.glyphicon-pencil',
+          .assertElementNotExists(pencilSelector,
             'It is not possible to rename new node network group after deployment');
       }
     };

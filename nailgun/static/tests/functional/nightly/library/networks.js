@@ -32,12 +32,16 @@ define([
     btnVerifySelector: 'button.verify-networks-btn',
     defaultPlaceholder: '127.0.0.1',
 
-    gotoNodeNetworkGroup: function(groupName) {
+    gotoNodeNetworkSubTab: function(groupName) {
+      var networkSubtabSelector = 'div[id="network-subtabs"]';
       return this.remote
-        .assertElementContainsText('ul.node-network-groups-list', groupName,
-          '"' + groupName + '" link is existed')
-        .findByCssSelector('ul.node-network-groups-list')
+        .assertElementAppears(networkSubtabSelector, 1000, 'Network subtab list exists')
+        .assertElementContainsText(networkSubtabSelector, groupName,
+          '"' + groupName + '" link exists')
+        .findByCssSelector(networkSubtabSelector)
           .clickLinkByText(groupName)
+          .sleep(500)
+          .assertElementContainsText('li.active', groupName, '"' + groupName + '" link is opened')
           .end();
     },
     checkNetworkInitialState: function(networkName) {
@@ -52,7 +56,7 @@ define([
 
       // Generic components
       chain = chain.then(function() {
-        return self.gotoNodeNetworkGroup('default');
+        return self.gotoNodeNetworkSubTab('default');
       })
       .assertElementDisabled(this.btnSaveSelector, '"Save Settings" button is disabled')
       .assertElementDisabled(this.btnCancelSelector, '"Cancel Changes" button is disabled')
@@ -353,16 +357,29 @@ define([
           return self.checkIpRanges(networkName);
         });
     },
-    checkIncorrectValueInput: function() {
+    checkIncorrectValueInput: function(inputSelector, value, errorSelector, errorMessage) {
+      var self = this;
+      return this.remote
+        .assertElementEnabled(inputSelector, '"' + inputSelector + '" is enabled')
+        .setInputValue(inputSelector, value)
+        .assertElementAppears(errorSelector, 1000,
+          'Error message appears for "' + inputSelector + '" with "' + value + '" value')
+        .assertElementContainsText(errorSelector, errorMessage,
+          'True error message is displayed for "' + inputSelector + '" with "' + value + '" value')
+        .then(function() {
+          return self.checkMultirackVerification();
+        });
+    },
+    checkMultirackVerification: function() {
       var self = this;
       return this.remote
         .assertElementDisabled(this.btnSaveSelector, '"Save Settings" button is disabled')
-        .assertElementExists('a[class$="network_verification"]',
-          '"Connectivity Check" link is existed')
-        .clickByCssSelector('a[class$="network_verification"]')
+        .then(function() {
+          return self.gotoNodeNetworkSubTab('Connectivity Check');
+        })
         .assertElementDisabled(this.btnVerifySelector, '"Verify Networks" button is disabled')
         .then(function() {
-          return self.gotoNodeNetworkGroup('default');
+          return self.gotoNodeNetworkSubTab('default');
         });
     },
     saveSettings: function() {
@@ -417,10 +434,8 @@ define([
     deleteNetworkGroup: function(groupName) {
       var self = this;
       return this.remote
-        .assertElementContainsText('ul.node_network_groups', groupName,
-          '"' + groupName + '" network group is shown and name is correct')
         .then(function() {
-          return self.gotoNodeNetworkGroup(groupName);
+          return self.gotoNodeNetworkSubTab(groupName);
         })
         .assertElementAppears('.glyphicon-remove', 1000, 'Remove icon is shown')
         .clickByCssSelector('.glyphicon-remove')
@@ -457,10 +472,32 @@ define([
         .assertElementEnabled('input[name="baremetal_gateway"]',
           '"Ironic gateway " textfield is enabled');
     },
-    checkBaremetalIntersection: function(networkName) {
+    checkBaremetalIntersection: function(networkName, intersectionValues) {
+      // Input array: Values to raise baremetal intersection: [Baremetal CIDR, Baremetal Start IP,
+      // Baremetal End IP, Ironic Start IP, Ironic End IP, Ironic Gateway]
       var self = this;
+      var cidrSelector = 'div.baremetal div.cidr input[type="text"]';
+      var startSelector = 'div.baremetal div.ip_ranges input[name*="range-start"]';
+      var endSelector = 'div.baremetal div.ip_ranges input[name*="range-end"]';
+      var baremetalGatewaySelector = 'input[name="baremetal_gateway"]';
+      var baremetalStartSelector = 'input[name="range-start_baremetal_range"]';
+      var baremetalEndSelector = 'input[name="range-end_baremetal_range"]';
       var networkAlertSelector = 'div.network-alert';
       return this.remote
+        .setInputValue(cidrSelector, intersectionValues[0])
+        .setInputValue(startSelector, intersectionValues[1])
+        .setInputValue(endSelector, intersectionValues[2])
+        .then(function() {
+          return self.checkNeutronL3ForBaremetal();
+        })
+        .setInputValue(baremetalStartSelector, intersectionValues[3])
+        .setInputValue(baremetalEndSelector, intersectionValues[4])
+        .setInputValue(baremetalGatewaySelector, intersectionValues[5])
+        .assertElementNotExists('div.form-baremetal-network div.has-error',
+          'No Ironic errors are observed for Storage and Baremetal intersection')
+        .then(function() {
+          return self.gotoNodeNetworkSubTab('default');
+        })
         .assertElementEnabled(this.btnSaveSelector, '"Save Settings" button is enabled')
         .clickByCssSelector(this.btnSaveSelector)
         .assertElementEnabled('div.' + networkName + ' div.cidr div.has-error input[type="text"]',
@@ -523,7 +560,7 @@ define([
       var cidrSelector = netSelector + 'div.cidr input[type="checkbox"]';
       var ipStartSelector = netSelector + 'div.ip_ranges input[name*="range-start"]';
       var ipEndSelector = netSelector + 'div.ip_ranges input[name*="range-end"]';
-      var defaultIpRange = {Storage: '1', Management: '0', Private: '2'};
+      var defaultIpRange = {Storage: '1', Management: '0', Private: '2', Baremetal: '3'};
       return this.remote
         .assertElementEnabled(cidrSelector,
           networkName + ' "Use the whole CIDR" checkbox is enabled before changing')

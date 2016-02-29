@@ -80,7 +80,9 @@ define([
       var self = this;
       return this.remote
         .then(function() {
-          return self.generic.gotoPage(pageName);
+          if (pageName !== 'Equipment') {
+            return self.generic.gotoPage(pageName);
+          }
         })
         .then(function() {
           return self.generic.gotoPage('Equipment');
@@ -97,7 +99,9 @@ define([
       var groupSelector = 'div.nodes-group';
       return this.remote
         .then(function() {
-          return self.generic.gotoPage(pageName);
+          if (pageName !== 'Equipment') {
+            return self.generic.gotoPage(pageName);
+          }
         })
         .then(function() {
           return self.generic.gotoPage('Equipment');

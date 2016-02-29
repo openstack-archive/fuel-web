@@ -145,8 +145,8 @@ define([
       'No "Node network group" item via sorting/filtering for unallocated nodes': function() {
         var itemName = 'Node network group';
         var itemRegExp = RegExp('[\\s\\S]*[^(' + itemName + ')][\\s\\S]*', 'i');
-        var btnSortSelector = 'button.btn-sorters';
-        var btnFilterSelector = 'button.btn-filters';
+        var btnSortSelector = 'button.btn-sorters:enabled';
+        var btnFilterSelector = 'button.btn-filters:enabled';
         var btnMoreSelector = 'div.more-control button.btn-link';
         var popoverSelector = 'div.popover ';
         var popContentSelector = popoverSelector + 'div.popover-content div';
@@ -158,7 +158,7 @@ define([
           .assertElementsExist('button.btn-add-nodes', '"Add Nodes" button exists')
           .clickByCssSelector('button.btn-add-nodes')
           // Check sorting
-          .assertElementsExist(btnSortSelector, '"Sort Nodes" button is exists')
+          .assertElementsAppear(btnSortSelector, 1000, '"Sort Nodes" button is exists')
           .clickByCssSelector(btnSortSelector)
           .assertElementsAppear('div.sorters', 1000, '"Sort" pane is appears')
           .assertElementsExist(btnMoreSelector, '"More" sort button exists')
@@ -169,7 +169,7 @@ define([
           .assertElementMatchesRegExp(popContentSelector, itemRegExp, 'No "' + itemName +
             '" item label via sorting for unallocated nodes')
           // Check filtering
-          .assertElementsExist(btnFilterSelector, '"Filter Nodes" button is exists')
+          .assertElementsAppear(btnFilterSelector, 1000, '"Filter Nodes" button is exists')
           .clickByCssSelector(btnFilterSelector)
           .assertElementsAppear('div.filters', 1000, '"Filter" pane is appears')
           .assertElementsExist(btnMoreSelector, '"More" filter button exists')
@@ -194,7 +194,7 @@ define([
           .assertElementsExist(btnEditSelector, '"Edit Roles" button exists')
           .clickByCssSelector(btnEditSelector)
           .then(function() {
-            return clusterPage.checkNodeRoles('Operating System');
+            return clusterPage.checkNodeRoles(['Operating System']);
           })
           .assertElementsExist(btnApplySelector, '"Apply Changes" button exists')
           .clickByCssSelector(btnApplySelector)

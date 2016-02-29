@@ -37,6 +37,7 @@ define([
           '" parameter and restart test.');
       }
       return this.remote
+        .assertElementsAppear('ul.navbar-nav', 5000, 'Main navigation bar exists')
         .clickLinkByText(pageName)
         .assertElementsAppear('div.' + pageSelector[pageName], 5000, '"' + pageName +
           '" page is loaded')

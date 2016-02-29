@@ -128,7 +128,7 @@ define([
           .assertElementContainsText('div.alert-success', 'Your network is configured correctly',
             'True msg observed')
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .assertElementNotExists('div.alert-success',
             'No message about result of network verification on "default" subtab')
@@ -153,7 +153,7 @@ define([
         var gatewayValue = '172.16.0.2';
         return this.remote
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .setInputValue('div.public input[name=gateway]', gatewayValue)
           .clickByCssSelector('.subtab-link-network_verification')
@@ -165,7 +165,7 @@ define([
             'Address intersection between public gateway and IP range of public network',
             'True message is observed')
           .then(function() {
-            return networksLib.gotoNodeNetworkGroup('default');
+            return networksLib.gotoNodeNetworkSubTab('default');
           })
           .assertElementExists('div.alert-danger',
             'Message about result of network verification on "default" subtab')

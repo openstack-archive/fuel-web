@@ -80,8 +80,7 @@ define([
           });
       },
       'Node settings pop-up contains environment and node network group names': function() {
-        var ipSelector = 'div[aria-labelledby="headinginterfaces"] .node-details-row:nth-child(3)';
-        var sumSelector = 'div.node-summary';
+        var summarySelector = 'div.node-summary ';
         var descriptionClusterNode = RegExp(
           'Environment.*' + clusterName + '[\\s\\S]*' +
           'Node network group.*default[\\s\\S]*', 'i');
@@ -120,17 +119,16 @@ define([
           .then(function() {
             return modal.checkTitle(computeName);
           })
-          .assertElementMatchesRegExp(sumSelector, descriptionClusterNode,
+          .assertElementMatchesRegExp(summarySelector, descriptionClusterNode,
             'Environment name and "default" node network group name are exist and correct')
           // Get IP and MAC for next tests
-          .findByCssSelector(sumSelector + ' div:nth-child(4) > span')
+          .findByCssSelector(summarySelector + '> div:nth-child(2) > div:nth-child(2) > span')
             .getVisibleText()
             .then(function(visibleText) {
               computeMac = visibleText;
             })
             .end()
-          .clickByCssSelector('div[id="headinginterfaces"] i')
-          .findByCssSelector(ipSelector + ' span')
+          .findByCssSelector(summarySelector + 'div.management-ip > span')
             .getVisibleText()
             .then(function(visibleText) {
               computeIp = visibleText;
@@ -144,7 +142,7 @@ define([
           .then(function() {
             return modal.waitToOpen();
           })
-          .assertElementMatchesRegExp(sumSelector, descriptionDiscoveredNode,
+          .assertElementMatchesRegExp(summarySelector, descriptionDiscoveredNode,
             'Environment name and "default" node network group name are not observed')
           .then(function() {
             return modal.close();
@@ -252,7 +250,7 @@ define([
           .clickByCssSelector('button.btn-clear-search');
       },
       'Labels support for "Equipment" page': function() {
-        var labelName = 'Boost_label';
+        var labelName = 'BOOST_LABEL';
         var labelValue = '1.5';
         var btnLabelsSelector = 'button.btn-labels';
         var btnAddLabelSelector = 'button.btn-add-label';
@@ -264,8 +262,8 @@ define([
         var labelPaneSelector = 'div.labels ';
         var labelCheckboxSelector = labelPaneSelector + 'input[type="checkbox"]';
         return this.remote
-          .assertElementsExist(nodeSelector + 'input', '"Controller" node exists')
-          .clickByCssSelector(nodeSelector + 'input')
+          .assertElementsExist(nodeSelector + ' input', '"Controller" node exists')
+          .clickByCssSelector(nodeSelector + ' input')
           // Add label
           .assertElementEnabled(btnLabelsSelector, '"Manage Labels" button is enabled')
           .clickByCssSelector(btnLabelsSelector)

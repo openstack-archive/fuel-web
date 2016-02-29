@@ -967,7 +967,9 @@
                         "install_ironic": "Install Ironic",
                         "install_ironic_description": "Ironic enables baremetal provisioning.",
                         "ironic_network_mode_alert": "Ironic requires Neutron with VLAN segmentation as a network option.",
-                        "ironic_storage_mode_alert": "Ironic requires Swift object storage as a backend for the Glance image service."
+                        "ironic_storage_mode_alert": "Ironic requires Swift object storage as a backend for the Glance image service.",
+                        "install_murano": "Install Murano",
+                        "install_murano_description": "Murano enables Windows or Linux based datacenter services like Active Directory, IIS, Apache, Microsoft SQL and ASP.NET to be deployed on OpenStack."
                     },
                     "ready": {
                         "title": "Finish",

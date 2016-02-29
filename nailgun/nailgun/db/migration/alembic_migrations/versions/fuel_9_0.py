@@ -51,6 +51,7 @@ cluster_statuses_new = (
     'operational',
     'error',
     'remove',
+    'partially_deployed'
 )
 
 

@@ -502,6 +502,7 @@ class TasksSerializer(object):
             task_relations = {
                 'id': serialized['id'],
                 'type': task_type,
+                'library_id': serialized['task_id'],
                 'requires': serialized.pop('requires', []),
                 'required_for': serialized.pop('required_for', []),
                 'cross-depends': serialized.pop('cross-depends', []),

@@ -17,7 +17,7 @@
 """Deployment serializers for orchestrator"""
 
 from copy import deepcopy
-from itertools import groupby
+import itertools
 
 import six
 import sqlalchemy as sa
@@ -79,7 +79,7 @@ class DeploymentMultinodeSerializer(object):
             return bool(node.replaced_deployment_info)
 
         serialized_nodes = []
-        for customized, node_group in groupby(nodes, keyfunc):
+        for customized, node_group in itertools.groupby(nodes, keyfunc):
             if customized and not ignore_customized:
                 serialized_nodes.extend(
                     self.serialize_customized(cluster, node_group))
@@ -551,6 +551,9 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
 
             node_attrs['nova_cpu_pinning_enabled'] = \
                 objects.NodeAttributes.is_nova_cpu_pinning_enabled(node)
+            node_attrs['nova_hugepages_enabled'] = (
+                objects.NodeAttributes.is_nova_hugepages_enabled(node))
+
         return attrs
 
     @classmethod
@@ -563,8 +566,12 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def serialize_node(self, node, role):
         serialized_node = super(
             DeploymentHASerializer90, self).serialize_node(node, role)
-        self.generate_cpu_pinning(node, serialized_node)
+        self.serialize_node_attributes(node, serialized_node)
         return serialized_node
+
+    def serialize_node_attributes(self, node, serialized_node):
+        self.generate_cpu_pinning(node, serialized_node)
+        self.generate_node_hugepages(node, serialized_node)
 
     def generate_cpu_pinning(self, node, serialized_node):
         pinning_info = objects.NodeAttributes.distribute_node_cpus(node)
@@ -572,6 +579,10 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
 
         self._generate_nova_cpu_pinning(serialized_node, cpu_pinning['nova'])
         self._generate_dpdk_cpu_pinning(serialized_node, cpu_pinning['dpdk'])
+
+    def generate_node_hugepages(self, node, serialized_node):
+        self._generate_nova_hugepages(node, serialized_node)
+        self._generate_dpdk_hugepages(node, serialized_node)
 
     @staticmethod
     def _generate_nova_cpu_pinning(serialized_node, cpus):
@@ -594,6 +605,16 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             'ovs_core_mask': hex(ovs_core_mask),
             'ovs_pmd_core_mask': hex(ovs_pmd_core_mask)
         })
+
+    @staticmethod
+    def _generate_nova_hugepages(node, serialized_node):
+        serialized_node.setdefault('nova', {})['enable_hugepages'] = (
+            objects.NodeAttributes.is_nova_hugepages_enabled(node))
+
+    @staticmethod
+    def _generate_dpdk_hugepages(node, serialized_node):
+        serialized_node.setdefault('dpdk', {}).update(
+            objects.NodeAttributes.dpdk_hugepages_attrs(node))
 
 
 def get_serializer_for_cluster(cluster):

@@ -373,7 +373,7 @@ class NetworkDeploymentSerializer(object):
         return bridge
 
     @classmethod
-    def add_port(cls, name, bridge, provider=None):
+    def add_port(cls, name, bridge, provider=None, vendor_specific=None):
         """Add port to schema
 
         Bridge name may be None, port will not be connected to any bridge then
@@ -381,6 +381,12 @@ class NetworkDeploymentSerializer(object):
         Port name can be in form "XX" or "XX.YY", where XX - NIC name,
         YY - vlan id. E.g. "eth0", "eth0.1021". This will create corresponding
         interface if name includes vlan id.
+
+        :param name: (sub)interface name, string
+        :param bridge: bridge name, nullable string
+        :param provider: provider name, nullable string
+        :param vendor_specific: vendor specific parameters, dict
+        :return: add-port transformation, dict
         """
         port = {
             'action': 'add-port',
@@ -390,6 +396,8 @@ class NetworkDeploymentSerializer(object):
             port['bridge'] = bridge
         if provider:
             port['provider'] = provider
+        if vendor_specific:
+            port['vendor_specific'] = vendor_specific
         return port
 
     @classmethod

@@ -52,7 +52,7 @@ cluster_statuses_new = (
     'operational',
     'error',
     'remove',
-    'partially_deployed'
+    'partially_deployed',
 )
 node_statuses_old = (
     'ready',
@@ -86,6 +86,12 @@ node_errors_new = (
     'discover',
     'stop_deployment',
 )
+task_statuses = (
+    'pending',
+    'ready',
+    'running',
+    'error',
+)
 
 
 def upgrade():
@@ -100,9 +106,11 @@ def upgrade():
     drop_legacy_patching()
     upgrade_node_status_attributes()
     upgrade_node_stop_deployment_error_type()
+    upgrade_store_deployment_history()
 
 
 def downgrade():
+    downgrade_store_deployment_history()
     downgrade_node_stop_deployment_error_type()
     downgrade_node_status_attributes()
     restore_legacy_patching()
@@ -1146,3 +1154,55 @@ def downgrade_deployment_graph():
     op.drop_table('deployment_graph_tasks')
     drop_enum('deployment_graph_tasks_type')
     op.drop_table('deployment_graphs')
+
+
+def upgrade_store_deployment_history():
+    op.create_table(
+        'deployment_histories',
+        sa.Column(
+            'id',
+            sa.Integer(),
+            nullable=False,
+            autoincrement=True,
+            primary_key=True,
+        ),
+        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.String(), nullable=False),
+        sa.Column('deployment_graph_task_name', sa.String(), nullable=False),
+        sa.Column('time_start', sa.DateTime(), nullable=True),
+        sa.Column('time_end', sa.DateTime(), nullable=True),
+        sa.Column(
+            'status',
+            sa.Enum(
+                *task_statuses,
+                name='deployment_history_task_status'),
+            nullable=False),
+        sa.Column(
+            'custom',
+            fields.JSON(),
+            default={},
+            server_default='{}'),
+
+        sa.ForeignKeyConstraint(['task_id'], ['tasks.id'], ),
+
+        sa.UniqueConstraint(
+            'task_id',
+            'node_id',
+            'deployment_graph_task_name',
+            name='_task_id_node_id_deployment_graph_task_name_uc'),
+    )
+
+    op.create_index('deployment_history_task_id_and_node_id',
+                    'deployment_histories', ['task_id', 'node_id'])
+    op.create_index('deployment_history_task_id_and_status',
+                    'deployment_histories', ['task_id', 'status'])
+    op.create_index('deployment_history_task_id_and_node_id_and_status',
+                    'deployment_histories', [
+                        'task_id',
+                        'node_id',
+                        'status'])
+
+
+def downgrade_store_deployment_history():
+    op.drop_table('deployment_histories')
+    drop_enum('deployment_history_task_status')

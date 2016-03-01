@@ -465,6 +465,10 @@ TASK_ROLES = Enum(
     names=('all', 'master', 'self')
 )
 
+LOCK_TYPES = Enum(
+    'shared', 'exclusive'
+)
+
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'
 
 # Task version from which cross-dependencies is used

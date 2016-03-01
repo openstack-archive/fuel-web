@@ -32,6 +32,8 @@ from nailgun.objects.cluster import Cluster
 from nailgun.objects.cluster import ClusterCollection
 from nailgun.objects.cluster import VmwareAttributes
 
+from nailgun.objects.locks import ClusterLocks
+
 from nailgun.objects.task import Task
 from nailgun.objects.task import TaskCollection
 

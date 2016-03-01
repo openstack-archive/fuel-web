@@ -287,6 +287,11 @@ class Task(NailgunObject):
             logger.debug("Updating parent task: %s.", instance.parent.uuid)
             cls._update_parent_instance(instance.parent)
 
+    @classmethod
+    def attach_context(cls, instance, context):
+        instance.context = context
+        db().flush()
+
 
 class TaskCollection(NailgunCollection):
 

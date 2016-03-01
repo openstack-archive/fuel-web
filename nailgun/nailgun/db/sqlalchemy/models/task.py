@@ -21,6 +21,7 @@ from sqlalchemy import Enum
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
+from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
@@ -34,6 +35,10 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 
 class Task(Base):
     __tablename__ = 'tasks'
+    __table_args__ = (
+        Index('status_name_id_idx', 'cluster_id', 'name', 'id')
+    )
+
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     uuid = Column(String(36), nullable=False,
@@ -68,6 +73,8 @@ class Task(Base):
     # sum([t.progress * t.weight for t in supertask.subtasks]) /
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
+
+    context = Column(MutableDict(JSON), nullable=True, default={})
 
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(

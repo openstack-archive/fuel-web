@@ -24,35 +24,15 @@ from alembic import op
 import six
 import sqlalchemy as sa
 
+# revision identifiers, used by Alembic.
 from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
-from nailgun.utils.migration import upgrade_enum
 
 
 revision = '11a9adc6d36a'
 down_revision = '43b2cb64dae6'
-
-cluster_statuses_old = (
-    'new',
-    'deployment',
-    'stopped',
-    'operational',
-    'error',
-    'remove',
-    'update',
-    'update_error'
-)
-cluster_statuses_new = (
-    'new',
-    'deployment',
-    'stopped',
-    'operational',
-    'error',
-    'remove',
-    'partially_deployed'
-)
 
 
 def upgrade():
@@ -62,18 +42,16 @@ def upgrade():
     upgrade_node_roles_metadata()
     merge_node_attributes_with_nodes()
     upgrade_node_attributes()
-    upgrade_remove_wizard_metadata_from_releases()
-    drop_legacy_patching()
+    upgrade_task_attributes()
 
 
 def downgrade():
-    restore_legacy_patching()
-    downgrade_remove_wizard_metadata_from_releases()
     downgrade_node_attributes()
     downgrade_merge_node_attributes_with_nodes()
     downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
+    downgrade_task_attributes()
 
 
 def remove_foreign_key_ondelete():
@@ -689,37 +667,21 @@ def downgrade_node_attributes():
     op.drop_column('nodes', 'attributes')
 
 
-def upgrade_remove_wizard_metadata_from_releases():
-    op.drop_column('releases', 'wizard_metadata')
-
-
-def downgrade_remove_wizard_metadata_from_releases():
+def upgrade_task_attributes():
     op.add_column(
-        'releases',
+        'tasks',
         sa.Column(
-            'wizard_metadata',
+            'context',
             fields.JSON(),
-            nullable=True
+            nullable=True,
+            default={}
         )
     )
-
-
-def drop_legacy_patching():
-    upgrade_enum(
-        "clusters",                 # table
-        "status",                   # column
-        "cluster_status",           # ENUM name
-        cluster_statuses_old,       # old options
-        cluster_statuses_new,       # new options
+    op.create_index(
+        'status_name_id_idx',
+        'tasks', ['cluster_id', 'name', 'id']
     )
 
-    op.drop_constraint(
-        'fk_pending_release_id',
-        'clusters',
-        type_='foreignkey'
-    )
-    op.drop_column('clusters', 'pending_release_id')
-    op.drop_column('releases', 'can_update_from_versions')
 
 
 def restore_legacy_patching():

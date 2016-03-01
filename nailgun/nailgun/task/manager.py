@@ -618,6 +618,10 @@ class DeploymentTaskManager(TaskManager):
 
         task_deployment.cache = deployment_message
 
+        objects.TasksHistoryCollection.create(
+            task_deployment.id,
+            deployment_message['tasks_graph'])
+
         for node in nodes_to_deployment:
             node.status = 'deploying'
             node.progress = 0

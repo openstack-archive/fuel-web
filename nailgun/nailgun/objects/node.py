@@ -18,9 +18,11 @@
 Node-related objects and collections
 """
 
+import collections
 import itertools
 import operator
 from oslo_serialization import jsonutils
+import six
 import traceback
 
 from datetime import datetime
@@ -1186,6 +1188,32 @@ class Node(NailgunObject):
     @classmethod
     def update_attributes(cls, instance, attrs):
         instance.attributes = utils.dict_merge(instance.attributes, attrs)
+
+    @classmethod
+    def total_hugepages(cls, instance, attributes=None):
+        hugepages = collections.defaultdict(int)
+        numa_count = len(instance.meta['numa_topology']['numa_nodes'])
+
+        if attributes is None:
+            hugepages_attributes = cls.get_attributes(instance)['hugepages']
+        else:
+            hugepages_attributes = attributes['hugepages']
+
+        for name, attrs in six.iteritems(hugepages_attributes):
+            if attrs.get('type') == 'custom_hugepages':
+                value = attrs['value']
+                for size, count in six.iteritems(value):
+                    hugepages[size] += int(count)
+            elif attrs.get('type') == 'text':
+                # type text means that value is the number of MB
+                # per NUMA node which should be covered by 2M
+                # hugepages
+                size = '2048'
+                # round up
+                count_per_numa_node, _ = divmod((int(attrs['value']) + 1), 2)
+                hugepages[size] += count_per_numa_node * numa_count
+
+        return dict(hugepages)
 
 
 class NodeCollection(NailgunCollection):

@@ -15,6 +15,7 @@
 #    under the License.
 
 import copy
+from datetime import datetime
 
 from nailgun.objects.serializers.task import TaskSerializer
 
@@ -64,6 +65,21 @@ class Task(NailgunObject):
         if not res and fail_if_not_found:
             raise errors.ObjectNotFound(
                 "Task with UUID={0} is not found in DB".format(uuid)
+            )
+        return res
+
+    @classmethod
+    def get_by_uid_excluding_deleted(cls, uid, fail_if_not_found=False,
+                                     lock_for_update=False):
+        q = db().query(cls.model).filter_by(id=uid).filter_by(deleted_at=None)
+        if lock_for_update:
+            q = q.order_by('id')
+            q = q.with_lockmode('update')
+        res = q.first()
+
+        if not res and fail_if_not_found:
+            raise errors.ObjectNotFound(
+                "Task with ID='{0}' is not found in DB".format(uid)
             )
         return res
 
@@ -287,6 +303,16 @@ class Task(NailgunObject):
             logger.debug("Updating parent task: %s.", instance.parent.uuid)
             cls._update_parent_instance(instance.parent)
 
+    @classmethod
+    def delete(cls, instance, db_deletion=False):
+        if db_deletion:
+            logger.debug("Delete task: %s", instance.uuid)
+            super(Task, cls).delete(instance)
+        else:
+            logger.debug("Mark task as deleted: %s", instance.uuid)
+            cls.update(instance, {'deleted_at': datetime.utcnow()})
+            db().commit()
+
 
 class TaskCollection(NailgunCollection):
 
@@ -294,6 +320,14 @@ class TaskCollection(NailgunCollection):
 
     @classmethod
     def get_by_cluster_id(cls, cluster_id):
+        if cluster_id == '':
+            cls.filter_by(None, cluster_id=None)\
+               .filter_by(deleted_at=None)
+        return cls.filter_by(None, cluster_id=cluster_id)\
+                  .filter_by(deleted_at=None)
+
+    @classmethod
+    def get_by_cluster_id_including_deleted(cls, cluster_id):
         if cluster_id == '':
             return cls.filter_by(None, cluster_id=None)
         return cls.filter_by(None, cluster_id=cluster_id)
@@ -315,3 +349,7 @@ class TaskCollection(NailgunCollection):
     def delete_by_names(cls, cluster, names):
         cls.get_by_name_and_cluster(cluster, names).delete(
             synchronize_session=False)
+
+    @classmethod
+    def all_not_deleted(cls):
+        return cls.filter_by(None, deleted_at=None)

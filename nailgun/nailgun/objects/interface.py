@@ -42,6 +42,11 @@ class NIC(NailgunObject):
         instance.assigned_networks_list = networks
         db().flush()
 
+    @classmethod
+    def is_sriov_enabled(cls, instance):
+        sriov = instance.interface_properties.get('sriov')
+        return sriov and sriov['enabled']
+
 
 class NICCollection(NailgunCollection):
 

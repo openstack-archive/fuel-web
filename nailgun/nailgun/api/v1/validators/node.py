@@ -25,6 +25,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun import utils
 
 
 class MetaInterfacesValidator(base.BasicValidator):
@@ -440,5 +441,61 @@ class NodeDeploymentValidator(TaskDeploymentValidator,
 class NodeAttributesValidator(base.BasicAttributesValidator):
 
     @classmethod
-    def validate(cls, data, node=None):
-        return super(NodeAttributesValidator, cls).validate(data)
+    def validate(cls, data, node):
+        data = cls.validate_json(data)
+        full_data = utils.dict_merge(objects.Node.get_attributes(node), data)
+        attrs = cls.validate_attributes(full_data)
+
+        cls._validate_hugepages(node, attrs)
+
+        return data
+
+    @staticmethod
+    def _calculate_total_memory(pages_info):
+        """ Calculate required memory in KiBs
+
+        :param pages_info: {<page_size_in_kibs>: <pages_count>, ...}
+        :returns: total required memory in KiBs
+        """
+        total_size = 0          # in kilobytes
+        for size, count in pages_info.items():
+            total_size += int(size) * count
+
+        return total_size
+
+    @classmethod
+    def _validate_hugepages(cls, node, attrs):
+        total_pages = objects.NodeAttributes.total_hugepages(node, attrs)
+        total_size = cls._calculate_total_memory(total_pages)
+
+        node_memory = (node.meta['memory']['total'] -
+                       consts.MEMORY_RESERVED_FOR_OPERATING_SYSTEM)
+        if total_size * 1024 > node_memory:
+            raise errors.InvalidData('Too much memory allocated for huge pages'
+                                     ', node {} have only {} GB'.format(
+                                         node.id,
+                                         node_memory / 1024 ** 3))
+
+        # check components that shoul be allocated on every numa node
+        # require less memory than node has
+        components = objects.NodeAttributes.split_hugepage_components(
+            attrs['hugepages'])
+
+        all_required = 0
+        for comp in components['all']:
+            all_required += cls._calculate_total_memory(comp)
+
+        for numa_node in node.meta['numa_topology']['numa_nodes']:
+            # first numa node must reserve some memory for operating system
+            if numa_node['id'] == 0:
+                available_memory = (
+                    numa_node['memory'] -
+                    consts.MEMORY_RESERVED_FOR_OPERATING_SYSTEM)
+            else:
+                available_memory = numa_node['memory']
+
+            if all_required * 1024 > available_memory:
+                raise errors.InvalidData(
+                    'Components that must be allocated on every numa node'
+                    ' requires more memory than numa node id {} has'
+                    .format(numa_node['id']))

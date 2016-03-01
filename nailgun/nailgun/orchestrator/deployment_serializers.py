@@ -17,7 +17,7 @@
 """Deployment serializers for orchestrator"""
 
 from copy import deepcopy
-from itertools import groupby
+import itertools
 
 import six
 import sqlalchemy as sa
@@ -78,7 +78,7 @@ class DeploymentMultinodeSerializer(object):
             return bool(node.replaced_deployment_info)
 
         serialized_nodes = []
-        for customized, node_group in groupby(nodes, keyfunc):
+        for customized, node_group in itertools.groupby(nodes, keyfunc):
             if customized and not ignore_customized:
                 serialized_nodes.extend(
                     self.serialize_customized(cluster, node_group))
@@ -567,6 +567,31 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             return NeutronNetworkTemplateSerializer90
         else:
             return NeutronNetworkDeploymentSerializer90
+
+    def serialize_node(self, node, role):
+        serialized_node = super(DeploymentHASerializer90, self).serialize_node(
+            node, role)
+        self.serialize_node_attributes(serialized_node, node)
+        return serialized_node
+
+    @classmethod
+    def serialize_node_attributes(cls, serialized_node, node):
+        cls.serialize_node_hugepages(serialized_node, node)
+
+    @classmethod
+    def serialize_node_hugepages(cls, serialized_node, node):
+        cls.serialize_dpdk_hugepages(serialized_node, node)
+
+    @classmethod
+    def serialize_dpdk_hugepages(cls, serialized_node, node):
+        dpdk_memory = objects.Node.get_attributes(
+            node)['hugepages']['dpdk']['value']
+        if not dpdk_memory:
+            return
+        serialized_node.setdefault('dpdk', {})
+        numa_nodes_len = len(node.meta['numa_topology']['numa_nodes'])
+        serialized_node.setdefault('dpdk', {})['ovs_socket_mem'] = ",".join(
+            itertools.repeat(str(dpdk_memory), numa_nodes_len))
 
 
 def get_serializer_for_cluster(cluster):

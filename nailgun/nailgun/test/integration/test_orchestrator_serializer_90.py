@@ -14,15 +14,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
+from nailgun.db.sqlalchemy import models
+from nailgun import objects
+
+from nailgun.orchestrator.deployment_graph import AstuteGraph
+from nailgun.orchestrator.deployment_serializers import \
+    get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer90
 
+from nailgun.test.integration.test_orchestrator_serializer import \
+    BaseDeploymentSerializer
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestBlockDeviceDevicesSerialization80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestDeploymentAttributesSerialization80
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestDeploymentHASerializer80
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
@@ -48,9 +55,46 @@ class TestBlockDeviceDevicesSerialization90(
 
 class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
-    TestDeploymentAttributesSerialization80
+    BaseDeploymentSerializer
 ):
-    pass
+
+    def setUp(self):
+        super(TestDeploymentAttributesSerialization90, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={
+                'version': self.env_version,
+                'operating_system': consts.RELEASE_OS.ubuntu},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
+        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        serializer_type = get_serializer_for_cluster(self.cluster_db)
+        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+
+    def test_dpdk_hugepages(self):
+        meta = {
+            'numa_topology': {
+                'supported_hugepages': [2048],
+                'numa_nodes': [{'id': 0}, {'id': 1}, {'id': 2}]}
+        }
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute'],
+            meta=meta)
+        node.attributes.update({
+            'hugepages': {
+                'dpdk': {
+                    'value': 128}}}
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        serialized_node = serialized_for_astute[0]
+        self.assertEquals(
+            "128,128,128",
+            serialized_node['dpdk']['ovs_socket_mem'])
 
 
 class TestDeploymentHASerializer90(

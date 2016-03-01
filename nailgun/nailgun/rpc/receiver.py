@@ -284,6 +284,11 @@ class NailgunReceiver(object):
                 'progress',
                 'online'
             )
+            # task_fields = (
+            #     'library_id',
+            #     'task_status',
+            #     'summary'
+            # )
             for param in update_fields:
                 if param in node:
                     logger.debug("Updating node %s - set %s to %s",
@@ -311,6 +316,14 @@ class NailgunReceiver(object):
                             node_id=node['uid'],
                             task_uuid=task_uuid
                         )
+            objects.TasksHistory.update(
+                task.id,
+                node_db.id,
+                node['library_id'],
+                node['task_status'],
+                node['summary']
+            )
+
         db().flush()
         if nodes_by_id:
             logger.warning("The following nodes is not found: %s",

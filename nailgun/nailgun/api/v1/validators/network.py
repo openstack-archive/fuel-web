@@ -455,6 +455,20 @@ class NetAssignmentValidator(BasicValidator):
                         node_id, iface.name, param_name),
                     log_message=True
                 )
+        if not sriov_db['available'] and sriov_new['enabled']:
+            raise errors.InvalidData(
+                "Node '{0}' interface '{1}': SR-IOV cannot be enabled as it is"
+                " not available".format(node_id, iface.name),
+                log_message=True
+            )
+        if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
+            raise errors.InvalidData(
+                "Node '{0}' interface '{1}': '{2}' virtual functions was"
+                "requested but just '{3}' are available".format(
+                    node_id, iface.name, sriov_new['sriov_numvfs'],
+                    sriov_db['sriov_totalvfs']),
+                log_message=True
+            )
 
     @classmethod
     def verify_data_correctness(cls, node):

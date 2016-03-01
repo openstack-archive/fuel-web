@@ -101,7 +101,6 @@ class DeploymentGraphTask(Base):
             *consts.ORCHESTRATOR_TASK_TYPES,
             name='deployment_graph_tasks_type'),
         nullable=False)
-    # deprecated, replaced by tasks
     groups = Column(
         psql.ARRAY(String(consts.DEPLOYMENT_TASK_GROUP_NAME_MAX_LEN)),
         default=[],

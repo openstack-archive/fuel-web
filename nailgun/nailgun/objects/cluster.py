@@ -972,6 +972,22 @@ class Cluster(NailgunObject):
         return node_group
 
     @classmethod
+    def _merge_tasks_lists(cls, tasks_lists):
+        """Merge several tasks lists.
+        Every next list will override tasks in previous one by id key.
+
+        :param tasks_lists: tasks lists
+        :type tasks_lists: list[list]
+        :return: merged list
+        :rtype: list[dict]
+        """
+        merged_list = {}
+        for task_list in tasks_lists:
+            for task in task_list:
+                merged_list[task['task_name']] = task
+        return list(six.viewvalues(merged_list))
+
+    @classmethod
     def get_deployment_tasks(
             cls, instance, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
         """Return deployment graph for cluster based on cluster attributes
@@ -981,6 +997,9 @@ class Cluster(NailgunObject):
             - else return default for release and enabled plugins
               deployment graph
         """
+        release_deployment_tasks = Release.get_deployment_tasks(
+            instance.release)
+
         cluster_deployment_graph = DeploymentGraph.get_for_model(
             instance, graph_type=graph_type)
         cluster_deployment_tasks = []
@@ -989,16 +1008,15 @@ class Cluster(NailgunObject):
                 DeploymentGraph.get_tasks(cluster_deployment_graph)
             return cluster_deployment_tasks
 
-        release_deployment_tasks = Release.get_deployment_tasks(
-            instance.release)
-        plugin_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
+        plugins_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
             instance)
 
-        # old logic:
-        if cluster_deployment_tasks:
-            return cluster_deployment_tasks
-        else:
-            return release_deployment_tasks + plugin_deployment_tasks
+        return cls._merge_tasks_lists([
+            release_deployment_tasks,
+            cluster_deployment_tasks,
+            plugins_deployment_tasks
+        ])
+
 
     @classmethod
     def get_refreshable_tasks(cls, instance, filter_by_configs=None):

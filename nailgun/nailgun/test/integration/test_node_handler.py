@@ -440,7 +440,13 @@ class TestHandlers(BaseIntegrationTest):
                     'type': 'text',
                     'value': 'value1'
                 }
-            }
+            },
+            'hugepages': {
+                'comp1': {
+                    'type': 'text',
+                    'value': '1',
+                },
+            },
         }
         node.attributes.update(fake_attributes)
         update_attributes = {

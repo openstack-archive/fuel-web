@@ -135,3 +135,18 @@ class NodeReassignValidator(base.BasicValidator):
             raise errors.InvalidData("Node {0} is already assigned to cluster"
                                      " {1}".format(node.id, cluster.id),
                                      log_message=True)
+
+
+class CopyVIPsValidator(base.BasicValidator):
+
+    @classmethod
+    def validate(cls, data, cluster, relation):
+        if relation is None:
+            raise errors.InvalidData(
+                "Relation for given cluster does not exist"
+            )
+
+        if cluster.id != relation.seed_cluster_id:
+            raise errors.InvalidData("Given cluster is not seed cluster")
+
+        return data

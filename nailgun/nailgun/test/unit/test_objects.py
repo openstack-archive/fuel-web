@@ -674,7 +674,7 @@ class TestNodeObject(BaseIntegrationTest):
             'fake_attributes': {'fake_key_1': {'key': 'new_value'},
                                 'fake_key_2': 'fake_value_2'}
         }
-        self.assertDictEqual(expected_attributes, node.attributes)
+        self.assertEqual(expected_attributes, node.attributes)
 
 
 class TestTaskObject(BaseIntegrationTest):

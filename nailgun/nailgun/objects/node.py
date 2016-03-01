@@ -1341,3 +1341,31 @@ class NodeAttributes(object):
                     human_size, hugepages[size])
 
         return kernel_opts
+
+    @classmethod
+    def is_nova_hugepages_enabled(cls, instance):
+        nova_hugepages = Node.get_attributes(
+            instance)['hugepages']['nova']['value']
+        return any(six.itervalues(nova_hugepages))
+
+    @classmethod
+    def dpdk_hugepages_attrs(cls, instance):
+        """Return hugepages configuration for DPDK
+
+        DPDK hugepages configured as the number of memory in MB
+        per NUMA node. This configuration passed to deployment
+        as comma-separeted values. (e.g. 'ovs_socket_mem': N,N,N,N
+        where N is the specified number of memory and there are
+        4 NUMA nodes)
+        """
+        dpdk_memory = Node.get_attributes(
+            instance)['hugepages']['dpdk']['value']
+
+        if not dpdk_memory:
+            return {}
+
+        numa_nodes_len = len(instance.meta['numa_topology']['numa_nodes'])
+
+        return {
+            'ovs_socket_mem': ",".join(
+                itertools.repeat(str(dpdk_memory), numa_nodes_len))}

@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import objects
+
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
 from nailgun.orchestrator.neutron_serializers import \
@@ -50,7 +52,33 @@ class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
     TestDeploymentAttributesSerialization80
 ):
-    pass
+
+    def test_dpdk_hugepages(self):
+        meta = {
+            'numa_topology': {
+                'supported_hugepages': [2048],
+                'numa_nodes': [{'id': 0}, {'id': 1}, {'id': 2}]}
+        }
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute'],
+            meta=meta)
+        node.attributes.update({
+            'hugepages': {
+                'dpdk': {
+                    'value': 128},
+                'nova': {
+                    'value': {'2048': 1}}}}
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        serialized_node = serialized_for_astute[0]
+        self.assertEquals(
+            "128,128,128",
+            serialized_node['dpdk']['ovs_socket_mem'])
+        self.assertTrue(serialized_node['nova']['enable_hugepages'])
 
 
 class TestDeploymentHASerializer90(

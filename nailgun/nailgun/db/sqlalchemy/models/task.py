@@ -68,6 +68,8 @@ class Task(Base):
     # sum([t.progress * t.weight for t in supertask.subtasks]) /
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
+    tasks_history = relationship(
+        "TasksHistory", backref="task", cascade="delete")
 
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(

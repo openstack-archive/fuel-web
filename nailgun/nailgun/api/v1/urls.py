@@ -110,6 +110,9 @@ from nailgun.api.v1.handlers.role import RoleHandler
 
 from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
+from nailgun.api.v1.handlers.tasks_history \
+    import TasksHistoryCollectionHandler
+from nailgun.api.v1.handlers.tasks import TasksHistoryHandler
 
 from nailgun.api.v1.handlers.version import VersionHandler
 
@@ -262,6 +265,10 @@ urls = (
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
     TaskHandler,
+    r'/tasks/(?P<task_deployment_id>\d+)/?$/tasks_history/?$',
+    TasksHistoryCollectionHandler,
+    r'/tasks/(?P<task_deployment_id>\d+)/?$/tasks_history/(?P<obj_id>\d+)/?$',
+    TasksHistoryHandler,
 
     r'/plugins/(?P<plugin_id>\d+)/links/?$',
     PluginLinkCollectionHandler,

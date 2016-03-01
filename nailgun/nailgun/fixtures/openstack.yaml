@@ -1614,6 +1614,12 @@
         description: "dialog.create_cluster_wizard.compute.qemu_description"
         compatible:
           - name: hypervisor:vmware
+        requires:
+          - one_of:
+              items:
+                - network:neutron:ml2:vlan
+                - network:neutron:ml2:tun
+              message: "dialog.create_cluster_wizard.compute.qemu_requires_network_backend"
       - name: hypervisor:vmware
         weight: 15
         bind:
@@ -1623,8 +1629,16 @@
         compatible:
           - name: hypervisor:qemu
         requires:
-          - name: hypervisor:qemu
-            message: "dialog.create_cluster_wizard.compute.vcenter_warning"
+          - one_of:
+              items:
+                - hypervisor:qemu
+              message: "dialog.create_cluster_wizard.compute.vcenter_warning"
+          - one_of:
+              items:
+                - network:neutron:ml2:dvs
+                - network:neutron:ml2:nsx
+              message: "dialog.create_cluster_wizard.compute.vcenter_requires_network_backend"
+              message_invalid: 'dialog.create_cluster_wizard.compute.vcenter_requires_network_plugins'
       - name: network:neutron:core:ml2
         default: true
         weight: 1000
@@ -1648,7 +1662,9 @@
           - name: network:neutron:core:ml2
           - name: hypervisor:qemu
         requires:
-          - name: network:neutron:core:ml2
+          - one_of:
+              items:
+                - network:neutron:core:ml2
       - name: network:neutron:ml2:tun
         bind: !!pairs
          - "cluster:net_provider": "neutron"
@@ -1667,7 +1683,9 @@
           - name: additional_service:ironic
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
         requires:
-          - name: network:neutron:core:ml2
+          - one_of:
+              items:
+                - network:neutron:core:ml2
       - name: storage:block:lvm
         label: "dialog.create_cluster_wizard.storage.lvm"
         description: "dialog.create_cluster_wizard.storage.default_provider"

@@ -76,12 +76,13 @@ class PluginCollection(NailgunCollection):
         :returns: list of Plugin models
         """
         newest_plugins = []
-        grouped_by_name = groupby(cls.all(), lambda p: p.name)
+
+        def key_func(elem):
+            return elem.name
+
+        grouped_by_name = groupby(sorted(cls.all(), key=key_func), key_func)
         for name, plugins in grouped_by_name:
-            newest_plugin = sorted(
-                plugins,
-                key=lambda p: LooseVersion(p.version),
-                reverse=True)[0]
+            newest_plugin = max(plugins, key=lambda p: LooseVersion(p.version))
 
             newest_plugins.append(newest_plugin)
 

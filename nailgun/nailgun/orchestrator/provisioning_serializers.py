@@ -426,17 +426,24 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
             'password': operator_user['password'],
             'homedir': operator_user['homedir'],
             'sudo': operator_user_sudo,
-            'ssh_keys': operator_user_authkeys,
+            'ssh_keys': operator_user_authkeys + settings.AUTHORIZED_KEYS,
         }
         service_user_dict = {
             'name': service_user['name'],
             'homedir': service_user['homedir'],
             'sudo': service_user_sudo,
             'password': service_user['password'],
+            'ssh_keys': settings.AUTHORIZED_KEYS
+        }
+        root_user_dict = {
+            'name': 'root',
+            'homedir': '/root',
+            'password': root_password,
+            'ssh_keys': settings.AUTHORIZED_KEYS
         }
 
-        serialized_node['ks_meta']['operator_user'] = operator_user_dict
-        serialized_node['ks_meta']['service_user'] = service_user_dict
-        serialized_node['ks_meta']['root_password'] = root_password
+        serialized_node['ks_meta']['user_accounts'] = [operator_user_dict,
+                                                       service_user_dict,
+                                                       root_user_dict]
 
         return serialized_node

@@ -1413,15 +1413,54 @@ class VendorSpecificMixin90(object):
         return vendor_specific
 
 
+class SriovSerializerMixin90(object):
+
+    @classmethod
+    def neutron_attrs(cls, cluster):
+        attrs = super(SriovSerializerMixin90, cls).neutron_attrs(cluster)
+        pci_ids = set()
+        for n in cluster.nodes:
+            for nic in n.nic_interfaces:
+                if objects.NIC.is_sriov_enabled(nic):
+                    pci_ids.add(nic.interface_properties['sriov']['pci_id'])
+        if pci_ids:
+            attrs['supported_pci_vendor_devs'] = list(pci_ids)
+        return attrs
+
+
 class NeutronNetworkDeploymentSerializer90(
     VendorSpecificMixin90,
+    SriovSerializerMixin90,
     NeutronNetworkDeploymentSerializer80
 ):
-    pass
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = (
+            super(NeutronNetworkDeploymentSerializer90, cls)
+            .generate_transformations(
+                node, nm, nets_by_ifaces, is_public, prv_base_ep))
+
+        # serialize SR-IOV enabled interfaces
+        for iface in node.nic_interfaces:
+            # add ports with SR-IOV settings for SR-IOV enabled NICs
+            if (not iface.bond and iface.name not in nets_by_ifaces and
+                    objects.NIC.is_sriov_enabled(iface)):
+                sriov = iface.interface_properties['sriov']
+                config = {
+                    'sriov_numvfs': sriov['sriov_numvfs'],
+                    'physnet': sriov['physnet']
+                }
+                transformations.append(cls.add_port(
+                    iface.name, bridge=None, provider='sriov',
+                    vendor_specific=config))
+
+        return transformations
 
 
 class NeutronNetworkTemplateSerializer90(
     VendorSpecificMixin90,
+    SriovSerializerMixin90,
     NeutronNetworkTemplateSerializer80
 ):
     pass

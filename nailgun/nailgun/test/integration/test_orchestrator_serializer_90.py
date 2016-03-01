@@ -14,14 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun import objects
+from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import deployment_serializers
 
-from nailgun.orchestrator.deployment_serializers import \
-    get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer90
+
+from nailgun.test.integration.test_orchestrator_serializer import \
+    BaseDeploymentSerializer
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestBlockDeviceDevicesSerialization80
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
@@ -121,7 +125,8 @@ class TestNetworkTemplateSerializer90(
             self.net_template if use_net_template else None)
         objects.Cluster.prepare_for_deployment(self.cluster)
 
-        serializer = get_serializer_for_cluster(self.cluster)
+        serializer = deployment_serializers.get_serializer_for_cluster(
+            self.cluster)
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
         nm = objects.Cluster.get_network_manager(self.cluster)
         networks_list = nm.get_node_networks(node)
@@ -157,3 +162,65 @@ class TestSerializeInterfaceDriversData90(
     TestSerializeInterfaceDriversData80
 ):
     pass
+
+
+class TestSriovSerialization90(
+    TestSerializer90Mixin,
+    BaseDeploymentSerializer
+):
+    def setUp(self, *args):
+        super(TestSriovSerialization90, self).setUp()
+        self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
+                'status': consts.CLUSTER_STATUSES.new},
+        )
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=1, if_count=3, cluster_id=self.env.clusters[0].id,
+            pending_roles=['compute'], pending_addition=True)
+
+    def serialize(self):
+        objects.Cluster.prepare_for_deployment(self.env.clusters[0])
+        graph = deployment_graph.AstuteGraph(self.env.clusters[0])
+        return deployment_serializers.serialize(
+            graph, self.env.clusters[0], self.env.nodes)
+
+    def test_nic_sriov_info_is_serialized(self):
+        for nic in self.env.nodes[0].nic_interfaces:
+            if not nic.assigned_networks_list:
+                nic_sriov = nic
+                nic.interface_properties['sriov'] = {
+                    'enabled': True,
+                    'sriov_numvfs': 8,
+                    'sriov_totalvfs': 8,
+                    'available': True,
+                    'pci_id': '1234:5678',
+                    'physnet': 'new_physnet'
+                }
+                objects.NIC.update(
+                    nic, {'interface_properties': nic.interface_properties})
+                break
+        else:
+            self.fail('NIC without assigned networks was not found')
+
+        node0 = self.serialize()[0]
+        self.assertEqual(
+            node0['quantum_settings']['supported_pci_vendor_devs'],
+            ['1234:5678']
+        )
+        for trans in node0['network_scheme']['transformations']:
+            if trans.get('name') == nic_sriov.name:
+                self.assertEqual(
+                    trans['vendor_specific'],
+                    {
+                        'sriov_numvfs': 8,
+                        'physnet': 'new_physnet'
+                    }
+                )
+                self.assertEqual(trans['provider'], 'sriov')
+                break
+        else:
+            self.fail('NIC with SR-IOV enabled was not found')

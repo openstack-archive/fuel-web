@@ -522,7 +522,8 @@ class NetworkManager(object):
                 'sriov_numvfs': 0,
                 'sriov_totalvfs': 0,
                 'available': False,
-                'pci_id': ''
+                'pci_id': '',
+                'physnet': 'physnet2'
             }
         }
 

@@ -1323,3 +1323,23 @@ class NodeAttributes(object):
                     human_size, hugepages[size])
 
         return kernel_opts
+
+    @classmethod
+    def is_nova_hugepages_enabled(cls, instance):
+        nova_hugepages = Node.get_attributes(
+            instance)['hugepages']['nova']['value']
+        return any(six.itervalues(nova_hugepages))
+
+    @classmethod
+    def dpdk_hugepages_attrs(cls, instance):
+        dpdk_memory = Node.get_attributes(
+            instance)['hugepages']['dpdk']['value']
+
+        if not dpdk_memory:
+            return {}
+
+        numa_nodes_len = len(instance.meta['numa_topology']['numa_nodes'])
+
+        return {
+            'ovs_socket_mem': ",".join(
+                itertools.repeat(str(dpdk_memory), numa_nodes_len))}

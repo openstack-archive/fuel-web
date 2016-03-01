@@ -17,7 +17,7 @@
 """Deployment serializers for orchestrator"""
 
 from copy import deepcopy
-from itertools import groupby
+import itertools
 
 import six
 import sqlalchemy as sa
@@ -79,7 +79,7 @@ class DeploymentMultinodeSerializer(object):
             return bool(node.replaced_deployment_info)
 
         serialized_nodes = []
-        for customized, node_group in groupby(nodes, keyfunc):
+        for customized, node_group in itertools.groupby(nodes, keyfunc):
             if customized and not ignore_customized:
                 serialized_nodes.extend(
                     self.serialize_customized(cluster, node_group))
@@ -542,12 +542,49 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def inject_murano_settings(self, data):
         return data
 
+    def get_common_attrs(self, cluster):
+        attrs = super(DeploymentHASerializer90, self).get_common_attrs(cluster)
+
+        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
+            name = objects.Node.get_slave_name(node)
+            node_attrs = attrs['network_metadata']['nodes'][name]
+
+            node_attrs['nova_hugepages_enabled'] = (
+                objects.NodeAttributes.is_nova_hugepages_enabled(node))
+
+        return attrs
+
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
             return NeutronNetworkTemplateSerializer90
         else:
             return NeutronNetworkDeploymentSerializer90
+
+    def serialize_node(self, node, role):
+        serialized_node = super(DeploymentHASerializer90, self).serialize_node(
+            node, role)
+        self.serialize_node_attributes(node, serialized_node)
+        return serialized_node
+
+    @classmethod
+    def serialize_node_attributes(cls, node, serialized_node):
+        cls.serialize_node_hugepages(node, serialized_node)
+
+    @classmethod
+    def serialize_node_hugepages(cls, node, serialized_node):
+        cls.serialize_nova_hugepages(node, serialized_node)
+        cls.serialize_dpdk_hugepages(node, serialized_node)
+
+    @classmethod
+    def serialize_nova_hugepages(cls, node, serialized_node):
+        serialized_node.setdefault('nova', {})['enable_hugepages'] = (
+            objects.NodeAttributes.is_nova_hugepages_enabled(node))
+
+    @classmethod
+    def serialize_dpdk_hugepages(cls, node, serialized_node):
+        serialized_node.setdefault('dpdk', {}).update(
+            objects.NodeAttributes.dpdk_hugepages_attrs(node))
 
 
 def get_serializer_for_cluster(cluster):

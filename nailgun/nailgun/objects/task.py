@@ -15,6 +15,7 @@
 #    under the License.
 
 import copy
+from datetime import datetime
 
 from nailgun.objects.serializers.task import TaskSerializer
 
@@ -287,6 +288,15 @@ class Task(NailgunObject):
             logger.debug("Updating parent task: %s.", instance.parent.uuid)
             cls._update_parent_instance(instance.parent)
 
+    @classmethod
+    def delete(cls, instance, db_deletion=False):
+        if db_deletion:
+            logger.debug("Delete task: %s", instance.uuid)
+            super(Task, cls).delete(instance)
+        else:
+            logger.debug("Mark task as deleted: %s", instance.uuid)
+            cls.update(instance, {'deleted_at': datetime.utcnow()})
+
 
 class TaskCollection(NailgunCollection):
 
@@ -294,7 +304,15 @@ class TaskCollection(NailgunCollection):
 
     @classmethod
     def get_by_cluster_id(cls, cluster_id):
-        if cluster_id == '':
+        if cluster_id == '' or cluster_id is None:
+            return cls.filter_by(None, cluster_id=None)\
+                      .filter_by(deleted_at=None)
+        return cls.filter_by(None, cluster_id=cluster_id)\
+                  .filter_by(deleted_at=None)
+
+    @classmethod
+    def get_by_cluster_id_including_deleted(cls, cluster_id):
+        if cluster_id == '' or cluster_id is None:
             return cls.filter_by(None, cluster_id=None)
         return cls.filter_by(None, cluster_id=cluster_id)
 

@@ -286,7 +286,8 @@ class TestHandlers(BaseIntegrationTest):
                 'sriov_numvfs': 0,
                 'sriov_totalvfs': 8,
                 'available': True,
-                'pci_id': '1234:5678'
+                'pci_id': '1234:5678',
+                'physnet': 'physnet2'
             })
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
@@ -764,6 +765,7 @@ class TestHandlers(BaseIntegrationTest):
 
         sriov['enabled'] = True
         sriov['sriov_numvfs'] = 8
+        sriov['physnet'] = 'new_physnet'
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
@@ -774,6 +776,7 @@ class TestHandlers(BaseIntegrationTest):
         sriov = resp.json_body[0]['interface_properties']['sriov']
         self.assertEqual(sriov['enabled'], True)
         self.assertEqual(sriov['sriov_numvfs'], 8)
+        self.assertEqual(sriov['physnet'], 'new_physnet')
 
     def test_update_sriov_properties_failed(self):
         self.env.create(

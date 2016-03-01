@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
+import mock
 
 from oslo_serialization import jsonutils
 
@@ -75,7 +75,7 @@ class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):
 
 class TestNodeReassignHandler(base.BaseIntegrationTest):
 
-    @patch('nailgun.task.task.rpc.cast')
+    @mock.patch('nailgun.task.task.rpc.cast')
     def test_node_reassign_handler(self, mcast):
         self.env.create(
             cluster_kwargs={'api': False},

@@ -150,10 +150,15 @@ class UpgradeHelper(object):
             nets_serializer.serialize_for_cluster(orig_cluster.cluster),
             nets_serializer.serialize_for_cluster(new_cluster.cluster))
 
-        orig_net_manager = orig_cluster.get_network_manager()
         new_net_manager = new_cluster.get_network_manager()
 
         new_net_manager.update(nets)
+
+    @classmethod
+    def move_vips(cls, orig_cluster, new_cluster):
+        orig_net_manager = orig_cluster.get_network_manager()
+        new_net_manager = new_cluster.get_network_manager()
+
         vips = orig_net_manager.get_assigned_vips()
         for ng_name in vips:
             if ng_name not in (consts.NETWORKS.public,

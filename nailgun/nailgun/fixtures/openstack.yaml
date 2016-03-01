@@ -752,7 +752,7 @@
             group: "general"
           name:
             label: "Username"
-            description: ""
+            description: "Username for operator user"
             weight: 50
             type: 'text'
             value: 'fueladmin'
@@ -761,16 +761,17 @@
               error: "Empty username"
           password:
             label: "Password"
-            description: ""
+            description: "Password for operator user"
             weight: 60
             type: 'password'
-            value: 'fueladmin'
+            value:
+              generator: 'password'
             regex:
               source: *non_empty_string
               error: "Empty password"
           homedir:
             label: "Home directory"
-            description: ""
+            description: "Home directory for operator user"
             weight: 70
             type: 'text'
             value: '/home/fueladmin'
@@ -779,16 +780,16 @@
               error: "Invalid path"
           authkeys:
             label: "Authorized SSH keys"
-            description: ""
+            description: "Public SSH keys to include to operator user's authorized keys, one per line."
             weight: 80
             type: 'textarea'
             value: ''
           sudo:
             label: "Sudoers configuration"
-            description: ""
+            description: "Sudoers configuration directives for operator user, one per line."
             weight: 90
             type: 'textarea'
-            value: ''
+            value: 'ALL=(ALL) NOPASSWD: ALL'
         service_user:
           metadata:
             label: "Service user account"
@@ -797,6 +798,10 @@
             restrictions:
               - condition: "true"
                 action: "hide"
+          password:
+            type: 'hidden'
+            value:
+              generator: 'password'
           name:
             type: 'hidden'
             value: 'fuel'
@@ -806,6 +811,9 @@
           homedir:
             type: 'hidden'
             value: '/var/lib/fuel'
+          root_password:
+            type: 'hidden'
+            value: 'r00tme'
         workloads_collector:
           metadata:
             label: "Workloads Collector User"
@@ -1336,11 +1344,6 @@
               source: '^[1-9]\d*$'
               error: "Invalid number"
       generated:
-        service_user:
-          password:
-            generator: "password"
-          root_password:
-            generator: "password"
         mysql:
           root_password:
             generator: "password"

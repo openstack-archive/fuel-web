@@ -1805,7 +1805,11 @@
               container: "gzip"
     node_attributes:
       cpu_pinning: {}
-      hugepages: {}
+      hugepages:
+        dpdk:
+          value: 0
+        nova:
+          value: {}
 - pk: 2
   extend: *base_release
   fields:

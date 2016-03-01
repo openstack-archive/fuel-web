@@ -1091,6 +1091,12 @@
             restrictions:
               - condition: "settings:neutron_advanced_configuration.neutron_dvr.value == true"
                 message: "Neutron DVR must be disabled in order to use Neutron L3 HA"
+          neutron_qos:
+            value: false
+            label: "Neutron QoS"
+            description: "Enable Neutron QoS advanced service plug-in"
+            weight: 40
+            type: "checkbox"
         corosync:
           metadata:
             label: "Corosync"

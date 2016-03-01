@@ -154,6 +154,12 @@ class UpgradeHelper(object):
         new_net_manager = new_cluster.get_network_manager()
 
         new_net_manager.update(nets)
+
+        orig_env_version = orig_cluster.release.environment_version
+        cls.move_vips(orig_net_manager, new_net_manager, orig_env_version)
+
+    @classmethod
+    def move_vips(cls, orig_net_manager, new_net_manager, orig_env_version):
         vips = orig_net_manager.get_assigned_vips()
         for ng_name in vips:
             if ng_name not in (consts.NETWORKS.public,
@@ -162,16 +168,20 @@ class UpgradeHelper(object):
         # NOTE(akscram): In the 7.0 release was introduced networking
         #                templates that use the vip_name column as
         #                unique names of VIPs.
-        if version.LooseVersion(orig_cluster.release.environment_version) < \
+        if version.LooseVersion(orig_env_version) < \
                 version.LooseVersion("7.0"):
             vips = cls.transform_vips_for_net_groups_70(vips)
         new_net_manager.assign_given_vips_for_net_groups(vips)
         new_net_manager.assign_vips_for_net_groups()
 
     @classmethod
-    def assign_node_to_cluster(cls, node, seed_cluster):
-        orig_cluster = adapters.NailgunClusterAdapter.get_by_uid(
+    def get_cluster_from_node(cls, node):
+        return adapters.NailgunClusterAdapter.get_by_uid(
             node.cluster_id)
+
+    @classmethod
+    def assign_node_to_cluster(cls, node, seed_cluster):
+        orig_cluster = cls.get_cluster_from_node(node)
 
         orig_manager = orig_cluster.get_network_manager()
 

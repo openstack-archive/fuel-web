@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
+import mock
 
 from oslo_serialization import jsonutils
 
@@ -75,8 +75,10 @@ class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):
 
 class TestNodeReassignHandler(base.BaseIntegrationTest):
 
-    @patch('nailgun.task.task.rpc.cast')
-    def test_node_reassign_handler(self, mcast):
+    @mock.patch('nailgun.extensions.cluster_upgrade.'
+                'upgrade.UpgradeHelper.move_vips')
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_node_reassign_handler(self, mcast, move_vips_mock):
         self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'status': consts.NODE_STATUSES.ready}])
@@ -96,6 +98,8 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         nodes = args[1]['args']['provisioning_info']['nodes']
         provisioned_uids = [int(n['uid']) for n in nodes]
         self.assertEqual([node_id, ], provisioned_uids)
+
+        move_vips_mock.assert_called_once(mock.ANY, mock.ANY, mock.ANY)
 
     def test_node_reassign_handler_no_node(self):
         self.env.create_cluster()

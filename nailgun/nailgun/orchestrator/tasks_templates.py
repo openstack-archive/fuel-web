@@ -177,6 +177,7 @@ def make_puppet_task(uids, task):
     return {
         'id': task.get('id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+        'library_id': task.get('task_id'),
         'uids': uids,
         'parameters': {
             'puppet_manifest': task['parameters']['puppet_manifest'],
@@ -190,6 +191,7 @@ def make_generic_task(uids, task):
     task = {
         'id': task.get('id'),
         'task_name': task.get('task_name'),
+        'library_id': task.get('task_id'),
         'type': task['type'],
         'uids': uids,
         'fail_on_error': task.get('fail_on_error', True),
@@ -203,6 +205,7 @@ def make_generic_task(uids, task):
 def make_reboot_task(uids, task):
     return {
         'id': task.get('id'),
+        'library_id': task.get('task_id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.reboot,
         'uids': uids,
         'parameters': {
@@ -317,6 +320,7 @@ def make_noop_task(uids, task):
     """
     return {
         'id': task.get('id'),
+        'library_id': task.get('task_id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
         'uids': uids,
         'fail_on_error': False

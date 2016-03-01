@@ -22,6 +22,7 @@ from nailgun.objects.serializers.base import BasicSerializer
 class DeploymentGraphTaskSerializer(BasicSerializer):
 
     fields = (
+        "id",
         "task_name",
         "version",
         "condition",
@@ -67,6 +68,10 @@ class DeploymentGraphTaskSerializer(BasicSerializer):
                     # to role: '*'
                     if len(value) == 1 and value[0] in consts.TASK_ROLES:
                         result['role'] = value[0]
+                # field id already used as task_name, so we need to use
+                # new name
+                if field == 'id':
+                    result['task_id'] = value
         # unwrap custom field
         if '_custom' in serialized_task:
             result.update(serialized_task.get('_custom', {}))

@@ -351,7 +351,7 @@ class NodeAttributesHandler(BaseHandler):
         """
         node = self.get_object_or_404(objects.Node, node_id)
 
-        data = self.checked_data()
+        data = self.checked_data(node=node)
         objects.Node.update_attributes(node, data)
 
         return objects.Node.get_attributes(node)

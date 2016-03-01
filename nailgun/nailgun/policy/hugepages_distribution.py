@@ -17,6 +17,8 @@
 import collections
 import copy
 
+from nailgun import consts
+
 __all__ = ['distribute_hugepages']
 
 
@@ -126,9 +128,10 @@ def distribute_hugepages(numa_topology, components):
         # converting memory to KiBs
         memory = numa_node['memory'] // 1024
 
-        # for the first numa node reserve 1GiB memory for operating system
+        # for the first numa node reserve memory for operating system
         if numa_node['id'] == 0:
-            memory -= 2 ** 20
+            # before subtraction convert size in bytes to KiBs
+            memory -= consts.MEMORY_RESERVED_FOR_OPERATING_SYSTEM // 1024
 
         numa_nodes.append(NumaNode(numa_node['id'], memory))
 

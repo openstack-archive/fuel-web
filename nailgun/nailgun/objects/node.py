@@ -1327,7 +1327,7 @@ class NodeAttributes(object):
         return int(math.ceil(float(size) / 2))
 
     @classmethod
-    def total_hugepages(cls, node):
+    def total_hugepages(cls, node, attributes=None):
         """Return total hugepages for the node
 
         Iterate over hugepages attributes and sum them
@@ -1344,7 +1344,11 @@ class NodeAttributes(object):
         hugepages = collections.defaultdict(int)
         numa_count = len(node.meta['numa_topology']['numa_nodes'])
 
-        hugepages_attributes = Node.get_attributes(node)['hugepages']
+        if attributes is None:
+            attributes = Node.get_attributes(node)
+
+        hugepages_attributes = attributes['hugepages']
+
         for name, attrs in six.iteritems(hugepages_attributes):
             if attrs.get('type') == 'custom_hugepages':
                 value = attrs['value']
@@ -1404,16 +1408,16 @@ class NodeAttributes(object):
                 itertools.repeat(str(dpdk_memory), numa_nodes_len))}
 
     @classmethod
-    def distribute_hugepages(cls, node):
-        topology = node.meta['numa_topology']
-        attributes = Node.get_attributes(node)['hugepages']
+    def split_hugepage_components(cls, hugepages_components):
+        """Split hugepage components to 2 groups.
 
-        # split components to 2 groups:
-        # components that should have pages on all numa nodes (such as dpdk)
-        # and components that may have pages on any numa node
+        1. components that should have pages on all numa nodes (such as dpdk)
+        2. components that may have pages on any numa node
+
+        """
         components = {'all': [], 'any': []}
 
-        for name, attrs in attributes.items():
+        for name, attrs in hugepages_components.items():
             if attrs.get('type') == 'text':
                 # type text means size of memory in MiB to allocate with
                 # 2MiB pages, so we need to calculate pages count
@@ -1423,6 +1427,14 @@ class NodeAttributes(object):
 
             elif attrs.get('type') == 'custom_hugepages':
                 components['any'].append(attrs['value'])
+
+        return components
+
+    @classmethod
+    def distribute_hugepages(cls, node):
+        topology = node.meta['numa_topology']
+        attributes = Node.get_attributes(node)['hugepages']
+        components = cls.split_hugepage_components(attributes)
 
         return hugepages_distribution.distribute_hugepages(
             topology, components)

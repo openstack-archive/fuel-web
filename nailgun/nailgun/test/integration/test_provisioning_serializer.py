@@ -455,49 +455,44 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
         )
 
         attributes = objects.Cluster.get_attributes(self.cluster_db)
-        generated = attributes['generated']
         operator_user = attributes['editable']['operator_user']
         service_user = attributes['editable']['service_user']
-        service_user.update(generated['service_user'])
 
         serialized_cluster = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
 
-        operator_user_name = operator_user['name']['value']
-        operator_user_password = operator_user['password']['value']
-        operator_user_homedir = operator_user['homedir']['value']
-        operator_user_sudo = utils.get_lines(
-            operator_user['sudo']['value']
-        )
-        operator_user_authkeys = utils.get_lines(
+        operator_user_keys = utils.get_lines(
             operator_user['authkeys']['value']
         )
+        common_keys = settings.AUTHORIZED_KEYS
 
-        service_user_name = service_user['name']['value']
-        service_user_password = service_user['password']
-        service_user_homedir = service_user['homedir']['value']
-        service_user_sudo = utils.get_lines(
-            service_user['sudo']['value']
-        )
-        root_password = service_user['root_password']
+        operator_user_dict = {
+            'name': operator_user['name']['value'],
+            'password': operator_user['password']['value'],
+            'homedir': operator_user['homedir']['value'],
+            'sudo': utils.get_lines(operator_user['sudo']['value']),
+            'ssh_keys': operator_user_keys + common_keys
+        }
+        service_user_dict = {
+            'name': service_user['name']['value'],
+            'password': service_user['password']['value'],
+            'homedir': service_user['homedir']['value'],
+            'sudo': utils.get_lines(service_user['sudo']['value']),
+            'ssh_keys': common_keys
+        }
+        root_user_dict = {
+            'name': 'root',
+            'homedir': '/root',
+            'password': service_user['root_password']['value'],
+            'ssh_keys': common_keys
+        }
+
+        user_accounts = [operator_user_dict,
+                         service_user_dict,
+                         root_user_dict]
 
         for node in serialized_cluster['nodes']:
             self.assertEqual(
-                node['ks_meta']['operator_user'], {
-                    'name': operator_user_name,
-                    'password': operator_user_password,
-                    'homedir': operator_user_homedir,
-                    'sudo': operator_user_sudo,
-                    'ssh_keys': operator_user_authkeys,
-                }
+                node['ks_meta']['user_accounts'],
+                user_accounts
             )
-            self.assertEqual(
-                node['ks_meta']['service_user'], {
-                    'name': service_user_name,
-                    'homedir': service_user_homedir,
-                    'sudo': service_user_sudo,
-                    'password': service_user_password,
-                }
-            )
-            self.assertEqual(node['ks_meta']['root_password'],
-                             root_password)

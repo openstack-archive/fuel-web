@@ -284,6 +284,7 @@ class NailgunReceiver(object):
                 'progress',
                 'online'
             )
+
             for param in update_fields:
                 if param in node:
                     logger.debug("Updating node %s - set %s to %s",
@@ -311,6 +312,15 @@ class NailgunReceiver(object):
                             node_id=node['uid'],
                             task_uuid=task_uuid
                         )
+            objects.DeploymentHistory.update(
+                task.id,
+                # TODO(vsharshov): master?
+                node_db.id,
+                node['deployment_graph_task_name'],
+                node['task_status'],
+                node['custom']
+            )
+
         db().flush()
         if nodes_by_id:
             logger.warning("The following nodes is not found: %s",
@@ -360,7 +370,7 @@ class NailgunReceiver(object):
         db_nodes = objects.NodeCollection.lock_for_update(q_nodes).all()
 
         for node_db in db_nodes:
-            node = nodes_by_id[node_db.uid]
+            node = nodes_by_id.pop(node_db.uid)
             if node.get('status') == consts.TASK_STATUSES.error:
                 node_db.status = consts.TASK_STATUSES.error
                 node_db.progress = 100

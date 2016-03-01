@@ -1309,7 +1309,7 @@ class NodeAttributes(object):
         return bool(Node.get_attributes(node)['cpu_pinning']['nova']['value'])
 
     @classmethod
-    def total_hugepages(cls, node):
+    def total_hugepages(cls, node, attributes=None):
         """Return total hugepages for the instance
 
         Iterate over hugepages attributes and sum them
@@ -1326,7 +1326,11 @@ class NodeAttributes(object):
         hugepages = collections.defaultdict(int)
         numa_count = len(node.meta['numa_topology']['numa_nodes'])
 
-        hugepages_attributes = Node.get_attributes(node)['hugepages']
+        if attributes is None:
+            hugepages_attributes = cls.get_attributes(node)['hugepages']
+        else:
+            hugepages_attributes = attributes['hugepages']
+
         for name, attrs in six.iteritems(hugepages_attributes):
             if attrs.get('type') == 'custom_hugepages':
                 value = attrs['value']

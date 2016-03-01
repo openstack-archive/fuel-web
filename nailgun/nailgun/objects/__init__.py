@@ -36,6 +36,8 @@ from nailgun.objects.cluster import VmwareAttributes
 
 from nailgun.objects.task import Task
 from nailgun.objects.task import TaskCollection
+from nailgun.objects.tasks_history import TasksHistory
+from nailgun.objects.tasks_history import TasksHistoryCollection
 
 from nailgun.objects.notification import Notification
 from nailgun.objects.notification import NotificationCollection

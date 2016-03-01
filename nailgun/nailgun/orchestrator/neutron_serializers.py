@@ -1393,13 +1393,32 @@ class NeutronNetworkTemplateSerializer80(
     pass
 
 
+class SriovConfigurationSerializerMixin(object):
+
+    @classmethod
+    def neutron_attrs(cls, cluster):
+        attrs = (super(SriovConfigurationSerializerMixin, cls)
+                 .neutron_attrs(cluster))
+        pci_ids = set()
+        for n in cluster.nodes:
+            for nic in n.nic_interfaces:
+                sriov = nic.interface_properties.get('sriov', {})
+                if sriov and sriov['available'] and sriov['enabled']:
+                    pci_ids.add(sriov['pci_id'])
+        if pci_ids:
+            attrs['supported_pci_vendor_devs'] = list(pci_ids)
+        return attrs
+
+
 class NeutronNetworkDeploymentSerializer90(
+    SriovConfigurationSerializerMixin,
     NeutronNetworkDeploymentSerializer80
 ):
     pass
 
 
 class NeutronNetworkTemplateSerializer90(
+    SriovConfigurationSerializerMixin,
     NeutronNetworkTemplateSerializer80
 ):
     pass

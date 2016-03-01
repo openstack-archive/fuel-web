@@ -31,6 +31,8 @@ class ClusterUpgradeExtension(extensions.BaseExtension):
          'handler': handlers.ClusterUpgradeCloneHandler},
         {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/assign/?$',
          'handler': handlers.NodeReassignHandler},
+        {'uri': r'/clusters/(?P<cluster_id>\d+)/upgrade/vips/?$',
+         'handler': handlers.CopyVIPsHandler},
     ]
 
     @classmethod

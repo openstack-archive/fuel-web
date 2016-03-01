@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
+import mock
 
 from oslo_serialization import jsonutils
 
@@ -75,7 +75,7 @@ class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):
 
 class TestNodeReassignHandler(base.BaseIntegrationTest):
 
-    @patch('nailgun.task.task.rpc.cast')
+    @mock.patch('nailgun.task.task.rpc.cast')
     def test_node_reassign_handler(self, mcast):
         self.env.create(
             cluster_kwargs={'api': False},
@@ -183,3 +183,28 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(400, resp.status_code)
+
+
+class TestCopyVipsHandler(base.BaseIntegrationTest):
+
+    def test_copy_vips_called(self):
+        from ..objects import relations
+
+        orig_cluster = self.env.create_cluster(api=False)
+        new_cluster = self.env.create_cluster(api=False)
+
+        relations.UpgradeRelationObject.create_relation(
+            orig_cluster.id, new_cluster.id)
+
+        with mock.patch('nailgun.extensions.cluster_upgrade.handlers'
+                        '.upgrade.UpgradeHelper.copy_vips') as copy_vips_mc:
+            resp = self.app.post(
+                reverse(
+                    'CopyVIPsHandler',
+                    kwargs={'cluster_id': new_cluster.id}
+                ),
+                headers=self.default_headers,
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(copy_vips_mc.called)

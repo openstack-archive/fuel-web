@@ -88,3 +88,39 @@ class NodeReassignHandler(base.BaseHandler):
         upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
 
         self.handle_task(cluster_id, [node.node, ])
+
+
+class CopyVIPsHandler(base.BaseHandler):
+    single = objects.Cluster
+    validator = validators.CopyVIPsValidator
+
+    @base.content
+    def POST(self, cluster_id):
+        """Copy VIPs from original cluster to new one
+
+        Original cluster object is obtained from existing relation between
+        clusters that is created on cluster clone operation
+
+        :param cluster_id: id of cluster that VIPs must be copied to
+
+        :http: *200 (OK)
+        """
+        from .objects import relations
+
+        cluster = self.get_object_or_404(self.single, cluster_id)
+        relation = relations.UpgradeRelationObject.get_cluster_relation(
+            cluster.id)
+
+        self.checked_data(cluster=cluster, relation=relation)
+
+        # get original cluster object and create adapter with it
+        orig_cluster_adapter = \
+            adapters.NailgunClusterAdapter(
+                adapters.NailgunClusterAdapter.get_by_uid(
+                    relation.orig_cluster_id)
+            )
+
+        seed_cluster_adapter = adapters.NailgunClusterAdapter(cluster)
+
+        upgrade.UpgradeHelper.copy_vips(orig_cluster_adapter,
+                                        seed_cluster_adapter)

@@ -300,7 +300,7 @@
         properties: *default_network_roles_metadata_properties
       -
         id: "ceph/public"
-        default_mapping: "management"
+        default_mapping: "storage"
         properties: *default_network_roles_metadata_properties
       -
         id: "ceph/radosgw"

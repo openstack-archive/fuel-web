@@ -88,3 +88,32 @@ class NodeReassignHandler(base.BaseHandler):
         upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
 
         self.handle_task(cluster_id, [node.node, ])
+
+
+class MoveVIPsHandler(base.BaseHandler):
+    single = objects.Cluster
+    validator = validators.MoveVIPsValidator
+
+    def get_cluster_adapter_or_404(self, cluster_id):
+        cluster = self.get_object_or_404(self.single, cluster_id)
+        return adapters.NailgunClusterAdapter(cluster)
+
+    @base.content
+    def POST(self, cluster_id):
+        """Move VIPs from old cluster to new one
+
+        :param orig_cluster_id: id of cluster which VIPs are being
+            moved;
+        :param new_cluster_id: id of cluster to which VIPs must be
+            moved;
+
+        :http: *200 (OK)
+        """
+
+        data = self.checked_data()
+
+        orig_cluster_ar = self.get_cluster_adapter_or_404(
+            data['orig_cluster_id'])
+        new_cluster_ar = self.get_cluster_adapter_or_404(cluster_id)
+
+        upgrade.UpgradeHelper.move_vips(orig_cluster_ar, new_cluster_ar)

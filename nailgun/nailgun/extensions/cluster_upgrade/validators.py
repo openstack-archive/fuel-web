@@ -135,3 +135,23 @@ class NodeReassignValidator(base.BasicValidator):
             raise errors.InvalidData("Node {0} is already assigned to cluster"
                                      " {1}".format(node.id, cluster.id),
                                      log_message=True)
+
+
+class MoveVIPsValidator(base.BasicValidator):
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Move VIPs for one cluster to another",
+        "description": "Needed parameters for the procedure",
+        "type": "object",
+        "properties": {
+            "orig_cluster_id": {"type": "number"},
+        },
+        "required": ["orig_cluster_id"],
+    }
+
+    @classmethod
+    def validate(cls, data):
+        data = super(MoveVIPsValidator, cls).validate(data)
+        cls.validate_schema(data, cls.schema)
+
+        return data

@@ -141,3 +141,14 @@ class TestNodeReassignValidator(base.BaseTestCase):
         msg = "^Empty request received$"
         with self.assertRaisesRegexp(errors.InvalidData, msg):
             self.validator.validate("", node)
+
+
+class TestMoveVIPsValidator(base.BaseTestCase):
+    validator = validators.MoveVIPsValidator
+
+    def test_validate_schema_failed(self):
+        with self.assertRaises(errors.InvalidData) as cm:
+            self.validator.validate("{}")
+
+        self.assertIn("'orig_cluster_id' is a required property",
+                      cm.exception.message)

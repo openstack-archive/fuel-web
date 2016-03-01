@@ -22,9 +22,11 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 import nailgun.orchestrator.tasks_templates as templates
-from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun.utils.role_resolver import RoleResolver
+
+# TODO(bgaifullin) HUCK to prevent cycle imports
+from nailgun.plugins.manager import PluginManager
 
 
 class BasePluginDeploymentHooksSerializer(object):

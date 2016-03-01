@@ -241,6 +241,7 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
 
 class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
+    maxDiff = None
 
     def test_get_deployment_tasks(self):
         resp = self.app.get(
@@ -259,7 +260,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         )
         release_tasks = objects.Release.get_deployment_tasks(
             self.cluster.release)
-        self.assertEqual(resp.json, release_tasks)
+        self.assertItemsEqual(resp.json, release_tasks)
 
     def test_upload_deployment_tasks(self):
         tasks = self.get_correct_tasks()

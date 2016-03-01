@@ -17,13 +17,31 @@
 import copy
 import six
 
+from nailgun import consts
 from nailgun.objects.serializers import network_configuration
 
 from . import base as base_tests
+from ..objects import adapters
 from ..objects import relations
 
 
 class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
+
+    def setUp(self):
+        super(TestUpgradeHelperCloneCluster, self).setUp()
+
+        self.orig_net_manager = self.src_cluster.get_network_manager()
+
+        self.serialize_nets = network_configuration.\
+            NeutronNetworkConfigurationSerializer.\
+            serialize_for_cluster
+
+        self.public_net_data = {
+            "cidr": "192.168.42.0/24",
+            "gateway": "192.168.42.1",
+            "ip_ranges": [["192.168.42.5", "192.168.42.11"]],
+        }
+
     def test_create_cluster_clone(self):
         new_cluster = self.helper.create_cluster_clone(self.src_cluster,
                                                        self.data)
@@ -60,28 +78,48 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
                 self.assertEqual(editable_attrs[section][key]["value"],
                                  value["value"])
 
+    def update_public_net_params(self, networks):
+        pub_net = self._get_pub_net(networks)
+        pub_net.update(self.public_net_data)
+        self.orig_net_manager.update(networks)
+
+    def _get_pub_net(self, networks):
+        return next(net for net in networks['networks'] if
+                    net['name'] == consts.NETWORKS.public)
+
     def test_copy_network_config(self):
         new_cluster = self.helper.create_cluster_clone(self.src_cluster,
                                                        self.data)
-        orig_net_manager = self.src_cluster.get_network_manager()
-        serialize_nets = network_configuration.\
-            NeutronNetworkConfigurationSerializer.\
-            serialize_for_cluster
-
-        # Do some unordinary changes
-        nets = serialize_nets(self.src_cluster.cluster)
-        nets["networks"][0].update({
-            "cidr": "172.16.42.0/24",
-            "gateway": "172.16.42.1",
-            "ip_ranges": [["172.16.42.2", "172.16.42.126"]],
-        })
-        orig_net_manager.update(nets)
-        orig_net_manager.assign_vips_for_net_groups()
+        # Do some unordinary changes to public network
+        nets = self.serialize_nets(self.src_cluster.cluster)
+        self.update_public_net_params(nets)
 
         self.helper.copy_network_config(self.src_cluster, new_cluster)
 
-        orig_nets = serialize_nets(self.src_cluster_db)
-        new_nets = serialize_nets(new_cluster.cluster)
+        new_nets = self.serialize_nets(new_cluster.cluster)
+
+        public_net = self._get_pub_net(new_nets)
+
+        self.assertEqual(public_net['cidr'], self.public_net_data['cidr'])
+        self.assertEqual(public_net['gateway'],
+                         self.public_net_data['gateway'])
+        self.assertEqual(public_net['ip_ranges'],
+                         self.public_net_data['ip_ranges'])
+
+    def test_copy_vips(self):
+        new_cluster = self.helper.clone_cluster(self.src_cluster, self.data)
+
+        # we have to move node to new cluster before VIP assignment
+        # because there is no point in the operation for a cluster
+        # w/o nodes
+        node = adapters.NailgunNodeAdapter(self.src_cluster.cluster.nodes[0])
+        self.helper.assign_node_to_cluster(node, new_cluster, node.roles, [])
+
+        self.helper.copy_vips(self.src_cluster, new_cluster)
+
+        orig_nets = self.serialize_nets(self.src_cluster.cluster)
+        new_nets = self.serialize_nets(new_cluster.cluster)
+
         self.assertEqual(orig_nets["management_vip"],
                          new_nets["management_vip"])
         self.assertEqual(orig_nets["management_vrouter_vip"],
@@ -92,8 +130,7 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
                          new_nets["public_vrouter_vip"])
 
     def test_clone_cluster(self):
-        orig_net_manager = self.src_cluster.get_network_manager()
-        orig_net_manager.assign_vips_for_net_groups()
+        self.orig_net_manager.assign_vips_for_net_groups()
         new_cluster = self.helper.clone_cluster(self.src_cluster, self.data)
         relation = relations.UpgradeRelationObject.get_cluster_relation(
             self.src_cluster.id)

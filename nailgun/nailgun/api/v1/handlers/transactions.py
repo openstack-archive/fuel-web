@@ -31,8 +31,8 @@ Handlers dealing with tasks
 """
 
 
-class TaskHandler(SingleHandler):
-    """Task single handler"""
+class TransactionHandler(SingleHandler):
+    """Transaction single handler"""
 
     single = objects.Task
     validator = TaskValidator
@@ -56,12 +56,12 @@ class TaskHandler(SingleHandler):
         except errors.CannotDelete as exc:
             raise self.http(400, exc.message)
 
-        self.single.delete(obj)
+        self.single.delete(obj, db_deletion=True)
         raise self.http(204)
 
 
-class TaskCollectionHandler(CollectionHandler):
-    """Task collection handler"""
+class TransactionCollectionHandler(CollectionHandler):
+    """Transaction collection handler"""
 
     collection = objects.TaskCollection
     validator = TaskValidator
@@ -76,6 +76,9 @@ class TaskCollectionHandler(CollectionHandler):
         """
         cluster_id = web.input(cluster_id=None).cluster_id
 
-        return self.collection.to_json(
-            self.collection.get_by_cluster_id(cluster_id)
-        )
+        if cluster_id is not None:
+            return self.collection.to_json(
+                self.collection.get_by_cluster_id_including_deleted(cluster_id)
+            )
+        else:
+            return self.collection.to_json()

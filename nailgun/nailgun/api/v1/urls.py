@@ -43,6 +43,9 @@ from nailgun.api.v1.handlers.cluster_plugin_link \
 from nailgun.api.v1.handlers.cluster_plugin_link \
     import ClusterPluginLinkHandler
 
+from nailgun.api.v1.handlers.deployment_history \
+    import DeploymentHistoryCollectionHandler
+
 from nailgun.api.v1.handlers.vip import ClusterVIPCollectionHandler
 from nailgun.api.v1.handlers.vip import ClusterVIPHandler
 
@@ -100,6 +103,7 @@ from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 from nailgun.api.v1.handlers.orchestrator import SerializedTasksHandler
 from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
 
+
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
@@ -112,6 +116,10 @@ from nailgun.api.v1.handlers.role import RoleHandler
 
 from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
+
+from nailgun.api.v1.handlers.transactions import TransactionCollectionHandler
+from nailgun.api.v1.handlers.transactions import TransactionHandler
+
 
 from nailgun.api.v1.handlers.version import VersionHandler
 
@@ -269,6 +277,12 @@ urls = (
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
     TaskHandler,
+    r'/transactions/?$',
+    TransactionCollectionHandler,
+    r'/transactions/(?P<obj_id>\d+)/?$',
+    TransactionHandler,
+    r'/transactions/(?P<transaction_id>\d+)/deployment_history/?$',
+    DeploymentHistoryCollectionHandler,
 
     r'/plugins/(?P<plugin_id>\d+)/links/?$',
     PluginLinkCollectionHandler,

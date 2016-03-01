@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -22,48 +22,26 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.task import TaskValidator
 
 from nailgun.errors import errors
-from nailgun.logger import logger
 
 from nailgun import objects
 
 
 """
-Handlers dealing with tasks
+Handlers dealing with all transactions (tasks)
 """
 
 
-class TaskHandler(SingleHandler):
-    """Task single handler"""
+class TransactionHandler(SingleHandler):
+    """Transaction single handler"""
 
-    single = objects.Task
+    single = objects.Transaction
     validator = TaskValidator
-
-    def get_object_or_404(self, obj, *args, **kwargs):
-        """Get object instance by ID
-
-        :http: 404 when not found
-        :returns: object instance
-        """
-        log_404 = kwargs.pop("log_404", None)
-        log_get = kwargs.pop("log_get", None)
-        uid = kwargs.get("id", (args[0] if args else None))
-        if uid is None:
-            if log_404:
-                getattr(logger, log_404[0])(log_404[1])
-            raise self.http(404, u'Invalid ID specified')
-        else:
-            instance = obj.get_by_uid_excluding_deleted(uid)
-            if not instance:
-                raise self.http(404, u'{0} not found'.format(obj.__name__))
-            if log_get:
-                getattr(logger, log_get[0])(log_get[1])
-        return instance
 
     @content
     def DELETE(self, obj_id):
         """:returns: Empty string
 
-        :http: * 204 (object successfully marked as deleted)
+        :http: * 204 (object successfully deleted)
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(
@@ -78,14 +56,14 @@ class TaskHandler(SingleHandler):
         except errors.CannotDelete as exc:
             raise self.http(400, exc.message)
 
-        self.single.delete(obj)
+        self.single.delete(obj, db_deletion=True)
         raise self.http(204)
 
 
-class TaskCollectionHandler(CollectionHandler):
-    """Task collection handler"""
+class TransactionCollectionHandler(CollectionHandler):
+    """Transaction collection handler"""
 
-    collection = objects.TaskCollection
+    collection = objects.TransactionCollection
     validator = TaskValidator
 
     @content
@@ -100,7 +78,7 @@ class TaskCollectionHandler(CollectionHandler):
 
         if cluster_id is not None:
             return self.collection.to_json(
-                self.collection.get_by_cluster_id(cluster_id)
+                self.collection.get_by_cluster_id_including_deleted(cluster_id)
             )
         else:
-            return self.collection.to_json(self.collection.all_not_deleted())
+            return self.collection.to_json()

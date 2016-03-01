@@ -67,6 +67,15 @@ class NodeReassignHandler(base.BaseHandler):
 
         self.raise_task(task)
 
+    def reassign_vips(self, orig_cluster, cluster):
+        orig_net_manager = orig_cluster.get_network_manager()
+        new_net_manager = cluster.get_network_manager()
+
+        orig_env_version = orig_cluster.release.environment_version
+        upgrade.UpgradeHelper.move_vips(orig_net_manager,
+                                        new_net_manager,
+                                        orig_env_version)
+
     @base.content
     def POST(self, cluster_id):
         """Reassign node to cluster via reinstallation
@@ -86,5 +95,11 @@ class NodeReassignHandler(base.BaseHandler):
             self.get_object_or_404(objects.Node, data['node_id']))
 
         upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
+
+        # NOTE(aroma): VIP copying to new cluster will only have an
+        # effect when it has assigned nodes so there is point to perform
+        # the action after moving the node here
+        orig_cluster = upgrade.UpgradeHelper.get_cluster_from_node(node)
+        self.reassign_vips(orig_cluster, cluster)
 
         self.handle_task(cluster_id, [node.node, ])

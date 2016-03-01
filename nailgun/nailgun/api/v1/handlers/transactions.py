@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -27,21 +27,21 @@ from nailgun import objects
 
 
 """
-Handlers dealing with tasks
+Handlers dealing with all transactions (tasks)
 """
 
 
-class TaskHandler(SingleHandler):
-    """Task single handler"""
+class TransactionHandler(SingleHandler):
+    """Transaction single handler"""
 
-    single = objects.Task
+    single = objects.Transaction
     validator = TaskValidator
 
     @content
     def DELETE(self, obj_id):
         """:returns: Empty string
 
-        :http: * 204 (object successfully marked as deleted)
+        :http: * 204 (object successfully deleted)
                * 400 (object could not deleted)
                * 404 (object not found in db)
         """
@@ -57,14 +57,14 @@ class TaskHandler(SingleHandler):
         except errors.CannotDelete as exc:
             raise self.http(400, exc.message)
 
-        self.single.delete(obj)
+        self.single.delete(obj, db_deletion=True)
         raise self.http(204)
 
 
-class TaskCollectionHandler(CollectionHandler):
-    """Task collection handler"""
+class TransactionCollectionHandler(CollectionHandler):
+    """Transaction collection handler"""
 
-    collection = objects.TaskCollection
+    collection = objects.TransactionCollection
     validator = TaskValidator
 
     @content
@@ -79,7 +79,7 @@ class TaskCollectionHandler(CollectionHandler):
 
         if cluster_id is not None:
             return self.collection.to_json(
-                self.collection.get_by_cluster_id(cluster_id)
+                self.collection.get_by_cluster_id_including_deleted(cluster_id)
             )
         else:
-            return self.collection.to_json(self.collection.all_not_deleted())
+            return self.collection.to_json()

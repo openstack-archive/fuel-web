@@ -291,6 +291,9 @@ class DeploymentTask(BaseDeploymentTask):
             task_ids, tasks_events
         )
         logger.debug("finish tasks serialization.")
+
+        objects.DeploymentHistoryCollection.create(task, graph)
+
         return {
             "deployment_info": serialized_cluster,
             "tasks_directory": directory,

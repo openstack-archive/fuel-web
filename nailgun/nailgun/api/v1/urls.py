@@ -43,6 +43,9 @@ from nailgun.api.v1.handlers.cluster_plugin_link \
 from nailgun.api.v1.handlers.cluster_plugin_link \
     import ClusterPluginLinkHandler
 
+from nailgun.api.v1.handlers.deployment_history \
+    import DeploymentHistoryCollectionHandler
+
 from nailgun.api.v1.handlers.vip import ClusterVIPCollectionHandler
 from nailgun.api.v1.handlers.vip import ClusterVIPHandler
 
@@ -269,6 +272,10 @@ urls = (
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
     TaskHandler,
+    r'/transactions/?$',
+    TaskCollectionHandler,
+    r'/transactions/(?P<transaction_id>\d+)/deployment_history/?$',
+    DeploymentHistoryCollectionHandler,
 
     r'/plugins/(?P<plugin_id>\d+)/links/?$',
     PluginLinkCollectionHandler,

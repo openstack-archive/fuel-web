@@ -373,7 +373,7 @@ class NetworkDeploymentSerializer(object):
         return bridge
 
     @classmethod
-    def add_port(cls, name, bridge, provider=None):
+    def add_port(cls, name, bridge, provider=None, vendor_specific=None):
         """Add port to schema
 
         Bridge name may be None, port will not be connected to any bridge then
@@ -390,6 +390,8 @@ class NetworkDeploymentSerializer(object):
             port['bridge'] = bridge
         if provider:
             port['provider'] = provider
+        if vendor_specific:
+            port['vendor_specific'] = vendor_specific
         return port
 
     @classmethod

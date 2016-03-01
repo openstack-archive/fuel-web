@@ -86,6 +86,12 @@ node_errors_new = (
     'discover',
     'stop_deployment',
 )
+# task_statuses = (
+#     'pending',
+#     'ready',
+#     'running',
+#     'error'
+# )
 
 
 def upgrade():
@@ -100,9 +106,11 @@ def upgrade():
     drop_legacy_patching()
     upgrade_node_status_attributes()
     upgrade_node_stop_deployment_error_type()
+    upgrade_store_tasks_history()
 
 
 def downgrade():
+    downgrade_store_tasks_history()
     downgrade_node_stop_deployment_error_type()
     downgrade_node_status_attributes()
     restore_legacy_patching()
@@ -1146,3 +1154,45 @@ def downgrade_deployment_graph():
     op.drop_table('deployment_graph_tasks')
     drop_enum('deployment_graph_tasks_type')
     op.drop_table('deployment_graphs')
+
+
+def upgrade_store_tasks_history():
+    op.create_table(
+        'tasks_history',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('deployment_task_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('time_started', sa.Date(), nullable=True),
+        sa.Column('time_ended', sa.Date(), nullable=True),
+        sa.Column('status', sa.Enum(name='task_status'), nullable=False),
+        sa.Column(
+            'last_run_result',
+            fields.JSON(),
+            default={},
+            server_default='{}'),
+
+        sa.ForeignKeyConstraint(['deployment_task_id'], ['tasks.id'], ),
+        sa.ForeignKeyConstraint(['task_id'], ['deployment_graph_tasks.id'], ),
+        sa.ForeignKeyConstraint(['node_id'], ['nodes.id'], ),
+
+        sa.UniqueConstraint(
+            'deployment_task_id',
+            'task_id',
+            'node_id',
+            name='_deployment_task_id_task_id_node_id_uc'),
+    )
+
+    op.create_index('tasks_history_deployment_task_id_and_node_id',
+                    'tasks_history', ['deployment_task_id', 'node_id'])
+    op.create_index('tasks_history_deployment_task_id_and_status',
+                    'tasks_history', ['deployment_task_id', 'status'])
+    op.create_index('tasks_history_deployment_task_id_and_node_id_and_status',
+                    'tasks_history', [
+                        'deployment_task_id',
+                        'node_id',
+                        'status'])
+
+
+def downgrade_store_tasks_history():
+    op.drop_table('tasks_history')

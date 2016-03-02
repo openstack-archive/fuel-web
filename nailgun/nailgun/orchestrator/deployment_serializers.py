@@ -632,6 +632,13 @@ class DeploymentHASerializer10(DeploymentHASerializer90):
 
         return attrs
 
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return neutron_serializers.NeutronNetworkTemplateSerializer10
+        else:
+            return neutron_serializers.NeutronNetworkDeploymentSerializer10
+
 
 class DeploymentLCMSerializer(DeploymentHASerializer90):
     _configs = None
@@ -797,7 +804,7 @@ def get_serializer_for_cluster(cluster):
         },
         '10.0': {
             'ha': DeploymentHASerializer10,
-        },
+        }
     }
 
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'

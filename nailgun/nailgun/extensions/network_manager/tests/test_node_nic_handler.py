@@ -15,6 +15,7 @@
 #    under the License.
 
 from mock import patch
+import uuid
 
 from copy import deepcopy
 from oslo_serialization import jsonutils
@@ -1102,3 +1103,74 @@ class TestSriovHandlers(BaseIntegrationTest):
             "Node '{0}' interface '{1}': SR-IOV cannot be enabled when "
             "networks are assigned to the interface".format(
                 self.env.nodes[0].id, nics[0]['name']))
+
+
+class TestNICAttributesHandlers(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNICAttributesHandlers, self).setUp()
+        self.env.create(
+            cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
+            release_kwargs={
+                'name': uuid.uuid4().get_hex(),
+                'version': 'newton-10.0',
+                'operating_system': 'Ubuntu',
+                'modes': [consts.CLUSTER_MODES.multinode,
+                          consts.CLUSTER_MODES.ha_compact]},
+            nodes_kwargs=[{'roles': ['controller']}])
+        self.node = self.env.nodes[0]
+
+    def test_get_nic_attributes(self):
+        resp = self.app.get(
+            reverse("NodeNICsHandler", kwargs={"node_id": self.node.id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        expected_attributes = {
+            'disable_offloading': {
+                'label': 'Disable offloading',
+                'type': 'checkbox',
+                'weight': 10,
+                'value': False
+            },
+            'dpdk': {
+                'label': 'DPDK',
+                'type': 'checkbox',
+                'name': 'dpdk',
+                'enabled': False,
+                'available': False
+            },
+            'sriov': {
+                'label': 'SRIOV',
+                'type': 'checkbox',
+                'available': False,
+                'enabled': False,
+                'sriov_numvfs': {
+                    'label': 'virtual_functions',
+                    'type': 'number',
+                    'min': 0,
+                    'max': 0,
+                    'name': 'sriov_numvfs',
+                    'value': None
+                },
+                'physnet': {
+                    'type': 'text',
+                    'name': 'sriov_physnet',
+                    'label': 'physical_network',
+                    'value': 'physnet2'
+                },
+                'pci_id': '',
+            },
+            'mtu': {
+                'type': 'text',
+                'weight': 20,
+                'label': 'MTU',
+                'value': None
+            }
+        }
+
+        for interface in resp.json_body:
+            self.assertEqual(expected_attributes, interface['attributes'])
+
+    def test_put_nic_attributes(self):
+        pass

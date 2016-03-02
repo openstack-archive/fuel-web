@@ -624,8 +624,9 @@ class NetworkManager(object):
         for nic in node.nic_interfaces:
             nic_dict = NodeInterfacesSerializer.serialize(nic)
             if 'interface_properties' in nic_dict:
-                default_properties = cls.get_default_interface_properties(
-                    nic_dict['interface_properties'])
+                default_properties = objects.NIC \
+                    .get_default_interface_properties(
+                        nic_dict['interface_properties'])
                 nic_dict['interface_properties'] = nailgun_utils.dict_merge(
                     nic_dict['interface_properties'],
                     default_properties)
@@ -803,10 +804,15 @@ class NetworkManager(object):
                 )
             if 'offloading_modes' in iface:
                 update['offloading_modes'] = iface['offloading_modes']
+            if 'attributes' in iface:
+                update['attributes'] = nailgun_utils.dict_merge(
+                    current_iface.attributes,
+                    iface['attributes']
+                )
 
             objects.NIC.update(current_iface, update)
-        objects.Node.clear_bonds(node_db)
 
+        objects.Node.clear_bonds(node_db)
         for bond in bond_interfaces:
             if bond.get('bond_properties', {}).get('mode'):
                 mode = bond['bond_properties']['mode']
@@ -819,6 +825,7 @@ class NetworkManager(object):
                 'mac': bond.get('mac'),
                 'bond_properties': bond.get('bond_properties', {}),
                 'interface_properties': bond.get('interface_properties', {}),
+                'attributes': bond.get('attributes', {})
             }
             bond_db = objects.Bond.create(data)
 
@@ -853,6 +860,7 @@ class NetworkManager(object):
         except errors.InvalidInterfacesInfo as e:
             logger.debug("Cannot update interfaces: %s", e.message)
             return
+
         pxe_iface_name = cls._get_pxe_iface_name(node)
         for interface in node.meta["interfaces"]:
             # set 'pxe' property for appropriate iface
@@ -992,6 +1000,7 @@ class NetworkManager(object):
         interface.bus_info = interface_attrs.get('bus_info')
         interface.pxe = interface_attrs.get('pxe', False)
 
+        # TODO(apopovych): set for attributes and meta
         interface_properties = nailgun_utils.dict_merge(
             cls.get_default_interface_properties(),
             interface.interface_properties or {}
@@ -1002,6 +1011,26 @@ class NetworkManager(object):
                 interface_properties,
                 interface_attrs['interface_properties']
             )
+
+        interface.meta = {
+            'offloading_modes': interface_attrs.get('offloading_modes'),
+            'sriov': {
+                'available': interface_properties.get(
+                    'sriov').get('available', False),
+                'pci_id': interface_properties.get(
+                    'sriov').get('pci_id', ''),
+                'totalvfs': interface_properties.get(
+                    'sriov').get('sriov_totalvfs', 0)
+            },
+            'dpdk': {
+                'available': interface_properties.get(
+                    'dpdk').get('available', False)
+            },
+            'pci_id': interface_properties.get('pci_id', ''),
+        }
+        if interface_properties.get('numa_node'):
+            interface.meta['nume_node'] = interface_properties['numa_node']
+
         # update interface_properties in DB only if something was changed
         if interface.interface_properties != interface_properties:
             interface.interface_properties = interface_properties
@@ -1391,13 +1420,16 @@ class NetworkManager(object):
     @classmethod
     def get_iface_properties(cls, iface):
         properties = {}
-        if iface.interface_properties.get('mtu'):
-            properties['mtu'] = iface.interface_properties['mtu']
-        if iface.interface_properties.get('disable_offloading'):
+        if iface.attributes.get('mtu', {}).get('value', {}).get('value'):
+            properties['mtu'] = iface.attributes['mtu']['value']['value']
+        if iface.attributes.get('offloading', {}).get('disable', {}).get(
+                'value'):
             properties['vendor_specific'] = {
                 'disable_offloading':
-                iface.interface_properties['disable_offloading']
+                iface.attributes['offloading']['disable']['value']
             }
+
+        # TODO(apopovych): rewrite to get offloading data from attributes
         if iface.offloading_modes:
             modified_offloading_modes = \
                 cls._get_modified_offloading_modes(iface.offloading_modes)

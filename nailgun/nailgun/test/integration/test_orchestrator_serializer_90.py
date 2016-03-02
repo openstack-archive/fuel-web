@@ -16,6 +16,8 @@
 
 from nailgun import objects
 
+from nailgun.orchestrator.deployment_serializers import \
+    get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
 from nailgun.orchestrator.neutron_serializers import \
@@ -108,6 +110,46 @@ class TestNetworkTemplateSerializer90(
 ):
     legacy_serializer = NeutronNetworkDeploymentSerializer90
     template_serializer = NeutronNetworkTemplateSerializer90
+
+    def check_selective_gateway(self, use_net_template=False):
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'], primary_roles=['controller']
+        )
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template if use_net_template else None)
+        objects.Cluster.prepare_for_deployment(self.cluster)
+
+        serializer = get_serializer_for_cluster(self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        networks_list = nm.get_node_networks(node)
+        networks = {net['name']: net for net in networks_list}
+        endpoints = net_serializer.generate_network_scheme(
+            node, networks_list)['endpoints']
+
+        na = self.net_template[
+            'adv_net_template']['default']['network_assignments']
+        ep_net_map = {na[net_name]['ep']: net_name for net_name in na}
+
+        for name in endpoints:
+            if name not in ep_net_map:
+                self.assertNotIn('vendor_specific', endpoints[name])
+                continue
+            if networks[ep_net_map[name]].get('gateway') is None:
+                self.assertNotIn('vendor_specific', endpoints[name])
+            else:
+                self.assertIn('vendor_specific', endpoints[name])
+                self.assertEqual(
+                    endpoints[name]['vendor_specific']['provider_gateway'],
+                    networks[ep_net_map[name]]['gateway'])
+
+    def test_selective_gateway_in_deployment_serializer(self):
+        self.check_selective_gateway()
+
+    def test_selective_gateway_in_template_serializer(self):
+        self.check_selective_gateway(use_net_template=True)
 
 
 class TestSerializeInterfaceDriversData90(

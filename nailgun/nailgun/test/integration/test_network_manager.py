@@ -258,6 +258,30 @@ class TestNetworkManager(BaseIntegrationTest):
 
         self.assertEqual(needed_vip_ip, ip_before)
 
+    def test_assign_vip_throws_out_of_ips_error(self):
+        cluster = self.env.create_cluster(api=False)
+        pub_net = objects.NetworkGroup.get_by_cluster(cluster.id).filter(
+            objects.NetworkGroup.model.name == consts.NETWORKS.public
+        ).first()
+
+        self.db.query(IPAddrRange).filter_by(
+            network_group_id=pub_net.id
+        ).delete()
+
+        full_range = IPAddrRange(
+            first='172.16.10.2',
+            last='172.16.10.2',
+            network_group_id=pub_net.id
+        )
+        self.db.add(full_range)
+        self.db.flush()
+
+        self.assertRaises(
+            errors.OutOfIPs,
+            self.env.network_manager.assign_vips_for_net_groups,
+            cluster
+        )
+
     def test_vip_for_admin_network_is_free(self):
         admin_net_id = objects.NetworkGroup.get_admin_network_group().id
         self.db.query(IPAddrRange).filter_by(

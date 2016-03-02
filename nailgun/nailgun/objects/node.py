@@ -53,6 +53,7 @@ from nailgun.objects import NetworkGroup
 from nailgun.objects import Notification
 from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.policy import cpu_distribution
+from nailgun.policy import hugepages_distribution
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -1308,9 +1309,15 @@ class NodeAttributes(object):
     def is_nova_cpu_pinning_enabled(cls, node):
         return bool(Node.get_attributes(node)['cpu_pinning']['nova']['value'])
 
+    @staticmethod
+    def pages_per_numa_node(size):
+        """Convert memory size (in MiBs) to 2 MiB pages count."""
+        # for python3 compatibility we have to use int() and float()
+        return int(math.ceil(float(size) / 2))
+
     @classmethod
-    def total_hugepages(cls, instance):
-        """Return total hugepages for the instance
+    def total_hugepages(cls, node):
+        """Return total hugepages for the node
 
         Iterate over hugepages attributes and sum them
         according their type: custom_hugepages - contains
@@ -1324,9 +1331,9 @@ class NodeAttributes(object):
         """
 
         hugepages = collections.defaultdict(int)
-        numa_count = len(instance.meta['numa_topology']['numa_nodes'])
+        numa_count = len(node.meta['numa_topology']['numa_nodes'])
 
-        hugepages_attributes = Node.get_attributes(instance)['hugepages']
+        hugepages_attributes = Node.get_attributes(node)['hugepages']
         for name, attrs in six.iteritems(hugepages_attributes):
             if attrs.get('type') == 'custom_hugepages':
                 value = attrs['value']
@@ -1334,9 +1341,8 @@ class NodeAttributes(object):
                     hugepages[size] += int(count)
             elif attrs.get('type') == 'text':
                 # type text means that value is the number of memory in MB
-                # per NUMA node which should be covered by 2M hugepages
-                # for python3 capabilites we have to use int() and float()
-                count_per_numa_node = int(math.ceil(float(attrs['value']) / 2))
+                # per NUMA node which should be converted to pages count
+                count_per_numa_node = cls.pages_per_numa_node(attrs['value'])
                 hugepages[consts.DEFAULT_HUGEPAGE_SIZE] += (
                     count_per_numa_node * numa_count)
 
@@ -1357,3 +1363,26 @@ class NodeAttributes(object):
                     human_size, hugepage_size)
 
         return kernel_opts
+
+    @classmethod
+    def distribute_hugepages(cls, node):
+        topology = node.meta['numa_topology']['numa_nodes']
+        attributes = Node.get_attributes(node)['hugepages']
+
+        # split components to 2 groups:
+        # components that should have pages on all numa nodes (such as dpdk)
+        # and components that may have pages on any numa node
+        components = {'all': [], 'any': []}
+
+        for name, attrs in attributes.items():
+            if attrs.get('type') == 'text':
+                # type text means size of memory in MiB to allocate with
+                # 2MiB pages, so we need to calculate pages count
+                pages_count = cls.pages_per_numa_node(attrs['value'])
+                components['all'].append({'2048': pages_count})
+
+            elif attrs.get('type') == 'custom_hugepages':
+                components['any'].append(attrs['value'])
+
+        return hugepages_distribution.distribute_hugepages(
+            topology, components)

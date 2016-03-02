@@ -86,6 +86,14 @@ class ClusterVIPHandler(base.SingleHandler):
             self.validator.validate_update,
             existing_obj=obj
         )
+
+        # user defined VIP must be deleted if 'is_user_defined'
+        # flag was reset
+        if data.get('is_user_defined') is False \
+                and obj.is_user_defined is True:
+            self.single.delete(obj)
+            raise self.http(200, {})
+
         self.single.update(obj, data)
         return self.single.to_json(obj)
 
@@ -184,9 +192,17 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
             cluster_id=int(cluster_id)
         )
 
-        return self.collection.to_json(
-            self.collection.update_vips(update_data)
-        )
+        updated = self.collection.update_vips(update_data)
+
+        # NOTE(aroma): in case 'is_user_defined' flag was unset for all VIPs
+        # in the request data update_vips will return empty collection and
+        # self.collection.to_json will provide incorrect data for the response,
+        # as IPAddr object is used to process VIPs. Thus we must handle such
+        # case by following check
+        if not updated:
+            raise self.http(200, {})
+
+        return self.collection.to_json(updated)
 
     def PATCH(self, cluster_id):
         """Update VIPs collection.

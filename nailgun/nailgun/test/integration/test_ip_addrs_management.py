@@ -148,20 +148,22 @@ class BaseIPAddrTest(BaseIntegrationTest):
         intersecting_vip = self.management_vips[1].ip_addr
         self._check_ip_intersection(intersecting_vip)
 
+    def check_create_vip(self, create_data=None):
+        data = {
+            'ip_addr': "192.168.0.15",
+            'network': self.management_net.id,
+            'vip_name': 'management',
+        }
 
-class TestIPAddrList(BaseIPAddrTest):
+        if create_data:
+            data.update(create_data)
 
-    __test__ = True
-
-    handler_name = 'ClusterVIPCollectionHandler'
-
-    def check_create_vip(self, create_data):
         resp = self.app.post(
             reverse(
-                self.handler_name,
+                'ClusterVIPCollectionHandler',
                 kwargs={'cluster_id': self.cluster['id']}
             ),
-            params=jsonutils.dumps(create_data),
+            params=jsonutils.dumps(data),
             headers=self.default_headers
         )
 
@@ -169,24 +171,27 @@ class TestIPAddrList(BaseIPAddrTest):
 
         return resp
 
+    def check_vip_removed(self, vip_id):
+        vip_db = self.db.query(objects.IPAddr.model)\
+            .filter_by(id=vip_id).first()
+        self.assertIsNone(vip_db)
+
+
+class TestIPAddrList(BaseIPAddrTest):
+
+    __test__ = True
+
+    handler_name = 'ClusterVIPCollectionHandler'
+
     def test_create_vip_for_cluster(self):
         create_data = {
-            'ip_addr': "192.168.0.15",
-            'network': self.management_net.id,
-            'vip_name': 'management',
             'is_user_defined': True
         }
 
         self.check_create_vip(create_data)
 
     def test_create_vip_for_cluster_wo_is_user_defined_flag(self):
-        create_data = {
-            'ip_addr': "192.168.0.15",
-            'network': self.management_net.id,
-            'vip_name': 'management',
-        }
-
-        create_resp = self.check_create_vip(create_data)
+        create_resp = self.check_create_vip()
 
         get_resp = self.app.get(
             reverse(
@@ -200,6 +205,57 @@ class TestIPAddrList(BaseIPAddrTest):
         )
 
         self.assertTrue(get_resp.json_body['is_user_defined'])
+
+    def test_vips_with_unset_is_user_defined_are_removed(self):
+        vip_one = self.check_create_vip(
+            {'vip_name': 'management', 'ip_addr': '192.168.17.17'}
+        ).json_body
+        vip_two = self.check_create_vip(
+            {'vip_name': 'vrouter', 'ip_addr': '192.168.17.18'}
+        ).json_body
+
+        update_data = [
+            {'id': vip_one['id']},
+            {'id': vip_two['id'], 'is_user_defined': False}
+        ]
+
+        resp = self.app.patch(
+            reverse(
+                self.handler_name,
+                kwargs={
+                    'cluster_id': self.cluster['id']
+                }
+            ),
+            params=jsonutils.dumps(update_data),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+        # check that only one VIP is present in the response
+        self.assertEqual(len(resp.json_body), 1)
+        self.assertEqual(resp.json_body[0]['id'], vip_one['id'])
+
+        self.check_vip_removed(vip_two['id'])
+
+    def test_empty_response_if_all_vips_removed(self):
+        vip = self.check_create_vip().json_body
+
+        update_data = [{'id': vip['id'], 'is_user_defined': False}]
+
+        resp = self.app.patch(
+            reverse(
+                self.handler_name,
+                kwargs={
+                    'cluster_id': self.cluster['id']
+                }
+            ),
+            params=jsonutils.dumps(update_data),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(resp.json_body, {})
+
+        self.check_vip_removed(vip['id'])
 
     def test_vips_list_for_cluster(self):
         resp = self.app.get(
@@ -733,3 +789,24 @@ class TestIPAddrHandler(BaseIPAddrTest):
 
         vip = net_conf['vips'][changed_vip['vip_name']]
         self.assertEqual(vip['namespace'], update_data['vip_namespace'])
+
+    def test_vip_update_remove_if_user_defined_set_to_false(self):
+        create_resp = self.check_create_vip()
+
+        update_data = {
+            'is_user_defined': False
+        }
+
+        change_resp = self.app.put(
+            reverse(
+                self.handler_name,
+                kwargs={'ip_addr_id': create_resp.json_body['id'],
+                        'cluster_id': self.cluster['id']}
+            ),
+            headers=self.default_headers,
+            params=jsonutils.dumps(update_data)
+        )
+
+        self.assertEqual(change_resp.status_code, 200)
+        self.assertEqual(change_resp.json_body, {})
+        self.check_vip_removed(create_resp.json_body['id'])

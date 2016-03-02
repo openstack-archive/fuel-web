@@ -159,7 +159,7 @@ class PluginAdapterBase(object):
 
     @property
     def nic_attributes_metadata(self):
-        return self.plugin.bond_attributes_metadata
+        return self.plugin.nic_attributes_metadata
 
     @property
     def node_attributes_metadata(self):

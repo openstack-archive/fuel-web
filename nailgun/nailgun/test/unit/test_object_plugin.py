@@ -13,41 +13,34 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+import uuid
+
+import sqlalchemy as sa
+from oslo_serialization import jsonutils
+
 from nailgun import consts
 from nailgun.objects import ClusterPlugin
-from nailgun.objects import Plugin
 from nailgun.objects import PluginCollection
 from nailgun.test import base
-import sqlalchemy as sa
-import uuid
 
 
 class ExtraFunctions(base.BaseTestCase):
 
     def _create_test_plugins(self):
-        plugin_ids = []
         for version in ['1.0.0', '2.0.0', '0.0.1', '3.0.0', '4.0.0', '5.0.0']:
-            plugin_data = self.env.get_default_plugin_metadata(
+            self.env.create_plugin(
                 version=version,
                 name='multiversion_plugin')
-            plugin = Plugin.create(plugin_data)
-            plugin_ids.append(plugin.id)
-
-        single_plugin_data = self.env.get_default_plugin_metadata(
+        self.env.create_plugin(
             name='single_plugin')
-        plugin = Plugin.create(single_plugin_data)
-        plugin_ids.append(plugin.id)
-
-        incompatible_plugin_data = self.env.get_default_plugin_metadata(
+        self.env.create_plugin(
             name='incompatible_plugin',
-            releases=[]
-        )
-        plugin = Plugin.create(incompatible_plugin_data)
-        plugin_ids.append(plugin.id)
+            releases=[])
 
-        return plugin_ids
+        return [p.id for p in self.env.plugins]
 
-    def _create_test_cluster(self):
+    def _create_test_cluster(self, nodes=[]):
         self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={
@@ -55,7 +48,8 @@ class ExtraFunctions(base.BaseTestCase):
                 'version': '2015.1-8.0',
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
-                          consts.CLUSTER_MODES.ha_compact]})
+                          consts.CLUSTER_MODES.ha_compact]},
+            nodes_kwargs=nodes)
 
         return self.env.clusters[0]
 
@@ -64,10 +58,8 @@ class TestPluginCollection(ExtraFunctions):
 
     def test_all_newest(self):
         self._create_test_plugins()
-
         newest_plugins = PluginCollection.all_newest()
         self.assertEqual(len(newest_plugins), 3)
-
         single_plugin = filter(
             lambda p: p.name == 'single_plugin',
             newest_plugins)
@@ -77,7 +69,6 @@ class TestPluginCollection(ExtraFunctions):
 
         self.assertEqual(len(single_plugin), 1)
         self.assertEqual(len(multiversion_plugin), 1)
-
         self.assertEqual(multiversion_plugin[0].version, '5.0.0')
 
     def test_get_by_uids(self):
@@ -170,3 +161,69 @@ class TestClusterPlugin(ExtraFunctions):
         self.assertFalse(ClusterPlugin.is_plugin_used(plugin.id))
         ClusterPlugin.set_attributes(cluster.id, plugin.id, enabled=True)
         self.assertTrue(ClusterPlugin.is_plugin_used(plugin.id))
+
+
+class TestNodeNICInterfaceClusterPlugin(ExtraFunctions):
+
+    def test_get_all_enabled_attributes_by_interface(self):
+        pass
+
+    def test_populate_nic_with_plugin_attributes(self):
+        # create cluster with 2 nodes
+        # install plugin with nic attributes which compatible with cluster
+        meta = base.reflect_db_metadata()
+        nic_config = self.env.get_default_plugin_nic_config()
+        self._create_test_cluster(
+            nodes=[{'roles': ['controller']}, {'roles': ['compute']}])
+        self.env.create_plugin(
+            name='plugin_a_with_nic_attributes',
+            nic_attributes_metadata=nic_config)
+
+        node_nic_interface_cluster_plugins = self.db.execute(
+            meta.tables['node_nic_interface_cluster_plugins'].select()
+        ).fetchall()
+
+        self.assertEqual(4, len(node_nic_interface_cluster_plugins))
+        for item in node_nic_interface_cluster_plugins:
+            self.assertDictEqual(nic_config, jsonutils.loads(item.attributes))
+
+    def test_populate_nic_with_empty_plugin_attributes(self):
+        # create cluster with 2 nodes
+        # install plugin without nic attributes which compatible with cluster
+        meta = base.reflect_db_metadata()
+        self._create_test_cluster(
+            nodes=[{'roles': ['controller']}, {'roles': ['compute']}])
+        self.env.create_plugin(
+            name='plugin_b_with_nic_attributes',
+            nic_attributes_metadata={})
+
+        node_nic_interface_cluster_plugins = self.db.execute(
+            meta.tables['node_nic_interface_cluster_plugins'].select()
+        ).fetchall()
+
+        self.assertEqual(0, len(node_nic_interface_cluster_plugins))
+
+    def test_add_cluster_plugin_for_node_nic(self):
+        # install plugins compatible with cluster
+        # populate cluster with node
+        meta = base.reflect_db_metadata()
+        nic_config = self.env.get_default_plugin_nic_config()
+        self.env.create_plugin(
+            name='plugin_a_with_nic_attributes',
+            nic_attributes_metadata=nic_config)
+        self.env.create_plugin(
+            name='plugin_b_with_nic_attributes',
+            nic_attributes_metadata={})
+        self._create_test_cluster(
+            nodes=[{'roles': ['controller']}, {'roles': ['compute']}])
+
+        node_nic_interface_cluster_plugins = self.db.execute(
+            meta.tables['node_nic_interface_cluster_plugins'].select()
+        ).fetchall()
+
+        self.assertEqual(4, len(node_nic_interface_cluster_plugins))
+        for item in node_nic_interface_cluster_plugins:
+            self.assertDictEqual(nic_config, jsonutils.loads(item.attributes))
+
+    def test_set_attributes(self):
+        pass

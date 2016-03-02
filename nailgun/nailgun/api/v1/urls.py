@@ -64,6 +64,7 @@ from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
 from nailgun.api.v1.handlers.node import NodeAgentHandler
+from nailgun.api.v1.handlers.node import NodeAttributesDefaultsHandler
 from nailgun.api.v1.handlers.node import NodeAttributesHandler
 from nailgun.api.v1.handlers.node import NodeCollectionHandler
 from nailgun.api.v1.handlers.node import NodeHandler
@@ -75,6 +76,7 @@ from nailgun.api.v1.handlers.plugin import \
 from nailgun.api.v1.handlers.plugin import PluginDeploymentGraphHandler
 from nailgun.api.v1.handlers.plugin import PluginHandler
 from nailgun.api.v1.handlers.plugin import PluginSyncHandler
+
 from nailgun.api.v1.handlers.plugin_link import PluginLinkCollectionHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkHandler
 
@@ -261,6 +263,8 @@ urls = (
     NodeHandler,
     r'/nodes/(?P<node_id>\d+)/attributes/?$',
     NodeAttributesHandler,
+    r'/nodes/(?P<node_id>\d+)/attributes/defaults/?$',
+    NodeAttributesDefaultsHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',

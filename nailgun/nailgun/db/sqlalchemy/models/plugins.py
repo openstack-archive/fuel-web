@@ -73,6 +73,10 @@ class NodeNICInterfaceClusterPlugin(Base):
         MutableDict.as_mutable(JSON),
         nullable=False,
         server_default='{}')
+    node = relationship(
+        "Node",
+        backref="node_nic_interface_cluster_plugins",
+        cascade="delete")
 
 
 class NodeBondInterfaceClusterPlugin(Base):
@@ -96,6 +100,10 @@ class NodeBondInterfaceClusterPlugin(Base):
         MutableDict.as_mutable(JSON),
         nullable=False,
         server_default='{}')
+    node = relationship(
+        "Node",
+        backref="node_bond_interface_cluster_plugins",
+        cascade="delete")
 
 
 class NodeClusterPlugin(Base):
@@ -115,6 +123,8 @@ class NodeClusterPlugin(Base):
         MutableDict.as_mutable(JSON),
         nullable=False,
         server_default='{}')
+    node = relationship(
+        "Node", backref="node_cluster_plugins", cascade="delete")
 
 
 class Plugin(Base):

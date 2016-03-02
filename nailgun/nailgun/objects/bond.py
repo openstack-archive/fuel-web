@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.objects.base import NailgunCollection
+from nailgun.objects.base import NailgunObject
+from nailgun.objects.plugin import NodeBondInterfaceClusterPlugins
 from nailgun.objects.serializers.base import BasicSerializer
 
 
@@ -49,6 +51,23 @@ class Bond(NailgunObject):
         instance.update(data)
         instance.offloading_modes = data.get('offloading_modes', {})
         return instance
+
+    @classmethod
+    def get_attributes(cls, instance):
+        """Get native and plugin attributes for bond.
+
+        :param instance: NodeBondInterface instance
+        :type instance: NodeBondInterface model
+        :returns: dict -- Object of interface attributes
+        """
+        attributes = copy.deepcopy(instance.attributes)
+        # FIXME:
+        #   Use PluginManager as entry point
+        attributes.update(
+            NodeBondInterfaceClusterPlugins.
+            get_all_enabled_attributes_by_interface(instance))
+
+        return attributes
 
 
 class BondCollection(NailgunCollection):

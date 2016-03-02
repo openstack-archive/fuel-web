@@ -17,7 +17,6 @@
 from distutils.version import StrictVersion
 
 from nailgun import consts
-
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.settings import settings
 
@@ -120,31 +119,31 @@ class NodeInterfacesSerializer(BasicSerializer):
 
     @classmethod
     def serialize_nic_interface(cls, instance, fields=None):
+        from nailgun.objects import NIC
         if not fields:
             if StrictVersion(cls._get_env_version(instance)) < \
                     StrictVersion('6.1'):
                 fields = cls.nic_fields_60
             else:
                 fields = cls.nic_fields
-        return BasicSerializer.serialize(
-            instance,
-            fields=fields
-        )
+        data_dict = BasicSerializer.serialize(instance, fields=fields)
+        data_dict['attributes'] = NIC.get_attributes(instance)
+
+        return data_dict
 
     @classmethod
     def serialize_bond_interface(cls, instance, fields=None):
+        from nailgun.objects import Bond
         if not fields:
             if StrictVersion(cls._get_env_version(instance)) < \
                     StrictVersion('6.1'):
                 fields = cls.bond_fields_60
             else:
                 fields = cls.bond_fields
-        data_dict = BasicSerializer.serialize(
-            instance,
-            fields=fields
-        )
-        data_dict['slaves'] = [{'name': slave.name}
-                               for slave in instance.slaves]
+        data_dict = BasicSerializer.serialize(instance, fields=fields)
+        data_dict['slaves'] = [{'name': s.name} for s in instance.slaves]
+        data_dict['attributes'] = Bond.get_attributes(instance)
+
         return data_dict
 
     @classmethod

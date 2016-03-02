@@ -583,6 +583,7 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def generate_node_hugepages(self, node, serialized_node):
         self._generate_nova_hugepages(node, serialized_node)
         self._generate_dpdk_hugepages(node, serialized_node)
+        self._generate_hugepages_distribution(node, serialized_node)
 
     @staticmethod
     def _generate_nova_cpu_pinning(serialized_node, cpus):
@@ -615,6 +616,14 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def _generate_dpdk_hugepages(node, serialized_node):
         serialized_node.setdefault('dpdk', {}).update(
             objects.NodeAttributes.dpdk_hugepages_attrs(node))
+
+    @classmethod
+    def _generate_hugepages_distribution(self, node, serialized_node):
+        hugepages = objects.NodeAttributes.distribute_hugepages(node)
+
+        if hugepages:
+            serialized_node.setdefault('hugepages', []).extend(
+                hugepages)
 
 
 def get_serializer_for_cluster(cluster):

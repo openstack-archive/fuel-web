@@ -39,6 +39,8 @@ from nailgun.orchestrator.base_serializers import \
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer
 from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkDeploymentSerializer10_0
+from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer51
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer60
@@ -50,6 +52,8 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer80
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer10_0
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 from nailgun.orchestrator.neutron_serializers import \
@@ -626,6 +630,16 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
                 hugepages)
 
 
+class DeploymentHASerializer10_0(DeploymentHASerializer90):
+
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return NeutronNetworkTemplateSerializer10_0
+        else:
+            return NeutronNetworkDeploymentSerializer10_0
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -658,6 +672,9 @@ def get_serializer_for_cluster(cluster):
         },
         '9.0': {
             'ha': DeploymentHASerializer90,
+        },
+        '10.0': {
+            'ha': DeploymentHASerializer10_0
         }
     }
 

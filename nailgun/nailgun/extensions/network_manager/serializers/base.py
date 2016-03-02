@@ -192,10 +192,11 @@ class NetworkDeploymentSerializer(object):
             'name': iface.name,
             'interfaces': sorted(x['name'] for x in iface.slaves),
         }
-        if iface.interface_properties.get('mtu'):
-            bond['mtu'] = iface.interface_properties['mtu']
+        if iface.attributes.get('mtu', {}).get('value', {}).get('value'):
+            bond['mtu'] = iface.attributes['mtu']['value']['value']
         if parameters:
             bond.update(parameters)
+
         return bond
 
     @classmethod
@@ -214,4 +215,5 @@ class NetworkDeploymentSerializer(object):
             patch['provider'] = provider
         if mtu:
             patch['mtu'] = mtu
+
         return patch

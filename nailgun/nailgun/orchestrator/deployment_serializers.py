@@ -564,6 +564,7 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         serialized_node = super(
             DeploymentHASerializer90, self).serialize_node(node, role)
         self.generate_cpu_pinning(node, serialized_node)
+        self.generate_node_hugepages(node, serialized_node)
         return serialized_node
 
     def generate_cpu_pinning(self, node, serialized_node):
@@ -594,6 +595,10 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             'ovs_core_mask': hex(ovs_core_mask),
             'ovs_pmd_core_mask': hex(ovs_pmd_core_mask)
         })
+
+    def generate_node_hugepages(self, node, serialized_node):
+        serialized_node.setdefault('hugepages', []).extend(
+            objects.NodeAttributes.distribute_hugepages(node))
 
 
 def get_serializer_for_cluster(cluster):

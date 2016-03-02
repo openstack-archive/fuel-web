@@ -58,9 +58,12 @@ from nailgun.objects.master_node_settings import MasterNodeSettings
 from nailgun.objects.node_group import NodeGroup
 from nailgun.objects.node_group import NodeGroupCollection
 
+from nailgun.objects.plugin import ClusterPlugins
+from nailgun.objects.plugin import NodeClusterPlugins
+from nailgun.objects.plugin import NodeBondInterfaceClusterPlugins
+from nailgun.objects.plugin import NodeNICInterfaceClusterPlugins
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
-from nailgun.objects.plugin import ClusterPlugins
 
 from nailgun.objects.plugin_link import PluginLink
 from nailgun.objects.plugin_link import PluginLinkCollection

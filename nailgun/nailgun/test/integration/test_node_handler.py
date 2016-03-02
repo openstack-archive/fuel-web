@@ -466,3 +466,55 @@ class TestHandlers(BaseIntegrationTest):
         fake_attributes['group1']['comp1']['value'] = '41'
         self.assertEqual(200, resp.status_code)
         self.assertEqual(fake_attributes, resp.json_body)
+
+
+class TestNodeAttributesDefaultsHandler(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNodeAttributesDefaultsHandler, self).setUp()
+        self.node_attributes = {'test_attr_key': 'test_attr_val'}
+        self.env.create(
+            release_kwargs={
+                'version': '2015.1-10.0',
+                'operating_system': 'Ubuntu',
+                'node_attributes': self.node_attributes
+            },
+            nodes_kwargs=[
+                {'role': 'controller'}
+            ]
+        )
+        self.cluster = self.env.clusters[0]
+        self.node = self.env.nodes[0]
+
+    def test_get_node_default_attributes(self):
+        resp = self.app.get(
+            reverse(
+                'NodeAttributesDefaultsHandler',
+                kwargs={'node_id': self.node.id}),
+            headers=self.default_headers)
+
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(self.node_attributes, resp.json_body)
+
+    def test_get_node_default_attrbiutes_with_enabled_plugin(self):
+        self.env.create_plugin(
+            name='plugin_a',
+            cluster=self.cluster,
+            enabled=True,
+            node_attributes_metadata={
+                'plugin_attr_key': 'plugin_attr_val'})
+
+        resp = self.app.get(
+            reverse(
+                'NodeAttributesDefaultsHandler',
+                kwargs={'node_id': self.node.id}),
+            headers=self.default_headers)
+
+        expected_attributes = {
+            'test_attr_key': 'test_attr_val',
+            'plugin_a': {
+                'plugin_attr_key': 'plugin_attr_val'}
+        }
+        self.maxDiff = None
+        self.assertEqual(200, resp.status_code)
+        self.assertDictEqual(expected_attributes, resp.json_body)

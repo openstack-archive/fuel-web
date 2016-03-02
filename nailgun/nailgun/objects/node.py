@@ -521,7 +521,6 @@ class Node(NailgunObject):
         try:
             network_manager = Cluster.get_network_manager(instance.cluster)
             network_manager.update_interfaces_info(instance)
-
             db().refresh(instance)
         except errors.InvalidInterfacesInfo as exc:
             logger.warning(
@@ -961,6 +960,7 @@ class Node(NailgunObject):
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
         cls.set_default_attributes(instance)
+        cls.create_nic_attributes(instance)
 
     @classmethod
     def set_network_template(cls, instance):
@@ -1273,7 +1273,7 @@ class Node(NailgunObject):
     def set_default_attributes(cls, instance):
         if not instance.cluster_id:
             logger.warning(
-                u"Attempting to update attributes of node "
+                u"Attempting to get default attributes of node "
                 u"'{0}' which isn't added to any cluster".format(
                     instance.full_name))
             return
@@ -1378,6 +1378,29 @@ class Node(NailgunObject):
                 tags.add('primary-{}'.format(assoc.tag.tag))
 
         return sorted(tags)
+
+    @classmethod
+    def get_bond_default_attributes(cls, instance):
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to get bond default attributes of node "
+                u"'{0}' which isn't added to any cluster".format(
+                    instance.full_name))
+            return
+
+        return Bond.get_default_attributes(instance.cluster)
+
+    @classmethod
+    def create_nic_attributes(cls, instance):
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to create NIC attributes of node "
+                u"'{0}' which isn't added to any cluster".format(
+                    instance.full_name))
+            return
+
+        for nic_interface in instance.nic_interfaces:
+            NIC.create_attributes(nic_interface)
 
 
 class NodeCollection(NailgunCollection):
@@ -1494,7 +1517,7 @@ class NodeAttributes(object):
         for nic in dpdk_nics:
             # NIC may have numa_node equal to null, in that case
             # we assume that it belongs to first NUMA
-            nics_numas.append(nic.interface_properties.get('numa_node') or 0)
+            nics_numas.append(nic.meta.get('numa_node') or 0)
 
         return cpu_distribution.distribute_node_cpus(
             numa_nodes, components, nics_numas)

@@ -124,7 +124,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                 self.admin_nic = nic
             elif net_names:
                 self.other_nic = nic
-            elif nic['interface_properties']['sriov']['available']:
+            elif nic['meta']['sriov']['available']:
                 self.sriov_nic = nic
             else:
                 self.empty_nic = nic
@@ -167,7 +167,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                 "lacp_rate": "slow",
                 "type__": bond_type
             },
-            "interface_properties": iface_props,
+            "attributes": iface_props,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -254,9 +254,10 @@ class TestNodeNICsBonding(BaseIntegrationTest):
     def test_nics_lnx_bond_create_failed_with_dpdk(self, m_dpdk_available):
         m_dpdk_available.return_value = True
         bond_name = 'bond0'
-        self.prepare_bond_w_props(bond_name=bond_name,
-                                  bond_type=BOND_TYPES.linux,
-                                  iface_props={'dpdk': {'enabled': True}})
+        self.prepare_bond_w_props(
+            bond_name=bond_name,
+            bond_type=BOND_TYPES.linux,
+            iface_props={'dpdk': {'dpdk_enabled': {'value': True}}})
         self.node_nics_put_check_error("Bond interface '{0}': DPDK can be"
                                        " enabled only for 'dpdkovs' bond type".
                                        format(bond_name))
@@ -290,7 +291,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data = self.env.node_nics_get(node.id).json_body
         bond = [iface for iface in self.data
                 if iface['type'] == NETWORK_INTERFACE_TYPES.bond][0]
-        bond['interface_properties'] = {'dpdk': {'enabled': True}}
+        bond['attributes'] = {'dpdk': {'dpdk_enabled': {'value': True}}}
         self.node_nics_put_check_error(
             "Bond interface '{0}': DPDK can be enabled only for 'dpdkovs' bond"
             " type".format(bond_name))
@@ -720,8 +721,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                 {"name": self.sriov_nic["name"]}],
             "assigned_networks": self.sriov_nic["assigned_networks"]
         })
-        self.sriov_nic['interface_properties']['sriov']['enabled'] = True
-        self.sriov_nic['interface_properties']['sriov']['sriov_numvfs'] = 2
+        self.sriov_nic['attributes']['sriov']['sriov_enabled']['value'] = True
+        self.sriov_nic['attributes']['sriov']['sriov_numvfs']['value'] = 2
         cluster_db = self.env.clusters[-1]
         cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
         cluster_attrs['common']['libvirt_type']['value'] = HYPERVISORS.kvm

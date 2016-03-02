@@ -19,6 +19,7 @@ from six.moves import map
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
+from nailgun.objects.plugin import NodeNICInterfaceClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.plugins.adapters import wrap_plugin
@@ -334,6 +335,68 @@ class PluginManager(object):
                     components.append(component)
 
         return components
+
+    # FIXME: write tests
+    @classmethod
+    def get_bond_metadata(cls, cluster):
+        """Get plugin bond attributes metadata for cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :returns: dict -- Object with bond attributes
+        """
+        plugins_bond_metadata = {}
+        enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
+            metadata = plugin_adapter.bond_attributes_metadata
+            plugins_bond_metadata[plugin_adapter.name] = metadata
+
+        return plugins_bond_metadata
+
+    # FIXME: write tests
+    @classmethod
+    def get_nic_metadata(cls, cluster):
+        """Get plugin nic attributes metadata for cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :returns: dict -- Object with nic attributes
+        """
+        plugins_nic_metadata = {}
+        enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
+            metadata = plugin_adapter.nic_attributes_metadata
+            plugins_nic_metadata[plugin_adapter.name] = metadata
+
+        return plugins_nic_metadata
+
+    # FIXME: write tests
+    @classmethod
+    def get_nic_attributes(cls, interface):
+        """Return plugin related attributes for NIC.
+
+        :param interface: A NIC instance
+        :type interface: Cluster model
+        """
+        return NodeNICInterfaceClusterPlugin.\
+            get_all_enabled_attributes_by_interface(interface)
+
+    # FIXME: write tests
+    @classmethod
+    def get_node_metadata(cls, cluster):
+        """Get plugin node attributes metadata for cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :returns: dict -- Object with node attributes
+        """
+        plugins_node_metadata = {}
+        enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
+            metadata = plugin_adapter.node_attributes_metadata
+            plugins_node_metadata[plugin_adapter.name] = metadata
+
+        return plugins_node_metadata
 
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):

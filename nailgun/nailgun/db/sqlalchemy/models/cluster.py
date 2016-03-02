@@ -129,6 +129,9 @@ class Cluster(Base):
     cluster_plugins = relationship(
         "ClusterPlugins", backref="cluster", cascade="delete")
 
+    cluster_plugins = relationship(
+        "ClusterPlugins", backref="cluster", cascade="delete")
+
     @property
     def changes(self):
         return [

@@ -14,14 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 
 from sqlalchemy.sql import not_
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.objects.base import NailgunCollection
+from nailgun.objects.base import NailgunObject
+from nailgun.plugins.manager import PluginManager
 from nailgun.objects.serializers.base import BasicSerializer
+from nailgun import utils
 
 
 class NIC(NailgunObject):
@@ -41,6 +44,53 @@ class NIC(NailgunObject):
         """
         instance.assigned_networks_list = networks
         db().flush()
+
+    # FIXME: write tests
+    @classmethod
+    def get_attributes(cls, instance):
+        """Get all attributes for interface.
+
+        :param instance: NodeNICInterface instance
+        :type instance: NodeNICInterface model
+        :returns: dict -- Object of interface attributes
+        """
+        attributes = copy.deepcopy(instance.attributes)
+        attributes.update(
+            PluginManager.get_nic_attributes(instance))
+
+        return attributes
+
+    # FIXME: write tests
+    @classmethod
+    def set_default_attributes(cls, instance):
+        """Set default attributes for interface.
+
+        :param instance: NodeNICInterface instance
+        :type instance: NodeNICInterface model
+        :returns: None
+        """
+        instance.attributes = instance.node.cluster.release.nic_metadata
+        # FIXME:
+        #   Use PluginManager as entry point
+        #   merge interface_properties and attributes
+        #   set default attributes for NodeNICInterfaceClusterPlugin
+
+    # FIXME: write tests
+    @classmethod
+    def set_attributes(cls, instance, attributes):
+        """Update data for native and plugin attributes for interface.
+
+        :param instance: NodeNICInterface instance
+        :type instance: NodeNICInterface model
+        :param attributes: NodeNICInterface attributes
+        :type attributes: dict
+        :returns: None
+        """
+        instance.attributes = utils.dict_merge(instance.attributes, attributes)
+        # FIXME:
+        #   Use PluginManager as entry point
+        #   separate attributes for native and plugins
+        #   set attributes for NodeNICInterfaceClusterPlugin
 
 
 class NICCollection(NailgunCollection):

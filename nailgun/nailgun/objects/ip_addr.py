@@ -235,6 +235,9 @@ class IPAddrCollection(NailgunCollection):
     def update_vips(cls, new_data_list):
         """Perform batch update of VIP data.
 
+        Remove VIPs for which 'is_user_defined'
+        has been reset
+
         :param new_data_list:
         :type new_data_list: list(dict)
         :return: vips query
@@ -247,9 +250,24 @@ class IPAddrCollection(NailgunCollection):
         query = cls.filter_by_list(None, 'id', list(data_by_ids))
 
         cls.lock_for_update(query).all()
+
+        updated = []
+        to_delete = []
         for existing_instance in query:
-            cls.single.update(
-                existing_instance,
-                data_by_ids[existing_instance.id]
-            )
-        return query
+
+            update_data = data_by_ids[existing_instance.id]
+
+            if update_data.get('is_user_defined') is False and \
+                    existing_instance.is_user_defined is True:
+                to_delete.append(existing_instance.id)
+                continue
+
+            cls.single.update(existing_instance, update_data)
+            updated.append(existing_instance)
+
+        if to_delete:
+            query.filter(
+                cls.single.model.id.in_(to_delete)
+            ).delete(synchronize_session='fetch')
+
+        return updated

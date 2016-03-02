@@ -78,9 +78,6 @@ class TestTaskManagers(BaseIntegrationTest):
         provision_task = filter(
             lambda t: t.name == TASK_NAMES.provision, supertask.subtasks)[0]
         self.assertEqual(provision_task.weight, 0.4)
-
-        wait_nodes = [self.env.nodes[0]]
-        self.env.wait_for_nodes_status(wait_nodes, NODE_STATUSES.provisioning)
         self.env.wait_ready(
             supertask,
             60,
@@ -99,7 +96,6 @@ class TestTaskManagers(BaseIntegrationTest):
             u"Deployment of environment '{0}' is done.".format(cluster_name),
             supertask.message
         )
-        self.env.wait_for_nodes_status(wait_nodes, NODE_STATUSES.ready)
         self.env.refresh_nodes()
         for n in filter(
             lambda n: n.cluster_id == cluster['id'],

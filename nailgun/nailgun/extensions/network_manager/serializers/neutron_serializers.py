@@ -1487,7 +1487,7 @@ class SriovSerializerMixin90(object):
         for n in cluster.nodes:
             for nic in n.nic_interfaces:
                 if objects.NIC.is_sriov_enabled(nic):
-                    pci_ids.add(nic.interface_properties['sriov']['pci_id'])
+                    pci_ids.add(nic.meta['sriov']['pci_id'])
         if pci_ids:
             attrs['supported_pci_vendor_devs'] = list(pci_ids)
         return attrs
@@ -1546,10 +1546,10 @@ class NeutronNetworkDeploymentSerializer90(
             # add ports with SR-IOV settings for SR-IOV enabled NICs
             if (not iface.bond and iface.name not in nets_by_ifaces and
                     objects.NIC.is_sriov_enabled(iface)):
-                sriov = iface.interface_properties['sriov']
+                sriov = iface.attributes['sriov']
                 config = {
-                    'sriov_numvfs': sriov['sriov_numvfs'],
-                    'physnet': sriov['physnet']
+                    'sriov_numvfs': sriov['numvfs']['value'],
+                    'physnet': sriov['physnet']['value']
                 }
                 transformations.append(cls.add_port(
                     iface.name, bridge=None, provider='sriov',

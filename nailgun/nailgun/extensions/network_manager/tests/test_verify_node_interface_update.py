@@ -91,16 +91,31 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
         objects.NIC.assign_networks(nic_3, [])
 
         dpdk_settings = {
-            'dpdk': {'enabled': True,
-                     'available': True},
-            'pci_id': 'test_id:2',
+            'attributes': {
+                'dpdk': {
+                    'enabled': {'value': True}},
+            },
+            'meta': {
+                'dpdk': {
+                    'available': True,
+                },
+                'pci_id': "test_id:2"
+            }
         }
-        objects.NIC.update(nic_2, {'interface_properties': utils.dict_merge(
-            nic_2.interface_properties, dpdk_settings)})
+        objects.NIC.update(nic_2, {
+            'attributes': utils.dict_merge(
+                nic_2.attributes, dpdk_settings['attributes']),
+            'meta': utils.dict_merge(
+                nic_2.meta, dpdk_settings['meta'])
+        })
 
-        dpdk_settings['dpdk']['enabled'] = False
-        objects.NIC.update(nic_3, {'interface_properties': utils.dict_merge(
-            nic_3.interface_properties, dpdk_settings)})
+        dpdk_settings['attributes']['dpdk']['enabled']['value'] = False
+        objects.NIC.update(nic_3, {
+            'attributes': utils.dict_merge(
+                nic_3.attributes, dpdk_settings['attributes']),
+            'meta': utils.dict_merge(
+                nic_3.meta, dpdk_settings['meta'])
+        })
 
         self.cluster_attrs = objects.Cluster.get_editable_attributes(
             self.cluster_db)
@@ -138,17 +153,17 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
 
     def test_change_pci_id(self):
         iface = self.data['interfaces'][1]
-        iface['interface_properties']['pci_id'] = '123:345'
+        iface['meta']['pci_id'] = '123:345'
         self.check_fail("PCI-ID .* can't be changed manually")
 
     def test_wrong_mtu(self):
         iface = self.data['interfaces'][1]
-        iface['interface_properties']['mtu'] = 1501
+        iface['attributes']['mtu']['value']['value'] = 1501
         self.check_fail("MTU size must be less than 1500 bytes")
 
     def test_non_default_mtu(self):
         iface = self.data['interfaces'][1]
-        iface['interface_properties']['mtu'] = 1500
+        iface['attributes']['mtu']['value']['value'] = 1500
         self.assertNotRaises(errors.InvalidData,
                              self.validator, self.data)
 
@@ -158,18 +173,56 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
 
         nets = nic_2['assigned_networks']
         nic_2['assigned_networks'] = []
-        nic_3['interface_properties']['dpdk']['enabled'] = True
+        nic_3['attributes']['dpdk']['enabled']['value'] = True
 
         bond_data = {
             'type': "bond",
             'name': "ovs-bond0",
             'mode': "active-backup",
             'assigned_networks': nets,
-            'interface_properties': {
-                'mtu': None,
-                'disable_offloading': True,
+            'attributes': {
+                'offloading': {
+                    'disable': {
+                        'value': True,
+                        'label': 'Disable offloading',
+                        'type': 'checkbox',
+                        'weight': 10
+                    },
+                    'metadata': {
+                        'label': 'Offloading',
+                        'weight': 10
+                    },
+                    'offloading_modes': {
+                        'description': 'Offloading modes',
+                        'value': {},
+                        'label': 'Offloading modes',
+                        'type': 'offloading_modes',
+                        'weight': 20
+                    }
+                },
+                'mtu': {
+                    'value': {
+                        'value': None,
+                        'label': 'MTU',
+                        'type': 'number',
+                        'weight': 10
+                    },
+                    'metadata': {
+                        'label': 'MTU',
+                        'weight': 20
+                    }
+                },
                 'dpdk': {
-                    'enabled': True,
+                    'enabled': {
+                        'value': True,
+                        'label': 'DPDK enabled',
+                        'type': 'checkbox',
+                        'weight': 10
+                    },
+                    'metadata': {
+                        'label': 'DPDK',
+                        'weight': 40
+                    }
                 }
             },
             'bond_properties': {
@@ -194,9 +247,12 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
         self._create_bond_data()
         nic_3 = self.node.nic_interfaces[2]
 
-        dpdk_settings = {'dpdk': {'available': False}, 'pci_id': ''}
-        objects.NIC.update(nic_3, {'interface_properties': utils.dict_merge(
-            nic_3.interface_properties, dpdk_settings)})
+        meta = {
+            'dpdk': {'available': False},
+            'pci_id': ''
+        }
+        objects.NIC.update(nic_3, {
+            'meta': utils.dict_merge(nic_3.meta, meta)})
 
         self.assertRaisesRegexp(
             errors.InvalidData,

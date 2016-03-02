@@ -37,6 +37,7 @@ from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 from nailgun.logger import logger
 from nailgun import objects
 
+from nailgun.task.manager import ApplyChangesForceTaskManager
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
@@ -84,6 +85,15 @@ class ClusterChangesHandler(DeferredTaskHandler):
     log_error = u"Error during execution of deployment " \
                 u"task on environment '{env_id}': {error}"
     task_manager = ApplyChangesTaskManager
+    validator = ClusterChangesValidator
+
+
+class ClusterChangesForceRedeployHandler(DeferredTaskHandler):
+
+    log_message = u"Trying to force deployment of the environment '{env_id}'"
+    log_error = u"Error during execution of a forced deployment task " \
+                u"on environment '{env_id}': {error}"
+    task_manager = ApplyChangesForceTaskManager
     validator = ClusterChangesValidator
 
 

@@ -221,19 +221,6 @@ class TestPipeline(BaseExtensionCase):
 
         return cluster
 
-    @mock.patch('nailgun.orchestrator.deployment_serializers.'
-                'fire_callback_on_deployment_data_serialization')
-    def test_deployment_serialization(self, mfire_callback):
-        cluster = self._create_cluster_with_extensions()
-        graph = deployment_graph.AstuteGraph(cluster)
-        deployment_serializers.serialize(graph, cluster, cluster.nodes)
-
-        self.assertTrue(mfire_callback.called)
-        self.assertEqual(mfire_callback.call_args[1], {
-            'cluster': cluster,
-            'nodes': cluster.nodes,
-        })
-
     @mock.patch.object(deployment_graph.AstuteGraph, 'deploy_task_serialize')
     def test_deployment_serialization_ignore_customized(self, _):
         cluster = self._create_cluster_with_extensions()
@@ -260,8 +247,7 @@ class TestPipeline(BaseExtensionCase):
                     deployment_serializers.serialize(
                         graph, cluster, cluster.nodes, ignore_customized=True)
 
-        mfire_callback.assert_called_once_with(data, cluster=cluster,
-                                               nodes=cluster.nodes)
+        mfire_callback.assert_called_once_with(data, cluster, cluster.nodes)
 
     @mock.patch.object(deployment_graph.AstuteGraph, 'deploy_task_serialize')
     def test_deployment_serialization_ignore_customized_false(self, _):
@@ -298,12 +284,10 @@ class TestPipeline(BaseExtensionCase):
                     deployment_serializers.serialize(
                         graph, cluster, cluster.nodes, ignore_customized=False)
 
-        self.assertEqual(
-            mfire_callback.call_args[0][0], expected_data)
+        self.assertEqual(mfire_callback.call_args[0][0], expected_data)
+        self.assertIs(mfire_callback.call_args[0][1], cluster)
         self.assertItemsEqual(
-            mfire_callback.call_args[1]['nodes'], cluster.nodes[1:])
-        self.assertIs(
-            mfire_callback.call_args[1]['cluster'], cluster)
+            mfire_callback.call_args[0][2], cluster.nodes[1:])
 
     def test_provisioning_serialization_ignore_customized(self):
         cluster = self._create_cluster_with_extensions()
@@ -328,8 +312,7 @@ class TestPipeline(BaseExtensionCase):
                     provisioning_serializers.serialize(
                         cluster, cluster.nodes, ignore_customized=True)
 
-        mfire_callback.assert_called_once_with(data, cluster=cluster,
-                                               nodes=cluster.nodes)
+        mfire_callback.assert_called_once_with(data, cluster, cluster.nodes)
 
     def test_provisioning_serialization_ignore_customized_false(self):
         cluster = self._create_cluster_with_extensions(
@@ -342,7 +325,7 @@ class TestPipeline(BaseExtensionCase):
         )
 
         data = {"nodes": [{"uid": n.uid} for n in cluster.nodes]}
-        expected_data = copy.deepcopy(data["nodes"][1:])
+        expected_data = {"nodes": copy.deepcopy(data["nodes"][1:])}
 
         mserializer = mock.MagicMock()
         mserializer.serialize.return_value = data
@@ -363,24 +346,10 @@ class TestPipeline(BaseExtensionCase):
                     provisioning_serializers.serialize(
                         cluster, cluster.nodes, ignore_customized=False)
 
-        self.assertEqual(
-            mfire_callback.call_args[0][0], {'nodes': expected_data})
+        self.assertEqual(mfire_callback.call_args[0][0], expected_data)
+        self.assertIs(mfire_callback.call_args[0][1], cluster)
         self.assertItemsEqual(
-            mfire_callback.call_args[1]['nodes'], cluster.nodes[1:])
-        self.assertIs(
-            mfire_callback.call_args[1]['cluster'], cluster)
-
-    @mock.patch('nailgun.orchestrator.provisioning_serializers.'
-                'fire_callback_on_provisioning_data_serialization')
-    def test_provisioning_serialization(self, mfire_callback):
-        cluster = self._create_cluster_with_extensions()
-        provisioning_serializers.serialize(cluster, cluster.nodes)
-
-        self.assertTrue(mfire_callback.called)
-        self.assertEqual(mfire_callback.call_args[1], {
-            'cluster': cluster,
-            'nodes': cluster.nodes,
-        })
+            mfire_callback.call_args[0][2], cluster.nodes[1:])
 
     def test_pipeline_change_data(self):
         self.env.create(
@@ -394,14 +363,14 @@ class TestPipeline(BaseExtensionCase):
         class PipelinePlus1(BasePipeline):
 
             @classmethod
-            def process_provisioning(cls, data, **kwargs):
+            def process_provisioning(cls, data, cluster, nodes, **kwargs):
                 data['key'] += 1
                 return data
 
         class PipelinePlus2(BasePipeline):
 
             @classmethod
-            def process_provisioning(cls, data, **kwargs):
+            def process_provisioning(cls, data, cluster, nodes, **kwargs):
                 data['key'] += 2
                 return data
 
@@ -412,6 +381,9 @@ class TestPipeline(BaseExtensionCase):
             data_pipelines = (PipelinePlus1, PipelinePlus2)
 
         extension = Extension()
+
+        cluster.extensions = [extension.name]
+        self.db.flush()
 
         data = {'key': 0, 'nodes': []}
 

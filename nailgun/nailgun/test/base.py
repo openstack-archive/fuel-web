@@ -1121,7 +1121,8 @@ class EnvironmentManager(object):
             )
 
     def make_bond_via_api(self, bond_name, bond_mode, nic_names, node_id=None,
-                          bond_properties=None, interface_properties=None):
+                          bond_properties=None, interface_properties=None,
+                          attrs=None):
         if not node_id:
             node_id = self.nodes[0]["id"]
         resp = self.app.get(
@@ -1149,7 +1150,8 @@ class EnvironmentManager(object):
             "type": NETWORK_INTERFACE_TYPES.bond,
             "mode": bond_mode,
             "slaves": slaves,
-            "assigned_networks": assigned_nets
+            "assigned_networks": assigned_nets,
+            "attributes": attrs or {}
         }
         if bond_properties:
             bond_dict["bond_properties"] = bond_properties

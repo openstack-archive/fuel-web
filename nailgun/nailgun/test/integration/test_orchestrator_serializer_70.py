@@ -1793,6 +1793,28 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         # old IPs are the same
         self.assertEqual(len(ips_5_str.difference(ips_2_str)), 3)
 
+    def check_vendor_specific_is_not_set(self, net_template=None):
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'], primary_roles=['controller']
+        )
+        objects.Cluster.set_network_template(self.cluster, net_template)
+        objects.Cluster.prepare_for_deployment(self.cluster)
+        serializer = get_serializer_for_cluster(self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        networks = nm.get_node_networks(node)
+        network_scheme = net_serializer.generate_network_scheme(node, networks)
+
+        self.assertNotIn('vendor_specific',
+                         network_scheme['endpoints']['br-ex'])
+
+    def test_vendor_specific_in_deployment_serializer(self):
+        self.check_vendor_specific_is_not_set()
+
+    def test_vendor_specific_in_template_serializer(self):
+        self.check_vendor_specific_is_not_set(self.net_template)
+
 
 class TestCustomNetGroupIpAllocation(BaseDeploymentSerializer):
 

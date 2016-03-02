@@ -62,6 +62,19 @@ INTERFACES = {
                         }
                     }
                 }
+            },
+            "attributes": {
+                "type": "object",
+                "properties": {
+                    "offloading": {
+                        "type": "object"},
+                    "mtu": {
+                        "type": "object"},
+                    "sriov": {
+                        "type": "object"},
+                    "dpdk": {
+                        "type": "object"}
+                }
             }
         }
     }

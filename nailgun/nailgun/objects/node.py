@@ -53,6 +53,7 @@ from nailgun.objects import NetworkGroup
 from nailgun.objects import Notification
 from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.policy import cpu_distribution
+from nailgun.policy import hugepages_distribution
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -1309,6 +1310,10 @@ class NodeAttributes(object):
         return bool(Node.get_attributes(node)['cpu_pinning']['nova']['value'])
 
     @classmethod
+    def pages_per_numa_node(cls, size_in_mib):
+        return int(math.ceil(float(size_in_mib) / 2))
+
+    @classmethod
     def total_hugepages(cls, instance):
         """Return total hugepages for the instance
 
@@ -1336,7 +1341,7 @@ class NodeAttributes(object):
                 # type text means that value is the number of memory in MB
                 # per NUMA node which should be covered by 2M hugepages
                 # for python3 capabilites we have to use int() and float()
-                count_per_numa_node = int(math.ceil(float(attrs['value']) / 2))
+                count_per_numa_node = cls.pages_per_numa_node(attrs['value'])
                 hugepages[consts.DEFAULT_HUGEPAGE_SIZE] += (
                     count_per_numa_node * numa_count)
 
@@ -1357,3 +1362,26 @@ class NodeAttributes(object):
                     human_size, hugepage_size)
 
         return kernel_opts
+
+    @classmethod
+    def distribute_hugepages(cls, instance):
+        topology = instance.meta['numa_topology']['numa_nodes']
+        attributes = Node.get_attributes(instance)['hugepages']
+
+        # split components to 2 groups:
+        # components that shoud have pages on all numa nodes (such as dpdk)
+        # and components that have pages on any numa node
+        components = {'all': [], 'any': []}
+
+        for name, attrs in attributes.items():
+            if attrs.get('type') == 'text':
+                # type text means size of memory in MiB to allocate with
+                # 2MiB pages, so we need to calculate pages count
+                pages_count = cls.pages_per_numa_node(attrs['value'])
+                components['all'].append({'2048': pages_count})
+
+            elif attrs.get('type') == 'custom_hugepages':
+                components['any'].append(attrs['value'])
+
+        return hugepages_distribution.distribute_hugepages(
+            topology, components)

@@ -445,8 +445,8 @@ class NetAssignmentValidator(BasicValidator):
     @classmethod
     def _verify_sriov_properties(cls, iface, data, db_node):
         non_changeable = ['sriov_totalvfs', 'available', 'pci_id']
-        sriov_data = data['interface_properties']['sriov']
-        sriov_db = iface.interface_properties['sriov']
+        sriov_data = data['attributes']['sriov']
+        sriov_db = iface.attributes['sriov']
         sriov_new = sriov_db.copy()
         sriov_new.update(sriov_data)
 
@@ -481,8 +481,8 @@ class NetAssignmentValidator(BasicValidator):
             )
         if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
             raise errors.InvalidData(
-                "Node '{0}' interface '{1}': '{2}' virtual functions was "
-                "requested but just '{3}' are available".format(
+                "Node '{0}' interface '{1}': '{2}' virtual functions was"
+                " requested but just '{3}' are available".format(
                     db_node.id, iface.name, sriov_new['sriov_numvfs'],
                     sriov_db['sriov_totalvfs']),
                 log_message=True
@@ -562,10 +562,8 @@ class NetAssignmentValidator(BasicValidator):
                 hw_available &= objects.NIC.dpdk_available(
                     slave_iface, dpdk_drivers)
 
-            interface_properties = iface.get('interface_properties', {})
-            enabled = interface_properties.get('dpdk', {}).get(
-                'enabled', False)
-
+            attributes = iface.get('attributes', {})
+            enabled = attributes.get('dpdk', {}).get('enabled', False)
             bond_type = iface.get('bond_properties', {}).get('type__')
         else:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
@@ -575,13 +573,11 @@ class NetAssignmentValidator(BasicValidator):
                 bond_type = iface.get('bond_properties', {}).get(
                     'type__', db_iface.bond_properties.get('type__'))
             hw_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
-
-            interface_properties = utils.dict_merge(
-                db_iface.interface_properties,
-                iface.get('interface_properties', {})
+            attributes = utils.dict_merge(
+                db_iface.attributes,
+                iface.get('attributes', {})
             )
-            enabled = interface_properties.get('dpdk', {}).get(
-                'enabled', False)
+            enabled = attributes.get('dpdk', {}).get('enabled', False)
 
         # check basic parameters
         if not hw_available and enabled:
@@ -603,8 +599,8 @@ class NetAssignmentValidator(BasicValidator):
                 )
 
         if db_iface is not None:
-            pci_id = interface_properties.get('pci_id')
-            db_pci_id = db_iface.interface_properties.get('pci_id')
+            pci_id = attributes.get('pci_id')
+            db_pci_id = db_iface.attributes.get('pci_id')
 
             if pci_id != db_pci_id:
                 raise errors.InvalidData(
@@ -624,7 +620,7 @@ class NetAssignmentValidator(BasicValidator):
 
         # check mtu <= 1500
         # github.com/openvswitch/ovs/blob/master/INSTALL.DPDK.md#restrictions
-        mtu = interface_properties.get('mtu')
+        mtu = attributes.get('mtu', {}).get('value')
         if enabled and mtu is not None and mtu > 1500:
             raise errors.InvalidData(
                 "For interface '{}' with enabled DPDK MTU"
@@ -708,7 +704,7 @@ class NetAssignmentValidator(BasicValidator):
                                                             iface['name']),
                             log_message=True
                         )
-                if iface.get('interface_properties', {}).get('sriov'):
+                if iface.get('attributes', {}).get('sriov'):
                     cls._verify_sriov_properties(db_iface, iface, db_node)
 
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
@@ -738,8 +734,8 @@ class NetAssignmentValidator(BasicValidator):
                         )
                     cur_iface = interfaces_by_name.get(slave['name'], {})
                     iface_props = utils.dict_merge(
-                        db_slave.interface_properties,
-                        cur_iface.get('interface_properties', {}))
+                        db_slave.attributes,
+                        cur_iface.get('attributes', {}))
                     if iface_props.get('sriov', {}).get('enabled'):
                         raise errors.InvalidData(
                             "Node '{0}': bond '{1}' cannot contain SRIOV "

@@ -1066,7 +1066,6 @@
             # description: "Enables adaptation of granular tasks for task deployment."
             weight: 12
             type: "hidden"
-
         public_network_assignment:
           metadata:
             weight: 10
@@ -1891,6 +1890,48 @@
         incompatible:
           - name: network:neutron:ml2:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+    nic_attributes:
+      disable_offloading:
+        label: "Disable offloading"
+        weight: 10
+        type: "checkbox"
+        value: False
+      mtu:
+        label: "MTU"
+        weight: 20
+        type: "text"
+        value: null
+      sriov:
+        label: "SRIOV"
+        type: "checkbox"
+        enabled: null
+        available: null
+        pci_id: ""
+        sriov_numvfs:
+          label: "virtual_functions"
+          name: "sriov_numvfs"
+          type: "number"
+          min: 0
+          max: 0
+          value: null
+        physnet:
+          label: "physical_network"
+          name: "sriov_physnet"
+          type: "text"
+          value: null
+      dpdk:
+        label: "DPDK"
+        name: "dpdk"
+        type: "checkbox"
+        enabled: null
+        available: null
+    bond_attributes:
+      mode:
+        label: "Mode"
+        type: "select"
+        values:
+          - balance-rr
+        value: balance-rr
     modes: ['ha_compact']
     extensions: ['volume_manager']
 - pk: 1

@@ -483,8 +483,13 @@ class NetAssignmentValidator(BasicValidator):
         if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': '{2}' virtual functions was"
+<<<<<<< HEAD
                 "requested but just '{3}' are available".format(
                     db_node.id, iface.name, sriov_new['sriov_numvfs'],
+=======
+                " requested but just '{3}' are available".format(
+                    node_id, iface.name, sriov_new['sriov_numvfs'],
+>>>>>>> ba99156... Support for plugin NIC attributes
                     sriov_db['sriov_totalvfs']),
                 log_message=True
             )

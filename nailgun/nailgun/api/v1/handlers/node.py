@@ -309,6 +309,20 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
         return filter(lambda x: x is not None, map(self.get_default, nodes))
 
 
+class NodeBondAttributesDefaultsHandler(BaseHandler):
+    """Bond default attributes handler"""
+
+    @content
+    def GET(self, node_id):
+        """:returns: JSONized Bond default attributes.
+
+        :http: * 200 (OK)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(objects.Node, node_id)
+        return objects.Node.get_bond_default_attributes(node)
+
+
 class NodesAllocationStatsHandler(BaseHandler):
     """Node allocation stats handler"""
 
@@ -355,3 +369,18 @@ class NodeAttributesHandler(BaseHandler):
         objects.Node.update_attributes(node, data)
 
         return objects.Node.get_attributes(node)
+
+
+class NodeAttributesDefaultsHandler(BaseHandler):
+    """Node default attributes handler"""
+
+    @content
+    def GET(self, node_id):
+        """:returns: JSONized Node default attributes.
+
+        :http: * 200 (OK)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(objects.Node, node_id)
+
+        return objects.Node.get_default_attributes(node)

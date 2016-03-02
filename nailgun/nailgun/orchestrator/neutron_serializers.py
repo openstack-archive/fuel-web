@@ -1569,3 +1569,47 @@ class NeutronNetworkTemplateSerializer90(
     NeutronNetworkTemplateSerializer80
 ):
     pass
+
+
+class NeutronNetworkDeploymentSerializer10_0(
+    NeutronNetworkDeploymentSerializer90
+):
+
+    @classmethod
+    def generate_network_scheme(cls, node, networks):
+        schema = (
+            super(NeutronNetworkDeploymentSerializer10_0, cls)
+            .generate_network_scheme(node, networks))
+
+        # Add Bond specifc attributes
+        for transformation in schema.get('transformations', []):
+            if cls._is_bond(transformation):
+                cls._add_attributes_for_bond(transformation)
+
+        # Add NIC specific attributes
+        for iface in node.nic_interfaces:
+            cls._add_attributes_for_interface(iface, schema)
+
+        return schema
+
+    @classmethod
+    def _add_attributes_for_bond(cls, transformation):
+        name = transformation.get('name', '')
+        bond = objects.BondCollection.filter_by(None, name=name)[0]
+        attributes = objects.Bond.get_attributes(bond)
+        transformation['attributes'] = attributes
+
+    @classmethod
+    def _add_attributes_for_interface(cls, interface, schema):
+        attributes = objects.NIC.get_attributes(interface)
+        schema['interfaces'][interface.name]['attributes'] = attributes
+
+    @classmethod
+    def _is_bond(cls, transformation):
+        return transformation.get('action') == 'add-bond'
+
+
+class NeutronNetworkTemplateSerializer10_0(
+    NeutronNetworkTemplateSerializer90
+):
+    pass

@@ -481,8 +481,8 @@ class NetAssignmentValidator(BasicValidator):
             )
         if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
             raise errors.InvalidData(
-                "Node '{0}' interface '{1}': '{2}' virtual functions was "
-                "requested but just '{3}' are available".format(
+                "Node '{0}' interface '{1}': '{2}' virtual functions was"
+                " requested but just '{3}' are available".format(
                     db_node.id, iface.name, sriov_new['sriov_numvfs'],
                     sriov_db['sriov_totalvfs']),
                 log_message=True

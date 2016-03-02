@@ -58,8 +58,10 @@ class TestDeploymentAttributesSerialization90(
     TestDeploymentAttributesSerialization80
 ):
     def test_attributes_cpu_pinning(self):
-        numa_nodes = [{'id': 1, 'cpus': [1, 2, 3, 4]},
-                      {'id': 2, 'cpus': [5, 6, 7, 8]}]
+        numa_nodes = [
+            {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
+            {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}
+        ]
         node = self.env.create_node(cluster_id=self.cluster_db.id,
                                     roles=['compute'])
 
@@ -83,6 +85,47 @@ class TestDeploymentAttributesSerialization90(
         node_common_attrs = \
             serialized_node['network_metadata']['nodes'][node_name]
         self.assertTrue(node_common_attrs['nova_cpu_pinning_enabled'])
+
+    def test_attributes_hugepages_distribution(self):
+        meta = {
+            'numa_topology': {
+                'supported_hugepages': [2048, 1048576],
+                'numa_nodes': [
+                    {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
+                    {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}],
+            }
+        }
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute'],
+            meta=meta)
+        node.attributes.update({
+            'hugepages': {
+                'comp1': {
+                    'type': 'custom_hugepages',
+                    'value': {
+                        '2048': 512,
+                        '1048576': 1,
+                    }
+                },
+                'comp2': {
+                    'type': 'text',
+                    'value': '512'}
+            }
+        })
+
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        serialized_node = serialized_for_astute[0]
+
+        expected = [
+            {'numa_id': 0, 'size': 2048, 'count': 512},
+            {'numa_id': 1, 'size': 2048, 'count': 512},
+            {'numa_id': 1, 'size': 1048576, 'count': 1},
+        ]
+
+        self.assertEqual(serialized_node['hugepages'], expected)
 
 
 class TestDeploymentHASerializer90(

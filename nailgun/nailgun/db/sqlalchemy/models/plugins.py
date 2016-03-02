@@ -52,7 +52,7 @@ class ClusterPlugins(Base):
                         server_default='{}')
 
 
-class NodeNICInterfaceClusterPlugin(Base):
+class NodeNICInterfaceClusterPlugins(Base):
 
     __tablename__ = 'node_nic_interface_cluster_plugins'
     id = Column(Integer, primary_key=True)
@@ -74,7 +74,7 @@ class NodeNICInterfaceClusterPlugin(Base):
         server_default='{}')
 
 
-class NodeBondInterfaceClusterPlugin(Base):
+class NodeBondInterfaceClusterPlugins(Base):
 
     __tablename__ = 'node_bond_interface_cluster_plugins'
     id = Column(Integer, primary_key=True)
@@ -96,7 +96,7 @@ class NodeBondInterfaceClusterPlugin(Base):
         server_default='{}')
 
 
-class NodeClusterPlugin(Base):
+class NodeClusterPlugins(Base):
 
     __tablename__ = 'node_cluster_plugins'
     id = Column(Integer, primary_key=True)
@@ -172,5 +172,7 @@ class Plugin(Base):
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")
+    cluster_plugins = relationship(
+        "ClusterPlugins", backref="plugin", cascade="delete")
     links = relationship(
         "PluginLink", backref="plugin", cascade="delete")

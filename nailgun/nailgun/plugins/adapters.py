@@ -157,6 +157,18 @@ class PluginAdapterBase(object):
         return self.plugin.components_metadata
 
     @property
+    def bond_attributes_metadata(self):
+        return self.plugin.bond_attributes_metadata
+
+    @property
+    def nic_attributes_metadata(self):
+        return self.plugin.bond_attributes_metadata
+
+    @property
+    def node_attributes_metadata(self):
+        return self.plugin.node_attributes_metadata
+
+    @property
     def releases(self):
         return self.plugin.releases
 

@@ -62,6 +62,11 @@ from nailgun.db.sqlalchemy.models.master_node_settings \
     import MasterNodeSettings
 
 from nailgun.db.sqlalchemy.models.plugins import ClusterPlugins
+from nailgun.db.sqlalchemy.models.plugins import NodeClusterPlugins
+from nailgun.db.sqlalchemy.models.plugins \
+    import NodeBondInterfaceClusterPlugins
+from nailgun.db.sqlalchemy.models.plugins \
+    import NodeNICInterfaceClusterPlugins
 from nailgun.db.sqlalchemy.models.plugins import Plugin
 
 from nailgun.db.sqlalchemy.models.openstack_config import OpenstackConfig

@@ -55,6 +55,7 @@ from nailgun.objects import NIC
 from nailgun.objects import Notification
 from nailgun.objects import Release
 from nailgun.objects.serializers.node import NodeSerializer
+from nailgun.plugins.manager import PluginManager
 from nailgun.policy import cpu_distribution
 from nailgun.policy import hugepages_distribution
 from nailgun.settings import settings
@@ -492,7 +493,6 @@ class Node(NailgunObject):
         try:
             network_manager = Cluster.get_network_manager(instance.cluster)
             network_manager.update_interfaces_info(instance)
-
             db().refresh(instance)
         except errors.InvalidInterfacesInfo as exc:
             logger.warning(
@@ -924,6 +924,7 @@ class Node(NailgunObject):
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
         cls.set_default_attributes(instance)
+        cls.create_nic_attributes(instance)
 
     @classmethod
     def set_network_template(cls, instance):
@@ -1149,11 +1150,13 @@ class Node(NailgunObject):
     def set_default_attributes(cls, instance):
         if not instance.cluster_id:
             logger.warning(
-                u"Attempting to update attributes of node "
+                u"Attempting to get default attributes of node "
                 u"'{0}' which isn't added to any cluster".format(
                     instance.full_name))
             return
 
+        # FIXME:
+        #   set here default attributes for each node_plugin from plugins
         instance.attributes = copy.deepcopy(
             instance.cluster.release.node_attributes)
         NodeAttributes.set_default_hugepages(instance)
@@ -1176,8 +1179,24 @@ class Node(NailgunObject):
     def get_attributes(cls, instance):
         return copy.deepcopy(instance.attributes)
 
+    # TODO(apopovych): move into Bond
+    def get_bond_default_attributes(cls, instance):
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to get default attributes of node bond"
+                u"'{0}' which isn't added to any cluster".format(
+                    instance.full_name))
+            return
+
+        cluster = instance.cluster
+        bond_metadata = cluster.release.bond_attributes
+        bond_metadata.update(PluginManager.get_bond_metadata(cluster))
+
+        return bond_metadata
+
     @classmethod
     def update_attributes(cls, instance, attrs):
+        # FIXME: set here attributes for each node_plugin
         instance.attributes = utils.dict_merge(instance.attributes, attrs)
 
     @classmethod
@@ -1217,6 +1236,18 @@ class Node(NailgunObject):
             return []
         nm = Cluster.get_network_manager(instance.cluster)
         return nm.dpdk_nics(instance)
+
+    @classmethod
+    def create_nic_attributes(cls, instance):
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to update attributes of node NICs "
+                u"'{0}' which isn't added to any cluster".format(
+                    instance.full_name))
+            return
+
+        for nic_interface in instance.nic_interfaces:
+            NIC.create_attributes(nic_interface)
 
 
 class NodeCollection(NailgunCollection):
@@ -1333,7 +1364,7 @@ class NodeAttributes(object):
         for nic in dpdk_nics:
             # NIC may have numa_node equal to null, in that case
             # we assume that it belongs to first NUMA
-            nics_numas.append(nic.interface_properties.get('numa_node') or 0)
+            nics_numas.append(nic.meta.get('numa_node') or 0)
 
         return cpu_distribution.distribute_node_cpus(
             numa_nodes, components, nics_numas)

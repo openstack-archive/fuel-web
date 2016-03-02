@@ -1077,8 +1077,12 @@ LOAD_TESTS_PATHS:
     load_previous_tests_results: "/tmp/nailgun_performance_tests/previous_results.json"
     failed_test_file_name: "failed_tests.txt"
 
-DNS_UPSTREAM: "8.8.8.8, 8.8.4.4"
-NTP_UPSTREAM: "0.fuel.pool.ntp.org, 1.fuel.pool.ntp.org"
+DNS_UPSTREAM:
+  - '8.8.8.8'
+  - '8.8.4.4'
+NTP_UPSTREAM:
+  - '0.fuel.pool.ntp.org'
+  - '1.fuel.pool.ntp.org'
 
 # deadlocks detection settings
 LOG_DEADLOCKS_WARNINGS: 1

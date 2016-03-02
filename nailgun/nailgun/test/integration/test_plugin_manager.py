@@ -507,3 +507,65 @@ class TestClusterPluginIntegration(base.BaseTestCase):
 
         enabled_plugins = ClusterPlugin.get_enabled(self.cluster.id)
         self.assertItemsEqual(enabled_plugins, [plugin_a])
+
+
+class TestNICIntegration(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestNICIntegration, self).setUp()
+
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2015.1-8.0'},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+            })
+        self.cluster = self.env.clusters[0]
+        self.env.create_plugin(
+            name='plugin_a',
+            cluster=self.cluster,
+            enabled=True,
+            nic_attributes_metadata={'attr_a': 'test_a'})
+        self.node = self.env.create_nodes_w_interfaces_count(
+            1, 1, **{"cluster_id": self.cluster.id})[0]
+        self.interface = self.node.nic_interfaces[0]
+
+    def test_get_nic_metadata(self):
+        self.env.create_plugin(
+            name='plugin_b',
+            cluster=self.cluster,
+            enabled=True,
+            nic_attributes_metadata={'attr_b': 'test_b'})
+        nic_metadata = PluginManager.get_nic_metadata(self.cluster)
+        self.assertDictEqual({
+            'plugin_b': {'attr_b': 'test_b'},
+            'plugin_a': {'attr_a': 'test_a'}
+        }, nic_metadata)
+
+    def test_get_nic_plugin_atributes(self):
+        attributes = PluginManager.get_nic_attributes(self.interface)
+        del attributes['plugin_a']['metadata']['nic_plugin_id']
+        self.assertDictEqual({
+            'plugin_a': {
+                'metadata': {'class': 'plugin'},
+                'attributes': {'attr_a': 'test_a'}
+            }
+        }, attributes)
+
+    def test_update_nic_attributes(self):
+        new_attrs = PluginManager.get_nic_attributes(self.interface)
+        new_attrs['plugin_a']['attributes']['attr_a'] = ''
+        PluginManager.update_nic_attributes(self.interface, new_attrs)
+        attributes = PluginManager.get_nic_attributes(self.interface)
+        del attributes['plugin_a']['metadata']['nic_plugin_id']
+        self.assertDictEqual({
+            'plugin_a': {
+                'metadata': {'class': 'plugin'},
+                'attributes': {'attr_a': ''}
+            }
+        }, attributes)
+
+
+class TestBondIntegration(base.BaseTestCase):
+    pass

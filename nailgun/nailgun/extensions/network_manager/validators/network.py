@@ -538,13 +538,14 @@ class NetAssignmentValidator(BasicValidator):
 
     @classmethod
     def _verify_sriov_properties(cls, iface, data, db_node):
-        non_changeable = ['sriov_totalvfs', 'available', 'pci_id']
-        sriov_data = data['interface_properties']['sriov']
-        sriov_db = iface.interface_properties['sriov']
+        non_changeable = ['totalvfs', 'available', 'pci_id']
+        sriov_data = data['attributes']['sriov']
+        sriov_db = iface.attributes['sriov']
+        sriov_meta = iface.meta['sriov']
         sriov_new = sriov_db.copy()
         sriov_new.update(sriov_data)
 
-        if sriov_new['enabled']:
+        if sriov_new['enabled']['value']:
             # check hypervisor type
             h_type = objects.Cluster.get_editable_attributes(
                 db_node.cluster)['common']['libvirt_type']['value']
@@ -552,36 +553,39 @@ class NetAssignmentValidator(BasicValidator):
                 raise errors.InvalidData(
                     'Only KVM hypervisor works with SR-IOV.')
 
-        for param_name in non_changeable:
-            if sriov_db[param_name] != sriov_new[param_name]:
-                raise errors.InvalidData(
-                    "Node '{0}' interface '{1}': SR-IOV parameter '{2}' cannot"
-                    " be changed through API".format(
-                        db_node.id, iface.name, param_name),
-                    log_message=True
-                )
-        if not sriov_db['available'] and sriov_new['enabled']:
+        if 'meta' in data:
+            sriov_meta_data = data['meta']['sriov']
+            for param_name in non_changeable:
+                if sriov_meta[param_name] != sriov_meta_data[param_name]:
+                    raise errors.InvalidData(
+                        "Node '{0}' interface '{1}': SR-IOV parameter '{2}' "
+                        "cannot be changed through API".format(
+                            db_node.id, iface.name, param_name),
+                        log_message=True
+                    )
+
+        if not sriov_meta['available'] and sriov_new['enabled']['value']:
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': SR-IOV cannot be enabled as it is"
                 " not available".format(db_node.id, iface.name),
                 log_message=True
             )
-        if not sriov_new['sriov_numvfs'] and sriov_new['enabled']:
+        if not sriov_new['numvfs']['value'] and sriov_new['enabled']['value']:
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': virtual functions can not be"
                 " enabled for interface when 'sriov_numfs' option is not"
                 " specified!".format(db_node.id, iface.name),
                 log_message=True
             )
-        if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
+        if sriov_meta['totalvfs'] < sriov_new['numvfs']['value']:
             raise errors.InvalidData(
-                "Node '{0}' interface '{1}': '{2}' virtual functions was "
-                "requested but just '{3}' are available".format(
-                    db_node.id, iface.name, sriov_new['sriov_numvfs'],
-                    sriov_db['sriov_totalvfs']),
+                "Node '{0}' interface '{1}': '{2}' virtual functions was"
+                " requested but just '{3}' are available".format(
+                    db_node.id, iface.name, sriov_new['numvfs']['value'],
+                    sriov_meta['totalvfs']),
                 log_message=True
             )
-        if (sriov_new['enabled'] and
+        if (sriov_new['enabled']['value'] and
                 data.get('assigned_networks', iface.assigned_networks)):
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': SR-IOV cannot be enabled when "
@@ -656,10 +660,7 @@ class NetAssignmentValidator(BasicValidator):
                 hw_available &= objects.NIC.dpdk_available(
                     slave_iface, dpdk_drivers)
 
-            interface_properties = iface.get('interface_properties', {})
-            enabled = interface_properties.get('dpdk', {}).get(
-                'enabled', False)
-
+            attributes = iface.get('attributes', {})
             bond_type = iface.get('bond_properties', {}).get('type__')
         else:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
@@ -669,13 +670,13 @@ class NetAssignmentValidator(BasicValidator):
                 bond_type = iface.get('bond_properties', {}).get(
                     'type__', db_iface.bond_properties.get('type__'))
             hw_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
-
-            interface_properties = utils.dict_merge(
-                db_iface.interface_properties,
-                iface.get('interface_properties', {})
+            attributes = utils.dict_merge(
+                db_iface.attributes,
+                iface.get('attributes', {})
             )
-            enabled = interface_properties.get('dpdk', {}).get(
-                'enabled', False)
+
+        enabled = attributes.get('dpdk', {}).get('enabled', {}).get(
+            'value', False)
 
         # check basic parameters
         if not hw_available and enabled:
@@ -696,9 +697,10 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
 
-        if db_iface is not None:
-            pci_id = interface_properties.get('pci_id')
-            db_pci_id = db_iface.interface_properties.get('pci_id')
+        if (db_iface is not None and iface['type'] !=
+                consts.NETWORK_INTERFACE_TYPES.bond):
+            pci_id = iface.get('meta', {}).get('pci_id', '')
+            db_pci_id = db_iface.meta.get('pci_id', '')
 
             if pci_id != db_pci_id:
                 raise errors.InvalidData(
@@ -718,7 +720,7 @@ class NetAssignmentValidator(BasicValidator):
 
         # check mtu <= 1500
         # github.com/openvswitch/ovs/blob/master/INSTALL.DPDK.md#restrictions
-        mtu = interface_properties.get('mtu')
+        mtu = attributes.get('mtu', {}).get('value', {}).get('value')
         if enabled and mtu is not None and mtu > 1500:
             raise errors.InvalidData(
                 "For interface '{}' with enabled DPDK MTU"
@@ -794,7 +796,7 @@ class NetAssignmentValidator(BasicValidator):
                                                             iface['name']),
                             log_message=True
                         )
-                if iface.get('interface_properties', {}).get('sriov'):
+                if iface.get('attributes', {}).get('sriov'):
                     cls._verify_sriov_properties(db_iface, iface, db_node)
 
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
@@ -824,9 +826,10 @@ class NetAssignmentValidator(BasicValidator):
                         )
                     cur_iface = interfaces_by_name.get(slave['name'], {})
                     iface_props = utils.dict_merge(
-                        db_slave.interface_properties,
-                        cur_iface.get('interface_properties', {}))
-                    if iface_props.get('sriov', {}).get('enabled'):
+                        db_slave.attributes,
+                        cur_iface.get('attributes', {}))
+                    if iface_props.get('sriov', {}).get('enabled').get(
+                            'value'):
                         raise errors.InvalidData(
                             "Node '{0}': bond '{1}' cannot contain SRIOV "
                             "enabled interface '{2}'".format(

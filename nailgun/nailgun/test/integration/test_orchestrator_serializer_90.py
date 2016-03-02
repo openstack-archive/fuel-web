@@ -97,13 +97,13 @@ class TestDeploymentAttributesSerialization90(
         objects.NIC.assign_networks(other_nic, other_nets)
         objects.NIC.assign_networks(dpdk_nic, dpdk_nets)
 
-        objects.NIC.update(dpdk_nic,
-                           {'interface_properties':
-                               {
-                                   'dpdk': {'enabled': True,
-                                            'available': True},
-                                   'pci_id': 'test_id:2'
-                               }})
+        objects.NIC.update(dpdk_nic, {
+            'meta': {
+                'dpdk': {'available': True},
+                'pci_id': 'test_id:2'
+            },
+            'attributes': {'dpdk': {'enabled': {'value': True}}}
+        })
 
     def _create_cluster_with_vxlan(self):
         release_id = self.cluster_db.release.id
@@ -214,8 +214,8 @@ class TestDeploymentAttributesSerialization90(
             node.cluster, {'editable': cluster_attrs})
 
         for iface in node.interfaces:
-            iface['interface_properties'].update({'pci_id': 'test_id:1'})
-            iface['interface_properties']['dpdk']['available'] = True
+            iface['meta'].update({'pci_id': 'test_id:1'})
+            iface['meta']['dpdk']['available'] = True
 
         interfaces = self.env.node_nics_get(node.id).json_body
         first_nic = interfaces[0]
@@ -233,7 +233,7 @@ class TestDeploymentAttributesSerialization90(
             'slaves': nics_for_bond,
             'assigned_networks': networks_for_bond,
             'bond_properties': bond_properties,
-            'interface_properties': {'dpdk': {'enabled': True}}}
+            'attributes': {'dpdk': {'enabled': {'value': True}}}}
         interfaces.append(bond_interface)
         self.env.node_nics_put(node.id, interfaces)
         objects.Cluster.prepare_for_deployment(self.cluster_db)
@@ -978,16 +978,18 @@ class TestSriovSerialization90(
         for nic in self.env.nodes[0].nic_interfaces:
             if not nic.assigned_networks_list:
                 nic_sriov = nic
-                nic.interface_properties['sriov'] = {
-                    'enabled': True,
-                    'sriov_numvfs': 8,
-                    'sriov_totalvfs': 8,
+                nic.attributes['sriov'] = {
+                    'enabled': {'value': True},
+                    'numvfs': {'value': 8},
+                    'physnet': {'value': 'new_physnet'}
+                }
+                nic.meta['sriov'] = {
                     'available': True,
-                    'pci_id': '1234:5678',
-                    'physnet': 'new_physnet'
+                    'totalvfs': 8,
+                    'pci_id': '1234:5678'
                 }
                 objects.NIC.update(
-                    nic, {'interface_properties': nic.interface_properties})
+                    nic, {'attributes': nic.attributes, 'meta': nic.meta})
                 break
         else:
             self.fail('NIC without assigned networks was not found')

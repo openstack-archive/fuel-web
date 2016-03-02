@@ -163,8 +163,11 @@ class Node(Base):
     @property
     def needs_redeploy(self):
         return (
-            self.status in ['error', 'provisioned'] or
-            len(self.pending_roles)) and not self.pending_deletion
+            self.status in [
+                consts.NODE_STATUSES.error,
+                consts.NODE_STATUSES.provisioned,
+                consts.NODE_STATUSES.stopped
+            ] or len(self.pending_roles)) and not self.pending_deletion
 
     @property
     def needs_redeletion(self):

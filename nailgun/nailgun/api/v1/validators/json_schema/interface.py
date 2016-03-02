@@ -62,6 +62,42 @@ INTERFACES = {
                         }
                     }
                 }
+            },
+            "attributes": {
+                "type": "object",
+                "properties": {
+                    "offloading": {
+                        "type": "object"},
+                    "mtu": {
+                        "type": "object"},
+                    "sriov": {
+                        "type": "object",
+                        "properties": {
+                            "sriov_enabled": {
+                                "type": "object",
+                                "properties": {
+                                    "value":
+                                    base_types.NULLABLE_BOOL
+                                }
+                            },
+                            "sriov_numvfs": {
+                                "type": "object",
+                                "properties": {
+                                    "value":
+                                    base_types.NULLABLE_POSITIVE_INTEGER
+                                }
+                            },
+                            "physnet": {
+                                "type": "object",
+                                "properties": {
+                                    "value": {"type": "string"}
+                                }
+                            }
+                        }
+                    },
+                    "dpdk": {
+                        "type": "object"}
+                }
             }
         }
     }

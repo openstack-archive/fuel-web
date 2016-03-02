@@ -625,8 +625,9 @@ class NetworkManager(object):
         for nic in node.nic_interfaces:
             nic_dict = NodeInterfacesSerializer.serialize(nic)
             if 'interface_properties' in nic_dict:
-                default_properties = cls.get_default_interface_properties(
-                    nic_dict['interface_properties'])
+                default_properties = objects.NIC \
+                    .get_default_interface_properties(
+                        nic_dict['interface_properties'])
                 nic_dict['interface_properties'] = nailgun_utils.dict_merge(
                     nic_dict['interface_properties'],
                     default_properties)
@@ -804,10 +805,15 @@ class NetworkManager(object):
                 )
             if 'offloading_modes' in iface:
                 update['offloading_modes'] = iface['offloading_modes']
+            if 'attributes' in iface:
+                update['attributes'] = nailgun_utils.dict_merge(
+                    current_iface.attributes,
+                    iface['attributes']
+                )
 
             objects.NIC.update(current_iface, update)
-        objects.Node.clear_bonds(node_db)
 
+        objects.Node.clear_bonds(node_db)
         for bond in bond_interfaces:
             if bond.get('bond_properties', {}).get('mode'):
                 mode = bond['bond_properties']['mode']
@@ -820,6 +826,7 @@ class NetworkManager(object):
                 'mac': bond.get('mac'),
                 'bond_properties': bond.get('bond_properties', {}),
                 'interface_properties': bond.get('interface_properties', {}),
+                'attributes': bond.get('attributes', {})
             }
             bond_db = objects.Bond.create(data)
 
@@ -998,7 +1005,7 @@ class NetworkManager(object):
         interface_properties = interface.interface_properties
         if not interface_properties:
             interface_properties = \
-                cls.get_default_interface_properties()
+                objects.NIC.get_default_interface_properties()
         if interface_attrs.get('interface_properties'):
             interface_properties = nailgun_utils.dict_merge(
                 interface_properties,
@@ -1400,6 +1407,7 @@ class NetworkManager(object):
             properties.pop(prop)
         return properties
 
+    # TODO(apopovych): rewrite to get this data from attributes
     @classmethod
     def get_iface_properties(cls, iface):
         properties = {}

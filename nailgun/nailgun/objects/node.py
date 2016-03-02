@@ -51,6 +51,7 @@ from nailgun.objects import NetworkGroup
 from nailgun.objects import Notification
 from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.policy import cpu_distribution
+from nailgun.policy import hugepages_distribution
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -1323,3 +1324,10 @@ class NodeAttributes(object):
                     human_size, hugepages[size])
 
         return kernel_opts
+
+    @classmethod
+    def distribute_hugepages(cls, instance):
+        topology = instance.meta['numa_topology']['numa_nodes']
+        attributes = Node.get_attributes(instance)['hugepages']
+        return hugepages_distribution.distribute_hugepages(
+            topology, attributes)

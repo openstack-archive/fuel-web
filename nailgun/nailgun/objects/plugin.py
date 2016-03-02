@@ -232,12 +232,22 @@ class ClusterPlugin(NailgunObject):
         plugin_attributes = dict(plugin.attributes_metadata)
         plugin_attributes.pop('metadata', None)
         for cluster in cls.get_compatible_clusters(plugin):
-            cls.create({
+            cluster_plugin = cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
                 'attributes': plugin_attributes
             })
+
+            # Set default attributes for Nodes, NICs and Bonds during
+            # plugin installation
+            NodeNICInterfaceClusterPlugin.add_node_nics_for_cluster_plugin(
+                cluster_plugin)
+            NodeBondInterfaceClusterPlugin.add_node_bonds_for_cluster_plugin(
+                cluster_plugin)
+            NodeClusterPlugin.add_nodes_for_cluster_plugin(cluster_plugin)
+
+        db().flush()
 
     @classmethod
     def set_attributes(cls, cluster_id, plugin_id, enabled=None, attrs=None):
@@ -351,3 +361,204 @@ class ClusterPlugin(NailgunObject):
             .filter(cls.model.enabled.is_(True))
 
         return db().query(q.exists()).scalar()
+
+
+class NodeNICInterfaceClusterPlugin(NailgunObject):
+
+    model = models.NodeNICInterfaceClusterPlugin
+
+    @classmethod
+    def get_all_attributes_by_interface(cls, interface):
+        """Returns plugin enabled attributes for specific NIC.
+
+        :param interface: Interface instance
+        :type interface: models.node.NodeNICInterface
+        :returns: dict -- Dict object with plugin NIC attributes
+        """
+        nic_attributes = {}
+        nic_plugin_attributes_query = db().query(
+            cls.model.id,
+            models.Plugin.name,
+            cls.model.attributes
+        ).join(
+            models.ClusterPlugin,
+            models.Plugin
+        ).filter(
+            cls.model.interface_id == interface.id
+        ).filter(
+            models.ClusterPlugin.enabled.is_(True))
+
+        for _id, plugin_name, attributes in nic_plugin_attributes_query:
+            nic_attributes[plugin_name] = {
+                'metadata': {
+                    'nic_plugin_id': _id
+                },
+                'attributes': attributes
+            }
+
+        return nic_attributes
+
+    @classmethod
+    def add_node_nics_for_cluster_plugin(cls, cluster_plugin):
+        """Populates 'node_nic_interface_cluster_plugins' table.
+
+        :param cluster_plugin: ClusterPlugin instance
+        :type cluster_plugin: models.cluster.ClusterPlugin
+        :returns: None
+        """
+        nic_attributes = dict(
+            cluster_plugin.plugin.nic_attributes_metadata)
+        for node in cluster_plugin.cluster.nodes:
+            for interface in node.nic_interfaces:
+                if nic_attributes:
+                    cls.create({
+                        'cluster_plugin_id': cluster_plugin.id,
+                        'interface_id': interface.id,
+                        'node_id': node.id,
+                        'attributes': nic_attributes
+                    })
+
+        db().flush()
+
+    @classmethod
+    def add_cluster_plugin_for_node_nic(cls, interface):
+        """Populates 'node_nic_interface_cluster_plugins' table.
+
+        :param interface: Interface instance
+        :type interface: models.node.NodeNICInterface
+        :returns: None
+        """
+        node = interface.node
+        # remove old relations for interfaces
+        nic_cluster_plugin_ids = set(
+            item.id for item in node.node_nic_interface_cluster_plugins)
+        cls.bulk_delete(nic_cluster_plugin_ids)
+
+        for cluster_plugin in node.cluster.cluster_plugins:
+            nic_attributes = dict(
+                cluster_plugin.plugin.nic_attributes_metadata)
+            if nic_attributes:
+                cls.create({
+                    'cluster_plugin_id': cluster_plugin.id,
+                    'interface_id': interface.id,
+                    'node_id': node.id,
+                    'attributes': nic_attributes
+                })
+
+        db().flush()
+
+    @classmethod
+    def set_attributes(cls, interface_id, node_id,
+                       cluster_plugin_id, attrs=None):
+        """Update plugin NIC attributes
+
+        :param interface_id:
+        :type interface_id: int
+        :param node_id:
+        :type node_id: int
+        :param cluster_plugin_id:
+        :type cluster_plugin_id: int
+        :param attrs:
+        :type attrs: dict
+        :returns: None
+        """
+        db().query(cls.model)\
+            .filter_by(
+                cluster_plugin_id=cluster_plugin_id,
+                interface_id=interface_id)\
+            .update(attrs, synchronize_session='fetch')
+
+        db().flush()
+
+
+class NodeBondInterfaceClusterPlugin(NailgunObject):
+
+    model = models.NodeBondInterfaceClusterPlugin
+
+    @classmethod
+    def get_all_enabled_attributes_by_bond(cls, bond):
+        pass
+
+    @classmethod
+    def add_node_bonds_for_cluster_plugin(cls, cluster_plugin):
+        """Populates 'node_bond_interface_cluster_plugins' table with bonds.
+
+        :param cluster_plugin: ClusterPlugin instance
+        :type cluster_plugin: models.cluster.ClusterPlugin
+        :returns: None
+        """
+        bond_attributes = dict(
+            cluster_plugin.plugin.bond_attributes_metadata)
+        for node in cluster_plugin.cluster.nodes:
+            for bond in node.bond_interfaces:
+                if bond_attributes:
+                    cls.create({
+                        'cluster_plugin_id': cluster_plugin.id,
+                        'bond_id': bond.id,
+                        'node_id': node.id,
+                        'attributes': bond_attributes
+                    })
+
+        db().flush()
+
+    @classmethod
+    def add_cluster_plugin_for_node_bond(cls, bond):
+        """Populates 'node_bond_interface_cluster_plugins' table.
+
+        :param interface: Bond instance
+        :type interface: models.node.NodeBondInterface
+        :returns: None
+        """
+        pass
+
+    @classmethod
+    def set_attributes(cls, bond_id, node_id,
+                       cluster_plugin_id, attrs=None):
+        """Update plugin Bond attributes
+        """
+        pass
+
+
+class NodeClusterPlugin(NailgunObject):
+
+    model = models.NodeClusterPlugin
+
+    @classmethod
+    def get_all_enabled_attributes_by_node(cls, node):
+        pass
+
+    @classmethod
+    def add_nodes_for_cluster_plugin(cls, cluster_plugin):
+        """Populates 'node_cluster_plugins' table with nodes.
+
+        :param cluster_plugin: ClusterPlugin instance
+        :type cluster_plugin: models.cluster.ClusterPlugin
+        :returns: None
+        """
+        node_attributes = dict(
+            cluster_plugin.plugin.node_attributes_metadata)
+        for node in cluster_plugin.cluster.nodes:
+            if node_attributes:
+                cls.create({
+                    'cluster_plugin_id': cluster_plugin.id,
+                    'node_id': node.id,
+                    'attributes': node_attributes
+                })
+
+        db().flush()
+
+    @classmethod
+    def add_cluster_plugin_for_node(cls, node):
+        """Populates 'node_cluster_plugins' table.
+
+        :param interface: None instance
+        :type interface: models.node.Node
+        :returns: None
+        """
+        pass
+
+    @classmethod
+    def set_attributes(cls, node_id, cluster_plugin_id, attrs=None):
+        """Update plugin Node attributes
+        """
+        pass

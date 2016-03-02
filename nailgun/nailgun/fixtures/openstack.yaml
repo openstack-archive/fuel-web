@@ -1048,7 +1048,6 @@
             description: "The new deployment engine based on cross-node dependencies for deployment tasks."
             weight: 11
             type: "hidden"
-
         public_network_assignment:
           metadata:
             weight: 10
@@ -1843,6 +1842,18 @@
         incompatible:
           - name: network:neutron:ml2:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+    nic_metadata:
+      mtu:
+        label: "MTU"
+        type: "text"
+        value: ""
+    bond_metadata:
+      mode:
+        label: "Mode"
+        type: "select"
+        values:
+          - balance-rr
+        value: balance-rr
     modes: ['ha_compact']
     extensions: ['volume_manager']
 - pk: 1

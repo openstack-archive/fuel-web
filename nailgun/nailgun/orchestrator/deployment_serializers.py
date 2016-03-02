@@ -599,7 +599,7 @@ def _execute_pipeline(data, cluster, nodes, ignore_customized):
     "Executes pipelines depending on ignore_customized boolean."
     if ignore_customized:
         return fire_callback_on_deployment_data_serialization(
-            data, cluster=cluster, nodes=nodes)
+            data, cluster, nodes)
 
     nodes_without_customized = {n.uid: n for n in nodes
                                 if not n.replaced_deployment_info}
@@ -613,8 +613,8 @@ def _execute_pipeline(data, cluster, nodes, ignore_customized):
     # NOTE(sbrzeczkowski): pipelines must be executed for nodes
     # which don't have replaced_deployment_info specified
     updated_data = fire_callback_on_deployment_data_serialization(
-        nodes_data_for_pipeline, cluster=cluster,
-        nodes=list(six.itervalues(nodes_without_customized)))
+        nodes_data_for_pipeline, cluster,
+        list(six.itervalues(nodes_without_customized)))
 
     # customized nodes
     updated_data.extend(six.moves.filterfalse(keyfunc, data))

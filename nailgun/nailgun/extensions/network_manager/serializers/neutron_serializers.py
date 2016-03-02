@@ -1487,7 +1487,7 @@ class SriovSerializerMixin90(object):
         for n in cluster.nodes:
             for nic in n.nic_interfaces:
                 if objects.NIC.is_sriov_enabled(nic):
-                    pci_ids.add(nic.interface_properties['sriov']['pci_id'])
+                    pci_ids.add(nic.meta['sriov']['pci_id'])
         if pci_ids:
             attrs['supported_pci_vendor_devs'] = list(pci_ids)
         return attrs
@@ -1546,10 +1546,10 @@ class NeutronNetworkDeploymentSerializer90(
             # add ports with SR-IOV settings for SR-IOV enabled NICs
             if (not iface.bond and iface.name not in nets_by_ifaces and
                     objects.NIC.is_sriov_enabled(iface)):
-                sriov = iface.interface_properties['sriov']
+                sriov = iface.attributes['sriov']
                 config = {
-                    'sriov_numvfs': sriov['sriov_numvfs'],
-                    'physnet': sriov['physnet']
+                    'sriov_numvfs': sriov['sriov_numvfs']['value'],
+                    'physnet': sriov['physnet']['value']
                 }
                 transformations.append(cls.add_port(
                     iface.name, bridge=None, provider='sriov',
@@ -1563,5 +1563,49 @@ class NeutronNetworkTemplateSerializer90(
     DPDKSerializerMixin90,
     SriovSerializerMixin90,
     NeutronNetworkTemplateSerializer80
+):
+    pass
+
+
+class NeutronNetworkDeploymentSerializer10(
+    NeutronNetworkDeploymentSerializer90
+):
+
+    @classmethod
+    def generate_network_scheme(cls, node, networks):
+        schema = (
+            super(NeutronNetworkDeploymentSerializer10, cls)
+            .generate_network_scheme(node, networks))
+
+        # Add Bond specifc attributes
+        for transformation in schema.get('transformations', []):
+            if cls._is_bond(transformation):
+                cls._add_attributes_for_bond(transformation)
+
+        # Add NIC specific attributes
+        for iface in node.nic_interfaces:
+            cls._add_attributes_for_interface(iface, schema)
+
+        return schema
+
+    @classmethod
+    def _add_attributes_for_bond(cls, transformation):
+        name = transformation.get('name', '')
+        bond = objects.BondCollection.filter_by(None, name=name)[0]
+        attributes = objects.Bond.get_attributes(bond)
+        transformation['attributes'] = attributes
+
+    @classmethod
+    def _add_attributes_for_interface(cls, interface, schema):
+        attributes = objects.NIC.get_attributes(interface)
+        schema['interfaces'][interface.name]['attributes'] = attributes
+
+    @classmethod
+    def _is_bond(cls, transformation):
+        return transformation.get('action') == 'add-bond'
+
+
+class NeutronNetworkTemplateSerializer10(
+    NeutronNetworkTemplateSerializer90
 ):
     pass

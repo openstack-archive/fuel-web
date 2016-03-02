@@ -811,7 +811,7 @@ def get_serializer_for_cluster(cluster):
         },
         '10.0': {
             'ha': DeploymentHASerializer10,
-        },
+        }
     }
 
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'

@@ -423,14 +423,20 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         )
 
     def test_sriov_is_enabled_with_non_kvm_hypervisor(self):
-        objects.NIC.update(self.node.nic_interfaces[0],
-                           {'interface_properties':
-                               {
-                                   'sriov': {'enabled': True,
-                                             'sriov_totalvfs': 4,
-                                             'sriov_numfs': 2,
-                                             'available': True},
-                               }})
+        objects.NIC.update(self.node.nic_interfaces[0], {
+            'attributes': {
+                'sriov': {
+                    'enabled': {'value': True},
+                    'numfs': {'value': 2}
+                }
+            },
+            'meta': {
+                'sriov': {
+                    'available': True,
+                    'totalvfs': 4,
+                }
+            }
+        })
 
         self.assertRaisesRegexp(
             errors.InvalidData,

@@ -14,15 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 import six
 from sqlalchemy.sql import not_
 
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun.objects.base import NailgunCollection
+from nailgun.objects.base import NailgunObject
 from nailgun.objects.serializers.base import BasicSerializer
+from nailgun.plugins.manager import PluginManager
+from nailgun import utils
 
 
 class DPDKMixin(object):
@@ -33,21 +37,24 @@ class DPDKMixin(object):
 
     @classmethod
     def dpdk_enabled(cls, instance):
-        dpdk = instance.interface_properties.get('dpdk')
-        return bool(dpdk and dpdk.get('enabled'))
+        return bool(instance.attributes.get('dpdk', {}).get(
+            'enabled', {}).get('value'))
 
     @classmethod
     def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
-        interface_properties = interface.interface_properties
-        dpdk_properties = interface_properties.get('dpdk', {}).copy()
-        dpdk_properties['available'] = cls.dpdk_available(interface,
-                                                          dpdk_drivers)
-        if (not dpdk_properties['available'] and
-                dpdk_properties.get('enabled')):
-            dpdk_properties['enabled'] = False
-        # update interface_properties in DB only if something was changed
-        if interface_properties.get('dpdk', {}) != dpdk_properties:
-            interface_properties['dpdk'] = dpdk_properties
+        attributes = interface.attributes
+        meta = interface.meta
+        dpdk_attributes = attributes.get('dpdk', {}).copy()
+        dpdk_available = cls.dpdk_available(interface, dpdk_drivers)
+
+        if (not dpdk_available and dpdk_attributes.get(
+                'enabled', {}).get('value')):
+            dpdk_attributes['enabled']['value'] = False
+        # update attributes in DB only if something was changed
+        if attributes.get('dpdk', {}) != dpdk_attributes:
+            attributes['dpdk'] = dpdk_attributes
+        if meta.get('dpdk', {}) != {'available': dpdk_available}:
+            meta['dpdk'] = {'available': dpdk_available}
 
 
 class NIC(DPDKMixin, NailgunObject):
@@ -70,7 +77,7 @@ class NIC(DPDKMixin, NailgunObject):
 
     @classmethod
     def get_dpdk_driver(cls, instance, dpdk_drivers):
-        pci_id = instance.interface_properties.get('pci_id', '').lower()
+        pci_id = instance.meta.get('pci_id', '').lower()
         for driver, device_ids in six.iteritems(dpdk_drivers):
             if pci_id in device_ids:
                 return driver
@@ -97,8 +104,8 @@ class NIC(DPDKMixin, NailgunObject):
 
     @classmethod
     def is_sriov_enabled(cls, instance):
-        sriov = instance.interface_properties.get('sriov')
-        return sriov and sriov['enabled']
+        enabled = instance.attributes.get('sriov', {}).get('enabled')
+        return enabled and enabled['value']
 
     @classmethod
     def update_offloading_modes(cls, instance, new_modes, keep_states=False):
@@ -210,6 +217,97 @@ class NIC(DPDKMixin, NailgunObject):
         ).first()
 
         return nic
+
+    @classmethod
+    def create_attributes(cls, instance):
+        """Create attributes for interface with default values.
+
+        :param instance: NodeNICInterface instance
+        :type instance: NodeNICInterface model
+        :returns: None
+        """
+        attributes = copy.deepcopy(
+            instance.node.cluster.release.nic_attributes)
+
+        mac = instance.mac
+        meta = instance.node.meta
+        name = instance.name
+        properties = {}
+
+        for interface in meta.get('interfaces', []):
+            if interface['name'] == name and interface['mac'] == mac:
+                properties = interface.get('interface_properties', {})
+
+        attributes['offloading']['disable']['value'] = \
+            properties.get('disable_offloading', False)
+        attributes['mtu']['value']['value'] = properties.get('mtu')
+        attributes['sriov']['enabled']['value'] = \
+            properties.get('sriov', {}).get('enabled', False)
+        attributes['sriov']['numvfs']['value'] = \
+            properties.get('sriov', {}).get('sriov_numvfs')
+        attributes['sriov']['physnet']['value'] = \
+            properties.get('sriov', {}).get('physnet', 'physnet2')
+        attributes['dpdk']['enabled']['value'] = \
+            properties.get('dpdk', {}).get('enabled', False)
+
+        instance.attributes = attributes
+        PluginManager.add_plugin_attributes_for_interface(instance)
+
+        db().flush()
+
+    # FIXME: write tests
+    @classmethod
+    def get_attributes(cls, instance):
+        """Get all attributes for interface.
+
+        :param instance: NodeNICInterface instance
+        :type instance: NodeNICInterface model
+        :returns: dict -- Object of interface attributes
+        """
+        attributes = copy.deepcopy(instance.attributes)
+        attributes.update(
+            PluginManager.get_nic_attributes(instance))
+
+        return attributes
+
+    # FIXME: write tests
+    @classmethod
+    def get_default_attributes(cls, instance):
+        """Get default attributes for interface.
+
+        :param instance: NodeNICInterface instance
+        :type instance: NodeNICInterface model
+        :returns: dict -- Dict object of NIC attributes
+        """
+        default_attributes = copy.deepcopy(
+            instance.node.cluster.release.nic_attributes)
+        # set attributes for NICs with interface properties as default values
+        properties = instance.interface_properties
+        for prop in properties:
+            if prop in default_attributes:
+                default_attributes[prop]['value'] = properties[prop]
+        # FIXME:
+        #   Use PluginManager as entry point
+        #   get default attributes for NodeNICInterfaceClusterPlugin
+
+        return default_attributes
+
+    @classmethod
+    def update(cls, instance, data):
+        """Update data for native and plugin attributes for interface.
+
+        :param instance: NodeNICInterface instance
+        :type instance: NodeNICInterface model
+        :param data: Data to update
+        :type data: dict
+        :returns: None
+        """
+        super(NIC, cls).update(instance, data)
+        attributes = data.get('attributes')
+        if attributes:
+            PluginManager.update_nic_attributes(attributes)
+            instance.attributes = utils.dict_merge(
+                instance.attributes, attributes)
 
 
 class NICCollection(NailgunCollection):

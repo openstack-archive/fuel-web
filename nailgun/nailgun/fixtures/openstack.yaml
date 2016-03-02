@@ -1304,13 +1304,15 @@
             restrictions:
               - "settings:storage.volumes_lvm.value == true or settings:storage.volumes_block_device.value == true"
           images_ceph:
-            value: false
+            value: true
             label: "Ceph RBD for images (Glance)"
             description: "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing."
             weight: 30
             type: "checkbox"
             restrictions:
               - "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
+              - condition: "true"
+                action: "hide"
           images_vcenter:
             value: false
             label: "VMware vCenter/ESXi datastore for images (Glance)"
@@ -1329,11 +1331,15 @@
             weight: 75
             type: "checkbox"
           objects_ceph:
-            value: false
+            value: true
             label: "Ceph RadosGW for objects (Swift API)"
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
             weight: 80
-            type: "checkbox"
+            type: "hidden"
+            # type: "checkbox"
+            # restrictions:
+            #   - condition: "true"
+            #     action: "hide"
           osd_pool_size:
             value: "3"
             label: "Ceph object replication factor"
@@ -1703,22 +1709,22 @@
         incompatible:
           - name: storage:block:lvm
             message: "Ceph not compatible with LVM"
-      - name: storage:object:ceph
-        label: "dialog.create_cluster_wizard.storage.ceph"
-        description: "dialog.create_cluster_wizard.storage.ceph_object"
-        weight: 10
-        bind:
-          - "settings:storage.objects_ceph.value"
-        compatible:
-          - name: hypervisor:qemu
-          - name: hypervisor:vmware
-          - name: network:neutron:core:ml2
-          - name: network:neutron:ml2:vlan
-          - name: network:neutron:ml2:tun
-          - name: storage:block:lvm
-          - name: storage:block:ceph
-          - name: storage:ephemeral:ceph
-          - name: storage:image:ceph
+      # - name: storage:object:ceph
+      #   label: "dialog.create_cluster_wizard.storage.ceph"
+      #   description: "dialog.create_cluster_wizard.storage.ceph_object"
+      #   weight: 10
+      #   bind:
+      #     - "settings:storage.objects_ceph.value"
+      #   compatible:
+      #     - name: hypervisor:qemu
+      #     - name: hypervisor:vmware
+      #     - name: network:neutron:core:ml2
+      #     - name: network:neutron:ml2:vlan
+      #     - name: network:neutron:ml2:tun
+      #     - name: storage:block:lvm
+      #     - name: storage:block:ceph
+      #     - name: storage:ephemeral:ceph
+      #     - name: storage:image:ceph
       - name: storage:ephemeral:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
         description: "dialog.create_cluster_wizard.storage.ceph_ephemeral"
@@ -1735,22 +1741,22 @@
           - name: storage:block:ceph
           - name: storage:object:ceph
           - name: storage:image:ceph
-      - name: storage:image:ceph
-        label: "dialog.create_cluster_wizard.storage.ceph"
-        description: "dialog.create_cluster_wizard.storage.ceph_image"
-        weight: 10
-        bind:
-          - "settings:storage.images_ceph.value"
-        compatible:
-          - name: hypervisor:qemu
-          - name: hypervisor:vmware
-          - name: network:neutron:core:ml2
-          - name: network:neutron:ml2:vlan
-          - name: network:neutron:ml2:tun
-          - name: storage:block:lvm
-          - name: storage:block:ceph
-          - name: storage:object:ceph
-          - name: storage:ephemeral:ceph
+      # - name: storage:image:ceph
+      #   label: "dialog.create_cluster_wizard.storage.ceph"
+      #   description: "dialog.create_cluster_wizard.storage.ceph_image"
+      #   weight: 10
+      #   bind:
+      #     - "settings:storage.images_ceph.value"
+      #   compatible:
+      #     - name: hypervisor:qemu
+      #     - name: hypervisor:vmware
+      #     - name: network:neutron:core:ml2
+      #     - name: network:neutron:ml2:vlan
+      #     - name: network:neutron:ml2:tun
+      #     - name: storage:block:lvm
+      #     - name: storage:block:ceph
+      #     - name: storage:object:ceph
+      #     - name: storage:ephemeral:ceph
       - name: additional_service:sahara
         bind:
           - "settings:additional_components.sahara.value"

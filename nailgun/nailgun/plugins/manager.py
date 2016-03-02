@@ -29,6 +29,8 @@ from nailgun import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import NodeClusterPlugin
+from nailgun.objects.plugin import NodeBondInterfaceClusterPlugin
+from nailgun.objects.plugin import NodeNICInterfaceClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
@@ -71,6 +73,15 @@ class PluginManager(object):
             if cls.is_plugin_data(attributes[k]):
                 plugins[k] = attributes.pop(k)['metadata']
 
+        propagate_task_deploy = get_in(
+            attributes, 'common', 'propagate_task_deploy', 'value')
+        if propagate_task_deploy is not None:
+            legacy_tasks_are_ignored = not propagate_task_deploy
+        else:
+            legacy_tasks_are_ignored = not get_in(
+                cluster.attributes.editable,
+                'common', 'propagate_task_deploy', 'value')
+
         for container in six.itervalues(plugins):
             default = container.get('default', False)
             for attrs in container.get('versions', []):
@@ -83,13 +94,6 @@ class PluginManager(object):
                     continue
                 enabled = container['enabled'] \
                     and plugin_id == container['chosen_id']
-                legacy_tasks_are_ignored = not get_in(
-                    cluster.attributes.editable,
-                    'common', 'propagate_task_deploy', 'value')
-                new_value = not get_in(
-                    attributes, 'common', 'propagate_task_deploy', 'value')
-                if new_value is not None:
-                    legacy_tasks_are_ignored = new_value
                 if (enabled and
                         Release.is_lcm_supported(cluster.release) and
                         legacy_tasks_are_ignored and
@@ -474,6 +478,115 @@ class PluginManager(object):
         NodeClusterPlugin.add_cluster_plugins_for_node(node)
 
     # ENTRY POINT
+    @classmethod
+    def get_bond_default_attributes(cls, cluster):
+        """Get plugin bond attributes metadata for cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :returns: dict -- Object with bond attributes
+        """
+        plugins_bond_metadata = {}
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
+        for plugin_adapter in six.moves.map(wrap_plugin, enabled_plugins):
+            metadata = plugin_adapter.bond_attributes_metadata
+            if metadata:
+                plugins_bond_metadata[plugin_adapter.name] = metadata
+
+        return plugins_bond_metadata
+
+    @classmethod
+    def get_bond_attributes(cls, bond):
+        """Return plugin related attributes for Bond.
+
+        :param interface: A BOND instance
+        :type interface: Bond model
+        """
+        return NodeBondInterfaceClusterPlugin.\
+            get_all_enabled_attributes_by_bond(bond)
+
+    @classmethod
+    def add_plugin_attributes_for_bond(cls, bond):
+        """Add plugin related attributes for Bond.
+
+        :param interface: A BOND instance
+        :type interface: Bond model
+        :returns: object -- Bond model instance
+        """
+        NodeBondInterfaceClusterPlugin.\
+            add_cluster_plugins_for_node_bond(bond)
+
+        return bond
+
+    @classmethod
+    def update_bond_attributes(cls, attributes):
+        plugins = []
+        for k in list(attributes):
+            if cls.is_plugin_data(attributes[k]):
+                plugins.append(attributes.pop(k))
+
+        for plugin in plugins:
+            metadata = plugin.pop('metadata')
+            NodeNICInterfaceClusterPlugin.\
+                set_attributes(
+                    metadata['bond_plugin_id'],
+                    plugin
+                )
+
+    @classmethod
+    def get_nic_default_attributes(cls, cluster):
+        """Get default plugin nic attributes for cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :returns: dict -- Object with nic attributes
+        """
+        plugins_nic_metadata = {}
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
+        for plugin_adapter in six.moves.map(wrap_plugin, enabled_plugins):
+            metadata = plugin_adapter.nic_attributes_metadata
+            if metadata:
+                plugins_nic_metadata[plugin_adapter.name] = metadata
+
+        return plugins_nic_metadata
+
+    @classmethod
+    def get_nic_attributes(cls, interface):
+        """Return plugin related attributes for NIC.
+
+        :param interface: A NIC instance
+        :type interface: Interface model
+        :returns:
+        """
+        return NodeNICInterfaceClusterPlugin.\
+            get_all_enabled_attributes_by_interface(interface)
+
+    @classmethod
+    def update_nic_attributes(cls, attributes):
+        plugins = []
+        for k in list(attributes):
+            if cls.is_plugin_data(attributes[k]):
+                plugins.append(attributes.pop(k))
+
+        for plugin in plugins:
+            metadata = plugin.pop('metadata')
+            NodeNICInterfaceClusterPlugin.\
+                set_attributes(
+                    metadata['nic_plugin_id'],
+                    plugin
+                )
+
+    @classmethod
+    def add_plugin_attributes_for_interface(cls, interface):
+        """Add plugin related attributes for NIC.
+
+        :param interface: A NIC instance
+        :type interface: Interface model
+        :returns: None
+        """
+        NodeNICInterfaceClusterPlugin.\
+            add_cluster_plugins_for_node_nic(interface)
+
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
         """Sync or install metadata for plugins by given IDs.

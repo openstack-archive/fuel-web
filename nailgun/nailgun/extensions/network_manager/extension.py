@@ -36,6 +36,8 @@ from nailgun.extensions.network_manager.handlers.vip import \
 from nailgun.extensions.network_manager.handlers.vip import ClusterVIPHandler
 
 from nailgun.extensions.network_manager.handlers.nic import \
+    NodeBondAttributesDefaultsHandler
+from nailgun.extensions.network_manager.handlers.nic import \
     NodeCollectionNICsDefaultHandler
 from nailgun.extensions.network_manager.handlers.nic import \
     NodeCollectionNICsHandler
@@ -79,6 +81,8 @@ class NetworkManagerExtension(BaseExtension):
         {'uri': r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
                 r'nova_network/verify/?$',
          'handler': NovaNetworkConfigurationVerifyHandler},
+        {'uri': r'/nodes/(?P<node_id>\d+)/bonds/attributes/defaults/?$',
+         'handler': NodeBondAttributesDefaultsHandler},
         {'uri': r'/nodes/interfaces/?$',
          'handler': NodeCollectionNICsHandler},
         {'uri': r'/nodes/interfaces/default_assignment/?$',

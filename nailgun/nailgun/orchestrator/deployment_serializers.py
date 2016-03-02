@@ -38,6 +38,8 @@ from nailgun.orchestrator.base_serializers import \
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer
 from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkDeploymentSerializer10_0
+from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer51
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer60
@@ -49,6 +51,8 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer80
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
+from nailgun.orchestrator.neutron_serializers import \
+    NeutronNetworkTemplateSerializer10_0
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 from nailgun.orchestrator.neutron_serializers import \
@@ -658,6 +662,7 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
                 hugepages)
 
 
+<<<<<<< 78cf3724677457aa29cd725716efc2e72703a4d0
 class DeploymentLCMSerializer(DeploymentHASerializer90):
     _configs = None
     _priorities = {
@@ -736,6 +741,16 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:
                 if config.node_id == node.id:
                     utils.dict_update(node_config, config.configuration, 1)
+=======
+class DeploymentHASerializer10_0(DeploymentHASerializer90):
+
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return NeutronNetworkTemplateSerializer10_0
+        else:
+            return NeutronNetworkDeploymentSerializer10_0
+>>>>>>> Support for plugin NIC attributes
 
 
 def get_serializer_for_cluster(cluster):
@@ -770,6 +785,9 @@ def get_serializer_for_cluster(cluster):
         },
         '9.0': {
             'ha': DeploymentHASerializer90,
+        },
+        '10.0': {
+            'ha': DeploymentHASerializer10_0
         }
     }
 

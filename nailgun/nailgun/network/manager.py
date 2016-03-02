@@ -788,10 +788,12 @@ class NetworkManager(object):
                 )
             if 'offloading_modes' in iface:
                 update['offloading_modes'] = iface['offloading_modes']
+            if 'attributes' in iface:
+                update['attributes'] = iface['attributes']
 
             objects.NIC.update(current_iface, update)
-        objects.Node.clear_bonds(node_db)
 
+        objects.Node.clear_bonds(node_db)
         for bond in bond_interfaces:
             if bond.get('bond_properties', {}).get('mode'):
                 mode = bond['bond_properties']['mode']
@@ -804,6 +806,7 @@ class NetworkManager(object):
                 'mac': bond.get('mac'),
                 'bond_properties': bond.get('bond_properties', {}),
                 'interface_properties': bond.get('interface_properties', {}),
+                'attributes': bond.get('attributes', {})
             }
             bond_db = objects.Bond.create(data)
 

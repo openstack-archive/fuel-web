@@ -1084,7 +1084,7 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
                     'uids': ['master'],
                     'parameters': {
                         'puppet_modules': '/etc/puppet/modules',
-                        'puppet_manifest': '/etc/puppet/modules/nailgun/'
+                        'puppet_manifest': '/etc/puppet/modules/fuel/'
                                            'examples/dhcp-ranges.pp',
                         'timeout': 300,
                         'cwd': '/'}

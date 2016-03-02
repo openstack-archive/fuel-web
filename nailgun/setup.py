@@ -85,5 +85,4 @@ if __name__ == "__main__":
                  '.extension:VolumeManagerExtension')
             ],
         },
-        data_files=recursive_data_files([('share/nailgun', 'static')]),
     )

@@ -107,7 +107,7 @@ class TestNetworkVerification(BaseTestCase):
                     if ng.name == consts.NETWORKS.private:
                         private_ifaces[node.name] = iface.name
 
-        dpdk_iface.interface_properties['dpdk']['enabled'] = True
+        dpdk_iface.attributes['dpdk']['dpdk_enabled']['value'] = True
 
         task = models.Task(
             name=consts.TASK_NAMES.check_networks,

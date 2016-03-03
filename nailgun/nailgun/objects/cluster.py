@@ -21,6 +21,11 @@ Cluster-related objects and collections
 import copy
 from distutils.version import StrictVersion
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 import six
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
@@ -983,6 +988,26 @@ class Cluster(NailgunObject):
             instance, graph_type=graph_type)
         if cluster_deployment_graph:
             return DeploymentGraph.get_tasks(cluster_deployment_graph)
+        else:
+            return []
+
+    @classmethod
+    def _merge_tasks_lists(cls, tasks_lists):
+        """Merge several tasks lists.
+
+        Every next list will override tasks in previous one by `task_name` key.
+
+        :param tasks_lists: tasks lists
+        :type tasks_lists: list[list]
+        :return: merged list
+        :rtype: list[dict]
+        """
+        # ordered dict is required to preserve order for 7.0 serializer
+        merged_list = OrderedDict()
+        for task_list in tasks_lists:
+            for task in task_list:
+                merged_list[task['id']] = task
+        return list(six.viewvalues(merged_list))
 
     @classmethod
     def get_deployment_tasks(
@@ -997,16 +1022,18 @@ class Cluster(NailgunObject):
         cluster_deployment_tasks = cls.get_own_deployment_tasks(
             instance, graph_type=graph_type)
 
-        if cluster_deployment_tasks is not None:
-            return cluster_deployment_tasks
-
         release_deployment_tasks = Release.get_deployment_tasks(
             instance.release, graph_type=graph_type)
+
         # graph types not supported by plugin manager interface yet
-        plugin_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
+        plugins_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
             instance)
 
-        return release_deployment_tasks + plugin_deployment_tasks
+        return cls._merge_tasks_lists([
+            release_deployment_tasks,
+            plugins_deployment_tasks,
+            cluster_deployment_tasks
+        ])
 
     @classmethod
     def get_refreshable_tasks(cls, instance, filter_by_configs=None):

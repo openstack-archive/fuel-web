@@ -114,7 +114,7 @@ maintainers:
 - nailgun/nailgun/orchestrator/neutron_serializers.py: *network_experts
 - nailgun/nailgun/orchestrator/nova_serializers.py: *network_experts
 
-- nailgun/static/: &ui_experts
+- nailgun/nailgun/fixtures/openstack.yaml: &ui_experts
     - name:   Vitaly Kramskikh
       email:  vkramskikh@mirantis.com
       IRC:    vkramskikh
@@ -123,18 +123,8 @@ maintainers:
       email:  jkirnosova@mirantis.com
       IRC:    jaranovich
 
-    - name:   Alexandra Morozova
-      email:  astepanchuk@mirantis.com
-      IRC:    morale
-
     - name:   Kate Pimenova
       email:  kpimenova@mirantis.com
       IRC:    kpimenova
-
-- nailgun/gulpfile.js: *ui_experts
-- nailgun/gulp/: *ui_experts
-- nailgun/package.json: *ui_experts
-
-- nailgun/static/translations/core.json: *docs_team
 
 - specs/: *packaging_team

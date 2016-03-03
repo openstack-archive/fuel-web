@@ -36,8 +36,6 @@ class DeploymentGraphTaskSerializer(BasicSerializer):
         "cross_depended_by",
         "cross_depends",
         "parameters",
-        "test_pre",
-        "test_post",
         "_custom"
     )
 

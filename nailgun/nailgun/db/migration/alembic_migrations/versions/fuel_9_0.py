@@ -890,18 +890,6 @@ def upgrade_deployment_graph():
             nullable=True),
 
         sa.Column(
-            'test_post',
-            fields.JSON(),
-            default={},
-            server_default='{}'),
-
-        sa.Column(
-            'test_pre',
-            fields.JSON(),
-            default={},
-            server_default='{}'),
-
-        sa.Column(
             'type',
             sa.Enum(
                 'puppet',
@@ -1062,8 +1050,28 @@ def upgrade_deployment_graph():
             'cross-depended-by': 'cross_depended_by',
             'role': 'roles'
         }
+
+        # fields outside schema will be mapped to _custom field
+        schema_fields = {
+            'tasks',
+            'groups',
+            'condition',
+            'parameters',
+            'cross_depended_by',
+            'reexecute_on',
+            'required_for',
+            'requires',
+            'refresh_on',
+            'version',
+            'roles',
+            'task_name',
+            'type',
+            'cross_depends'
+        }
+
         for json_task in json_tasks:
             table_task = {}
+            custom_fields = {}
             for field in json_task:
                 value = json_task[field]
                 # remap fields
@@ -1073,8 +1081,13 @@ def upgrade_deployment_graph():
                         value = [value]
                     table_task[fields_mapping[field]] = value
                 else:
-                    table_task[field] = value
+                    if field in schema_fields:
+                        table_task[field] = value
+                    else:
+                        custom_fields[field] = value
+
             table_task['deployment_graph_id'] = deployment_graph_id
+            table_task['_custom'] = custom_fields
             connection.execute(
                 deployment_graph_tasks_table.insert(),
                 table_task

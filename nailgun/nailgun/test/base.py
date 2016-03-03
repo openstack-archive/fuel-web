@@ -22,7 +22,6 @@ except ImportError:
 
 import copy
 import mock
-import operator
 import os
 import re
 import six
@@ -1537,11 +1536,18 @@ class DeploymentTasksTestMixin(object):
         :param result: list of tasks
         :type result: list
         """
-        reference.sort(key=operator.itemgetter('id'))
-        result.sort(key=operator.itemgetter('id'))
+        reference.sort(key=lambda x: x.get('id', x.get('task_name')))
+        result.sort(key=lambda x: x.get('id', x.get('task_name')))
         for ref, res in six.moves.zip(reference, result):
             for field in ref:
-                self.assertEqual(ref.get(field), (res or {}).get(field))
+                if field == '_custom':
+                    # unpack custom json fields if persist
+                    self.assertEqual(
+                        jsonutils.loads(ref.get(field)),
+                        jsonutils.loads((res or {}).get(field))
+                    )
+                else:
+                    self.assertEqual(ref.get(field), (res or {}).get(field))
 
 
 # this method is for development and troubleshooting purposes

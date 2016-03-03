@@ -42,6 +42,11 @@ class NIC(NailgunObject):
         instance.assigned_networks_list = networks
         db().flush()
 
+    @classmethod
+    def update_properties(cls, instance, properties):
+        instance.interface_properties = properties
+        db().flush()
+
 
 class NICCollection(NailgunCollection):
 

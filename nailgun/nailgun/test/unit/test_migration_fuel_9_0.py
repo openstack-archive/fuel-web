@@ -55,6 +55,12 @@ JSON_TASKS = [
         'type': 'puppet',
         'cross-depended-by': ['a', 'b'],
         'cross-depends': ['c', 'd']
+    },
+    {
+        'id': 'custom-test',
+        'type': 'puppet',
+        'test_pre': {'k': 'v'},
+        'test_post': {'k': 'v'}
     }
 ]
 
@@ -63,8 +69,6 @@ JSON_TASKS_AFTER_DB = [
         'tasks': [],
         'groups': [],
         'condition': None,
-        'test_post': '{}',
-        'test_pre': '{}',
         'parameters': '{}',
         'cross_depended_by': '[]',
         'reexecute_on': [],
@@ -82,8 +86,6 @@ JSON_TASKS_AFTER_DB = [
         'tasks': [],
         'groups': [],
         'condition': None,
-        'test_post': '{}',
-        'test_pre': '{}',
         'parameters': '{"strategy": {"type": "one_by_one"}}',
         'cross_depended_by': '[]',
         'reexecute_on': [],
@@ -101,8 +103,6 @@ JSON_TASKS_AFTER_DB = [
         'tasks': [],
         'groups': [],
         'condition': None,
-        'test_post': '{}',
-        'test_pre': '{}',
         'parameters': '{}',
         'cross_depended_by': '["a", "b"]',
         'reexecute_on': [],
@@ -115,7 +115,25 @@ JSON_TASKS_AFTER_DB = [
         'type': 'puppet',
         'cross_depends': '["c", "d"]',
         '_custom': '{}',
-    }
+    },
+    {
+        'tasks': [],
+        'groups': [],
+        'condition': None,
+        'parameters': '{}',
+        'cross_depended_by': '[]',
+        'reexecute_on': [],
+        'required_for': [],
+        'requires': [],
+        'refresh_on': [],
+        'version': '1.0.0',
+        'roles': [],
+        'task_name': 'custom-test',
+        'type': 'puppet',
+        'cross_depends': '[]',
+        '_custom': '{"test_pre": {"k": "v"}, "test_post": {"k": "v"}}',
+    },
+
 ]
 
 
@@ -545,7 +563,8 @@ class TestRemoveWizardMetadata(base.BaseAlembicMigrationTest):
         self.assertNotIn('wizard_metadata', releases_table.c)
 
 
-class TestDeploymentGraphMigration(base.BaseAlembicMigrationTest):
+class TestDeploymentGraphMigration(
+    base.BaseAlembicMigrationTest, base.DeploymentTasksTestMixin):
 
     def setUp(self):
         self.meta = base.reflect_db_metadata()
@@ -581,8 +600,6 @@ class TestDeploymentGraphMigration(base.BaseAlembicMigrationTest):
                 'version': '2.0.0',
                 'type': 'puppet',
                 'condition': None,
-                'test_post': None,
-                'test_pre': None,
                 'requires': ['a', 'b'],
                 'required_for': ['c', 'd'],
                 'refresh_on': ['r1', 'r2'],
@@ -603,8 +620,6 @@ class TestDeploymentGraphMigration(base.BaseAlembicMigrationTest):
                 'version': '2.0.0',
                 'type': 'puppet',
                 'condition': None,
-                'test_post': None,
-                'test_pre': None,
                 'requires': ['task1'],
                 'required_for': ['c', 'd'],
                 'refresh_on': [],
@@ -709,9 +724,10 @@ WHERE releases.id
             result.pop('id', None)
             result.pop('deployment_graph_id', None)
             results.append(result)
-        self.assertItemsEqual(results, JSON_TASKS_AFTER_DB)
+        self._compare_tasks(JSON_TASKS_AFTER_DB, results)
 
     def test_cluster_graphs_is_created_from_json_tasks(self):
+        self.maxDiff = None
         query = sa.text("""
 SELECT deployment_graph_tasks.*
     FROM deployment_graph_tasks
@@ -728,11 +744,12 @@ WHERE clusters.id
         db_records = db.execute(query)
         results = []
         for record in db_records:
+
             result = dict(zip(record.keys(), record))
             result.pop('id', None)
             result.pop('deployment_graph_id', None)
             results.append(result)
-        self.assertItemsEqual(results, JSON_TASKS_AFTER_DB)
+        self._compare_tasks(JSON_TASKS_AFTER_DB, results)
 
     def test_plugins_graphs_is_created_from_json_tasks(self):
         query = sa.text("""
@@ -755,4 +772,4 @@ WHERE plugins.id
             result.pop('id', None)
             result.pop('deployment_graph_id', None)
             results.append(result)
-        self.assertItemsEqual(results, JSON_TASKS_AFTER_DB)
+        self._compare_tasks(JSON_TASKS_AFTER_DB, results)

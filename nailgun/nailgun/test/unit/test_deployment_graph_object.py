@@ -136,7 +136,7 @@ class TestDeploymentGraphModel(base.BaseTestCase):
             }
         ]
 
-        dg = DeploymentGraph.create(JSON_TASKS, verbose_name='test_graph')
+        dg = DeploymentGraph.create(JSON_TASKS, name='test_graph')
         serialized = DeploymentGraph.to_dict(dg)
-        self.assertEqual(serialized['verbose_name'], 'test_graph')
+        self.assertEqual(serialized['name'], 'test_graph')
         self.assertItemsEqual(serialized['deployment_tasks'], expected_tasks)

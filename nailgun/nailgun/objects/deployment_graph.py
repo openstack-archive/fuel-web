@@ -104,15 +104,15 @@ class DeploymentGraph(NailgunObject):
         return relation_model
 
     @classmethod
-    def create(cls, deployment_tasks_data=None, verbose_name=None):
+    def create(cls, deployment_tasks_data=None, name=None):
         """Create DeploymentGraph and related DeploymentGraphTask models.
 
         It is possible to create empty graphs if not tasks data provided.
 
         :param deployment_tasks_data: list of deployment_tasks
         :type deployment_tasks_data: list[dict]|None
-        :param verbose_name: graph verbose name
-        :type verbose_name: basestring|None
+        :param name: graph verbose name
+        :type name: basestring|None
         :returns: instance of new DeploymentGraphModel
         :rtype: DeploymentGraphModel
         """
@@ -120,7 +120,7 @@ class DeploymentGraph(NailgunObject):
 
         # create graph
         deployment_graph_instance = super(DeploymentGraph, cls).create({
-            'verbose_name': verbose_name
+            'name': name
         })
         # create tasks
         if deployment_tasks_data:

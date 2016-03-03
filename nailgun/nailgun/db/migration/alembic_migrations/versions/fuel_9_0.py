@@ -843,7 +843,7 @@ def upgrade_deployment_graph():
         sa.PrimaryKeyConstraint('id'),
 
         sa.Column(
-            'verbose_name',
+            'name',
             sa.VARCHAR(length=255),
             nullable=True),
     )
@@ -1030,7 +1030,7 @@ def upgrade_deployment_graph():
     def create_graph_from_json_tasks(json_tasks):
         deployment_graph_id = connection.execute(
             deployment_graph_table.insert(),
-            {'verbose_name': 'default'}
+            {'name': 'default'}
         ).inserted_primary_key[0]
         fields_mapping = {
             'id': 'task_name',

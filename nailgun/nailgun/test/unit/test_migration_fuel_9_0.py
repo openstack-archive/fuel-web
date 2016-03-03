@@ -553,7 +553,7 @@ class TestDeploymentGraphMigration(base.BaseAlembicMigrationTest):
     def _insert_deployment_graph(self):
         result = db.execute(
             self.meta.tables['deployment_graphs'].insert(),
-            [{'verbose_name': 'test_graph'}]
+            [{'name': 'test_graph'}]
         )
         db.commit()
         deployment_graph_id = result.inserted_primary_key[0]
@@ -562,7 +562,7 @@ class TestDeploymentGraphMigration(base.BaseAlembicMigrationTest):
     def test_deployment_graph_creation(self):
         result = db.execute(
             self.meta.tables['deployment_graphs'].insert(),
-            [{'verbose_name': 'test_graph'}]
+            [{'name': 'test_graph'}]
         )
         db.commit()
         graph_key = result.inserted_primary_key[0]

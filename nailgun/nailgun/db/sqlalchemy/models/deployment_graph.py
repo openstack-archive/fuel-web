@@ -26,7 +26,7 @@ class DeploymentGraph(Base):
     id = sa.Column(
         sa.Integer,
         primary_key=True)
-    verbose_name = sa.Column(
+    name = sa.Column(
         # not planned to used in business logic and
         # added to make work with custom graphs convenient
         sa.String(255),

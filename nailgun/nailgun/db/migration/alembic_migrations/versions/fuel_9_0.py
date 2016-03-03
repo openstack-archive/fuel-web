@@ -838,10 +838,8 @@ def upgrade_deployment_graph():
 
         sa.Column(
             'id',
-            sa.INTEGER(),
-            nullable=False,
-            autoincrement=True,
-            primary_key=True),
+            sa.INTEGER()),
+        sa.PrimaryKeyConstraint('id'),
 
         sa.Column(
             'verbose_name',
@@ -854,10 +852,8 @@ def upgrade_deployment_graph():
 
         sa.Column(
             'id',
-            sa.INTEGER(),
-            nullable=False,
-            autoincrement=True,
-            primary_key=True),
+            sa.INTEGER()),
+        sa.PrimaryKeyConstraint('id'),
 
         sa.Column(
             'deployment_graph_id',

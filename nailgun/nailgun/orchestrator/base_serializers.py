@@ -260,7 +260,7 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node."""
-        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
+        for node in objects.Cluster.get_nodes_not_for_deletion_eager(cluster):
             netw_data = node.network_data
             addresses = {}
             for net in node.cluster.network_groups:
@@ -352,7 +352,7 @@ class NetworkDeploymentSerializer(object):
 
         # Assign prefix from admin network
         admin_net = IPNetwork(
-            objects.NetworkGroup.get_admin_network_group(node.id).cidr
+            objects.NetworkGroup.get_admin_network_group(node=node).cidr
         )
         admin_ip.prefixlen = admin_net.prefixlen
 

@@ -124,7 +124,7 @@ class NailgunNetworkManager(object):
         self.net_manager.assign_given_vips_for_net_groups(self.cluster, vips)
 
     def get_admin_network_group(self, node_id=None):
-        ng = objects.NetworkGroup.get_admin_network_group(node_id)
+        ng = objects.NetworkGroup.get_admin_network_group(node_id=node_id)
         return NailgunNetworkGroupAdapter(ng)
 
     def set_node_netgroups_ids(self, node, mapping):

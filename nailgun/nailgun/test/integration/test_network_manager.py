@@ -348,7 +348,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.env.network_manager.assign_admin_ips(self.env.nodes)
 
         for n in self.env.nodes:
-            admin_net = objects.NetworkGroup.get_admin_network_group(n.id)
+            admin_net = objects.NetworkGroup.get_admin_network_group(node=n)
             ip = self.db.query(IPAddr).\
                 filter_by(network=admin_net.id).\
                 filter_by(node=n.id).first()
@@ -356,6 +356,37 @@ class TestNetworkManager(BaseIntegrationTest):
             self.assertIn(
                 IPAddress(ip.ip_addr),
                 IPNetwork(admin_net.cidr)
+            )
+
+    def test_get_admin_network_group(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
+            },
+            nodes_kwargs=[{}, {}]
+        )
+        node_group = self.env.create_node_group()
+        self.env.nodes[1].group_id = node_group.json_body['id']
+        self.db().flush()
+
+        admin_net = objects.NetworkGroup.get_admin_network_group(
+            self.env.nodes[1].id)
+
+        mock_range = IPAddrRange(
+            first='9.9.9.1',
+            last='9.9.9.254',
+            network_group_id=admin_net.id
+        )
+        self.db.add(mock_range)
+        self.db.flush()
+        self.env.network_manager.assign_admin_ips(self.env.nodes)
+
+        for n in self.env.nodes:
+            self.assertEqual(
+                objects.NetworkGroup.get_admin_network_group(node_id=n.id),
+                objects.NetworkGroup.get_admin_network_group(node=n)
             )
 
     def test_assign_ip_multiple_groups(self):
@@ -417,7 +448,7 @@ class TestNetworkManager(BaseIntegrationTest):
             # if node_id is not passed to the method vips also will be
             # returned as they are assigned at the cretion of a cluster
             ip = objects.IPAddr.get_ips_except_admin(
-                node_id=node.id, include_network_data=True
+                node=node, include_network_data=True
             )[0]
             ips.append(ip)
 
@@ -516,6 +547,37 @@ class TestNetworkManager(BaseIntegrationTest):
         )
         self.assertEquals(node_net_ips,
                           objects.Node.get_networks_ips_dict(node))
+
+    def test_get_admin_ip_for_node(self):
+        self.env.create(api=False)
+        cluster = self.env.clusters[0]
+        node_data = self.env.create_node(cluster_id=cluster.id)
+        node = self.env.nodes[-1]
+
+        # No admin ip assigned
+        self.env.network_manager.assign_ips(
+            cluster, [node_data], consts.NETWORKS.management
+        )
+        self.assertEqual(
+            self.env.network_manager.get_admin_ip_for_node(node.id),
+            self.env.network_manager.get_admin_ip_for_node(node.id, node=node)
+        )
+        self.assertIsNone(
+            self.env.network_manager.get_admin_ip_for_node(node.id))
+
+        # Admin ip assigned
+        self.env.network_manager.assign_ips(
+            cluster, [node_data], consts.NETWORKS.fuelweb_admin
+        )
+#        raise Exception("%s, %s" % (node_data, node))
+#        self.assertIsNotNone(node.ip_addrs)
+        self.env.db.refresh(node)
+        self.assertEqual(
+            self.env.network_manager.get_admin_ip_for_node(node.id),
+            self.env.network_manager.get_admin_ip_for_node(node.id, node=node)
+        )
+        self.assertIsNotNone(
+            self.env.network_manager.get_admin_ip_for_node(node.id))
 
     def test_set_node_networks_ips(self):
         cluster = self.env.create_cluster(api=False)

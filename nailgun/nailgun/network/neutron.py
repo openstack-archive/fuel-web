@@ -161,7 +161,7 @@ class NeutronManager70(
                 'meta': ng.meta,
                 'gateway': ng.gateway
             }
-        admin_ng = objects.NetworkGroup.get_admin_network_group(node.id)
+        admin_ng = objects.NetworkGroup.get_admin_network_group(node=node)
         if admin_ng:
             networks[admin_ng.name] = {
                 'ip': cls.get_ip_w_cidr_prefix_len(
@@ -405,23 +405,23 @@ class NeutronManager70(
 
             # Default admin network has no node group
             if network == consts.NETWORKS.fuelweb_admin:
-                net_db = objects.NetworkGroup.get_admin_network_group(node.id)
+                net = objects.NetworkGroup.get_admin_network_group(node=node)
             else:
-                net_db = objects.NetworkGroup.get_from_node_group_by_name(
+                net = objects.NetworkGroup.get_from_node_group_by_name(
                     node.group_id, network)
 
-            if not net_db:
+            if not net:
                 logger.warning(
                     ("Failed to assign network {0} on node {1}"
                      " because it does not exist.").format(network, node.id))
             else:
                 # Ensure network_group configuration is consistent
                 # with the template
-                if vlan != net_db.vlan_start:
+                if vlan != net.vlan_start:
                     data = {'vlan_start': vlan}
-                    objects.NetworkGroup.update(net_db, data)
+                    objects.NetworkGroup.update(net, data)
 
-                ng = {'id': net_db.id}
+                ng = {'id': net.id}
                 node_ifaces[iface]['assigned_networks'].append(ng)
 
             # The parent interface NIC ID does not need to be updated for each

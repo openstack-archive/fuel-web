@@ -26,6 +26,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import joinedload
 
 from nailgun import consts
 from nailgun.db import db
@@ -495,6 +496,27 @@ class Cluster(NailgunObject):
         """All clusters nodes except nodes for deletion."""
         return db().query(models.Node).filter_by(
             cluster=cluster, pending_deletion=False).order_by(models.Node.id)
+
+    @classmethod
+    def get_nodes_not_for_deletion_eager(cls, cluster):
+        """All clusters nodes except nodes for deletion.
+
+        Loading nodes related data for performance boost. In case
+        of loaded data we don't perform extra SQL queries.
+
+        :param cluster: cluster
+        :type cluster: nailgun.db.sqlalchemy.models.Cluster
+        :return: query for fetching nodes with related data
+        """
+        query = cls.get_nodes_not_for_deletion(cluster)
+        return query.options(
+            joinedload('nic_interfaces'), joinedload('bond_interfaces'),
+            joinedload('ip_addrs'), joinedload('networks'),
+            joinedload('nic_interfaces.assigned_networks_list'),
+            joinedload('bond_interfaces.assigned_networks_list'),
+            joinedload('cluster'), joinedload('cluster.node_groups'),
+            joinedload('cluster.node_groups.networks')
+        )
 
     @classmethod
     def clear_pending_changes(cls, instance, node_id=None):

@@ -2035,7 +2035,7 @@ class TestIPAddrObject(BaseTestCase):
         self.env.network_manager.assign_ips(
             self.cluster, [node], consts.NETWORKS.management
         )
-        for ip in objects.IPAddr.get_ips_except_admin(node.id):
+        for ip in objects.IPAddr.get_ips_except_admin(node):
             self.assertEqual(ip.network_data.name, consts.NETWORKS.management)
 
     def test_delete_by_node(self):

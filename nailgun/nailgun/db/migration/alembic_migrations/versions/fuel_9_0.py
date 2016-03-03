@@ -890,18 +890,6 @@ def upgrade_deployment_graph():
             nullable=True),
 
         sa.Column(
-            'test_post',
-            fields.JSON(),
-            default={},
-            server_default='{}'),
-
-        sa.Column(
-            'test_pre',
-            fields.JSON(),
-            default={},
-            server_default='{}'),
-
-        sa.Column(
             'type',
             sa.Enum(
                 'puppet',

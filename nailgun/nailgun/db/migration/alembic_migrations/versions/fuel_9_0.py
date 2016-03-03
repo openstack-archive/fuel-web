@@ -846,7 +846,7 @@ def upgrade_deployment_graph():
 
         sa.Column(
             'verbose_name',
-            sa.VARCHAR(length=consts.DEPLOYMENT_GRAPH_NAME_MAX_LEN),
+            sa.VARCHAR(length=255),
             nullable=True),
     )
 
@@ -871,7 +871,7 @@ def upgrade_deployment_graph():
 
         sa.Column(
             'task_name',
-            sa.VARCHAR(length=consts.DEPLOYMENT_TASK_NAME_MAX_LEN),
+            sa.VARCHAR(length=255),
             nullable=False),
         sa.UniqueConstraint(
             'deployment_graph_id',
@@ -880,10 +880,10 @@ def upgrade_deployment_graph():
 
         sa.Column(
             'version',
-            sa.VARCHAR(consts.DEPLOYMENT_TASK_VERSION_MAX_LEN),
+            sa.VARCHAR(255),
             nullable=False,
-            server_default=consts.DEPLOYMENT_TASK_DEFAULT_VERSION,
-            default=consts.DEPLOYMENT_TASK_DEFAULT_VERSION),
+            server_default='1.0.0',
+            default='1.0.0'),
 
         sa.Column(
             'condition',
@@ -912,49 +912,49 @@ def upgrade_deployment_graph():
         # legacy field, will be removed in next patches
         sa.Column(
             'groups',
-            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_GROUP_NAME_MAX_LEN)),
+            psql.ARRAY(sa.String(255)),
             default=[],
             nullable=False,
             server_default='{}'),
 
         sa.Column(
             'tasks',
-            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+            psql.ARRAY(sa.String(255)),
             default=[],
             nullable=False,
             server_default='{}'),
 
         sa.Column(
             'roles',
-            psql.ARRAY(sa.String(consts.NODE_ROLE_NAME_MAX_LEN)),
+            psql.ARRAY(sa.String(255)),
             default=[],
             nullable=False,
             server_default='{}'),
 
         sa.Column(
             'reexecute_on',
-            psql.ARRAY(sa.String(consts.NAILGUN_EVENT_NAME_MAX_LEN)),
+            psql.ARRAY(sa.String(255)),
             default=[],
             nullable=False,
             server_default='{}'),
 
         sa.Column(
             'refresh_on',
-            psql.ARRAY(sa.String(consts.NAILGUN_EVENT_NAME_MAX_LEN)),
+            psql.ARRAY(sa.String(255)),
             default=[],
             nullable=False,
             server_default='{}'),
 
         sa.Column(
             'required_for',
-            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+            psql.ARRAY(sa.String(255)),
             default=[],
             nullable=False,
             server_default='{}'),
 
         sa.Column(
             'requires',
-            psql.ARRAY(sa.String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+            psql.ARRAY(sa.String(255)),
             default=[],
             nullable=False,
             server_default='{}'),
@@ -997,7 +997,7 @@ def upgrade_deployment_graph():
 
             sa.Column(
                 'type',
-                sa.VARCHAR(length=consts.DEPLOYMENT_GRAPH_TYPE_MAX_LEN),
+                sa.VARCHAR(length=255),
                 nullable=False),
 
             sa.Column(
@@ -1046,7 +1046,7 @@ def upgrade_deployment_graph():
     def create_graph_from_json_tasks(json_tasks):
         deployment_graph_id = connection.execute(
             deployment_graph_table.insert(),
-            {'verbose_name': consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE}
+            {'verbose_name': 'default'}
         ).inserted_primary_key[0]
         fields_mapping = {
             'id': 'task_name',
@@ -1103,7 +1103,7 @@ def upgrade_deployment_graph():
                 insert_relation_query,
                 deployment_graph_id=deployment_graph_id,
                 target_id=entity_id,
-                type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
+                type='default'
             )
 
     op.drop_column('releases', 'deployment_tasks')

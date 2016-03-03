@@ -1066,10 +1066,23 @@ class Node(NailgunObject):
     def get_kernel_params(cls, instance):
         """Get kernel params.
 
-        Return cluster kernel_params if they weren't replaced by custom params.
+        Assemble kernel_params if they weren't replaced by custom params.
         """
-        return (instance.kernel_params or
-                Cluster.get_default_kernel_params(instance.cluster))
+        if instance.kernel_params:
+            return instance.kernel_params
+
+        kernel_params = Cluster.get_default_kernel_params(instance.cluster)
+
+        # Add intel_iommu=on amd_iommu=on if SR-IOV is enabled on node
+        for nic in instance.nic_interfaces:
+            sriov = nic.interface_properties.get('sriov', {})
+            if sriov and sriov['available'] and sriov['enabled']:
+                if 'intel_iommu=' not in kernel_params:
+                    kernel_params += ' intel_iommu=on'
+                if 'amd_iommu=' not in kernel_params:
+                    kernel_params += ' amd_iommu=on'
+                break
+        return kernel_params
 
     @classmethod
     def remove_replaced_params(cls, instance):

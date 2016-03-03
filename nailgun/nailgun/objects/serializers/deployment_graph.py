@@ -76,7 +76,7 @@ class DeploymentGraphSerializer(BasicSerializer):
 
     fields = (
         "id",
-        "verbose_name"
+        "name"
     )
 
     @classmethod

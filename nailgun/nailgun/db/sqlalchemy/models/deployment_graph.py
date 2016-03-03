@@ -37,7 +37,7 @@ class DeploymentGraph(Base):
     verbose_name = Column(
         # not planned to used in business logic and
         # added to make work with custom graphs convenient
-        String(consts.DEPLOYMENT_GRAPH_NAME_MAX_LEN),
+        String(255),
         nullable=True)
     tasks = relationship(
         'DeploymentGraphTask',
@@ -77,14 +77,14 @@ class DeploymentGraphTask(Base):
     # not task_id because it could be perceived as fk
     # and not id because it is not unique inside table
     task_name = Column(
-        String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN),
+        String(255),
         index=True,
         nullable=False)
     version = Column(
-        String(consts.DEPLOYMENT_TASK_VERSION_MAX_LEN),
+        String(255),
         nullable=False,
-        server_default=consts.DEPLOYMENT_TASK_DEFAULT_VERSION,
-        default=consts.DEPLOYMENT_TASK_DEFAULT_VERSION)
+        server_default='1.0.0',
+        default='1.0.0')
     condition = Column(
         Text,
         nullable=True)
@@ -102,38 +102,38 @@ class DeploymentGraphTask(Base):
             name='deployment_graph_tasks_type'),
         nullable=False)
     groups = Column(
-        psql.ARRAY(String(consts.DEPLOYMENT_TASK_GROUP_NAME_MAX_LEN)),
+        psql.ARRAY(String(255)),
         default=[],
         server_default='{}',
         nullable=False)
     tasks = Column(
-        psql.ARRAY(String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+        psql.ARRAY(String(255)),
         default=[],
         server_default='{}',
         nullable=False)
     roles = Column(    # node roles
-        psql.ARRAY(String(consts.NODE_ROLE_NAME_MAX_LEN)),
+        psql.ARRAY(String(255)),
         default=[],
         server_default='{}',
         nullable=False)
     # list of Nailgun events on which this task should be re-executed
     reexecute_on = Column(
-        psql.ARRAY(String(consts.NAILGUN_EVENT_NAME_MAX_LEN)),
+        psql.ARRAY(String(255)),
         default=[],
         server_default='{}',
         nullable=False)
     refresh_on = Column(    # new in 8.0
-        psql.ARRAY(String(consts.NAILGUN_EVENT_NAME_MAX_LEN)),
+        psql.ARRAY(String(255)),
         default=[],
         server_default='{}',
         nullable=False)
     required_for = Column(
-        psql.ARRAY(String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+        psql.ARRAY(String(255)),
         default=[],
         server_default='{}',
         nullable=False)
     requires = Column(
-        psql.ARRAY(String(consts.DEPLOYMENT_TASK_NAME_MAX_LEN)),
+        psql.ARRAY(String(255)),
         default=[],
         server_default='{}',
         nullable=False)
@@ -171,7 +171,7 @@ class ReleaseDeploymentGraph(Base):
         Integer,
         primary_key=True)
     type = Column(
-        String(consts.DEPLOYMENT_GRAPH_TYPE_MAX_LEN),
+        String(255),
         nullable=False)
     deployment_graph_id = Column(
         Integer,
@@ -206,7 +206,7 @@ class PluginDeploymentGraph(Base):
         Integer,
         primary_key=True)
     type = Column(
-        String(consts.DEPLOYMENT_GRAPH_TYPE_MAX_LEN),
+        String(255),
         nullable=False)
     deployment_graph_id = Column(
         Integer,
@@ -237,7 +237,7 @@ class ClusterDeploymentGraph(Base):
         Integer,
         primary_key=True)
     type = Column(
-        String(consts.DEPLOYMENT_GRAPH_TYPE_MAX_LEN),
+        String(255),
         nullable=False)
     deployment_graph_id = Column(
         Integer,

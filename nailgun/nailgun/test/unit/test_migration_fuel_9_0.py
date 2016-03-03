@@ -23,6 +23,12 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
+from nailgun.objects import Cluster
+from nailgun.objects import ClusterCollection
+from nailgun.objects import PluginCollection
+from nailgun.objects import Release
+from nailgun.objects import ReleaseCollection
+from nailgun.plugins.adapters import wrap_plugin
 from nailgun.test import base
 
 _prepare_revision = '43b2cb64dae6'
@@ -60,61 +66,34 @@ JSON_TASKS = [
 
 JSON_TASKS_AFTER_DB = [
     {
-        'tasks': [],
-        'groups': [],
-        'condition': None,
-        'test_post': '{}',
-        'test_pre': '{}',
-        'parameters': '{}',
-        'cross_depended_by': '[]',
-        'reexecute_on': [],
-        'required_for': [],
-        'requires': ['post_deployment_start'],
-        'refresh_on': [],
-        'version': '1.0.0',
-        'roles': [],
         'task_name': 'post_deployment_end',
+        'id': 'post_deployment_end',
         'type': 'stage',
-        'cross_depends': '[]',
-        '_custom': '{}',
+        'requires': ['post_deployment_start'],
+        'version': '1.0.0'
+
     },
     {
-        'tasks': [],
-        'groups': [],
-        'condition': None,
-        'test_post': '{}',
-        'test_pre': '{}',
-        'parameters': '{"strategy": {"type": "one_by_one"}}',
-        'cross_depended_by': '[]',
-        'reexecute_on': [],
+        'task_name': 'primary-controller',
+        'id': 'primary-controller',
+        'parameters': {'strategy': {'type': 'one_by_one'}},
         'required_for': ['deploy_end'],
         'requires': ['deploy_start'],
-        'refresh_on': [],
-        'version': '1.0.0',
         'roles': ['primary-controller'],
-        'task_name': 'primary-controller',
+        'role': ['primary-controller'],  # legacy notation should be converted
+                                         # to `roles`
         'type': 'group',
-        'cross_depends': '[]',
-        '_custom': '{}',
+        'version': '1.0.0'
     },
     {
-        'tasks': [],
-        'groups': [],
-        'condition': None,
-        'test_post': '{}',
-        'test_pre': '{}',
-        'parameters': '{}',
-        'cross_depended_by': '["a", "b"]',
-        'reexecute_on': [],
-        'required_for': [],
-        'requires': [],
-        'refresh_on': [],
-        'version': '1.0.0',
-        'roles': [],
         'task_name': 'cross-dep-test',
+        'id': 'cross-dep-test',
         'type': 'puppet',
-        'cross_depends': '["c", "d"]',
-        '_custom': '{}',
+        'cross_depended_by': ['a', 'b'],
+        'cross-depended-by': ['a', 'b'],
+        'cross_depends': ['c', 'd'],
+        'cross-depends': ['c', 'd'],
+        'version': '1.0.0'
     }
 ]
 
@@ -689,70 +668,22 @@ class TestDeploymentGraphMigration(base.BaseAlembicMigrationTest):
         db.rollback()
 
     def test_release_graphs_is_created_from_json_tasks(self):
-        query = sa.text("""
-SELECT deployment_graph_tasks.*
-    FROM deployment_graph_tasks
-JOIN deployment_graphs
-    ON deployment_graph_tasks.deployment_graph_id = deployment_graphs.id
-JOIN release_deployment_graphs
-    ON deployment_graphs.id = release_deployment_graphs.deployment_graph_id
-JOIN releases
-    ON release_deployment_graphs.release_id = releases.id
-WHERE releases.id
-    IN (SELECT id FROM releases WHERE releases.name = 'test_name')
-        """)
-
-        db_records = db.execute(query)
-        results = []
-        for record in db_records:
-            result = dict(zip(record.keys(), record))
-            result.pop('id', None)
-            result.pop('deployment_graph_id', None)
-            results.append(result)
-        self.assertItemsEqual(results, JSON_TASKS_AFTER_DB)
-
-    def test_cluster_graphs_is_created_from_json_tasks(self):
-        query = sa.text("""
-SELECT deployment_graph_tasks.*
-    FROM deployment_graph_tasks
-JOIN deployment_graphs
-    ON deployment_graph_tasks.deployment_graph_id = deployment_graphs.id
-JOIN cluster_deployment_graphs
-    ON deployment_graphs.id = cluster_deployment_graphs.deployment_graph_id
-JOIN clusters
-    ON cluster_deployment_graphs.cluster_id = clusters.id
-WHERE clusters.id
-    IN (SELECT id FROM clusters WHERE clusters.name = 'test_env')
-        """)
-
-        db_records = db.execute(query)
-        results = []
-        for record in db_records:
-            result = dict(zip(record.keys(), record))
-            result.pop('id', None)
-            result.pop('deployment_graph_id', None)
-            results.append(result)
-        self.assertItemsEqual(results, JSON_TASKS_AFTER_DB)
+        release_instance = ReleaseCollection.filter_by(
+            None, name='test_name').first()
+        tasks = Release.get_deployment_tasks(release_instance)
+        self.assertItemsEqual(tasks, JSON_TASKS_AFTER_DB)
 
     def test_plugins_graphs_is_created_from_json_tasks(self):
-        query = sa.text("""
-SELECT deployment_graph_tasks.*
-    FROM deployment_graph_tasks
-JOIN deployment_graphs
-    ON deployment_graph_tasks.deployment_graph_id = deployment_graphs.id
-JOIN plugin_deployment_graphs
-    ON deployment_graphs.id = plugin_deployment_graphs.deployment_graph_id
-JOIN plugins
-    ON plugin_deployment_graphs.plugin_id = plugins.id
-WHERE plugins.id
-    IN (SELECT id FROM plugins WHERE plugins.name = 'test_plugin_a')
-        """)
+        plugin_instance = PluginCollection.filter_by(
+            None, name='test_plugin_a').first()
+        tasks = wrap_plugin(plugin_instance).deployment_tasks
+        for task in tasks:
+            # remove plugin adapter side-effect
+            task.get('parameters', {}).pop('cwd', None)
+        self.assertItemsEqual(tasks, JSON_TASKS_AFTER_DB)
 
-        db_records = db.execute(query)
-        results = []
-        for record in db_records:
-            result = dict(zip(record.keys(), record))
-            result.pop('id', None)
-            result.pop('deployment_graph_id', None)
-            results.append(result)
-        self.assertItemsEqual(results, JSON_TASKS_AFTER_DB)
+    def test_cluster_graphs_is_created_from_json_tasks(self):
+        cluster_instance = ClusterCollection.filter_by(
+            None, name='test_env').first()
+        tasks = Cluster.get_own_deployment_tasks(cluster_instance)
+        self.assertItemsEqual(tasks, JSON_TASKS_AFTER_DB)

@@ -439,7 +439,9 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
     serializer = ps.ProvisioningSerializer90
 
     def test_user_account_info(self):
-        self.env.create()
+        self.env.create(
+            release_kwargs={'version': 'liberty-9.0'},
+        )
         self.cluster_db = self.env.clusters[0]
         self.env.create_nodes_w_interfaces_count(
             1, 1,
@@ -496,3 +498,23 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
                 node['ks_meta']['user_accounts'],
                 user_accounts
             )
+
+    def test_serialize_iommu_parameters_for_sriov(self):
+        self.env.create(
+            release_kwargs={
+                'version': 'liberty-9.0',
+                'operating_system': consts.RELEASE_OS.ubuntu},
+            nodes_kwargs=[
+                {'roles': ['compute']}]
+        )
+
+        sriov_nic = self.env.nodes[0].nic_interfaces[0]
+        sriov_nic.interface_properties['sriov']['available'] = True
+        sriov_nic.interface_properties['sriov']['enabled'] = True
+        objects.NIC.update(sriov_nic, {})
+
+        serialized_node = self.serializer.serialize(
+            self.env.clusters[0], self.env.nodes)['nodes'][0]
+        kernel_opts = serialized_node['ks_meta']['pm_data']['kernel_params']
+        self.assertIn("intel_iommu=on", kernel_opts)
+        self.assertIn("amd_iommu=on", kernel_opts)

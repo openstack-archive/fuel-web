@@ -88,14 +88,6 @@ class DeploymentGraphTask(Base):
     condition = Column(
         Text,
         nullable=True)
-    test_post = Column(
-        MutableDict.as_mutable(JSON),
-        default={},
-        server_default='{}')
-    test_pre = Column(
-        MutableDict.as_mutable(JSON),
-        default={},
-        server_default='{}')
     type = Column(
         Enum(
             *consts.ORCHESTRATOR_TASK_TYPES,

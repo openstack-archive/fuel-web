@@ -821,11 +821,17 @@ DUMP:
       - type: dir
         path: /var/log/docker-logs
       - type: file
-        path: /var/log/*.log
+        path: /var/log/*
       - type: file
         path: /var/log/puppet/bootstrap_admin_node.log
       - type: file
         path: /var/log/atop/atop_current
+      - type: dir
+        path: /var/log/anaconda
+      - type: dir
+        path: /var/log/sa
+      - type: file
+        path: /var/log/tuned/tuned.log
       - type: command
         command: uname -a
         to_file: uname_a.txt

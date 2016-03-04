@@ -612,7 +612,14 @@ class TestNetworkManager(BaseIntegrationTest):
             for net in iface.assigned_networks_list:
                 self.assertEquals(admin_ng_id, net.id)
 
-    def test_get_assigned_vips(self):
+    def test_vips_assignment(self):
+        # FIXME(asaprykin): This is hotfix for unit tests failures.
+        # It should be removed after https://review.openstack.org/#/c/284841/
+        # is merged.
+        self._test_get_assigned_vips()
+        self._test_assign_given_vips_for_net_groups()
+
+    def _test_get_assigned_vips(self):
         vips_to_create = {
             consts.NETWORKS.management: {
                 consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',
@@ -628,7 +635,7 @@ class TestNetworkManager(BaseIntegrationTest):
         vips = self.env.network_manager.get_assigned_vips(cluster)
         self.assertEqual(vips_to_create, vips)
 
-    def test_assign_given_vips_for_net_groups(self):
+    def _test_assign_given_vips_for_net_groups(self):
         vips_to_create = {
             consts.NETWORKS.management: {
                 consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',

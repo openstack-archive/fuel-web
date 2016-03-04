@@ -74,18 +74,6 @@ Preparing Development Environment
     sudo chown -R `whoami`.`whoami` /var/log/nailgun
     sudo chmod -R a+w /var/log/nailgun
 
-#. Install NodeJS and JS dependencies::
-
-    sudo apt-get remove --yes nodejs nodejs-legacy
-    sudo apt-get install --yes software-properties-common
-    sudo add-apt-repository --yes ppa:chris-lea/node.js
-    sudo apt-get update
-    sudo apt-get install --yes nodejs
-    sudo npm install -g gulp
-    sudo chown -R `whoami`.`whoami` ~/.npm
-    cd nailgun
-    npm install
-
 Setup for Nailgun Unit Tests
 ----------------------------
 
@@ -142,29 +130,6 @@ For example:
 
 * run_tests.sh -N - run all tests except for Nailgun regular and
   performance tests.
-
-
-
-Setup for Web UI Tests
-----------------------
-
-#. UI tests use Selenium server, so you need to install Java Runtime
-   Environment (JRE) 1.6 or newer version.
-
-#. You also need to install Firefox - it is used as the default browser for
-   tests.
-
-#. Run full Web UI test suite (this will wipe your Nailgun database in
-   PostgreSQL)::
-
-    cd nailgun
-    npm run lint
-    npm test
-
-   By default Firefox browser is used. You can specify the browser using
-   BROWSER environment variable::
-
-    BROWSER=chrome npm test
 
 
 .. _running-parallel-tests-py:
@@ -238,52 +203,9 @@ Running Nailgun in Fake Mode
 
     python manage.py run -p 8000 --fake-tasks-amqp | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun.log 2>&1 &
 
-#. If you plan to use Fuel UI:
-
-  * Update JS dependencies::
-
-      npm install
-
-  * If you don't plan to modify Fuel UI, you may want just to build static
-    version which is served by nailgun::
-
-      gulp build
-
-    Please note that after pulling updates from fuel-web repo you may need to
-    run this command again.
-
-    To specify custom output directory location use
-    `static-dir` option::
-
-      gulp build --static-dir=static_compressed
-
-    To speed up build process you may also want to disable uglification and
-    source maps generation::
-
-      gulp build --no-uglify --no-sourcemaps
-
-  * If you plan to modify Fuel UI, there is more convenient option --
-    a development server. It watches for file changes and automatically
-    rebuilds changed modules (significantly faster than full rebuild)
-    and triggers page refresh in browsers::
-
-      gulp dev-server
-
-    By default it runs on port 8080 and assumes that nailgun runs on
-    port 8000. You can override this by using the following options::
-
-      gulp dev-server --dev-server-host=127.0.0.1 --dev-server-port=8080 --nailgun-host=127.0.0.1 --nailgun-port=8000
-
-    If you don't want to use a development server but would like to recompile
-    the bundle on any change, use::
-
-      gulp build --watch
-
-    If automatic rebuild on change doesn't work, most likely you need to
-    increase the limit of inotify watches::
-
-      echo 100000 | sudo tee /proc/sys/fs/inotify/max_user_watches
-
+Nailgun in fake mode is usually used for Fuel UI development and Fuel UI
+functional tests. For more information, please check out README file in
+the fuel-ui repo.
 
 Note: Diagnostic Snapshot is not available in a Fake mode.
 

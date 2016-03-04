@@ -85,6 +85,7 @@ Source code of all those components is split into multiple git
 repositories like, for example:
 
 - https://github.com/openstack/fuel-web
+- https://github.com/openstack/fuel-ui
 - https://github.com/openstack/fuel-astute
 - https://github.com/openstack/fuel-ostf
 - https://github.com/openstack/fuel-library

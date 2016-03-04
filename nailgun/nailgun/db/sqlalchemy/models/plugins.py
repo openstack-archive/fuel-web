@@ -97,10 +97,6 @@ class Plugin(Base):
     # with old environments and old plugins.
     tasks = Column(
         MutableList.as_mutable(JSON), server_default='[]', nullable=False)
-    deployment_graphs = relationship(
-        "PluginDeploymentGraph",
-        back_populates="plugin",
-        lazy="dynamic")
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")

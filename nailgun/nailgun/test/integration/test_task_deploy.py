@@ -29,6 +29,7 @@ class TestTaskDeploy(BaseIntegrationTest):
     def setUp(self):
         super(TestTaskDeploy, self).setUp()
         self.env.create(
+            api=False,
             nodes_kwargs=[
                 {"name": "First",
                  "pending_addition": True},

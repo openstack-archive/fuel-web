@@ -226,7 +226,8 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 405)
 
     @mock.patch('objects.Cluster.get_deployment_tasks')
-    def execute_update_open_stack_config(self, tasks_mock):
+    def execute_update_open_stack_config(
+            self, tasks_mock, expect_errors=False, **kwargs):
         tasks_mock.return_value = [{
             'id': 'upload_configuration',
             'type': 'upload_file',
@@ -238,9 +239,12 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             'refresh_on': ['*']
         }]
         data = {'cluster_id': self.clusters[0].id}
+        data.update(kwargs)
         resp = self.app.put(
             reverse('OpenstackConfigExecuteHandler'),
-            jsonutils.dumps(data), headers=self.default_headers
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
         )
         return resp
 
@@ -300,7 +304,7 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         )
 
     @mock.patch('objects.OpenstackConfigCollection.find_configs_for_nodes')
-    def test_openstack_config_completed_exit_if_no_changes(self, m_conf):
+    def test_openstack_config_successfully_exit_if_no_changes(self, m_conf):
         m_conf.return_value = []
         resp = self.execute_update_open_stack_config()
         self.assertEqual(200, resp.status_code)
@@ -314,11 +318,7 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         # all changes on error.
         self.db.commit()
         # Try to update OpenStack configuration for cluster
-        data = {'cluster_id': self.clusters[0].id}
-        resp = self.app.put(
-            reverse('OpenstackConfigExecuteHandler'),
-            jsonutils.dumps(data), headers=self.default_headers,
-            expect_errors=True)
+        resp = self.execute_update_open_stack_config(expect_errors=True)
         # Request shouldn't pass a validation
         self.assertEqual(resp.status_code, 400)
         self.assertEqual("Nodes '{0}' are not in status 'ready' and "
@@ -327,36 +327,21 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
                          resp.json_body['message'])
 
         # Try to update OpenStack configuration for cluster with 'force' key
-        data = {'cluster_id': self.clusters[0].id,
-                'force': True}
-        resp = self.app.put(
-            reverse('OpenstackConfigExecuteHandler'),
-            jsonutils.dumps(data), headers=self.default_headers
-        )
+        resp = self.execute_update_open_stack_config(force=True)
         # Update OpenStack configuration executed successfully
         self.assertEqual(resp.status_code, 202)
 
     def test_openstack_config_execute_fail_cluster_not_operational(self):
         self.clusters[0].status = consts.CLUSTER_STATUSES.error
         self.db.flush()
-        data = {'cluster_id': self.clusters[0].id}
-        resp = self.app.put(
-            reverse('OpenstackConfigExecuteHandler'),
-            jsonutils.dumps(data), headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self.execute_update_open_stack_config(expect_errors=True)
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.json_body['message'],
                          "Cluster should be in the status 'operational'")
 
     def test_openstack_config_execute_fail_deploy_running(self):
         deploy_task_id = self.create_running_deployment_task()
-        data = {'cluster_id': self.clusters[0].id}
-        resp = self.app.put(
-            reverse('OpenstackConfigExecuteHandler'),
-            jsonutils.dumps(data), headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self.execute_update_open_stack_config(expect_errors=True)
         self.check_fail_deploy_running(deploy_task_id, resp)
 
     def test_openstack_config_execute_fail_no_ready_nodes(self):
@@ -367,13 +352,7 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.db.flush()
 
         # Try to update configuration for node 0
-        data = {'cluster_id': self.clusters[0].id}
-
-        resp = self.app.put(
-            reverse('OpenstackConfigExecuteHandler'),
-            jsonutils.dumps(data), headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self.execute_update_open_stack_config(expect_errors=True)
         # Request shouldn't pass a validation
         self.assertEqual(resp.status_code, 400)
         self.assertEqual("No nodes in status 'ready'",
@@ -381,11 +360,8 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
 
     def test_openstack_config_execute_fail_not_existed_cluster(self):
         # Try to update not existed cluster
-        data = {'cluster_id': -1}
-        resp = self.app.put(
-            reverse('OpenstackConfigExecuteHandler'),
-            jsonutils.dumps(data), headers=self.default_headers,
-            expect_errors=True
+        resp = self.execute_update_open_stack_config(
+            expect_errors=True, cluster_id=-1
         )
         # Request shouldn't pass a validation
         self.assertEqual(resp.status_code, 404)

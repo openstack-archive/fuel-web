@@ -471,6 +471,7 @@ class EnvironmentManager(object):
 
     def disable_task_deploy(self, cluster):
         cluster.attributes.editable['common']['task_deploy']['value'] = False
+        cluster.attributes.editable.changed()
         self.db().flush()
 
     def delete_node_group(self, ng_id, status_code=200, api=True):

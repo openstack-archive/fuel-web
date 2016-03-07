@@ -19,40 +19,9 @@ from copy import deepcopy
 from mock import Mock
 from mock import patch
 
-from nailgun.db.sqlalchemy.models.mutable import Mutable
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.test.base import BaseUnitTest
-
-
-class TestMutable(BaseUnitTest):
-    def setUp(self):
-        self.parents = {'parent': 'key'}
-        self.mutable = Mutable()
-        self.mutable._parents = self.parents
-
-    def _check_cast(self, value, expected_type):
-        result = self.mutable.cast(value)
-        self.assertIsInstance(result, expected_type)
-        self.assertIs(result._parents, self.mutable._parents)
-        self.assertItemsEqual(result, value)
-
-    def test_cast_list(self):
-        self._check_cast([1, 2, 3], MutableList)
-
-    def test_cast_dict(self):
-        self._check_cast({'1': 1, '2': 2}, MutableDict)
-
-    def test_cast_mutable_list(self):
-        self._check_cast(MutableList([1, 2, 3]), MutableList)
-
-    def test_cast_mutable_dict(self):
-        self._check_cast(MutableDict({'1': 1, '2': 2}), MutableDict)
-
-    def test_cast_simple_type(self):
-        result = self.mutable.cast(1)
-        self.assertIsInstance(result, int)
-        self.assertEqual(result, 1)
 
 
 @patch('sqlalchemy.ext.mutable.Mutable.coerce')
@@ -122,7 +91,7 @@ class TestMutableDict(TestMutableDictBase):
     def test_initialize(self):
         with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
             MutableDict(key1='value1', key2='value2')
-            self._assert_call_object_changed_once(m_changed)
+            self._assert_object_not_changed(m_changed)
 
     def test_setitem(self):
         self._check('__setitem__', '2', 2)
@@ -138,11 +107,10 @@ class TestMutableDict(TestMutableDictBase):
 
     def test_setdefault_with_default_dict(self):
         with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
-            self.mutable_obj.setdefault('2', dict())
-            # 'changed' method called twice:
-            #  - during casting default dict to MutableDict for new object
-            #  - in setdefault method for 'mutable_obj'
-            self.assertEqual(m_changed.call_count, 2)
+            self.mutable_obj.setdefault('num', 1)
+            self.mutable_obj.setdefault('num', 2)
+            self.assertEqual(m_changed.call_count, 1)
+            self.assertEqual(1, self.mutable_obj['num'])
 
     def test_setdefault_failure(self):
         self._check_failure(TypeError, 'setdefault', {})
@@ -207,11 +175,7 @@ class TestMutableDictIntegration(TestMutableDictBase):
 
         m_changed.reset_mock()
         clone = deepcopy(self.mutable_obj)
-        # changed should calls two times
-        # - root cloned dict (clone)
-        # - mutable dict element in root dict (cloned dct)
-        self.assertEqual(m_changed.call_count, 2)
-
+        self.assertEqual(0, m_changed.call_count)
         dct['1'] = 'new_element'
         self.assertEqual(clone['2']['1'], 'element1')
         self.assertEqual(self.mutable_obj['2']['1'], 'new_element')
@@ -256,7 +220,7 @@ class TestMutableList(TestMutableListBase):
     def test_initialize(self):
         with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
             MutableList([1, 2, 3])
-            self._assert_call_object_changed_once(m_changed)
+            self._assert_object_not_changed(m_changed)
 
     def test_append(self):
         self._check('append', 'element')
@@ -373,107 +337,8 @@ class TestMutableListIntegration(TestMutableListBase):
 
         m_changed.reset_mock()
         clone = deepcopy(self.mutable_obj)
-        # changed should calls two times
-        # - root cloned list (clone)
-        # - mutable list element in root list (cloned lst)
-        self.assertEqual(m_changed.call_count, 2)
+        self.assertEqual(0, m_changed.call_count)
 
         lst[0] = 'new_element'
         self.assertEqual(clone[0][0], 'element1')
         self.assertEqual(self.mutable_obj[0][0], 'new_element')
-
-
-class TestComplexDataStructures(BaseUnitTest):
-    def setUp(self):
-        lst = [
-            {'1': 1, '2': 2},
-            MutableDict({'1': 1, '2': 2}),
-            MutableList([1, 2, 3]),
-            '123'
-        ]
-        # create list with three levels of nesting
-        complex_list = lst + [lst + [lst]]
-        self.mutable_list = MutableList(complex_list)
-
-        dct = {
-            '1': [1, 2],
-            '2': MutableList([1, 3]),
-            '3': MutableDict({'1': 1, '2': 2}),
-            '4': '123'
-        }
-        # create dict with three levels of nesting
-        complex_dict = dict(dct)
-        complex_dict.setdefault('5', copy(dct))
-        complex_dict['5'].setdefault('5', copy(dct))
-        self.mutable_dict = MutableDict(complex_dict)
-
-        self.lst = [1, [1, 2, 3], {'1': 1, '2': 2}]
-        self.dct = {'1': 1, '2': [1, 2, 3], '3': {'1': 1, '2': 2}}
-
-    def _validate_data(self, data):
-        """Iterative data validation
-
-        Check that there're no builtin list or dict in data
-        :param data: data to validate
-        """
-        elements = []
-        while True:
-            self.assertNotIn(type(data), (dict, list))
-            if isinstance(data, dict):
-                self.assertIsInstance(data, MutableDict)
-                elements.extend([value for key, value in data.items()])
-            if isinstance(data, list):
-                self.assertIsInstance(data, MutableList)
-                elements.extend(data)
-            if not elements:
-                break
-            data = elements.pop()
-
-    def _check(self, obj, method, *args, **kwargs):
-        getattr(obj, method)(*args, **kwargs)
-        self._validate_data(obj)
-
-    def test_append_to_first_level(self):
-        self._check(self.mutable_list, 'append', self.lst)
-
-    def test_append_to_second_level(self):
-        self._check(self.mutable_list[2], 'append', self.lst)
-
-    def test_append_to_third_level(self):
-        self._check(self.mutable_list[4][4], 'append', self.lst)
-
-    def test_extend_first_level(self):
-        self._check(self.mutable_list, 'extend', self.lst)
-
-    def test_extend_second_level(self):
-        self._check(self.mutable_list[2], 'extend', self.lst)
-
-    def test_third_third_level(self):
-        self._check(self.mutable_list[4][4], 'extend', self.lst)
-
-    def test_insert_to_first_level(self):
-        self._check(self.mutable_list, 'insert', 2, self.lst)
-
-    def test_insert_to_second_level(self):
-        self._check(self.mutable_list[2], 'insert', 2, self.lst)
-
-    def test_insert_to_third_level(self):
-        self._check(self.mutable_list[4][4], 'insert', 2, self.lst)
-
-    def test_setitem_to_first_level(self):
-        self._check(self.mutable_list, '__setitem__', 1, self.lst)
-
-    def test_setitem_to_second_level(self):
-        self._check(self.mutable_list[2], '__setitem__', 1, self.lst)
-
-    def test_setitem_to_third_level(self):
-        self._check(self.mutable_list[4][4], '__setitem__', 1, self.lst)
-
-    def test_setslice_to_first_level(self):
-        self._check(self.mutable_list, '__setslice__', 0, 3, self.lst)
-
-    def test_setslice_to_second_level(self):
-        self._check(self.mutable_list[2], '__setslice__', 0, 3, self.lst)
-
-    def test_setslice_to_third_level(self):
-        self._check(self.mutable_list[4][4], '__setslice__', 0, 3, self.lst)

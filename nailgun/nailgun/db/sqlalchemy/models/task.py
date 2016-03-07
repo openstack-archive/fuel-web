@@ -18,7 +18,6 @@ import uuid
 
 from sqlalchemy import Column
 from sqlalchemy import Enum
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -30,6 +29,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 
 
 class Task(Base):

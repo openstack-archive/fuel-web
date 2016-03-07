@@ -95,11 +95,15 @@ class Release(NailgunObject):
         instance.roles_metadata[role['name']] = role['meta']
         instance.volumes_metadata['volumes_roles_mapping'][role['name']] = \
             role.get('volumes_roles_mapping', [])
+        # notify about changes
+        instance.volumes_metadata.changed()
 
     @classmethod
     def remove_role(cls, instance, role_name):
         result = instance.roles_metadata.pop(role_name, None)
         instance.volumes_metadata['volumes_roles_mapping'].pop(role_name, None)
+        # notify about changes
+        instance.volumes_metadata.changed()
         return bool(result)
 
     @classmethod

@@ -28,12 +28,12 @@ from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 
 from sqlalchemy.dialects import postgresql as psql
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment

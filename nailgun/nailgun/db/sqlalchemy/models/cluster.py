@@ -24,7 +24,6 @@ from sqlalchemy import Text
 from sqlalchemy import UnicodeText
 
 from sqlalchemy.dialects import postgresql as psql
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
@@ -35,6 +34,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.db.sqlalchemy.models.node import Node
 

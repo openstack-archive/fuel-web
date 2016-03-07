@@ -19,6 +19,7 @@ from oslo_serialization import jsonutils
 import six
 
 from nailgun import consts
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
 
@@ -354,7 +355,8 @@ class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
         self.non_existent = ['non_existent']
 
     @patch('nailgun.task.task.rpc.cast')
-    def test_use_only_certain_tasks(self, mcast):
+    def test_use_only_certain_tasks_in_granular_deploy(self, mcast):
+        self.env.disable_task_deploy(self.cluster)
         self.emulate_nodes_provisioning(self.nodes)
 
         action_url = self.make_action_url(
@@ -413,10 +415,12 @@ class TestDeployMethodVersioning(BaseSelectedNodesTest):
 
     @patch('nailgun.task.task.rpc.cast')
     def test_deploy_is_used_before_61(self, mcast):
+        self.env.disable_task_deploy(self.cluster)
         self.assert_deployment_method('2014.2-6.0', 'deploy', mcast)
 
     @patch('nailgun.task.task.rpc.cast')
     def test_granular_is_used_in_61(self, mcast):
+        self.env.disable_task_deploy(self.cluster)
         self.assert_deployment_method('2014.2-6.1', 'granular_deploy', mcast)
 
 
@@ -508,8 +512,9 @@ class TestSerializedTasksHandler(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertIn("do not belong to cluster", resp.body)
 
-    def test_400_if_task_based_not_allowed(self):
-        self.env.disable_task_deploy(self.cluster)
+    @patch.object(TaskProcessor, 'ensure_task_based_deploy_allowed')
+    def test_400_if_task_based_not_allowed(self, check_task_mock):
+        check_task_mock.side_effect = errors.TaskBaseDeploymentNotAllowed()
         resp = self.get_serialized_tasks(self.cluster.id)
         self.assertEqual(resp.status_code, 400)
         self.assertIn("The task-based deployment is not allowed", resp.body)

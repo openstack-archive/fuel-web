@@ -19,45 +19,30 @@ import six
 from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
-from nailgun.orchestrator import orchestrator_graph
 
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer90
 
-from nailgun.test.integration.test_orchestrator_serializer import \
-    BaseDeploymentSerializer
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestBlockDeviceDevicesSerialization80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestDeploymentAttributesSerialization80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestDeploymentHASerializer80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestDeploymentTasksSerialization80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestMultiNodeGroupsSerialization80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestNetworkTemplateSerializer80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestSerializeInterfaceDriversData80
+from nailgun.test.integration import test_orchestrator_serializer_80
 
 
 class TestSerializer90Mixin(object):
     env_version = "liberty-9.0"
+    task_deploy = True
 
 
 class TestBlockDeviceDevicesSerialization90(
     TestSerializer90Mixin,
-    TestBlockDeviceDevicesSerialization80
+    test_orchestrator_serializer_80.TestBlockDeviceDevicesSerialization80
 ):
     pass
 
 
 class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
-    TestDeploymentAttributesSerialization80
+    test_orchestrator_serializer_80.TestDeploymentAttributesSerialization80
 ):
     def test_attributes_cpu_pinning(self):
         numa_nodes = [
@@ -171,7 +156,7 @@ class TestDeploymentAttributesSerialization90(
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,
-    TestDeploymentHASerializer80
+    test_orchestrator_serializer_80.TestDeploymentHASerializer80
 ):
     def test_glance_properties(self):
         self.check_no_murano_data()
@@ -179,21 +164,21 @@ class TestDeploymentHASerializer90(
 
 class TestDeploymentTasksSerialization90(
     TestSerializer90Mixin,
-    TestDeploymentTasksSerialization80
+    test_orchestrator_serializer_80.TestDeploymentTasksSerialization80
 ):
     pass
 
 
 class TestMultiNodeGroupsSerialization90(
     TestSerializer90Mixin,
-    TestMultiNodeGroupsSerialization80
+    test_orchestrator_serializer_80.TestMultiNodeGroupsSerialization80
 ):
     pass
 
 
 class TestNetworkTemplateSerializer90(
     TestSerializer90Mixin,
-    TestNetworkTemplateSerializer80
+    test_orchestrator_serializer_80.TestNetworkTemplateSerializer80
 ):
     legacy_serializer = NeutronNetworkDeploymentSerializer90
     template_serializer = NeutronNetworkTemplateSerializer90
@@ -242,14 +227,14 @@ class TestNetworkTemplateSerializer90(
 
 class TestSerializeInterfaceDriversData90(
     TestSerializer90Mixin,
-    TestSerializeInterfaceDriversData80
+    test_orchestrator_serializer_80.TestSerializeInterfaceDriversData80
 ):
     pass
 
 
 class TestSriovSerialization90(
     TestSerializer90Mixin,
-    BaseDeploymentSerializer
+    test_orchestrator_serializer_80.BaseDeploymentSerializer
 ):
     def setUp(self, *args):
         super(TestSriovSerialization90, self).setUp()
@@ -267,9 +252,8 @@ class TestSriovSerialization90(
 
     def serialize(self):
         objects.Cluster.prepare_for_deployment(self.env.clusters[0])
-        graph = orchestrator_graph.AstuteGraph(self.env.clusters[0])
         return deployment_serializers.serialize(
-            graph, self.env.clusters[0], self.env.nodes)
+            None, self.env.clusters[0], self.env.nodes)
 
     def test_nic_sriov_info_is_serialized(self):
         for nic in self.env.nodes[0].nic_interfaces:

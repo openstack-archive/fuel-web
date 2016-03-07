@@ -93,6 +93,10 @@ maintainers:
       email:  aroma@mirantis.com
       IRC:    aroma
 
+    - name:   Artur Svechnikov
+      email:  asvechnikov@mirantis.com
+      IRC:    asvechnikov
+
     - name:   Maciej Kwiek
       email:  mkwiek@mirantis.com
       IRC:    mkwiek

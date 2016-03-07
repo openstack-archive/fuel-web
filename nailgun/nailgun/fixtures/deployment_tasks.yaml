@@ -103,6 +103,7 @@
       type: parallel
 
 - id: generate_vms
+  version: 2.0.0
   type: puppet
   groups: [virt]
   requires: [netconfig]
@@ -113,6 +114,7 @@
     timeout: 3600
 
 - id: netconfig
+  version: 2.0.0
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
@@ -126,6 +128,7 @@
     timeout: 3600
 
 - id: deploy_legacy
+  version: 2.0.0
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
@@ -146,6 +149,7 @@
       type: parallel
 
 - id: upload_nodes_info
+  version: 2.0.0
   type: upload_file
   role: '*'
   requires: [post_deployment_start]
@@ -153,6 +157,7 @@
     path: /etc/hiera/nodes.yaml
 
 - id: update_hosts
+  version: 2.0.0
   type: puppet
   role: '*'
   required_for: [post_deployment_end]
@@ -173,6 +178,7 @@
       type: parallel
 
 - id: globals
+  version: 2.0.0
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,

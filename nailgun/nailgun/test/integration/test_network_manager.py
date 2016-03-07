@@ -629,14 +629,6 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEqual(vips_to_create, vips)
 
     def test_assign_given_vips_for_net_groups(self):
-        vips_to_create = {
-            consts.NETWORKS.management: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',
-            },
-            consts.NETWORKS.public: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '172.16.0.2',
-            },
-        }
         vips_to_assign = {
             consts.NETWORKS.management: {
                 consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',
@@ -648,7 +640,6 @@ class TestNetworkManager(BaseIntegrationTest):
             },
         }
         cluster = self.env.create_cluster(api=False)
-        self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
         self.env.network_manager.assign_given_vips_for_net_groups(
             cluster, vips_to_assign)
         vips = self.env.network_manager.get_assigned_vips(cluster)

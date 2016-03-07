@@ -1825,10 +1825,16 @@ class TestHandlers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=60)
 
-    @fake_tasks()
-    def test_force_redeploy_changes(self):
+    @patch('nailgun.task.manager.rpc.cast')
+    def test_force_redeploy_changes(self, mcast):
         self.env.create(
-            nodes_kwargs=[{'name': '', 'pending_addition': True}]
+            nodes_kwargs=[
+                {'status': consts.NODE_STATUSES.ready},
+                {'status': consts.NODE_STATUSES.ready},
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            },
         )
 
         def _send_request(handler):
@@ -1841,10 +1847,6 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=True
             )
 
-        # Initial deployment
-        task = self.env.launch_deployment()
-        self.env.wait_ready(task, timeout=60)
-
         # Trying to redeploy on cluster in the operational state
         resp = _send_request('ClusterChangesHandler')
         self.assertEqual(resp.status_code, 400)
@@ -1853,7 +1855,18 @@ class TestHandlers(BaseIntegrationTest):
         # Trying to force redeploy on cluster in the operational state
         resp = _send_request('ClusterChangesForceRedeployHandler')
         self.assertEqual(resp.status_code, 202)
+
+        # Test task is created
         self.assertEqual(resp.json_body.get('name'),
                          consts.TASK_NAMES.deploy)
         self.assertEqual(resp.json_body.get('status'),
                          consts.TASK_STATUSES.pending)
+
+        # Test message is sent
+        args, _ = mcast.call_args_list[0]
+        deployment_info = args[1][0]['args']['deployment_info']
+
+        self.assertItemsEqual(
+            [node.uid for node in self.env.nodes],
+            [node['uid'] for node in deployment_info]
+        )

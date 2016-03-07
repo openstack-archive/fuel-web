@@ -674,21 +674,30 @@ class TestTaskManagers(BaseIntegrationTest):
         manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
-    @fake_tasks()
-    def test_force_deploy_changes(self):
+    @mock.patch('nailgun.task.manager.rpc.cast')
+    def test_force_deploy_changes(self, mcast):
         self.env.create(
             nodes_kwargs=[
-                {"status": NODE_STATUSES.ready}
-            ]
+                {'status': NODE_STATUSES.ready},
+                {'status': NODE_STATUSES.ready},
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            },
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.ApplyChangesForceTaskManager(cluster_db.id)
         supertask = manager_.execute()
         self.assertEqual(supertask.name, TASK_NAMES.deploy)
-        self.assertIn(supertask.status, (TASK_STATUSES.pending,
-                                         TASK_STATUSES.running,
-                                         TASK_STATUSES.ready))
+        self.assertIn(supertask.status, TASK_STATUSES.pending)
+
+        args, _ = mcast.call_args_list[0]
+        deployment_info = args[1][0]['args']['deployment_info']
+        self.assertItemsEqual(
+            [node.uid for node in self.env.nodes],
+            [node['uid'] for node in deployment_info]
+        )
 
     @fake_tasks()
     @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')

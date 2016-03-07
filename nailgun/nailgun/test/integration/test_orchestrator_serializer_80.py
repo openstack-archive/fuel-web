@@ -42,6 +42,7 @@ from nailgun.test.integration.test_orchestrator_serializer_70 import \
 
 class TestSerializer80Mixin(object):
     env_version = "liberty-8.0"
+    task_deploy = False
 
     def _check_baremetal_neutron_attrs(self, cluster):
         self.env._set_additional_component(cluster, 'ironic', True)
@@ -76,14 +77,14 @@ class TestNetworkTemplateSerializer80(
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer80, self).setUp()
-        cluster = self.env.create(
+        self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
         self.net_template = self.env.read_fixtures(['network_template_80'])[0]
-        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
+        self.cluster = self.env.clusters[-1]
 
     def test_get_net_provider_serializer(self):
         serializer = get_serializer_for_cluster(self.cluster)
@@ -192,13 +193,11 @@ class TestDeploymentTasksSerialization80(
     TestSerializer80Mixin,
     BaseDeploymentSerializer
 ):
-    manifests_to_rerun = set([
-        "/etc/puppet/modules/osnailyfacter/modular/globals/globals.pp",
-        "/etc/puppet/modules/osnailyfacter/modular/netconfig/netconfig.pp"])
+    tasks_for_rerun = {"globals", "netconfig"}
 
     def setUp(self):
         super(TestDeploymentTasksSerialization80, self).setUp()
-        cluster = self.env.create(
+        self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
@@ -210,7 +209,9 @@ class TestDeploymentTasksSerialization80(
                  'status': consts.NODE_STATUSES.ready}]
         )
 
-        self.cluster = self.db.query(models.Cluster).get(cluster['id'])
+        self.cluster = self.env.clusters[-1]
+        if not self.task_deploy:
+            self.env.disable_task_deploy(self.cluster)
 
     def add_node(self, role):
         return self.env.create_node(
@@ -219,41 +220,84 @@ class TestDeploymentTasksSerialization80(
             pending_addition=True
         )
 
-    def get_deployment_info(self):
+    def get_rpc_args(self):
         self.env.launch_deployment()
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        return args[1][1]['args']['deployment_info']
+        return args[1][1]['args']
+
+    def check_add_compute_for_task_deploy(self, new_node_uid, rpc_message):
+        tasks_graph = rpc_message['tasks_graph']
+        for node_id, tasks in six.iteritems(tasks_graph):
+            if node_id is None:
+                # skip virtual node
+                continue
+
+            task_ids = {
+                t['id'] for t in tasks
+                if t['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
+            }
+            if node_id == new_node_uid:
+                # all tasks are run on a new node
+                self.assertTrue(
+                    self.tasks_for_rerun.issubset(task_ids))
+            else:
+                # only selected tasks are run on a deployed node
+                self.assertEqual(self.tasks_for_rerun, task_ids)
+
+    def check_add_compute_for_granular_deploy(self, new_node_uid, rpc_message):
+        for node in rpc_message['deployment_info']:
+            task_ids = {t['id'] for t in node['tasks']}
+            if node['tasks'][0]['uids'] == [new_node_uid]:
+                # all tasks are run on a new node
+                self.assertTrue(
+                    self.tasks_for_rerun.issubset(task_ids))
+            else:
+                # only selected tasks are run on a deployed node
+                self.assertItemsEqual(self.tasks_for_rerun, task_ids)
+
+    def check_add_controller_for_task_deploy(self, rpc_message):
+        tasks_graph = rpc_message['tasks_graph']
+        for node_id, tasks in six.iteritems(tasks_graph):
+            if node_id is None:
+                # skip virtual node
+                continue
+
+            task_ids = {
+                t['id'] for t in tasks
+                if t['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
+            }
+            self.assertTrue(self.tasks_for_rerun.issubset(task_ids))
+
+    def check_add_controller_for_granular_deploy(self, rpc_message):
+        for node in rpc_message['deployment_info']:
+            task_ids = {t['id'] for t in node['tasks']}
+            # controller is redeployed when other one is added
+            # so all tasks are run on all nodes
+            self.assertTrue(
+                self.tasks_for_rerun.issubset(task_ids))
 
     @mock.patch('nailgun.rpc.cast')
     def test_add_compute(self, _):
         new_node = self.add_node('compute')
-
-        rpc_deploy_message = self.get_deployment_info()
-
-        for node in rpc_deploy_message:
-            tasks_for_node = set(t['parameters']['puppet_manifest']
-                                 for t in node['tasks'])
-            if node['tasks'][0]['uids'] == [str(new_node.id)]:
-                # all tasks are run on a new node
-                self.assertTrue(
-                    self.manifests_to_rerun.issubset(tasks_for_node))
-            else:
-                # only selected tasks are run on a deployed node
-                self.assertEqual(self.manifests_to_rerun, tasks_for_node)
+        rpc_deploy_message = self.get_rpc_args()
+        if self.task_deploy:
+            self.check_add_compute_for_task_deploy(
+                new_node.uid, rpc_deploy_message
+            )
+        else:
+            self.check_add_compute_for_granular_deploy(
+                new_node.uid, rpc_deploy_message
+            )
 
     @mock.patch('nailgun.rpc.cast')
     def test_add_controller(self, _):
         self.add_node('controller')
+        rpc_deploy_message = self.get_rpc_args()
 
-        rpc_deploy_message = self.get_deployment_info()
-
-        for node in rpc_deploy_message:
-            tasks_for_node = set(t['parameters']['puppet_manifest']
-                                 for t in node['tasks'])
-            # controller is redeployed when other one is added
-            # so all tasks are run on all nodes
-            self.assertTrue(
-                self.manifests_to_rerun.issubset(tasks_for_node))
+        if self.task_deploy:
+            self.check_add_controller_for_task_deploy(rpc_deploy_message)
+        else:
+            self.check_add_controller_for_granular_deploy(rpc_deploy_message)
 
 
 class TestDeploymentAttributesSerialization80(

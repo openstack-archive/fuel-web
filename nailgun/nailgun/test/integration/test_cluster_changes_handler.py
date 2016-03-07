@@ -94,7 +94,6 @@ class TestHandlers(BaseIntegrationTest):
             'storage_interface': 'eth0.102',
             'public_interface': 'eth1',
             'floating_interface': 'eth1',
-            'tasks': [],
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
@@ -193,7 +192,6 @@ class TestHandlers(BaseIntegrationTest):
                     'fail_if_error': is_critical,
                     'vms_conf': [],
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
-                    'priority': 100,
 
                     'network_data': {
                         'eth1': {
@@ -236,15 +234,15 @@ class TestHandlers(BaseIntegrationTest):
 
         deployment_msg = {
             'api_version': '1',
-            'method': 'deploy',
+            'method': 'task_deploy',
             'respond_to': 'deploy_resp',
             'args': {}
         }
 
         deployment_msg['args']['task_uuid'] = deploy_task_uuid
         deployment_msg['args']['deployment_info'] = deployment_info
-        deployment_msg['args']['pre_deployment'] = []
-        deployment_msg['args']['post_deployment'] = []
+        deployment_msg['args']['tasks_directory'] = {}
+        deployment_msg['args']['tasks_graph'] = {}
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -388,11 +386,11 @@ class TestHandlers(BaseIntegrationTest):
                          'storage_address',
                          'ipaddr',
                          'IP',
-                         'tasks',
-                         'priority',
                          'workloads_collector',
                          'vms_conf',
-                         'storage'])
+                         'storage',
+                         'tasks_directory',
+                         'tasks_graph'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -416,6 +414,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         cluster_db = self.env.clusters[0]
+        self.env.disable_task_deploy(cluster_db)
 
         # This is here to work around the fact that we use the same fixture
         # for all versions. Only 6.1 has a GRE network defined in
@@ -901,6 +900,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         cluster_db = self.env.clusters[0]
+        self.env.disable_task_deploy(cluster_db)
 
         # This is here to work around the fact that we use the same fixture
         # for all versions. Only 6.1 has a GRE network defined in

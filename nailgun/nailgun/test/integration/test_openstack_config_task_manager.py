@@ -28,8 +28,10 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
         super(TestOpenstackConfigTaskManager, self).setUp()
 
         self.env.create(
-            cluster_kwargs={'net_provider': 'neutron'},
-            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={'net_provider': 'neutron',
+                            'net_segment_type': 'gre'},
+            release_kwargs={'version': 'liberty-9.0',
+                            'operating_system': consts.RELEASE_OS.ubuntu},
             nodes_kwargs=[
                 {'roles': ['controller'], 'status': 'ready'},
                 {'roles': ['compute'], 'status': 'ready'},

@@ -74,7 +74,7 @@ class TaskManager(object):
 
     def _finish_task(self, task, log_item, status, message):
         data = {'status': status, 'progress': 100, 'message': message}
-        # update task entity with given data
+        # update task entithe uty with given data
         objects.Task.update(task, data)
         # NOTE(romcheg): Flushing the data is required to unlock
         # tasks in order to temporary fix issues with

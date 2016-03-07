@@ -1161,6 +1161,7 @@ class Node(NailgunObject):
 
         for vm in node.vms_conf:
             vm['created'] = False
+        node.vms_conf.changed()
 
     @classmethod
     def set_default_attributes(cls, instance):

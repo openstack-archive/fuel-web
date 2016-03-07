@@ -24,16 +24,6 @@ case $1 in
     cleanup_nailgun_env)
         cleanup_nailgun_env
         ;;
-    prepare_nailgun_database)
-        prepare_pgpass
-        prepare_database_role
-        prepare_database
-        ;;
-    cleanup_nailgun_database)
-        prepare_pgpass
-        cleanup_database
-        cleanup_pgpass
-        ;;
     cleanup_nailgun_server)
         cleanup_server
         ;;
@@ -44,8 +34,6 @@ case $1 in
         echo "Not supported subcommand. Available subcommands: "
         echo "cleanup_nailgun_env"
         echo "prepare_nailgun_env"
-        echo "cleanup_nailgun_database"
-        echo "prepare_nailgun_database"
         echo "cleanup_nailgun_server"
         echo "prepare_nailgun_server"
         exit 1

@@ -63,7 +63,13 @@ from nailgun.test import base
 from nailgun.utils import reverse
 
 
-class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
+class BaseSerializerTest(base.BaseIntegrationTest):
+    @classmethod
+    def create_serializer(cls, cluster):
+        return get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
+
+
+class OrchestratorSerializerTestBase(BaseSerializerTest):
     """Class contains helpers."""
 
     def setUp(self):
@@ -478,9 +484,9 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         cluster = self.create_env(
             manager=consts.NOVA_NET_MANAGERS.FlatDHCPManager
         )
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             scheme = node['network_scheme']
             self.assertEqual(
@@ -540,9 +546,8 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         cluster = self.create_env(
             manager=consts.NOVA_NET_MANAGERS.VlanManager
         )
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             scheme = node['network_scheme']
             self.assertEqual(
@@ -611,9 +616,8 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                        bond_properties={
                                            'mode': consts.BOND_MODES.balance_rr
                                        })
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             self.assertEqual(
                 node['network_scheme']['transformations'],
@@ -662,9 +666,8 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                        bond_properties={
                                            'mode': consts.BOND_MODES.balance_rr
                                        })
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             self.assertEqual(
                 node['network_scheme']['roles'],
@@ -830,9 +833,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
     def test_vlan_schema(self):
         cluster = self.create_env(segment_type='vlan')
         self.add_nics_properties(cluster)
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
 
         self.check_vlan_schema(facts, [
             {'action': 'add-br',
@@ -888,9 +890,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             interfaces[1].assigned_networks_list = [private_net]
         self.db.flush()
 
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         self.check_vlan_schema(facts, [
             {'action': 'add-br',
              'name': 'br-fw-admin'},
@@ -948,9 +949,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                        interface_properties={
                                            'mtu': 9000
                                        })
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             transformations = [
                 {'action': 'add-br',
@@ -1000,9 +1000,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
     def test_gre_schema(self):
         cluster = self.create_env(segment_type='gre')
         self.add_nics_properties(cluster)
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             node_db = objects.Node.get_by_uid(node['uid'])
             is_public = objects.Node.should_have_public(node_db)
@@ -1101,9 +1100,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 interface_properties={
                     'mtu': 9000
                 })
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             transformations = [
                 {'action': 'add-br',
@@ -1195,10 +1193,8 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             group_id=group_id)
 
         objects.Cluster.prepare_for_deployment(cluster)
-        serializer = get_serializer_for_cluster(cluster)
-        facts = serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
-
+        serializer = self.create_serializer(cluster)
+        facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
             node_db = objects.Node.get_by_uid(node['uid'])
             is_public = objects.Node.should_have_public(node_db)
@@ -1493,9 +1489,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def serialize_env_w_version(self, version):
         self.new_env_release_version = version
         cluster = self.create_env(mode=consts.CLUSTER_MODES.ha_compact)
-        serializer = get_serializer_for_cluster(cluster)
-        return serializer(AstuteGraph(cluster)).serialize(
-            cluster, cluster.nodes)
+        serializer = self.create_serializer(cluster)
+        return serializer.serialize(cluster, cluster.nodes)
 
     def assert_roles_flattened(self, nodes):
         self.assertEqual(len(nodes), 6)
@@ -1865,7 +1860,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.db.flush()
 
         objects.Cluster.prepare_for_deployment(cluster)
-        serializer = get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
+        serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
@@ -2435,7 +2430,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
                          True)
 
 
-class BaseDeploymentSerializer(base.BaseIntegrationTest):
+class BaseDeploymentSerializer(BaseSerializerTest):
 
     node_name = 'node name'
     # Needs to be set in childs

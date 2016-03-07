@@ -22,14 +22,18 @@ from nailgun.test import base
 from nailgun.test.base import fake_tasks
 
 
-class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
+class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
+
+    env_version = "liberty-8.0"
 
     def setUp(self):
-        super(TestOpenstackConfigTaskManager, self).setUp()
+        super(TestOpenstackConfigTaskManager80, self).setUp()
 
         self.env.create(
-            cluster_kwargs={'net_provider': 'neutron'},
-            release_kwargs={'version': '1111-8.0'},
+            cluster_kwargs={'net_provider': 'neutron',
+                            'net_segment_type': 'gre'},
+            release_kwargs={'version': self.env_version,
+                            'operating_system': consts.RELEASE_OS.ubuntu},
             nodes_kwargs=[
                 {'roles': ['controller'], 'status': 'ready'},
                 {'roles': ['compute'], 'status': 'ready'},
@@ -117,3 +121,7 @@ class TestOpenstackConfigTaskManager(base.BaseIntegrationTest):
         self.assertItemsEqual([self.nodes[0].uid], node_uids)
         self.assertItemsEqual(deployment_tasks, [
             make_generic_task([self.nodes[0].uid], self.refreshable_task)])
+
+
+class TestOpenstackConfigTaskManager90(TestOpenstackConfigTaskManager80):
+    env_version = "liberty-8.0"

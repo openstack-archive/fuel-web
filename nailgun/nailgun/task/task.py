@@ -1859,13 +1859,12 @@ class UpdateDnsmasqTask(object):
 class UpdateOpenstackConfigTask(BaseDeploymentTask):
 
     @staticmethod
-    def task_deploy(task, nodes, update_configs):
+    def task_deploy(task, nodes, update_configs, task_ids):
         tasks = objects.Cluster.get_deployment_tasks(task.cluster)
-        events = task_based_deployment.TaskEvents(
-            'refresh_on', update_configs
-        )
+        # Pass task filter as None, to prevent execute all tasks, excepted
+        # tasks that should be executed by subscription
         directory, graph = task_based_deployment.TasksSerializer.serialize(
-            task.cluster, [], tasks, nodes, events=events
+            task.cluster, nodes, tasks, task_ids=task_ids
         )
         return make_astute_message(
             task, "task_deploy", "update_config_resp", {
@@ -1875,12 +1874,8 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
         )
 
     @staticmethod
-    def granular_deploy(task, nodes, update_configs):
-        refreshable_tasks = objects.Cluster.get_refreshable_tasks(
-            task.cluster, update_configs
-        )
+    def granular_deploy(task, nodes, update_configs, task_ids):
         orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-        task_ids = [t['id'] for t in refreshable_tasks]
         orchestrator_graph.only_tasks(task_ids)
         deployment_tasks = orchestrator_graph.stage_tasks_serialize(
             orchestrator_graph.graph.topology, nodes
@@ -1903,7 +1898,13 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
         else:
             raise errors.NoChanges()
 
-        return cls.call_deployment_method(task, nodes, updated_configs)[1]
+        refreshable_tasks = objects.Cluster.get_refreshable_tasks(
+            task.cluster, updated_configs
+        )
+        task_ids = {t['id'] for t in refreshable_tasks}
+        return cls.call_deployment_method(
+            task, nodes, updated_configs, task_ids
+        )[1]
 
 
 if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:

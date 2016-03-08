@@ -487,6 +487,13 @@ class TasksSerializer(object):
         )
         skipped = skip or not task_serializer.should_execute()
         force = self.events and self.events.check_subscription(task)
+        if skipped and not force:
+            # Do not call real serializer if it should be skipped
+            task_serializer = NoopSerializer(
+                task, self.cluster, self.deployment_nodes,
+                role_resolver=role_resolver
+            )
+
         serialised_tasks = self.task_processor.process_tasks(
             task, task_serializer.serialize()
         )

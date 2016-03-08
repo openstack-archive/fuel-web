@@ -29,14 +29,14 @@ class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):
     def test_clone(self):
         resp = self.app.post(
             reverse("ClusterUpgradeCloneHandler",
-                    kwargs={"cluster_id": self.cluster_61.id}),
+                    kwargs={"cluster_id": self.src_cluster.id}),
             jsonutils.dumps(self.data),
             headers=self.default_headers)
         body = resp.json_body
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(body["name"],
-                         "cluster-clone-{0}".format(self.cluster_61.id))
-        self.assertEqual(body["release_id"], self.release_80.id)
+                         "cluster-clone-{0}".format(self.src_cluster.id))
+        self.assertEqual(body["release_id"], self.dst_release.id)
 
     def test_clone_cluster_not_found_error(self):
         resp = self.app.post(
@@ -51,22 +51,22 @@ class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):
     def test_clone_cluster_already_in_upgrade_error(self):
         self.app.post(
             reverse("ClusterUpgradeCloneHandler",
-                    kwargs={"cluster_id": self.cluster_61.id}),
+                    kwargs={"cluster_id": self.src_cluster.id}),
             jsonutils.dumps(self.data),
             headers=self.default_headers)
         resp = self.app.post(
             reverse("ClusterUpgradeCloneHandler",
-                    kwargs={"cluster_id": self.cluster_61.id}),
+                    kwargs={"cluster_id": self.src_cluster.id}),
             jsonutils.dumps(self.data),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
     def test_clone_cluster_name_already_exists_error(self):
-        data = dict(self.data, name=self.cluster_61.name)
+        data = dict(self.data, name=self.src_cluster.name)
         resp = self.app.post(
             reverse("ClusterUpgradeCloneHandler",
-                    kwargs={"cluster_id": self.cluster_61.id}),
+                    kwargs={"cluster_id": self.src_cluster.id}),
             jsonutils.dumps(data),
             headers=self.default_headers,
             expect_errors=True)

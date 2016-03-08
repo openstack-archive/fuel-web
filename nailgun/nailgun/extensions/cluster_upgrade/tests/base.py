@@ -26,26 +26,26 @@ class BaseCloneClusterTest(nailgun_test_base.BaseIntegrationTest):
 
     def setUp(self):
         super(BaseCloneClusterTest, self).setUp()
-        self.release_61 = self.env.create_release(
+        self.src_release = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,
             version="2014.2.2-6.1",
             state=consts.RELEASE_STATES.manageonly
         )
 
-        self.release_80 = self.env.create_release(
+        self.dst_release = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,
-            version="liberty-8.0",
+            version="liberty-9.0",
         )
 
-        self.cluster_61_db = self.env.create_cluster(
+        self.src_cluster_db = self.env.create_cluster(
             api=False,
-            release_id=self.release_61.id,
+            release_id=self.src_release.id,
             net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
             net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
         )
-        self.cluster_61 = adapters.NailgunClusterAdapter(
-            self.cluster_61_db)
+        self.src_cluster = adapters.NailgunClusterAdapter(
+            self.src_cluster_db)
         self.data = {
-            "name": "cluster-clone-{0}".format(self.cluster_61.id),
-            "release_id": self.release_80.id,
+            "name": "cluster-clone-{0}".format(self.src_cluster.id),
+            "release_id": self.dst_release.id,
         }

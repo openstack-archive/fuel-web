@@ -40,15 +40,16 @@ class NoopSerializer(StandardConfigRolesHook):
         return True
 
     def get_uids(self):
-        groups = self.task.get('groups', self.task.get('role'))
-        if groups is None:
+        roles = self.task.get('groups', self.task.get('role'))
+        if roles is None:
             # it means that task is not associated with any node
             return [None]
-        return self.role_resolver.resolve(groups)
+        return self.role_resolver.resolve(roles)
 
     def serialize(self):
         uids = self.get_uids()
-        yield make_noop_task(uids, self.task)
+        if uids:
+            yield make_noop_task(uids, self.task)
 
 
 class PluginTaskSerializer(StandardConfigRolesHook):
@@ -487,6 +488,13 @@ class TasksSerializer(object):
         )
         skipped = skip or not task_serializer.should_execute()
         force = self.events and self.events.check_subscription(task)
+        if skipped and not force:
+            # Do not call real serializer if it should be skipped
+            task_serializer = NoopSerializer(
+                task, self.cluster, self.deployment_nodes,
+                role_resolver=role_resolver
+            )
+
         serialised_tasks = self.task_processor.process_tasks(
             task, task_serializer.serialize()
         )

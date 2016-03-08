@@ -161,6 +161,27 @@ class TestTaskSerializers(BaseTestCase):
     def test_process_with_selected_task_id(self):
         self._check_run_selected_tasks(["task3"], ["task3"], ["task3"])
 
+    def test_noop_serializer_is_used_for_skipped_tasks(self):
+        tasks = [
+            {
+                "id": "task2", "role": ["compute"],
+                "type": "puppet", "version": "2.0.0",
+                "parameters": {"puppet_manifest": "task2.pp"}
+            },
+            {
+                "id": "task3", "role": ["compute"],
+                "type": "puppet", "version": "2.0.0", "parameters": {}
+            },
+        ]
+        dictionary = self.serializer.serialize(
+            self.env.clusters[-1], self.env.nodes, tasks, task_ids=['task2']
+        )[0]
+        self.assertEqual(
+            tasks[0]['parameters'], dictionary['task2']['parameters']
+        )
+        # noop serializer does not add parameters
+        self.assertNotIn('parameters', dictionary['task3'])
+
     def test_serialize_success_if_all_applicable_task_has_version_2(self):
         tasks = [
             {
@@ -508,6 +529,13 @@ class TestNoopSerializer(BaseTestCase):
             },
             task
         )
+
+    def test_serialize_skipped_if_no_nodes(self):
+        serializer = task_based_deployment.NoopSerializer(
+            {'id': 'deploy_start', 'type': 'stage', 'role': ['non_existing']},
+            self.env, []
+        )
+        self.assertEqual([], list(serializer.serialize()))
 
 
 class TestDeploymentTaskSerializer(BaseUnitTest):

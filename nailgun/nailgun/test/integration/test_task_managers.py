@@ -514,44 +514,32 @@ class TestTaskManagers(BaseIntegrationTest):
         tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
 
-    @fake_tasks(recover_nodes=False)
-    def test_deletion_during_deployment(self):
+    @mock.patch('nailgun.task.manager.rpc.cast')
+    def test_deletion_during_deployment(self, mcast):
         self.env.create(
             nodes_kwargs=[
-                {"status": "ready", "pending_addition": True},
-            ]
+                {"status": consts.NODE_STATUSES.deploying},
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.deployment
+            },
         )
         cluster_id = self.env.clusters[0].id
-        resp = self.app.put(
-            reverse(
-                'ClusterChangesHandler',
-                kwargs={'cluster_id': cluster_id}),
-            headers=self.default_headers
-        )
-        deploy_uuid = resp.json_body['uuid']
         self.app.delete(
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
-
-        def cluster_is_deleted():
-            q = self.db.query(models.Cluster).filter_by(id=cluster_id)
-            return not self.db.query(q.exists()).scalar()
-
-        self.env.wait_for_true(cluster_is_deleted,
-                               error_message="Cluster deletion timeout")
-
-        task_deploy = self.db.query(models.Task).filter_by(
-            uuid=deploy_uuid
-        ).first()
-        self.assertIsNone(task_deploy)
-        task_delete = self.db.query(models.Task).filter_by(
-            cluster_id=cluster_id,
-            name="cluster_deletion"
-        ).first()
-        self.assertIsNone(task_delete)
+        self.assertEqual(consts.CLUSTER_STATUSES.remove,
+                         self.env.clusters[0].status)
+        args, _ = mcast.call_args_list[0]
+        deletion_task_info = args[1]
+        self.assertEqual('remove_nodes', deletion_task_info['method'])
+        self.assertItemsEqual(
+            [node.uid for node in self.env.nodes],
+            [str(node['uid']) for node in deletion_task_info['args']['nodes']]
+        )
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deletion_cluster_ha_3x3(self):

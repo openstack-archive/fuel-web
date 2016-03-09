@@ -277,7 +277,19 @@ class TaskHelper(object):
             task.result = result
             db().add(task)
             db().commit()
-            full_err_msg = u"\n".join(err_messages)
+
+            new_err_messages = []
+            for i, err_msg in enumerate(err_messages):
+                if not err_msg:
+                    continue
+                err_ids = ''
+                ids = result[i].get('ids')
+                if ids:
+                    err_ids = " (Network IDs: {0})".format(', '.join(
+                        map(lambda x: str(x), ids)))
+                new_err_messages.append(err_msg + err_ids)
+
+            full_err_msg = u"\n".join(new_err_messages)
             raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod

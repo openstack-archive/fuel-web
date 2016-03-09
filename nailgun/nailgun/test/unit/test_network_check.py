@@ -259,7 +259,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaisesWithMessage(
             errors.NetworkCheckError,
             "Address space intersection between networks:\n"
-            "public, management",
+            "public, management (Network IDs: 1, 2)",
             checker.neutron_check_network_address_spaces_intersection)
 
         checker = NetworkCheck(self.task, {})
@@ -269,7 +269,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaisesWithMessage(
             errors.NetworkCheckError,
             "Address space intersection between networks:\n"
-            "public, management",
+            "public, management (Network IDs: 1, 2)",
             checker.neutron_check_network_address_spaces_intersection)
 
         checker = NetworkCheck(self.task, {})
@@ -279,7 +279,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaisesWithMessage(
             errors.NetworkCheckError,
             "Address space intersection between networks:\n"
-            "public, public",
+            "public, public (Network IDs: 1, 2)",
             checker.neutron_check_network_address_spaces_intersection)
 
         checker = NetworkCheck(self.task, {})

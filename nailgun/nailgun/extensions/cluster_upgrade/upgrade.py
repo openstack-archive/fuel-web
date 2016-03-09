@@ -154,11 +154,10 @@ class UpgradeHelper(object):
         new_net_manager = new_cluster.get_network_manager()
 
         new_net_manager.update(nets)
-        vips = orig_net_manager.get_assigned_vips()
-        for ng_name in vips:
-            if ng_name not in (consts.NETWORKS.public,
-                               consts.NETWORKS.management):
-                vips.pop(ng_name)
+        vips = {}
+        assigned_vips = orig_net_manager.get_assigned_vips()
+        for ng_name in (consts.NETWORKS.public, consts.NETWORKS.management):
+            vips[ng_name] = assigned_vips[ng_name]
         # NOTE(akscram): In the 7.0 release was introduced networking
         #                templates that use the vip_name column as
         #                unique names of VIPs.

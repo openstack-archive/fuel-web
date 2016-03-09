@@ -13,7 +13,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import mock
 
+from nailgun.db.sqlalchemy import models
+from nailgun import objects
 from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.test import base
 
@@ -66,6 +69,25 @@ JSON_TASKS = [
             'cmd': 'ruby /etc/puppet/modules/osnailyfacter/'
                    'modular/ssl/ssl_keys_saving_pre.rb'
         }
+    }
+]
+
+
+TWO_TASKS = [
+    {
+        'id': 'first',
+        'type': 'puppet'
+    },
+    {
+        'id': 'second',
+        'type': 'puppet'
+    }
+]
+
+ONE_TASK = [
+    {
+        'id': 'only',
+        'type': 'puppet'
     }
 ]
 
@@ -136,7 +158,93 @@ class TestDeploymentGraphModel(base.BaseTestCase):
             }
         ]
 
-        dg = DeploymentGraph.create(JSON_TASKS, name='test_graph')
-        serialized = DeploymentGraph.to_dict(dg)
+        deployment_graph = DeploymentGraph.create(
+            JSON_TASKS, name='test_graph')
+        serialized = DeploymentGraph.to_dict(deployment_graph)
         self.assertEqual(serialized['name'], 'test_graph')
         self.assertItemsEqual(serialized['deployment_tasks'], expected_tasks)
+
+    def models_count(self, model, count):
+        self.assertEqual(self.db.query(model).count(), count)
+
+    @mock.patch('nailgun.logger.logger.debug')
+    def test_deletion_with_single_relation(self, m_debug):
+        self.env.create()
+
+        self.models_count(models.DeploymentGraph, 1)
+        self.models_count(models.DeploymentGraphTask, 25)
+        self.models_count(models.Cluster, 1)
+        self.models_count(models.Release, 1)
+        self.models_count(models.ClusterDeploymentGraph, 0)
+        self.models_count(models.PluginDeploymentGraph, 0)
+        self.models_count(models.ReleaseDeploymentGraph, 1)
+
+        cluster = self.env.clusters[0]
+
+        one_task_deployment_graph = DeploymentGraph.create(
+            ONE_TASK, name='test_graph')
+        DeploymentGraph.attach_to_model(
+            one_task_deployment_graph, cluster, graph_type='test_type1')
+
+        two_tasks_deployment_graph = DeploymentGraph.create(
+            TWO_TASKS, name='test_graph')
+        two_tasks_deployment_graph_id = two_tasks_deployment_graph.id
+        DeploymentGraph.attach_to_model(
+            two_tasks_deployment_graph, cluster, graph_type='test_type2')
+
+        self.models_count(models.DeploymentGraph, 3)
+        self.models_count(
+            models.DeploymentGraphTask,
+            25 + len(TWO_TASKS) + len(ONE_TASK))
+        self.models_count(models.Cluster, 1)
+        self.models_count(models.Release, 1)
+        self.models_count(models.ClusterDeploymentGraph, 2)
+        self.models_count(models.ReleaseDeploymentGraph, 1)
+
+        # test that only one graph and relation is deleted
+        DeploymentGraph.delete_from_model(cluster, graph_type='test_type2')
+
+        self.models_count(models.DeploymentGraph, 2)
+        self.models_count(models.DeploymentGraphTask, 25 + len(ONE_TASK))
+        self.models_count(models.Cluster, 1)
+        self.models_count(models.Release, 1)
+        self.models_count(models.ClusterDeploymentGraph, 1)
+        self.models_count(models.ReleaseDeploymentGraph, 1)
+
+        m_debug.assert_called_with('Graph with ID={0} related to model '
+                                   'Cluster with ID={1} was deleted'
+                                   .format(two_tasks_deployment_graph_id,
+                                           cluster.id))
+
+        # test that graph and relations deletion cascades from cluster
+        objects.Cluster.delete(cluster)
+        self.models_count(models.DeploymentGraph, 1)
+        self.models_count(models.DeploymentGraphTask, 25)
+        self.models_count(models.Cluster, 0)
+        self.models_count(models.Release, 1)
+        self.models_count(models.ClusterDeploymentGraph, 0)
+        self.models_count(models.ReleaseDeploymentGraph, 1)
+
+    # todo(ikutukov): add more deletion tests to ensure nothing wil be dropped
+    # accidentally
+    @mock.patch('nailgun.logger.logger.warning')
+    @mock.patch('nailgun.logger.logger.debug')
+    def test_deletion_with_many_relations(self, m_debug, m_warn):
+        self.env.create()
+        cluster = self.env.clusters[0]
+        deployment_graph = DeploymentGraph.create(
+            JSON_TASKS, name='test_graph')
+        DeploymentGraph.attach_to_model(
+            deployment_graph, cluster, graph_type='test_graph')
+        DeploymentGraph.attach_to_model(
+            deployment_graph, cluster.release, graph_type='test_graph')
+
+        DeploymentGraph.delete_from_model(cluster, graph_type='test_graph')
+        m_warn.assert_called_with('Graph with ID={0} have many relations, so '
+                                  'it will be detached but not deleted to '
+                                  'save other relations'
+                                  .format(deployment_graph.id))
+
+        m_debug.assert_called_with('Graph with ID={0} was detached from model '
+                                   'Cluster with ID={1}'
+                                   .format(deployment_graph.id, cluster.id))

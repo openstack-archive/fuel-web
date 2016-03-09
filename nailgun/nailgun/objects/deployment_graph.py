@@ -190,7 +190,7 @@ class DeploymentGraph(NailgunObject):
         :raises: IntegrityError
         """
         if rewrite:
-            cls.detach_from_model(instance, graph_type)
+            cls.delete_from_model(instance, graph_type)
         association_class = cls._get_association_for_model(instance)
         if association_class:
             association = association_class(
@@ -198,7 +198,7 @@ class DeploymentGraph(NailgunObject):
                 deployment_graph_id=graph_instance.id
             )
             instance.deployment_graphs.append(association)
-        db().flush()
+            db().flush()
 
     @classmethod
     def detach_from_model(
@@ -210,8 +210,8 @@ class DeploymentGraph(NailgunObject):
         :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_type: graph type
         :type graph_type: basestring
-        :returns: if graph was detached
-        :rtype: bool
+        :returns: detached graph or nothing
+        :rtype: ReleaseGraph|None
         """
         existing_graph = cls.get_for_model(instance, graph_type)
         if existing_graph:
@@ -222,8 +222,55 @@ class DeploymentGraph(NailgunObject):
             db().flush()
             logger.debug(
                 'Graph with ID={0} was detached from model {1} with ID={2}'
-                .format(existing_graph.id, instance, instance.id))
+                .format(
+                    existing_graph.id,
+                    instance.__class__.__name__,
+                    instance.id))
             return existing_graph
+
+    @classmethod
+    def delete_from_model(
+            cls, instance,
+            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+        """Delete graph related with given model with given type if exists.
+
+        :param instance: model that should have relation to graph
+        :type instance: models.Plugin|models.Cluster|models.Release|
+        :param graph_type: graph type
+        :type graph_type: basestring
+        :returns: if graph was detached
+        :rtype: bool
+        """
+        existing_graph = cls.get_for_model(instance, graph_type)
+        if existing_graph:
+            relations_count = (
+                existing_graph.releases.count() +
+                existing_graph.plugins.count() +
+                existing_graph.clusters.count()
+            )
+            if relations_count == 1:
+                cls.delete(existing_graph)
+                db().flush()
+                logger.debug(
+                    'Graph with ID={0} related to model {1} with ID={2} was '
+                    'deleted'.format(
+                        existing_graph.id,
+                        instance.__class__.__name__,
+                        instance.id))
+            elif relations_count > 1:
+                logger.warning(
+                    'Graph with ID={0} have many relations, so it will be '
+                    'detached but not deleted to save other relations'
+                    .format(existing_graph.id, instance, instance.id))
+                cls.detach_from_model(instance, graph_type)
+            else:
+                raise Exception(
+                    'Graph with ID={0} have no relations and its deletion '
+                    'could not be addressed from model {1} with ID={2}, delete'
+                    'graph object directly by id'.format(
+                        existing_graph.id,
+                        instance.__class__.__name__,
+                        instance.id))
 
 
 class DeploymentGraphCollection(NailgunCollection):

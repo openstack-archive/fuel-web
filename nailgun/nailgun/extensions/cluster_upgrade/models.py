@@ -19,7 +19,7 @@ from sqlalchemy import Integer
 
 from nailgun.db.sqlalchemy.models.base import Base
 
-from . import extension
+from nailgun.extensions.cluster_upgrade import extension
 
 
 class UpgradeRelation(Base):

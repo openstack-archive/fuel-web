@@ -23,10 +23,10 @@ from nailgun.errors import errors
 from nailgun.settings import settings
 from nailgun.test import base
 
-from .. import validators
-from . import base as tests_base
-from . import EXTENSION
-from ..objects import relations
+from nailgun.extensions.cluster_upgrade.objects import relations
+from nailgun.extensions.cluster_upgrade.tests import base as tests_base
+from nailgun.extensions.cluster_upgrade.tests import EXTENSION
+from nailgun.extensions.cluster_upgrade import validators
 
 
 class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):

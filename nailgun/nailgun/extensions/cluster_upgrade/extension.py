@@ -18,7 +18,7 @@ import os
 
 from nailgun import extensions
 
-from . import handlers
+from nailgun.extensions.cluster_upgrade import handlers
 
 
 class ClusterUpgradeExtension(extensions.BaseExtension):
@@ -40,6 +40,6 @@ class ClusterUpgradeExtension(extensions.BaseExtension):
 
     @classmethod
     def on_cluster_delete(cls, cluster):
-        from .objects import relations
+        from nailgun.extensions.cluster_upgrade.objects import relations
 
         relations.UpgradeRelationObject.delete_relation(cluster.id)

@@ -16,7 +16,7 @@
 
 from nailgun.db import db
 
-from .. import models
+from nailgun.extensions.cluster_upgrade import models
 
 
 class UpgradeRelationObject(object):

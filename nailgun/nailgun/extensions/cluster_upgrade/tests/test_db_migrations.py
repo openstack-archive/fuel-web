@@ -20,7 +20,7 @@ from nailgun import db
 from nailgun.db.migration import make_alembic_config_from_extension
 from nailgun.test import base
 
-from .. import extension
+from nailgun.extensions.cluster_upgrade import extension
 
 
 _test_revision = '3b5d115d7e49'

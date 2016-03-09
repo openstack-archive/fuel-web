@@ -16,9 +16,9 @@
 
 import alembic
 
-from ..extension import VolumeManagerExtension
 from nailgun import db
 from nailgun.db.migration import make_alembic_config_from_extension
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.test import base
 
 

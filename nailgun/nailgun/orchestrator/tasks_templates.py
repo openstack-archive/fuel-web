@@ -227,6 +227,7 @@ def make_provisioning_images_task(
 
     return make_shell_task(uids, {
         'parameters': {
+            'cluster_id': cid,
             'cmd': ("fa_build_image "
                     "--image_build_dir /var/lib/fuel/ibp "
                     "--log-file /var/log/fuel-agent-env-{0}.log "

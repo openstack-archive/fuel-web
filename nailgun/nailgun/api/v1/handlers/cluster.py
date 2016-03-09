@@ -28,7 +28,7 @@ from nailgun.api.v1.handlers.base import DeferredTaskHandler
 from nailgun.api.v1.handlers.base import DeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 
-from nailgun.api.v1.validators.cluster import AttributesValidator
+from nailgun.api.v1.validators.cluster import ClusterAttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterChangesValidator
 from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
@@ -121,7 +121,7 @@ class ClusterAttributesHandler(BaseHandler):
         "editable",
     )
 
-    validator = AttributesValidator
+    validator = ClusterAttributesValidator
 
     @content
     def GET(self, cluster_id):

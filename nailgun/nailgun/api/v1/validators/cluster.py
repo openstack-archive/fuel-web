@@ -13,28 +13,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
-from distutils.version import StrictVersion
+from distutils import version
 from itertools import groupby
 
 import six
 import sqlalchemy as sa
 
-from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
-from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators import base
 from nailgun.api.v1.validators.json_schema import cluster as cluster_schema
 from nailgun.api.v1.validators.node import ProvisionSelectedNodesValidator
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
-from nailgun.utils import restrictions
 
 
-class ClusterValidator(BasicValidator):
+class ClusterValidator(base.BasicValidator):
 
     single_schema = cluster_schema.single_schema
     collection_schema = cluster_schema.collection_schema
@@ -219,7 +215,7 @@ class ClusterValidator(BasicValidator):
             )
 
 
-class AttributesValidator(BasicValidator):
+class ClusterAttributesValidator(base.BasicAttributesValidator):
 
     @classmethod
     def validate(cls, data, cluster=None, force=False):
@@ -240,15 +236,15 @@ class AttributesValidator(BasicValidator):
             attrs = objects.Cluster.get_updated_editable_attributes(cluster, d)
             cls.validate_provision(cluster, attrs)
             cls.validate_allowed_attributes(cluster, d, force)
-        cls.validate_editable_attributes(attrs)
+        cls.validate_attributes(attrs.get('editable', {}))
 
         return d
 
     @classmethod
     def validate_provision(cls, cluster, attrs):
         # NOTE(agordeev): disable classic provisioning for 7.0 or higher
-        if StrictVersion(cluster.release.environment_version) >= \
-                StrictVersion(consts.FUEL_IMAGE_BASED_ONLY):
+        if version.StrictVersion(cluster.release.environment_version) >= \
+                version.StrictVersion(consts.FUEL_IMAGE_BASED_ONLY):
             provision_data = attrs['editable'].get('provision')
             if provision_data:
                 if provision_data['method']['value'] != \
@@ -261,72 +257,6 @@ class AttributesValidator(BasicValidator):
                 raise errors.InvalidData(
                     u"Provisioning method is not set. Unable to continue",
                     log_message=True)
-
-    @classmethod
-    def validate_editable_attributes(cls, data):
-        """Validate 'editable' attributes."""
-        for attrs in data.get('editable', {}).values():
-            if not isinstance(attrs, dict):
-                continue
-            for attr_name, attr in six.iteritems(attrs):
-                cls.validate_attribute(attr_name, attr)
-
-        return data
-
-    @classmethod
-    def validate_attribute(cls, attr_name, attr):
-        """Validates a single attribute from settings.yaml.
-
-        Dict is of this form:
-
-        description: <description>
-        label: <label>
-        restrictions:
-          - <restriction>
-          - <restriction>
-          - ...
-        type: <type>
-        value: <value>
-        weight: <weight>
-        regex:
-          error: <error message>
-          source: <regexp source>
-
-        We validate that 'value' corresponds to 'type' according to
-        attribute_type_schemas mapping in json_schema/cluster.py.
-        If regex is present, we additionally check that the provided string
-        value matches the regexp.
-
-        :param attr_name: Name of the attribute being checked
-        :param attr: attribute value
-        :return: attribute or raise InvalidData exception
-        """
-
-        if not isinstance(attr, dict):
-            return attr
-
-        if 'type' not in attr and 'value' not in attr:
-            return attr
-
-        schema = copy.deepcopy(cluster_schema.attribute_schema)
-        type_ = attr.get('type')
-        if type_:
-            value_schema = cluster_schema.attribute_type_schemas.get(type_)
-            if value_schema:
-                schema['properties'].update(value_schema)
-
-        try:
-            cls.validate_schema(attr, schema)
-        except errors.InvalidData as e:
-            raise errors.InvalidData('[{0}] {1}'.format(attr_name, e.message))
-
-        # Validate regexp only if some value is present
-        # Otherwise regexp might be invalid
-        if attr['value']:
-            regex_err = restrictions.AttributesRestriction.validate_regex(attr)
-            if regex_err is not None:
-                raise errors.InvalidData(
-                    '[{0}] {1}'.format(attr_name, regex_err))
 
     @classmethod
     def validate_allowed_attributes(cls, cluster, data, force):
@@ -391,7 +321,7 @@ class AttributesValidator(BasicValidator):
                 )
 
 
-class ClusterChangesValidator(BaseDefferedTaskValidator):
+class ClusterChangesValidator(base.BaseDefferedTaskValidator):
 
     @classmethod
     def validate(cls, cluster):
@@ -399,7 +329,7 @@ class ClusterChangesValidator(BaseDefferedTaskValidator):
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
 
 
-class ClusterStopDeploymentValidator(BaseDefferedTaskValidator):
+class ClusterStopDeploymentValidator(base.BaseDefferedTaskValidator):
 
     @classmethod
     def validate(cls, cluster):
@@ -412,7 +342,7 @@ class ClusterStopDeploymentValidator(BaseDefferedTaskValidator):
             raise errors.CannotBeStopped()
 
 
-class VmwareAttributesValidator(BasicValidator):
+class VmwareAttributesValidator(base.BasicValidator):
 
     single_schema = cluster_schema.vmware_attributes_schema
 

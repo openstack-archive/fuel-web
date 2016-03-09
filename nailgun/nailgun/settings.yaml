@@ -42,6 +42,7 @@ DATABASE:
   port: "5432"
   user: "nailgun"
   passwd: "nailgun"
+  isolation_level: "SERIALIZABLE"
 
 # Config updates for admin network do not apply on any environment,
 # changes should be made in database if required

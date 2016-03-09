@@ -155,7 +155,7 @@ class UpgradeHelper(object):
 
         new_net_manager.update(nets)
         vips = orig_net_manager.get_assigned_vips()
-        for ng_name in vips:
+        for ng_name in list(vips):
             if ng_name not in (consts.NETWORKS.public,
                                consts.NETWORKS.management):
                 vips.pop(ng_name)

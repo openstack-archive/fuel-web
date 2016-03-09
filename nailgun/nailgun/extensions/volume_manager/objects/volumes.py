@@ -16,10 +16,11 @@
 
 from copy import deepcopy
 
-from ..manager import VolumeManager
-from ..models.node_volumes import NodeVolumes
-from .adapters import NailgunNodeAdapter
 from nailgun.db import db
+from nailgun.extensions.volume_manager.manager import VolumeManager
+from nailgun.extensions.volume_manager.models.node_volumes import NodeVolumes
+from nailgun.extensions.volume_manager.objects.adapters \
+    import NailgunNodeAdapter
 
 
 class VolumeObject(object):

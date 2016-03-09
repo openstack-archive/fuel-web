@@ -24,7 +24,7 @@ from nailgun import objects
 from nailgun.objects.serializers import network_configuration
 from nailgun import utils
 
-from .objects import adapters
+from nailgun.extensions.cluster_upgrade.objects import adapters
 
 
 def merge_attributes(a, b):
@@ -74,7 +74,7 @@ class UpgradeHelper(object):
 
     @classmethod
     def clone_cluster(cls, orig_cluster, data):
-        from .objects import relations
+        from nailgun.extensions.cluster_upgrade.objects import relations
 
         new_cluster = cls.create_cluster_clone(orig_cluster, data)
         cls.copy_attributes(orig_cluster, new_cluster)

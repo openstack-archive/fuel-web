@@ -19,7 +19,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 
-from .objects import adapters
+from nailgun.extensions.cluster_upgrade.objects import adapters
 
 
 class ClusterUpgradeValidator(base.BasicValidator):
@@ -74,7 +74,8 @@ class ClusterUpgradeValidator(base.BasicValidator):
 
     @classmethod
     def validate_cluster_status(cls, cluster):
-        from .objects.relations import UpgradeRelationObject
+        from nailgun.extensions.cluster_upgrade.objects.relations \
+            import UpgradeRelationObject
 
         if UpgradeRelationObject.is_cluster_in_upgrade(cluster.id):
             raise errors.InvalidData(

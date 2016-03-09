@@ -20,9 +20,9 @@ from nailgun.api.v1.handlers import base
 from nailgun import objects
 from nailgun.task import manager
 
-from . import upgrade
-from . import validators
-from .objects import adapters
+from nailgun.extensions.cluster_upgrade.objects import adapters
+from nailgun.extensions.cluster_upgrade import upgrade
+from nailgun.extensions.cluster_upgrade import validators
 
 
 class ClusterUpgradeCloneHandler(base.BaseHandler):

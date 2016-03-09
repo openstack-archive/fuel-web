@@ -1424,6 +1424,18 @@ class BaseTestCase(TestCase):
                               compare_sorted)
                 newpath.pop()
 
+    def assertModelCount(self, model, count):
+        """Assert that given model have `count` records in database.
+
+        :param model: SQLAlchemy model
+        :type model: Model
+        :param count: count of records in database
+        :type count: int
+
+        :raises: AssertionError
+        """
+        self.assertEqual(self.db.query(model).count(), count)
+
 
 class BaseIntegrationTest(BaseTestCase):
 

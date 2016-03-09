@@ -146,7 +146,6 @@ class Cluster(NailgunObject):
         :param data: dictionary of key-value pairs as object fields
         :returns: Cluster instance
         """
-
         # TODO(enchantner): fix this temporary hack in clients
         if "release_id" not in data:
             release_id = data.pop("release", None)
@@ -172,7 +171,6 @@ class Cluster(NailgunObject):
         cls.create_attributes(cluster, enabled_editable_attributes)
         cls.create_vmware_attributes(cluster)
         cls.create_default_extensions(cluster)
-
         if deployment_tasks:
             deployment_graph = DeploymentGraph.create(deployment_tasks)
             DeploymentGraph.attach_to_model(deployment_graph, cluster)
@@ -550,7 +548,6 @@ class Cluster(NailgunObject):
         deployment_tasks = data.pop("deployment_tasks", None)
 
         super(Cluster, cls).update(instance, data)
-
         if deployment_tasks:
             deployment_graph = DeploymentGraph.create(deployment_tasks)
             DeploymentGraph.attach_to_model(deployment_graph, instance)

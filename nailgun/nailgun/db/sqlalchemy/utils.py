@@ -15,7 +15,7 @@
 #    under the License.
 
 
-def make_dsn(engine, host, port, user, passwd, name):
+def make_dsn(engine, host, port, user, passwd, name, **kwargs):
     """Constructs DSN string that can be used to connect to database.
 
     If host starts with '/' it will be treated as a socket and port will be
@@ -27,6 +27,7 @@ def make_dsn(engine, host, port, user, passwd, name):
     :param user: DB user name
     :param passwd: DB user password
     :param name: name of the database
+    :param kwargs: other possible arguments
     """
     if host.startswith('/'):
         # use socket

@@ -13,12 +13,17 @@
 #    under the License.
 
 import sqlalchemy as sa
+from sqlalchemy.orm import attributes
 
 from nailgun import consts
+from nailgun.logger import logger
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.cluster import Cluster
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
+from nailgun.db.sqlalchemy.models.plugins import Plugin
+from nailgun.db.sqlalchemy.models.release import Release
 
 
 class DeploymentGraph(Base):
@@ -240,3 +245,43 @@ class ClusterDeploymentGraph(Base):
             "deployment_graphs",
             lazy="dynamic",
             cascade="all, delete-orphan"))
+
+
+@sa.event.listens_for(sa.orm.Session, 'after_flush')
+def delete_orphan_graphs(session, ctx):
+    orphans_possible = False
+
+    # check if something have happened with related models
+    for model in (Release, Plugin, Cluster):
+        for instance in session.dirty:
+            if isinstance(instance, model) and attributes.get_history(
+                    instance, 'deployment_graphs').deleted:
+                orphans_possible = True
+                break
+        for instance in session.deleted:
+            if isinstance(instance, model):
+                orphans_possible = True
+                break
+
+    if orphans_possible:
+        # bulk delete will not work with filter in that case.
+        orphan_graphs_query = session.query(
+            DeploymentGraph.id
+        ).filter(
+            sa.and_(
+                ~DeploymentGraph.clusters.any(),
+                ~DeploymentGraph.releases.any(),
+                ~DeploymentGraph.plugins.any(),
+            )
+        )
+        orphan_ids = orphan_graphs_query[0]
+        if orphan_ids:
+
+            session.query(DeploymentGraph).filter(
+                DeploymentGraph.id.in_(orphan_graphs_query.subquery())
+            ).delete(synchronize_session=False)
+
+            logger.debug(
+                "Orphan graphs with ID={0} have been removed"
+                .format(list(orphan_ids))
+            )

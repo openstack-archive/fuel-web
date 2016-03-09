@@ -35,6 +35,7 @@ the Fuel components:
     apt-get install git
     git clone https://github.com/openstack/fuel-main
     git clone https://github.com/openstack/fuel-web
+    git clone https://github.com/openstack/fuel-ui
     git clone https://github.com/openstack/fuel-agent
     git clone https://github.com/openstack/fuel-astute
     git clone https://github.com/openstack/fuel-ostf
@@ -73,11 +74,13 @@ tag of Fuel:
     # Repos and versions
     FUELLIB_COMMIT?=tags/5.0
     NAILGUN_COMMIT?=tags/5.0
+    FUEL_UI_COMMIT?=tags/5.0
     ASTUTE_COMMIT?=tags/5.0
     OSTF_COMMIT?=tags/5.0
 
     FUELLIB_REPO?=https://github.com/openstack/fuel-library.git
     NAILGUN_REPO?=https://github.com/openstack/fuel-web.git
+    FUEL_UI_REPO?=https://github.com/openstack/fuel-ui.git
     ASTUTE_REPO?=https://github.com/openstack/fuel-astute.git
     OSTF_REPO?=https://github.com/openstack/fuel-ostf.git
 
@@ -118,7 +121,6 @@ your Fuel ISO build environment on Ubuntu 14.04:
     sudo gem install bundler -v 1.2.1
     sudo gem install builder
     sudo pip install xmlbuilder jinja2
-    sudo npm install -g gulp
 
 #. If you haven't already done so, get the source code::
 

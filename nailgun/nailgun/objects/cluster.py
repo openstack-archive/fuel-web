@@ -1172,6 +1172,8 @@ class Cluster(NailgunObject):
             for vm in node.vms_conf:
                 if not vm.get('created'):
                     vm['created'] = True
+                    # notify about changes
+                    node.vms_conf.changed()
         db().flush()
 
     @classmethod

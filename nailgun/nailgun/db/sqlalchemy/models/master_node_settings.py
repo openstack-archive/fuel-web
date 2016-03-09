@@ -14,11 +14,11 @@
 
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSON
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy import Integer
 from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 
 
 class MasterNodeSettings(Base):

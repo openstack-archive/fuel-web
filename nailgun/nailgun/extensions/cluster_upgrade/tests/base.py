@@ -17,8 +17,8 @@
 from nailgun import consts
 from nailgun.test import base as nailgun_test_base
 
-from .. import upgrade
-from ..objects import adapters
+from nailgun.extensions.cluster_upgrade.objects import adapters
+from nailgun.extensions.cluster_upgrade import upgrade
 
 
 class BaseCloneClusterTest(nailgun_test_base.BaseIntegrationTest):

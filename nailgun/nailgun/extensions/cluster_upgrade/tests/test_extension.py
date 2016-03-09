@@ -17,8 +17,8 @@
 import mock
 from nailgun.test.base import BaseTestCase
 
-from .. import extension
-from ..objects import relations
+from nailgun.extensions.cluster_upgrade import extension
+from nailgun.extensions.cluster_upgrade.objects import relations
 
 
 class TestExtension(BaseTestCase):

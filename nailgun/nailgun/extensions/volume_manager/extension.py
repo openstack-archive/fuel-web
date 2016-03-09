@@ -23,9 +23,11 @@ from nailgun.logger import logger
 from nailgun.objects import Node
 from nailgun.objects import Notification
 
-from .handlers.disks import NodeDefaultsDisksHandler
-from .handlers.disks import NodeDisksHandler
-from .handlers.disks import NodeVolumesInformationHandler
+from nailgun.extensions.volume_manager.handlers.disks \
+    import NodeDefaultsDisksHandler
+from nailgun.extensions.volume_manager.handlers.disks import NodeDisksHandler
+from nailgun.extensions.volume_manager.handlers.disks \
+    import NodeVolumesInformationHandler
 
 
 class VolumeManagerExtension(BaseExtension):
@@ -54,17 +56,20 @@ class VolumeManagerExtension(BaseExtension):
 
     @classmethod
     def get_node_volumes(cls, node):
-        from .objects.volumes import VolumeObject
+        from nailgun.extensions.volume_manager.objects.volumes \
+            import VolumeObject
         return VolumeObject.get_volumes(node)
 
     @classmethod
     def set_node_volumes(cls, node, volumes):
-        from .objects.volumes import VolumeObject
+        from nailgun.extensions.volume_manager.objects.volumes \
+            import VolumeObject
         return VolumeObject.set_volumes(node, volumes)
 
     @classmethod
     def set_default_node_volumes(cls, node):
-        from .objects.volumes import VolumeObject
+        from nailgun.extensions.volume_manager.objects.volumes \
+            import VolumeObject
 
         try:
             VolumeObject.set_default_node_volumes(node)
@@ -94,10 +99,12 @@ class VolumeManagerExtension(BaseExtension):
 
     @classmethod
     def on_node_delete(cls, node):
-        from .objects.volumes import VolumeObject
+        from nailgun.extensions.volume_manager.objects.volumes \
+            import VolumeObject
         VolumeObject.delete_by_node_ids([node.id])
 
     @classmethod
     def on_node_collection_delete(cls, node_ids):
-        from .objects.volumes import VolumeObject
+        from nailgun.extensions.volume_manager.objects.volumes \
+            import VolumeObject
         VolumeObject.delete_by_node_ids(node_ids)

@@ -19,8 +19,8 @@ import six
 
 from nailgun.objects.serializers import network_configuration
 
-from . import base as base_tests
-from ..objects import relations
+from nailgun.extensions.cluster_upgrade import base as base_tests
+from nailgun.extensions.cluster_upgrade.objects import relations
 
 
 class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):

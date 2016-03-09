@@ -22,7 +22,7 @@ from nailgun import consts
 from nailgun.test import base
 from nailgun.utils import reverse
 
-from . import base as tests_base
+from nailgun.extensions.cluster_upgrade import base as tests_base
 
 
 class TestClusterUpgradeCloneHandler(tests_base.BaseCloneClusterTest):

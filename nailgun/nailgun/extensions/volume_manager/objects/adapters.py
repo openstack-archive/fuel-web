@@ -33,7 +33,7 @@ class NailgunNodeAdapter(object):
         return self.node.full_name
 
     def get_node_spaces(self):
-        from ..manager import get_node_spaces
+        from nailgun.extensions.volume_manager.manager import get_node_spaces
 
         # If node bound to the cluster than it has a role
         # and volume groups which we should to allocate

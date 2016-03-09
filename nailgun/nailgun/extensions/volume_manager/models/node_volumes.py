@@ -20,7 +20,7 @@ from sqlalchemy import Integer
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 
-from ..extension import VolumeManagerExtension
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 
 
 class NodeVolumes(Base):

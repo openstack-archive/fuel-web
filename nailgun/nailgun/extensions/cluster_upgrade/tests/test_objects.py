@@ -16,8 +16,8 @@
 
 from nailgun.test.base import BaseIntegrationTest
 
-from .. import models
-from ..objects import relations as objects
+from nailgun.extensions.cluster_upgrade import models
+from nailgun.extensions.cluster_upgrade.objects import relations as objects
 
 
 class TestUpgradeRelationObject(BaseIntegrationTest):

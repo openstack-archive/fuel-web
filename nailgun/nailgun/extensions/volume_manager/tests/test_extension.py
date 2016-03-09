@@ -17,8 +17,8 @@
 import mock
 from nailgun.test.base import BaseTestCase
 
-from ..extension import VolumeManagerExtension
-from ..objects.volumes import VolumeObject
+from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
+from nailgun.extensions.volume_manager.objects.volumes import VolumeObject
 
 
 @mock.patch.object(VolumeObject, 'delete_by_node_ids')

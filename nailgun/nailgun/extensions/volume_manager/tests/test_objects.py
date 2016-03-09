@@ -16,8 +16,8 @@
 
 from nailgun.test.base import BaseTestCase
 
-from ..models.node_volumes import NodeVolumes
-from ..objects.volumes import VolumeObject
+from nailgun.extensions.volume_manager.models.node_volumes import NodeVolumes
+from nailgun.extensions.volume_manager.objects.volumes import VolumeObject
 
 
 class TestExtension(BaseTestCase):

@@ -27,7 +27,8 @@ from oslo_serialization import jsonutils
 from nailgun.errors import errors
 from nailgun.logger import logger
 
-from .objects.adapters import NailgunNodeAdapter
+from nailgun.extensions.volume_manager.objects.adapters \
+    import NailgunNodeAdapter
 
 
 def is_service(space):
@@ -592,7 +593,8 @@ class VolumeManager(object):
         self.node_name = node.name
 
         # Make sure that we don't change volumes directly from manager
-        from .extension import VolumeManagerExtension
+        from nailgun.extensions.volume_manager.extension \
+            import VolumeManagerExtension
         self.volumes = deepcopy(
             VolumeManagerExtension.get_node_volumes(node)) or []
         # For swap calculation

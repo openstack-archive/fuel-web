@@ -33,7 +33,8 @@ from nailgun.settings import settings
 
 
 db_str = utils.make_dsn(**settings.DATABASE)
-engine = create_engine(db_str, client_encoding='utf8')
+engine = create_engine(db_str, client_encoding='utf8',
+                       isolation_level=settings.DATABASE['isolation_level'])
 
 
 class DeadlocksSafeQueryMixin(object):

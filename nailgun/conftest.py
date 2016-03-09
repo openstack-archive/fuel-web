@@ -13,6 +13,7 @@
 #    under the License.
 
 import re
+import sys
 
 from psycopg2 import connect
 
@@ -67,3 +68,7 @@ def not_present(cur, name):
     cur.execute('select datname from pg_database;')
     db_list = cur.fetchall()
     return all([name not in row for row in db_list])
+
+
+def pytest_runtest_setup(item):
+    sys.setcheckinterval(50000)

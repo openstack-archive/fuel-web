@@ -402,8 +402,8 @@ class NetworkCheck(object):
                 "Floating address ranges {0} are not in the same public CIDR."
                 .format(', '.join(str(cidr) for cidr in floating_ip_ranges))
             )
-            self.result = [{"ids": [],
-                            "errors": ["cidr", "ip_ranges"]}]
+            self.result.append({"ids": [],
+                                "errors": ["cidr", "ip_ranges"]})
         self.expose_error_messages()
 
         # Check intersection of networks address spaces inside
@@ -551,9 +551,9 @@ class NetworkCheck(object):
                                 u"Gateway address belongs to the network's "
                                 u"IP range [{0}].".format(ip_range)
                             )
-                        self.result.append(
-                            {"ids": [net['id']], "errors": ["gateway"]}
-                        )
+                            self.result.append(
+                                {"ids": [net['id']], "errors": ["gateway"]}
+                            )
                     else:
                         self.err_msgs.append(
                             u"Gateway address does not belong to the network."

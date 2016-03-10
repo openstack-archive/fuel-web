@@ -18,7 +18,6 @@ import time
 
 import mock
 import netaddr
-import unittest2
 import yaml
 
 from sqlalchemy import sql
@@ -36,6 +35,7 @@ from nailgun.consts import TASK_STATUSES
 
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
 from nailgun.task import task
@@ -515,9 +515,8 @@ class TestTaskManagers(BaseIntegrationTest):
         tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])
 
-    @unittest2.skip("Randomly failing test")
-    @fake_tasks(recover_nodes=False)
-    def test_deletion_during_deployment(self):
+    @fake_tasks(recover_nodes=False, fake_rpc=False)
+    def test_deletion_during_deployment(self, mock_rpc):
         self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True},
@@ -531,19 +530,27 @@ class TestTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         deploy_uuid = resp.json_body['uuid']
+        NailgunReceiver.provision_resp(
+            task_uuid=deploy_uuid,
+            status=consts.TASK_STATUSES.running,
+            progress=50,
+        )
+
         self.app.delete(
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
-
-        def cluster_is_deleted():
-            q = self.db.query(models.Cluster).filter_by(id=cluster_id)
-            return not self.db.query(q.exists()).scalar()
-
-        self.env.wait_for_true(cluster_is_deleted,
-                               error_message="Cluster deletion timeout")
+        task_delete = self.db.query(models.Task).filter_by(
+            cluster_id=cluster_id,
+            name="cluster_deletion"
+        ).first()
+        NailgunReceiver.remove_cluster_resp(
+            task_uuid=task_delete.uuid,
+            status=consts.TASK_STATUSES.ready,
+            progress=100,
+        )
 
         task_deploy = self.db.query(models.Task).filter_by(
             uuid=deploy_uuid

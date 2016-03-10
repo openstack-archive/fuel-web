@@ -530,17 +530,43 @@ class EnvironmentManager(object):
         resp = self.neutron_networks_put(cluster_id, netconfig)
         return resp
 
-    def create_plugin(self, api=False, cluster=None, enabled=True, **kwargs):
-        plugin_data = self.get_default_plugin_metadata(**kwargs)
+    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
+    def create_plugin(self, m_load_conf, sample=None, api=False, cluster=None,
+                      enabled=True, expect_errors=False, **kwargs):
+        if sample:
+            plugin_data = sample
+            plugin_data.update(**kwargs)
+        else:
+            plugin_data = self.get_default_plugin_metadata(**kwargs)
+        env_config = plugin_data.pop('attributes_metadata', None)
+        node_roles = plugin_data.pop('roles_metadata', None)
+        volumes = plugin_data.pop('volumes_metadata', None)
+        network_roles = plugin_data.pop('network_roles_metadata', None)
+        deployment_tasks = plugin_data.pop('deployment_tasks', None)
+        tasks = plugin_data.pop('tasks', None)
+        components = plugin_data.pop('components', None)
+
+        mocked_metadata = {
+            'metadata.yaml': plugin_data,
+            'environment_config.yaml': env_config,
+            'node_roles.yaml': node_roles,
+            'volumes.yaml': volumes,
+            'network_roles.yaml': network_roles,
+            'deployment_tasks.yaml': deployment_tasks,
+            'tasks.yaml': tasks,
+            'components.yaml': components
+        }
+
+        m_load_conf.side_effect = lambda key: copy.deepcopy(
+            mocked_metadata[key])
 
         if api:
-            resp = self.app.post(
+            return self.app.post(
                 reverse('PluginCollectionHandler'),
                 jsonutils.dumps(plugin_data),
                 headers=self.default_headers,
-                expect_errors=False
+                expect_errors=expect_errors
             )
-            plugin = Plugin.get_by_uid(resp.json_body['id'])
         else:
             plugin = Plugin.create(plugin_data)
 
@@ -553,6 +579,7 @@ class EnvironmentManager(object):
                 cluster.id, plugin.id, enabled=enabled,
                 attrs=plugin.attributes_metadata or {}
             )
+
         return plugin
 
     def create_cluster_plugin_link(self, **kwargs):

@@ -14,12 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
-
-import unittest2
-
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy import models
+from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -55,9 +52,8 @@ class TestCharsetIssues(BaseIntegrationTest):
         self.assertEqual(len(supertask.subtasks), 3)
         self.env.wait_ready(supertask)
 
-    @unittest2.skip("Randomly failing test")
-    @fake_tasks()
-    def test_deletion_during_deployment(self):
+    @fake_tasks(fake_rpc=False)
+    def test_deletion_during_deployment(self, mock_rpc):
         self.env.create(
             cluster_kwargs={
                 "name": u"Вася"
@@ -67,26 +63,35 @@ class TestCharsetIssues(BaseIntegrationTest):
             ]
         )
         cluster_id = self.env.clusters[0].id
-        self.app.put(
+        resp = self.app.put(
             reverse(
                 'ClusterChangesHandler',
                 kwargs={'cluster_id': cluster_id}),
             headers=self.default_headers
         )
+        deploy_uuid = resp.json_body['uuid']
+        NailgunReceiver.provision_resp(
+            task_uuid=deploy_uuid,
+            status=consts.TASK_STATUSES.running,
+            progress=50,
+        )
+
         self.app.delete(
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
-        timeout = 10
-        timer = time.time()
-        while True:
-            cluster = self.db.query(Cluster).filter_by(id=cluster_id).first()
-            if not cluster:
-                break
-            if (time.time() - timer) > timeout:
-                raise Exception("Cluster deletion timeout")
-            time.sleep(0.24)
+        task_delete = self.db.query(models.Task).filter_by(
+            cluster_id=cluster_id,
+            name="cluster_deletion"
+        ).first()
+        NailgunReceiver.remove_cluster_resp(
+            task_uuid=task_delete.uuid,
+            status=consts.TASK_STATUSES.ready,
+            progress=100,
+        )
 
+        cluster = self.db.query(models.Cluster).filter_by(
+            id=cluster_id).first()
         self.assertIsNone(cluster)

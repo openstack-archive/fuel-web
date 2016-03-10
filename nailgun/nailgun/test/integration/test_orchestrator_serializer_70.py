@@ -385,8 +385,11 @@ class TestDeploymentAttributesSerialization70(
                                        vlan_start=self.custom_network[
                                            'vlan_start'
                                        ])
-        self.env._add_plugin_network_roles(self.cluster_db,
-                                           self.plugin_network_roles)
+        self.env.create_plugin(
+            cluster=self.cluster_db,
+            network_roles_metadata=self.plugin_network_roles,
+            package_version='3.0.0')
+
         self.env.create_node(
             api=True,
             cluster_id=cluster['id'],
@@ -762,6 +765,7 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
         self.cluster = self.env.clusters[0]
 
         self.plugin_data = {
+            'package_version': '3.0.0',
             'releases': [
                 {
                     'repository_path': 'plugin_test',
@@ -1084,6 +1088,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         self.cluster = self.env.clusters[0]
 
         self.plugin_data = {
+            'package_version': '3.0.0',
             'releases': [
                 {
                     'repository_path': 'repositories/ubuntu',
@@ -1119,7 +1124,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
             self.cluster, self.cluster.nodes)
         self.assertItemsEqual(serialized_data[0]['tasks'], [{
             'parameters': {
-                'cwd': '/etc/fuel/plugins/testing_plugin-0.1.0/',
+                'cwd': '/etc/fuel/plugins/testing_plugin-0.1/',
                 'puppet_manifest': '/path/to/manifests',
                 'puppet_modules': '/path/to/modules',
                 'timeout': 3600,

@@ -481,6 +481,7 @@ class TestClusterPluginsGraphHandler(BaseGraphTasksTests,
         super(TestClusterPluginsGraphHandler, self).setUp()
         self.env.create_plugin(
             cluster=self.cluster,
+            package_version='5.0.0',
             deployment_tasks=self.deployment_tasks)
 
     def test_get_deployment_tasks(self):

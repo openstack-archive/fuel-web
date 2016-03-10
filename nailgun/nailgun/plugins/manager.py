@@ -158,13 +158,9 @@ class PluginManager(object):
         metadata['always_editable'] = plugin.is_hotpluggable
 
     @classmethod
-    def get_cluster_plugins_with_tasks(cls, cluster):
-        cluster_plugins = []
-        for plugin_db in ClusterPlugins.get_enabled(cluster.id):
-            plugin_adapter = wrap_plugin(plugin_db)
-            plugin_adapter.set_cluster_tasks()
-            cluster_plugins.append(plugin_adapter)
-        return cluster_plugins
+    def get_enabled_plugins(cls, cluster):
+        return [wrap_plugin(plugin)
+                for plugin in ClusterPlugins.get_enabled(cluster.id)]
 
     @classmethod
     def get_network_roles(cls, cluster, merge_policy):

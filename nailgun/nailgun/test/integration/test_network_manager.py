@@ -1724,7 +1724,10 @@ class TestNeutronManager80(BaseIntegrationTest):
        - name: "unmapped_vip"
          namespace: "haproxy"
         """)
-        self.env._add_plugin_network_roles(self.cluster, unmapped_roles)
+        self.env.create_plugin(
+            cluster=self.cluster,
+            network_roles_metadata=unmapped_roles,
+            package_version='3.0.0')
         assigned_vips = self.net_manager.assign_vips_for_net_groups(
             self.cluster)
 

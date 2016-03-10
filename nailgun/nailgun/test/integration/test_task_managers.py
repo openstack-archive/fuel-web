@@ -730,7 +730,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(len(to_delete_ids), 1)
 
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, timeout=5)
+        self.env.wait_ready(supertask)
 
         self.assertEqual(self.env.db.query(models.Node).count(), 1)
         remaining_node = self.env.db.query(models.Node).first()
@@ -749,7 +749,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
         self.db.flush()
-        self.env.wait_ready(supertask, timeout=5)
+        self.env.wait_ready(supertask)
 
         # this test is failing when whole test set is executing
         # apparently the main reason for that is delays in data
@@ -791,7 +791,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
         self.db.flush()
-        self.env.wait_ready(supertask, timeout=5)
+        self.env.wait_ready(supertask)
 
         # same as in previous test
         self.env.wait_for_true(self.check_node_presence, args=[3])
@@ -821,7 +821,7 @@ class TestTaskManagers(BaseIntegrationTest):
             roles=['controller'])
 
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, timeout=5)
+        self.env.wait_ready(supertask)
         self.assertEqual(self.env.db.query(models.Node).count(), 0)
 
     @fake_tasks(recover_nodes=False)
@@ -838,7 +838,7 @@ class TestTaskManagers(BaseIntegrationTest):
         node = cluster_db.nodes[0]
         self.assertEqual(node.status, NODE_STATUSES.removing)
         self.db.commit()
-        self.env.wait_ready(task, timeout=5)
+        self.env.wait_ready(task)
 
         self.assertEqual(self.db.query(models.Node).count(), 0)
 

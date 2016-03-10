@@ -167,7 +167,7 @@ class TestHandlers(BaseIntegrationTest):
         def cluster_is_empty():
             return self.db.query(Cluster).count() == 0
 
-        self.env.wait_for_true(cluster_is_empty, timeout=5)
+        self.env.wait_for_true(cluster_is_empty)
         self._wait_for_threads()
 
         # Nodes should be in discover status
@@ -195,7 +195,7 @@ class TestHandlers(BaseIntegrationTest):
             return self.db.query(Cluster).count() == 0 and \
                 self.db.query(Node).count() == 1
 
-        self.env.wait_for_true(cluster_is_empty_and_in_db_one_node, timeout=5)
+        self.env.wait_for_true(cluster_is_empty_and_in_db_one_node)
         self._wait_for_threads()
 
         node = self.db.query(Node).first()

@@ -45,18 +45,18 @@ class TestMulticastNetworkManager(base.BaseIntegrationTest):
     @base.fake_tasks()
     def test_multicast_successfull_scenario(self):
         multicast_task = self.execute()
-        self.env.wait_ready(multicast_task, timeout=10)
+        self.env.wait_ready(multicast_task)
         corosync = multicast_task.cluster.attributes.editable['corosync']
         self.assertTrue(corosync['verified']['value'])
 
     @base.fake_tasks(prefix='error1')
     def test_multicast_no_message_from_node(self):
-        self.env.wait_error(self.execute(), timeout=10)
+        self.env.wait_error(self.execute())
 
     @base.fake_tasks(prefix='error2')
     def test_multicast_no_messages_for_one_node(self):
         multicast = self.execute()
-        self.env.wait_error(multicast, timeout=10)
+        self.env.wait_error(multicast)
         node_ids = [node['node_id'] for node in multicast.result]
         not_received = [node['not_received'] for node in multicast.result]
         self.assertTrue(any(node_ids == node for node in not_received))

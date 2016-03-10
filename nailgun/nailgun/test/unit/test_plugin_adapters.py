@@ -144,10 +144,18 @@ class TestPluginBase(base.BaseTestCase):
 
     def test_get_metadata(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        tasks = self.env.get_default_plugin_tasks()
+
+        mocked_metadata = {
+            self._find_path('metadata'): plugin_metadata,
+            self._find_path('environment_config'): attributes_metadata,
+            self._find_path('tasks'): tasks
+        }
 
         with mock.patch.object(
                 self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.return_value = plugin_metadata
+            load_conf.side_effect = lambda key: mocked_metadata[key]
             Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
@@ -181,12 +189,11 @@ class TestPluginV1(TestPluginBase):
     package_version = '1.0.0'
 
     def test_primary_added_for_version(self):
-        stub = 'stub'
         with mock.patch.object(
                 self.plugin_adapter, '_load_config') as load_conf:
             load_conf.return_value = [{'role': ['controller']}]
 
-            tasks = self.plugin_adapter._load_tasks(stub)
+            tasks = self.plugin_adapter._load_tasks()
             self.assertItemsEqual(
                 tasks[0]['role'], ['primary-controller', 'controller'])
 
@@ -202,12 +209,11 @@ class TestPluginV2(TestPluginBase):
     package_version = '2.0.0'
 
     def test_role_not_changed_for_version(self):
-        stub = 'stub'
         with mock.patch.object(
                 self.plugin_adapter, '_load_config') as load_conf:
             load_conf.return_value = [{'role': ['controller']}]
 
-            tasks = self.plugin_adapter._load_tasks(stub)
+            tasks = self.plugin_adapter._load_tasks()
             self.assertItemsEqual(
                 tasks[0]['role'], ['controller'])
 

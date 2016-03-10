@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import mock
-import os
 from oslo_serialization import jsonutils
 import yaml
 
@@ -49,37 +49,33 @@ class BasePluginTest(base.BaseIntegrationTest):
         self.sample_plugin = self.env.get_default_plugin_metadata()
         self.plugin_env_config = self.env.get_default_plugin_env_config()
 
-        attributes_metadata = self.env.get_default_plugin_env_config()
-        roles_metadata = self.env.get_default_plugin_node_roles_config()
-        volumes_metadata = self.env.get_default_plugin_volumes_config()
-        network_roles_metadata = self.env.get_default_network_roles_config()
-        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
-        tasks = self.env.get_default_plugin_tasks()
+    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
+    def create_plugin(self, m_load_conf, sample=None, expect_errors=False):
+        sample = sample or self.sample_plugin
+        env_config = sample.pop('attributes_metadata', None) \
+            or self.plugin_env_config
+        roles_metadata = sample.pop('roles_metadata', None) \
+            or self.env.get_default_plugin_node_roles_config()
+        volumes_metadata = sample.pop('volumes_metadata', None) \
+            or self.env.get_default_plugin_volumes_config()
+        network_roles_metadata = sample.pop('network_roles_metadata', None) \
+            or self.env.get_default_network_roles_config()
+        deployment_tasks = sample.pop('deployment_tasks', None) \
+            or self.env.get_default_plugin_deployment_tasks()
 
-        self.mocked_metadata = {
-            'environment_config.yaml': attributes_metadata,
+        mocked_metadata = {
+            'metadata.yaml': sample,
+            'environment_config.yaml': env_config,
             'node_roles.yaml': roles_metadata,
             'volumes.yaml': volumes_metadata,
             'network_roles.yaml': network_roles_metadata,
             'deployment_tasks.yaml': deployment_tasks,
-            'tasks.yaml': tasks,
+            'tasks.yaml': self.TASKS_CONFIG,
         }
 
-    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
-    def create_plugin(self, m_load_conf, sample=None, expect_errors=False):
+        m_load_conf.side_effect = lambda key: copy.deepcopy(
+            mocked_metadata[key])
 
-        def mock_load_config(configs, default_config):
-            def _load_config(config):
-                head, tail = os.path.split(config)
-                return configs.get(tail, default_config)
-            return _load_config
-
-        m_load_conf.side_effect = mock_load_config(
-            self.mocked_metadata,
-            self.plugin_env_config
-        )
-
-        sample = sample or self.sample_plugin
         resp = self.app.post(
             base.reverse('PluginCollectionHandler'),
             jsonutils.dumps(sample),
@@ -98,18 +94,11 @@ class BasePluginTest(base.BaseIntegrationTest):
 
     def create_cluster(self, nodes=None):
         nodes = nodes if nodes else []
-        with mock.patch('nailgun.plugins.adapters.os') as os:
-            with mock.patch(
-                    'nailgun.plugins.adapters.open',
-                    create=True,
-                    side_effect=get_config(self.plugin_env_config)):
-                os.access.return_value = True
-                os.path.exists.return_value = True
-                self.env.create(
-                    release_kwargs={'version': '2014.2-6.0',
-                                    'operating_system': 'Ubuntu',
-                                    'deployment_tasks': []},
-                    nodes_kwargs=nodes)
+        self.env.create(
+            release_kwargs={'version': '2014.2-6.0',
+                            'operating_system': 'Ubuntu',
+                            'deployment_tasks': []},
+            nodes_kwargs=nodes)
         return self.env.clusters[0]
 
     def default_attributes(self, cluster):
@@ -142,32 +131,18 @@ class BasePluginTest(base.BaseIntegrationTest):
     def get_pre_hooks(self, cluster):
         with mock.patch('nailgun.plugins.adapters.glob') as glob:
             glob.glob.return_value = ['/some/path']
-            with mock.patch('nailgun.plugins.adapters.os') as os:
-                with mock.patch(
-                        'nailgun.plugins.adapters.open',
-                        create=True,
-                        side_effect=get_config(self.TASKS_CONFIG)):
-                    os.access.return_value = True
-                    os.path.exists.return_value = True
-                    resp = self.app.get(
-                        base.reverse('DefaultPrePluginsHooksInfo',
-                                     {'cluster_id': cluster.id}),
-                        headers=self.default_headers)
-                return resp
+            resp = self.app.get(
+                base.reverse('DefaultPrePluginsHooksInfo',
+                             {'cluster_id': cluster.id}),
+                headers=self.default_headers)
+        return resp
 
     def get_post_hooks(self, cluster):
-        with mock.patch('nailgun.plugins.adapters.os') as os:
-            with mock.patch(
-                    'nailgun.plugins.adapters.open',
-                    create=True,
-                    side_effect=get_config(self.TASKS_CONFIG)):
-                os.access.return_value = True
-                os.path.exists.return_value = True
-                resp = self.app.get(
-                    base.reverse('DefaultPostPluginsHooksInfo',
-                                 {'cluster_id': cluster.id}),
-                    headers=self.default_headers)
-                return resp
+        resp = self.app.get(
+            base.reverse('DefaultPostPluginsHooksInfo',
+                         {'cluster_id': cluster.id}),
+            headers=self.default_headers)
+        return resp
 
     def sync_plugins(self, params=None, expect_errors=False):
         post_data = jsonutils.dumps(params) if params else ''
@@ -191,6 +166,7 @@ class TestPluginsApi(BasePluginTest):
         self.assertEqual(resp.status_code, 201)
         metadata = resp.json
         del metadata['id']
+
         self.assertEqual(metadata, self.sample_plugin)
 
     def test_env_create_and_load_env_config(self):
@@ -269,12 +245,14 @@ class TestPluginsApi(BasePluginTest):
     def test_attributes_after_plugin_is_created(self):
         sample = dict(
             attributes_metadata={
-                "attr_text": {
-                    "value": "value",
-                    "type": "text",
-                    "description": "description",
-                    "weight": 25,
-                    "label": "label"
+                "attributes": {
+                    "attr_text": {
+                        "value": "value",
+                        "type": "text",
+                        "description": "description",
+                        "weight": 25,
+                        "label": "label"
+                    }
                 }
             }, **self.sample_plugin)
         self.create_plugin(sample=sample).json_body

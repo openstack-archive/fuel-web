@@ -133,13 +133,13 @@ class BasePluginDeploymentHooksSerializer(object):
 class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
 
     def serialize_begin_tasks(self):
-        plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
+        plugins = PluginManager.get_enabled_plugins(self.cluster)
         return itertools.chain(
             self.create_repositories(plugins),
             self.sync_scripts(plugins))
 
     def serialize_end_tasks(self):
-        plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
+        plugins = PluginManager.get_enabled_plugins(self.cluster)
         return self.deployment_tasks(plugins)
 
     def _get_node_uids_for_plugin_tasks(self, plugin):
@@ -262,7 +262,7 @@ class PluginsPostDeploymentHooksSerializer(
         return list()
 
     def serialize_end_tasks(self):
-        plugins = PluginManager.get_cluster_plugins_with_tasks(self.cluster)
+        plugins = PluginManager.get_enabled_plugins(self.cluster)
         return self.deployment_tasks(plugins)
 
     def deployment_tasks(self, plugins):

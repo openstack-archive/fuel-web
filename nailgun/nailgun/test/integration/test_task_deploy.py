@@ -54,11 +54,13 @@ class TestTaskDeploy(BaseIntegrationTest):
         tasks.extend(self.env.get_default_plugin_tasks(
             role=["compute"], stage="pre_deployment"
         ))
+
         self.env.create_plugin(
             cluster=self.cluster,
             enabled=True,
             package_version="4.0.0",
-            deployment_tasks=deployment_tasks, tasks=tasks
+            deployment_tasks=deployment_tasks,
+            tasks=tasks
         )
         self.db.flush()
 
@@ -102,14 +104,8 @@ class TestTaskDeploy(BaseIntegrationTest):
         )
 
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
-    @mock.patch('nailgun.plugins.adapters.os.path.exists', return_value=True)
-    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_tasks')
-    def test_task_deploy_with_plugins(self, load_tasks, *_):
+    def test_task_deploy_with_plugins(self, *_):
         self.add_plugin_with_tasks("plugin_deployment_task")
-        # There is bug[1] in PluginAdapters,
-        # it always reads the tasks from local file sytem.
-        # [1] https://bugs.launchpad.net/fuel/+bug/1527320
-        load_tasks.return_value = self.env.plugins[-1].tasks
         message = self.get_deploy_message()
         compute_uid = next(
             (x.uid for x in self.env.nodes if 'compute' in x.roles), None

@@ -78,7 +78,7 @@ prepare_server() {
         --config="$NAILGUN_CONFIG" \
         --fake-tasks \
         --fake-tasks-tick-count=80 \
-        --fake-tasks-tick-interval=1 >> "$NAILGUN_LOGS/nailgun.log" 2>&1 &
+        --fake-tasks-tick-interval=3 >> "$NAILGUN_LOGS/nailgun.log" 2>&1 &
 
     which curl >/dev/null 2>&1
     if [[ $? -ne 0 ]]; then

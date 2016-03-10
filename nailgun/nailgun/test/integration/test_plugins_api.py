@@ -15,19 +15,12 @@
 #    under the License.
 
 import mock
-import os
 from oslo_serialization import jsonutils
 import yaml
 
 from nailgun import objects
 from nailgun.plugins import adapters
 from nailgun.test import base
-
-
-def get_config(config):
-    def _get_config(*args):
-        return mock.mock_open(read_data=yaml.dump(config))()
-    return _get_config
 
 
 class BasePluginTest(base.BaseIntegrationTest):
@@ -47,46 +40,6 @@ class BasePluginTest(base.BaseIntegrationTest):
     def setUp(self):
         super(BasePluginTest, self).setUp()
         self.sample_plugin = self.env.get_default_plugin_metadata()
-        self.plugin_env_config = self.env.get_default_plugin_env_config()
-
-        attributes_metadata = self.env.get_default_plugin_env_config()
-        roles_metadata = self.env.get_default_plugin_node_roles_config()
-        volumes_metadata = self.env.get_default_plugin_volumes_config()
-        network_roles_metadata = self.env.get_default_network_roles_config()
-        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
-        tasks = self.env.get_default_plugin_tasks()
-
-        self.mocked_metadata = {
-            'environment_config.yaml': attributes_metadata,
-            'node_roles.yaml': roles_metadata,
-            'volumes.yaml': volumes_metadata,
-            'network_roles.yaml': network_roles_metadata,
-            'deployment_tasks.yaml': deployment_tasks,
-            'tasks.yaml': tasks,
-        }
-
-    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
-    def create_plugin(self, m_load_conf, sample=None, expect_errors=False):
-
-        def mock_load_config(configs, default_config):
-            def _load_config(config):
-                head, tail = os.path.split(config)
-                return configs.get(tail, default_config)
-            return _load_config
-
-        m_load_conf.side_effect = mock_load_config(
-            self.mocked_metadata,
-            self.plugin_env_config
-        )
-
-        sample = sample or self.sample_plugin
-        resp = self.app.post(
-            base.reverse('PluginCollectionHandler'),
-            jsonutils.dumps(sample),
-            headers=self.default_headers,
-            expect_errors=expect_errors
-        )
-        return resp
 
     def delete_plugin(self, plugin_id, expect_errors=False):
         resp = self.app.delete(
@@ -98,18 +51,11 @@ class BasePluginTest(base.BaseIntegrationTest):
 
     def create_cluster(self, nodes=None):
         nodes = nodes if nodes else []
-        with mock.patch('nailgun.plugins.adapters.os') as os:
-            with mock.patch(
-                    'nailgun.plugins.adapters.open',
-                    create=True,
-                    side_effect=get_config(self.plugin_env_config)):
-                os.access.return_value = True
-                os.path.exists.return_value = True
-                self.env.create(
-                    release_kwargs={'version': '2014.2-6.0',
-                                    'operating_system': 'Ubuntu',
-                                    'deployment_tasks': []},
-                    nodes_kwargs=nodes)
+        self.env.create(
+            release_kwargs={'version': '2014.2-6.0',
+                            'operating_system': 'Ubuntu',
+                            'deployment_tasks': []},
+            nodes_kwargs=nodes)
         return self.env.clusters[0]
 
     def default_attributes(self, cluster):
@@ -142,32 +88,18 @@ class BasePluginTest(base.BaseIntegrationTest):
     def get_pre_hooks(self, cluster):
         with mock.patch('nailgun.plugins.adapters.glob') as glob:
             glob.glob.return_value = ['/some/path']
-            with mock.patch('nailgun.plugins.adapters.os') as os:
-                with mock.patch(
-                        'nailgun.plugins.adapters.open',
-                        create=True,
-                        side_effect=get_config(self.TASKS_CONFIG)):
-                    os.access.return_value = True
-                    os.path.exists.return_value = True
-                    resp = self.app.get(
-                        base.reverse('DefaultPrePluginsHooksInfo',
-                                     {'cluster_id': cluster.id}),
-                        headers=self.default_headers)
-                return resp
+            resp = self.app.get(
+                base.reverse('DefaultPrePluginsHooksInfo',
+                             {'cluster_id': cluster.id}),
+                headers=self.default_headers)
+        return resp
 
     def get_post_hooks(self, cluster):
-        with mock.patch('nailgun.plugins.adapters.os') as os:
-            with mock.patch(
-                    'nailgun.plugins.adapters.open',
-                    create=True,
-                    side_effect=get_config(self.TASKS_CONFIG)):
-                os.access.return_value = True
-                os.path.exists.return_value = True
-                resp = self.app.get(
-                    base.reverse('DefaultPostPluginsHooksInfo',
-                                 {'cluster_id': cluster.id}),
-                    headers=self.default_headers)
-                return resp
+        resp = self.app.get(
+            base.reverse('DefaultPostPluginsHooksInfo',
+                         {'cluster_id': cluster.id}),
+            headers=self.default_headers)
+        return resp
 
     def sync_plugins(self, params=None, expect_errors=False):
         post_data = jsonutils.dumps(params) if params else ''
@@ -187,21 +119,22 @@ class BasePluginTest(base.BaseIntegrationTest):
 class TestPluginsApi(BasePluginTest):
 
     def test_plugin_created_on_post(self):
-        resp = self.create_plugin()
+        resp = self.env.create_plugin(api=True)
         self.assertEqual(resp.status_code, 201)
         metadata = resp.json
         del metadata['id']
+
         self.assertEqual(metadata, self.sample_plugin)
 
     def test_env_create_and_load_env_config(self):
-        self.create_plugin()
+        self.env.create_plugin(api=True)
         cluster = self.create_cluster()
         self.assertIn(self.sample_plugin['name'],
                       objects.Cluster.get_editable_attributes(
                           cluster, all_plugins_versions=True))
 
     def test_enable_disable_plugin(self):
-        resp = self.create_plugin()
+        resp = self.env.create_plugin(api=True)
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
         cluster = self.create_cluster()
         self.assertItemsEqual(
@@ -224,18 +157,18 @@ class TestPluginsApi(BasePluginTest):
         )
 
     def test_delete_plugin(self):
-        resp = self.create_plugin()
+        resp = self.env.create_plugin(api=True)
         del_resp = self.delete_plugin(resp.json['id'])
         self.assertEqual(del_resp.status_code, 204)
 
     def test_delete_unused_plugin(self):
         self.create_cluster()
-        resp = self.create_plugin()
+        resp = self.env.create_plugin(api=True)
         del_resp = self.delete_plugin(resp.json['id'])
         self.assertEqual(del_resp.status_code, 204)
 
     def test_no_delete_of_used_plugin(self):
-        resp = self.create_plugin()
+        resp = self.env.create_plugin(api=True)
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
         cluster = self.create_cluster()
         enable_resp = self.enable_plugin(cluster, plugin.name, plugin.id)
@@ -244,7 +177,7 @@ class TestPluginsApi(BasePluginTest):
         self.assertEqual(del_resp.status_code, 400)
 
     def test_update_plugin(self):
-        resp = self.create_plugin()
+        resp = self.env.create_plugin(api=True)
         data = resp.json
         data['package_version'] = '2.0.0'
         plugin_id = data.pop('id')
@@ -260,24 +193,23 @@ class TestPluginsApi(BasePluginTest):
         self.assertEqual(updated_data, data)
 
     def test_default_attributes_after_plugin_is_created(self):
-        self.create_plugin()
+        self.env.create_plugin(api=True)
         cluster = self.create_cluster()
         default_attributes = self.default_attributes(cluster)
         self.assertIn(self.sample_plugin['name'],
                       default_attributes.json_body['editable'])
 
     def test_attributes_after_plugin_is_created(self):
-        sample = dict(
+        self.env.create_plugin(
+            api=True,
             attributes_metadata={
-                "attr_text": {
-                    "value": "value",
-                    "type": "text",
-                    "description": "description",
-                    "weight": 25,
-                    "label": "label"
-                }
-            }, **self.sample_plugin)
-        self.create_plugin(sample=sample).json_body
+                "attributes": {
+                    "attr_text": {
+                        "value": "value",
+                        "type": "text",
+                        "description": "description",
+                        "weight": 25,
+                        "label": "label"}}})
         cluster = self.create_cluster()
         editable = self.default_attributes(cluster).json_body['editable']
         self.assertIn(
@@ -287,11 +219,10 @@ class TestPluginsApi(BasePluginTest):
 
     def test_plugins_multiversioning(self):
         def create_with_version(plugin_version):
-            response = self.create_plugin(
-                sample=self.env.get_default_plugin_metadata(
-                    name='multiversion_plugin',
-                    version=plugin_version
-                )
+            response = self.env.create_plugin(
+                api=True,
+                name='multiversion_plugin',
+                version=plugin_version
             )
             return response.json_body['id']
 
@@ -375,7 +306,7 @@ class TestPluginsApi(BasePluginTest):
                  'version': '2014.2.1-5.1'}
             ],
         }
-        resp = self.create_plugin(sample=old_version_plugin)
+        resp = self.env.create_plugin(api=True, **old_version_plugin)
         self.assertEqual(resp.status_code, 201)
 
         new_version_plugin_1 = {
@@ -390,7 +321,7 @@ class TestPluginsApi(BasePluginTest):
                  'version': '2014.2.1-5.1'}
             ],
         }
-        resp = self.create_plugin(sample=new_version_plugin_1)
+        resp = self.env.create_plugin(api=True, **new_version_plugin_1)
         self.assertEqual(resp.status_code, 201)
         # Only plugins with version 3.0.0 will be synced
         plugin_ids.append(resp.json['id'])
@@ -407,7 +338,7 @@ class TestPluginsApi(BasePluginTest):
                  'version': '2014.2.1-5.1'}
             ],
         }
-        resp = self.create_plugin(sample=new_version_plugin_2)
+        resp = self.env.create_plugin(api=True, **new_version_plugin_2)
         self.assertEqual(resp.status_code, 201)
         plugin_ids.append(resp.json['id'])
 
@@ -424,7 +355,7 @@ class TestPrePostHooks(BasePluginTest):
             return_value=mock.Mock(text='Archive: test'))
         self._requests_mock.start()
 
-        resp = self.create_plugin()
+        resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
         self.plugin = adapters.wrap_plugin(
             objects.Plugin.get_by_uid(resp.json['id']))
         self.cluster = self.create_cluster([
@@ -482,9 +413,9 @@ class TestPluginValidation(BasePluginTest):
                 {'os': 'Ubuntu',
                  'mode': ['ha', 'multinode'],
                  'version': '2014.2.1-5.1'}
-            ],
+            ]
         }
-        resp = self.create_plugin(sample=sample)
+        resp = self.env.create_plugin(sample=sample, api=True)
         self.assertEqual(resp.status_code, 201)
 
     def test_releases_not_provided(self):
@@ -495,7 +426,8 @@ class TestPluginValidation(BasePluginTest):
             'title': 'Test plugin',
             'package_version': '1.0.0'
         }
-        resp = self.create_plugin(sample=sample, expect_errors=True)
+        resp = self.env.create_plugin(
+            sample=sample, api=True, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
     def test_version_is_not_present_in_release_data(self):
@@ -509,7 +441,8 @@ class TestPluginValidation(BasePluginTest):
                 {'os': 'Ubuntu', 'mode': ['ha', 'multinode']}
             ]
         }
-        resp = self.create_plugin(sample=sample, expect_errors=True)
+        resp = self.env.create_plugin(
+            sample=sample, api=True, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
     def test_plugin_version_is_floating(self):
@@ -525,7 +458,8 @@ class TestPluginValidation(BasePluginTest):
                  'version': '2014.2.1-5.1'}
             ]
         }
-        resp = self.create_plugin(sample=sample, expect_errors=True)
+        resp = self.env.create_plugin(
+            sample=sample, api=True, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
     def test_title_is_not_present(self):
@@ -540,7 +474,8 @@ class TestPluginValidation(BasePluginTest):
                  'version': '2014.2.1-5.1'}
             ]
         }
-        resp = self.create_plugin(sample=sample, expect_errors=True)
+        resp = self.env.create_plugin(
+            sample=sample, api=True, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
 

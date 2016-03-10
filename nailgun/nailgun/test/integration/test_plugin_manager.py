@@ -46,7 +46,6 @@ class TestPluginManager(base.BaseIntegrationTest):
                 'volumes': [{'id': name, 'type': 'vg'}]
             }
             self.env.create_plugin(
-                api=True,
                 cluster=self.cluster,
                 name=name,
                 package_version='3.0.0',
@@ -82,7 +81,6 @@ class TestPluginManager(base.BaseIntegrationTest):
     def test_get_empty_plugin_volumes_metadata_for_cluster(self):
         cluster = self.env.create_cluster(api=False)
         self.env.create_plugin(
-            api=True,
             cluster=cluster,
             package_version='3.0.0',
             fuel_version=['7.0']
@@ -109,7 +107,6 @@ class TestPluginManager(base.BaseIntegrationTest):
             ]
         }
         self.env.create_plugin(
-            api=True,
             cluster=cluster,
             name=plugin_name,
             package_version='3.0.0',
@@ -139,7 +136,6 @@ class TestPluginManager(base.BaseIntegrationTest):
             ]
         }
         self.env.create_plugin(
-            api=True,
             cluster=self.cluster,
             name=plugin_name,
             package_version='3.0.0',
@@ -304,13 +300,15 @@ class TestPluginManager(base.BaseIntegrationTest):
         plugin_b = self.env.create_plugin(
             name='plugin_b', title='plugin_a_title', cluster=cluster,
             attributes_metadata={
-                'metadata': {
-                    'restrictions': [
-                        {
-                            "condition": "cluster:net_provider != 'neutron'",
-                            "action": "hide"
-                        }
-                    ]
+                'attributes': {
+                    'metadata': {
+                        'restrictions': [
+                            {
+                                "condition": "test_condition",
+                                "action": "hide"
+                            }
+                        ]
+                    }
                 }
             }
         )
@@ -377,13 +375,15 @@ class TestPluginManager(base.BaseIntegrationTest):
         plugin_b = self.env.create_plugin(
             name='plugin_b', title='plugin_a_title', cluster=cluster,
             attributes_metadata={
-                'metadata': {
-                    'restrictions': [
-                        {
-                            "condition": "cluster:net_provider != 'neutron'",
-                            "action": "hide"
-                        }
-                    ]
+                'attributes': {
+                    'metadata': {
+                        'restrictions': [
+                            {
+                                "condition": "test_condition",
+                                "action": "hide"
+                            }
+                        ]
+                    }
                 }
             }
         )

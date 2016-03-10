@@ -33,10 +33,9 @@ from nailgun.settings import settings
 class PluginAdapterBase(object):
     """Implements wrapper for plugin db model configuration files logic
 
-    1. Uploading plugin provided cluster attributes
-    2. Uploading tasks
-    3. Enabling/Disabling of plugin based on cluster attributes
-    4. Providing repositories/deployment scripts related info to clients
+    1. Uploading plugin provided attributes
+    2. Uploading tasks and deployment tasks
+    3. Providing repositories/deployment scripts related info to clients
     """
     config_metadata = 'metadata.yaml'
     config_tasks = 'tasks.yaml'
@@ -44,8 +43,9 @@ class PluginAdapterBase(object):
     def __init__(self, plugin):
         self.plugin = plugin
         self.plugin_path = os.path.join(settings.PLUGINS_PATH, self.path_name)
-        self.tasks = []
-        self.db_cfg_mapping = {}
+        self.db_cfg_mapping = {
+            'attributes_metadata': 'environment_config.yaml'
+        }
 
     @abc.abstractmethod
     def path_name(self):
@@ -58,12 +58,17 @@ class PluginAdapterBase(object):
         :rtype: dict
         """
         metadata = self._load_config(self.config_metadata) or {}
+        tasks = self._load_tasks()
+        if tasks is not None:
+            metadata['tasks'] = tasks
+        else:
+            metadata['tasks'] = []
 
         for attribute, config in six.iteritems(self.db_cfg_mapping):
             attribute_data = self._load_config(config)
             # Plugin columns have constraints for nullable data,
             # so we need to check it
-            if attribute_data:
+            if attribute_data is not None:
                 if attribute == 'attributes_metadata':
                     attribute_data = attribute_data['attributes']
                 metadata[attribute] = attribute_data
@@ -83,26 +88,8 @@ class PluginAdapterBase(object):
         else:
             logger.warning("Config {0} is not readable.".format(config))
 
-    def _load_tasks(self, file_name):
-        data = self._load_config(file_name) or []
-        for item in data:
-            # backward compatibility for plugins added in version 6.0,
-            # and it is expected that task with role: [controller]
-            # will be executed on all controllers
-
-            if (StrictVersion(self.plugin.package_version)
-                    == StrictVersion('1.0')
-                    and isinstance(item['role'], list)
-                    and 'controller' in item['role']):
-                item['role'].append('primary-controller')
-        return data
-
-    def set_cluster_tasks(self):
-        """Load plugins provided tasks and set them to instance tasks variable
-
-        Provided tasks are loaded from tasks config file.
-        """
-        self.tasks = self._load_tasks(self.config_tasks)
+    def _load_tasks(self):
+        return self._load_config(self.config_tasks) or []
 
     @property
     def plugin_release_versions(self):
@@ -149,6 +136,10 @@ class PluginAdapterBase(object):
                                        {'tasks': value})
             else:
                 DeploymentGraph.create_for_model({'tasks': value}, self.plugin)
+
+    @property
+    def tasks(self):
+        return self.plugin.tasks
 
     @property
     def volumes_metadata(self):
@@ -275,6 +266,18 @@ class PluginAdapterV1(PluginAdapterBase):
         """
         return self.full_name
 
+    def _load_tasks(self):
+        data = self._load_config(self.config_tasks) or []
+        for item in data:
+            # backward compatibility for plugins added in version 6.0,
+            # and it is expected that task with role: [controller]
+            # will be executed on all controllers
+            role = item['role']
+            if (isinstance(role, list) and 'controller' in role):
+                role.append('primary-controller')
+
+        return data
+
 
 class PluginAdapterV2(PluginAdapterBase):
     """Plugins attributes class for package version 2.0.0"""
@@ -312,10 +315,8 @@ class PluginAdapterV3(PluginAdapterV2):
 
     def __init__(self, plugin):
         super(PluginAdapterV3, self).__init__(plugin)
-        self.db_cfg_mapping['attributes_metadata'] = 'environment_config.yaml'
         self.db_cfg_mapping['network_roles_metadata'] = 'network_roles.yaml'
         self.db_cfg_mapping['roles_metadata'] = 'node_roles.yaml'
-        self.db_cfg_mapping['tasks'] = self.config_tasks
         self.db_cfg_mapping['volumes_metadata'] = 'volumes.yaml'
 
     def get_metadata(self):

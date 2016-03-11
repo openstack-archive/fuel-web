@@ -51,20 +51,16 @@ class BaseExtension(object):
         "handler": HandlerClass
       }
     ]
-    urls = []
 
-    Specify a list of calls which extension provides.
-    This list is required for core and other extensions
-    to find extension with specific functionality.
+    If extension needs to manipulate provisioning or deployment data it should
+    define data_pipelines list which is a list of BasePipeline sub-classes:
 
-    provides = [
-        'method_1',
-        'method_2',
+    data_pipelines = [
+        ExamplePipelineClass,
+        ExamplePipelineClass2,
     ]
     """
-
     urls = []
-    provides = []
     data_pipelines = []
 
     @classmethod
@@ -123,3 +119,7 @@ class BaseExtension(object):
     @classmethod
     def on_cluster_delete(cls, cluster):
         """Callback which gets executed when cluster is deleted"""
+
+    @classmethod
+    def on_before_deployment_check(cls, cluster):
+        """Callback which gets executed when before deployment check runs"""

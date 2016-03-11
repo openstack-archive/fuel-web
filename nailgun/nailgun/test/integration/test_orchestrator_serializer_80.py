@@ -15,11 +15,12 @@
 #    under the License.
 
 from copy import deepcopy
+
 import mock
 import six
+import unittest2
 
 import nailgun
-
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
@@ -323,6 +324,7 @@ class TestDeploymentAttributesSerialization80(
                              consts.DEFAULT_BRIDGES_NAMES.br_baremetal)
             self.assertIn(expected_patch, transformations)
 
+    @unittest2.skip("Should be moved to volume_manager tests")
     def test_disks_attrs(self):
         disks = [
             {
@@ -574,6 +576,7 @@ class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
         serializer_type = get_serializer_for_cluster(self.cluster_db)
         self.serializer = serializer_type(AstuteGraph(self.cluster_db))
 
+    @unittest2.skip("Should be moved to volume_manager tests")
     def test_block_device_disks(self):
         self.env.create_node(
             cluster_id=self.cluster_db.id,

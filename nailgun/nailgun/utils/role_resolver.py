@@ -79,21 +79,23 @@ class RoleResolver(BaseRoleResolver):
                 self.__mapping[r].add(node.uid)
 
     def resolve(self, roles, policy=None):
-        if isinstance(roles, six.string_types) and roles in self.SPECIAL_ROLES:
-            result = self.SPECIAL_ROLES[roles]
-        elif roles == consts.TASK_ROLES.all:
-            result = list(set(
-                uid for nodes in six.itervalues(self.__mapping)
-                for uid in nodes
-            ))
-        elif isinstance(roles, (list, tuple)):
+        if roles == consts.TASK_ROLES.all:
+            logger.warn(
+                "The role '%s' is deprecated. Please use /.*/ instead.",
+                consts.TASK_ROLES.all
+            )
+            roles = ["/.*/"]
+        if isinstance(roles, six.string_types):
+            logger.warn("The role must be list of strings, not '%s'", roles)
+            roles = [roles]
+
+        if isinstance(roles, (list, tuple)):
             result = set()
             for role in roles:
                 pattern = NameMatchingPolicy.create(role)
                 for node_role, nodes_ids in six.iteritems(self.__mapping):
                     if pattern.match(node_role):
                         result.update(nodes_ids)
-            result = list(result)
         else:
             # TODO(fix using wrong format for roles in tasks.yaml)
             # After it will be allowed to raise exception here
@@ -107,7 +109,9 @@ class RoleResolver(BaseRoleResolver):
         # for example if need only one any controller.
         # to distribute load select first node from pool
         if result and policy == consts.NODE_RESOLVE_POLICY.any:
-            result = result[0:1]
+            result = [next(result)]
+        else:
+            result = list(result)
 
         logger.debug(
             "Role '%s' and policy '%s' was resolved to: %s",

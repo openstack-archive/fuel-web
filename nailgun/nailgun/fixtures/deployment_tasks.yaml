@@ -147,14 +147,17 @@
 
 - id: upload_nodes_info
   type: upload_file
-  role: '*'
+  role: ['/.*/']
   requires: [post_deployment_start]
   parameters:
     path: /etc/hiera/nodes.yaml
+    data:
+      generator: from_deployment_info
+      generator_args: nodes
 
 - id: update_hosts
   type: puppet
-  role: '*'
+  role: ['/.*/']
   required_for: [post_deployment_end]
   requires: [upload_nodes_info]
   parameters:
@@ -188,9 +191,12 @@
 - id: upload_configuration
   type: upload_file
   version: 2.0.0
-  role: '*'
+  role: ['/.*/']
   requires: [pre_deployment_start]
   required_for: [pre_deployment_end]
   parameters:
     timeout: 180
+    data:
+      generator: from_deployment_info
+      generator_args: configs
   refresh_on: ['*']

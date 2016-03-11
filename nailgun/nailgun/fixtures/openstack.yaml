@@ -930,7 +930,7 @@
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
           murano_glance_artifacts_plugin:
-            value: false
+            value: true
             label: "Enable glance artifact repository"
             description: "If selected glance artifact repository will be enabled"
             weight: 40
@@ -938,8 +938,6 @@
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
                 message: "Murano should be enabled"
-              - condition: "not ('experimental' in version:feature_groups)"
-                action: "hide"
           heat:
             value: true
             label: ""

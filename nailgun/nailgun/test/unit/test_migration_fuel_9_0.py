@@ -773,3 +773,26 @@ WHERE plugins.id
             result.pop('deployment_graph_id', None)
             results.append(result)
         self._compare_tasks(JSON_TASKS_AFTER_DB, results)
+
+
+class TestTasksMigration(base.BaseAlembicMigrationTest):
+
+    def test_deployment_info_field_exist(self):
+        result = db.execute(
+            sa.select([self.meta.tables['tasks'].c.deployment_info])
+        )
+        self.assertIsNone(result.scalar())
+
+    def test_deleted_at_field_exist(self):
+        result = db.execute(
+            sa.select([self.meta.tables['tasks'].c.deleted_at])
+        )
+        self.assertIsNone(result.scalar())
+
+    def text_cluster_name_index_exists(self):
+        cluster_name_idx = next(
+            (i for i in self.meta.tables['tasks'].indexexes
+             if i.name == 'cluster_name_idx'),
+            None
+        )
+        self.assertIsNotNone(cluster_name_idx)

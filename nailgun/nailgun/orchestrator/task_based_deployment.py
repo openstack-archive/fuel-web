@@ -396,6 +396,9 @@ class TaskEvents(object):
 class TasksSerializer(object):
     """The deploy tasks serializer."""
 
+    # TODO(bgaifullin) get rid of code duplication
+    # inherit from lcm.transaction_serializer
+
     def __init__(self, cluster, nodes,
                  affected_nodes=None, task_ids=None, events=None):
         """Initializes.

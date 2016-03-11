@@ -12,11 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# TODO(eli): All extension specific tests will be moved
-# into extension directory.
-# Will be done as a part of blueprint:
-# https://blueprints.launchpad.net/fuel/+spec/volume-manager-refactoring
-
 import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa

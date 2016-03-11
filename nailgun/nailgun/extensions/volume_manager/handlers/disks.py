@@ -19,6 +19,7 @@ Handlers dealing with disks
 """
 
 from ..manager import DisksFormatConvertor
+from ..manager import VolumeManager
 from ..validators.disks import NodeDisksValidator
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
@@ -84,7 +85,7 @@ class NodeDefaultsDisksHandler(BaseHandler):
         node = self.get_object_or_404(objects.Node, node_id)
 
         volumes = DisksFormatConvertor.format_disks_to_simple(
-            node.volume_manager.gen_volumes_info())
+            VolumeManager(node).gen_volumes_info())
 
         return volumes
 

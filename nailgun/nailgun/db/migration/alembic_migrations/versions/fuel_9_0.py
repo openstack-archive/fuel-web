@@ -86,6 +86,45 @@ node_errors_new = (
     'stop_deployment',
 )
 
+bond_modes_old = (
+    # same for both OVS and linux
+    'active-backup',
+    # OVS modes
+    'balance-slb',
+    'lacp-balance-tcp',
+    # linux modes
+    'balance-rr',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
+)
+
+bond_modes_new = (
+    # same for both OVS and linux
+    'active-backup',
+    # OVS modes
+    'balance-slb',
+    'balance-tcp',
+    'lacp-balance-tcp',
+    # linux modes
+    'balance-rr',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
+)
+
+ovs_bond_properties = {
+    'mode': [{'values': ['active-backup', 'balance-slb', 'balance-tcp']}],
+    'lacp': [{'values': ['active', 'passive'],
+              'for_modes': ['balance-tcp']}],
+    'lacp_rate': [{'values': ['slow', 'fast'],
+                   'for_modes': ['balance-tcp']}]
+}
+
 
 def upgrade():
     add_foreign_key_ondelete()
@@ -99,9 +138,11 @@ def upgrade():
     drop_legacy_patching()
     upgrade_node_status_attributes()
     upgrade_node_stop_deployment_error_type()
+    add_ovs_bond_properties()
 
 
 def downgrade():
+    remove_ovs_bond_properties()
     downgrade_node_stop_deployment_error_type()
     downgrade_node_status_attributes()
     restore_legacy_patching()
@@ -112,6 +153,76 @@ def downgrade():
     downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
+
+
+def add_ovs_bond_properties():
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_old,             # new options
+        bond_modes_new,             # old options
+    )
+    connection = op.get_bind()
+
+    select = sa.sql.text(
+        "SELECT id, networks_metadata from releases")
+    update = sa.sql.text(
+        """UPDATE releases
+        SET networks_metadata = :networks
+        WHERE id = :id""")
+    releases = connection.execute(select)
+
+    for release_id, networks_db_meta in releases:
+        if not networks_db_meta:
+            continue
+
+        networks_meta = jsonutils.loads(networks_db_meta)
+        if 'bonding' not in networks_meta:
+            continue
+
+        db_bond_meta = networks_meta['bonding']['properties']
+        db_bond_meta.update({"ovs": ovs_bond_properties})
+        connection.execute(
+            update,
+            id=release_id,
+            networks=jsonutils.dumps(networks_meta)
+        )
+
+
+def remove_ovs_bond_properties():
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_new,             # new options
+        bond_modes_old,             # old options
+    )
+    connection = op.get_bind()
+
+    select = sa.sql.text(
+        "SELECT id, networks_metadata from releases")
+    update = sa.sql.text(
+        """UPDATE releases
+        SET networks_metadata = :networks
+        WHERE id = :id""")
+    releases = connection.execute(select)
+
+    for release_id, networks_db_meta in releases:
+        if not networks_db_meta:
+            continue
+
+        networks_meta = jsonutils.loads(networks_db_meta)
+        if 'bonding' not in networks_meta:
+            continue
+
+        db_bond_meta = networks_meta['bonding']['properties']
+        db_bond_meta.pop("ovs", {})
+        connection.execute(
+            update,
+            id=release_id,
+            networks=jsonutils.dumps(networks_meta)
+        )
 
 
 def remove_foreign_key_ondelete():

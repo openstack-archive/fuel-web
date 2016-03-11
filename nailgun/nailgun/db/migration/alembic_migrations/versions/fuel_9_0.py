@@ -95,6 +95,54 @@ node_errors_new = (
     'stop_deployment',
 )
 
+bond_modes_old = (
+    # same for both OVS and linux
+    'active-backup',
+    # OVS modes
+    'balance-slb',
+    'lacp-balance-tcp',
+    # linux modes
+    'balance-rr',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
+)
+
+bond_modes_new = (
+    # same for both OVS and linux
+    'active-backup',
+    # OVS modes
+    'balance-slb',
+    'balance-tcp',
+    'lacp-balance-tcp',
+    # linux modes
+    'balance-rr',
+    'balance-xor',
+    'broadcast',
+    '802.3ad',
+    'balance-tlb',
+    'balance-alb',
+)
+
+bond_properties_old = (
+    'mode',
+    'xmit_hash_policy',
+    'lacp_rate',
+    # not for orchestrator input
+    'type__'
+)
+
+bond_properties_new = (
+    'mode',
+    'xmit_hash_policy',
+    'lacp_rate',
+    'lacp',
+    # not for orchestrator input
+    'type__'
+)
+
 
 def upgrade():
     add_foreign_key_ondelete()
@@ -109,9 +157,11 @@ def upgrade():
     upgrade_node_status_attributes()
     upgrade_neutron_l23_providers()
     upgrade_node_stop_deployment_error_type()
+    upgrade_bond_modes()
 
 
 def downgrade():
+    downgrade_bond_modes()
     downgrade_node_stop_deployment_error_type()
     downgrade_neutron_l23_providers()
     downgrade_node_status_attributes()
@@ -123,6 +173,26 @@ def downgrade():
     downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
+
+
+def upgrade_bond_modes():
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_old,             # old options
+        bond_modes_new,             # new options
+    )
+
+
+def downgrade_bond_modes():
+    upgrade_enum(
+        'node_bond_interfaces',     # table
+        'mode',                     # column
+        'bond_mode',                # ENUM name
+        bond_modes_new,             # old options
+        bond_modes_old,             # new options
+    )
 
 
 def remove_foreign_key_ondelete():

@@ -1405,12 +1405,13 @@ def upgrade_ceph_cluster_attrs():
 
     for cluster_id, editable in connection.execute(q_get_cluster_attrs):
         editable = jsonutils.loads(editable)
-        editable['storage'].update(ceph_storage_attrs)
-        connection.execute(
-            q_update_cluster_attrs,
-            cluster_id=cluster_id,
-            editable=jsonutils.dumps(editable)
-        )
+        if editable.get('storage'):
+            editable['storage'].update(ceph_storage_attrs)
+            connection.execute(
+                q_update_cluster_attrs,
+                cluster_id=cluster_id,
+                editable=jsonutils.dumps(editable)
+            )
 
 
 def downgrade_ceph_cluster_attrs():
@@ -1419,7 +1420,8 @@ def downgrade_ceph_cluster_attrs():
     for cluster_id, editable in connection.execute(q_get_cluster_attrs):
         editable = jsonutils.loads(editable)
         for ceph_attr in ceph_storage_attrs:
-            editable['storage'].pop(ceph_attr, None)
+            if editable.get('storage'):
+                editable['storage'].pop(ceph_attr, None)
         connection.execute(
             q_update_cluster_attrs,
             cluster_id=cluster_id,

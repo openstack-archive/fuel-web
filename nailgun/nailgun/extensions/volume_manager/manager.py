@@ -223,7 +223,7 @@ class DisksFormatConvertor(object):
     @classmethod
     def format_disks_to_full(cls, node, disks):
         """Convert disks from simple format to full format."""
-        volume_manager = node.volume_manager
+        volume_manager = VolumeManager(node)
         for disk in disks:
             for volume in disk['volumes']:
                 volume_manager.set_volume_size(disk['id'],
@@ -326,7 +326,7 @@ class DisksFormatConvertor(object):
         volumes_info = []
         for space in get_node_spaces(node):
             # Here we calculate min_size of nodes
-            min_size = node.volume_manager.expand_generators(
+            min_size = VolumeManager(node).expand_generators(
                 space)['min_size']
 
             volumes_info.append({
@@ -592,9 +592,10 @@ class VolumeManager(object):
         self.node_name = node.name
 
         # Make sure that we don't change volumes directly from manager
-        from .extension import VolumeManagerExtension
+        from .objects.volumes import VolumeObject
+
         self.volumes = deepcopy(
-            VolumeManagerExtension.get_node_volumes(node)) or []
+            VolumeObject.get_volumes(node)) or []
         # For swap calculation
         self.ram = node.ram
         self.allowed_volumes = node.get_node_spaces()

@@ -36,6 +36,7 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun.extensions import fire_callback_on_before_deployment_check
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
 from nailgun.network.manager import NetworkManager
@@ -548,8 +549,8 @@ class DeletionTask(object):
 
         # check if there's a Zabbix server in an environment
         # and if there is, remove hosts
-        if (task.name != consts.TASK_NAMES.cluster_deletion
-                and ZabbixManager.get_zabbix_node(task.cluster)):
+        if (task.name != consts.TASK_NAMES.cluster_deletion and
+                ZabbixManager.get_zabbix_node(task.cluster)):
             zabbix_credentials = ZabbixManager.get_zabbix_credentials(
                 task.cluster
             )
@@ -1182,10 +1183,10 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def execute(cls, task):
+        fire_callback_on_before_deployment_check(task.cluster)
+
         cls._check_nodes_are_online(task)
-        cls._check_disks(task)
         cls._check_ceph(task)
-        cls._check_volumes(task)
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
         cls._validate_network_template(task)
@@ -1218,30 +1219,6 @@ class CheckBeforeDeploymentTask(object):
                 'and try again.'.format(node_names))
 
     @classmethod
-    def _check_disks(cls, task):
-        try:
-            for node in task.cluster.nodes:
-                if cls._is_disk_checking_required(node):
-                    node.volume_manager.check_disk_space_for_deployment()
-        except errors.NotEnoughFreeSpace:
-            raise errors.NotEnoughFreeSpace(
-                u"Node '{0}' has insufficient disk space".format(
-                    node.human_readable_name
-                )
-            )
-
-    @classmethod
-    def _check_volumes(cls, task):
-        try:
-            for node in task.cluster.nodes:
-                if cls._is_disk_checking_required(node):
-                    node.volume_manager.check_volume_sizes_for_deployment()
-        except errors.NotEnoughFreeSpace as e:
-            raise errors.NotEnoughFreeSpace(
-                u"Node '%s' has insufficient disk space\n%s" % (
-                    node.human_readable_name, e.message))
-
-    @classmethod
     def _check_ceph(cls, task):
         storage = objects.Attributes.merged_attrs(
             task.cluster.attributes
@@ -1252,15 +1229,6 @@ class CheckBeforeDeploymentTask(object):
                storage[option]['value'] is True:
                 cls._check_ceph_osds(task)
                 return
-
-    @classmethod
-    def _is_disk_checking_required(cls, node):
-        """Disk checking required in case if node is not provisioned."""
-        if node.status in ('ready', 'deploying', 'provisioned') or \
-           (node.status == 'error' and node.error_type != 'provision'):
-            return False
-
-        return True
 
     @classmethod
     def _check_ceph_osds(cls, task):
@@ -1322,15 +1290,19 @@ class CheckBeforeDeploymentTask(object):
         """Check for mongo nodes presence in env with external mongo."""
         components = objects.Attributes.merged_attrs(
             task.cluster.attributes).get("additional_components", None)
-        if (components and components["ceilometer"]["value"]
-            and components["mongo"]["value"]
-                and len(objects.Cluster.get_nodes_by_role(
-                        task.cluster, 'mongo')) > 0):
+
+        if (components and components["ceilometer"]["value"] and
+                components["mongo"]["value"] and
+                len(objects.Cluster.get_nodes_by_role(
+                    task.cluster, 'mongo')) > 0):
+
                     raise errors.ExtMongoCheckerError
-        if (components and components["ceilometer"]["value"]
-            and not components["mongo"]["value"]
-                and len(objects.Cluster.get_nodes_by_role(
-                        task.cluster, 'mongo')) == 0):
+
+        if (components and components["ceilometer"]["value"] and not
+                components["mongo"]["value"] and
+                len(objects.Cluster.get_nodes_by_role(
+                    task.cluster, 'mongo')) == 0):
+
                     raise errors.MongoNodesCheckError
 
     @classmethod

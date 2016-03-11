@@ -374,7 +374,9 @@
       bonding:
         availability:
           - linux: "true"
-          - ovs: "false"
+          - ovs: "interface:pxe == false and
+                  'dpdk' in interface:interface_properties and
+                  interface:interface_properties.dpdk.available"
         properties:
           linux:
             mode:
@@ -390,6 +392,9 @@
             lacp_rate:
               - values: ["slow", "fast"]
                 for_modes: ["802.3ad"]
+          ovs:
+            mode:
+              - values: ["active-backup", "balance-slb", "lacp-balance-tcp"]
       nova_network:
         networks:
           - name: "public"

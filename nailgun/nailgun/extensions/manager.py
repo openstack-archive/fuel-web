@@ -108,17 +108,23 @@ def fire_callback_on_cluster_delete(cluster):
         extension.on_cluster_delete(cluster)
 
 
-def fire_callback_on_deployment_data_serialization(data, **kwargs):
-    for pipeline in chain.from_iterable(
-            ext.data_pipelines for ext in get_all_extensions()):
-        data = pipeline.process_deployment(data, **kwargs)
+def _collect_data_pipelines_for_cluster(cluster):
+    extensions = set(cluster.extensions)
+    return chain.from_iterable(e.data_pipelines for e in get_all_extensions()
+                               if e.name in extensions)
+
+
+def fire_callback_on_deployment_data_serialization(data, cluster, nodes,
+                                                   **kwargs):
+    for pipeline in _collect_data_pipelines_for_cluster(cluster):
+        data = pipeline.process_deployment(data, cluster, nodes, **kwargs)
 
     return data
 
 
-def fire_callback_on_provisioning_data_serialization(data, **kwargs):
-    for pipeline in chain.from_iterable(
-            ext.data_pipelines for ext in get_all_extensions()):
-        data = pipeline.process_provisioning(data, **kwargs)
+def fire_callback_on_provisioning_data_serialization(data, cluster, nodes,
+                                                     **kwargs):
+    for pipeline in _collect_data_pipelines_for_cluster(cluster):
+        data = pipeline.process_provisioning(data, cluster, nodes, **kwargs)
 
     return data

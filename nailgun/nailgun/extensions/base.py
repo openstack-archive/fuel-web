@@ -24,7 +24,7 @@ import six
 class BasePipeline(object):
 
     @classmethod
-    def process_deployment(cls, deployment_data, **kwargs):
+    def process_deployment(cls, deployment_data, cluster, nodes, **kwargs):
         """Change the deployment_data.
 
         :param deployment_data: serialized data
@@ -32,7 +32,7 @@ class BasePipeline(object):
         return deployment_data
 
     @classmethod
-    def process_provisioning(cls, provisioning_data, **kwargs):
+    def process_provisioning(cls, provisioning_data, cluster, nodes, **kwargs):
         """Change the provisioning_data.
 
         :param provisioning_data: serialized data

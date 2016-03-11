@@ -127,7 +127,7 @@ class InstallationInfo(object):
                       'murano', None),
         WhiteListRule(('additional_components', 'murano-cfapi', 'value'),
                       'murano-cfapi', None),
-        WhiteListRule(('additional_components',
+        WhiteListRule(('murano_settings',
                        'murano_glance_artifacts_plugin', 'value'),
                       'murano_glance_artifacts_plugin', None),
         WhiteListRule(('additional_components', 'heat', 'value'),
@@ -148,7 +148,7 @@ class InstallationInfo(object):
                       'public_ssl_services', None),
         WhiteListRule(('public_ssl', 'cert_source', 'value'),
                       'public_ssl_cert_source', None),
-    )
+    )∆
 
     vmware_attributes_white_list = (
         # ((path, to, property), 'map_to_name', transform_function)

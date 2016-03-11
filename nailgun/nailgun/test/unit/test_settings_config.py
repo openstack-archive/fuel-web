@@ -22,7 +22,7 @@ from nailgun.settings import settings
 from nailgun.test import base
 
 
-class TestSettings(base.BaseTestCase):
+class TestSettings(base.BaseUnitTest):
 
     def test_log_format_remote_openstack(self):
         syslog_w_app = (

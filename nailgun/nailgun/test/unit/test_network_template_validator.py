@@ -15,14 +15,13 @@
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.network import NetworkTemplateValidator
-from nailgun.test.base import BaseValidatorTest
+from nailgun.test import base
 
 
-class BaseNetworkTemplateValidatorTest(BaseValidatorTest):
+class BaseNetworkTemplateValidatorTest(base.BaseValidatorUnitTest):
     validator = NetworkTemplateValidator.validate
 
     def setUp(self):
-        super(BaseValidatorTest, self).setUp()
         self.nt = {
             "adv_net_template": {
                 "node_group_1": {

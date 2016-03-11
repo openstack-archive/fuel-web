@@ -19,14 +19,14 @@ import mock
 from nailgun.api.v1.urls import get_all_urls
 from nailgun.api.v1.urls import get_extensions_urls
 
-from nailgun.test.base import BaseTestCase
+from nailgun.test import base
 
 
 class FakeHandler(object):
     pass
 
 
-class TestUrls(BaseTestCase):
+class TestUrls(base.BaseUnitTest):
 
     @mock.patch('nailgun.api.v1.urls.get_extensions_urls')
     @mock.patch('nailgun.api.v1.urls.get_feature_groups_urls')

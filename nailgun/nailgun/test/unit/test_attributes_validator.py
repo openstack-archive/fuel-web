@@ -24,7 +24,7 @@ from nailgun.errors import errors
 from nailgun.test import base as base_test
 
 
-class TestClusterAttributesValidator(base_test.BaseTestCase):
+class TestClusterAttributesValidator(base_test.BaseUnitTest):
     def test_generated_attributes_validation(self):
         self.assertRaises(
             errors.InvalidData,
@@ -102,7 +102,7 @@ class TestClusterAttributesValidator(base_test.BaseTestCase):
                 yaml.load(attributes))
 
 
-class TestBasicAttributesValidator(base_test.BaseTestCase):
+class TestBasicAttributesValidator(base_test.BaseUnitTest):
     def test_missing_type(self):
         attrs = '''
             storage:

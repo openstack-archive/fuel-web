@@ -16,10 +16,10 @@ from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import role
 from nailgun.api.v1.validators.role import RoleValidator
 from nailgun.errors import errors
-from nailgun.test.base import BaseUnitTest
+from nailgun.test import base
 
 
-class TestRoleVolumeAllocationsValidationBySchema(BaseUnitTest):
+class TestRoleVolumeAllocationsValidationBySchema(base.BaseValidatorUnitTest):
     invalid_data = [1, 'some_string', dict(), list()]
     ids = ['os', 'image', 'vm', 'cinder', 'ceph', 'cephjournal', 'mongo']
     allocation_sizes = ['all', 'min', 'full-disk']

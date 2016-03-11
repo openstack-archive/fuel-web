@@ -16,7 +16,7 @@
 
 import copy
 
-from nailgun.test.base import BaseTestCase
+from nailgun.test import base
 from nailgun.utils.migration import negate_condition
 from nailgun.utils.migration import remove_question_operator
 from nailgun.utils.migration import upgrade_attributes_metadata_6_0_to_6_1
@@ -28,7 +28,7 @@ from nailgun.utils.migration import upgrade_role_limits_6_0_to_6_1
 from nailgun.utils.migration import upgrade_role_restrictions_6_0_to_6_1
 
 
-class TestDataMigration(BaseTestCase):
+class TestDataMigration(base.BaseUnitTest):
     def test_release_attributes_metadata_upgrade_50_to_51(self):
         attributes_metadata_50 = {
             'editable': {

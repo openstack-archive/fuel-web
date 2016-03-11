@@ -20,11 +20,11 @@ from mock import Mock
 from mock import patch
 
 from nailgun.errors import errors
-from nailgun.test.base import BaseTestCase
+from nailgun.test import base
 from nailgun.utils.zabbix import ZabbixManager
 
 
-class TestZabbixManager(BaseTestCase):
+class TestZabbixManager(base.BaseUnitTest):
 
     @patch('nailgun.utils.zabbix.urllib2.urlopen')
     def test_error_zabbix_request(self, mock_urlopen):

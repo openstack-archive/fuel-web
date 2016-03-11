@@ -1324,33 +1324,7 @@ class EnvironmentManager(object):
         return plugin
 
 
-class BaseTestCase(TestCase):
-
-    fixtures = ['admin_network', 'master_node_settings']
-
-    def __init__(self, *args, **kwargs):
-        super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.default_headers = {
-            "Content-Type": "application/json"
-        }
-
-    @classmethod
-    def setUpClass(cls):
-        cls.app = app.TestApp(
-            build_app(db_driver=test_db_driver).wsgifunc(
-                ConnectionMonitorMiddleware)
-        )
-        syncdb()
-
-    def setUp(self):
-        self.db = db
-        flush()
-        self.env = EnvironmentManager(app=self.app, session=self.db)
-        self.env.upload_fixtures(self.fixtures)
-
-    def tearDown(self):
-        self.db.remove()
-
+class BaseUnitTest(TestCase):
     def assertNotRaises(self, exception, method, *args, **kwargs):
         try:
             method(*args, **kwargs)
@@ -1426,6 +1400,34 @@ class BaseTestCase(TestCase):
                 newpath.pop()
 
 
+class BaseTestCase(BaseUnitTest):
+
+    fixtures = ['admin_network', 'master_node_settings']
+
+    def __init__(self, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.default_headers = {
+            "Content-Type": "application/json"
+        }
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = app.TestApp(
+            build_app(db_driver=test_db_driver).wsgifunc(
+                ConnectionMonitorMiddleware)
+        )
+        syncdb()
+
+    def setUp(self):
+        self.db = db
+        flush()
+        self.env = EnvironmentManager(app=self.app, session=self.db)
+        self.env.upload_fixtures(self.fixtures)
+
+    def tearDown(self):
+        self.db.remove()
+
+
 class BaseIntegrationTest(BaseTestCase):
 
     def tearDown(self):
@@ -1483,10 +1485,6 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
         )
 
         return resp.json['access']['token']['id'].encode('utf-8')
-
-
-class BaseUnitTest(TestCase):
-    pass
 
 
 def fake_tasks(fake_rpc=True,
@@ -1684,7 +1682,7 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
         self.set_sending_stats(False)
 
 
-class BaseValidatorTest(BaseTestCase):
+class ValidatorTestMixin(object):
     """JSON-schema validation policy:
 
        1) All required properties are present;
@@ -1834,3 +1832,11 @@ class BaseValidatorTest(BaseTestCase):
         self.assertIn(
             "{0} does not match".format(stringified_values),
             context.exception.message)
+
+
+class BaseValidatorUnitTest(ValidatorTestMixin, BaseUnitTest):
+    pass
+
+
+class BaseValidatorTest(ValidatorTestMixin, BaseTestCase):
+    pass

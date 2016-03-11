@@ -16,14 +16,13 @@
 
 import mock
 
-from unittest2.case import TestCase
-
 from nailgun.network.template import NetworkTemplate
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
+from nailgun.test import base
 
 
-class TestNetworkTemplate(TestCase):
+class TestNetworkTemplate(base.BaseUnitTest):
     def test_simple_substitution(self):
         template = NetworkTemplate("a: <%a%>, b: <%b%>")
         substituted_string = template.safe_substitute(a='aaa', b='bbb')

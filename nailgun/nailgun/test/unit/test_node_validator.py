@@ -21,7 +21,7 @@ from nailgun.errors import errors
 from nailgun.test import base
 
 
-class TestNodeJsonSchemaValidation(base.BaseValidatorTest):
+class TestNodeJsonSchemaValidation(base.BaseValidatorUnitTest):
 
     validator = node.NodeValidator.validate_schema
 

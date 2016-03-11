@@ -25,11 +25,11 @@ from nailgun.errors import errors
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
 from nailgun.task import task
-from nailgun.test.base import BaseTestCase
+from nailgun.test import base
 from nailgun.utils import reverse
 
 
-class TestClusterDeletionTask(BaseTestCase):
+class TestClusterDeletionTask(base.BaseTestCase):
 
     def create_cluster_and_execute_deletion_task(
             self, attributes=None, os=consts.RELEASE_OS.centos):
@@ -93,7 +93,7 @@ class TestClusterDeletionTask(BaseTestCase):
             mock.ANY, fake_attrs['provision']['image_data'])
 
 
-class TestDeleteIBPImagesTask(BaseTestCase):
+class TestDeleteIBPImagesTask(base.BaseUnitTest):
 
     @mock.patch('nailgun.task.task.settings')
     @mock.patch('nailgun.task.task.make_astute_message')
@@ -130,7 +130,7 @@ class TestDeleteIBPImagesTask(BaseTestCase):
         self.assertIn('/fake/path/fake.yaml', rm_cmd)
 
 
-class TestHelperUpdateClusterStatus(BaseTestCase):
+class TestHelperUpdateClusterStatus(base.BaseTestCase):
 
     def setUp(self):
         super(TestHelperUpdateClusterStatus, self).setUp()
@@ -277,7 +277,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             self.assertEqual(self.cluster.status, 'new')
 
 
-class TestCheckBeforeDeploymentTask(BaseTestCase):
+class TestCheckBeforeDeploymentTask(base.BaseTestCase):
 
     def setUp(self):
         super(TestCheckBeforeDeploymentTask, self).setUp()
@@ -674,7 +674,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             task.CheckBeforeDeploymentTask._check_vmware_consistency(self.task)
 
 
-class TestDeployTask(BaseTestCase):
+class TestDeployTask(base.BaseTestCase):
 
     def create_deploy_tasks(self):
         self.env.create()

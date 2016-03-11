@@ -18,7 +18,7 @@ import copy
 from nailgun.test import base
 
 
-class TestDataDiff(base.BaseTestCase):
+class TestDataDiff(base.BaseUnitTest):
     def setUp(self):
         super(TestDataDiff, self).setUp()
 

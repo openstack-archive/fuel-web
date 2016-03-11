@@ -80,7 +80,7 @@ DATA = """
 """
 
 
-class TestRestriction(base.BaseTestCase):
+class TestRestriction(base.BaseUnitTest):
 
     def setUp(self):
         super(TestRestriction, self).setUp()

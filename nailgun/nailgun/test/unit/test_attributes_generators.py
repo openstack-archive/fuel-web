@@ -18,7 +18,7 @@ import mock
 import string
 import struct
 
-from nailgun.test.base import BaseTestCase
+from nailgun.test import base
 from nailgun.utils import AttributesGenerator
 
 
@@ -26,7 +26,7 @@ def fake_urandom(length):
     return 'f' * length
 
 
-class TestAttributesGenerators(BaseTestCase):
+class TestAttributesGenerators(base.BaseUnitTest):
 
     def is_hex(self, val):
         return all(c in string.hexdigits for c in val)

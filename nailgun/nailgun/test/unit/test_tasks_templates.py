@@ -29,7 +29,7 @@ from nailgun.orchestrator import tasks_templates
 from nailgun.settings import settings
 
 
-class TestMakeTask(base.BaseTestCase):
+class TestMakeTask(base.BaseUnitTest):
 
     def test_make_ubuntu_sources_task(self):
         result = tasks_templates.make_ubuntu_sources_task(
@@ -287,7 +287,7 @@ class TestMakeTask(base.BaseTestCase):
                 }})
 
 
-class TestMakeUbuntuPreferencesTask(base.BaseTestCase):
+class TestMakeUbuntuPreferencesTask(base.BaseUnitTest):
 
     _fake_debian_release = '''
       Origin: TestOrigin

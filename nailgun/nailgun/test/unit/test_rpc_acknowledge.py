@@ -21,7 +21,7 @@ from nailgun.rpc import receiverd
 from nailgun.test import base
 
 
-class TestRpcAcknowledge(base.BaseTestCase):
+class TestRpcAcknowledge(base.BaseUnitTest):
 
     def setUp(self):
         super(TestRpcAcknowledge, self).setUp()

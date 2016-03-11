@@ -129,7 +129,7 @@ SUBTASKS_WITH_REGEXP = """
 """
 
 
-class TestGraphDependencies(base.BaseTestCase):
+class TestGraphDependencies(base.BaseUnitTest):
 
     def setUp(self):
         super(TestGraphDependencies, self).setUp()
@@ -162,7 +162,7 @@ class TestGraphDependencies(base.BaseTestCase):
             ['setup_network', 'install_controller'])
 
 
-class TestUpdateGraphDependencies(base.BaseTestCase):
+class TestUpdateGraphDependencies(base.BaseUnitTest):
 
     def setUp(self):
         super(TestUpdateGraphDependencies, self).setUp()
@@ -196,7 +196,7 @@ class TestUpdateGraphDependencies(base.BaseTestCase):
             {'deploy_end': {}, 'controller': {}})
 
 
-class TestAddDependenciesToNodes(base.BaseTestCase):
+class TestAddDependenciesToNodes(base.BaseUnitTest):
 
     def setUp(self):
         super(TestAddDependenciesToNodes, self).setUp()
@@ -268,7 +268,7 @@ class TestAddDependenciesToNodes(base.BaseTestCase):
         self.assertItemsEqual(uid_4_priorities, [300, 400])
 
 
-class TestLegacyGraphSerialized(base.BaseTestCase):
+class TestLegacyGraphSerialized(base.BaseUnitTest):
 
     def setUp(self):
         super(TestLegacyGraphSerialized, self).setUp()
@@ -304,7 +304,7 @@ class TestLegacyGraphSerialized(base.BaseTestCase):
             set(['compute', 'cinder', 'ceph-osd']))
 
 
-class TestTasksRemoval(base.BaseTestCase):
+class TestTasksRemoval(base.BaseUnitTest):
 
     def setUp(self):
         super(TestTasksRemoval, self).setUp()
@@ -328,7 +328,7 @@ class TestTasksRemoval(base.BaseTestCase):
             [t['id'] for t in tasks], ['setup_network', 'install_controller'])
 
 
-class GroupsTraversalTest(base.BaseTestCase):
+class GroupsTraversalTest(base.BaseUnitTest):
 
     GROUPS = ""
 
@@ -547,7 +547,7 @@ COMPLEX_DEPENDENCIES = """
 """
 
 
-class TestFindGraph(base.BaseTestCase):
+class TestFindGraph(base.BaseUnitTest):
 
     def setUp(self):
         super(TestFindGraph, self).setUp()
@@ -687,7 +687,7 @@ class TestFindGraph(base.BaseTestCase):
             ['task_a', 'task_d'])
 
 
-class TestOrdered(base.BaseTestCase):
+class TestOrdered(base.BaseUnitTest):
 
     TASKS = """
     - id: a
@@ -716,7 +716,7 @@ class TestOrdered(base.BaseTestCase):
             ['a', 'b', 'c', 'd', 'e', 'f'])
 
 
-class TestIncludeSkipped(base.BaseTestCase):
+class TestIncludeSkipped(base.BaseUnitTest):
 
     TASKS = """
     - id: a
@@ -757,7 +757,7 @@ class TestIncludeSkipped(base.BaseTestCase):
             [t['id'] for t in self.tasks])
 
 
-class TestDeploymentGraphValidator(base.BaseTestCase):
+class TestDeploymentGraphValidator(base.BaseUnitTest):
 
     def test_validation_pass_with_existing_dependencies(self):
         yaml_tasks = """

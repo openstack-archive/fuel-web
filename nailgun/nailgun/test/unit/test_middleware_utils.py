@@ -15,12 +15,11 @@
 import re
 import six
 
-from nailgun.test.base import TestCase
-
 from nailgun.middleware import utils
+from nailgun.test import base
 
 
-class TestUtils(TestCase):
+class TestUtils(base.BaseUnitTest):
 
     def test_get_body_from_env(self):
         expected_body = "Hi! I'm test body"

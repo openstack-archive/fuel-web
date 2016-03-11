@@ -17,10 +17,10 @@
 from mock import Mock
 from mock import patch
 from nailgun.orchestrator.stages import stage_serialize
-from nailgun.test.base import BaseTestCase
+from nailgun.test import base
 
 
-class TestStages(BaseTestCase):
+class TestStages(base.BaseUnitTest):
     @patch('nailgun.orchestrator.priority_serializers.PriorityStrategy.'
            'one_by_one')
     def test_stage_serialize(self, m_one_by_one):

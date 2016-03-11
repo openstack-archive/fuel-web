@@ -18,11 +18,10 @@ import mock
 
 from nailgun import consts
 from nailgun.orchestrator import task_based_deployment
-from nailgun.test.base import BaseTestCase
-from nailgun.test.base import BaseUnitTest
+from nailgun.test import base
 
 
-class TestTaskSerializers(BaseTestCase):
+class TestTaskSerializers(base.BaseTestCase):
     def setUp(self):
         super(TestTaskSerializers, self).setUp()
         self.env.create(
@@ -465,7 +464,7 @@ class TestTaskSerializers(BaseTestCase):
         )
 
 
-class TestNoopSerializer(BaseTestCase):
+class TestNoopSerializer(base.BaseTestCase):
     def setUp(self):
         super(TestNoopSerializer, self).setUp()
         self.env.create(
@@ -510,7 +509,7 @@ class TestNoopSerializer(BaseTestCase):
         )
 
 
-class TestDeploymentTaskSerializer(BaseUnitTest):
+class TestDeploymentTaskSerializer(base.BaseUnitTest):
     def make_task(self, task_id, **kwargs):
         task = kwargs
         task.setdefault('type', 'puppet')
@@ -563,7 +562,7 @@ class TestDeploymentTaskSerializer(BaseUnitTest):
         )
 
 
-class TestTaskProcessor(BaseTestCase):
+class TestTaskProcessor(base.BaseUnitTest):
     def setUp(self):
         super(TestTaskProcessor, self).setUp()
         self.processor = task_based_deployment.TaskProcessor()

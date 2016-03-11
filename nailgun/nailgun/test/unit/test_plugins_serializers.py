@@ -28,7 +28,7 @@ from nailgun.test import base
 from nailgun.utils.role_resolver import NullResolver
 
 
-class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
+class TestBasePluginDeploymentHooksSerializer(base.BaseUnitTest):
 
     def setUp(self):
         super(TestBasePluginDeploymentHooksSerializer, self).setUp()
@@ -135,7 +135,7 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
         self.assertEqual(script_paths, names)
 
 
-class TestTasksDeploymentOrder(base.BaseTestCase):
+class TestTasksDeploymentOrder(base.BaseUnitTest):
 
     def setUp(self):
         super(TestTasksDeploymentOrder, self).setUp()
@@ -198,7 +198,7 @@ class TestTasksDeploymentOrder(base.BaseTestCase):
              'pre_deployment/100'])
 
 
-class TestPluginsDeploymentEnvironment(base.BaseTestCase):
+class TestPluginsDeploymentEnvironment(base.BaseUnitTest):
     def setUp(self):
         super(TestPluginsDeploymentEnvironment, self).setUp()
         self.cluster = mock.Mock()

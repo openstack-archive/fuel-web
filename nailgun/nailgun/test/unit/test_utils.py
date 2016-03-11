@@ -34,7 +34,7 @@ from nailgun.utils.debian import parse_release_file
 from nailgun.utils.fake_generator import FakeNodesGenerator
 
 
-class TestUtils(base.BaseIntegrationTest):
+class TestUtils(base.BaseUnitTest):
     def test_dict_merge(self):
         custom = {"coord": [10, 10],
                   "pass": "qwerty",

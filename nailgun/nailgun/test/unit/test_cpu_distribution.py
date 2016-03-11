@@ -20,7 +20,7 @@ from nailgun.policy import cpu_distribution
 from nailgun.test import base
 
 
-class TestCpuDistributor(base.BaseTestCase):
+class TestCpuDistributor(base.BaseUnitTest):
 
     def test_cpu_distributor(self):
         component = {'name': 'test_name',
@@ -61,7 +61,7 @@ class TestCpuDistributor(base.BaseTestCase):
         self.assertEqual(3, distributor.required)
 
 
-class TestGroupCpuDistributor(base.BaseTestCase):
+class TestGroupCpuDistributor(base.BaseUnitTest):
 
     def _create_group_distributor(self, *required_cpus):
         components = []
@@ -97,7 +97,7 @@ class TestGroupCpuDistributor(base.BaseTestCase):
         self.assertEquals(expected, result)
 
 
-class TestDistributeNodeCPUs(base.BaseTestCase):
+class TestDistributeNodeCPUs(base.BaseUnitTest):
 
     def test_many_cpus_required(self):
         numa_nodes = [

@@ -22,7 +22,6 @@ import yaml
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
-from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
 from nailgun.task import task
 from nailgun.test.base import BaseTestCase
@@ -330,38 +329,6 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.set_node_error_type('deploy')
         self.assertFalse(self.is_checking_required())
-
-    def test_check_volumes_and_disks_do_not_run_if_node_ready(self):
-        self.set_node_status('ready')
-
-        with mock.patch.object(
-                VolumeManager,
-                'check_disk_space_for_deployment') as check_mock:
-            task.CheckBeforeDeploymentTask._check_disks(self.task)
-            self.assertFalse(check_mock.called)
-
-        with mock.patch.object(
-                VolumeManager,
-                'check_volume_sizes_for_deployment') as check_mock:
-            task.CheckBeforeDeploymentTask._check_volumes(self.task)
-            self.assertFalse(check_mock.called)
-
-    def test_check_volumes_and_disks_run_if_node_not_ready(self):
-        self.set_node_status('discover')
-
-        with mock.patch.object(
-                VolumeManager,
-                'check_disk_space_for_deployment') as check_mock:
-            task.CheckBeforeDeploymentTask._check_disks(self.task)
-
-            self.assertEqual(check_mock.call_count, 1)
-
-        with mock.patch.object(
-                VolumeManager,
-                'check_volume_sizes_for_deployment') as check_mock:
-            task.CheckBeforeDeploymentTask._check_volumes(self.task)
-
-            self.assertEqual(check_mock.call_count, 1)
 
     def test_check_nodes_online_raises_exception(self):
         self.node.online = False

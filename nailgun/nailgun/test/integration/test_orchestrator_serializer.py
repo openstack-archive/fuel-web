@@ -26,6 +26,7 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 from oslo_serialization import jsonutils
+import unittest2
 import yaml
 
 from nailgun import consts
@@ -56,8 +57,6 @@ from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
 
-from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
-from nailgun.extensions.volume_manager import manager
 from nailgun.settings import settings
 from nailgun.test import base
 from nailgun.utils import reverse
@@ -235,10 +234,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(serialized_data['online'], node_db.online)
         self.assertEqual(serialized_data['fqdn'],
                          '%s.%s' % (node_db.hostname, settings.DNS_DOMAIN))
-        self.assertEqual(
-            serialized_data['glance'],
-            {'image_cache_max_size': manager.calc_glance_cache_size(
-                VolumeManagerExtension.get_node_volumes(node_db))})
 
     def test_serialize_node_vms_conf(self):
         node = self.env.create_node(
@@ -2285,15 +2280,8 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
             headers=self.default_headers)
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
-    def test_glance_image_cache_max_size(self):
-        data = self.serialize(self.cluster)
-        self.assertEqual(len(data), 2)
-        # one node - 2 roles
-        self.assertEqual(data[0]['uid'], data[1]['uid'])
-        self.assertEqual(data[0]['glance']['image_cache_max_size'], '0')
-        self.assertEqual(data[1]['glance']['image_cache_max_size'], '0')
 
-
+@unittest2.skip("Should be moved to volume_manager tests")
 class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
 
     env_version = '1111-6.0'
@@ -2573,13 +2561,6 @@ class BaseDeploymentSerializer(base.BaseIntegrationTest):
         self.assertEqual(
             result['cinder']['instances'][0]['vc_password'],
             "secret")
-
-        # check glance parameters
-        self.assertEqual(result['glance']['vc_host'], "1.2.3.4")
-        self.assertEqual(result['glance']['vc_user'], "admin")
-        self.assertEqual(result['glance']['vc_password'], "secret")
-        self.assertEqual(result['glance']['vc_datacenter'], "test_datacenter")
-        self.assertEqual(result['glance']['vc_datastore'], "test_datastore")
 
     def check_no_murano_data(self):
         glance_properties = self.serializer.generate_test_vm_image_data(

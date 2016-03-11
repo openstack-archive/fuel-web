@@ -48,6 +48,7 @@ class TestSerializer90Mixin(object):
     env_version = "liberty-9.0"
 
 
+# NOTE(sbrzeczkowski): this one is skipped in test_orch*_80.py
 class TestBlockDeviceDevicesSerialization90(
     TestSerializer90Mixin,
     TestBlockDeviceDevicesSerialization80

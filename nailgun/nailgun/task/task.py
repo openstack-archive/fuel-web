@@ -16,6 +16,7 @@
 
 import collections
 from copy import deepcopy
+from distutils.version import StrictVersion
 import os
 import socket
 
@@ -38,6 +39,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
+from nailgun import lcm
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
@@ -277,25 +279,52 @@ class DeploymentTask(BaseDeploymentTask):
         """
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
-        logger.debug("start cluster serialization.")
-        serialized_cluster = deployment_serializers.serialize(
+        # TODO(bgaifullin) remove task version check
+        # after related Library changes will be committed
+        # if there is at least one task that is supported LCM, use it.
+        lcm_readiness = StrictVersion(consts.TASK_LCM_READINESS)
+        lcm_ready = (
+            objects.Release.is_lcm_supported(task.cluster.release) and
+            any(StrictVersion(t['version']) >= lcm_readiness
+                for t in deployment_tasks)
+        )
+        deployment_info = deployment_serializers.serialize(
             None, task.cluster, nodes
         )
         logger.debug("finish cluster serialization.")
-        tasks_events = events and \
-            task_based_deployment.TaskEvents('reexecute_on', events)
-
         logger.debug("start tasks serialization.")
-        directory, graph = task_based_deployment.TasksSerializer.serialize(
-            task.cluster, nodes, deployment_tasks, affected_nodes,
-            task_ids, tasks_events
-        )
+        # TODO(bgaifullin) Added condition to check lcm readiness
+        # according to tasks. if there is any task with version >= 2.1.0
+        # that means LCM can be used.
+        if lcm_ready:
+            logger.debug("The LCM serializers will be used.")
+            role_resolver = RoleResolver(
+                objects.Cluster.get_nodes_not_for_deletion(task.cluster)
+            )
+            current_state = objects.Task.get_deployment_info(
+                objects.TaskCollection.get_last_success_run(task)
+            )
+            expected_state = {node['uid']: node for node in deployment_info}
+            context = lcm.TransactionContext(expected_state, current_state)
+            graph = lcm.TransactionSerializer.serialize(
+                context, deployment_tasks, role_resolver
+            )
+            directory = {}
+            deployment_info = {}
+            objects.Task.attach_deployment_info(task, expected_state)
+        else:
+            logger.debug("The legacy task serializers will be used.")
+            tasks_events = events and \
+                task_based_deployment.TaskEvents('reexecute_on', events)
+            directory, graph = task_based_deployment.TasksSerializer.serialize(
+                task.cluster, nodes, deployment_tasks, affected_nodes,
+                task_ids, tasks_events
+            )
         logger.debug("finish tasks serialization.")
         return {
-            "deployment_info": serialized_cluster,
+            "deployment_info": deployment_info,
             "tasks_directory": directory,
             "tasks_graph": graph
-
         }
 
 

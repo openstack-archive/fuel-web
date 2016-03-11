@@ -25,6 +25,8 @@ from nailgun.utils import dict_merge
 from nailgun.utils import flatten
 from nailgun.utils import get_lines
 from nailgun.utils import grouper
+from nailgun.utils import text_format
+from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
 
 from nailgun.utils.debian import get_apt_preferences_line
@@ -152,6 +154,31 @@ class TestTraverse(base.BaseUnitTest):
         self.assertEqual(result, {
             'foo': 'testvalue',
             'bar': 'test 13 string',
+            'baz': 42,
+            'regex': {
+                'source': 'test {a} string',
+                'error': 'an {a} error'
+            },
+            'list': [
+                {
+                    'x': 'a 13 a',
+                },
+                {
+                    'y': 'b 42 b',
+                }
+            ]})
+
+    def test_w_safe_formatting_context(self):
+        data = self.data.copy()
+        data['bar'] = 'test {b} value'
+        result = traverse(
+            data, self.TestGenerator, {'a': 13},
+            text_format_safe
+        )
+
+        self.assertEqual(result, {
+            'foo': 'testvalue',
+            'bar': 'test {b} value',
             'baz': 42,
             'regex': {
                 'source': 'test {a} string',

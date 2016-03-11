@@ -90,14 +90,34 @@ def dict_merge(a, b):
     return result
 
 
-def traverse(data, generator_class, formatter_context=None):
+def text_format(data, context):
+    try:
+        return data.format(**context)
+    except Exception as e:
+        raise ValueError("Cannot format {0}: {1}".format(data, e))
+
+
+def text_format_safe(data, context):
+    try:
+        return data.format(**context)
+    except Exception as e:
+        logger.warning("Cannot format %s: %s. it will be used as is.",
+                       data, six.text_type(e))
+        return data
+
+
+def traverse(data, generator_class, formatter_context=None, formatter=None):
     """Traverse data.
 
     :param data: an input data to be traversed
     :param generator_class: a generator class to be used
     :param formatter_context: a dict to be passed into .format() for strings
+    :param formatter: the text formatter, by default text_format will be used
     :returns: a dict with traversed data
     """
+
+    if formatter is None:
+        formatter = text_format
 
     # generate value if generator is specified
     if isinstance(data, collections.Mapping) and 'generator' in data:
@@ -116,19 +136,22 @@ def traverse(data, generator_class, formatter_context=None):
             # so it fails if we try to format them. as a workaround, we
             # can skip them and do copy as is.
             if key != 'regex':
-                rv[key] = traverse(value, generator_class, formatter_context)
+                rv[key] = traverse(
+                    value, generator_class, formatter_context, formatter
+                )
             else:
                 rv[key] = value
         return rv
 
     # format all strings with "formatter_context"
     elif isinstance(data, six.string_types) and formatter_context:
-        return data.format(**formatter_context)
-
+        return formatter(data, formatter_context)
     # we want to traverse all sequences also (lists, tuples, etc)
-    elif isinstance(data, (list, tuple)):
+    elif isinstance(data, (list, tuple, set)):
         return type(data)(
-            (traverse(i, generator_class, formatter_context) for i in data))
+            traverse(i, generator_class, formatter_context, formatter)
+            for i in data
+        )
 
     # just return value as is for all other cases
     return data
@@ -232,3 +255,19 @@ def get_lines(text):
     """Returns all non-empty lines in input string
     """
     return list(six.moves.filter(bool, text.splitlines()))
+
+
+def dict_update(target, patch, level=None):
+    """Update dict with patch.
+
+     Note: the patch is applied to elements in 2nd level
+
+    :param target: the target dict, will be update inplace
+    :param patch: the modifications, that will be applied to target
+    :param level: how deeper the update will be applied (-1 means for all)
+    """
+    for k, v in six.iteritems(patch):
+        if level and level > 1:
+            dict_update(target.setdefault(k, {}), v, level - 1)
+        else:
+            target.setdefault(k, {}).update(v)

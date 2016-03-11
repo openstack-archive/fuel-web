@@ -40,7 +40,7 @@ class BaseRoleResolver(object):
                        any means need to return any node from resolved
                        all means need to return all resolved nodes
         :type policy: str
-        :return: the list of nodes
+        :return: the unique set of nodes
         """
 
 
@@ -79,35 +79,40 @@ class RoleResolver(BaseRoleResolver):
                 self.__mapping[r].add(node.uid)
 
     def resolve(self, roles, policy=None):
-        if isinstance(roles, six.string_types) and roles in self.SPECIAL_ROLES:
-            result = self.SPECIAL_ROLES[roles]
-        elif roles == consts.TASK_ROLES.all:
-            result = list(set(
+        result = set()
+        if roles == consts.TASK_ROLES.all:
+            # little optimization
+            result = {
                 uid for nodes in six.itervalues(self.__mapping)
                 for uid in nodes
-            ))
-        elif isinstance(roles, (list, tuple)):
-            result = set()
-            for role in roles:
-                pattern = NameMatchingPolicy.create(role)
-                for node_role, nodes_ids in six.iteritems(self.__mapping):
-                    if pattern.match(node_role):
-                        result.update(nodes_ids)
-            result = list(result)
+            }
         else:
-            # TODO(fix using wrong format for roles in tasks.yaml)
-            # After it will be allowed to raise exception here
-            logger.warn(
-                'Wrong roles format, `roles` should be a list or "*": %s',
-                roles
-            )
-            return []
+            if isinstance(roles, six.string_types):
+                roles = [roles]
+
+            if not isinstance(roles, (list, tuple, set)):
+                # TODO(bgaifullin) fix wrong format for roles in tasks.yaml
+                # After it will be allowed to raise exception here
+                logger.warn(
+                    'Wrong roles format, `roles` should be a list or "*": %s',
+                    roles
+                )
+                return result
+
+            for role in roles:
+                if role in self.SPECIAL_ROLES:
+                    result.update(self.SPECIAL_ROLES[role])
+                else:
+                    pattern = NameMatchingPolicy.create(role)
+                    for node_role, nodes_ids in six.iteritems(self.__mapping):
+                        if pattern.match(node_role):
+                            result.update(nodes_ids)
 
         # in some cases need only one any node from pool
         # for example if need only one any controller.
         # to distribute load select first node from pool
         if result and policy == consts.NODE_RESOLVE_POLICY.any:
-            result = result[0:1]
+            result = {next(iter(result))}
 
         logger.debug(
             "Role '%s' and policy '%s' was resolved to: %s",

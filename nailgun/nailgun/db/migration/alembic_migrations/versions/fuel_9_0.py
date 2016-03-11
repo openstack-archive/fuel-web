@@ -99,9 +99,11 @@ def upgrade():
     drop_legacy_patching()
     upgrade_node_status_attributes()
     upgrade_node_stop_deployment_error_type()
+    upgrade_task_attributes()
 
 
 def downgrade():
+    downgrade_task_attributes()
     downgrade_node_stop_deployment_error_type()
     downgrade_node_status_attributes()
     restore_legacy_patching()
@@ -1163,3 +1165,32 @@ def downgrade_deployment_graph():
     op.drop_table('deployment_graph_tasks')
     drop_enum('deployment_graph_tasks_type')
     op.drop_table('deployment_graphs')
+
+
+def upgrade_task_attributes():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'deleted_at',
+            sa.DateTime
+        )
+    )
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'deployment_info',
+            fields.JSON(),
+            nullable=True,
+            default={}
+        )
+    )
+    op.create_index(
+        'cluster_name_idx',
+        'tasks', ['cluster_id', 'name']
+    )
+
+
+def downgrade_task_attributes():
+    op.drop_index('cluster_name_idx', 'tasks')
+    op.drop_column('tasks', 'deployment_info')
+    op.drop_column('tasks', 'deleted_at')

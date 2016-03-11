@@ -426,25 +426,28 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(expected_priorities, nodes)
 
     def test_set_critital_node(self):
-        nodes = [
-            {'role': 'mongo'},
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
-            {'role': 'controller'},
-            {'role': 'ceph-osd'}
-        ]
         self.cluster_mock.release.environment_version = '5.0'
         serializer = DeploymentMultinodeSerializer(
             AstuteGraph(self.cluster_mock))
-        serializer.set_critical_nodes(nodes)
+        serialized_nodes = serializer.serialize_nodes(self.cluster.nodes)
+        # primary-contoller is not critical for MultiNode serializer
         expected_ciritial_roles = [
-            {'role': 'mongo', 'fail_if_error': False},
-            {'role': 'mongo', 'fail_if_error': False},
-            {'role': 'primary-mongo', 'fail_if_error': True},
-            {'role': 'controller', 'fail_if_error': True},
-            {'role': 'ceph-osd', 'fail_if_error': True}
+            {'fail_if_error': False, 'role': 'cinder'},
+            {'fail_if_error': False, 'role': 'primary-controller'},
+            {'fail_if_error': False, 'role': 'cinder'},
+            {'fail_if_error': False, 'role': 'compute'},
+            {'fail_if_error': False, 'role': 'compute'},
+            {'fail_if_error': True, 'role': 'primary-mongo'},
+            {'fail_if_error': False, 'role': 'cinder'}
         ]
-        self.assertEqual(expected_ciritial_roles, nodes)
+
+        self.assertItemsEqual(
+            expected_ciritial_roles,
+            (
+                {'role': n['role'], 'fail_if_error': n['fail_if_error']}
+                for n in serialized_nodes
+            )
+        )
 
 
 class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
@@ -1310,26 +1313,27 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         self.assertEqual(expected_priorities, nodes)
 
     def test_set_critital_node(self):
-        nodes = [
-            {'role': 'zabbix-server'},
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
-            {'role': 'primary-controller'},
-            {'role': 'controller'},
-            {'role': 'controller'},
-            {'role': 'ceph-osd'}
-        ]
-        self.serializer.set_critical_nodes(nodes)
+        serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
         expected_ciritial_roles = [
-            {'role': 'zabbix-server', 'fail_if_error': False},
-            {'role': 'mongo', 'fail_if_error': False},
-            {'role': 'primary-mongo', 'fail_if_error': True},
-            {'role': 'primary-controller', 'fail_if_error': True},
-            {'role': 'controller', 'fail_if_error': True},
-            {'role': 'controller', 'fail_if_error': True},
-            {'role': 'ceph-osd', 'fail_if_error': True}
+            {'fail_if_error': True, 'role': 'primary-controller'},
+            {'fail_if_error': True, 'role': 'controller'},
+            {'fail_if_error': False, 'role': 'cinder'},
+            {'fail_if_error': True, 'role': 'controller'},
+            {'fail_if_error': False, 'role': 'cinder'},
+            {'fail_if_error': False, 'role': 'compute'},
+            {'fail_if_error': False, 'role': 'compute'},
+            {'fail_if_error': True, 'role': 'primary-mongo'},
+            {'fail_if_error': False, 'role': 'cinder'}
         ]
-        self.assertEqual(expected_ciritial_roles, nodes)
+
+        self.assertItemsEqual(
+            expected_ciritial_roles,
+            (
+                {'role': n['role'], 'fail_if_error': n['fail_if_error']}
+                for n in serialized_nodes
+            )
+        )
+
 
     def test_set_primary_controller_priority_not_depend_on_nodes_order(self):
         controllers = filter(lambda n: 'controller' in n.roles, self.env.nodes)

@@ -66,17 +66,26 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
 
     def test_resolve_master(self):
         resolver = role_resolver.RoleResolver(self.nodes)
-        self.assertEqual(
+        self.assertItemsEqual(
             [consts.MASTER_NODE_UID],
             resolver.resolve(consts.TASK_ROLES.master)
+        )
+        self.assertItemsEqual(
+            [consts.MASTER_NODE_UID, '2', '3'],
+            resolver.resolve([consts.TASK_ROLES.master, 'controller'])
         )
 
     def test_resolve_any(self):
         resolver = role_resolver.RoleResolver(self.nodes)
         all_nodes = resolver.resolve("*", consts.NODE_RESOLVE_POLICY.all)
+        self.assertItemsEqual(
+            all_nodes,
+            (n.uid for n in self.nodes)
+        )
         any_node = resolver.resolve("*", consts.NODE_RESOLVE_POLICY.any)
         self.assertEqual(1, len(any_node))
-        self.assertIn(any_node[0], all_nodes)
+        self.assertTrue(any_node.issubset(all_nodes))
+
 
 
 class TestNullResolver(BaseUnitTest):

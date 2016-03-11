@@ -38,6 +38,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
+from nailgun import lcm
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import deployment_graph
@@ -51,6 +52,7 @@ import nailgun.rpc as rpc
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
+from nailgun.utils import dict_merge
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.role_resolver import RoleResolver
@@ -278,24 +280,39 @@ class DeploymentTask(BaseDeploymentTask):
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         logger.debug("start cluster serialization.")
-        serialized_cluster = deployment_serializers.serialize(
+
+        deployment_info = deployment_serializers.serialize(
             None, task.cluster, nodes
         )
         logger.debug("finish cluster serialization.")
-        tasks_events = events and \
-            task_based_deployment.TaskEvents('reexecute_on', events)
-
         logger.debug("start tasks serialization.")
-        directory, graph = task_based_deployment.TasksSerializer.serialize(
-            task.cluster, nodes, deployment_tasks, affected_nodes,
-            task_ids, tasks_events
-        )
+        if objects.Release.is_lcm_supported(task.cluster.release):
+            logger.debug("The LCM serializers will be used.")
+            role_resolver = RoleResolver(
+                objects.Cluster.get_nodes_not_for_deletion(task.cluster)
+            )
+            current_state = objects.Task.get_context(
+                objects.TaskCollection.get_last_success_run(task)
+            )
+            expected_state = {node['uid']: node for node in deployment_info}
+            context = lcm.TransactionContext(expected_state, current_state)
+            graph = lcm.TransactionSerializer.serialize(
+                context, deployment_tasks, role_resolver
+            )
+            directory = {}
+            objects.Task.attach_context(task, expected_state)
+        else:
+            logger.debug("The legacy task serializers will be used.")
+            tasks_events = events and \
+                task_based_deployment.TaskEvents('reexecute_on', events)
+            directory, graph = task_based_deployment.TasksSerializer.serialize(
+                task.cluster, nodes, deployment_tasks, affected_nodes,
+                task_ids, tasks_events
+            )
         logger.debug("finish tasks serialization.")
         return {
-            "deployment_info": serialized_cluster,
             "tasks_directory": directory,
             "tasks_graph": graph
-
         }
 
 

@@ -409,6 +409,9 @@ FUEL_IMAGE_BASED_ONLY = '7.0'
 # version of Fuel when multiple floating IP ranges support is added
 FUEL_MULTIPLE_FLOATING_IP_RANGES = '8.0'
 
+# version of Fuel when LCM was introduced
+FUEL_LCM_AVAILABLE = '9.0'
+
 # this file is provided by the fuel-release package
 FUEL_RELEASE_FILE = '/etc/fuel_release'
 

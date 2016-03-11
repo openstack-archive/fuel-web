@@ -38,7 +38,7 @@ class TestTaskDeploy(BaseIntegrationTest):
             ],
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': '2015.1.0-8.0',
+                'version': 'liberty-9.0',
             },
         )
         self.cluster = self.env.clusters[-1]

@@ -287,6 +287,16 @@ class Task(NailgunObject):
             logger.debug("Updating parent task: %s.", instance.parent.uuid)
             cls._update_parent_instance(instance.parent)
 
+    @classmethod
+    def attach_context(cls, instance, context):
+        instance.context = context
+        db().flush()
+
+    @classmethod
+    def get_context(cls, instance):
+        if instance is not None:
+            return instance.context
+
 
 class TaskCollection(NailgunCollection):
 
@@ -315,3 +325,11 @@ class TaskCollection(NailgunCollection):
     def delete_by_names(cls, cluster, names):
         cls.get_by_name_and_cluster(cluster, names).delete(
             synchronize_session=False)
+
+    @classmethod
+    def get_last_success_run(cls, task):
+        return cls.all().filter_by(
+            cluster_id=task.cluster_id,
+            name=task.name,
+            status=consts.TASK_STATUSES.ready
+        ).limit(1).first()

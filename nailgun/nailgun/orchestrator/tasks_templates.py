@@ -177,6 +177,7 @@ def make_puppet_task(uids, task):
     return {
         'id': task.get('id'),
         'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+        'task_id': task.get('task_id'),
         'uids': uids,
         'parameters': {
             'puppet_manifest': task['parameters']['puppet_manifest'],

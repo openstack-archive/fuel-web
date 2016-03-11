@@ -20,11 +20,8 @@ from copy import deepcopy
 from itertools import groupby
 
 import six
-import sqlalchemy as sa
 
 from nailgun import consts
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Node
 from nailgun.extensions import fire_callback_on_deployment_data_serialization
 from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
@@ -32,6 +29,8 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun import utils
 from nailgun.utils.ceph import get_pool_pg_count
+from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.role_resolver import NameMatchingPolicy
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
@@ -68,29 +67,51 @@ class DeploymentMultinodeSerializer(object):
     nova_network_serializer = NovaNetworkDeploymentSerializer
     neutron_network_serializer = NeutronNetworkDeploymentSerializer
 
-    critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
+    critical_roles = {'controller', 'ceph-osd', 'primary-mongo'}
+
+    all_nodes = None
+    role_resolver = None
 
     def __init__(self, tasks_graph=None):
         self.task_graph = tasks_graph
 
+    def initialize(self, cluster):
+        self.all_nodes = objects.Cluster.get_nodes_not_for_deletion(cluster)
+        self.role_resolver = RoleResolver(self.all_nodes)
+
+    def finalize(self):
+        self.all_nodes = None
+        self.role_resolver = None
+
     def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which are passed to puppet."""
-        def keyfunc(node):
+        def is_customized(node):
             return bool(node.replaced_deployment_info)
 
-        serialized_nodes = []
-        for customized, node_group in groupby(nodes, keyfunc):
-            if customized and not ignore_customized:
-                serialized_nodes.extend(
-                    self.serialize_customized(cluster, node_group))
+        try:
+            self.initialize(cluster)
+            serialized_nodes = []
+            if isinstance(nodes, list):
+                nodes.sort(key=is_customized)
             else:
-                serialized_nodes.extend(self.serialize_generated(
-                    cluster, node_group))
+                nodes = sorted(nodes, key=is_customized)
+            for customized, node_group in groupby(nodes, is_customized):
+                if customized and not ignore_customized:
+                    serialized_nodes.extend(
+                        self.serialize_customized(cluster, node_group)
+                    )
+                else:
+                    serialized_nodes.extend(
+                        self.serialize_generated(cluster, node_group)
+                    )
 
-        # NOTE(dshulyak) tasks should not be preserved from replaced deployment
-        # info, there is different mechanism to control changes in tasks
-        # introduced during granular deployment, and that mech should be used
-        self.set_tasks(serialized_nodes)
+            # NOTE(dshulyak) tasks should not be preserved from replaced
+            #  deployment info, there is different mechanism to control
+            #  changes in tasks introduced during granular deployment,
+            #  and that mech should be used
+            self.set_tasks(serialized_nodes)
+        finally:
+            self.finalize()
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
@@ -98,28 +119,24 @@ class DeploymentMultinodeSerializer(object):
         common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
-        self.set_critical_nodes(nodes)
-        return [utils.dict_merge(node, common_attrs) for node in nodes]
+        for node in nodes:
+            yield utils.dict_merge(node, common_attrs)
 
     def serialize_customized(self, cluster, nodes):
-        serialized = []
         for node in nodes:
             for role_data in node.replaced_deployment_info:
-                serialized.append(role_data)
-        return serialized
+                yield role_data
 
     def get_common_attrs(self, cluster):
         """Cluster attributes."""
 
         attrs = objects.Cluster.get_attributes(cluster)
         attrs = objects.Attributes.merged_attrs_values(attrs)
-
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
         attrs['openstack_version'] = cluster.release.version
         attrs['fuel_version'] = cluster.fuel_version
-        attrs['nodes'] = self.node_list(
-            objects.Cluster.get_nodes_not_for_deletion(cluster))
+        attrs['nodes'] = self.node_list(self.all_nodes)
 
         # Adding params to workloads_collector
         if 'workloads_collector' not in attrs:
@@ -128,10 +145,6 @@ class DeploymentMultinodeSerializer(object):
             objects.MasterNodeSettings.must_send_stats()
         username = attrs['workloads_collector'].pop('user', None)
         attrs['workloads_collector']['username'] = username
-
-        for node in attrs['nodes']:
-            if node['role'] in 'cinder':
-                attrs['use_cinder'] = True
 
         self.set_storage_parameters(cluster, attrs)
 
@@ -151,14 +164,8 @@ class DeploymentMultinodeSerializer(object):
         rounded up to the nearest power of 2.
         """
         osd_num = 0
-        nodes = db().query(Node).filter(
-            Node.cluster == cluster
-        ).filter(sa.or_(
-            Node.roles.any('ceph-osd'),
-            Node.pending_roles.any('ceph-osd')
-        ))
-
-        for node in nodes:
+        ceph_nodes = self.role_resolver.resolve(['ceph-osd'])
+        for node in ceph_nodes:
             for disk in node_extension_call('get_node_volumes', node):
                 for part in disk.get('volumes', []):
                     if part.get('name') == 'ceph' and part.get('size', 0) > 0:
@@ -196,11 +203,16 @@ class DeploymentMultinodeSerializer(object):
 
     @classmethod
     def serialize_node_for_node_list(cls, node, role):
-        return {
+        result = {
             'uid': node.uid,
             'fqdn': objects.Node.get_node_fqdn(node),
             'name': objects.Node.get_slave_name(node),
-            'role': role}
+            'role': role
+        }
+        # TODO(bgaifullin) remove hardcode
+        if role == 'cinder':
+            result['use_cinder'] = True
+        return result
 
     # TODO(apopovych): we have more generical method 'filter_by_roles'
     def by_role(self, nodes, role):
@@ -208,11 +220,6 @@ class DeploymentMultinodeSerializer(object):
 
     def not_roles(self, nodes, roles):
         return filter(lambda node: node['role'] not in roles, nodes)
-
-    def set_critical_nodes(self, nodes):
-        """Set behavior on nodes deployment error during deployment process."""
-        for n in nodes:
-            n['fail_if_error'] = n['role'] in self.critical_roles
 
     def serialize_nodes(self, nodes):
         """Serialize node for each role.
@@ -224,7 +231,9 @@ class DeploymentMultinodeSerializer(object):
         serialized_nodes = []
         for node in nodes:
             for role in objects.Node.all_roles(node):
-                serialized_nodes.append(self.serialize_node(node, role))
+                serialized_node = self.serialize_node(node, role)
+                serialized_node['fail_if_error'] = role in self.critical_roles
+                serialized_nodes.append(serialized_node)
         return serialized_nodes
 
     def serialize_node(self, node, role):
@@ -314,7 +323,8 @@ class DeploymentMultinodeSerializer(object):
             for node in serialized_nodes:
                 node['tasks'] = self.task_graph.deploy_task_serialize(node)
 
-    def inject_list_of_plugins(self, attributes, cluster):
+    @classmethod
+    def inject_list_of_plugins(cls, attributes, cluster):
         plugins = objects.ClusterPlugins.get_enabled(cluster.id)
         attributes['plugins'] = [p['name'] for p in plugins]
 
@@ -322,11 +332,11 @@ class DeploymentMultinodeSerializer(object):
 class DeploymentHASerializer(DeploymentMultinodeSerializer):
     """Serializer for HA mode."""
 
-    critical_roles = ['primary-controller',
+    critical_roles = {'primary-controller',
                       'primary-mongo',
                       'primary-swift-proxy',
                       'ceph-osd',
-                      'controller']
+                      'controller'}
 
     def get_last_controller(self, nodes):
         sorted_nodes = sorted(
@@ -538,14 +548,33 @@ class DeploymentHASerializer80(DeploymentHASerializer70):
 
 
 class DeploymentHASerializer90(DeploymentHASerializer80):
+    configs = None
 
-    def inject_murano_settings(self, data):
-        return data
+    def initialize(self, cluster):
+        super(DeploymentHASerializer90, self).initialize(cluster)
+        priorities = {
+            consts.OPENSTACK_CONFIG_TYPES.cluster: 0,
+            consts.OPENSTACK_CONFIG_TYPES.role: 1,
+            consts.OPENSTACK_CONFIG_TYPES.node: 2,
+        }
+        self.configs = sorted(
+            objects.OpenstackConfigCollection.filter_by(
+                None, cluster_id=cluster.id
+            ),
+            key=lambda x: priorities[x.config_type]
+        )
+
+    def finalize(self):
+        self.configs = None
+        super(DeploymentHASerializer90, self).finalize()
 
     def get_common_attrs(self, cluster):
         attrs = super(DeploymentHASerializer90, self).get_common_attrs(cluster)
+        attrs['environment'] = objects.Cluster.to_dict(cluster)
+        attrs['release'] = objects.Release.to_dict(cluster.release)
 
-        for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
+        # TODO(bgaifullin) remove additional loop
+        for node in self.all_nodes:
             name = objects.Node.get_slave_name(node)
             node_attrs = attrs['network_metadata']['nodes'][name]
 
@@ -560,10 +589,41 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         else:
             return NeutronNetworkDeploymentSerializer90
 
-    def serialize_node(self, node, role):
+    def serialize_customized(self, cluster, nodes):
+        for node in nodes:
+            data = {}
+            roles = []
+            for role_data in node.replaced_deployment_info:
+                roles.append(role_data.pop('role'))
+                data = utils.dict_merge(data, role_data)
+            data['roles'] = roles
+            yield data
+
+    def serialize_nodes(self, nodes):
+        serialized_nodes = []
+        for node in nodes:
+            roles = objects.Node.all_roles(node)
+            serialized_node = self.serialize_node(node, roles)
+            serialized_node['fail_if_error'] = \
+                self.critical_roles.intersection(roles)
+            serialized_nodes.append(serialized_node)
+        # added master node
+        serialized_nodes.append({
+            'uid': consts.MASTER_NODE_UID,
+            'roles': consts.TASK_ROLES.master
+        })
+        return serialized_nodes
+
+    def serialize_node(self, node, roles):
+        # serialize all roles to one config
+        # Since there is no role depended things except
+        # OpenStack configs, we can do this
         serialized_node = super(
-            DeploymentHASerializer90, self).serialize_node(node, role)
+            DeploymentHASerializer90, self).serialize_node(node, roles[0])
+        del serialized_node['role']
+        serialized_node['roles'] = roles
         self.generate_cpu_pinning(node, serialized_node)
+        self.inject_configs(serialized_node, node, roles)
         return serialized_node
 
     def generate_cpu_pinning(self, node, serialized_node):
@@ -594,6 +654,23 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             'ovs_core_mask': hex(ovs_core_mask),
             'ovs_pmd_core_mask': hex(ovs_pmd_core_mask)
         })
+
+    def inject_configs(self, attrs, node, roles):
+        node_config = attrs.setdefault('configs', {})
+        for config in self.configs:
+            if config.config_type == consts.OPENSTACK_CONFIG_TYPES.cluster:
+                utils.dict_update(node_config, config.configuration)
+            elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.role:
+                for role in roles:
+                    if NameMatchingPolicy.create(config.node_role).match(role):
+                        utils.dict_update(node_config, config.configuration)
+            elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:
+                if config.node_id == node['uid']:
+                    utils.dict_update(node_config, config.configuration)
+
+    @staticmethod
+    def inject_murano_settings(data):
+        return data
 
 
 def get_serializer_for_cluster(cluster):

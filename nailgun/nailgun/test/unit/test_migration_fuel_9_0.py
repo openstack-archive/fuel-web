@@ -773,3 +773,29 @@ WHERE plugins.id
             result.pop('deployment_graph_id', None)
             results.append(result)
         self._compare_tasks(JSON_TASKS_AFTER_DB, results)
+
+
+class TestBondMode(base.BaseAlembicMigrationTest):
+
+    def test_balance_tcp_mode_saving(self):
+        result = db.execute(
+            sa.select([self.meta.tables['nodes'].c.id])
+        )
+        rel_row = result.fetchone()
+        db.execute(
+            self.meta.tables['node_bond_interfaces'].insert(),
+            [
+                {
+                    'name': 'bond0',
+                    'node_id': rel_row[0],
+                    'mode': consts.BOND_MODES.balance_tcp,
+                    'interface_properties': ''
+                }
+            ])
+
+        result = db.execute(
+            sa.select([self.meta.tables['node_bond_interfaces'].c.mode]))
+
+        for row in result.fetchall():
+            mode = row[0]
+            self.assertEqual(mode, consts.BOND_MODES.balance_tcp)

@@ -392,7 +392,8 @@ class TestHandlers(BaseIntegrationTest):
                          'priority',
                          'workloads_collector',
                          'vms_conf',
-                         'storage'])
+                         'storage',
+                         'glance'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -852,7 +853,8 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'priority',
                          'workloads_collector',
-                         'storage'])
+                         'storage',
+                         'glance'])
 
     def check_pg_count(self, deployment_info):
         pools = ['volumes', 'compute', 'backups', '.rgw',
@@ -1356,7 +1358,8 @@ class TestHandlers(BaseIntegrationTest):
                          'priority',
                          'workloads_collector',
                          'vms_conf',
-                         'storage'])
+                         'storage',
+                         'glance'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

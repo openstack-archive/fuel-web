@@ -17,21 +17,15 @@
 """Deployment serializers for orchestrator"""
 
 from copy import deepcopy
+from distutils.version import StrictVersion
 from itertools import groupby
 
 import six
-import sqlalchemy as sa
 
 from nailgun import consts
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Node
 from nailgun.extensions import fire_callback_on_deployment_data_serialization
-from nailgun.extensions import node_extension_call
-from nailgun.extensions.volume_manager import manager as volume_manager
-from nailgun.logger import logger
 from nailgun import objects
 from nailgun import utils
-from nailgun.utils.ceph import get_pool_pg_count
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
@@ -133,8 +127,6 @@ class DeploymentMultinodeSerializer(object):
             if node['role'] in 'cinder':
                 attrs['use_cinder'] = True
 
-        self.set_storage_parameters(cluster, attrs)
-
         net_serializer = self.get_net_provider_serializer(cluster)
         net_common_attrs = net_serializer.get_common_attrs(cluster, attrs)
         attrs = utils.dict_merge(attrs, net_common_attrs)
@@ -142,46 +134,6 @@ class DeploymentMultinodeSerializer(object):
         self.inject_list_of_plugins(attrs, cluster)
 
         return attrs
-
-    def set_storage_parameters(self, cluster, attrs):
-        """Generate pg_num
-
-        pg_num is generated as the number of OSDs across the cluster
-        multiplied by 100, divided by Ceph replication factor, and
-        rounded up to the nearest power of 2.
-        """
-        osd_num = 0
-        nodes = db().query(Node).filter(
-            Node.cluster == cluster
-        ).filter(sa.or_(
-            Node.roles.any('ceph-osd'),
-            Node.pending_roles.any('ceph-osd')
-        ))
-
-        for node in nodes:
-            for disk in node_extension_call('get_node_volumes', node):
-                for part in disk.get('volumes', []):
-                    if part.get('name') == 'ceph' and part.get('size', 0) > 0:
-                        osd_num += 1
-
-        storage_attrs = attrs['storage']
-
-        pg_counts = get_pool_pg_count(
-            osd_num=osd_num,
-            pool_sz=int(storage_attrs['osd_pool_size']),
-            ceph_version='firefly',
-            volumes_ceph=storage_attrs['volumes_ceph'],
-            objects_ceph=storage_attrs['objects_ceph'],
-            ephemeral_ceph=storage_attrs['ephemeral_ceph'],
-            images_ceph=storage_attrs['images_ceph'],
-            emulate_pre_7_0=False)
-
-        # Log {pool_name: pg_count} mapping
-        pg_str = ", ".join(map("{0[0]}={0[1]}".format, pg_counts.items()))
-        logger.debug("Ceph: PG values {%s}", pg_str)
-
-        storage_attrs['pg_num'] = pg_counts['default_pg_num']
-        storage_attrs['per_pool_pg_nums'] = pg_counts
 
     @classmethod
     def node_list(cls, nodes):
@@ -243,20 +195,9 @@ class DeploymentMultinodeSerializer(object):
         net_serializer = self.get_net_provider_serializer(node.cluster)
         node_attrs.update(net_serializer.get_node_attrs(node))
         node_attrs.update(net_serializer.network_ranges(node.group_id))
-        node_attrs.update(self.get_image_cache_max_size(node))
         node_attrs.update(self.generate_test_vm_image_data(node))
 
         return node_attrs
-
-    def get_image_cache_max_size(self, node):
-        images_ceph = (node.cluster.attributes['editable']['storage']
-                       ['images_ceph']['value'])
-        if images_ceph:
-            image_cache_max_size = '0'
-        else:
-            image_cache_max_size = volume_manager.calc_glance_cache_size(
-                node_extension_call('get_node_volumes', node))
-        return {'glance': {'image_cache_max_size': image_cache_max_size}}
 
     def generate_test_vm_image_data(self, node):
         # Instantiate all default values in dict.
@@ -513,28 +454,12 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
 
 class DeploymentHASerializer80(DeploymentHASerializer70):
 
-    def serialize_node(self, node, role):
-        serialized_node = super(
-            DeploymentHASerializer80, self).serialize_node(node, role)
-        serialized_node.update(self.generate_node_volumes_data(node))
-
-        return serialized_node
-
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
             return NeutronNetworkTemplateSerializer80
         else:
             return NeutronNetworkDeploymentSerializer80
-
-    def generate_node_volumes_data(self, node):
-        """Serialize information about disks.
-
-        This function returns information about disks and
-        volume groups for each node in cluster.
-        Will be passed to Astute.
-        """
-        return {'node_volumes': node_extension_call('get_node_volumes', node)}
 
 
 class DeploymentHASerializer90(DeploymentHASerializer80):
@@ -637,7 +562,8 @@ def get_serializer_for_cluster(cluster):
             return serializers[env_mode]
 
     # return latest serializer by default
-    latest_version = sorted(six.iterkeys(serializers_map))[-1]
+    latest_version = max(serializers_map, key=lambda v: StrictVersion(v))
+
     return serializers_map[latest_version][env_mode]
 
 

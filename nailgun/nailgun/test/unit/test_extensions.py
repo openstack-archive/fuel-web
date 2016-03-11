@@ -27,7 +27,6 @@ from nailgun.extensions import fire_callback_on_node_delete
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.extensions import get_extension
-from nailgun.extensions import node_extension_call
 from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
@@ -105,48 +104,6 @@ class TestExtensionUtils(BaseTestCase):
             "Cannot find extension with name 'unknown_ex'",
             get_extension,
             'unknown_ex')
-
-    @mock.patch('nailgun.extensions.manager.get_all_extensions',
-                return_value=make_mock_extensions())
-    def test_node_extension_call_raises_error(self, _):
-        self.assertRaisesRegexp(
-            errors.CannotFindExtension,
-            "Cannot find extension which provides 'method_call' call",
-            node_extension_call,
-            'method_call',
-            self.make_node())
-
-    @mock.patch('nailgun.extensions.manager.get_all_extensions',
-                return_value=make_mock_extensions())
-    def test_node_extension_call_extension_from_node(self, get_m):
-        node = self.make_node(
-            node_extensions=['ex1'],
-            cluster_extensions=['ex2'])
-
-        node_extension_call('method_call', node)
-        ex1 = get_m.return_value[0]
-        self.assertEqual('ex1', ex1.name)
-        ex2 = get_m.return_value[1]
-        self.assertEqual('ex2', ex2.name)
-
-        ex1.method_call.assert_called_once_with(node)
-        self.assertFalse(ex2.method_call.called)
-
-    @mock.patch('nailgun.extensions.manager.get_all_extensions',
-                return_value=make_mock_extensions())
-    def test_node_extension_call_default_extension_from_cluster(self, get_m):
-        node = self.make_node(
-            node_extensions=[],
-            cluster_extensions=['ex2'])
-
-        node_extension_call('method_call', node)
-        ex1 = get_m.return_value[0]
-        self.assertEqual('ex1', ex1.name)
-        ex2 = get_m.return_value[1]
-        self.assertEqual('ex2', ex2.name)
-
-        self.assertFalse(ex1.method_call.called)
-        ex2.method_call.assert_called_once_with(node)
 
     @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())

@@ -867,6 +867,12 @@
             description: ""
             weight: 10
             type: "text"
+          murano_glance_artifacts_plugin:
+            value: true
+            label: "Enable glance artifact repository"
+            description: "If selected glance artifact repository will be enabled"
+            weight: 40
+            type: "checkbox"
         external_mongo:
           metadata:
             label: "External MongoDB"
@@ -940,17 +946,6 @@
             label: "Install Murano service broker for Cloud Foundry"
             description: "If selected, Murano service broker will be installed"
             weight: 30
-            type: "checkbox"
-            restrictions:
-              - condition: "settings:additional_components.murano.value == false"
-                message: "Murano should be enabled"
-              - condition: "not ('experimental' in version:feature_groups)"
-                action: "hide"
-          murano_glance_artifacts_plugin:
-            value: false
-            label: "Enable glance artifact repository"
-            description: "If selected glance artifact repository will be enabled"
-            weight: 40
             type: "checkbox"
             restrictions:
               - condition: "settings:additional_components.murano.value == false"

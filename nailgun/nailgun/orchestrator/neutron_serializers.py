@@ -17,11 +17,8 @@
 """Neutron network deployment serializers for orchestrator"""
 
 from collections import defaultdict
+from collections import OrderedDict
 import netaddr
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 import re
 import six
 

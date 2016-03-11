@@ -14,7 +14,6 @@
 
 import os
 import os.path
-import sys
 
 from setuptools import find_packages
 from setuptools import setup
@@ -28,9 +27,6 @@ def find_requires():
     requirements = []
     with open('{0}/requirements.txt'.format(dir_path), 'r') as reqs:
         requirements = reqs.readlines()
-    if sys.version_info == (2, 6):
-        requirements.append('argparse')
-        requirements.append('ordereddict')
     return requirements
 
 

@@ -211,6 +211,12 @@ def prepare():
                         },
                     ]
                 },
+                'bonding': {
+                    'properties': {
+                        'linux': {}
+                    }
+
+                }
 
             }),
             'network_roles_metadata': jsonutils.dumps([{
@@ -773,3 +779,21 @@ WHERE plugins.id
             result.pop('deployment_graph_id', None)
             results.append(result)
         self._compare_tasks(JSON_TASKS_AFTER_DB, results)
+
+
+class TestOvsBondPropertiesAdded(base.BaseAlembicMigrationTest):
+    def test_cluster_bond_meta_field_exists_and_has_proper_value_ovs(self):
+        ovs_bond_properties = {
+            "mode": [
+                {"values": ["active-backup", "balance-slb", "balance-tcp"]}],
+            "lacp": [{"values": ["active", "passive"],
+                      "for_modes": ["balance-tcp"]}],
+            "lacp_rate": [{"values": ["slow", "fast"],
+                           "for_modes": ["balance-tcp"]}]
+        }
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.networks_metadata]).
+            where(self.meta.tables['releases'].c.name == 'test_name'))
+        bond_meta = jsonutils.loads(result.fetchone()[0])['bonding']
+        self.assertIn('ovs', bond_meta['properties'])
+        self.assertEqual(bond_meta['properties']['ovs'], ovs_bond_properties)

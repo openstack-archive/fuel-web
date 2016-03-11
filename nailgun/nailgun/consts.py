@@ -183,6 +183,7 @@ BOND_MODES = Enum(
     'active-backup',
     # OVS modes
     'balance-slb',
+    'balance-tcp',
     'lacp-balance-tcp',
     # linux modes
     'balance-rr',
@@ -195,6 +196,7 @@ BOND_MODES = Enum(
         'active_backup',
 
         'balance_slb',
+        'balance_tcp',
         'lacp_balance_tcp',
 
         'balance_rr',

@@ -19,6 +19,7 @@ import os
 import six
 
 from nailgun.extensions import BaseExtension
+from nailgun.extensions import BasePipeline
 from nailgun.logger import logger
 from nailgun.objects import Node
 from nailgun.objects import Notification
@@ -28,29 +29,7 @@ from .handlers.disks import NodeDisksHandler
 from .handlers.disks import NodeVolumesInformationHandler
 
 
-class VolumeManagerExtension(BaseExtension):
-
-    name = 'volume_manager'
-    version = '1.0.0'
-    provides = [
-        'get_node_volumes',
-        'set_node_volumes',
-        'set_default_node_volumes']
-
-    description = "Volume Manager Extension"
-
-    @classmethod
-    def alembic_migrations_path(cls):
-        return os.path.join(os.path.dirname(__file__),
-                            'alembic_migrations', 'migrations')
-
-    urls = [
-        {'uri': r'/nodes/(?P<node_id>\d+)/disks/?$',
-         'handler': NodeDisksHandler},
-        {'uri': r'/nodes/(?P<node_id>\d+)/disks/defaults/?$',
-         'handler': NodeDefaultsDisksHandler},
-        {'uri': r'/nodes/(?P<node_id>\d+)/volumes/?$',
-         'handler': NodeVolumesInformationHandler}]
+class VolumeObjectMethodsMixin(object):
 
     @classmethod
     def get_node_volumes(cls, node):
@@ -79,6 +58,47 @@ class VolumeManagerExtension(BaseExtension):
 
         if node.cluster_id:
             Node.add_pending_change(node, 'disks')
+
+
+class NodeVolumesPipeline(VolumeObjectMethodsMixin, BasePipeline):
+
+    @classmethod
+    def process_provisioning(cls, data, cluster, nodes, **kwargs):
+        nodes_db = {node.id: node for node in nodes}
+
+        for node in data['nodes']:
+            volumes = cls.get_node_volumes(nodes_db[int(node['uid'])])
+            node['ks_meta']['pm_data']['ks_spaces'] = volumes
+
+        return data
+
+
+class VolumeManagerExtension(VolumeObjectMethodsMixin, BaseExtension):
+
+    name = 'volume_manager'
+    version = '1.0.0'
+    provides = [
+        'get_node_volumes',
+        'set_node_volumes',
+        'set_default_node_volumes']
+
+    description = "Volume Manager Extension"
+    data_pipelines = [
+        NodeVolumesPipeline,
+    ]
+
+    @classmethod
+    def alembic_migrations_path(cls):
+        return os.path.join(os.path.dirname(__file__),
+                            'alembic_migrations', 'migrations')
+
+    urls = [
+        {'uri': r'/nodes/(?P<node_id>\d+)/disks/?$',
+         'handler': NodeDisksHandler},
+        {'uri': r'/nodes/(?P<node_id>\d+)/disks/defaults/?$',
+         'handler': NodeDefaultsDisksHandler},
+        {'uri': r'/nodes/(?P<node_id>\d+)/volumes/?$',
+         'handler': NodeVolumesInformationHandler}]
 
     @classmethod
     def on_node_create(cls, node):

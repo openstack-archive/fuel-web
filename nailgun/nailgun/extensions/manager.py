@@ -58,26 +58,6 @@ def get_extension(name):
         "Cannot find extension with name '{0}'".format(name))
 
 
-def _get_extension_by_node(call_name, node):
-    all_extensions = {ext.name: ext for ext in get_all_extensions()}
-    for extension in chain(node.extensions,
-                           node.cluster.extensions if node.cluster else []):
-
-        if (extension in all_extensions and
-                call_name in all_extensions[extension].provides):
-            return all_extensions[extension]
-
-    raise errors.CannotFindExtension("Cannot find extension which provides "
-                                     "'{0}' call".format(call_name))
-
-
-def node_extension_call(call_name, node, *args, **kwargs):
-    # NOTE(sbrzeczkowski): should be removed once data-pipeline blueprint is
-    # done: https://blueprints.launchpad.net/fuel/+spec/data-pipeline
-    extension = _get_extension_by_node(call_name, node)
-    return getattr(extension, call_name)(node, *args, **kwargs)
-
-
 def fire_callback_on_node_create(node):
     for extension in get_all_extensions():
         extension.on_node_create(node)
@@ -106,6 +86,11 @@ def fire_callback_on_node_collection_delete(node_ids):
 def fire_callback_on_cluster_delete(cluster):
     for extension in get_all_extensions():
         extension.on_cluster_delete(cluster)
+
+
+def fire_callback_on_before_deployment_check(cluster):
+    for extension in get_all_extensions():
+        extension.on_before_deployment_check(cluster)
 
 
 def _collect_data_pipelines_for_cluster(cluster):

@@ -150,19 +150,18 @@ class TestDeploymentAttributesSerialization90(
                 networks_for_bond.append(first_nic_networks.pop(i))
                 break
 
-        interfaces.append(
-            {
-                'name': bond_interface_name,
-                'type': consts.NETWORK_INTERFACE_TYPES.bond,
-                'mode': consts.BOND_MODES.balance_slb,
-                'slaves': nics_for_bond,
-                'assigned_networks': networks_for_bond,
-                'interface_properties':
-                    {
-                        'dpdk': {'enabled': True}
-                    }
-            }
-        )
+        bond_interface = {
+            'name': bond_interface_name,
+            'type': consts.NETWORK_INTERFACE_TYPES.bond,
+            'slaves': nics_for_bond,
+            'assigned_networks': networks_for_bond,
+            'bond_properties': {
+                'mode': consts.BOND_MODES.balance_tcp,
+                'lacp': 'active', 'lacp_rate': 'fast',
+                'xmit_hash_policy': 'layer2'
+            },
+            'interface_properties': {'dpdk': {'enabled': True}}}
+        interfaces.append(bond_interface)
         self.env.node_nics_put(node.id, interfaces)
         objects.Cluster.prepare_for_deployment(self.cluster_db)
 
@@ -178,12 +177,15 @@ class TestDeploymentAttributesSerialization90(
         private_br = filter(lambda t: t.get('name') ==
                             consts.DEFAULT_BRIDGES_NAMES.br_prv,
                             transformations)[0]
-        dpdk_port = filter(lambda t: t.get('bridge') ==
-                           consts.DEFAULT_BRIDGES_NAMES.br_prv,
-                           transformations)[0]
+        dpdk_bonds = filter(lambda t: t.get('name') ==
+                            bond_interface_name,
+                            transformations)
         self.assertEqual(private_br.get('vendor_specific'),
                          {'datapath_type': 'netdev'})
-        self.assertEqual(dpdk_port.get('provider'), 'dpdkovs')
+        self.assertEqual(dpdk_bonds[0].get('provider'),
+                         consts.NEUTRON_L23_PROVIDERS.dpdkovs)
+        self.assertEqual(dpdk_bonds[0].get('bond_properties'),
+                         bond_interface['bond_properties'])
 
         interfaces = node['network_scheme']['interfaces']
         for iface in nics_for_bond:

@@ -390,6 +390,18 @@
             lacp_rate:
               - values: ["slow", "fast"]
                 for_modes: ["802.3ad"]
+          ovs:
+            mode:
+              - values: ["active-backup", "balance-slb", "balance-tcp"]
+            lacp:
+              - values: ["active", "passive"]
+                for_modes: ["balance-tcp"]
+            lacp_rate:
+              - values: ["slow", "fast"]
+                for_modes: ["balance-tcp"]
+            xmit_hash_policy:
+              - values: ["layer2", "layer2+3", "layer3+4", "encap2+3", "encap3+4"]
+                for_modes: ["balance-tcp"]
       nova_network:
         networks:
           - name: "public"

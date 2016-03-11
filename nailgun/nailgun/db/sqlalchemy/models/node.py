@@ -34,7 +34,6 @@ from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
-from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.logger import logger
 
 
@@ -143,14 +142,6 @@ class Node(Base):
         # TODO(enchantner): move to object
         from nailgun.extensions.network_manager.manager import NetworkManager
         return NetworkManager.get_node_networks(self)
-
-    @property
-    def volume_manager(self):
-        # TODO(eli): will be moved into an extension.
-        # Should be done as a part of blueprint:
-        # https://blueprints.launchpad.net/fuel/+spec
-        #                                 /volume-manager-refactoring
-        return VolumeManager(self)
 
     @property
     def needs_reprovision(self):

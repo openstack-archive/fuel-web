@@ -72,8 +72,6 @@ def _get_extension_by_node(call_name, node):
 
 
 def node_extension_call(call_name, node, *args, **kwargs):
-    # NOTE(sbrzeczkowski): should be removed once data-pipeline blueprint is
-    # done: https://blueprints.launchpad.net/fuel/+spec/data-pipeline
     extension = _get_extension_by_node(call_name, node)
     return getattr(extension, call_name)(node, *args, **kwargs)
 
@@ -106,6 +104,11 @@ def fire_callback_on_node_collection_delete(node_ids):
 def fire_callback_on_cluster_delete(cluster):
     for extension in get_all_extensions():
         extension.on_cluster_delete(cluster)
+
+
+def fire_callback_on_before_deployment_check(cluster):
+    for extension in get_all_extensions():
+        extension.on_before_deployment_check(cluster)
 
 
 def _collect_data_pipelines_for_cluster(cluster):

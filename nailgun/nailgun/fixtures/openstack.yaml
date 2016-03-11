@@ -927,10 +927,12 @@
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
                 message: "Murano should be enabled"
+              - condition: "settings:additional_components.murano_glance_artifacts.value == true"
+	        message: "Service Broker can't be deployed with Glance artifacts in the same time."
               - condition: "not ('experimental' in version:feature_groups)"
                 action: "hide"
           murano_glance_artifacts_plugin:
-            value: false
+            value: true
             label: "Enable glance artifact repository"
             description: "If selected glance artifact repository will be enabled"
             weight: 40
@@ -938,8 +940,8 @@
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
                 message: "Murano should be enabled"
-              - condition: "not ('experimental' in version:feature_groups)"
-                action: "hide"
+              - condition: "settings:additional_components.murano-cfapi.value == true"
+		message: "Glance artifacts can't be used with Service Broker in the same time."
           heat:
             value: true
             label: ""

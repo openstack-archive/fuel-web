@@ -58,11 +58,6 @@ Requires:    pydot-ng >= 1.0.0
 # Workaroud for babel bug
 Requires:    pytz
 
-%if 0%{?rhel} >= 5 && 0%{?rhel} < 7
-Requires:    python-argparse >= 1.2.1
-Requires:    python-ordereddict >= 1.1
-%endif
-
 %if 0%{?fedora} > 16 || 0%{?rhel} > 6
 Requires(post): systemd-units
 Requires(preun): systemd-units

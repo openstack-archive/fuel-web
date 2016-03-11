@@ -23,7 +23,6 @@ import six
 
 from nailgun import consts
 from nailgun.extensions import fire_callback_on_provisioning_data_serialization
-from nailgun.extensions import node_extension_call
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import MellanoxMixin
@@ -133,7 +132,6 @@ class ProvisioningSerializer(MellanoxMixin):
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'pm_data': {
-                    'ks_spaces': node_extension_call('get_node_volumes', node),
                     'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
                 'cloud_init_templates':

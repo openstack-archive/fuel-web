@@ -26,8 +26,6 @@ from nailgun import objects
 
 from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
-from nailgun.extensions.volume_manager import manager
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
@@ -213,9 +211,6 @@ class TestHandlers(BaseIntegrationTest):
                     }}
 
                 individual_atts.update(common_attrs)
-                individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.calc_glance_cache_size(
-                        VolumeManagerExtension.get_node_volumes(node)))
                 deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
@@ -285,9 +280,8 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_enable': 1,
                     'mco_identity': n.id,
                     'pm_data': {
-                        'ks_spaces': VolumeManagerExtension.get_node_volumes(
-                            n),
                         'kernel_params': objects.Node.get_kernel_params(n),
+                        'ks_spaces': None,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'authorized_keys':
@@ -370,7 +364,9 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'uids',
                          'percentage',
-                         'vms_conf'])
+                         'vms_conf',
+                         'ks_spaces',
+                         ])
 
         self.check_pg_count(args[1][1]['args']['deployment_info'])
 
@@ -384,9 +380,10 @@ class TestHandlers(BaseIntegrationTest):
                          'IP',
                          'workloads_collector',
                          'vms_conf',
-                         'storage',
                          'tasks_directory',
-                         'tasks_graph'])
+                         'tasks_graph',
+                         'storage',
+                         'glance'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -676,9 +673,6 @@ class TestHandlers(BaseIntegrationTest):
                 }
 
                 individual_atts.update(common_attrs)
-                individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.calc_glance_cache_size(
-                        VolumeManagerExtension.get_node_volumes(node)))
                 deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
@@ -749,9 +743,8 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_enable': 1,
                     'mco_identity': n.id,
                     'pm_data': {
-                        'ks_spaces': VolumeManagerExtension.get_node_volumes(
-                            n),
                         'kernel_params': objects.Node.get_kernel_params(n),
+                        'ks_spaces': None,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'authorized_keys':
@@ -832,7 +825,8 @@ class TestHandlers(BaseIntegrationTest):
                          'IP',
                          'tasks',
                          'uids',
-                         'percentage'])
+                         'percentage',
+                         'ks_spaces'])
 
         self.check_pg_count(args[1][1]['args']['deployment_info'])
 
@@ -847,7 +841,8 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'priority',
                          'workloads_collector',
-                         'storage'])
+                         'storage',
+                         'glance'])
 
     def check_pg_count(self, deployment_info):
         pools = ['volumes', 'compute', 'backups', '.rgw',
@@ -1180,9 +1175,6 @@ class TestHandlers(BaseIntegrationTest):
                 }
 
                 individual_atts.update(common_attrs)
-                individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.calc_glance_cache_size(
-                        VolumeManagerExtension.get_node_volumes(node)))
                 deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
@@ -1253,9 +1245,8 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_enable': 1,
                     'mco_identity': n.id,
                     'pm_data': {
-                        'ks_spaces': VolumeManagerExtension.get_node_volumes(
-                            n),
                         'kernel_params': objects.Node.get_kernel_params(n),
+                        'ks_spaces': None,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'authorized_keys':
@@ -1336,7 +1327,8 @@ class TestHandlers(BaseIntegrationTest):
                          'IP',
                          'tasks',
                          'uids',
-                         'percentage'])
+                         'percentage',
+                         'ks_spaces'])
 
         self.check_pg_count(args[1][1]['args']['deployment_info'])
 
@@ -1352,7 +1344,8 @@ class TestHandlers(BaseIntegrationTest):
                          'priority',
                          'workloads_collector',
                          'vms_conf',
-                         'storage'])
+                         'storage',
+                         'glance'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

@@ -21,7 +21,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
-from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import tasks_serializer
 from nailgun.test import base
 
@@ -560,7 +560,7 @@ class TestPreTaskSerialization(BaseTaskSerializationTestUbuntu):
         """)
 
     def test_tasks_serialized_correctly(self):
-        self.graph = deployment_graph.AstuteGraph(self.cluster)
+        self.graph = orchestrator_graph.AstuteGraph(self.cluster)
         self.cluster.release.operating_system = consts.RELEASE_OS.ubuntu
         tasks = self.graph.pre_tasks_serialize(self.nodes)
         self.assertEqual(len(tasks), 20)
@@ -618,7 +618,7 @@ class TestPostTaskSerialization(BaseTaskSerializationTest):
         super(TestPostTaskSerialization, self).setUp()
         self.control_uids = [n.uid for n in self.nodes
                              if 'controller' in n.roles]
-        self.graph = deployment_graph.AstuteGraph(self.cluster)
+        self.graph = orchestrator_graph.AstuteGraph(self.cluster)
 
     def test_post_task_serialize_all_tasks(self):
         self.nodes.append(self.env.create_node(
@@ -664,7 +664,7 @@ class TestConditionalTasksSerializers(BaseTaskSerializationTest):
 
     def setUp(self):
         super(TestConditionalTasksSerializers, self).setUp()
-        self.graph = deployment_graph.AstuteGraph(self.cluster)
+        self.graph = orchestrator_graph.AstuteGraph(self.cluster)
 
     def test_conditions_satisfied(self):
         self.cluster.status = 'operational'

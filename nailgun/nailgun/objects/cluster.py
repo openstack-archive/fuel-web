@@ -394,6 +394,8 @@ class Cluster(NailgunObject):
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
         cls.get_network_manager(instance).update_restricted_networks(instance)
+        for node in instance.nodes:
+            cls.get_network_manager(instance).assign_networks_by_default(node)
         db().flush()
 
     @classmethod

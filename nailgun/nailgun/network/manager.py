@@ -597,11 +597,14 @@ class NetworkManager(object):
         ngs.add(admin_net)
 
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
+        should_have_public = objects.Node.\
+            should_have_public(node)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(
             next(six.moves.zip(*sorted(
                 [[ng.id, ng.meta['map_priority']]
-                 for ng in ngs],
+                 for ng in ngs if (should_have_public or
+                                   ng.name != consts.NETWORKS.public)],
                 key=lambda x: x[1])))
         )
         ng_ids = set(ng.id for ng in ngs)

@@ -336,7 +336,7 @@ class TestDeploymentAttributesSerialization80(
             {
                 u'name': u'sda',
                 u'extra': [],
-                u'free_space': 330,
+                u'free_space': 0,
                 u'volumes': [
                     {
                         u'type': u'boot',
@@ -420,6 +420,7 @@ class TestDeploymentAttributesSerialization80(
             self.cluster_db, self.cluster_db.nodes)
         for node in serialized_for_astute:
             self.assertIn("node_volumes", node)
+            self.maxDiff = None
             self.assertItemsEqual(
                 expected_node_volumes_hash, node["node_volumes"])
 

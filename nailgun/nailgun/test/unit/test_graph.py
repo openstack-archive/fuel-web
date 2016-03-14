@@ -16,15 +16,15 @@
 
 import six
 
-from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import graph_visualization
 from nailgun.test import base
 
 
-class TestDeploymentGraphViualization(base.BaseUnitTest):
+class TestOrchestratorGraphViualization(base.BaseUnitTest):
 
     def get_dotgraph_with_tasks(self, tasks):
-        graph = deployment_graph.DeploymentGraph()
+        graph = orchestrator_graph.OrchestratorGraph()
         graph.add_tasks(tasks)
         visualization = graph_visualization.GraphVisualization(graph)
         dotgraph = visualization.get_dotgraph()

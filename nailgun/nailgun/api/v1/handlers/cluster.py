@@ -25,7 +25,7 @@ from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DeferredTaskHandler
-from nailgun.api.v1.handlers.base import DeploymentTasksHandler
+from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun.api.v1.validators.cluster import ClusterAttributesValidator
@@ -250,7 +250,7 @@ class ClusterGeneratedData(BaseHandler):
         return cluster.attributes.generated
 
 
-class ClusterDeploymentTasksHandler(DeploymentTasksHandler):
+class ClusterDeploymentTasksHandler(OrchestratorDeploymentTasksHandler):
     """Cluster Handler for deployment graph serialization."""
 
     single = objects.Cluster

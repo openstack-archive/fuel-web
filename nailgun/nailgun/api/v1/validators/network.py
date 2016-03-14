@@ -20,6 +20,7 @@ import six
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.network_template import \
     NETWORK_TEMPLATE
+from nailgun.api.v1.validators.json_schema import iface_schema
 from nailgun.api.v1.validators.json_schema import networks
 from nailgun import consts
 from nailgun.db import db
@@ -281,6 +282,8 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
 
 
 class NetAssignmentValidator(BasicValidator):
+    single_schema = iface_schema.INTERFACES
+
     @classmethod
     def validate(cls, node):
         if not isinstance(node, dict):
@@ -300,7 +303,6 @@ class NetAssignmentValidator(BasicValidator):
                     node['id']),
                 log_message=True
             )
-
         net_ids = set()
         for iface in node['interfaces']:
             if not isinstance(iface, dict):

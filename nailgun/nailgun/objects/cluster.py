@@ -389,11 +389,27 @@ class Cluster(NailgunObject):
 
     @classmethod
     def patch_attributes(cls, instance, data):
+        roles_metadata = Cluster.get_roles(instance)
+        network_manager = cls.get_network_manager(instance)
+        public_map = {}
+        for node in instance.nodes:
+            public_map[node.id] = network_manager.node_should_have_public(
+                node, roles_metadata)
+
         PluginManager.process_cluster_attributes(instance, data['editable'])
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
-        cls.get_network_manager(instance).update_restricted_networks(instance)
+        network_manager.update_restricted_networks(instance)
+        for node in instance.nodes:
+            should_have_public = network_manager.node_should_have_public(
+                node, roles_metadata)
+            if public_map[node.id] == should_have_public:
+                continue
+            if should_have_public:
+                network_manager.assign_public_network_on_node(node)
+            else:
+                network_manager.unassign_public_network_on_node(node)
         db().flush()
 
     @classmethod
@@ -621,6 +637,10 @@ class Cluster(NailgunObject):
         from nailgun.objects import OpenstackConfig
         OpenstackConfig.disable_by_nodes(nodes_to_remove)
 
+        map(
+            Node.assign_group,
+            nodes_to_add
+        )
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add

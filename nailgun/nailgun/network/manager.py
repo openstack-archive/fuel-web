@@ -24,6 +24,8 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 
+from operator import attrgetter
+
 import six
 
 from nailgun import consts
@@ -534,6 +536,75 @@ class NetworkManager(object):
             }
         }
 
+    @staticmethod
+    def node_should_have_public(node, roles_metadata=None):
+        return objects.Node.should_have_public(node, roles_metadata)
+
+    @classmethod
+    def assign_public_network_on_node(cls, node):
+        public_net = objects.NetworkGroupCollection.filter_by(
+            None,
+            group_id=node.group_id,
+            name=consts.NETWORKS.public).first()
+        cls._assign_network_to_interface(node, public_net)
+
+    @staticmethod
+    def _node_interfaces_without_bonds(node):
+        ifaces = set(node.interfaces)
+        for bond in node.bond_interfaces:
+            ifaces ^= set(bond.slaves)
+        return sorted(ifaces, key=attrgetter('name'))
+
+    @classmethod
+    def _assign_network_to_interface(cls, node, network):
+        """Assign network to interface by default for single node
+
+        Assign given network to first available interfacee.
+        Checks interface type, if network is already assigned
+        and already assigned networks.
+        """
+        untagged = objects.NetworkGroup.is_untagged(network)
+        dedicated = network.meta.get('dedicated_nic')
+        ifaces = cls._node_interfaces_without_bonds(node)
+        for iface in ifaces:
+            if iface.assigned_networks_list.count(network):
+                break
+            if any(six.moves.map(lambda network:
+                                 network.meta.get('dedicated_nic'),
+                                 iface.assigned_networks_list)):
+                continue
+            if dedicated and iface.assigned_networks_list:
+                continue
+            if untagged and any(six.moves.map(
+                    objects.NetworkGroup.is_untagged,
+                    iface.assigned_networks_list)):
+                continue
+            assigned_nets = iface.assigned_networks_list + [network]
+            objects.NIC.assign_networks(iface, assigned_nets)
+            break
+        else:
+            logger.warning(
+                "Cannot assign network %r appropriately for "
+                "node %r. Set unassigned network to the "
+                "interface %r",
+                network.name, node.name, ifaces[0].name
+            )
+            assigned_nets = ifaces[0].assigned_networks_list + [network]
+            objects.NIC.assign_networks(ifaces[0], assigned_nets)
+
+    @classmethod
+    def unassign_public_network_on_node(cls, node):
+        public_net = objects.NetworkGroupCollection.filter_by(
+            None,
+            group_id=node.group_id,
+            name=consts.NETWORKS.public).first()
+        ifaces = cls._node_interfaces_without_bonds(node)
+        for iface in ifaces:
+            network_list = iface.assigned_networks_list
+            if public_net in network_list:
+                network_list.remove(public_net)
+                objects.NIC.update(iface, network_list)
+
     @classmethod
     def assign_network_to_interface_by_default(cls, ng):
         """Assign network to interface by default for all nodes in node group
@@ -542,36 +613,9 @@ class NetworkManager(object):
         first avalable interface. Checks interface type and already assigned
         networks.
         """
-        untagged = objects.NetworkGroup.is_untagged(ng)
-        dedicated = ng.meta.get('dedicated_nic')
         node_group = objects.NodeGroup.get_by_uid(ng.group_id)
         for node in node_group.nodes:
-            ifaces = set(node.interfaces)
-            for bond in node.bond_interfaces:
-                ifaces = ifaces ^ set(bond.slaves)
-            ifaces = sorted(ifaces, key=lambda i: i.name)
-            for iface in ifaces:
-                if any(six.moves.map(lambda ng: ng.meta.get('dedicated_nic'),
-                                     iface.assigned_networks_list)):
-                    continue
-                if dedicated and iface.assigned_networks_list:
-                    continue
-                if untagged and any(six.moves.map(
-                        objects.NetworkGroup.is_untagged,
-                        iface.assigned_networks_list)):
-                    continue
-                assigned_nets = iface.assigned_networks_list + [ng]
-                objects.NIC.assign_networks(iface, assigned_nets)
-                break
-            else:
-                logger.warning(
-                    "Cannot assign network %r appropriately for "
-                    "node %r. Set unassigned network to the "
-                    "interface %r",
-                    ng.name, node.name, ifaces[0].name
-                )
-                assigned_nets = ifaces[0].assigned_networks_list + [ng]
-                objects.NIC.assign_networks(ifaces[0], assigned_nets)
+            cls._assign_network_to_interface(node, ng)
 
     @classmethod
     def get_default_interfaces_configuration(cls, node):
@@ -597,11 +641,14 @@ class NetworkManager(object):
         ngs.add(admin_net)
 
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
+        should_have_public = objects.Node.\
+            should_have_public(node)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(
             next(six.moves.zip(*sorted(
                 [[ng.id, ng.meta['map_priority']]
-                 for ng in ngs],
+                 for ng in ngs if (should_have_public or
+                                   ng.name != consts.NETWORKS.public)],
                 key=lambda x: x[1])))
         )
         ng_ids = set(ng.id for ng in ngs)

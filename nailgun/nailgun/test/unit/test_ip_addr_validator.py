@@ -21,6 +21,7 @@ from nailgun.api.v1.validators import ip_addr
 from nailgun.errors import errors
 from nailgun.test import base
 
+from nailgun.api.v1.validators.json_schema import iface_schema
 
 class TestIpAddrValidator(base.BaseUnitTest):
 
@@ -29,7 +30,7 @@ class TestIpAddrValidator(base.BaseUnitTest):
 
         self.create_data = {
             'ip_addr': "192.168.0.15",
-            'network': -1,
+            'network': 1,
             'vip_name': 'test',
             'is_user_defined': True
         }

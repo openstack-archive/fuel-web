@@ -334,7 +334,7 @@ class Node(NailgunObject):
         return False
 
     @classmethod
-    def should_have_public(cls, instance):
+    def should_have_public(cls, instance, roles_metadata=None):
         """Determine whether this node should be connected to Public network,
 
         no matter with or without an IP address assigned from that network
@@ -345,13 +345,14 @@ class Node(NailgunObject):
         :param instance: Node DB instance
         :returns: True when node has Public network
         """
+        roles_metadata = roles_metadata or\
+            Cluster.get_roles(instance.cluster)
         if cls.should_have_public_with_ip(instance):
             return True
 
         dvr_enabled = Cluster.neutron_dvr_enabled(instance.cluster)
         if dvr_enabled:
             roles = itertools.chain(instance.roles, instance.pending_roles)
-            roles_metadata = Cluster.get_roles(instance.cluster)
 
             for role in roles:
                 if roles_metadata.get(role, {}).get('public_for_dvr_required'):
@@ -407,10 +408,9 @@ class Node(NailgunObject):
         if new_node.meta and new_node.meta.get('interfaces'):
             cls.update_interfaces(new_node)
 
-        # adding node into cluster
+        # role cannot be assigned if cluster_id is not set
         if new_node_cluster_id:
-            cls.add_into_cluster(new_node, new_node_cluster_id)
-
+            new_node.cluster_id = new_node_cluster_id
         # updating roles
         if roles is not None:
             cls.update_roles(new_node, roles)
@@ -418,6 +418,10 @@ class Node(NailgunObject):
             cls.update_pending_roles(new_node, pending_roles)
         if primary_roles is not None:
             cls.update_primary_roles(new_node, primary_roles)
+
+        # adding node into cluster
+        if new_node_cluster_id:
+            cls.add_into_cluster(new_node, new_node_cluster_id)
 
         # creating attributes
         cls.create_discover_notification(new_node)

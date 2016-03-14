@@ -1189,6 +1189,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                                       PrepareDataMixin):
 
     env_version = '2015.1.0-7.0'
+    legacy_serializer = NeutronNetworkDeploymentSerializer70
+    template_serializer = NeutronNetworkTemplateSerializer70
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
@@ -1222,9 +1224,9 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             'name': self.node_name,
             'cluster_id': cluster['id']
         }
-        self.env.create_nodes_w_interfaces_count(1, 4, **nodes_kwargs)
+        self.env.create_nodes_w_interfaces_count(1, 6, **nodes_kwargs)
         nodes_kwargs['roles'] = ['compute', 'cinder']
-        self.env.create_nodes_w_interfaces_count(1, 4, **nodes_kwargs)
+        self.env.create_nodes_w_interfaces_count(1, 6, **nodes_kwargs)
 
         return cluster
 
@@ -1248,12 +1250,12 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         self.cluster.network_config.configuration_template = None
 
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+        self.assertIs(net_serializer, self.legacy_serializer)
 
         self.cluster.network_config.configuration_template = \
             self.net_template
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkTemplateSerializer70)
+        self.assertIs(net_serializer, self.template_serializer)
 
     def test_ip_assignment_according_to_template(self):
         self.create_more_nodes(iface_count=4)
@@ -1320,7 +1322,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
 
         serializer = get_serializer_for_cluster(self.cluster)
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+        self.assertIs(net_serializer, self.legacy_serializer)
 
         nm = objects.Cluster.get_network_manager(self.cluster)
         networks = nm.get_node_networks(compute)
@@ -1352,7 +1354,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
 
         serializer = get_serializer_for_cluster(self.cluster)
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+        self.assertIs(net_serializer, self.legacy_serializer)
 
         nm = objects.Cluster.get_network_manager(self.cluster)
         networks = nm.get_node_networks(compute)
@@ -1475,6 +1477,38 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         for node in self.serialized_for_astute:
             roles = node['network_scheme']['roles']
             self.assertEqual(roles, expected_roles[node['fqdn']])
+
+    def test_routes_while_using_multiple_node_groups(self):
+        self.env.create_node_group()
+        objects.Cluster.prepare_for_deployment(self.cluster)
+        serializer = get_serializer_for_cluster(self.cluster)
+        facts = serializer(AstuteGraph(self.cluster)).serialize(
+            self.cluster, self.cluster.nodes)
+
+        for node in facts:
+            node_db = objects.Node.get_by_uid(node['uid'])
+            is_public = objects.Node.should_have_public(node_db)
+            endpoints = node['network_scheme']['endpoints']
+            if 'compute' in node_db.roles:
+                # private network won't have routes
+                self.assertEqual(endpoints['br-prv'], {'IP': 'none'})
+                endpoints.pop('br-prv')
+            else:
+                self.assertNotIn('br-prv', endpoints)
+            if is_public:
+                # floating network won't have routes
+                self.assertEqual(endpoints['br-floating'], {'IP': 'none'})
+                endpoints.pop('br-floating')
+            for name, descr in six.iteritems(endpoints):
+                self.assertTrue(set(['IP', 'routes']).issubset((descr.keys())))
+                # the only route in this case is for Admin network
+                # others are shared
+                self.assertIn(len(descr['routes']), [0, 1])
+                if descr['routes']:
+                    self.assertEqual(name, 'br-fw-admin')
+                    for route in descr['routes']:
+                        self.assertEqual(set(['net', 'via']),
+                                         set(route.keys()))
 
     def test_multiple_node_roles_transformations(self):
         node = self.cluster.nodes[1]

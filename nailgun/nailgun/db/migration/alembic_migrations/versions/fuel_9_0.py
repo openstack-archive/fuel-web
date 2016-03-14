@@ -516,7 +516,7 @@ def upgrade_ip_address():
         'ip_addrs',
         sa.Column(
             'vip_namespace',
-            sa.String(length=25),
+            sa.String(length=50),
             nullable=True,
             default=None,
             server_default=None
@@ -527,7 +527,7 @@ def upgrade_ip_address():
         'ip_addrs',
         'vip_type',
         new_column_name='vip_name',
-        type_=sa.String(length=25)
+        type_=sa.String(length=50)
     )
 
 

@@ -21,7 +21,6 @@ from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
-from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
@@ -34,9 +33,9 @@ class IPAddr(Base):
                                          ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(psql.INET, nullable=False)
-    vip_name = Column(String(consts.VIP_NAME_MAX_LEN), nullable=True)
+    vip_name = Column(String(50), nullable=True)
     vip_namespace = Column(
-        String(consts.VIP_NAMESPACE_MAX_LEN),
+        String(50),
         nullable=True,
         server_default=None
     )
@@ -63,7 +62,7 @@ class NetworkGroup(Base):
     __tablename__ = 'network_groups'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(consts.NETWORK_GROUP_NAME_MAX_LEN), nullable=False)
+    name = Column(String(50), nullable=False)
     # can be nullable only for fuelweb admin net
     release = Column(Integer, ForeignKey('releases.id', ondelete='CASCADE'))
     # can be nullable only for fuelweb admin net

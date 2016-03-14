@@ -26,7 +26,7 @@ from nailgun.logger import logger
 
 from nailgun import objects
 
-from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.task import manager
 
 
@@ -38,7 +38,7 @@ class SpawnVmsHandler(BaseHandler):
 
     def get_tasks(self, cluster):
         tasks = objects.Cluster.get_deployment_tasks(cluster)
-        graph = deployment_graph.DeploymentGraph()
+        graph = orchestrator_graph.OrchestratorGraph()
         graph.add_tasks(tasks)
         subgraph = graph.find_subgraph(end='generate_vms')
         return [task['id'] for task in subgraph.topology]

@@ -22,19 +22,20 @@ import web
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
-from nailgun.api.v1.validators.graph import GraphVisualizationValidator
 from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
+from nailgun.api.v1.validators.orchestrator_graph import \
+    OrchestratorGraphVisualizationValidator
 
 from nailgun.logger import logger
 
 from nailgun.errors import errors
 from nailgun import objects
 
-from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import graph_visualization
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator.stages import post_deployment_serialize
 from nailgun.orchestrator.stages import pre_deployment_serialize
@@ -152,7 +153,7 @@ class DefaultProvisioningInfo(DefaultOrchestratorInfo):
 class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        graph = deployment_graph.AstuteGraph(cluster)
+        graph = orchestrator_graph.AstuteGraph(cluster)
         return deployment_serializers.serialize(
             graph, cluster, nodes, ignore_customized=True)
 
@@ -163,7 +164,7 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        graph = deployment_graph.AstuteGraph(cluster)
+        graph = orchestrator_graph.AstuteGraph(cluster)
         return pre_deployment_serialize(graph, cluster, nodes)
 
     def get_default_nodes(self, cluster):
@@ -173,7 +174,7 @@ class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        graph = deployment_graph.AstuteGraph(cluster)
+        graph = orchestrator_graph.AstuteGraph(cluster)
         return post_deployment_serialize(graph, cluster, nodes)
 
     def get_default_nodes(self, cluster):
@@ -323,7 +324,7 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
 
 class TaskDeployGraph(BaseHandler):
 
-    validator = GraphVisualizationValidator
+    validator = OrchestratorGraphVisualizationValidator
 
     def GET(self, cluster_id):
         """:returns: DOT representation of deployment graph.
@@ -336,7 +337,7 @@ class TaskDeployGraph(BaseHandler):
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         tasks = objects.Cluster.get_deployment_tasks(cluster)
-        graph = deployment_graph.DeploymentGraph(tasks)
+        graph = orchestrator_graph.OrchestratorGraph(tasks)
 
         tasks = web.input(tasks=None).tasks
         parents_for = web.input(parents_for=None).parents_for

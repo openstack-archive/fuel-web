@@ -1237,7 +1237,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
 
         return cluster
 
-    def create_more_nodes(self, iface_count=2):
+    def create_more_nodes(self, iface_count=3):
         self.env.create_nodes_w_interfaces_count(
             1, iface_count, roles=['cinder'], cluster_id=self.cluster.id)
         self.env.create_nodes_w_interfaces_count(

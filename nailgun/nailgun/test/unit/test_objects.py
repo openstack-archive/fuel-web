@@ -2017,14 +2017,14 @@ class TestNICObject(BaseTestCase):
         nic_2 = node.interfaces[1]
 
         self.assertEqual(len(nic_1.assigned_networks), 4)
-        self.assertEqual(len(nic_2.assigned_networks), 1)
-
-        new_nets = nic_1.assigned_networks_list + nic_2.assigned_networks_list
-        objects.NIC.assign_networks(nic_1, new_nets)
-        objects.NIC.assign_networks(nic_2, [])
-
-        self.assertEqual(len(nic_1.assigned_networks), 5)
         self.assertEqual(len(nic_2.assigned_networks), 0)
+
+        new_nets = nic_1.assigned_networks_list
+        objects.NIC.assign_networks(nic_2, new_nets)
+        objects.NIC.assign_networks(nic_1, [])
+
+        self.assertEqual(len(nic_1.assigned_networks), 0)
+        self.assertEqual(len(nic_2.assigned_networks), 4)
 
     def test_get_interfaces_not_in_mac_list(self):
         node = self.env.nodes[0]

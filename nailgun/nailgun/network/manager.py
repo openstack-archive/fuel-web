@@ -144,15 +144,9 @@ class NetworkManager(object):
                     u"Node id='{0}' doesn't belong to Cluster id='{1}'"
                     .format(node_id, cluster_id)
                 )
-
-            if network_name == 'public' and \
-                    not objects.Node.should_have_public_with_ip(node):
-                continue
-
             network = objects.NetworkGroup.get_node_network_by_name(
                 node, network_name
             )
-
             node_ips = six.moves.map(
                 lambda i: i.ip_addr,
                 objects.IPAddr.get_ips_except_admin(
@@ -160,6 +154,10 @@ class NetworkManager(object):
                     network_id=network.id
                 )
             )
+
+            if network_name == 'public' and \
+                    not objects.Node.should_have_public_with_ip(node):
+                continue
 
             # check if any of node_ips in required ranges
             ip_already_assigned = False
@@ -175,7 +173,6 @@ class NetworkManager(object):
                     )
                     ip_already_assigned = True
                     break
-
             if ip_already_assigned:
                 continue
 
@@ -579,14 +576,16 @@ class NetworkManager(object):
                     objects.Cluster.get_default_group(node.cluster).id)
         node_group = objects.NodeGroup.get_by_uid(group_id)
         admin_net = objects.NetworkGroup.get_admin_network_group(node.id)
-
         ngs = node_group.networks + [admin_net]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
+        should_have_public = objects.Node.\
+            should_have_public_with_ip(node)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(
             zip(*sorted(
                 [[ng.id, ng.meta['map_priority']]
-                 for ng in ngs],
+                 for ng in ngs if (should_have_public or
+                                   ng.name != consts.NETWORKS.public)],
                 key=lambda x: x[1]))[0]
         )
         ng_ids = set(ng.id for ng in ngs)

@@ -622,7 +622,7 @@ class NeutronNetworkDeploymentSerializer61(
         other_nets = nm.get_networks_not_on_node(node, networks)
 
         for ngname, brname in netgroup_mapping:
-            netgroup = netgroups[ngname]
+            netgroup = netgroups.get(ngname, {})
             if netgroup.get('gateway'):
                 via = netgroup['gateway']
                 attrs['endpoints'][brname]['routes'] = []
@@ -1458,7 +1458,7 @@ class NeutronNetworkDeploymentSerializer80(
         cidrs_in_use = set(ng['cidr'] for ng in netgroups if 'cidr' in ng)
 
         for ngname, brname in netgroup_mapping:
-            netgroup = netgroups[ngname]
+            netgroup = netgroups.get(ngname, {})
             if netgroup.get('gateway') and netgroup.get('cidr'):
                 via = netgroup['gateway']
                 attrs['endpoints'][brname]['routes'] = []

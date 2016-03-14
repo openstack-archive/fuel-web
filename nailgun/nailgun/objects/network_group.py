@@ -66,9 +66,11 @@ class NetworkGroup(NailgunObject):
         ).order_by(models.NetworkGroup.id).all()
 
     @classmethod
-    def get_admin_network_group(cls, node_id=None):
+    def get_admin_network_group(cls, node=None):
         """Method for receiving Admin NetworkGroup.
 
+        :param node: Node
+        :type node: nailgun.objects.Node
         :returns: Admin NetworkGroup.
         :raises: errors.AdminNetworkNotFound
         """
@@ -76,9 +78,11 @@ class NetworkGroup(NailgunObject):
         admin_ngs = db().query(models.NetworkGroup).filter_by(
             name=consts.NETWORKS.fuelweb_admin,
         )
-        if node_id:
-            node_db = db().query(models.Node).get(node_id)
-            admin_ng = admin_ngs.filter_by(group_id=node_db.group_id).first()
+
+        if node is not None and node.nodegroup:
+            networks = (net for net in node.nodegroup.networks
+                        if net.name == consts.NETWORKS.fuelweb_admin)
+            admin_ng = next(networks, None)
 
         admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
 
@@ -304,7 +308,7 @@ class NetworkGroup(NailgunObject):
     @classmethod
     def get_node_network_by_name(cls, node, network_name):
         if network_name == consts.NETWORKS.fuelweb_admin:
-            return cls.get_admin_network_group(node.id)
+            return cls.get_admin_network_group(node)
         else:
             return cls.get_from_node_group_by_name(node.group_id, network_name)
 

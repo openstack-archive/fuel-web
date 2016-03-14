@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 from random import randint
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance import base
 
@@ -225,7 +226,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
             [],
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
-        self.check_time_exec(func, 10)
+        self.check_time_exec(func)
 
     @fake_tasks()
     @base.evaluate_unit_performance
@@ -242,6 +243,8 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
             [],
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
+
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
 
         func = functools.partial(
             self.put_handler,

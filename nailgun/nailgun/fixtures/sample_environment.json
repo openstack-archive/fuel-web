@@ -642,7 +642,21 @@
                         "bus_info": "0000:06:00.0",
                         "max_speed": 1000,
                         "current_speed": 1000,
-                        "pxe": false
+                        "pxe": false,
+                        "interface_properties": {
+                            "sriov": {
+                                "available": true,
+                                "enabled": false,
+                                "pci_id": "1234:5678",
+                                "physnet": "physnet2",
+                                "sriov_numvfs": 0,
+                                "sriov_totalvfs": 2
+                            },
+                            "dpdk": {
+                                "available": true,
+                                "enabled": false
+                            }
+                        }
                     },
                     {
                         "name": "eth2",

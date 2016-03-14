@@ -401,7 +401,9 @@ class TestHandlers(BaseIntegrationTest):
             },
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'gre',
+                'editable_attributes': {'public_network_assignment':
+                    {'assign_to_all_nodes': {'value': True}}}
             },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -887,7 +889,9 @@ class TestHandlers(BaseIntegrationTest):
             },
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'gre',
+                'editable_attributes': {'public_network_assignment':
+                    {'assign_to_all_nodes': {'value': True}}}
             },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},

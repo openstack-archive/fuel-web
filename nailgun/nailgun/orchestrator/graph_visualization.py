@@ -21,7 +21,7 @@ from nailgun import consts
 
 
 class GraphVisualization(object):
-    """Wrapper for DeploymentGraph used for graph visualization."""
+    """Wrapper for GraphSolver used for graph visualization."""
 
     def __init__(self, graph):
         self._graph = graph

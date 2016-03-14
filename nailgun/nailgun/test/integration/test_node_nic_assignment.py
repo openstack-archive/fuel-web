@@ -39,7 +39,11 @@ class TestClusterHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
 
         node = self.env.create_node(api=True, meta=meta, mac=mac)
-        self.env.create_cluster(api=True, nodes=[node['id']])
+        self.env.create_cluster(
+            api=True,
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}},
+            nodes=[node['id']])
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
@@ -99,7 +103,10 @@ class TestClusterHandlers(BaseIntegrationTest):
 class TestNodeHandlers(BaseIntegrationTest):
 
     def test_network_assignment_when_node_created_and_added(self):
-        cluster = self.env.create_cluster(api=True)
+        cluster = self.env.create_cluster(
+            api=True,
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
@@ -122,7 +129,10 @@ class TestNodeHandlers(BaseIntegrationTest):
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def test_network_assignment_when_node_added(self):
-        cluster = self.env.create_cluster(api=True)
+        cluster = self.env.create_cluster(
+            api=True,
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
@@ -275,9 +285,12 @@ class TestNodeHandlers(BaseIntegrationTest):
             self.assertEqual(set(net_name_per_nic[i]), net_names)
 
     def test_neutron_assignment_when_network_cfg_changed_then_node_added(self):
-        cluster = self.env.create_cluster(api=True,
-                                          net_provider='neutron',
-                                          net_segment_type='vlan')
+        cluster = self.env.create_cluster(
+            api=True,
+            net_provider='neutron',
+            net_segment_type='vlan',
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
         resp = self.env.neutron_networks_get(cluster['id'])
         nets = resp.json_body
         for net in nets['networks']:
@@ -593,25 +606,36 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
     def test_nova_net_public_network_assigned_to_second_nic_by_name(self):
         self.env.create_cluster(
             api=True,
-            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
+            net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network,
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
         self.create_node_and_check_assignment()
 
     def test_neutron_gre_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(api=True,
-                                net_provider='neutron',
-                                net_segment_type='gre')
+        self.env.create_cluster(
+            api=True,
+            net_provider='neutron',
+            net_segment_type='gre',
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
         self.create_node_and_check_assignment()
 
     def test_neutron_tun_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(api=True,
-                                net_provider='neutron',
-                                net_segment_type='tun')
+        self.env.create_cluster(
+            api=True,
+            net_provider='neutron',
+            net_segment_type='tun',
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
         self.create_node_and_check_assignment()
 
     def test_neutron_vlan_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(api=True,
-                                net_provider='neutron',
-                                net_segment_type='vlan')
+        self.env.create_cluster(
+            api=True,
+            net_provider='neutron',
+            net_segment_type='vlan',
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
         self.create_node_and_check_assignment()
 
 
@@ -716,3 +740,121 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertIn("node is not added to any cluster",
                       resp.json_body['message'])
+
+
+class TestPublicNetworkAssigment(BaseIntegrationTest):
+    def setUp(self):
+        super(TestPublicNetworkAssigment, self).setUp()
+        self.default_networks = [u'fuelweb_admin', u'management',
+                                 u'storage', u'private']
+        self.public_networks = ['public']
+
+    def set_assign_public_to_all_nodes(self, cluster, value):
+        attrs = deepcopy(cluster.attributes.editable)
+        attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
+            value
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            attrs['public_network_assignment']['assign_to_all_nodes']['value'],
+            value
+        )
+
+    def check_nic_assigments(self, node, networks_by_mac):
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+
+        self.assertEqual(resp.status_code, 200)
+
+        for resp_nic in resp.json_body:
+            net_names = [net['name'] for net in resp_nic['assigned_networks']]
+            self.assertListEqual(networks_by_mac[resp_nic['mac']], net_names)
+
+    def check_node_public_ip_assigment(self, cluster, node, public_ip):
+        node_db = objects.Node.get_by_uid(node['id'])
+        nm = objects.Cluster.get_network_manager(cluster)
+        nets = nm.get_node_networks(node_db)
+        ng = nm.get_network_by_netname('public', nets)
+        self.assertEqual(public_ip, ng.get('ip'))
+
+    def create_node_with_preset_macs(self, cluster, roles=None):
+        macs = [self.env.generate_random_mac(), self.env.generate_random_mac()]
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': macs[0]},
+             {'name': 'eth1', 'mac': macs[1]}])
+
+        node = self.env.create_node(api=True, meta=meta, mac=macs[0],
+                                    roles=roles, cluster_id=cluster.id)
+        return node, macs
+
+    def test_only_controllers_changed_to_all_change(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[0]
+
+        node1, macs1 = self.create_node_with_preset_macs(cluster,
+                                                         ['controller'])
+        self.check_nic_assigments(node1, {
+            macs1[0]: self.default_networks,
+            macs1[1]: self.public_networks})
+
+        node2, macs2 = self.create_node_with_preset_macs(cluster,
+                                                         roles=['cinder'])
+        self.check_nic_assigments(node2, {
+            macs2[0]: self.default_networks,
+            macs2[1]: []})
+
+        self.set_assign_public_to_all_nodes(cluster, True)
+
+        self.check_nic_assigments(node1, {
+            macs1[0]: self.default_networks,
+            macs1[1]: self.public_networks})
+        self.check_nic_assigments(node2, {
+            macs2[0]: self.default_networks,
+            macs2[1]: self.public_networks})
+
+        objects.Cluster.prepare_for_deployment(cluster)
+        self.check_node_public_ip_assigment(cluster, node1, '172.16.0.4/24')
+        self.check_node_public_ip_assigment(cluster, node2, '172.16.0.5/24')
+
+    def test_all_to_only_controllers_change(self):
+        self.env.create_cluster(
+            api=True,
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
+
+        cluster = self.env.clusters[0]
+
+        node1, macs1 = self.create_node_with_preset_macs(cluster,
+                                                         ['controller'])
+        self.check_nic_assigments(node1, {
+            macs1[0]: self.default_networks,
+            macs1[1]: self.public_networks})
+
+        node2, macs2 = self.create_node_with_preset_macs(cluster,
+                                                         ['cinder'])
+        self.check_nic_assigments(node2, {
+            macs2[0]: self.default_networks,
+            macs2[1]: self.public_networks})
+
+        self.set_assign_public_to_all_nodes(cluster, False)
+
+        self.check_nic_assigments(node1, {
+            macs1[0]: self.default_networks,
+            macs1[1]: self.public_networks})
+        self.check_nic_assigments(node2, {
+            macs2[0]: self.default_networks,
+            macs2[1]: []})
+
+        objects.Cluster.prepare_for_deployment(cluster)
+        self.check_node_public_ip_assigment(cluster, node1, '172.16.0.4/24')
+        with self.assertRaises(IndexError):
+            self.check_node_public_ip_assigment(cluster, node2, None)

@@ -86,10 +86,6 @@ class InstallationInfo(object):
                       'pin_rabbitmq', bool),
         WhiteListRule(('repo_setup', 'repo_type', 'value'),
                       'repo_type', None),
-        WhiteListRule(('repo_setup', 'uca_openstack_release',
-                       'value'), 'uca_openstack_release', None),
-        WhiteListRule(('repo_setup', 'uca_repo_url', 'value'),
-                      'uca_repo_url', None),
 
         WhiteListRule(('storage', 'volumes_lvm', 'value'),
                       'volumes_lvm', None),

@@ -225,7 +225,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
             [],
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
-        self.check_time_exec(func, 10)
+        self.check_time_exec(func)
 
     @fake_tasks()
     @base.evaluate_unit_performance

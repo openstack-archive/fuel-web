@@ -39,6 +39,8 @@ from nailgun.test.integration.test_orchestrator_serializer_80 import \
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestNetworkTemplateSerializer80
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestNetworkTemplateSerializer80CompatibleWith70
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestSerializeInterfaceDriversData80
 
 
@@ -105,6 +107,41 @@ class TestMultiNodeGroupsSerialization90(
     TestMultiNodeGroupsSerialization80
 ):
     pass
+
+
+class TestNetworkTemplateSerializer90CompatibleWith80(
+    TestSerializer90Mixin,
+    TestNetworkTemplateSerializer80CompatibleWith70
+):
+    legacy_serializer = NeutronNetworkDeploymentSerializer90
+    template_serializer = NeutronNetworkTemplateSerializer90
+
+    def check_vendor_specific_is_not_set(self, use_net_template=False):
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'], primary_roles=['controller']
+        )
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template if use_net_template else None)
+        objects.Cluster.prepare_for_deployment(self.cluster)
+        serializer = deployment_serializers.get_serializer_for_cluster(
+            self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        networks = nm.get_node_networks(node)
+        endpoints = net_serializer.generate_network_scheme(
+            node, networks)['endpoints']
+
+        for name in endpoints:
+            # Just 'provider_gateway' can be in 'vendor_specific'
+            if endpoints[name].get('vendor_specific'):
+                self.assertItemsEqual(['provider_gateway'],
+                                      endpoints[name]['vendor_specific'])
+
+    # We have different attributes and network roles sets in 9.0
+    def test_multiple_node_roles_network_metadata(self):
+        pass
 
 
 class TestNetworkTemplateSerializer90(

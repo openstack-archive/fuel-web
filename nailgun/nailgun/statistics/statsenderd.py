@@ -38,11 +38,9 @@ logger = logging.getLogger('statistics')
 
 class StatsSender(object):
 
-    COLLECTOR_COMMUNITY_SERVER = "collector.fuel-infra.org"
-
     def build_collector_url(self, url_template):
         return getattr(settings, url_template)\
-            .format(collector_server=self.COLLECTOR_COMMUNITY_SERVER)
+            .format(collector_server=settings.COLLECTOR_SERVER)
 
     def ping_collector(self):
         try:

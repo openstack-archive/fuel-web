@@ -78,6 +78,7 @@ RPC_CONSUMER_LOG_PATH: "/var/log/nailgun/receiverd.log"
 
 ASSASSIN_LOG_PATH: "/var/log/nailgun/assassind.log"
 
+COLLECTOR_SERVER: "collector.fuel-infra.org"
 COLLECTOR_ACTION_LOGS_URL: "https://{collector_server}/api/v1/action_logs/"
 COLLECTOR_INST_INFO_URL: "https://{collector_server}/api/v1/installation_structure/"
 COLLECTOR_OSWL_INFO_URL: "https://{collector_server}/api/v1/oswl_stats/"

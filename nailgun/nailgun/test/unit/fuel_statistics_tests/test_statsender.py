@@ -53,7 +53,7 @@ class TestStatisticsSender(BaseTestCase):
 
     @patch.dict('nailgun.settings.settings.VERSION', FEATURE_EXPERIMENTAL)
     def test_community_collector_urls(self):
-        self.check_collector_urls(StatsSender.COLLECTOR_COMMUNITY_SERVER)
+        self.check_collector_urls(settings.COLLECTOR_SERVER)
 
     @patch('nailgun.statistics.statsenderd.requests.get')
     def test_ping_ok(self, requests_get):

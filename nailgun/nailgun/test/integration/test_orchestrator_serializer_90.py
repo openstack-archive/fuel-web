@@ -16,7 +16,7 @@
 
 from nailgun import consts
 from nailgun import objects
-from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import deployment_serializers
 
 from nailgun.orchestrator.neutron_serializers import \
@@ -183,7 +183,7 @@ class TestSriovSerialization90(
 
     def serialize(self):
         objects.Cluster.prepare_for_deployment(self.env.clusters[0])
-        graph = deployment_graph.AstuteGraph(self.env.clusters[0])
+        graph = orchestrator_graph.AstuteGraph(self.env.clusters[0])
         return deployment_serializers.serialize(
             graph, self.env.clusters[0], self.env.nodes)
 

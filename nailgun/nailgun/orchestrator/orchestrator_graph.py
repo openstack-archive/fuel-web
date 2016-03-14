@@ -33,7 +33,7 @@ from nailgun.policy.name_match import NameMatchingPolicy
 from nailgun.utils.role_resolver import RoleResolver
 
 
-class DeploymentGraph(nx.DiGraph):
+class OrchestratorGraph(nx.DiGraph):
     """DirectedGraph used to generate configs for speficific orchestrators
 
     In case of astute - we are working with priorities
@@ -57,7 +57,7 @@ class DeploymentGraph(nx.DiGraph):
     adjlist_dict_factory = OrderedDict
 
     def __init__(self, tasks=None, *args, **kwargs):
-        super(DeploymentGraph, self).__init__(*args, **kwargs)
+        super(OrchestratorGraph, self).__init__(*args, **kwargs)
         # (dshulyak) we need to monkey patch created dicts, 1.9.1
         # doesnt support chaning those data structures by fabric
         self.node = self.node_dict_factory()
@@ -73,7 +73,7 @@ class DeploymentGraph(nx.DiGraph):
             self.succ[n] = self.adjlist_dict_factory()
             self.pred[n] = self.adjlist_dict_factory()
             self.node[n] = attr
-        super(DeploymentGraph, self).add_node(n, **attr)
+        super(OrchestratorGraph, self).add_node(n, **attr)
 
     def add_edge(self, u, v, **attr):
         if u not in self.succ:
@@ -84,7 +84,7 @@ class DeploymentGraph(nx.DiGraph):
             self.succ[v] = self.adjlist_dict_factory()
             self.pred[v] = self.adjlist_dict_factory()
             self.node[v] = self.node_dict_factory()
-        super(DeploymentGraph, self).add_edge(u, v, **attr)
+        super(OrchestratorGraph, self).add_edge(u, v, **attr)
 
     def add_tasks(self, tasks):
         for task in tasks:
@@ -122,7 +122,7 @@ class DeploymentGraph(nx.DiGraph):
                     else:
                         not_matched.append(available_group)
                 # Add dependency for non-existing group which will be
-                # resolved in DeploymentGraphValidator
+                # resolved in OrchestratorGraphValidator
                 if len(available_groups) == len(not_matched):
                     self.add_edge(task['id'], group)
                     logger.warning(
@@ -250,7 +250,7 @@ class DeploymentGraph(nx.DiGraph):
         :param end: task name
         :param start: task name
         :param include: iterable with task names
-        :returns: DeploymentGraph instance (subgraph from original)
+        :returns: OrchestratorGraph instance (subgraph from original)
         """
         working_graph = self
 
@@ -289,7 +289,7 @@ class AstuteGraph(object):
     def __init__(self, cluster):
         self.cluster = cluster
         self.tasks = objects.Cluster.get_deployment_tasks(cluster)
-        self.graph = DeploymentGraph()
+        self.graph = OrchestratorGraph()
         self.graph.add_tasks(self.tasks)
         self.serializers = TaskSerializers()
 
@@ -480,10 +480,10 @@ class AstuteGraph(object):
         return serialized
 
 
-class DeploymentGraphValidator(object):
+class OrchestratorGraphValidator(object):
 
     def __init__(self, tasks):
-        self.graph = DeploymentGraph()
+        self.graph = OrchestratorGraph()
         self.graph.add_tasks(tasks)
 
     def check(self):

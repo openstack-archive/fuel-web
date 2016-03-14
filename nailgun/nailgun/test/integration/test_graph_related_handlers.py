@@ -21,7 +21,7 @@ import yaml
 
 from nailgun import consts
 from nailgun import objects
-from nailgun.orchestrator.deployment_graph import DeploymentGraph
+from nailgun.orchestrator.orchestrator_graph import OrchestratorGraph
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import DeploymentTasksTestMixin
 from nailgun.utils import reverse
@@ -376,7 +376,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
 
     def assert_passed_correctly(self, url, **kwargs):
-        with mock.patch.object(DeploymentGraph,
+        with mock.patch.object(OrchestratorGraph,
                                'find_subgraph') as mfind_subgraph:
             resp = self.app.get(
                 url,

@@ -33,13 +33,13 @@ from nailgun.test import base
 from nailgun.test.base import DeploymentTasksTestMixin
 from nailgun.utils import reverse
 
-from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer70
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
+from nailgun.orchestrator.orchestrator_graph import AstuteGraph
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 from nailgun.test.integration.test_orchestrator_serializer import \

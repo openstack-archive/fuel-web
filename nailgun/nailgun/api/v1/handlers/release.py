@@ -20,7 +20,7 @@ Handlers dealing with releases
 
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.handlers.base import DeploymentTasksHandler
+from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
@@ -98,7 +98,7 @@ class ReleaseNetworksHandler(SingleHandler):
         raise self.http(405, 'Delete not supported for this entity')
 
 
-class ReleaseDeploymentTasksHandler(DeploymentTasksHandler):
+class ReleaseDeploymentTasksHandler(OrchestratorDeploymentTasksHandler):
     """Release Handler for deployment graph configuration."""
 
     single = Release

@@ -39,6 +39,8 @@ from nailgun.test.integration.test_orchestrator_serializer_80 import \
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestNetworkTemplateSerializer80
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
+    TestNetworkTemplateSerializer80CompatibleWith70
+from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestSerializeInterfaceDriversData80
 
 
@@ -105,6 +107,59 @@ class TestMultiNodeGroupsSerialization90(
     TestMultiNodeGroupsSerialization80
 ):
     pass
+
+
+class TestNetworkTemplateSerializer90CompatibleWith80(
+    TestSerializer90Mixin,
+    TestNetworkTemplateSerializer80CompatibleWith70
+):
+    general_serializer = NeutronNetworkDeploymentSerializer90
+    template_serializer = NeutronNetworkTemplateSerializer90
+
+    def check_vendor_specific_is_not_set(self, use_net_template=False):
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'], primary_roles=['controller']
+        )
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_template if use_net_template else None)
+        objects.Cluster.prepare_for_deployment(self.cluster)
+        serializer = deployment_serializers.get_serializer_for_cluster(
+            self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        networks = nm.get_node_networks(node)
+        endpoints = net_serializer.generate_network_scheme(
+            node, networks)['endpoints']
+
+        for name in endpoints:
+            # Just 'provider_gateway' can be in 'vendor_specific'
+            if endpoints[name].get('vendor_specific'):
+                self.assertItemsEqual(['provider_gateway'],
+                                      endpoints[name]['vendor_specific'])
+
+    # This test is replaced as we have different attributes set in 9.0
+    def test_multiple_node_roles_network_metadata_attrs(self):
+        for node_data in self.serialized_for_astute:
+            self.assertItemsEqual(
+                node_data['network_metadata'], ['nodes', 'vips'])
+            nodes = node_data['network_metadata']['nodes']
+            for node_name, node_attrs in nodes.items():
+                self.assertItemsEqual(
+                    node_attrs,
+                    ['uid', 'fqdn', 'name', 'user_node_name', 'swift_zone',
+                     'node_roles', 'network_roles', 'nova_cpu_pinning_enabled']
+                )
+                node = objects.Node.get_by_uid(node_attrs['uid'])
+                self.assertEqual(objects.Node.get_slave_name(node), node_name)
+                self.assertEqual(node_attrs['uid'], node.uid)
+                self.assertEqual(node_attrs['fqdn'],
+                                 objects.Node.get_node_fqdn(node))
+                self.assertEqual(node_attrs['name'], node_name)
+                self.assertEqual(node_attrs['user_node_name'], node.name)
+                self.assertEqual(node_attrs['swift_zone'], node.uid)
+                self.assertEqual(node_attrs['nova_cpu_pinning_enabled'], False)
 
 
 class TestNetworkTemplateSerializer90(

@@ -388,12 +388,41 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
+    def _create_public_map(cls, instance, roles_metadata=None):
+        from nailgun.objects import Node
+        public_map = {}
+        for node in instance.nodes:
+            public_map[node.id] = Node.should_have_public(
+                node, roles_metadata)
+        return public_map
+
+    @classmethod
+    def _update_public_network(cls, instance, public_map, roles_metadata):
+        if instance.network_config.configuration_template is not None:
+            return
+        from nailgun.objects import Node
+        for node in instance.nodes:
+            should_have_public = Node.should_have_public(
+                node, roles_metadata)
+            if public_map[node.id] == should_have_public:
+                continue
+            if should_have_public:
+                Node.assign_public_network(node)
+            else:
+                Node.unassign_public_network(node)
+
+    @classmethod
     def patch_attributes(cls, instance, data):
+        roles_metadata = Cluster.get_roles(instance)
+        public_map = cls._create_public_map(instance, roles_metadata)
+        network_manager = cls.get_network_manager(instance)
+
         PluginManager.process_cluster_attributes(instance, data['editable'])
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
-        cls.get_network_manager(instance).update_restricted_networks(instance)
+        network_manager.update_restricted_networks(instance)
+        cls._update_public_network(instance, public_map, roles_metadata)
         db().flush()
 
     @classmethod
@@ -621,6 +650,10 @@ class Cluster(NailgunObject):
         from nailgun.objects import OpenstackConfig
         OpenstackConfig.disable_by_nodes(nodes_to_remove)
 
+        map(
+            Node.assign_group,
+            nodes_to_add
+        )
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add

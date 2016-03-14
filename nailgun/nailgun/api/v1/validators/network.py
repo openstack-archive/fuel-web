@@ -590,12 +590,13 @@ class NetAssignmentValidator(BasicValidator):
                 )
 
         if db_node.cluster:
-            cls.check_networks_are_acceptable_for_node_to_assign(interfaces,
+            cls.check_networks_are_acceptable_for_node_to_assign(db_node,
+                                                                 interfaces,
                                                                  db_node)
 
     @classmethod
-    def check_networks_are_acceptable_for_node_to_assign(cls, interfaces,
-                                                         node_db):
+    def check_networks_are_acceptable_for_node_to_assign(cls, node,
+                                                         interfaces, node_db):
         # get list of available networks for the node via nodegroup
         node_group_db = node_db.nodegroup
         net_group_ids = set(n.id for n in node_group_db.networks)
@@ -628,6 +629,12 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
             else:
+                if not objects.Node.should_have_public(node):
+                    public_id = next(
+                        (n.id for n in node_group_db.networks
+                            if n.name == consts.NETWORKS.public), None)
+                    if public_id:
+                        net_group_ids -= set([public_id])
                 unassigned_net_ids = net_group_ids - net_ids
                 if unassigned_net_ids:
                     raise errors.InvalidData(

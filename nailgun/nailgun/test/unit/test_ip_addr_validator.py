@@ -29,7 +29,7 @@ class TestIpAddrValidator(base.BaseUnitTest):
 
         self.create_data = {
             'ip_addr': "192.168.0.15",
-            'network': -1,
+            'network': 1,
             'vip_name': 'test',
             'is_user_defined': True
         }

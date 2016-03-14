@@ -28,7 +28,7 @@ NULLABLE_STRING = {
 
 POSITIVE_INTEGER = {
     'type': 'integer',
-    'minValue': 1
+    'minimum': 1
 }
 
 POSITIVE_NUMBER = {
@@ -47,7 +47,7 @@ NULLABLE_ENUM = lambda e: {
 
 NON_NEGATIVE_INTEGER = {
     'type': 'integer',
-    'minValue': 0
+    'minimum': 0
 }
 
 NULLABLE_NON_NEGATIVE_INTEGER = {

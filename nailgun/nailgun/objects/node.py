@@ -50,6 +50,7 @@ from nailgun.objects import IPAddr
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import NetworkGroup
+from nailgun.objects import NetworkGroupCollection
 from nailgun.objects import NIC
 from nailgun.objects import Notification
 from nailgun.objects import Release
@@ -334,7 +335,7 @@ class Node(NailgunObject):
         return False
 
     @classmethod
-    def should_have_public(cls, instance):
+    def should_have_public(cls, instance, roles_metadata=None):
         """Determine whether this node should be connected to Public network,
 
         no matter with or without an IP address assigned from that network
@@ -345,19 +346,83 @@ class Node(NailgunObject):
         :param instance: Node DB instance
         :returns: True when node has Public network
         """
+        roles_metadata = roles_metadata or\
+            Cluster.get_roles(instance.cluster)
         if cls.should_have_public_with_ip(instance):
             return True
 
         dvr_enabled = Cluster.neutron_dvr_enabled(instance.cluster)
         if dvr_enabled:
             roles = itertools.chain(instance.roles, instance.pending_roles)
-            roles_metadata = Cluster.get_roles(instance.cluster)
 
             for role in roles:
                 if roles_metadata.get(role, {}).get('public_for_dvr_required'):
                     return True
 
         return False
+
+    @classmethod
+    def assign_public_network(cls, node):
+        public_net = next(NetworkGroupCollection.filter_by(
+            node.nodegroup.networks,
+            name=consts.NETWORKS.public), None)
+        cls.assign_network_to_interface(node, public_net)
+
+    @staticmethod
+    def get_interfaces_without_bonds_slaves(node):
+        ifaces = set(node.interfaces)
+        for bond in node.bond_interfaces:
+            ifaces ^= set(bond.slaves)
+        return sorted(ifaces, key=operator.attrgetter('name'))
+
+    @classmethod
+    def assign_network_to_interface(cls, node, network):
+        """Assign network to interface by default for single node
+
+        Assign given network to first available interfacee.
+        Checks interface type, if network is already assigned
+        and already assigned networks.
+        """
+        untagged = NetworkGroup.is_untagged(network)
+        dedicated = network.meta.get('dedicated_nic')
+        ifaces = cls.get_interfaces_without_bonds_slaves(node)
+        for iface in ifaces:
+            if iface.assigned_networks_list.count(network):
+                break
+            if any(six.moves.map(lambda network:
+                                 network.meta.get('dedicated_nic'),
+                                 iface.assigned_networks_list)):
+                continue
+            if dedicated and iface.assigned_networks_list:
+                continue
+            if untagged and any(six.moves.map(
+                    NetworkGroup.is_untagged,
+                    iface.assigned_networks_list)):
+                continue
+            assigned_nets = iface.assigned_networks_list + [network]
+            NIC.assign_networks(iface, assigned_nets)
+            break
+        else:
+            logger.warning(
+                "Cannot assign network %r appropriately for "
+                "node %r. Set unassigned network to the "
+                "interface %r",
+                network.name, node.name, ifaces[0].name
+            )
+            assigned_nets = ifaces[0].assigned_networks_list + [network]
+            NIC.assign_networks(ifaces[0], assigned_nets)
+
+    @classmethod
+    def unassign_public_network(cls, node):
+        public_net = next(NetworkGroupCollection.filter_by(
+            node.nodegroup.networks,
+            name=consts.NETWORKS.public), None)
+        ifaces = cls._node_interfaces_without_bonds(node)
+        for iface in ifaces:
+            network_list = iface.assigned_networks_list
+            if public_net in network_list:
+                network_list.remove(public_net)
+                NIC.assign_networks(iface, network_list)
 
     @classmethod
     def create(cls, data):
@@ -407,10 +472,9 @@ class Node(NailgunObject):
         if new_node.meta and new_node.meta.get('interfaces'):
             cls.update_interfaces(new_node)
 
-        # adding node into cluster
+        # role cannot be assigned if cluster_id is not set
         if new_node_cluster_id:
-            cls.add_into_cluster(new_node, new_node_cluster_id)
-
+            new_node.cluster_id = new_node_cluster_id
         # updating roles
         if roles is not None:
             cls.update_roles(new_node, roles)
@@ -418,6 +482,10 @@ class Node(NailgunObject):
             cls.update_pending_roles(new_node, pending_roles)
         if primary_roles is not None:
             cls.update_primary_roles(new_node, primary_roles)
+
+        # adding node into cluster
+        if new_node_cluster_id:
+            cls.add_into_cluster(new_node, new_node_cluster_id)
 
         # creating attributes
         cls.create_discover_notification(new_node)

@@ -944,7 +944,9 @@ class VolumeManager(object):
                 self.__logger('Allocating all available space for volume: '
                               'disk: %s volume: %s' %
                               (disk.id, volume_info))
+                size_to_allocation = disk.free_space
                 self._get_allocator(disk, volume_info)(volume_info)
+                self._reduce_volumes_free_space(disk.id, size_to_allocation)
             else:
                 self.__logger('Not enough free space for volume '
                               'allocation: disk: %s volume: %s' %
@@ -952,7 +954,7 @@ class VolumeManager(object):
                 self._get_allocator(disk, volume_info)(volume_info, 0)
 
     def _allocate_size_for_volume(self, volume_info, size):
-        """Allocate volumes with particaular size."""
+        """Allocate volumes with particular size."""
         self.__logger('Allocate volume %s with size %s ' % (volume_info, size))
 
         not_allocated_size = size
@@ -973,6 +975,7 @@ class VolumeManager(object):
 
             self._get_allocator(disk, volume_info)(volume_info,
                                                    size_to_allocation)
+            self._reduce_volumes_free_space(disk.id, size_to_allocation)
             not_allocated_size -= size_to_allocation
 
     def _allocate_full_disk(self, volume_info):
@@ -986,6 +989,19 @@ class VolumeManager(object):
                 self._get_allocator(disk, volume_info)(volume_info, 0)
             else:
                 self._get_allocator(disk, volume_info)(volume_info)
+                size_to_allocation = disk.free_space
+                self._reduce_volumes_free_space(disk.id, size_to_allocation)
+
+    def _reduce_volumes_free_space(self, disk_id, size):
+        """Update free_space in VolumeManager.volumes.
+
+        This function keeps free_space in actual state after space
+        allocation for volume on one of disks.
+        :param size: allocated size for volume on disk
+        """
+        for volume in self.volumes:
+            if volume['id'] == disk_id and volume['type'] == 'disk':
+                volume['free_space'] -= size
 
     def _get_allocator(self, disk, volume_info):
         """Returns disk method for volume allocation."""
@@ -1036,7 +1052,6 @@ class VolumeManager(object):
         if self._all_size_volumes:
             self._allocate_all_free_space_for_volume(
                 self._all_size_volumes[-1])
-
         self.volumes = self.expand_generators(self.volumes)
 
         self.pick_default_bootable_disk()

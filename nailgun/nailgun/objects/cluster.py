@@ -393,7 +393,9 @@ class Cluster(NailgunObject):
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
-        cls.get_network_manager(instance).update_restricted_networks(instance)
+        network_manager = cls.get_network_manager(instance)
+        network_manager.update_restricted_networks(instance)
+        network_manager.update_public_networks(instance)
         db().flush()
 
     @classmethod
@@ -621,6 +623,10 @@ class Cluster(NailgunObject):
         from nailgun.objects import OpenstackConfig
         OpenstackConfig.disable_by_nodes(nodes_to_remove)
 
+        map(
+            Node.assign_group,
+            nodes_to_add
+        )
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add

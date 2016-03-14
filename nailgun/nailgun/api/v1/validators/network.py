@@ -754,6 +754,12 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
             else:
+                if not objects.Node.should_have_public(node_db):
+                    public_id = next(
+                        (n.id for n in node_group_db.networks
+                            if n.name == consts.NETWORKS.public), None)
+                    if public_id:
+                        net_group_ids -= set([public_id])
                 unassigned_net_ids = net_group_ids - net_ids
                 if unassigned_net_ids:
                     raise errors.InvalidData(

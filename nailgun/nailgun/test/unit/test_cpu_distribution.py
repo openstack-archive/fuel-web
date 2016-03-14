@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -15,6 +15,8 @@
 #    under the License.
 
 import copy
+
+import six
 
 from nailgun.policy import cpu_distribution
 from nailgun.test import base
@@ -75,10 +77,11 @@ class TestGroupCpuDistributor(base.BaseTestCase):
         distributor = self._create_group_distributor(*required_cpus)
         self.assertEquals(10, distributor.total_required)
         self.assertEquals(4, len(distributor.components))
-        for required, component in zip(required_cpus, distributor.components):
+        for required, component in six.moves.zip(
+                required_cpus, distributor.components):
             self.assertEquals(required, component.required)
 
-    def test_consume_and_result(self):
+    def test_consume(self):
         required_cpus = [1, 2, 2]
         distributor = self._create_group_distributor(*required_cpus)
         cpus = [0, 1, 2, 3, 4]
@@ -86,15 +89,13 @@ class TestGroupCpuDistributor(base.BaseTestCase):
         self.assertFalse(distributor.consume(cpus))
         self.assertEquals([], cpus)
         self.assertEquals(0, distributor.total_required)
-        expected = {'isolated_cpus': [0, 1, 2, 3, 4],
-                    'components': {
-                        'comp0': [0],
-                        'comp1': [1, 2],
-                        'comp2': [3, 4]}}
-        result = {'isolated_cpus': [],
-                  'components': {}}
-        distributor.add_to_result(result)
-        self.assertEquals(expected, result)
+
+        expected = [
+            [0],
+            [1, 2],
+            [3, 4]]
+        for cpus, component in zip(expected, distributor.components):
+            self.assertEquals(cpus, component.cpus)
 
 
 class TestDistributeNodeCPUs(base.BaseTestCase):

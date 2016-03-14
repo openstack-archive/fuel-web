@@ -999,6 +999,11 @@ class VolumeManager(object):
             self._allocate_all_free_space_for_volume(
                 self._all_size_volumes[-1])
 
+        for volume in self.volumes:
+            for disk in self.disks:
+                if volume['id'] == disk.id and volume['type'] == 'disk':
+                    volume['free_space'] = disk.free_space
+
         self.volumes = self.expand_generators(self.volumes)
 
         self.__logger('Generated volumes: %s' % self.volumes)

@@ -336,7 +336,7 @@ class TestDeploymentAttributesSerialization80(
             {
                 u'name': u'sda',
                 u'extra': [],
-                u'free_space': 330,
+                u'free_space': 0,
                 u'volumes': [
                     {
                         u'type': u'boot',

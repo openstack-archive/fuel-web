@@ -594,7 +594,8 @@ class TasksSerializer(object):
         # need to search dependencies on node and in sync points
         node_ids = [node_id, None]
         for name in dependencies:
-            for rel in self.resolve_relation(name, node_ids, task_resolver):
+            for rel in self.resolve_relation(name, node_ids, task_resolver,
+                                             False):
                 yield rel
 
     def expand_cross_dependencies(self, node_id, dependencies, task_resolver):
@@ -612,25 +613,30 @@ class TasksSerializer(object):
 
             if roles == consts.TASK_ROLES.self:
                 node_ids = [node_id]
+                self_ref_node = False
             else:
                 node_ids = self.role_resolver.resolve(
                     roles, dep.get('policy', consts.NODE_RESOLVE_POLICY.all)
                 )
+                self_ref_node = node_id
             relations = self.resolve_relation(
-                dep['name'], node_ids, task_resolver
+                dep['name'], node_ids, task_resolver, self_ref_node
             )
             for rel in relations:
                 yield rel
 
-    def resolve_relation(self, name, node_ids, task_resolver):
+    def resolve_relation(self, name, node_ids, task_resolver, node):
         """Resolves the task relation.
 
         :param name: the name of task
         :param node_ids: the ID of nodes where need to search
         :param task_resolver: the task name resolver
+        :param node: the node
         """
         match_policy = NameMatchingPolicy.create(name)
         for node_id in node_ids:
+            if node_id == node:
+                continue
             applied_tasks = set()
             for task_name in self.tasks_connections[node_id]:
                 if task_name == name:
@@ -649,7 +655,6 @@ class TasksSerializer(object):
                 applied_tasks.add(original_task)
                 if original_task is not task_name:
                     task_name = task_resolver(original_task)
-
                 yield task_name, node_id
 
     @classmethod

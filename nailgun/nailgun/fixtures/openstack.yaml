@@ -1930,7 +1930,8 @@
           value: 0
         nova:
           value: {}
-- pk: 2
+- &ubuntu_release
+  pk: 2
   extend: *base_release
   fields:
     name: "Liberty on Ubuntu 14.04"
@@ -2005,63 +2006,6 @@
                 suite: "auxiliary"
                 section: "main restricted"
                 priority: 1150
-          repo_type:
-            label: "OpenStack packages source"
-            type: "radio"
-            weight: 51
-            value: "fuel"
-            values:
-              - data: "fuel"
-                label: "Fuel"
-                description: "Use bundled OpenStack packages"
-              - data: "uca"
-                label: "Ubuntu Cloud Archive"
-                description: "Use Ubuntu Cloud Archive repository"
-          uca_repo_url:
-            value: 'http://ubuntu-cloud.archive.canonical.com/ubuntu'
-            label: 'URL to UCA repository'
-            description: 'This the url to the repository hosting the UCA packages'
-            weight: 58
-            type: "text"
-            restrictions:
-              - condition: "settings:repo_setup.repo_type.value != 'uca'"
-                action: "hide"
-          uca_openstack_release:
-            value: 'mitaka'
-            label: 'UCA OpenStack Release'
-            description: 'This is the named release for the UCA packages (kilo, liberty, etc)'
-            weight: 52
-            type: "text"
-            restrictions:
-              - condition: "settings:repo_setup.repo_type.value != 'uca'"
-                action: "hide"
-          pin_haproxy:
-            label: "HAProxy APT Pinning"
-            description: "Use Fuel HAProxy packages instead of upstream"
-            weight: 59
-            type: "checkbox"
-            value: true
-            restrictions:
-              - condition: "settings:repo_setup.repo_type.value == 'fuel'"
-                action: "hide"
-          pin_rabbitmq:
-            label: "RabbitMQ APT Pinning"
-            description: "Use Fuel RabbitMQ packages instead of upstream"
-            weight: 60
-            type: "checkbox"
-            value: true
-            restrictions:
-              - condition: "settings:repo_setup.repo_type.value == 'fuel'"
-                action: "hide"
-          pin_ceph:
-            label: "Ceph APT Pinning"
-            description: "Use Fuel Ceph packages instead of upstream"
-            weight: 61
-            type: "checkbox"
-            value: true
-            restrictions:
-              - condition: "settings:repo_setup.repo_type.value == 'fuel'"
-                action: "hide"
         provision:
           metadata:
             label: "Provision"
@@ -2193,3 +2137,104 @@
           regex:
             source: '^\d+$'
             error: "Incorrect value"
+  pk: 3
+  extend: *ubuntu_release
+  fields:
+    name: "Liberty on Ubuntu 14.04 with UCA"
+    version: "liberty-uca-9.0"
+    description: "This option will install the OpenStack Liberty packages using Ubuntu as a base operating system, including Ubuntu Cloud Archive OpenStack packages. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      editable:
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: null
+            description: |
+              Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
+              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
+              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-9.0/operations.html#external-ubuntu-ops).
+            value:
+              - type: "deb"
+                name: "ubuntu"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-updates"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty-updates"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-security"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "trusty-security"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "uca"
+                uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
+                suite: "trusty-updates/mitaka"
+                section: "main"
+                priority: 1080
+              - type: "deb"
+                name: "mos"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
+                suite: "mos9.0"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-updates"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos9.0-updates"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos9.0-security"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-holdback"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos9.0-holdback"
+                section: "main restricted"
+                priority: 1100
+              - type: "deb"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
+                suite: "auxiliary"
+                section: "main restricted"
+                priority: 1150
+          repo_type:
+            label: "OpenStack packages source"
+            type: "radio"
+            weight: 51
+            value: "fuel"
+            values:
+              - data: "fuel"
+                label: "Fuel"
+                description: "Use bundled OpenStack packages"
+              - data: "uca"
+                label: "Ubuntu Cloud Archive"
+                description: "Use Ubuntu Cloud Archive repository"
+          pin_haproxy:
+            label: "HAProxy APT Pinning"
+            description: "Use Fuel HAProxy packages instead of upstream"
+            weight: 59
+            type: "checkbox"
+            value: true
+          pin_rabbitmq:
+            label: "RabbitMQ APT Pinning"
+            description: "Use Fuel RabbitMQ packages instead of upstream"
+            weight: 60
+            type: "checkbox"
+            value: true
+          pin_ceph:
+            label: "Ceph APT Pinning"
+            description: "Use Fuel Ceph packages instead of upstream"
+            weight: 61
+            type: "checkbox"
+            value: true

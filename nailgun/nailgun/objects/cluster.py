@@ -389,6 +389,8 @@ class Cluster(NailgunObject):
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
+        for node in instance.nodes:
+            cls.get_network_manager(instance).assign_networks_by_default(node)
         cls.get_network_manager(instance).update_restricted_networks(instance)
         db().flush()
 
@@ -1340,6 +1342,7 @@ class Cluster(NailgunObject):
         :param instance: nailgun.db.sqlalchemy.models.Cluster instance
         :param nodes: the list of Nodes, None means for all nodes
         """
+        print cls.get_network_manager(instance)
         cls.get_network_manager(instance).prepare_for_deployment(
             instance, instance.nodes if nodes is None else nodes
         )

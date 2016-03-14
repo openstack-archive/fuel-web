@@ -25,13 +25,13 @@ from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun import rpc
 
-from nailgun.orchestrator.deployment_graph import AstuteGraph
 from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer80
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer80
+from nailgun.orchestrator.orchestrator_graph import AstuteGraph
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 from nailgun.test.integration.test_orchestrator_serializer import \

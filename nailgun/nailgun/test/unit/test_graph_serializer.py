@@ -22,8 +22,8 @@ import mock
 import yaml
 
 from nailgun.errors import errors
-from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import graph_configuration
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.test import base
 
 
@@ -136,7 +136,7 @@ class TestGraphDependencies(base.BaseTestCase):
         self.tasks = yaml.load(TASKS)
         self.subtasks = yaml.load(SUBTASKS)
         self.subtasks_with_regexp = yaml.load(SUBTASKS_WITH_REGEXP)
-        self.graph = deployment_graph.DeploymentGraph()
+        self.graph = orchestrator_graph.GraphSolver()
 
     def test_build_deployment_graph(self):
         self.graph.add_tasks(self.tasks)
@@ -170,14 +170,14 @@ class TestUpdateGraphDependencies(base.BaseTestCase):
         self.subtasks = yaml.load(SUBTASKS_WITH_REGEXP)
 
     def test_groups_regexp_resolution(self):
-        graph = deployment_graph.DeploymentGraph()
+        graph = orchestrator_graph.GraphSolver()
         graph.add_tasks(self.tasks + self.subtasks)
         self.assertItemsEqual(
             graph.succ['setup_something'],
             {'deploy_end': {}, 'cinder': {}, 'compute': {}, 'controller': {}})
 
     def test_support_for_all_groups(self):
-        graph = deployment_graph.DeploymentGraph()
+        graph = orchestrator_graph.GraphSolver()
         subtasks = copy.deepcopy(self.subtasks)
         subtasks[0]['groups'] = ['/.*/']
         graph.add_tasks(self.tasks + subtasks)
@@ -187,7 +187,7 @@ class TestUpdateGraphDependencies(base.BaseTestCase):
              'cinder': {}, 'compute': {}, 'controller': {}})
 
     def test_simple_string_in_group(self):
-        graph = deployment_graph.DeploymentGraph()
+        graph = orchestrator_graph.GraphSolver()
         subtasks = copy.deepcopy(self.subtasks)
         subtasks[0]['groups'] = ['controller']
         graph.add_tasks(self.tasks + subtasks)
@@ -204,7 +204,7 @@ class TestAddDependenciesToNodes(base.BaseTestCase):
             cluster_m.get_deployment_tasks.return_value = yaml.load(
                 TASKS + SUBTASKS)
             self.cluster = mock.Mock()
-            self.graph = deployment_graph.AstuteGraph(self.cluster)
+            self.graph = orchestrator_graph.AstuteGraph(self.cluster)
 
     def test_priority_serilized_correctly_for_all_roles(self):
         nodes = [{'uid': '3', 'role': 'primary-controller'},
@@ -276,7 +276,7 @@ class TestLegacyGraphSerialized(base.BaseTestCase):
             cluster_m.get_deployment_tasks.return_value = yaml.load(
                 graph_configuration.DEPLOYMENT_51_60)
             self.cluster = mock.Mock()
-            self.graph = deployment_graph.AstuteGraph(self.cluster)
+            self.graph = orchestrator_graph.AstuteGraph(self.cluster)
 
     def test_serialized_with_tasks_and_priorities(self):
         """Test verifies that priorities and tasks."""
@@ -312,7 +312,7 @@ class TestTasksRemoval(base.BaseTestCase):
             cluster_m.get_deployment_tasks.return_value = yaml.load(
                 TASKS + SUBTASKS)
             self.cluster = mock.Mock()
-            self.astute = deployment_graph.AstuteGraph(self.cluster)
+            self.astute = orchestrator_graph.AstuteGraph(self.cluster)
 
     def test_only_tasks(self):
         self.astute.only_tasks(['setup_network'])
@@ -338,7 +338,7 @@ class GroupsTraversalTest(base.BaseTestCase):
             cluster_m.get_deployment_tasks.return_value = yaml.load(
                 self.GROUPS)
             self.cluster = mock.Mock()
-            self.astute = deployment_graph.AstuteGraph(self.cluster)
+            self.astute = orchestrator_graph.AstuteGraph(self.cluster)
             self.nodes = []
 
     def get_node_by_role(self, role):
@@ -552,7 +552,7 @@ class TestFindGraph(base.BaseTestCase):
     def setUp(self):
         super(TestFindGraph, self).setUp()
         self.tasks = yaml.load(COMPLEX_DEPENDENCIES)
-        self.graph = deployment_graph.DeploymentGraph()
+        self.graph = orchestrator_graph.GraphSolver()
         self.graph.add_tasks(self.tasks)
 
     def test_end_at_pre_deployment(self):
@@ -709,7 +709,7 @@ class TestOrdered(base.BaseTestCase):
 
     def test_always_same_order(self):
 
-        graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
+        graph = orchestrator_graph.GraphSolver(tasks=self.tasks)
         # (dshulyak) order should be static
         self.assertEqual(
             [n['id'] for n in graph.topology],
@@ -733,7 +733,7 @@ class TestIncludeSkipped(base.BaseTestCase):
     def setUp(self):
         super(TestIncludeSkipped, self).setUp()
         self.tasks = yaml.load(self.TASKS)
-        self.graph = deployment_graph.DeploymentGraph(tasks=self.tasks)
+        self.graph = orchestrator_graph.GraphSolver(tasks=self.tasks)
 
     def test_filter_subgraph_will_not_return_skipped(self):
 
@@ -757,7 +757,7 @@ class TestIncludeSkipped(base.BaseTestCase):
             [t['id'] for t in self.tasks])
 
 
-class TestDeploymentGraphValidator(base.BaseTestCase):
+class TestGraphSolverValidator(base.BaseTestCase):
 
     def test_validation_pass_with_existing_dependencies(self):
         yaml_tasks = """
@@ -776,7 +776,7 @@ class TestDeploymentGraphValidator(base.BaseTestCase):
               amount: 2
           """
         tasks = yaml.load(yaml_tasks)
-        graph_validator = deployment_graph.DeploymentGraphValidator(tasks)
+        graph_validator = orchestrator_graph.GraphSolverValidator(tasks)
         graph_validator.check()
 
     def test_validation_failed_with_not_existing_dependencies(self):
@@ -793,7 +793,8 @@ class TestDeploymentGraphValidator(base.BaseTestCase):
                   type: one_by_one
               """.format(dependency_type=dependency_type)
             tasks = yaml.load(yaml_tasks)
-            graph_validator = deployment_graph.DeploymentGraphValidator(tasks)
+            graph_validator = orchestrator_graph.GraphSolverValidator(
+                tasks)
 
             with self.assertRaisesRegexp(
                     errors.InvalidData,
@@ -812,7 +813,7 @@ class TestDeploymentGraphValidator(base.BaseTestCase):
           requires: [test-controller-1]
         """
         tasks = yaml.load(yaml_tasks)
-        graph_validator = deployment_graph.DeploymentGraphValidator(tasks)
+        graph_validator = orchestrator_graph.GraphSolverValidator(tasks)
         with self.assertRaisesRegexp(
                 errors.InvalidData,
                 "Tasks can not be processed because it contains cycles in it"):

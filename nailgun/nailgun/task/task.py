@@ -40,8 +40,8 @@ from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
-from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
 from nailgun.orchestrator import task_based_deployment
@@ -232,27 +232,27 @@ class DeploymentTask(BaseDeploymentTask):
         :events: the list of events to find subscribed tasks
         :return: the arguments for RPC message
         """
-        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-        orchestrator_graph.only_tasks(task_ids)
+        graph = orchestrator_graph.AstuteGraph(task.cluster)
+        graph.only_tasks(task_ids)
 
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
         role_resolver = RoleResolver(nodes)
         serialized_cluster = deployment_serializers.serialize(
-            orchestrator_graph, task.cluster, nodes)
+            graph, task.cluster, nodes)
 
         if affected_nodes:
-            orchestrator_graph.reexecutable_tasks(events)
+            graph.reexecutable_tasks(events)
             serialized_cluster.extend(deployment_serializers.serialize(
-                orchestrator_graph, task.cluster, affected_nodes
+                graph, task.cluster, affected_nodes
             ))
             nodes = nodes + affected_nodes
         pre_deployment = stages.pre_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes,
+            graph, task.cluster, nodes,
             role_resolver=role_resolver)
         post_deployment = stages.post_deployment_serialize(
-            orchestrator_graph, task.cluster, nodes,
+            graph, task.cluster, nodes,
             role_resolver=role_resolver)
 
         return {
@@ -318,15 +318,15 @@ class UpdateNodesInfoTask(object):
 
     @classmethod
     def message(cls, task):
-        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
-        orchestrator_graph.only_tasks(cls._tasks)
+        graph = orchestrator_graph.AstuteGraph(task.cluster)
+        graph.only_tasks(cls._tasks)
 
         rpc_message = make_astute_message(
             task,
             'execute_tasks',
             'deploy_resp',
             {
-                'tasks': orchestrator_graph.post_tasks_serialize([])
+                'tasks': graph.post_tasks_serialize([])
             }
         )
         db().flush()
@@ -1485,7 +1485,7 @@ class CheckBeforeDeploymentTask(object):
         example dependencies are: requires|required_for|tasks|groups
         """
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
-        graph_validator = deployment_graph.DeploymentGraphValidator(
+        graph_validator = orchestrator_graph.GraphSolverValidator(
             deployment_tasks)
         graph_validator.check()
 
@@ -1879,11 +1879,11 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
         refreshable_tasks = objects.Cluster.get_refreshable_tasks(
             task.cluster, update_configs
         )
-        orchestrator_graph = deployment_graph.AstuteGraph(task.cluster)
+        graph = orchestrator_graph.AstuteGraph(task.cluster)
         task_ids = [t['id'] for t in refreshable_tasks]
-        orchestrator_graph.only_tasks(task_ids)
-        deployment_tasks = orchestrator_graph.stage_tasks_serialize(
-            orchestrator_graph.graph.topology, nodes
+        graph.only_tasks(task_ids)
+        deployment_tasks = graph.stage_tasks_serialize(
+            graph.graph.topology, nodes
         )
         return make_astute_message(
             task, 'execute_tasks', 'update_config_resp', {

@@ -25,14 +25,15 @@ import web
 
 from nailgun.api.v1.validators.base import BaseDefferedTaskValidator
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.graph import GraphTasksValidator
+from nailgun.api.v1.validators.orchestrator_graph import \
+    GraphSolverTasksValidator
 from nailgun import consts
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
-from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -586,10 +587,10 @@ class DeferredTaskHandler(BaseHandler):
         self.raise_task(task)
 
 
-class DeploymentTasksHandler(SingleHandler):
+class OrchestratorDeploymentTasksHandler(SingleHandler):
     """Handler for deployment graph serialization."""
 
-    validator = GraphTasksValidator
+    validator = GraphSolverTasksValidator
 
     @content
     def GET(self, obj_id):
@@ -608,7 +609,7 @@ class DeploymentTasksHandler(SingleHandler):
         # but the own release tasks is returned for release
         tasks = self.single.get_deployment_tasks(obj)
         if end or start:
-            graph = deployment_graph.DeploymentGraph(tasks)
+            graph = orchestrator_graph.GraphSolver(tasks)
             return graph.filter_subgraph(
                 end=end, start=start, include=include).node.values()
         return tasks

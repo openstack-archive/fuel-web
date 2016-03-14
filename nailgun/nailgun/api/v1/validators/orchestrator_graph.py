@@ -19,16 +19,16 @@ from nailgun.api.v1.validators.json_schema import tasks
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
-from nailgun.orchestrator import deployment_graph
+from nailgun.orchestrator import orchestrator_graph
 
 
-class GraphTasksValidator(BasicValidator):
+class GraphSolverTasksValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance):
         parsed = cls.validate(data)
         cls.validate_schema(parsed, tasks.TASKS_SCHEMA)
-        graph_validator = deployment_graph.DeploymentGraphValidator(
+        graph_validator = orchestrator_graph.GraphSolverValidator(
             parsed)
         graph_validator.check()
 
@@ -48,7 +48,7 @@ class TaskDeploymentValidator(BasicValidator):
         cls.validate_schema(tasks, base_types.STRINGS_ARRAY)
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(cluster)
-        graph = deployment_graph.DeploymentGraph()
+        graph = orchestrator_graph.GraphSolver()
         graph.add_tasks(deployment_tasks)
 
         non_existent_tasks = set(tasks) - set(graph.nodes())
@@ -74,7 +74,7 @@ class TaskDeploymentValidator(BasicValidator):
         return types
 
 
-class GraphVisualizationValidator(TaskDeploymentValidator):
+class GraphSolverVisualizationValidator(TaskDeploymentValidator):
 
     @classmethod
     def validate(cls, data, cluster):

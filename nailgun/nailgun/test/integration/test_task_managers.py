@@ -271,37 +271,36 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(next((
             t for t in tasks if is_update_hosts(t)), None))
 
-    @fake_tasks()
-    def test_do_not_redeploy_nodes_in_ready_status(self):
-        self.env.create(nodes_kwargs=[
-            {"pending_addition": True},
-            {"pending_addition": True, 'roles': ['compute']}])
-        cluster_db = self.env.clusters[0]
-        # Generate ips
-        objects.Cluster.prepare_for_deployment(cluster_db)
-        # First node with status ready
-        # should not be readeployed
-        self.env.nodes[0].status = consts.TASK_STATUSES.ready
-        self.env.nodes[0].pending_addition = False
-        self.db.commit()
-
-        objects.Cluster.clear_pending_changes(cluster_db)
+    @mock.patch('nailgun.task.manager.rpc.cast')
+    def test_do_not_redeploy_nodes_in_ready_status(self, mcast):
+        self.env.create(
+            nodes_kwargs=[
+                {'pending_addition': False,
+                 'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'pending_addition': True,
+                 'roles': ['compute'],
+                 'status': consts.NODE_STATUSES.discover},
+            ],
+        )
+        self.db.flush()
+        node_db = self.env.nodes[1]
 
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
-        self.assertIn(supertask.status, (consts.TASK_STATUSES.pending,
-                                         consts.TASK_STATUSES.running,
-                                         consts.TASK_STATUSES.ready))
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.pending)
 
-        self.assertEqual(self.env.nodes[0].status, consts.TASK_STATUSES.ready)
-        self.env.wait_for_nodes_status([self.env.nodes[1]],
-                                       consts.NODE_STATUSES.provisioning)
-        self.env.wait_ready(supertask)
+        args, _ = mcast.call_args_list[0]
+        provisioning_info = args[1][0]['args']['provisioning_info']
+        deployment_info = args[1][1]['args']['deployment_info']
 
-        self.env.refresh_nodes()
+        # only one node should be provisioned (the second one)
+        self.assertEqual(1, len(provisioning_info['nodes']))
+        self.assertEqual(node_db.uid, provisioning_info['nodes'][0]['uid'])
 
-        self.assertEqual(self.env.nodes[1].status, consts.NODE_STATUSES.ready)
-        self.assertEqual(self.env.nodes[1].progress, 100)
+        # only one node should be deployed (the second one)
+        self.assertEqual(1, len(deployment_info))
+        self.assertEqual(node_db.uid, deployment_info[0]['uid'])
 
     @fake_tasks()
     def test_deployment_fails_if_node_offline(self):

@@ -963,6 +963,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
     env_version = '2015.1.0-7.0'
     prepare_for_deployment = objects.NodeCollection.prepare_for_deployment
+    general_serializer = NeutronNetworkDeploymentSerializer70
+    template_serializer = NeutronNetworkTemplateSerializer70
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer70, self).setUp()
@@ -1016,12 +1018,12 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
         self.cluster.network_config.configuration_template = None
 
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+        self.assertIs(net_serializer, self.general_serializer)
 
         self.cluster.network_config.configuration_template = \
             self.net_template
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkTemplateSerializer70)
+        self.assertIs(net_serializer, self.template_serializer)
 
     def test_network_schemes_priorities(self):
         expected = [
@@ -1165,7 +1167,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
         serializer = get_serializer_for_cluster(self.cluster)
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+        self.assertIs(net_serializer, self.general_serializer)
 
         nm = objects.Cluster.get_network_manager(self.cluster)
         networks = nm.get_node_networks(compute)
@@ -1197,7 +1199,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
 
         serializer = get_serializer_for_cluster(self.cluster)
         net_serializer = serializer.get_net_provider_serializer(self.cluster)
-        self.assertIs(net_serializer, NeutronNetworkDeploymentSerializer70)
+        self.assertIs(net_serializer, self.general_serializer)
 
         nm = objects.Cluster.get_network_manager(self.cluster)
         networks = nm.get_node_networks(compute)
@@ -1321,6 +1323,35 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             roles = node['network_scheme']['roles']
             self.assertEqual(roles, expected_roles[node['fqdn']])
 
+    def test_routes_while_using_multiple_node_groups(self):
+        self.env.create_node_group()
+        self.prepare_for_deployment(self.env.nodes)
+        serializer = get_serializer_for_cluster(self.cluster)
+        facts = serializer(AstuteGraph(self.cluster)).serialize(
+            self.cluster, self.cluster.nodes)
+
+        for node in facts:
+            node_db = objects.Node.get_by_uid(node['uid'])
+            is_public = objects.Node.should_have_public(node_db)
+            endpoints = node['network_scheme']['endpoints']
+            if 'compute' in node_db.roles:
+                # private network won't have routes
+                self.assertEqual(endpoints['br-prv'], {'IP': 'none'})
+                endpoints.pop('br-prv')
+            else:
+                self.assertNotIn('br-prv', endpoints)
+            if is_public:
+                # floating network won't have routes
+                self.assertEqual(endpoints['br-floating'], {'IP': 'none'})
+                endpoints.pop('br-floating')
+            for name, descr in six.iteritems(endpoints):
+                # the only route in this case is for Admin network
+                # others are shared
+                if name == 'br-fw-admin':
+                    self.assertIn(len(descr['routes']), [0, 1])
+                    for route in descr['routes']:
+                        self.assertItemsEqual(['net', 'via'], route)
+
     def test_multiple_node_roles_transformations(self):
         node = self.cluster.nodes[1]
 
@@ -1351,14 +1382,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
             if tx.get('bridge') == 'br-mgmt' and tx['action'] == 'add-port':
                 port_seen = True
 
-    def test_multiple_node_roles_network_metadata(self):
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        ip_by_net = {
-            'fuelweb_admin': None,
-            'storage': None,
-            'management': None,
-            'public': None
-        }
+    def test_multiple_node_roles_network_metadata_attrs(self):
         for node_data in self.serialized_for_astute:
             self.assertItemsEqual(
                 node_data['network_metadata'], ['nodes', 'vips'])
@@ -1370,11 +1394,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                      'swift_zone', 'node_roles', 'network_roles']
                 )
                 node = objects.Node.get_by_uid(node_attrs['uid'])
-                networks = nm.get_node_networks(node)
-                for net in ip_by_net:
-                    netgroup = nm.get_network_by_netname(net, networks)
-                    if netgroup.get('ip'):
-                        ip_by_net[net] = netgroup['ip'].split('/')[0]
                 self.assertEqual(objects.Node.get_slave_name(node), node_name)
                 self.assertEqual(node_attrs['uid'], node.uid)
                 self.assertEqual(node_attrs['fqdn'],
@@ -1382,6 +1401,26 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer):
                 self.assertEqual(node_attrs['name'], node_name)
                 self.assertEqual(node_attrs['user_node_name'], node.name)
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
+
+    def test_multiple_node_roles_network_metadata_roles(self):
+        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        ip_by_net = {
+            'fuelweb_admin': None,
+            'storage': None,
+            'management': None,
+            'public': None
+        }
+        for node_data in self.serialized_for_astute:
+            nodes = node_data['network_metadata']['nodes']
+            for node_name, node_attrs in nodes.items():
+                node = objects.Node.get_by_uid(node_attrs['uid'])
+                networks = nm.get_node_networks(node)
+                node_nets = [n['name'] for n in networks]
+
+                for net in node_nets:
+                    netgroup = nm.get_network_by_netname(net, networks)
+                    if netgroup.get('ip'):
+                        ip_by_net[net] = netgroup['ip'].split('/')[0]
                 network_roles = {
                     'management': ip_by_net['management'],
                     'admin/pxe': ip_by_net['fuelweb_admin'],

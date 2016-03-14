@@ -783,7 +783,10 @@ class TestNetworkManager(BaseIntegrationTest):
             "name": "eth1",
             "mac": "00:00:00:00:00:03"}])
         self.env.create(
-            cluster_kwargs={},
+            cluster_kwargs={
+                'editable_attributes': {'public_network_assignment': {
+                    'assign_to_all_nodes': {'value': True}}}
+                },
             nodes_kwargs=[
                 {
                     "api": True,
@@ -844,6 +847,7 @@ class TestNetworkManager(BaseIntegrationTest):
     def test_update_restricted_networks(self):
         restricted_net = {
             'name': 'restricted_net',
+            'map_priority': 5,
             'restrictions': [
                 'settings:additional_components.ironic.value == false'
             ]
@@ -861,14 +865,16 @@ class TestNetworkManager(BaseIntegrationTest):
         rel.networks_metadata = netw_meta
         cluster = self.env.create_cluster(
             release_id=rel.id,
-            api=False
-        )
+            api=False,
+            editable_attributes={'public_network_assignment': {
+                    'assign_to_all_nodes': {'value': True}}})
         self.env.create_node(cluster_id=cluster.id)
         self.assertEqual(len(filter(lambda ng: ng.name == 'restricted_net',
                                     cluster.network_groups)), 0)
         with patch.object(logger, 'warning') as mock_warn:
             objects.Cluster.patch_attributes(
                 cluster, yaml.load(attributes_metadata % True))
+            print mock_warn.call_args_list
             mock_warn.assert_called_once_with(
                 "Cannot assign network %r appropriately for "
                 "node %r. Set unassigned network to the "

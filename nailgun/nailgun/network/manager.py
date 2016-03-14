@@ -24,6 +24,7 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 
+
 import six
 
 from nailgun import consts
@@ -542,36 +543,9 @@ class NetworkManager(object):
         first avalable interface. Checks interface type and already assigned
         networks.
         """
-        untagged = objects.NetworkGroup.is_untagged(ng)
-        dedicated = ng.meta.get('dedicated_nic')
         node_group = objects.NodeGroup.get_by_uid(ng.group_id)
         for node in node_group.nodes:
-            ifaces = set(node.interfaces)
-            for bond in node.bond_interfaces:
-                ifaces = ifaces ^ set(bond.slaves)
-            ifaces = sorted(ifaces, key=lambda i: i.name)
-            for iface in ifaces:
-                if any(six.moves.map(lambda ng: ng.meta.get('dedicated_nic'),
-                                     iface.assigned_networks_list)):
-                    continue
-                if dedicated and iface.assigned_networks_list:
-                    continue
-                if untagged and any(six.moves.map(
-                        objects.NetworkGroup.is_untagged,
-                        iface.assigned_networks_list)):
-                    continue
-                assigned_nets = iface.assigned_networks_list + [ng]
-                objects.NIC.assign_networks(iface, assigned_nets)
-                break
-            else:
-                logger.warning(
-                    "Cannot assign network %r appropriately for "
-                    "node %r. Set unassigned network to the "
-                    "interface %r",
-                    ng.name, node.name, ifaces[0].name
-                )
-                assigned_nets = ifaces[0].assigned_networks_list + [ng]
-                objects.NIC.assign_networks(ifaces[0], assigned_nets)
+            objects.Node.assign_network_to_interface(node, ng)
 
     @classmethod
     def get_default_interfaces_configuration(cls, node):
@@ -597,11 +571,14 @@ class NetworkManager(object):
         ngs.add(admin_net)
 
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
+        should_have_public = objects.Node.\
+            should_have_public(node)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(
             next(six.moves.zip(*sorted(
                 [[ng.id, ng.meta['map_priority']]
-                 for ng in ngs],
+                 for ng in ngs if (should_have_public or
+                                   ng.name != consts.NETWORKS.public)],
                 key=lambda x: x[1])))
         )
         ng_ids = set(ng.id for ng in ngs)

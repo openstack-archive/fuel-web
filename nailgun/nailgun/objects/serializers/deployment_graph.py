@@ -35,8 +35,7 @@ class DeploymentGraphTaskSerializer(BasicSerializer):
         "requires",
         "cross_depended_by",
         "cross_depends",
-        "parameters",
-        "_custom"
+        "parameters"
     )
 
     @classmethod
@@ -66,9 +65,7 @@ class DeploymentGraphTaskSerializer(BasicSerializer):
                     if len(value) == 1 and value[0] in consts.TASK_ROLES:
                         result['role'] = value[0]
         # unwrap custom field
-        if '_custom' in serialized_task:
-            result.update(serialized_task.get('_custom', {}))
-            result.pop('_custom', None)
+        result.update(instance._custom)
         return result
 
 

@@ -576,7 +576,7 @@ class NeutronNetworkDeploymentSerializer61(
         other_nets = nm.get_networks_not_on_node(node, networks)
 
         for ngname, brname in netgroup_mapping:
-            netgroup = netgroups[ngname]
+            netgroup = netgroups.get(ngname, {})
             if netgroup.get('gateway'):
                 via = netgroup['gateway']
                 attrs['endpoints'][brname]['routes'] = []
@@ -1287,3 +1287,219 @@ class NeutronNetworkTemplateSerializer70(
             [n.update(addresses) for n in nodes
              if n['uid'] == str(node.uid)]
         return nodes
+<<<<<<< HEAD
+=======
+
+
+class GenerateL23Mixin80(object):
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(GenerateL23Mixin80, cls).generate_l2(cluster)
+        l2["phys_nets"]["physnet1"] = {
+            "bridge": consts.DEFAULT_BRIDGES_NAMES.br_floating,
+            "vlan_range": None
+        }
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            l2["phys_nets"]["physnet-ironic"] = {
+                "bridge": consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                "vlan_range": None
+            }
+        return l2
+
+    @classmethod
+    def generate_external_network(cls, cluster):
+        ext_net = super(GenerateL23Mixin80, cls).generate_external_network(
+            cluster
+        )
+        ext_net["L2"] = {
+            "network_type": "flat",
+            "segment_id": None,
+            "router_ext": True,
+            "physnet": "physnet1"
+        }
+        return ext_net
+
+    @classmethod
+    def _generate_baremetal_network(cls, cluster):
+        ng = objects.NetworkGroup.get_from_node_group_by_name(
+            objects.Cluster.get_default_group(cluster).id, 'baremetal')
+        return {
+            "L3": {
+                "subnet": ng.cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": cluster.network_config.baremetal_gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_range),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": objects.Cluster.get_creds(
+                cluster)['tenant']['value'],
+            "shared": True
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = super(GenerateL23Mixin80, cls).generate_predefined_networks(
+            cluster
+        )
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets
+
+
+class NeutronNetworkDeploymentSerializer80(
+    GenerateL23Mixin80,
+    NeutronNetworkDeploymentSerializer70
+):
+
+    @classmethod
+    def render_floating_ranges(cls, floating_ranges):
+        return [utils.join_range(x) for x in floating_ranges]
+
+    @classmethod
+    def get_network_to_endpoint_mapping(cls, node):
+        mapping = {
+            consts.NETWORKS.fuelweb_admin:
+                consts.DEFAULT_BRIDGES_NAMES.br_fw_admin,
+            consts.NETWORKS.storage:
+                consts.DEFAULT_BRIDGES_NAMES.br_storage,
+            consts.NETWORKS.management:
+                consts.DEFAULT_BRIDGES_NAMES.br_mgmt}
+        # roles can be assigned to br-ex only in case it has a public IP
+        if objects.Node.should_have_public_with_ip(node):
+            mapping[consts.NETWORKS.public] = \
+                consts.DEFAULT_BRIDGES_NAMES.br_ex
+        if node.cluster.network_config.segmentation_type in \
+                (consts.NEUTRON_SEGMENT_TYPES.gre,
+                 consts.NEUTRON_SEGMENT_TYPES.tun):
+            mapping[consts.NETWORKS.private] = \
+                consts.DEFAULT_BRIDGES_NAMES.br_mesh
+        if objects.Cluster.is_component_enabled(node.cluster, 'ironic'):
+            mapping[consts.NETWORKS.baremetal] = \
+                consts.DEFAULT_BRIDGES_NAMES.br_baremetal
+        mapping.update(cls.get_node_non_default_bridge_mapping(node))
+        return mapping
+
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = (super(NeutronNetworkDeploymentSerializer80, cls)
+                           .generate_transformations(node, nm, nets_by_ifaces,
+                                                     is_public, prv_base_ep))
+        if objects.Cluster.is_component_enabled(node.cluster, 'ironic'):
+            transformations.insert(0, cls.add_bridge(
+                consts.DEFAULT_BRIDGES_NAMES.br_baremetal))
+            transformations.append(cls.add_bridge(
+                consts.DEFAULT_BRIDGES_NAMES.br_ironic, provider='ovs'))
+            transformations.append(cls.add_patch(
+                bridges=[consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                         consts.DEFAULT_BRIDGES_NAMES.br_baremetal],
+                provider='ovs'))
+        return transformations
+
+    @classmethod
+    def generate_routes(cls, node, attrs, nm, netgroup_mapping, netgroups,
+                        networks):
+        """Generate static routes for environment with multiple node groups.
+
+        Generate static routes for all networks in all node groups where
+        gateway is set. Routes are not generated between shared L3 segments.
+        :param node: Node instance
+        :param attrs: deployment attributes hash (is modified in method)
+        :param nm: Network Manager for current environment
+        :param netgroup_mapping: endpoint to network name mapping
+        :param netgroups: hash of network parameters hashes for node
+        :param networks: sequence of network parameters hashes
+        :return: None (attrs is modified)
+        """
+        other_nets = nm.get_networks_not_on_node(node, networks)
+        cidrs_in_use = set(ng['cidr'] for ng in netgroups if 'cidr' in ng)
+
+        for ngname, brname in netgroup_mapping:
+            netgroup = netgroups.get(ngname, {})
+            if netgroup.get('gateway') and netgroup.get('cidr'):
+                via = netgroup['gateway']
+                attrs['endpoints'][brname]['routes'] = []
+                for cidr in other_nets.get(ngname, []):
+                    if cidr not in cidrs_in_use:
+                        attrs['endpoints'][brname]['routes'].append({
+                            'net': cidr,
+                            'via': via
+                        })
+                        cidrs_in_use.add(cidr)
+
+
+class NeutronNetworkTemplateSerializer80(
+    GenerateL23Mixin80,
+    NeutronNetworkTemplateSerializer70
+):
+    pass
+
+
+class VendorSpecificMixin90(object):
+    @classmethod
+    def generate_vendor_specific_for_endpoint(cls, netgroup):
+        vendor_specific = {}
+        if netgroup.get('gateway') and netgroup.get('cidr'):
+            vendor_specific['provider_gateway'] = netgroup['gateway']
+        return vendor_specific
+
+
+class SriovSerializerMixin90(object):
+
+    @classmethod
+    def neutron_attrs(cls, cluster):
+        attrs = super(SriovSerializerMixin90, cls).neutron_attrs(cluster)
+        pci_ids = set()
+        for n in cluster.nodes:
+            for nic in n.nic_interfaces:
+                if objects.NIC.is_sriov_enabled(nic):
+                    pci_ids.add(nic.interface_properties['sriov']['pci_id'])
+        if pci_ids:
+            attrs['supported_pci_vendor_devs'] = list(pci_ids)
+        return attrs
+
+
+class NeutronNetworkDeploymentSerializer90(
+    VendorSpecificMixin90,
+    SriovSerializerMixin90,
+    NeutronNetworkDeploymentSerializer80
+):
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = (
+            super(NeutronNetworkDeploymentSerializer90, cls)
+            .generate_transformations(
+                node, nm, nets_by_ifaces, is_public, prv_base_ep))
+
+        # serialize SR-IOV enabled interfaces
+        for iface in node.nic_interfaces:
+            # add ports with SR-IOV settings for SR-IOV enabled NICs
+            if (not iface.bond and iface.name not in nets_by_ifaces and
+                    objects.NIC.is_sriov_enabled(iface)):
+                sriov = iface.interface_properties['sriov']
+                config = {
+                    'sriov_numvfs': sriov['sriov_numvfs'],
+                    'physnet': sriov['physnet']
+                }
+                transformations.append(cls.add_port(
+                    iface.name, bridge=None, provider='sriov',
+                    vendor_specific=config))
+
+        return transformations
+
+
+class NeutronNetworkTemplateSerializer90(
+    VendorSpecificMixin90,
+    SriovSerializerMixin90,
+    NeutronNetworkTemplateSerializer80
+):
+    pass
+>>>>>>> 2464783... Robust generating of routes

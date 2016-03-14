@@ -446,6 +446,17 @@ class NetAssignmentValidator(BasicValidator):
         check_for_changes = [n for n in sriov_new if n in non_changeable]
         if not check_for_changes:
             return
+        try:
+            int_value = int(sriov_new['sriov_numvfs'])
+            if int_value != float(sriov_new['sriov_numvfs']) or int_value < 0:
+                raise ValueError
+        except ValueError:
+            raise errors.InvalidData(
+                "Node '{0}' interface '{1}': virtual functions value should be"
+                " positive integer number, but '{2}' was given".format(
+                    node_id, iface.name, sriov_new['sriov_numvfs']),
+                log_message=True
+            )
         sriov_db = iface.interface_properties['sriov']
         for param_name in check_for_changes:
             if sriov_db[param_name] != sriov_new[param_name]:

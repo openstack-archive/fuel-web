@@ -869,3 +869,61 @@ class TestHandlers(BaseIntegrationTest):
             "Node '{0}' interface '{1}': '8' virtual functions was"
             "requested but just '0' are available".format(
                 self.env.nodes[0].id, nics[0]['name']))
+
+    def test_set_sriov_numvfs_failed_negative_value(self):
+        self.env.create(
+            nodes_kwargs=[{"api": True}]
+        )
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0].id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov['sriov_numvfs'] = -4
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0].id}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json_body['message'],
+            "Node '{0}' interface '{1}': virtual functions value"
+            " should be positive integer number, but '-4' was given".format(
+                self.env.nodes[0].id, nics[0]['name'])
+        )
+
+    def test_set_sriov_numvfs_failed_float_value(self):
+        self.env.create(
+            nodes_kwargs=[{"api": True}]
+        )
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0].id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov['sriov_numvfs'] = 2.5
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0].id}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json_body['message'],
+            "Node '{0}' interface '{1}': virtual functions value"
+            " should be positive integer number, but '2.5' was given".format(
+                self.env.nodes[0].id, nics[0]['name'])
+        )

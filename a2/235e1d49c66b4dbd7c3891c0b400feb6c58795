@@ -1,0 +1,15 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Artur Svechnikov <asvechnikov@mirantis.com>
+Code-Review+1: Alexander Saprykin <asaprykin@mirantis.com>
+Code-Review+2: Bulat Gaifullin <bgaifullin@mirantis.com>
+Code-Review+1: Oleg Gelbukh <ogelbukh@mirantis.com>
+Code-Review+1: Artem Roma <aroma@mirantis.com>
+Code-Review+1: Alexander Kislitsky <akislitsky@mirantis.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Workflow+1: Bulat Gaifullin <bgaifullin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 14 Mar 2016 15:58:25 +0000
+Reviewed-on: https://review.openstack.org/291697
+Project: openstack/fuel-web
+Branch: refs/heads/master

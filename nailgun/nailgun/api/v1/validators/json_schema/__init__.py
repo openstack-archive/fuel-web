@@ -16,3 +16,5 @@ from nailgun.api.v1.validators.json_schema \
     import cluster as cluster_schema
 from nailgun.api.v1.validators.json_schema \
     import node as node_schema
+from nailgun.api.v1.validators.json_schema \
+    import interface as iface_schema

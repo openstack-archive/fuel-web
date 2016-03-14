@@ -280,14 +280,6 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
 class DeploySelectedNodes(BaseDeploySelectedNodes):
     """Handler for deployment selected nodes."""
 
-    def get_nodes(self, cluster):
-        nodes_to_deploy = super(
-            DeploySelectedNodes, self).get_nodes(cluster)
-
-        self.validate(cluster, nodes_to_deploy)
-
-        return nodes_to_deploy
-
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.

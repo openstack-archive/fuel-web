@@ -51,10 +51,9 @@ def load_fake_deployment_tasks(apply_to_db=True, commit=True):
         deployment_tasks = yaml.load(f)
 
     if apply_to_db:
-
-        deployment_graph = objects.DeploymentGraph.create(deployment_tasks)
         for rel in db().query(models.Release).all():
-            objects.DeploymentGraph.attach_to_model(deployment_graph, rel)
+            objects.DeploymentGraph.create_for_model(
+                {'tasks': deployment_tasks}, rel)
         if commit:
             db().commit()
     else:

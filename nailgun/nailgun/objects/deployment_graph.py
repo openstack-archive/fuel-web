@@ -70,6 +70,8 @@ class DeploymentGraphTask(NailgunObject):
         if custom_fields:
             data_to_create['_custom'] = custom_fields
 
+        # todo(ikutukov): super for this create method is not called to avoid
+        # force flush in base method.
         deployment_task_instance = models.DeploymentGraphTask(**data_to_create)
         db().add(deployment_task_instance)
         return deployment_task_instance

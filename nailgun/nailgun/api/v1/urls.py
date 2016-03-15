@@ -147,6 +147,10 @@ from nailgun.api.v1.handlers.openstack_config \
     import OpenstackConfigExecuteHandler
 from nailgun.api.v1.handlers.openstack_config import OpenstackConfigHandler
 
+from nailgun.api.v1.handlers.deployment_graph import \
+    DeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    DeploymentGraphHandler
 
 from nailgun.settings import settings
 
@@ -248,6 +252,11 @@ urls = (
     r'/clusters/(?P<obj_id>\d+)/deployment_graphs/'
     r'(?P<graph_type>[a-zA-Z0-9-_]+)/?$',
     ClusterDeploymentGraphHandler,
+
+    r'/graphs/?$',
+    DeploymentGraphCollectionHandler,
+    r'/graphs/(?P<obj_id>\d+)/?$',
+    DeploymentGraphHandler,
 
     r'/networks/?$',
     NetworkGroupCollectionHandler,

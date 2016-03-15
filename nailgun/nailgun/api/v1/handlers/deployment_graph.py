@@ -173,3 +173,30 @@ class RelatedDeploymentGraphCollectionHandler(CollectionHandler):
         related_model = self.get_object_or_404(self.related, int(obj_id))
         graphs = self.collection.get_for_model(related_model)
         return self.collection.to_json(graphs)
+
+
+class DeploymentGraphHandler(SingleHandler):
+    """Handler for fetching and deletion of the deployment graph."""
+
+    validator = DeploymentGraphValidator
+    single = objects.DeploymentGraph
+
+    @content
+    def DELETE(self, obj_id):
+        """Delete deployment graph.
+
+        :http: * 204 (OK)
+               * 404 (object not found in db)
+        """
+        d_e = self.get_object_or_404(self.single, obj_id)
+        self.single.delete(d_e)
+        raise self.http(204)
+
+    @content
+    def PATCH(self, obj_id):
+        return self.PUT(obj_id)
+
+
+class DeploymentGraphCollectionHandler(CollectionHandler):
+    """Handler for deployment graphs collection."""
+    collection = objects.DeploymentGraphCollection

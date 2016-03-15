@@ -73,27 +73,44 @@ class DeploymentGraphSerializer(BasicSerializer):
 
     fields = (
         "id",
-        "name"
-        # tasks will be added below
+        "name",
+        "tasks",
+        "relations"
     )
 
     @classmethod
     def serialize(cls, instance, fields=None):
-        serialized_graph = super(
-            DeploymentGraphSerializer, cls
-        ).serialize(instance, fields=fields)
-        if not fields or 'tasks' in fields:
-            tasks = nailgun.objects.DeploymentGraph\
-                .get_tasks(deployment_graph_instance=instance)
-            serialized_graph['tasks'] = tasks
-
-        # append relations info
-        serialized_graph['relations'] = []
-        for relation in nailgun.objects.DeploymentGraph.get_related_models(
-                instance):
-            serialized_graph['relations'].append({
-                'type': relation.get('type'),
-                'model': relation.get('model').__class__.__name__,
-                'model_id': relation.get('model').id
-            })
-        return serialized_graph
+        use_fields = fields if fields else cls.fields
+        data_dict = {}
+        for field in use_fields:
+            if field == 'tasks':
+                tasks = nailgun.objects.DeploymentGraph\
+                    .get_tasks(deployment_graph_instance=instance)
+                data_dict['tasks'] = tasks
+            elif field == 'relations':
+                data_dict['relations'] = []
+                for relation in nailgun.objects.DeploymentGraph.\
+                        get_related_models(instance):
+                    model = relation.get('model')
+                    data_dict['relations'].append({
+                        'type': relation.get('type'),
+                        'model': model.__class__.__name__.lower(),
+                        'model_id': model.id
+                    })
+            else:
+                value = getattr(instance, field)
+                if value is None:
+                    data_dict[field] = value
+                else:
+                    f = getattr(instance.__class__, field)
+                    if hasattr(f, "impl"):
+                        rel = f.impl.__class__.__name__
+                        if rel == 'ScalarObjectAttributeImpl':
+                            data_dict[field] = value.id
+                        elif rel == 'CollectionAttributeImpl':
+                            data_dict[field] = [v.id for v in value]
+                        else:
+                            data_dict[field] = value
+                    else:
+                        data_dict[field] = value
+        return data_dict

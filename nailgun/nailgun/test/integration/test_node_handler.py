@@ -336,7 +336,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertRegexpMatches(notif.message,
                                  "that does not match any Admin network")
 
-        admin_ng = objects.NetworkGroup.get_admin_network_group(node.id)
+        admin_ng = objects.NetworkGroup.get_admin_network_group(node)
         ipaddress = str(netaddr.IPRange(admin_ng.ip_ranges[0].first,
                                         admin_ng.ip_ranges[0].last)[1])
         self.app.put(

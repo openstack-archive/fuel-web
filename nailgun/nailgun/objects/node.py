@@ -207,7 +207,7 @@ class Node(NailgunObject):
         ).first()
 
     @classmethod
-    def get_admin_ip(cls, node_id, admin_net_id=None):
+    def get_admin_ip(cls, node, admin_net_id=None):
         """Get admin IP for specified node.
 
         When admin_net_id is None the admin network group for the node's
@@ -216,8 +216,8 @@ class Node(NailgunObject):
         If all_ips is True it will return all IPs from the admin network
         assigned to that node. Otherwise it just returns a single IP.
 
-        :param node_id: Node ID
-        :type node_id: int
+        :param node: return admin IP of this node
+        :type node: nailgun.db.sqlalchemy.models.Node
         :param admin_net_id: Admin NetworkGroup ID
         :type admin_net_id: int
         :param all_ips:
@@ -225,16 +225,12 @@ class Node(NailgunObject):
         :returns: IPAddr instance
         """
         if not admin_net_id:
-            admin_net = NetworkGroup.get_admin_network_group(node_id=node_id)
+            admin_net = NetworkGroup.get_admin_network_group(node)
             admin_net_id = admin_net.id
-        admin_ip = db().query(models.IPAddr).order_by(
-            models.IPAddr.id
-        ).filter_by(
-            node=node_id,
-            network=admin_net_id
-        )
 
-        admin_ip = admin_ip.first()
+        admin_ip = next((ip for ip in node.ip_addrs
+                         if ip.network == admin_net_id), None)
+
         return getattr(admin_ip, 'ip_addr', None)
 
     @classmethod
@@ -487,7 +483,7 @@ class Node(NailgunObject):
         """
         ip = new_ip or instance.ip
         nm = Cluster.get_network_manager(instance.cluster)
-        admin_ng = NetworkGroup.get_admin_network_group(instance.id)
+        admin_ng = NetworkGroup.get_admin_network_group(instance)
         match = nm.is_same_network(ip, admin_ng.cidr)
         if not match:
             cls.set_error_status_and_file_notification(

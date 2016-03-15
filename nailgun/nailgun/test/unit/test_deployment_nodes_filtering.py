@@ -37,8 +37,13 @@ class TestDeploymentNodesFiltering(BaseIntegrationTest):
         )
 
     def test_related_pending_deletion_nodes_not_present(self):
-
         cluster = self.env.clusters[0]
         controllers = [n for n in cluster.nodes if 'controller' in n.all_roles]
         nodes_to_deploy = TaskHelper.nodes_to_deploy(cluster)
+        self.assertItemsEqual(controllers, nodes_to_deploy)
+
+    def test_related_pending_deletion_nodes_not_present_with_force(self):
+        cluster = self.env.clusters[0]
+        controllers = [n for n in cluster.nodes if 'controller' in n.all_roles]
+        nodes_to_deploy = TaskHelper.nodes_to_deploy(cluster, force=True)
         self.assertItemsEqual(controllers, nodes_to_deploy)

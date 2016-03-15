@@ -952,12 +952,14 @@ class EnvironmentManager(object):
                 "Nothing to provision - try creating cluster"
             )
 
-    def launch_deployment(self, cluster_id=None):
+    def launch_deployment(self, cluster_id=None, force=False):
         if self.clusters:
             cluster_id = self._get_cluster_by_id(cluster_id).id
+            handler = 'ClusterChangesForceRedeployHandler'\
+                if force else 'ClusterChangesHandler'
             resp = self.app.put(
                 reverse(
-                    'ClusterChangesHandler',
+                    handler,
                     kwargs={'cluster_id': cluster_id}),
                 headers=self.default_headers)
 

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
@@ -19,7 +20,7 @@ from nailgun.test.base import fake_tasks
 
 
 class TestClusterScaling(BaseIntegrationTest):
-    '''Tests to ensure that nailgun supports scaling operations.'''
+    """Tests to ensure that nailgun supports scaling operations."""
 
     def create_env(self, nodes_kwargs):
         cluster = self.env.create(
@@ -81,6 +82,38 @@ class TestClusterScaling(BaseIntegrationTest):
         self.assertEqual(len(d_nodes), 2)
 
         supertask = self.env.launch_deployment()
+        self.assertEqual(supertask.name, 'deploy')
+
+        self.env.wait_ready(supertask)
+        self.assertEqual(supertask.status, 'ready')
+
+        controllers = self.filter_by_role(cluster.nodes, 'controller')
+        self.assertEqual(len(controllers), 1)
+
+    @fake_tasks()
+    def test_redeploy_shrink_controllers(self):
+        self.env.create(
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.ready
+                }, {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.ready,
+                    'pending_deletion': True
+                }, {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.ready,
+                    'pending_deletion': True
+                }
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            },
+        )
+        cluster = self.env.clusters[0]
+
+        supertask = self.env.launch_deployment(force=True)
         self.assertEqual(supertask.name, 'deploy')
 
         self.env.wait_ready(supertask)

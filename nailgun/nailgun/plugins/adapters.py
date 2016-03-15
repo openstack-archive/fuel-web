@@ -145,8 +145,13 @@ class PluginAdapterBase(object):
     @deployment_tasks.setter
     def deployment_tasks(self, value):
         if value:
-            deployment_graph = DeploymentGraph.create(value)
-            DeploymentGraph.attach_to_model(deployment_graph, self.plugin)
+            deployment_graph_instance = DeploymentGraph.get_for_model(
+                self.plugin)
+            if deployment_graph_instance:
+                DeploymentGraph.update(deployment_graph_instance,
+                                       {'tasks': value})
+            else:
+                DeploymentGraph.create_for_model({'tasks': value}, self.plugin)
 
     @property
     def volumes_metadata(self):

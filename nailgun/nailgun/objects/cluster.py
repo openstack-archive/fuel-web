@@ -174,8 +174,8 @@ class Cluster(NailgunObject):
         cls.create_default_extensions(cluster)
 
         if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, cluster)
+            DeploymentGraph.upsert_for_model(
+                {"tasks": deployment_tasks}, cluster)
 
         try:
             net_manager = cls.get_network_manager(cluster)
@@ -552,8 +552,8 @@ class Cluster(NailgunObject):
         super(Cluster, cls).update(instance, data)
 
         if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, instance)
+            DeploymentGraph.upsert_for_model(
+                {"tasks": deployment_tasks}, instance)
 
         if nodes is not None:
             cls.update_nodes(instance, nodes)

@@ -54,8 +54,8 @@ class BaseTaskSerializationTest(base.BaseTestCase):
         # deployment graph is overriding all other graphs.
         self.cluster.release.deployment_graphs.delete()
 
-        graph = objects.DeploymentGraph.create(yaml.load(self.TASKS))
-        objects.DeploymentGraph.attach_to_model(graph, self.cluster)
+        objects.DeploymentGraph.upsert_for_model(
+            {'tasks': yaml.load(self.TASKS)}, self.cluster)
 
 
 class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
@@ -82,8 +82,8 @@ class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
-        graph = objects.DeploymentGraph.create(yaml.load(self.TASKS))
-        objects.DeploymentGraph.attach_to_model(graph, self.cluster)
+        objects.DeploymentGraph.upsert_for_model(
+            {'tasks': yaml.load(self.TASKS)}, self.cluster)
 
     def tearDown(self):
         self._requests_mock.stop()

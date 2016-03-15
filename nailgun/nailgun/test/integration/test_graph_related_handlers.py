@@ -242,6 +242,8 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
 class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
+    maxDiff = None
+
     def test_get_deployment_tasks(self):
         resp = self.app.get(
             reverse('ClusterDeploymentTasksHandler',

@@ -182,7 +182,7 @@ class ProvisioningSerializer(MellanoxMixin):
             cluster_attrs, serialized_node)
         net_manager = objects.Cluster.get_network_manager(node.cluster)
         gw = net_manager.get_default_gateway(node.id)
-        admin_net = objects.NetworkGroup.get_admin_network_group(node.id)
+        admin_net = objects.NetworkGroup.get_admin_network_group(node)
         serialized_node['ks_meta'].update({'gw': gw})
         serialized_node['ks_meta'].update(
             {'admin_net': admin_net.cidr}
@@ -197,9 +197,9 @@ class ProvisioningSerializer(MellanoxMixin):
         interfaces = {}
         interfaces_extra = {}
         net_manager = objects.Cluster.get_network_manager(node.cluster)
-        admin_ip = net_manager.get_admin_ip_for_node(node.id)
+        admin_ip = net_manager.get_admin_ip_for_node(node)
         admin_netmask = str(netaddr.IPNetwork(
-            objects.NetworkGroup.get_admin_network_group(node.id).cidr
+            objects.NetworkGroup.get_admin_network_group(node).cidr
         ).netmask)
 
         for interface in node.nic_interfaces:

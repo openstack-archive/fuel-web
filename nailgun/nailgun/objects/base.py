@@ -81,6 +81,11 @@ class NailgunObject(object):
         return new_obj
 
     @classmethod
+    def bulk_create(cls, data):
+        db().execute(cls.model.__table__.insert(), data)
+        db().flush()
+
+    @classmethod
     def update(cls, instance, data):
         """Update existing instance with specified parameters
 

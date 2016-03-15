@@ -255,7 +255,7 @@ class Task(NailgunObject):
         elif instance.name == consts.TASK_NAMES.stop_deployment:
             if instance.status == consts.TASK_STATUSES.error:
                 cls.__update_cluster_status(
-                    consts.CLUSTER_STATUSES.error, None
+                    cluster, consts.CLUSTER_STATUSES.error, None
                 )
             else:
                 cls.__update_cluster_status(

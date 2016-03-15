@@ -580,7 +580,7 @@ class NetworkManager(object):
         node_group = objects.NodeGroup.get_by_uid(group_id)
         admin_net = objects.NetworkGroup.get_admin_network_group(node.id)
 
-        ngs = node_group.networks + [admin_net]
+        ngs = set(list(node_group.networks) + [admin_net])
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(

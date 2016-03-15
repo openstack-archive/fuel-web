@@ -53,7 +53,6 @@ class Release(NailgunObject):
         # in order to be compatible with old API, let's drop input
         # roles array. since fuel 7.0 we don't use it anymore, and
         # we don't require it even for old releases.
-        # print "data", data
         data.pop("roles", None)
         deployment_tasks = data.pop("deployment_tasks", [])
         release_obj = super(Release, cls).create(data)

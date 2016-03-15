@@ -165,7 +165,7 @@ class Cluster(NailgunObject):
             enabled_editable_attributes = enabled_core_attributes['editable']
 
         data["fuel_version"] = settings.VERSION["release"]
-        deployment_tasks = data.pop("deployment_tasks", None)
+        deployment_tasks = data.pop("deployment_tasks", [])
 
         cluster = super(Cluster, cls).create(data)
         cls.create_default_group(cluster)
@@ -174,9 +174,8 @@ class Cluster(NailgunObject):
         cls.create_vmware_attributes(cluster)
         cls.create_default_extensions(cluster)
 
-        if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, cluster)
+        # default graph should be created in any case
+        DeploymentGraph.create_for_model({"tasks": deployment_tasks}, cluster)
 
         try:
             net_manager = cls.get_network_manager(cluster)
@@ -555,9 +554,9 @@ class Cluster(NailgunObject):
         super(Cluster, cls).update(instance, data)
 
         if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, instance)
-
+            deployment_graph_instance = DeploymentGraph.get_for_model(instance)
+            DeploymentGraph.update(
+                deployment_graph_instance, {"tasks": deployment_tasks})
         if nodes is not None:
             cls.update_nodes(instance, nodes)
         if changes is not None:

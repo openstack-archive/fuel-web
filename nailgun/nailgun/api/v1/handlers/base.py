@@ -628,8 +628,16 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
             self.validator.validate_update,
             instance=obj
         )
-        deployment_graph_instance = objects.DeploymentGraph.create(data)
-        objects.DeploymentGraph.attach_to_model(deployment_graph_instance, obj)
+
+        deployment_graph_instance = objects.DeploymentGraph.get_for_model(obj)
+        if deployment_graph_instance:
+            objects.DeploymentGraph.update(
+                deployment_graph_instance, {'tasks': data})
+        else:
+            # todo(ikutukov): graph-type processing should be added in
+            # next patch
+            deployment_graph_instance = \
+                objects.DeploymentGraph.create_for_model({'tasks': data}, obj)
         return objects.DeploymentGraph.get_tasks(deployment_graph_instance)
 
     def POST(self, obj_id):

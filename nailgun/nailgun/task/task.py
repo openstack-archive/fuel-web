@@ -122,14 +122,14 @@ class BaseDeploymentTask(object):
         return methods
 
     @classmethod
-    def call_deployment_method(cls, task, *args, **kwargs):
+    def call_deployment_method(cls, transaction, *args, **kwargs):
         """Calls the deployment method with fallback.
 
-        :param task: the Task object instance
+        :param transaction: the transaction object
         :param args: the positional arguments
         :param kwargs: the keyword arguments
         """
-        for name in cls._get_deployment_methods(task.cluster):
+        for name in cls._get_deployment_methods(transaction.cluster):
             try:
                 message_builder = getattr(cls, name)
             except AttributeError:
@@ -139,12 +139,12 @@ class BaseDeploymentTask(object):
                 continue
 
             try:
-                method, args = message_builder(task, *args, **kwargs)
+                method, args = message_builder(transaction, *args, **kwargs)
                 # save tasks history
                 if 'tasks_graph' in args:
                     logger.info("start saving tasks history.")
                     objects.DeploymentHistoryCollection.create(
-                        task, args['tasks_graph']
+                        transaction, args['tasks_graph']
                     )
                     logger.info("finish saving tasks history.")
 
@@ -155,8 +155,7 @@ class BaseDeploymentTask(object):
                 )
 
     @classmethod
-    def lcm_transaction(cls, task, *args, **kwargs):
-        tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+    def lcm_transaction(cls, transaction, tasks, *args, **kwargs):
         # TODO(bgaifullin) remove task version check
         # after related Library changes will be committed
         # if there is at least one task that is supported LCM, use it.
@@ -168,19 +167,21 @@ class BaseDeploymentTask(object):
             raise errors.TaskBaseDeploymentNotAllowed()
 
         # TODO(bgaifullin) always run for all nodes, because deploy-changes
-        # and run for selected nodes uses same logic, and need to diffentiate
-        # this methods at first
-        nodes = objects.Cluster.get_nodes_not_for_deletion(task.cluster)
+        # and run for selected nodes uses same logic,
+        #  and need to differentiate this methods at first
+        nodes = objects.Cluster.get_nodes_not_for_deletion(transaction.cluster)
         role_resolver = RoleResolver(nodes)
         logger.info("start serialization of cluster.")
         # we should update information for all nodes except deleted
         # TODO(bgaifullin) pass role resolver to serializers
         deployment_info = deployment_serializers.serialize_for_lcm(
-            task.cluster, nodes
+            transaction.cluster, nodes
         )
         logger.info("finish serialization of cluster.")
         current_state = objects.Transaction.get_deployment_info(
-            objects.TransactionCollection.get_last_succeed_run(task.cluster)
+            objects.TransactionCollection.get_last_succeed_run(
+                transaction.cluster
+            )
         )
         expected_state = {node['uid']: node for node in deployment_info}
         context = lcm.TransactionContext(expected_state, current_state)
@@ -189,7 +190,7 @@ class BaseDeploymentTask(object):
             context, tasks, role_resolver
         )
         logger.info("finish serialization of tasks.")
-        objects.Transaction.attach_deployment_info(task, expected_state)
+        objects.Transaction.attach_deployment_info(transaction, expected_state)
         return 'task_deploy', {
             "tasks_directory": directory,
             "tasks_graph": graph
@@ -236,16 +237,16 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
-                reexecutable_filter=None):
+                reexecutable_filter=None, graph_type=None):
         """Builds RPC message for deployment task.
 
         :param task: the database task object instance
         :param nodes: the nodes for deployment
         :param affected_nodes: the list of nodes is affected by deployment
-        :deployment_tasks: the list of tasks_ids to execute,
-                           if None, all tasks will be executed
-        :reexecutable_filter: the list of events to find subscribed tasks
-        :return: the RPC message
+        :param deployment_tasks: the list of tasks_ids to execute,
+                                 if None, all tasks will be executed
+        :param reexecutable_filter: the list of events to find subscribed tasks
+        :param graph_type: deployment graph type
         """
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
         task_ids = deployment_tasks or []
@@ -265,8 +266,13 @@ class DeploymentTask(BaseDeploymentTask):
                 n.progress = 0
         db().flush()
 
+        deployment_tasks = objects.Cluster.get_deployment_tasks(
+            task.cluster, graph_type
+        )
+
         deployment_mode, message = cls.call_deployment_method(
-            task, nodes, affected_nodes, task_ids, reexecutable_filter
+            task, deployment_tasks, nodes,
+            affected_nodes, task_ids, reexecutable_filter
         )
 
         # After serialization set pending_addition to False
@@ -294,38 +300,40 @@ class DeploymentTask(BaseDeploymentTask):
         return rpc_message
 
     @classmethod
-    def granular_deploy(cls, task, nodes, affected_nodes, task_ids, events):
+    def granular_deploy(cls, transaction, tasks,
+                        nodes, affected_nodes, selected_task_ids, events):
         """Builds parameters for granular deployment.
 
-        :param task: the database task object instance
+        :param transaction: the transaction object
+        :param tasks: the list of deployment tasks to execute
         :param nodes: the nodes for deployment
         :param affected_nodes: the list of nodes is affected by deployment
-        :task_ids: the list of tasks_ids to execute,
-                           if None, all tasks will be executed
-        :events: the list of events to find subscribed tasks
+        :param selected_task_ids: the list of tasks_ids to execute,
+                                   if None, all tasks will be executed
+        :param events: the list of events to find subscribed tasks
         :return: RPC method name, the arguments for RPC message
         """
-        graph = orchestrator_graph.AstuteGraph(task.cluster)
-        graph.only_tasks(task_ids)
+        graph = orchestrator_graph.AstuteGraph(transaction.cluster, tasks)
+        graph.only_tasks(selected_task_ids)
 
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
         role_resolver = RoleResolver(nodes)
         serialized_cluster = deployment_serializers.serialize(
-            graph, task.cluster, nodes)
+            graph, transaction.cluster, nodes)
 
         if affected_nodes:
             graph.reexecutable_tasks(events)
             serialized_cluster.extend(deployment_serializers.serialize(
-                graph, task.cluster, affected_nodes
+                graph, transaction.cluster, affected_nodes
             ))
             nodes = nodes + affected_nodes
         pre_deployment = stages.pre_deployment_serialize(
-            graph, task.cluster, nodes,
+            graph, transaction.cluster, nodes,
             role_resolver=role_resolver)
         post_deployment = stages.post_deployment_serialize(
-            graph, task.cluster, nodes,
+            graph, transaction.cluster, nodes,
             role_resolver=role_resolver)
 
         return 'granular_deploy', {
@@ -340,22 +348,23 @@ class DeploymentTask(BaseDeploymentTask):
         return 'deploy', args
 
     @classmethod
-    def task_deploy(cls, task, nodes, affected_nodes, task_ids, events):
+    def task_deploy(cls, transaction, tasks, nodes, affected_nodes,
+                    selected_task_ids, events):
         """Builds parameters for task based deployment.
 
-        :param task: the database task object instance
+        :param transaction: the transaction object
+        :param tasks: the list of deployment tasks to execute
         :param nodes: the nodes for deployment
         :param affected_nodes: the list of nodes is affected by deployment
-        :task_ids: the list of tasks_ids to execute,
-                           if None, all tasks will be executed
-        :events: the list of events to find subscribed tasks
+        :param selected_task_ids: the list of tasks_ids to execute,
+                                  if None, all tasks will be executed
+        :param events: the list of events to find subscribed tasks
         :return:  RPC method name, the arguments for RPC message
         """
 
-        deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         logger.info("start cluster serialization.")
         serialized_cluster = deployment_serializers.serialize(
-            None, task.cluster, nodes
+            None, transaction.cluster, nodes
         )
         logger.debug("finish cluster serialization.")
         tasks_events = events and \
@@ -363,8 +372,8 @@ class DeploymentTask(BaseDeploymentTask):
 
         logger.info("start tasks serialization.")
         directory, graph = task_based_deployment.TasksSerializer.serialize(
-            task.cluster, nodes, deployment_tasks, affected_nodes,
-            task_ids, tasks_events
+            transaction.cluster, nodes, tasks, affected_nodes,
+            selected_task_ids, tasks_events
         )
         logger.info("finish tasks serialization.")
 
@@ -1576,6 +1585,7 @@ class CheckBeforeDeploymentTask(object):
 
         example dependencies are: requires|required_for|tasks|groups
         """
+        # TODO(akostrikov) https://bugs.launchpad.net/fuel/+bug/1561485
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         graph_validator = orchestrator_graph.GraphSolverValidator(
             deployment_tasks)
@@ -1951,27 +1961,27 @@ class UpdateDnsmasqTask(object):
 class UpdateOpenstackConfigTask(BaseDeploymentTask):
 
     @staticmethod
-    def task_deploy(task, nodes, update_configs, task_ids):
-        tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+    def task_deploy(transaction, tasks, nodes, task_ids):
+        # TODO(akostrikov) https://bugs.launchpad.net/fuel/+bug/1561485
         directory, graph = task_based_deployment.TasksSerializer.serialize(
-            task.cluster, nodes, tasks, task_ids=task_ids
+            transaction.cluster, nodes, tasks, task_ids=task_ids
         )
         return 'task_deploy', make_astute_message(
-            task, "task_deploy", "update_config_resp", {
+            transaction, "task_deploy", "update_config_resp", {
                 "tasks_directory": directory,
                 "tasks_graph": graph
             }
         )
 
     @staticmethod
-    def granular_deploy(task, nodes, update_configs, task_ids):
-        graph = orchestrator_graph.AstuteGraph(task.cluster)
+    def granular_deploy(transaction, tasks, nodes, task_ids):
+        graph = orchestrator_graph.AstuteGraph(transaction.cluster, tasks)
         graph.only_tasks(task_ids)
         deployment_tasks = graph.stage_tasks_serialize(
             graph.graph.topology, nodes
         )
         return 'granular_deploy', make_astute_message(
-            task, 'execute_tasks', 'update_config_resp', {
+            transaction, 'execute_tasks', 'update_config_resp', {
                 'tasks': deployment_tasks,
             })
 
@@ -1992,8 +2002,9 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
             task.cluster, updated_configs
         )
         task_ids = {t['id'] for t in refreshable_tasks}
+        deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         return cls.call_deployment_method(
-            task, nodes, updated_configs, task_ids
+            task, deployment_tasks, nodes, task_ids
         )[1]
 
 

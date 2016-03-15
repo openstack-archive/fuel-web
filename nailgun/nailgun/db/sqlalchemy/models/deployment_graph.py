@@ -149,7 +149,7 @@ class ReleaseDeploymentGraph(Base):
     deployment_graph = sa.orm.relationship(
         "DeploymentGraph",
         backref=sa.orm.backref(
-            "releases",
+            "releases_assoc",
             lazy="dynamic",
             cascade="all, delete-orphan"))
     release_id = sa.Column(
@@ -159,7 +159,7 @@ class ReleaseDeploymentGraph(Base):
     release = sa.orm.relationship(
         "Release",
         backref=sa.orm.backref(
-            "deployment_graphs",
+            "deployment_graphs_assoc",
             lazy="dynamic",
             cascade="all, delete-orphan"))
 
@@ -189,7 +189,7 @@ class PluginDeploymentGraph(Base):
     deployment_graph = sa.orm.relationship(
         "DeploymentGraph",
         backref=sa.orm.backref(
-            "plugins",
+            "plugins_assoc",
             lazy="dynamic",
             cascade="all, delete-orphan"))
     plugin_id = sa.Column(
@@ -199,7 +199,7 @@ class PluginDeploymentGraph(Base):
     plugin = sa.orm.relationship(
         "Plugin",
         backref=sa.orm.backref(
-            "deployment_graphs",
+            "deployment_graphs_assoc",
             lazy="dynamic",
             cascade="all, delete-orphan"))
 
@@ -226,7 +226,7 @@ class ClusterDeploymentGraph(Base):
     deployment_graph = sa.orm.relationship(
         "DeploymentGraph",
         backref=sa.orm.backref(
-            "clusters",
+            "clusters_assoc",
             lazy="dynamic",
             cascade="all, delete-orphan"))
     cluster_id = sa.Column(
@@ -237,6 +237,6 @@ class ClusterDeploymentGraph(Base):
     cluster = sa.orm.relationship(
         "Cluster",
         backref=sa.orm.backref(
-            "deployment_graphs",
+            "deployment_graphs_assoc",
             lazy="dynamic",
             cascade="all, delete-orphan"))

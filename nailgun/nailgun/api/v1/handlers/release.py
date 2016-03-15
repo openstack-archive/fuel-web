@@ -22,6 +22,10 @@ from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    RelatedDeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    RelatedDeploymentGraphHandler
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
 from nailgun.objects import Release
@@ -99,6 +103,19 @@ class ReleaseNetworksHandler(SingleHandler):
 
 
 class ReleaseDeploymentTasksHandler(OrchestratorDeploymentTasksHandler):
-    """Release Handler for deployment graph configuration."""
+    """Release Handler for deployment tasks configuration (legacy)."""
 
     single = Release
+
+
+class ReleaseDeploymentGraphHandler(RelatedDeploymentGraphHandler):
+    """Release Handler for deployment graph configuration."""
+
+    related = Release
+
+
+class ReleaseDeploymentGraphCollectionHandler(
+        RelatedDeploymentGraphCollectionHandler):
+    """Release Handler for deployment graphs configuration."""
+
+    related = Release

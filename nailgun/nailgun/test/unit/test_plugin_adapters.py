@@ -329,6 +329,15 @@ class TestPluginV4(TestPluginBase):
                     })
                 self.assertEqual(self.plugin_adapter.deployment_tasks[0][k], v)
 
+    def test_empty_task_file_not_failing(self):
+        with mock.patch.object(
+                self.plugin_adapter, '_load_config') as load_conf:
+            with mock.patch('nailgun.plugins.adapters.os') as os:
+                os.path.exists.return_value = True
+                with self.assertNotRaises(ValueError):
+                    load_conf.return_value = None
+                    self.plugin_adapter.set_cluster_tasks()
+
 
 class TestClusterCompatibilityValidation(base.BaseTestCase):
 

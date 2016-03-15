@@ -131,7 +131,7 @@ class TestStopDeployment(BaseIntegrationTest):
                 n["admin_ip"],
                 objects.Cluster.get_network_manager(
                     n_db.cluster
-                ).get_admin_ip_for_node(n_db.id)
+                ).get_admin_ip_for_node(n_db)
             )
 
     @fake_tasks(recover_nodes=False, tick_interval=1)

@@ -565,8 +565,7 @@ class TestNetworkManager(BaseIntegrationTest):
                           objects.Node.get_networks_ips_dict(node))
 
     def test_get_admin_ip_for_node(self):
-        self.env.create(api=False)
-        cluster = self.env.clusters[0]
+        cluster = self.env.create(api=False)
         node_data = self.env.create_node(cluster_id=cluster.id)
         node = self.env.nodes[-1]
 

@@ -135,10 +135,7 @@ class EnvironmentManager(object):
         )
         for node_kwargs in kwargs.pop('nodes_kwargs', []):
             if "cluster_id" not in node_kwargs:
-                if isinstance(cluster, dict):
-                    node_kwargs["cluster_id"] = cluster["id"]
-                else:
-                    node_kwargs["cluster_id"] = cluster.id
+                node_kwargs["cluster_id"] = cluster.id
             node_kwargs.setdefault("api", False)
             if "pending_roles" not in node_kwargs:
                 node_kwargs.setdefault("roles", ["controller"])
@@ -283,7 +280,7 @@ class EnvironmentManager(object):
                                      {'editable': editable_attributes})
         if vmware_attributes:
             Cluster.update_vmware_attributes(cluster_db, vmware_attributes)
-        return cluster
+        return cluster_db
 
     def create_node(
             self, api=False,

@@ -527,7 +527,7 @@ class TasksSerializer(object):
         for node_id, tasks in six.iteritems(self.tasks_connections):
             for task in six.itervalues(tasks):
                 requires = set(self.expand_dependencies(
-                    node_id, task.pop('requires'),
+                    node_id, task.pop('requires', None),
                     self.task_processor.get_last_task_id
                 ))
                 requires.update(self.expand_cross_dependencies(
@@ -537,7 +537,7 @@ class TasksSerializer(object):
                 requires.update(task.pop('requires_ex', ()))
 
                 required_for = set(self.expand_dependencies(
-                    node_id, task.pop('required_for'),
+                    node_id, task.pop('required_for', None),
                     self.task_processor.get_first_task_id
                 ))
                 required_for.update(self.expand_cross_dependencies(

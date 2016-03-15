@@ -14,9 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
-
 import six
+from sqlalchemy.exc import IntegrityError
 
 from nailgun import consts
 from nailgun.db import db
@@ -43,11 +42,13 @@ class DeploymentGraphTask(NailgunObject):
     }
 
     @classmethod
-    def create(cls, data):
+    def create(cls, data, flush=True):
         """Create DeploymentTask model.
 
         :param data: task data
         :type data: dict
+        :param flush: do SQLAlchemy flush
+        :type flush: bool
         :return: DeploymentGraphTask instance
         :rtype: DeploymentGraphTask
         """
@@ -71,6 +72,10 @@ class DeploymentGraphTask(NailgunObject):
         if custom_fields:
             data_to_create['_custom'] = custom_fields
 
+        # todo(ikutukov): super for this create method is not called to avoid
+        # force flush in base method.
+        # In future flushing should became optional param of CRUD method for
+        # the base nailgun object.
         deployment_task_instance = models.DeploymentGraphTask(**data_to_create)
         db().add(deployment_task_instance)
         return deployment_task_instance
@@ -104,32 +109,54 @@ class DeploymentGraph(NailgunObject):
         return relation_model
 
     @classmethod
-    def create(cls, deployment_tasks_data=None, name=None):
+    def create(cls, data):
         """Create DeploymentGraph and related DeploymentGraphTask models.
 
         It is possible to create empty graphs if not tasks data provided.
 
-        :param deployment_tasks_data: list of deployment_tasks
-        :type deployment_tasks_data: list[dict]|None
-        :param name: graph verbose name
-        :type name: basestring|None
+        :param data: tasks and graph name
+        :type data: dict
         :returns: instance of new DeploymentGraphModel
         :rtype: DeploymentGraphModel
         """
-        # it is possible to create empty graphs
 
-        # create graph
-        deployment_graph_instance = super(DeploymentGraph, cls).create({
-            'name': name
-        })
-        # create tasks
-        if deployment_tasks_data:
-            for deployment_task in copy.deepcopy(deployment_tasks_data):
-                deployment_task["deployment_graph_id"] = \
-                    deployment_graph_instance.id
-                DeploymentGraphTask.create(deployment_task)
+        tasks = data.pop('tasks', None)
+
+        deployment_graph_instance = super(DeploymentGraph, cls).create(data)
+        if tasks:
+            for task in tasks:
+                deployment_graph_instance.tasks.append(
+                    DeploymentGraphTask.create(task, False))
         db().flush()
         return deployment_graph_instance
+
+    @classmethod
+    def update(cls, instance, data):
+        """Create DeploymentGraph and related DeploymentGraphTask models.
+
+        It is possible to create empty graphs if not tasks data provided.
+
+        :param instance: DeploymentGraph instance
+        :type instance: DeploymentGraph
+        :param data: data to update
+        :type data: dict
+        :returns: instance of new DeploymentGraphModel
+        :rtype: DeploymentGraphModel
+        """
+
+        tasks = data.pop('tasks', None)
+
+        super(DeploymentGraph, cls).update(instance, data)
+
+        # remove old tasks
+        instance.tasks = []
+
+        if tasks:
+            for task in tasks:
+                instance.tasks.append(
+                    DeploymentGraphTask.create(task, False))
+        db().flush()
+        return instance
 
     @classmethod
     def get_tasks(cls, deployment_graph_instance):
@@ -139,6 +166,30 @@ class DeploymentGraph(NailgunObject):
         return DeploymentGraphTaskCollection.get_by_deployment_graph_uid(
             deployment_graph_instance.id
         )
+
+    @classmethod
+    def create_for_model(
+            cls, data, instance,
+            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+        """Create graph attached to model instance with given type.
+
+        This method is recommended to create or update graphs.
+
+        :param data: graph data
+        :type data: dict
+        :param instance: external model
+        :type instance: models.Cluster|models.Plugin|models.Release
+        :param graph_type: graph type, default is 'default'
+        :type graph_type: basestring
+        :return: models.DeploymentGraph
+        """
+        graph = cls.get_for_model(instance, graph_type=graph_type)
+        if not graph:
+            graph = cls.create(data)
+            cls.attach_to_model(graph, instance, graph_type)
+            return graph
+        else:
+            raise IntegrityError
 
     @classmethod
     def get_for_model(
@@ -168,29 +219,23 @@ class DeploymentGraph(NailgunObject):
     @classmethod
     def attach_to_model(
             cls, graph_instance, instance,
-            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE, rewrite=True):
+            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
         """Attach existing deployment graph to given model.
 
         graph_type is working like unique namespace and if there are existing
         graph with this type attached to model it will be replaced.
 
-        :param instance: model that should have relation to graph
-        :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_instance: deployment graph model
         :type graph_instance: models.DeploymentGraph
+        :param instance: model that should have relation to graph
+        :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_type: graph type
         :type graph_type: basestring
-        :param rewrite: remove existing graph with given type if True or
-                        integrity exception will be thrown if another graph is
-                        exists if False
-        :type rewrite: boolean
         :return: graph instance
         :rtype: models.DeploymentGraph
 
         :raises: IntegrityError
         """
-        if rewrite:
-            cls.detach_from_model(instance, graph_type)
         association_class = cls._get_association_for_model(instance)
         if association_class:
             association = association_class(

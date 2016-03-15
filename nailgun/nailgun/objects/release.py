@@ -58,8 +58,8 @@ class Release(NailgunObject):
         release_obj = super(Release, cls).create(data)
 
         if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, release_obj)
+            DeploymentGraph.create_for_model(
+                {'tasks': deployment_tasks}, release_obj)
         return release_obj
 
     @classmethod
@@ -78,8 +78,13 @@ class Release(NailgunObject):
 
         release_obj = super(Release, cls).update(instance, data)
         if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, release_obj)
+            deployment_graph_instance = DeploymentGraph.get_for_model(instance)
+            if deployment_graph_instance:
+                DeploymentGraph.update(deployment_graph_instance,
+                                       {'tasks': deployment_tasks})
+            else:
+                DeploymentGraph.create_for_model({'tasks': deployment_tasks},
+                                                 instance)
         return release_obj
 
     @classmethod
@@ -170,11 +175,13 @@ class Release(NailgunObject):
                 # upload default graph
                 if env_version.startswith('5.0'):
                     deployment_graph = DeploymentGraph.create(
-                        yaml.load(graph_configuration.DEPLOYMENT_50))
+                        {'tasks': yaml.load(
+                            graph_configuration.DEPLOYMENT_50)})
                 elif env_version.startswith('5.1') \
                         or env_version.startswith('6.0'):
                     deployment_graph = DeploymentGraph.create(
-                        yaml.load(graph_configuration.DEPLOYMENT_51_60))
+                        {'tasks': yaml.load(
+                            graph_configuration.DEPLOYMENT_51_60)})
                 else:
                     return []
             else:

@@ -64,7 +64,7 @@ from nailgun.utils import reverse
 
 
 class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
-    """Class containts helpers."""
+    """Class contains helpers."""
 
     prepare_for_deployment = \
         objects.NodeCollection.prepare_for_lt_6_1_deployment
@@ -92,7 +92,7 @@ class OrchestratorSerializerTestBase(base.BaseIntegrationTest):
             order_by(Node.id)
 
     def add_default_params(self, nodes):
-        """Adds neceserry default parameters to nodes
+        """Adds necessary default parameters to nodes
 
         :param nodes: list of dicts
         """

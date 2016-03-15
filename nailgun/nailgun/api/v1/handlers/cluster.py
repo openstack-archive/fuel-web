@@ -27,6 +27,10 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DeferredTaskHandler
 from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    RelatedDeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    RelatedDeploymentGraphHandler
 
 from nailgun.api.v1.validators.cluster import ClusterAttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterChangesValidator
@@ -378,3 +382,16 @@ class VmwareAttributesDefaultsHandler(BaseHandler):
         attributes = objects.Cluster.get_default_vmware_attributes(cluster)
 
         return {"editable": attributes}
+
+
+class ClusterDeploymentGraphHandler(RelatedDeploymentGraphHandler):
+    """Cluster Handler for deployment graph configuration."""
+
+    related = objects.Cluster
+
+
+class ClusterDeploymentGraphCollectionHandler(
+        RelatedDeploymentGraphCollectionHandler):
+    """Cluster Handler for deployment graphs configuration."""
+
+    related = objects.Cluster

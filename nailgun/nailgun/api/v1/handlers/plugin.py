@@ -18,6 +18,10 @@ import six
 
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.deployment_graph import \
+    LinkedDeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    LinkedDeploymentGraphHandler
 from nailgun.api.v1.validators import plugin
 from nailgun.errors import errors
 from nailgun import objects
@@ -72,3 +76,16 @@ class PluginSyncHandler(base.BaseHandler):
             raise self.http(400, msg=six.text_type(exc))
 
         raise self.http(200, {})
+
+
+class PluginDeploymentGraphHandler(LinkedDeploymentGraphHandler):
+    """Plugin Handler for deployment graph configuration."""
+
+    single = objects.Plugin
+
+
+class PluginDeploymentGraphCollectionHandler(
+        LinkedDeploymentGraphCollectionHandler):
+    """Plugin Handler for deployment graphs configuration."""
+
+    single = objects.Plugin

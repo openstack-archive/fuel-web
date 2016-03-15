@@ -628,8 +628,8 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
             self.validator.validate_update,
             instance=obj
         )
-        deployment_graph_instance = objects.DeploymentGraph.create(data)
-        objects.DeploymentGraph.attach_to_model(deployment_graph_instance, obj)
+        deployment_graph_instance = objects.DeploymentGraph.upsert_for_model(
+            {'tasks': data}, obj)
         return objects.DeploymentGraph.get_tasks(deployment_graph_instance)
 
     def POST(self, obj_id):

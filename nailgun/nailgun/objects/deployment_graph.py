@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import itertools
 
 import six
 
@@ -140,7 +141,6 @@ class DeploymentGraph(NailgunObject):
 
         super(DeploymentGraph, cls).update(instance, data)
 
-        # remove old tasks
         if tasks is not None:
             instance.tasks = []
             # flush is required to avoid task.id+graph.id key conflicts
@@ -261,7 +261,55 @@ class DeploymentGraph(NailgunObject):
                 .format(existing_graph.id, instance, instance.id))
             return existing_graph
 
+    @classmethod
+    def get_related_models(cls, instance):
+        """Get all models instanced related to this graph.
+
+        :param instance: deployment graph instance.
+        :type instance: models.DeploymentGraph
+
+        :return: list of {
+                    'type': 'graph_type',
+                    'model': Cluster|Plugin|Release
+                 }
+        :rtype: list[dict]
+        """
+        relations = [
+            (instance.clusters_assoc, 'cluster'),
+            (instance.releases_assoc, 'release'),
+            (instance.plugins_assoc, 'plugin'),
+        ]
+        result = []
+        for assoc_models, attr in relations:
+            for assoc_model in assoc_models:
+                related_model = getattr(assoc_model, attr, None)
+                result.append({
+                    'type': assoc_model.type,
+                    'model': related_model})
+        return result
+
 
 class DeploymentGraphCollection(NailgunCollection):
 
     single = DeploymentGraph
+
+    @classmethod
+    def get_for_model(cls, instance):
+        """Get deployment graphs related to given model.
+
+        :param instance: model that could have relation to graph
+        :type instance: models.Plugin|models.Cluster|models.Release|
+        :return: graph instance
+        :rtype: model.DeploymentGraph
+        """
+        association_model = cls.single.get_association_for_model(instance)
+        graphs = db.query(
+            models.DeploymentGraph
+        ).join(
+            association_model
+        ).join(
+            instance.__class__
+        ).filter(
+            instance.__class__.id == instance.id
+        )
+        return graphs.all()

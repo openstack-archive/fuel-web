@@ -171,6 +171,34 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             self.cluster.release)
         self.assertEqual(resp.json, release_tasks)
 
+    def test_get_custom_deployment_tasks(self):
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'custom-task',
+                    'type': 'puppet'
+                }
+            ]}, self.cluster.release, 'custom-graph')
+
+        resp = self.app.get(
+            reverse(
+                'ReleaseDeploymentTasksHandler',
+                kwargs={'obj_id': self.cluster.id}
+            ) + '?graph_type=custom-graph',
+            headers=self.default_headers
+        )
+        self.assertItemsEqual(
+            resp.json,
+            [
+                {
+                    'id': 'custom-task',
+                    'task_name': 'custom-task',
+                    'version': '1.0.0',
+                    'type': 'puppet'
+                }
+            ]
+        )
+
     def test_upload_deployment_tasks(self):
         tasks = self.get_correct_tasks()
         resp = self.app.put(
@@ -242,6 +270,8 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
 class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
+    maxDiff = None
+
     def test_get_deployment_tasks(self):
         resp = self.app.get(
             reverse('ClusterDeploymentTasksHandler',
@@ -260,6 +290,34 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         release_tasks = objects.Release.get_deployment_tasks(
             self.cluster.release)
         self.assertItemsEqual(resp.json, release_tasks)
+
+    def test_get_custom_deployment_tasks(self):
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'custom-task',
+                    'type': 'puppet'
+                }
+            ]}, self.cluster, 'custom-graph')
+
+        resp = self.app.get(
+            reverse(
+                'ClusterDeploymentTasksHandler',
+                kwargs={'obj_id': self.cluster.id}
+            ) + '?graph_type=custom-graph',
+            headers=self.default_headers
+        )
+        self.assertItemsEqual(
+            resp.json,
+            [
+                {
+                    'id': 'custom-task',
+                    'task_name': 'custom-task',
+                    'version': '1.0.0',
+                    'type': 'puppet'
+                }
+            ]
+        )
 
     def test_upload_deployment_tasks(self):
         tasks = self.get_correct_tasks()
@@ -543,3 +601,28 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertIn('Task types nonexistent do not exist', resp.body)
+
+
+class TestTaskDeployCustomGraph(BaseGraphTasksTests):
+
+    content_type = 'text/vnd.graphviz'
+
+    def setUp(self):
+        super(TestTaskDeployCustomGraph, self).setUp()
+        self.env.create()
+        self.cluster = self.env.clusters[-1]
+
+    def test_get_custom_tasks(self):
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {'id': 'pre_deployment', 'type': 'stage'},
+                {'id': 'custom-task', 'required_for': ['pre_deployment'],
+                 'type': 'puppet'},
+            ]}, self.cluster, 'custom-graph')
+
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': self.cluster.id,
+            }) + '?graph_type=custom-graph',
+        )
+        self.assertIn('"custom-task" -> pre_deployment;', resp.body)

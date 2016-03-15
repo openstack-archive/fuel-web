@@ -53,13 +53,13 @@ class Release(NailgunObject):
         # in order to be compatible with old API, let's drop input
         # roles array. since fuel 7.0 we don't use it anymore, and
         # we don't require it even for old releases.
+        # print "data", data
         data.pop("roles", None)
-        deployment_tasks = data.pop("deployment_tasks", None)
+        deployment_tasks = data.pop("deployment_tasks", [])
         release_obj = super(Release, cls).create(data)
 
-        if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, release_obj)
+        DeploymentGraph.create_for_model(
+            {'tasks': deployment_tasks}, release_obj)
         return release_obj
 
     @classmethod
@@ -75,11 +75,11 @@ class Release(NailgunObject):
         # we don't require it even for old releases.
         data.pop("roles", None)
         deployment_tasks = data.pop("deployment_tasks", None)
-
         release_obj = super(Release, cls).update(instance, data)
         if deployment_tasks:
-            deployment_graph = DeploymentGraph.create(deployment_tasks)
-            DeploymentGraph.attach_to_model(deployment_graph, release_obj)
+            deployment_graph_instance = DeploymentGraph.get_for_model(instance)
+            DeploymentGraph.update(deployment_graph_instance,
+                                   {'tasks': deployment_tasks})
         return release_obj
 
     @classmethod
@@ -154,34 +154,49 @@ class Release(NailgunObject):
                 StrictVersion(consts.FUEL_MULTIPLE_FLOATING_IP_RANGES))
 
     @classmethod
-    def get_deployment_tasks(cls, instance,
-                             graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def get_deployment_tasks(cls, instance, graph_type=None):
         """Get deployment graph based on release version.
 
         :param instance: Release instance
         :type instance: models.Release
+        :param graph_type: deployment graph type
+        :type graph_type: basestring|None
         :returns: list of deployment tasks
         :rtype: list
         """
+        if graph_type is None:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
+
         env_version = instance.environment_version
+
         deployment_graph = DeploymentGraph.get_for_model(instance, graph_type)
-        if not deployment_graph:
-            if graph_type == consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE:
-                # upload default graph
-                if env_version.startswith('5.0'):
-                    deployment_graph = DeploymentGraph.create(
-                        yaml.load(graph_configuration.DEPLOYMENT_50))
-                elif env_version.startswith('5.1') \
-                        or env_version.startswith('6.0'):
-                    deployment_graph = DeploymentGraph.create(
-                        yaml.load(graph_configuration.DEPLOYMENT_51_60))
-                else:
-                    return []
+        if deployment_graph:
+            deployment_tasks = DeploymentGraph.get_tasks(deployment_graph)
+        else:
+            # deployment tasks list should always be returned
+            deployment_tasks = []
+
+        if graph_type == consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE and \
+                not deployment_tasks:
+            # upload default legacy graphs
+            if env_version.startswith('5.0'):
+                deployment_tasks = yaml.load(
+                    graph_configuration.DEPLOYMENT_50)
+            elif env_version.startswith('5.1') \
+                    or env_version.startswith('6.0'):
+                deployment_tasks = yaml.load(
+                    graph_configuration.DEPLOYMENT_51_60)
+
+            if deployment_graph:
+                if deployment_tasks:
+                    DeploymentGraph.update(
+                        deployment_graph, {'tasks': deployment_tasks})
             else:
-                return []
-            DeploymentGraph.attach_to_model(
-                deployment_graph, instance, graph_type=graph_type)
-        return DeploymentGraph.get_tasks(deployment_graph)
+                # create graph anyway
+                DeploymentGraph.create_for_model(
+                    {'tasks': deployment_tasks}, instance)
+
+        return deployment_tasks
 
     @classmethod
     def get_min_controller_count(cls, instance):

@@ -104,32 +104,58 @@ class DeploymentGraph(NailgunObject):
         return relation_model
 
     @classmethod
-    def create(cls, deployment_tasks_data=None, name=None):
+    def create(cls, data):
         """Create DeploymentGraph and related DeploymentGraphTask models.
 
         It is possible to create empty graphs if not tasks data provided.
 
-        :param deployment_tasks_data: list of deployment_tasks
-        :type deployment_tasks_data: list[dict]|None
-        :param name: graph verbose name
-        :type name: basestring|None
+        :param data: tasks and graph name
+        :type data: dict
         :returns: instance of new DeploymentGraphModel
         :rtype: DeploymentGraphModel
         """
-        # it is possible to create empty graphs
+
+        tasks = data.pop('tasks', None)
 
         # create graph
-        deployment_graph_instance = super(DeploymentGraph, cls).create({
-            'name': name
-        })
+        deployment_graph_instance = super(DeploymentGraph, cls).create(data)
         # create tasks
-        if deployment_tasks_data:
-            for deployment_task in copy.deepcopy(deployment_tasks_data):
-                deployment_task["deployment_graph_id"] = \
-                    deployment_graph_instance.id
-                DeploymentGraphTask.create(deployment_task)
+        if tasks:
+            for task in copy.deepcopy(tasks):
+                task["deployment_graph_id"] = deployment_graph_instance.id
+                DeploymentGraphTask.create(task)
         db().flush()
         return deployment_graph_instance
+
+    @classmethod
+    def update(cls, instance, data):
+        """Create DeploymentGraph and related DeploymentGraphTask models.
+
+        It is possible to create empty graphs if not tasks data provided.
+
+        :param instance: DeploymentGraph instance
+        :type instance: DeploymentGraph
+        :param data: data to update
+        :type data: dict
+        :returns: instance of new DeploymentGraphModel
+        :rtype: DeploymentGraphModel
+        """
+
+        tasks = data.pop('tasks', None)
+
+        super(DeploymentGraph, cls).update(instance, data)
+
+        # remove old tasks
+        instance.tasks = []
+        db().flush()
+
+        # create tasks
+        if tasks:
+            for task in copy.deepcopy(tasks):
+                task["deployment_graph_id"] = instance.id
+                DeploymentGraphTask.create(task)
+        db().flush()
+        return instance
 
     @classmethod
     def get_tasks(cls, deployment_graph_instance):
@@ -139,6 +165,30 @@ class DeploymentGraph(NailgunObject):
         return DeploymentGraphTaskCollection.get_by_deployment_graph_uid(
             deployment_graph_instance.id
         )
+
+    @classmethod
+    def upsert_for_model(
+            cls, data, instance,
+            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+        """Create or update graph of given type attached to model instance.
+
+        This method is recommended to create or update graphs.
+
+        :param data: graph data
+        :type data: dict
+        :param instance: external model
+        :type instance: models.Cluster|models.Plugin|models.Release
+        :param graph_type: graph type, default is 'default'
+        :type graph_type: basestring
+        :return: models.DeploymentGraph
+        """
+        graph = cls.get_for_model(instance, graph_type=graph_type)
+        if graph:
+            cls.update(graph, data)
+        else:
+            graph = cls.create(data)
+            cls.attach_to_model(graph, instance, graph_type)
+        return graph
 
     @classmethod
     def get_for_model(
@@ -174,10 +224,10 @@ class DeploymentGraph(NailgunObject):
         graph_type is working like unique namespace and if there are existing
         graph with this type attached to model it will be replaced.
 
-        :param instance: model that should have relation to graph
-        :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_instance: deployment graph model
         :type graph_instance: models.DeploymentGraph
+        :param instance: model that should have relation to graph
+        :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_type: graph type
         :type graph_type: basestring
         :param rewrite: remove existing graph with given type if True or

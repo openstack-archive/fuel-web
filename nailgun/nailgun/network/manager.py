@@ -90,7 +90,7 @@ class NetworkManager(object):
         nodes_need_ips = defaultdict(list)
         for node in nodes:
             node_id = node.id
-            admin_net = objects.NetworkGroup.get_admin_network_group(node_id)
+            admin_net = objects.NetworkGroup.get_admin_network_group(node)
             node_admin_ips_count = objects.Node.get_network_ips_count(
                 node_id, admin_net.id)
             logger.debug(u"Trying to assign admin ip: node=%s", node_id)
@@ -145,8 +145,8 @@ class NetworkManager(object):
                     .format(node_id, cluster_id)
                 )
 
-            if network_name == 'public' and \
-                    not objects.Node.should_have_public_with_ip(node):
+            if (network_name == consts.NETWORKS.public and
+                    not objects.Node.should_have_public_with_ip(node)):
                 continue
 
             network = objects.NetworkGroup.get_node_network_by_name(
@@ -156,7 +156,7 @@ class NetworkManager(object):
             node_ips = six.moves.map(
                 lambda i: i.ip_addr,
                 objects.IPAddr.get_ips_except_admin(
-                    node_id=node_id,
+                    node=node,
                     network_id=network.id
                 )
             )
@@ -184,16 +184,19 @@ class NetworkManager(object):
         # Get and assign ips for nodes
         for network, nodes in six.iteritems(nodes_need_ips):
             free_ips = cls.get_free_ips(network, len(nodes))
-            for ip, n in zip(free_ips, nodes):
+            ip_addrs = []
+            for ip, n_id in six.moves.zip(free_ips, nodes):
                 logger.info(
                     "Assigning IP for node '{0}' in network '{1}'".format(
-                        n,
+                        n_id,
                         network_name
                     )
                 )
-                objects.IPAddr.create(
-                    {'network': network.id, 'ip_addr': ip, 'node': n}
-                )
+
+                ip_addrs.append({'node': n_id, 'ip_addr': ip,
+                                 'network': network.id})
+
+            objects.IPAddr.bulk_create(ip_addrs)
 
     @classmethod
     def get_assigned_vip(cls, nodegroup, network_name, vip_name):
@@ -484,7 +487,7 @@ class NetworkManager(object):
                        None)
         nic_ip = next((i for i in node.meta['interfaces']
                        if cls.is_ip_belongs_to_admin_subnet(i.get('ip'),
-                                                            node.id)),
+                                                            node)),
                       None)
         # 'pxe' flag is absent in agent's data often
         if nic_pxe and not (nic_pxe == nic_mac == nic_ip) or \
@@ -578,16 +581,16 @@ class NetworkManager(object):
         group_id = (node.group_id or
                     objects.Cluster.get_default_group(node.cluster).id)
         node_group = objects.NodeGroup.get_by_uid(group_id)
-        admin_net = objects.NetworkGroup.get_admin_network_group(node.id)
+        admin_net = objects.NetworkGroup.get_admin_network_group(node)
 
         ngs = node_group.networks + [admin_net]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(
-            zip(*sorted(
+            next(six.moves.zip(*sorted(
                 [[ng.id, ng.meta['map_priority']]
                  for ng in ngs],
-                key=lambda x: x[1]))[0]
+                key=lambda x: x[1])))
         )
         ng_ids = set(ng.id for ng in ngs)
         ng_wo_admin_ids = ng_ids.symmetric_difference(
@@ -672,9 +675,9 @@ class NetworkManager(object):
 
     @classmethod
     def _get_admin_node_network(cls, node):
-        net = objects.NetworkGroup.get_admin_network_group(node.id)
+        net = objects.NetworkGroup.get_admin_network_group(node)
         net_cidr = IPNetwork(net.cidr)
-        ip_addr = cls.get_admin_ip_for_node(node.id)
+        ip_addr = cls.get_admin_ip_for_node(node)
         if ip_addr:
             ip_addr = cls.get_ip_w_cidr_prefix_len(ip_addr, net)
 
@@ -886,7 +889,7 @@ class NetworkManager(object):
             objects.NIC.assign_networks(iface_mapped, net_list)
 
         iface_pxe.assigned_networks_list.append(
-            objects.NetworkGroup.get_admin_network_group(node.id))
+            objects.NetworkGroup.get_admin_network_group(node))
         objects.NIC.assign_networks(
             iface_pxe, iface_pxe.assigned_networks_list
         )
@@ -914,7 +917,7 @@ class NetworkManager(object):
         interfaces = node.meta['interfaces']
         for interface in interfaces:
             ip_addr = interface.get('ip')
-            if cls.is_ip_belongs_to_admin_subnet(ip_addr, node.id) or \
+            if cls.is_ip_belongs_to_admin_subnet(ip_addr, node) or \
                     utils.is_same_mac(interface['mac'], node.mac):
                 break
         else:
@@ -933,9 +936,9 @@ class NetworkManager(object):
                 )
 
     @classmethod
-    def is_ip_belongs_to_admin_subnet(cls, ip_addr, node_id=None):
-        admin_cidr = objects.NetworkGroup.get_admin_network_group(node_id).cidr
-        if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
+    def is_ip_belongs_to_admin_subnet(cls, ip_addr, node=None):
+        ng = objects.NetworkGroup.get_admin_network_group(node)
+        if ip_addr and IPAddress(ip_addr) in IPNetwork(ng.cidr):
             return True
         return False
 
@@ -1012,31 +1015,21 @@ class NetworkManager(object):
             objects.NIC.bulk_delete([i.id for i in interfaces_to_delete])
 
     @classmethod
-    def get_admin_ip_for_node(cls, node_id):
+    def get_admin_ip_for_node(cls, node=None):
         """Returns first admin IP address for node."""
-        return objects.Node.get_admin_ip(node_id)
-
-    @classmethod
-    def get_admin_ips_for_interfaces(cls, node):
-        """Returns mapping admin {"inteface name" => "admin ip"}."""
-        admin_ips = objects.Node.get_admin_ip(node.id)
-
-        interfaces_names = sorted(set([
-            interface.name for interface in node.interfaces]))
-
-        return dict(zip(interfaces_names, admin_ips))
+        return objects.Node.get_admin_ip(node)
 
     @classmethod
     def get_admin_interface(cls, node):
         try:
             return cls._get_interface_by_network_name(
-                node, 'fuelweb_admin')
+                node, consts.NETWORKS.fuelweb_admin)
         except errors.CanNotFindInterface:
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
 
         for iface in node.nic_interfaces:
-            if cls.is_ip_belongs_to_admin_subnet(iface.ip_addr, node.id):
+            if cls.is_ip_belongs_to_admin_subnet(iface.ip_addr, node):
                 return iface
 
         logger.warning(u'Cannot find admin interface for node '
@@ -1375,8 +1368,9 @@ class NetworkManager(object):
         :param node_id: The ID of Node Object.
         :return: The GW from Admin network if it's set. else Admin IP
         """
-        admin_net = objects.NetworkGroup.get_admin_network_group(node_id)
-        return admin_net.gateway or settings.MASTER_IP
+        node = objects.Node.get_by_uid(node_id)
+        net = objects.NetworkGroup.get_admin_network_group(node)
+        return net.gateway or settings.MASTER_IP
 
     @classmethod
     def get_networks_not_on_node(cls, node, networks=None):

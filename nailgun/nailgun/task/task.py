@@ -174,15 +174,16 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
-                reexecutable_filter=None):
+                reexecutable_filter=None, graph_type=None):
         """Builds RPC message for deployment task.
 
         :param task: the database task object instance
         :param nodes: the nodes for deployment
         :param affected_nodes: the list of nodes is affected by deployment
-        :deployment_tasks: the list of tasks_ids to execute,
-                           if None, all tasks will be executed
-        :reexecutable_filter: the list of events to find subscribed tasks
+        :param deployment_tasks: the list of tasks_ids to execute,
+                                 if None, all tasks will be executed
+        :param reexecutable_filter: the list of events to find subscribed tasks
+        :param graph_type: deployment graph type
         :return: the RPC message
         """
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
@@ -204,7 +205,8 @@ class DeploymentTask(BaseDeploymentTask):
         db().flush()
 
         deployment_mode, message = cls.call_deployment_method(
-            task, nodes, affected_nodes, task_ids, reexecutable_filter
+            task, nodes, affected_nodes, task_ids, reexecutable_filter,
+            graph_type
         )
 
         # After serialization set pending_addition to False
@@ -232,18 +234,20 @@ class DeploymentTask(BaseDeploymentTask):
         return rpc_message
 
     @classmethod
-    def granular_deploy(cls, task, nodes, affected_nodes, task_ids, events):
+    def granular_deploy(cls, task, nodes, affected_nodes, task_ids, events,
+                        graph_type):
         """Builds parameters for granular deployment.
 
         :param task: the database task object instance
         :param nodes: the nodes for deployment
         :param affected_nodes: the list of nodes is affected by deployment
-        :task_ids: the list of tasks_ids to execute,
-                           if None, all tasks will be executed
-        :events: the list of events to find subscribed tasks
+        :param task_ids: the list of tasks_ids to execute,
+                         if None, all tasks will be executed
+        :param events: the list of events to find subscribed tasks
+        :param graph_type: deployment graph type
         :return: the arguments for RPC message
         """
-        graph = orchestrator_graph.AstuteGraph(task.cluster)
+        graph = orchestrator_graph.AstuteGraph(task.cluster, graph_type)
         graph.only_tasks(task_ids)
 
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
@@ -275,19 +279,21 @@ class DeploymentTask(BaseDeploymentTask):
     deploy = granular_deploy
 
     @classmethod
-    def task_deploy(cls, task, nodes, affected_nodes, task_ids, events):
+    def task_deploy(cls, task, nodes, affected_nodes, task_ids, events,
+                    graph_type):
         """Builds parameters for task based deployment.
 
         :param task: the database task object instance
         :param nodes: the nodes for deployment
         :param affected_nodes: the list of nodes is affected by deployment
-        :task_ids: the list of tasks_ids to execute,
+        :param task_ids: the list of tasks_ids to execute,
                            if None, all tasks will be executed
-        :events: the list of events to find subscribed tasks
+        :param events: the list of events to find subscribed tasks
+        :param graph_type: deployment graph type
         :return: the arguments for RPC message
         """
-
-        deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+        deployment_tasks = objects.Cluster.get_deployment_tasks(
+            task.cluster, graph_type)
         logger.debug("start cluster serialization.")
         serialized_cluster = deployment_serializers.serialize(
             None, task.cluster, nodes
@@ -1511,6 +1517,7 @@ class CheckBeforeDeploymentTask(object):
 
         example dependencies are: requires|required_for|tasks|groups
         """
+        # TODO(akostrikov) https://bugs.launchpad.net/fuel/+bug/1561485
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         graph_validator = orchestrator_graph.GraphSolverValidator(
             deployment_tasks)
@@ -1887,6 +1894,7 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
 
     @staticmethod
     def task_deploy(task, nodes, update_configs, task_ids):
+        # TODO(akostrikov) https://bugs.launchpad.net/fuel/+bug/1561485
         tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         directory, graph = task_based_deployment.TasksSerializer.serialize(
             task.cluster, nodes, tasks, task_ids=task_ids

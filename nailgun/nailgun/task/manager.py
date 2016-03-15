@@ -164,7 +164,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         db().flush()
 
     def execute(self, nodes_to_provision_deploy=None, deployment_tasks=None,
-                force=False):
+                force=False, graph_type=None):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
                 self.cluster.name or self.cluster.id
@@ -201,13 +201,15 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             supertask.id,
             nodes_to_provision_deploy=nodes_ids_to_deploy,
             deployment_tasks=deployment_tasks,
-            force=force
+            force=force,
+            graph_type=graph_type
         )
 
         return supertask
 
     def _execute_async(self, supertask_id, deployment_tasks=None,
-                       nodes_to_provision_deploy=None, force=False):
+                       nodes_to_provision_deploy=None, force=False,
+                       graph_type=None):
         """Function for execute task in the mule
 
         :param supertask_id: id of parent task
@@ -222,7 +224,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 supertask,
                 deployment_tasks=deployment_tasks,
                 nodes_to_provision_deploy=nodes_to_provision_deploy,
-                force=force)
+                force=force,
+                graph_type=graph_type)
         except Exception as e:
             logger.exception('Error occurred when running task')
             data = {
@@ -247,7 +250,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         return task_deletion
 
     def _execute_async_content(self, supertask, deployment_tasks=None,
-                               nodes_to_provision_deploy=None, force=False):
+                               nodes_to_provision_deploy=None, force=False,
+                               graph_type=None):
         """Processes supertask async in mule
 
         :param supertask: SqlAlchemy task object
@@ -361,7 +365,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 affected_nodes=affected_nodes,
                 deployment_tasks=deployment_tasks,
                 method_name='message',
-                reexecutable_filter=consts.TASKS_TO_RERUN_ON_DEPLOY_CHANGES
+                reexecutable_filter=consts.TASKS_TO_RERUN_ON_DEPLOY_CHANGES,
+                graph_type=graph_type
             )
 
             db().commit()
@@ -586,7 +591,8 @@ class ProvisioningTaskManager(TaskManager):
 
 class DeploymentTaskManager(TaskManager):
 
-    def execute(self, nodes_to_deployment, deployment_tasks=None):
+    def execute(self, nodes_to_deployment, deployment_tasks=None,
+                graph_type=None):
         deployment_tasks = deployment_tasks or []
 
         logger.debug('Nodes to deploy: {0}'.format(
@@ -603,6 +609,7 @@ class DeploymentTaskManager(TaskManager):
             tasks.DeploymentTask,
             nodes_to_deployment,
             deployment_tasks=deployment_tasks,
+            graph_type=graph_type,
             method_name='message')
 
         db().refresh(task_deployment)

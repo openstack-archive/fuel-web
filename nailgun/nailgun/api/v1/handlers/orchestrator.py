@@ -262,20 +262,24 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
     validator = DeploySelectedNodesValidator
     task_manager = manager.DeploymentTaskManager
 
+    def get_graph_type(self):
+        return web.input(graph_type=None).graph_type
+
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)
 
     def get_nodes(self, cluster):
         nodes_to_deploy = super(
             BaseDeploySelectedNodes, self).get_nodes(cluster)
-        self.validate(cluster, nodes_to_deploy)
+        self.validate(cluster, nodes_to_deploy, self.get_graph_type())
         return nodes_to_deploy
 
-    def validate(self, cluster, nodes_to_deploy):
+    def validate(self, cluster, nodes_to_deploy, graph_type=None):
         self.checked_data(self.validator.validate_nodes_to_deploy,
                           nodes=nodes_to_deploy, cluster_id=cluster.id)
 
-        self.checked_data(self.validator.validate_release, cluster=cluster)
+        self.checked_data(self.validator.validate_release, cluster=cluster,
+                          graph_type=graph_type)
 
 
 class DeploySelectedNodes(BaseDeploySelectedNodes):
@@ -291,7 +295,8 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        return self.handle_task(cluster)
+        graph_type = self.get_graph_type()
+        return self.handle_task(cluster, graph_type=graph_type)
 
 
 class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
@@ -383,12 +388,13 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
         self.checked_data(self.validator.validate_placement,
                           data=nodes, cluster=cluster)
         tasks = web.input(tasks=None).tasks
+        graph_type = web.input(graph_type=None).graph_type
         task_ids = [t.strip() for t in tasks.split(',')] if tasks else None
         try:
             serialized_tasks = task_based_deployment.TasksSerializer.serialize(
                 cluster,
                 nodes,
-                objects.Cluster.get_deployment_tasks(cluster),
+                objects.Cluster.get_deployment_tasks(cluster, graph_type),
                 task_ids=task_ids
             )
             return {'tasks_directory': serialized_tasks[0],

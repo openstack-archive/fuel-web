@@ -319,7 +319,8 @@ class TestPluginV4(TestPluginBase):
                 self.plugin.components_metadata, components_metadata)
             # deployment tasks returning all non-defined fields, so check
             # should differ from JSON-stored fields
-            for k, v in six.iteritems(deployment_tasks[0]):
+            for k, v in six.iteritems(
+                    self.env.get_default_plugin_deployment_tasks()[0]):
                 # this field is updated by plugin adapter
                 if k is 'parameters':
                     v.update({

@@ -324,8 +324,8 @@ class ClusterAttributesValidator(base.BasicAttributesValidator):
 class ClusterChangesValidator(base.BaseDefferedTaskValidator):
 
     @classmethod
-    def validate(cls, cluster):
-        cls.validate_release(cluster=cluster)
+    def validate(cls, cluster, graph_type=None):
+        cls.validate_release(cluster=cluster, graph_type=graph_type)
         ProvisionSelectedNodesValidator.validate_provision(None, cluster)
 
 

@@ -602,12 +602,13 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         end = web.input(end=None).end
         start = web.input(start=None).start
+        graph_type = web.input(graph_type=None).graph_type
         # web.py depends on [] to understand that there will be multiple inputs
         include = web.input(include=[]).include
 
         # merged (cluster + plugins + release) tasks is returned for cluster
         # but the own release tasks is returned for release
-        tasks = self.single.get_deployment_tasks(obj)
+        tasks = self.single.get_deployment_tasks(obj, graph_type=graph_type)
         if end or start:
             graph = orchestrator_graph.GraphSolver(tasks)
             return graph.filter_subgraph(

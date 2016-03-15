@@ -472,6 +472,31 @@ class TestSerializedTasksHandler(BaseIntegrationTest):
             self.assertIn(task['type'], consts.ORCHESTRATOR_TASK_TYPES)
 
     @patch.object(TaskProcessor, 'ensure_task_based_deploy_allowed')
+    def test_custom_serialized_tasks_returned(self, _):
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'first-custom-task',
+                    'type': 'stage',
+                    'requires': ['pre_deployment_end']
+                }, {
+                    'id': 'second-custom-task',
+                    'type': 'stage',
+                    'requires': ['deploy_start']
+                }
+            ]}, self.cluster, 'custom-graph')
+
+        resp = self.get_serialized_tasks(
+            self.cluster.id, graph_type=['custom-graph'])
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('tasks_graph', resp.json)
+        self.assertIn('tasks_directory', resp.json)
+        tasks_graph = resp.json['tasks_graph']
+        expected_tasks = ['first-custom-task', 'second-custom-task']
+        self.assertItemsEqual(
+            [t['id'] for t in tasks_graph['null']], expected_tasks)
+
+    @patch.object(TaskProcessor, 'ensure_task_based_deploy_allowed')
     def test_query_nodes_and_tasks(self, _):
         not_skipped = ['globals']
         resp = self.get_serialized_tasks(

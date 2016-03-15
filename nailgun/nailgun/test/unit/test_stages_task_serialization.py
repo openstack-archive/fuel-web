@@ -52,10 +52,11 @@ class BaseTaskSerializationTest(base.BaseTestCase):
 
         # imitate behaviour of old-style tasks merge where cluster-level
         # deployment graph is overriding all other graphs.
-        self.cluster.release.deployment_graphs.delete()
+        dg = objects.DeploymentGraph.get_for_model(self.cluster.release)
+        objects.DeploymentGraph.update(dg, {'tasks': []})
 
-        graph = objects.DeploymentGraph.create(yaml.load(self.TASKS))
-        objects.DeploymentGraph.attach_to_model(graph, self.cluster)
+        dg = objects.DeploymentGraph.get_for_model(self.cluster)
+        objects.DeploymentGraph.update(dg, {'tasks': yaml.load(self.TASKS)})
 
 
 class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
@@ -82,8 +83,8 @@ class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
-        graph = objects.DeploymentGraph.create(yaml.load(self.TASKS))
-        objects.DeploymentGraph.attach_to_model(graph, self.cluster)
+        dg = objects.DeploymentGraph.get_for_model(self.cluster)
+        objects.DeploymentGraph.update(dg, {'tasks': yaml.load(self.TASKS)})
 
     def tearDown(self):
         self._requests_mock.stop()

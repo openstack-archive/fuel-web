@@ -57,7 +57,7 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
 
         # add refreshable deployment task
         task = DeploymentGraphTask(**self.refreshable_task)
-        deployment_graph_assoc = self.release.deployment_graphs.first()
+        deployment_graph_assoc = self.release.deployment_graphs_assoc.first()
         deployment_graph_assoc.deployment_graph.tasks.append(task)
 
         self.db().flush()

@@ -16,6 +16,7 @@
 
 from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.test import base
+from nailgun.test.base import DeploymentTasksTestMixin
 
 JSON_TASKS = [
     {
@@ -69,74 +70,117 @@ JSON_TASKS = [
     }
 ]
 
+EXPECTED_TASKS = [
+    {
+        'task_name': 'cross-dep-test',
+        'id': 'cross-dep-test',  # legacy
+        'type': 'puppet',
+        'version': '1.0.0',
+        'cross_depended_by': ['a', 'b'],
+        'cross_depends': ['c', 'd'],
+        'cross-depended-by': ['a', 'b'],  # legacy
+        'cross-depends': ['c', 'd'],      # legacy
+    }, {
+        'task_name': 'post_deployment_end',
+        'id': 'post_deployment_end',  # legacy
+        'type': 'stage',
+        'version': '1.0.0',
+        'requires': ['post_deployment_start'],
+    }, {
+        'task_name': 'primary-controller',
+        'id': 'primary-controller',    # legacy
+        'type': 'group',
+        'version': '1.0.0',
+        'required_for': ['deploy_end'],
+        'requires': ['deploy_start'],
+        'roles': ['primary-controller'],
+        'role': ['primary-controller'],    # legacy
+        'parameters': {'strategy': {'type': 'one_by_one'}},
+    },
+    {
+        'id': 'custom-fields-test',
+        'task_name': 'custom-fields-test',
+        'type': 'puppet',
+        'version': '1.0.0',
+        'CUSTOM_FIELD1': 'custom',
+        'CUSTOM_FIELD2': ['custom'],
+        'CUSTOM_FIELD3': {'custom': 'custom'},
+    },
+    {
+        'id': 'ssl-keys-saving',
+        'task_name': 'ssl-keys-saving',
+        'type': 'puppet',
+        'version': '2.0.0',
+        'groups': ['primary-controller', 'controller', 'compute',
+                   'compute-vmware', 'cinder', 'cinder-vmware',
+                   'primary-mongo', 'mongo', 'ceph-osd', 'virt'],
+        'requires': ['firewall'],
+        'condition': "(settings:public_ssl.horizon.value == true or "
+                     "settings:public_ssl.services.value == true) "
+                     "and settings:public_ssl.cert_source.value == "
+                     "'user_uploaded'",
+        'required_for': ['deploy_end'],
+        'parameters': {
+            'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
+                               'modular/ssl/ssl_keys_saving.pp',
+            'puppet_modules': '/etc/puppet/modules',
+            'timeout': 3600
+        },
+        'test_pre': {
+            'cmd': 'ruby /etc/puppet/modules/osnailyfacter/'
+                   'modular/ssl/ssl_keys_saving_pre.rb'
+        }
+    }
+]
 
-class TestDeploymentGraphModel(base.BaseTestCase):
+
+class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
+
     def test_deployment_graph_creation(self):
-        self.maxDiff = None
-        expected_tasks = [
+        dg = DeploymentGraph.create(
+            {'tasks': JSON_TASKS, 'name': 'test_graph'})
+        serialized = DeploymentGraph.to_dict(dg)
+        self.assertEqual(serialized['name'], 'test_graph')
+        self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
+
+    def test_deployment_graph_update(self):
+        updated_tasks = [
             {
-                'task_name': 'cross-dep-test',
-                'id': 'cross-dep-test',  # legacy
-                'type': 'puppet',
-                'version': '1.0.0',
-                'cross_depended_by': ['a', 'b'],
-                'cross_depends': ['c', 'd'],
-                'cross-depended-by': ['a', 'b'],  # legacy
-                'cross-depends': ['c', 'd'],      # legacy
-            }, {
-                'task_name': 'post_deployment_end',
-                'id': 'post_deployment_end',  # legacy
-                'type': 'stage',
-                'version': '1.0.0',
-                'requires': ['post_deployment_start'],
-            }, {
-                'task_name': 'primary-controller',
-                'id': 'primary-controller',    # legacy
-                'type': 'group',
-                'version': '1.0.0',
-                'required_for': ['deploy_end'],
-                'requires': ['deploy_start'],
-                'roles': ['primary-controller'],
-                'role': ['primary-controller'],    # legacy
-                'parameters': {'strategy': {'type': 'one_by_one'}},
-            },
+                'task_name': 'updated',
+                'type': 'puppet'
+            }
+        ]
+        expected_updated_tasks = [
             {
-                'id': 'custom-fields-test',
-                'task_name': 'custom-fields-test',
-                'type': 'puppet',
-                'version': '1.0.0',
-                'CUSTOM_FIELD1': 'custom',
-                'CUSTOM_FIELD2': ['custom'],
-                'CUSTOM_FIELD3': {'custom': 'custom'},
-            },
-            {
-                'id': 'ssl-keys-saving',
-                'task_name': 'ssl-keys-saving',
-                'type': 'puppet',
-                'version': '2.0.0',
-                'groups': ['primary-controller', 'controller', 'compute',
-                           'compute-vmware', 'cinder', 'cinder-vmware',
-                           'primary-mongo', 'mongo', 'ceph-osd', 'virt'],
-                'requires': ['firewall'],
-                'condition': "(settings:public_ssl.horizon.value == true or "
-                             "settings:public_ssl.services.value == true) "
-                             "and settings:public_ssl.cert_source.value == "
-                             "'user_uploaded'",
-                'required_for': ['deploy_end'],
-                'parameters': {
-                    'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
-                                       'modular/ssl/ssl_keys_saving.pp',
-                    'puppet_modules': '/etc/puppet/modules',
-                    'timeout': 3600
-                },
-                'test_pre': {
-                    'cmd': 'ruby /etc/puppet/modules/osnailyfacter/'
-                           'modular/ssl/ssl_keys_saving_pre.rb'
-                }
+                'task_name': 'updated',
+                'type': 'puppet'
             }
         ]
 
-        dg = DeploymentGraph.create(JSON_TASKS, name='test_graph')
+        dg = DeploymentGraph.create(
+            {'tasks': JSON_TASKS, 'name': 'test_graph'})
+        DeploymentGraph.update(dg, {'tasks': updated_tasks})
         serialized = DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
-        self.assertItemsEqual(serialized['deployment_tasks'], expected_tasks)
+        self._compare_tasks(
+            expected_updated_tasks, serialized['tasks'])
+
+    def test_deployment_graph_delete(self):
+        self.env.create()
+        cluster = self.env.clusters[-1]
+        DeploymentGraph.create_for_model(
+            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph')
+        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        self.assertIsNotNone(dg)
+        DeploymentGraph.delete(dg)
+        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        self.assertIsNone(dg)
+
+    def test_deployment_graph_create_for_model(self):
+        self.env.create()
+        cluster = self.env.clusters[-1]
+        DeploymentGraph.create_for_model(
+            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph')
+        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        self._compare_tasks(
+            EXPECTED_TASKS, DeploymentGraph.get_tasks(dg))

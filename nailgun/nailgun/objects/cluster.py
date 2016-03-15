@@ -1403,15 +1403,20 @@ class Cluster(NailgunObject):
         :param value: new value for flag
         :type value: bool
         """
-        if instance.attributes.generated['deployed_before']['value'] != value:
-            # TODO(aroma): remove unnecessary copying when enhancement
-            # of Mutable types will be introduced for corresponding
-            # fields of ORM models
-            generated_attrs = copy.deepcopy(instance.attributes.generated)
-            generated_attrs['deployed_before']['value'] = value
-            instance.attributes.generated = generated_attrs
+        generated = copy.deepcopy(instance.attributes.generated)
 
-            db.flush()
+        if 'deployed_before' not in generated:
+            # NOTE(aroma): this is needed for case when master node has
+            # been upgraded and there is attempt to re/deploy previously
+            # existing clusters. As long as setting the flag is temporary
+            # solution data base migration code should not be mangled
+            # in order to support it
+            generated['deployed_before'] = {'value': value}
+        elif generated['deployed_before']['value'] != value:
+            generated['deployed_before']['value'] = value
+
+        instance.attributes.generated = generated
+        db.flush()
 
     @classmethod
     def get_nodes_count_unmet_status(cls, instance, status):

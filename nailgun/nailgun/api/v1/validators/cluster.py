@@ -338,7 +338,12 @@ class ClusterStopDeploymentValidator(base.BaseDefferedTaskValidator):
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]
         # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-        if cluster.attributes.generated['deployed_before']['value']:
+        # NOTE(aroma): the check must regard the case when stop deployment
+        # is called for cluster that was created before master node upgrade
+        # to versions >= 8.0 and so having 'deployed_before' flag absent
+        # in their attributes.
+        generated = cluster.attributes.generated
+        if generated.get('deployed_before', {}).get('value'):
             raise errors.CannotBeStopped()
 
 

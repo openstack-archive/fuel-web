@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+import mock
 from netaddr import IPNetwork
 
 from oslo_serialization import jsonutils
@@ -56,7 +57,6 @@ class TestClusterHandlers(BaseIntegrationTest):
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
         mac = self.env.generate_random_mac()
-        meta = self.env.default_metadata()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
@@ -149,6 +149,55 @@ class TestNodeHandlers(BaseIntegrationTest):
             else:
                 self.assertTrue("public" in net_names)
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
+
+    def _add_node_with_pxe_on_eth2(self, cluster_id, **kwargs):
+        mac = self.env.generate_random_mac()
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': self.env.generate_random_mac()},
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+             {'name': 'eth2', 'mac': mac}])
+        return self.env.create_node(
+            api=True, meta=meta, mac=mac, cluster_id=cluster_id, **kwargs)
+
+    @mock.patch('nailgun.rpc.cast')
+    def test_default_network_assignment_for_multiple_node_groups(self, _):
+        cluster = self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu},
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.tun})
+
+        node1 = self._add_node_with_pxe_on_eth2(cluster['id'])
+
+        node_group = self.env.create_node_group(api=False)
+        resp = self.env.setup_networks_for_nodegroup(
+            cluster_id=cluster['id'], node_group=node_group,
+            cidr_start='199.99')
+        self.assertEqual(resp.status_code, 200)
+        node2 = self._add_node_with_pxe_on_eth2(cluster['id'], ip='199.99.9.3',
+            group_id=node_group.id)
+        self.assertEqual(node2['group_id'], node_group.id)
+
+        for node in [node1, node2]:
+            resp = self.app.get(
+                reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+                headers=self.default_headers)
+            self.assertEqual(resp.status_code, 200)
+            nics = resp.json_body
+            node_net_names = []
+            pxe_found = False
+            for nic in nics:
+                net_names = [net['name'] for net in nic['assigned_networks']]
+                node_net_names.extend(net_names)
+                if nic['pxe']:
+                    self.assertIn("fuelweb_admin", net_names)
+                    self.assertEqual(nic['name'], 'eth2')
+                    pxe_found = True
+            self.assertTrue(pxe_found)
+            self.assertEqual(len(node_net_names), len(set(node_net_names)))
 
     def test_novanet_assignment_when_network_cfg_changed_then_node_added(self):
         cluster = self.env.create_cluster(api=True)

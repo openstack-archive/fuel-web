@@ -23,6 +23,7 @@ except ImportError:
 import mock
 import os
 import re
+import six
 import time
 import uuid
 
@@ -405,6 +406,48 @@ class EnvironmentManager(object):
             db().commit()
 
         return ng
+
+    def setup_networks_for_nodegroup(
+            self, cluster_id, node_group, cidr_start, floating_ranges=None):
+        """Setup networks of particular node group in multi-node-group mode.
+
+        :param cluster_id: Cluster Id
+        :param node_group: NodeGroup instance
+        :param cidr_start: first two octets of CIDR which are common for all
+            networks (e.g. "192.168")
+        :param floating_ranges: Floating IP ranges
+        :return: response from network setup API request
+        """
+        ng2_networks = {
+            'fuelweb_admin': {'cidr': '{0}.9.0/24'.format(cidr_start),
+                              'ip_ranges': [['{0}.9.2'.format(cidr_start),
+                                             '{0}.9.254'.format(cidr_start)]],
+                              'gateway': '{0}.9.1'.format(cidr_start)},
+            'public': {'cidr': '{0}.0.0/24'.format(cidr_start),
+                       'ip_ranges': [['{0}.0.2'.format(cidr_start),
+                                      '{0}.0.127'.format(cidr_start)]],
+                       'gateway': '{0}.0.1'.format(cidr_start)},
+            'management': {'cidr': '{0}.1.0/24'.format(cidr_start),
+                           'gateway': '{0}.1.1'.format(cidr_start)},
+            'storage': {'cidr': '{0}.2.0/24'.format(cidr_start),
+                        'gateway': '{0}.2.1'.format(cidr_start)},
+            'private': {'cidr': '{0}.3.0/24'.format(cidr_start),
+                        'gateway': '{0}.3.1'.format(cidr_start)},
+        }
+        netw_ids = set(net.id for net in node_group.networks)
+        netconfig = self.neutron_networks_get(cluster_id).json_body
+        for net in netconfig['networks']:
+            if not net['meta']['notation']:
+                continue
+            if net['id'] in netw_ids and net['name'] in ng2_networks:
+                for pkey, pval in six.iteritems(ng2_networks[net['name']]):
+                    net[pkey] = pval
+            net['meta']['use_gateway'] = True
+        if floating_ranges:
+            netconfig['networking_parameters']['floating_ranges'] = \
+                floating_ranges
+        resp = self.neutron_networks_put(cluster_id, netconfig)
+        return resp
 
     def create_plugin(self, api=False, cluster=None, **kwargs):
         plugin_data = self.get_default_plugin_metadata()

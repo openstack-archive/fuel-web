@@ -30,6 +30,9 @@ from nailgun.api.v1.handlers.cluster import ClusterAttributesHandler
 from nailgun.api.v1.handlers.cluster import ClusterChangesForceRedeployHandler
 from nailgun.api.v1.handlers.cluster import ClusterChangesHandler
 from nailgun.api.v1.handlers.cluster import ClusterCollectionHandler
+from nailgun.api.v1.handlers.cluster import \
+    ClusterDeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.cluster import ClusterDeploymentGraphHandler
 from nailgun.api.v1.handlers.cluster import ClusterDeploymentTasksHandler
 from nailgun.api.v1.handlers.cluster import ClusterGeneratedData
 from nailgun.api.v1.handlers.cluster import ClusterHandler
@@ -81,6 +84,9 @@ from nailgun.api.v1.handlers.node import NodeHandler
 from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
 
 from nailgun.api.v1.handlers.plugin import PluginCollectionHandler
+from nailgun.api.v1.handlers.plugin import \
+    PluginDeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.plugin import PluginDeploymentGraphHandler
 from nailgun.api.v1.handlers.plugin import PluginHandler
 from nailgun.api.v1.handlers.plugin import PluginSyncHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkCollectionHandler
@@ -107,6 +113,9 @@ from nailgun.api.v1.handlers.orchestrator import SerializedTasksHandler
 from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
 
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
+from nailgun.api.v1.handlers.release import \
+    ReleaseDeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.release import ReleaseDeploymentGraphHandler
 from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
 from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
@@ -138,6 +147,10 @@ from nailgun.api.v1.handlers.openstack_config \
     import OpenstackConfigExecuteHandler
 from nailgun.api.v1.handlers.openstack_config import OpenstackConfigHandler
 
+from nailgun.api.v1.handlers.deployment_graph import \
+    DeploymentGraphCollectionHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    DeploymentGraphHandler
 
 from nailgun.settings import settings
 
@@ -157,6 +170,12 @@ urls = (
     RoleCollectionHandler,
     r'/releases/(?P<release_id>\d+)/roles/(?P<role_name>[a-zA-Z-_]+)/?$',
     RoleHandler,
+
+    r'/releases/(?P<obj_id>\d+)/deployment_graphs/?$',
+    ReleaseDeploymentGraphCollectionHandler,
+    r'/releases/(?P<obj_id>\d+)/deployment_graphs/'
+    r'(?P<graph_type>[a-zA-Z0-9-_]+)/?$',
+    ReleaseDeploymentGraphHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/roles/?$',
     ClusterRolesCollectionHandler,
@@ -227,6 +246,17 @@ urls = (
     ClusterResetHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
+
+    r'/clusters/(?P<obj_id>\d+)/deployment_graphs/?$',
+    ClusterDeploymentGraphCollectionHandler,
+    r'/clusters/(?P<obj_id>\d+)/deployment_graphs/'
+    r'(?P<graph_type>[a-zA-Z0-9-_]+)/?$',
+    ClusterDeploymentGraphHandler,
+
+    r'/graphs/?$',
+    DeploymentGraphCollectionHandler,
+    r'/graphs/(?P<obj_id>\d+)/?$',
+    DeploymentGraphHandler,
 
     r'/networks/?$',
     NetworkGroupCollectionHandler,
@@ -300,6 +330,12 @@ urls = (
     PluginCollectionHandler,
     r'/plugins/sync/?$',
     PluginSyncHandler,
+
+    r'/plugins/(?P<obj_id>\d+)/deployment_graphs/?$',
+    PluginDeploymentGraphCollectionHandler,
+    r'/plugins/(?P<obj_id>\d+)/deployment_graphs/'
+    r'(?P<graph_type>[a-zA-Z0-9-_]+)/?$',
+    PluginDeploymentGraphHandler,
 
     r'/notifications/?$',
     NotificationCollectionHandler,

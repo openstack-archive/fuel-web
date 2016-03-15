@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import itertools
 
 import six
 
@@ -69,6 +70,10 @@ class DeploymentGraphTask(NailgunObject):
         if custom_fields:
             data_to_create['_custom'] = custom_fields
 
+        # todo(ikutukov): super for this create method is not called to avoid
+        # force flush in base method.
+        # In future flushing should became optional param of CRUD method for
+        # the base nailgun object.
         deployment_task_instance = models.DeploymentGraphTask(**data_to_create)
         db().add(deployment_task_instance)
         return deployment_task_instance
@@ -140,7 +145,6 @@ class DeploymentGraph(NailgunObject):
 
         super(DeploymentGraph, cls).update(instance, data)
 
-        # remove old tasks
         if tasks is not None:
             instance.tasks = []
             # flush is required to avoid task.id+graph.id key conflicts
@@ -261,7 +265,54 @@ class DeploymentGraph(NailgunObject):
                 .format(existing_graph.id, instance, instance.id))
             return existing_graph
 
+    @classmethod
+    def get_related_models(cls, instance):
+        """Get all models instanced related to this graph.
+
+        :param instance: deployment graph instance.
+        :type instance: models.DeploymentGraph
+
+        :return: list of {
+                    'type': 'graph_type',
+                    'model': Cluster|Plugin|Release
+                 }
+        :rtype: list[dict]
+        """
+        result = []
+        for relation in itertools.chain(
+                instance.clusters_assoc,
+                instance.releases_assoc,
+                instance.plugins_assoc):
+            for attr in ('plugin', 'release', 'cluster'):
+                external_model = getattr(relation, attr, None)
+                if external_model:
+                    result.append({
+                        'type': relation.type,
+                        'model': external_model})
+        return result
+
 
 class DeploymentGraphCollection(NailgunCollection):
 
     single = DeploymentGraph
+
+    @classmethod
+    def get_for_model(cls, instance):
+        """Get deployment graphs related to given model.
+
+        :param instance: model that could have relation to graph
+        :type instance: models.Plugin|models.Cluster|models.Release|
+        :return: graph instance
+        :rtype: model.DeploymentGraph
+        """
+        association_model = cls.single.get_association_for_model(instance)
+        graphs = db.query(
+            models.DeploymentGraph
+        ).join(
+            association_model
+        ).join(
+            instance.__class__
+        ).filter(
+            instance.__class__.id == instance.id
+        )
+        return list(graphs)

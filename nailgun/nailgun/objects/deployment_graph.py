@@ -16,6 +16,7 @@
 
 import copy
 
+import itertools
 import six
 
 from nailgun import consts
@@ -114,7 +115,6 @@ class DeploymentGraph(NailgunObject):
         :returns: instance of new DeploymentGraphModel
         :rtype: DeploymentGraphModel
         """
-
         tasks = data.pop('tasks', None)
 
         # create graph
@@ -145,12 +145,12 @@ class DeploymentGraph(NailgunObject):
 
         super(DeploymentGraph, cls).update(instance, data)
 
-        # remove old tasks
-        instance.tasks = []
         db().flush()
 
         # create tasks
         if tasks:
+            # remove old tasks
+            instance.tasks = []
             for task in copy.deepcopy(tasks):
                 task["deployment_graph_id"] = instance.id
                 DeploymentGraphTask.create(task)
@@ -274,6 +274,30 @@ class DeploymentGraph(NailgunObject):
                 'Graph with ID={0} was detached from model {1} with ID={2}'
                 .format(existing_graph.id, instance, instance.id))
             return existing_graph
+
+    @classmethod
+    def get_related_models(cls, instance):
+        """Get all models instanced related to this graph.
+
+        :param instance: deployment graph instance.
+        :type instance: models.DeploymentGraph
+
+        :return: list of {
+                    'type': 'graph_type',
+                    'model': Cluster|Plugin|Release
+                 }
+        :rtype: list[dict]
+        """
+        result = []
+        for relation in itertools.chain(
+                instance.clusters, instance.releases, instance.plugins):
+            for attr in ('plugin', 'release', 'cluster'):
+                external_model = getattr(relation, attr, None)
+                if external_model:
+                    result.append({
+                        'type': relation.type,
+                        'model': external_model})
+        return result
 
 
 class DeploymentGraphCollection(NailgunCollection):

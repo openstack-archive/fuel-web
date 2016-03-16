@@ -52,7 +52,8 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 kwargs={'cluster_id': self.cluster['id']}
             ),
             params=jsonutils.dumps(self.link_data),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=True
         )
         self.assertEqual(201, resp.status_code)
 

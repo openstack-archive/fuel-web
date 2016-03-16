@@ -143,7 +143,7 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
             {'tasks': JSON_TASKS, 'name': 'test_graph'})
         serialized = DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
-        self.assertItemsEqual(serialized['deployment_tasks'], EXPECTED_TASKS)
+        self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
 
     def test_deployment_graph_update(self):
         self.maxDiff = None
@@ -166,7 +166,7 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
         serialized = DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
         self._compare_tasks(
-            expected_updated_tasks, serialized['deployment_tasks'])
+            expected_updated_tasks, serialized['tasks'])
 
     def test_deployment_graph_upset(self):
         self.maxDiff = None

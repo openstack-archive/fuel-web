@@ -333,7 +333,6 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             [node_to_deploy.uid]
         )
         # overwriting default made in EnvironmentManager
-
         self.cluster.release.deployment_graphs.delete()
         self.db().flush()
 

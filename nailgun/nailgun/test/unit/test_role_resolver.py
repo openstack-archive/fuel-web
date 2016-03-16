@@ -53,9 +53,15 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
             resolver.resolve(["controller"])
         )
         self.assertItemsEqual(
-            ["1", "2", "3", "4"],
+            ["0", "1", "2", "3", "4"],
             resolver.resolve(["/c.+/"])
         )
+        self.assertItemsEqual(
+            ["0", "2", "3"],
+            resolver.resolve('/controller/'))
+        self.assertItemsEqual(
+            ["0", "2", "3"],
+            resolver.resolve('/.*controller/'))
 
     def test_resolve_all(self):
         resolver = role_resolver.RoleResolver(self.nodes)

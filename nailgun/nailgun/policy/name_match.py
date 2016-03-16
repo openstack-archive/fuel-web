@@ -67,4 +67,4 @@ class PatternMatchingPolicy(NameMatchingPolicy):
         self.pattern = re.compile(pattern)
 
     def match(self, name):
-        return self.pattern.match(name)
+        return self.pattern.search(name)

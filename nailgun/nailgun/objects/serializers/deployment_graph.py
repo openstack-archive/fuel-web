@@ -16,6 +16,7 @@
 
 import nailgun
 from nailgun import consts
+# from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
 
 
@@ -74,6 +75,7 @@ class DeploymentGraphSerializer(BasicSerializer):
     fields = (
         "id",
         "name"
+        # tasks will be added below
     )
 
     @classmethod
@@ -81,8 +83,17 @@ class DeploymentGraphSerializer(BasicSerializer):
         serialized_graph = super(
             DeploymentGraphSerializer, cls
         ).serialize(instance, fields=None)
+        if not fields or 'tasks' in fields:
+            tasks = nailgun.objects.DeploymentGraph\
+                .get_tasks(deployment_graph_instance=instance)
+            serialized_graph['tasks'] = tasks
 
-        tasks = nailgun.objects.DeploymentGraph\
-            .get_tasks(deployment_graph_instance=instance)
-        serialized_graph['deployment_tasks'] = tasks
+        # append relations info
+        serialized_graph['relations'] = []
+        for relation in nailgun.objects.DeploymentGraph.get_related_models(instance):
+            serialized_graph['relations'].append({
+                'type': relation.get('type'),
+                'model': relation.get('model').__class__.__name__,
+                'model_id': relation.get('model').id
+            })
         return serialized_graph

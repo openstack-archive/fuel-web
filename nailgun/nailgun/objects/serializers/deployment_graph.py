@@ -74,6 +74,7 @@ class DeploymentGraphSerializer(BasicSerializer):
     fields = (
         "id",
         "name"
+        # tasks will be added below
     )
 
     @classmethod
@@ -84,5 +85,5 @@ class DeploymentGraphSerializer(BasicSerializer):
 
         tasks = nailgun.objects.DeploymentGraph\
             .get_tasks(deployment_graph_instance=instance)
-        serialized_graph['deployment_tasks'] = tasks
+        serialized_graph['tasks'] = tasks
         return serialized_graph

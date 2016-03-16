@@ -1,0 +1,9 @@
+Code-Review+2: Bulat Gaifullin <bgaifullin@mirantis.com>
+Code-Review+2: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Workflow+1: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 16 Mar 2016 19:34:41 +0000
+Reviewed-on: https://review.openstack.org/293619
+Project: openstack/fuel-web
+Branch: refs/heads/master

@@ -16,6 +16,7 @@
 
 import copy
 
+import itertools
 import six
 
 from nailgun import consts
@@ -93,7 +94,7 @@ class DeploymentGraph(NailgunObject):
     serializer = DeploymentGraphSerializer
 
     @classmethod
-    def _get_association_for_model(cls, target_model):
+    def get_association_for_model(cls, target_model):
         relation_model = None
         if isinstance(target_model, models.Plugin):
             relation_model = models.PluginDeploymentGraph
@@ -102,6 +103,21 @@ class DeploymentGraph(NailgunObject):
         elif isinstance(target_model, models.Cluster):
             relation_model = models.ClusterDeploymentGraph
         return relation_model
+
+    @classmethod
+    def _clear_tasks(cls, instance):
+        instance.tasks = []
+        db().flush()
+
+    @classmethod
+    def _add_tasks(cls, instance, new_tasks):
+        for task in new_tasks:
+            new_task_data = {
+                "deployment_graph_id": instance.id
+            }
+            new_task_data.update(task)
+            DeploymentGraphTask.create(new_task_data)
+        db().flush()
 
     @classmethod
     def create(cls, data):
@@ -115,16 +131,12 @@ class DeploymentGraph(NailgunObject):
         :rtype: DeploymentGraphModel
         """
 
-        tasks = data.pop('tasks', None)
-
+        tasks = data.pop('tasks', [])
         # create graph
         deployment_graph_instance = super(DeploymentGraph, cls).create(data)
         # create tasks
         if tasks:
-            for task in copy.deepcopy(tasks):
-                task["deployment_graph_id"] = deployment_graph_instance.id
-                DeploymentGraphTask.create(task)
-        db().flush()
+            cls._add_tasks(deployment_graph_instance, tasks)
         return deployment_graph_instance
 
     @classmethod
@@ -134,27 +146,18 @@ class DeploymentGraph(NailgunObject):
         It is possible to create empty graphs if not tasks data provided.
 
         :param instance: DeploymentGraph instance
-        :type instance: DeploymentGraph
+        :type instance: models.DeploymentGraph
         :param data: data to update
         :type data: dict
         :returns: instance of new DeploymentGraphModel
         :rtype: DeploymentGraphModel
         """
 
-        tasks = data.pop('tasks', None)
-
+        tasks = data.pop('tasks', [])
         super(DeploymentGraph, cls).update(instance, data)
-
-        # remove old tasks
-        instance.tasks = []
-        db().flush()
-
-        # create tasks
         if tasks:
-            for task in copy.deepcopy(tasks):
-                task["deployment_graph_id"] = instance.id
-                DeploymentGraphTask.create(task)
-        db().flush()
+            cls._clear_tasks(instance)
+            cls._add_tasks(instance, tasks)
         return instance
 
     @classmethod
@@ -203,7 +206,7 @@ class DeploymentGraph(NailgunObject):
         :return: graph instance
         :rtype: model.DeploymentGraph
         """
-        association_model = cls._get_association_for_model(instance)
+        association_model = cls.get_association_for_model(instance)
         if association_model:
             association = instance.deployment_graphs.filter(
                 association_model.type == graph_type
@@ -241,7 +244,7 @@ class DeploymentGraph(NailgunObject):
         """
         if rewrite:
             cls.detach_from_model(instance, graph_type)
-        association_class = cls._get_association_for_model(instance)
+        association_class = cls.get_association_for_model(instance)
         if association_class:
             association = association_class(
                 type=graph_type,
@@ -265,7 +268,7 @@ class DeploymentGraph(NailgunObject):
         """
         existing_graph = cls.get_for_model(instance, graph_type)
         if existing_graph:
-            association = cls._get_association_for_model(instance)
+            association = cls.get_association_for_model(instance)
             instance.deployment_graphs.filter(
                 association.type == graph_type
             ).delete()
@@ -275,7 +278,49 @@ class DeploymentGraph(NailgunObject):
                 .format(existing_graph.id, instance, instance.id))
             return existing_graph
 
+    @classmethod
+    def get_related_models(cls, instance):
+        """Get all models instanced related to this graph.
+
+        :param instance: deployment graph instance.
+        :type instance: models.DeploymentGraph
+
+        :return: list of {
+                    'type': 'graph_type',
+                    'model': Cluster|Plugin|Release
+                 }
+        :rtype: list[dict]
+        """
+        result = []
+        for relation in itertools.chain(
+                instance.clusters, instance.releases, instance.plugins):
+            for attr in ('plugin', 'release', 'cluster'):
+                external_model = getattr(relation, attr, None)
+                if external_model:
+                    result.append({
+                        'type': relation.type,
+                        'model': external_model})
+        return result
+
 
 class DeploymentGraphCollection(NailgunCollection):
 
     single = DeploymentGraph
+
+    @classmethod
+    def get_for_model(cls, instance):
+        """Get deployment graphs related to given model.
+
+        :param instance: model that could have relation to graph
+        :type instance: models.Plugin|models.Cluster|models.Release|
+        :return: graph instance
+        :rtype: model.DeploymentGraph
+        """
+        result = []
+        association_model = cls.single.get_association_for_model(instance)
+        if association_model:
+            associations = instance.deployment_graphs.all()
+            for association in associations:
+                result.append(
+                    cls.single.get_by_uid(association.deployment_graph_id))
+        return result

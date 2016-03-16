@@ -2180,6 +2180,12 @@
                 section: "main"
                 priority: 1080
               - type: "deb"
+                name: "uca-proposed"
+                uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
+                suite: "trusty-proposed/mitaka"
+                section: "main"
+                priority: 1080
+              - type: "deb"
                 name: "mos"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
                 suite: "mos9.0"

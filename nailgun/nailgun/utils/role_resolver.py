@@ -86,7 +86,10 @@ class RoleResolver(BaseRoleResolver):
                 uid for nodes in six.itervalues(self.__mapping)
                 for uid in nodes
             ))
-        elif isinstance(roles, (list, tuple)):
+        elif (isinstance(roles, (list, tuple)) or
+                isinstance(roles, six.string_types)):
+            if isinstance(roles, six.string_types):
+                roles = [roles]
             result = set()
             for role in roles:
                 pattern = NameMatchingPolicy.create(role)

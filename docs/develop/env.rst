@@ -301,7 +301,7 @@ Now you can create the virtual environment and activate it.
 ::
 
     virtualenv fuel-web-venv
-    . virtualenv/bin/activate
+    . fuel-web-venv/bin/activate
 
 And then install the dependencies.
 ::

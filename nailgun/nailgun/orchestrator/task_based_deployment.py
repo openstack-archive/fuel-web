@@ -98,12 +98,13 @@ def add_plugin_deployment_hooks(tasks):
         {'id': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
          'version': consts.TASK_CROSS_DEPENDENCY,
          'type': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
-         'requires': [consts.STAGES.pre_deployment + '_end'],
-         'required_for': [consts.STAGES.deploy + '_start']},
+         'requires': [consts.STAGES.pre_deployment + '_start'],
+         'required_for': [consts.STAGES.pre_deployment + '_end']},
         {'id': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
          'version': consts.TASK_CROSS_DEPENDENCY,
          'type': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
-         'requires': [consts.STAGES.post_deployment + '_end']}
+         'requires': [consts.STAGES.post_deployment + '_start'],
+         'required_for': [consts.STAGES.post_deployment + '_end']}
     ]
 
     return itertools.chain(iter(tasks), iter(hooks))

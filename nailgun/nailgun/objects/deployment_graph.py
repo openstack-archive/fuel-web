@@ -16,6 +16,7 @@
 
 import copy
 
+import itertools
 import six
 
 from nailgun import consts
@@ -43,11 +44,13 @@ class DeploymentGraphTask(NailgunObject):
     }
 
     @classmethod
-    def create(cls, data):
+    def create(cls, data, flush=True):
         """Create DeploymentTask model.
 
         :param data: task data
         :type data: dict
+        :param flush: do SQLAlchemy flush
+        :type flush: bool
         :return: DeploymentGraphTask instance
         :rtype: DeploymentGraphTask
         """
@@ -71,6 +74,10 @@ class DeploymentGraphTask(NailgunObject):
         if custom_fields:
             data_to_create['_custom'] = custom_fields
 
+        # todo(ikutukov): super for this create method is not called to avoid
+        # force flush in base method.
+        # In future flushing should became optional param of CRUD method for
+        # the base nailgun object.
         deployment_task_instance = models.DeploymentGraphTask(**data_to_create)
         db().add(deployment_task_instance)
         return deployment_task_instance
@@ -93,7 +100,7 @@ class DeploymentGraph(NailgunObject):
     serializer = DeploymentGraphSerializer
 
     @classmethod
-    def _get_association_for_model(cls, target_model):
+    def get_association_for_model(cls, target_model):
         relation_model = None
         if isinstance(target_model, models.Plugin):
             relation_model = models.PluginDeploymentGraph
@@ -102,6 +109,15 @@ class DeploymentGraph(NailgunObject):
         elif isinstance(target_model, models.Cluster):
             relation_model = models.ClusterDeploymentGraph
         return relation_model
+
+    @classmethod
+    def _add_tasks(cls, instance, new_tasks):
+        instance.tasks = []
+        db().commit()  # commit is required to update related models
+        for task in new_tasks:
+            task["deployment_graph_id"] = instance.id
+            DeploymentGraphTask.create(task)
+        db().flush()
 
     @classmethod
     def create(cls, data):
@@ -117,13 +133,11 @@ class DeploymentGraph(NailgunObject):
 
         tasks = data.pop('tasks', None)
 
-        # create graph
         deployment_graph_instance = super(DeploymentGraph, cls).create(data)
-        # create tasks
         if tasks:
-            for task in copy.deepcopy(tasks):
-                task["deployment_graph_id"] = deployment_graph_instance.id
-                DeploymentGraphTask.create(task)
+            for task in tasks:
+                deployment_graph_instance.tasks.append(
+                    DeploymentGraphTask.create(task, False))
         db().flush()
         return deployment_graph_instance
 
@@ -147,13 +161,11 @@ class DeploymentGraph(NailgunObject):
 
         # remove old tasks
         instance.tasks = []
-        db().flush()
 
-        # create tasks
         if tasks:
-            for task in copy.deepcopy(tasks):
-                task["deployment_graph_id"] = instance.id
-                DeploymentGraphTask.create(task)
+            for task in tasks:
+                instance.tasks.append(
+                    DeploymentGraphTask.create(task, False))
         db().flush()
         return instance
 
@@ -203,7 +215,7 @@ class DeploymentGraph(NailgunObject):
         :return: graph instance
         :rtype: model.DeploymentGraph
         """
-        association_model = cls._get_association_for_model(instance)
+        association_model = cls.get_association_for_model(instance)
         if association_model:
             association = instance.deployment_graphs.filter(
                 association_model.type == graph_type
@@ -241,7 +253,7 @@ class DeploymentGraph(NailgunObject):
         """
         if rewrite:
             cls.detach_from_model(instance, graph_type)
-        association_class = cls._get_association_for_model(instance)
+        association_class = cls.get_association_for_model(instance)
         if association_class:
             association = association_class(
                 type=graph_type,
@@ -265,7 +277,7 @@ class DeploymentGraph(NailgunObject):
         """
         existing_graph = cls.get_for_model(instance, graph_type)
         if existing_graph:
-            association = cls._get_association_for_model(instance)
+            association = cls.get_association_for_model(instance)
             instance.deployment_graphs.filter(
                 association.type == graph_type
             ).delete()
@@ -275,7 +287,52 @@ class DeploymentGraph(NailgunObject):
                 .format(existing_graph.id, instance, instance.id))
             return existing_graph
 
+    @classmethod
+    def get_related_models(cls, instance):
+        """Get all models instanced related to this graph.
+
+        :param instance: deployment graph instance.
+        :type instance: models.DeploymentGraph
+
+        :return: list of {
+                    'type': 'graph_type',
+                    'model': Cluster|Plugin|Release
+                 }
+        :rtype: list[dict]
+        """
+        result = []
+        for relation in itertools.chain(
+                instance.clusters, instance.releases, instance.plugins):
+            for attr in ('plugin', 'release', 'cluster'):
+                external_model = getattr(relation, attr, None)
+                if external_model:
+                    result.append({
+                        'type': relation.type,
+                        'model': external_model})
+        return result
+
 
 class DeploymentGraphCollection(NailgunCollection):
 
     single = DeploymentGraph
+
+    @classmethod
+    def get_for_model(cls, instance):
+        """Get deployment graphs related to given model.
+
+        :param instance: model that could have relation to graph
+        :type instance: models.Plugin|models.Cluster|models.Release|
+        :return: graph instance
+        :rtype: model.DeploymentGraph
+        """
+        association_model = cls.single.get_association_for_model(instance)
+        graphs = db.query(
+            models.DeploymentGraph
+        ).join(
+            association_model
+        ).join(
+            instance.__class__
+        ).filter(
+            instance.__class__.id == instance.id
+        )
+        return list(graphs)

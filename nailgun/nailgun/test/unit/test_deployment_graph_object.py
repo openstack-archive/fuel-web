@@ -143,7 +143,7 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
             {'tasks': JSON_TASKS, 'name': 'test_graph'})
         serialized = DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
-        self.assertItemsEqual(serialized['deployment_tasks'], EXPECTED_TASKS)
+        self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
 
     def test_deployment_graph_update(self):
         self.maxDiff = None
@@ -166,38 +166,7 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
         serialized = DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
         self._compare_tasks(
-            expected_updated_tasks, serialized['deployment_tasks'])
-
-    def test_deployment_graph_upset(self):
-        self.maxDiff = None
-        updated_tasks = [
-            {
-                'task_name': 'updated',
-                'type': 'puppet'
-            }
-        ]
-        expected_updated_tasks = [
-            {
-                'task_name': 'updated',
-                'type': 'puppet'
-            }
-        ]
-        self.env.create()
-        cluster = self.env.clusters[0]
-        # create new
-        dg = DeploymentGraph.upsert_for_model(
-            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster)
-        self._compare_tasks(EXPECTED_TASKS, DeploymentGraph.get_tasks(dg))
-        created_id = dg.id
-
-        # then update
-        dg = DeploymentGraph.upsert_for_model(
-            {'tasks': updated_tasks, 'name': 'test_graph'}, cluster)
-        self._compare_tasks(
-            expected_updated_tasks, DeploymentGraph.get_tasks(dg))
-        updated_id = dg.id
-
-        self.assertEqual(created_id, updated_id)
+            expected_updated_tasks, serialized['tasks'])
 
     def test_deployment_graph_delete(self):
         self.env.create()

@@ -405,6 +405,64 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEqual(admin_net1.group_id, None)
         self.assertEqual(admin_net2.group_id, node_group.json_body['id'])
 
+    def test_get_admin_network_group(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
+            },
+            nodes_kwargs=[{}, {}]
+        )
+
+        node0 = self.env.nodes[0]
+        node1 = self.env.nodes[1]
+
+        node_group = self.env.create_node_group()
+        node1.group_id = node_group.json_body['id']
+        self.db().flush()
+
+        admin_net1 = objects.NetworkGroup.get_admin_network_group(node=node0)
+        admin_net2 = objects.NetworkGroup.get_admin_network_group(node=node1)
+
+        self.assertEqual(admin_net1.group_id, None)
+        self.assertEqual(admin_net2.group_id, node_group.json_body['id'])
+
+    def test_get_admin_network_group_with_admin_net(self):
+        self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
+            },
+            nodes_kwargs=[{}, {}]
+        )
+
+        node0 = self.env.nodes[0]
+        node1 = self.env.nodes[1]
+
+        node_group = self.env.create_node_group()
+        node1.group_id = node_group.json_body['id']
+        self.db().flush()
+
+        admin_net = objects.NetworkGroup.get_default_admin_network()
+        self.assertIsNotNone(admin_net)
+        with patch.object(objects.NetworkGroup,
+                'get_default_admin_network') as get_mock:
+            get_mock.return_value = admin_net
+            admin_net1 = objects.NetworkGroup.get_admin_network_group(node0)
+            admin_net2 = objects.NetworkGroup.get_admin_network_group(node1)
+            self.assertEqual(admin_net1, admin_net)
+            self.assertNotEqual(admin_net2, admin_net)
+            self.assertEqual(int(get_mock.call_count), 1)
+
+        with patch.object(objects.NetworkGroup,
+                'get_default_admin_network') as get_mock:
+            admin_net1 = objects.NetworkGroup.get_admin_network_group(
+                node0, admin_net)
+            self.assertEqual(admin_net1, admin_net)
+            self.assertEqual(get_mock.call_count, 0)
+
     def test_assign_ip_multiple_groups(self):
         self.env.create(
             cluster_kwargs={
@@ -585,6 +643,49 @@ class TestNetworkManager(BaseIntegrationTest):
         self.env.db.refresh(node)
         self.assertIsNotNone(
             self.env.network_manager.get_admin_ip_for_node(node))
+
+    def test_get_admin_ip_for_node_with_admin_net(self):
+        self.env.create(api=False)
+        cluster = self.env.clusters[0]
+        node_data = self.env.create_node(cluster_id=cluster.id)
+        node = self.env.nodes[-1]
+
+        self.env.network_manager.assign_ips(
+            cluster, [node_data], consts.NETWORKS.fuelweb_admin
+        )
+
+        with patch.object(objects.NetworkGroup,
+                'get_default_admin_network') as get_mock:
+            self.env.network_manager.get_admin_ip_for_node(node)
+            self.assertEqual(get_mock.call_count, 1)
+
+        admin_net = objects.NetworkGroup.get_default_admin_network()
+        with patch.object(objects.NetworkGroup,
+                'get_default_admin_network') as get_mock:
+            self.env.network_manager.get_admin_ip_for_node(node, admin_net)
+            self.assertEqual(get_mock.call_count, 0)
+
+    def test_get_node_networks_with_admin_net(self):
+        self.env.create(api=False)
+        cluster = self.env.clusters[0]
+        node_data = self.env.create_node(cluster_id=cluster.id)
+        node = self.env.nodes[-1]
+
+        self.env.network_manager.assign_ips(
+            cluster, [node_data], consts.NETWORKS.fuelweb_admin
+        )
+
+        admin_net = objects.NetworkGroup.get_default_admin_network()
+        with patch.object(objects.NetworkGroup,
+                'get_default_admin_network') as get_mock:
+            get_mock.return_value = admin_net
+            self.env.network_manager.get_node_networks(node)
+            self.assertEqual(get_mock.call_count, 1)
+
+        with patch.object(objects.NetworkGroup,
+                'get_default_admin_network') as get_mock:
+            self.env.network_manager.get_node_networks(node, admin_net)
+            self.assertEqual(get_mock.call_count, 0)
 
     def test_set_node_networks_ips(self):
         cluster = self.env.create_cluster(api=False)

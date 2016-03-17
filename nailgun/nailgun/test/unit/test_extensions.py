@@ -28,8 +28,8 @@ from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.extensions import get_extension
 from nailgun.extensions import node_extension_call
-from nailgun.orchestrator import deployment_graph
 from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.test.base import BaseTestCase
 
@@ -221,7 +221,7 @@ class TestPipeline(BaseExtensionCase):
 
         return cluster
 
-    @mock.patch.object(deployment_graph.AstuteGraph, 'deploy_task_serialize')
+    @mock.patch.object(orchestrator_graph.AstuteGraph, 'deploy_task_serialize')
     def test_deployment_serialization_ignore_customized(self, _):
         cluster = self._create_cluster_with_extensions()
 
@@ -243,13 +243,13 @@ class TestPipeline(BaseExtensionCase):
                         cluster.nodes[0], 'replaced_deployment_info',
                         new_callable=mock.Mock(return_value=replaced_data)):
 
-                    graph = deployment_graph.AstuteGraph(cluster)
+                    graph = orchestrator_graph.AstuteGraph(cluster)
                     deployment_serializers.serialize(
                         graph, cluster, cluster.nodes, ignore_customized=True)
 
         mfire_callback.assert_called_once_with(data, cluster, cluster.nodes)
 
-    @mock.patch.object(deployment_graph.AstuteGraph, 'deploy_task_serialize')
+    @mock.patch.object(orchestrator_graph.AstuteGraph, 'deploy_task_serialize')
     def test_deployment_serialization_ignore_customized_false(self, _):
         cluster = self._create_cluster_with_extensions(
             nodes_kwargs=[
@@ -280,7 +280,7 @@ class TestPipeline(BaseExtensionCase):
                         cluster.nodes[0], 'replaced_deployment_info',
                         new_callable=mock.Mock(return_value=replaced_data)):
 
-                    graph = deployment_graph.AstuteGraph(cluster)
+                    graph = orchestrator_graph.AstuteGraph(cluster)
                     deployment_serializers.serialize(
                         graph, cluster, cluster.nodes, ignore_customized=False)
 

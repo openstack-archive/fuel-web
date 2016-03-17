@@ -16,9 +16,12 @@
 
 import six
 
+from oslo_serialization import jsonutils
+
 from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
+from nailgun.utils import reverse
 
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
@@ -161,6 +164,27 @@ class TestDeploymentAttributesSerialization90(
 
         self.assertEqual(serialized_node['hugepages'], expected)
 
+    def test_immutable_metadata_key(self):
+        node = self.env.create_node(api=True,
+            cluster_id=self.cluster_db.id,
+            pending_roles=['controller'],
+            pending_addition=True)
+        self.db.flush()
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node['id']}),
+            jsonutils.dumps({'hostname': 'new-name'}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+#        graph = deployment_graph.AstuteGraph(self.env.clusters[0])
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node_data in serialized_for_astute:
+            for k, v in six.iteritems(node_data['network_metadata']['nodes']):
+                node = objects.Node.get_by_uid(v['uid'])
+                self.assertEqual(objects.Node.default_slave_name(node), k)
+
+
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,
@@ -300,7 +324,7 @@ class TestSriovSerialization90(
 ):
     def setUp(self, *args):
         super(TestSriovSerialization90, self).setUp()
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
@@ -308,6 +332,7 @@ class TestSriovSerialization90(
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
                 'status': consts.CLUSTER_STATUSES.new},
         )
+        self.cluster_db = objects.Cluster.get_by_uid(cluster['id'])
         self.env.create_nodes_w_interfaces_count(
             nodes_count=1, if_count=3, cluster_id=self.env.clusters[0].id,
             pending_roles=['compute'], pending_addition=True)

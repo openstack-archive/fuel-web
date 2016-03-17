@@ -387,6 +387,9 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEqual(n.progress, 100)
 
     def test_deletion_empty_cluster_task_manager(self):
+        #(mihgen): we synchronously call rpc receiver for empty cluster
+        # that's why there is no need to mock rpc now
+        # see task/task.py#L513 (DeletionTask.execute)
         cluster = self.env.create_cluster(api=True)
         resp = self.app.delete(
             reverse(
@@ -396,18 +399,6 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         self.assertEqual(202, resp.status_code)
 
-        timer = time.time()
-        timeout = 15
-        clstr = self.db.query(models.Cluster).get(self.env.clusters[0].id)
-        while clstr:
-            time.sleep(1)
-            try:
-                self.db.refresh(clstr)
-            except Exception:
-                break
-            if time.time() - timer > timeout:
-                raise Exception("Cluster deletion seems to be hanged")
-
         notification = self.db.query(models.Notification)\
             .filter(models.Notification.topic == "done")\
             .filter(models.Notification.message == "Environment '%s' and all "
@@ -415,6 +406,8 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
+        #(mihgen) there is cascade removal of taks when cluster is removed
+        # may need a change for store-deployment-tasks-history blueprint
         self.assertEqual(tasks, [])
 
     @fake_tasks()

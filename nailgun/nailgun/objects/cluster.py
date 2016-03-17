@@ -989,7 +989,7 @@ class Cluster(NailgunObject):
             return []
 
     @classmethod
-    def _merge_tasks_lists(cls, tasks_lists):
+    def _merge_tasks_lists(cls, tasks_lists, validate):
         """Merge several tasks lists.
 
         Every next list will override tasks in previous one by `task_name` key.
@@ -1005,13 +1005,16 @@ class Cluster(NailgunObject):
         seen = set()
         for task in itertools.chain(*reversed(tasks_lists)):
             if not task['id'] in seen:
+                if validate:
+                    validate(task)
                 seen.add(task['id'])
                 result.append(task)
         return result
 
     @classmethod
-    def get_deployment_tasks(
-            cls, instance, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def get_deployment_tasks(cls, instance,
+                             graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE,
+                             validate=None):
         """Return deployment graph for cluster based on cluster attributes
 
             - if there is deployment_graph defined by user - use it instead of
@@ -1033,7 +1036,7 @@ class Cluster(NailgunObject):
             release_deployment_tasks,
             plugins_deployment_tasks,
             cluster_deployment_tasks
-        ])
+        ], validate)
 
     @classmethod
     def get_refreshable_tasks(cls, instance, filter_by_configs=None):

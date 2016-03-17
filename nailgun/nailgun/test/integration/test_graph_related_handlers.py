@@ -259,7 +259,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         )
         release_tasks = objects.Release.get_deployment_tasks(
             self.cluster.release)
-        self.assertItemsEqual(resp.json, release_tasks)
+        self.assertEqual(resp.json, release_tasks)
 
     def test_upload_deployment_tasks(self):
         tasks = self.get_correct_tasks()
@@ -269,14 +269,8 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             params=jsonutils.dumps(tasks),
             headers=self.default_headers,
         )
-        cluster_own_tasks = objects.Cluster.get_own_deployment_tasks(
-            self.cluster)
         cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
-
-        self._compare_tasks(resp.json, cluster_own_tasks)
-        # cluster tasks is a merged tasks with underlying release tasks
-        for task in resp.json:
-            self.assertIn(task, cluster_tasks)
+        self._compare_tasks(resp.json, cluster_tasks)
 
     def test_upload_tasks_without_type(self):
         tasks = self.get_corrupted_tasks()
@@ -334,14 +328,8 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             params=jsonutils.dumps(tasks),
             headers=self.default_headers,
         )
-        cluster_own_tasks = objects.Cluster.get_own_deployment_tasks(
-            self.cluster)
         cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
-
-        self._compare_tasks(resp.json, cluster_own_tasks)
-        # cluster tasks is a merged tasks with underlying release tasks
-        for task in resp.json:
-            self.assertIn(task, cluster_tasks)
+        self.assertEqual(cluster_tasks, resp.json)
 
     def test_upload_cross_dependencies_without_name(self):
         tasks = self.get_tasks_cross_dependencies_without_name()

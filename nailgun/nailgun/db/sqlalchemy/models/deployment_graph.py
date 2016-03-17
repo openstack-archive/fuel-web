@@ -31,6 +31,22 @@ class DeploymentGraph(Base):
         # added to make work with custom graphs convenient
         sa.String(255),
         nullable=True)
+    tasks = sa.orm.relationship(
+        'DeploymentGraphTask',
+        back_populates="deployment_graph")
+
+    plugins = sa.orm.relationship(
+        "PluginDeploymentGraph",
+        back_populates="deployment_graph",
+        lazy="dynamic")
+    clusters = sa.orm.relationship(
+        "ClusterDeploymentGraph",
+        back_populates="deployment_graph",
+        lazy="dynamic")
+    releases = sa.orm.relationship(
+        "ReleaseDeploymentGraph",
+        back_populates="deployment_graph",
+        lazy="dynamic")
 
 
 class DeploymentGraphTask(Base):
@@ -50,7 +66,7 @@ class DeploymentGraphTask(Base):
         nullable=False)
     deployment_graph = sa.orm.relationship(
         'DeploymentGraph',
-        backref=sa.orm.backref("tasks", cascade="all, delete-orphan"))
+        back_populates='tasks')
 
     # not task_id because it could be perceived as fk
     # and not id because it is not unique inside table
@@ -134,6 +150,7 @@ class ReleaseDeploymentGraph(Base):
         sa.UniqueConstraint(
             'release_id',
             'type',
+            # deployment_graph_id is not under constraint
             name='_type_deployment_graph_id_uc'),
     )
     id = sa.Column(
@@ -145,23 +162,19 @@ class ReleaseDeploymentGraph(Base):
     deployment_graph_id = sa.Column(
         sa.Integer,
         sa.ForeignKey('deployment_graphs.id', ondelete="CASCADE"),
+        nullable=False,
         index=True)
     deployment_graph = sa.orm.relationship(
         "DeploymentGraph",
-        backref=sa.orm.backref(
-            "releases",
-            lazy="dynamic",
-            cascade="all, delete-orphan"))
+        back_populates="releases")
     release_id = sa.Column(
         sa.Integer,
         sa.ForeignKey('releases.id', ondelete="CASCADE"),
+        nullable=False,
         index=True)
     release = sa.orm.relationship(
         "Release",
-        backref=sa.orm.backref(
-            "deployment_graphs",
-            lazy="dynamic",
-            cascade="all, delete-orphan"))
+        back_populates="deployment_graphs")
 
 
 class PluginDeploymentGraph(Base):
@@ -174,6 +187,7 @@ class PluginDeploymentGraph(Base):
         sa.UniqueConstraint(
             'plugin_id',
             'type',
+            # deployment_graph_id is not under constraint
             name='_type_deployment_graph_id_uc'),
     )
     id = sa.Column(
@@ -185,23 +199,19 @@ class PluginDeploymentGraph(Base):
     deployment_graph_id = sa.Column(
         sa.Integer,
         sa.ForeignKey('deployment_graphs.id', ondelete="CASCADE"),
+        nullable=False,
         index=True)
     deployment_graph = sa.orm.relationship(
         "DeploymentGraph",
-        backref=sa.orm.backref(
-            "plugins",
-            lazy="dynamic",
-            cascade="all, delete-orphan"))
+        back_populates="plugins")
     plugin_id = sa.Column(
         sa.Integer,
         sa.ForeignKey('plugins.id', ondelete="CASCADE"),
+        nullable=False,
         index=True)
     plugin = sa.orm.relationship(
         "Plugin",
-        backref=sa.orm.backref(
-            "deployment_graphs",
-            lazy="dynamic",
-            cascade="all, delete-orphan"))
+        back_populates="deployment_graphs")
 
 
 class ClusterDeploymentGraph(Base):
@@ -210,6 +220,7 @@ class ClusterDeploymentGraph(Base):
         sa.UniqueConstraint(
             'cluster_id',
             'type',
+            # deployment_graph_id is not under constraint
             name='_type_deployment_graph_id_uc'),
     )
     id = sa.Column(
@@ -221,22 +232,16 @@ class ClusterDeploymentGraph(Base):
     deployment_graph_id = sa.Column(
         sa.Integer,
         sa.ForeignKey('deployment_graphs.id', ondelete="CASCADE"),
-        index=True,
-        nullable=False)
+        nullable=False,
+        index=True)
     deployment_graph = sa.orm.relationship(
         "DeploymentGraph",
-        backref=sa.orm.backref(
-            "clusters",
-            lazy="dynamic",
-            cascade="all, delete-orphan"))
+        back_populates="clusters")
     cluster_id = sa.Column(
         sa.Integer,
         sa.ForeignKey('clusters.id', ondelete="CASCADE"),
-        index=True,
-        nullable=False)
+        nullable=False,
+        index=True)
     cluster = sa.orm.relationship(
         "Cluster",
-        backref=sa.orm.backref(
-            "deployment_graphs",
-            lazy="dynamic",
-            cascade="all, delete-orphan"))
+        back_populates="deployment_graphs")

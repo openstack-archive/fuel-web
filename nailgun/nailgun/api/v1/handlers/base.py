@@ -603,9 +603,6 @@ class DeploymentTasksHandler(SingleHandler):
         start = web.input(start=None).start
         # web.py depends on [] to understand that there will be multiple inputs
         include = web.input(include=[]).include
-
-        # merged (cluster + plugins + release) tasks is returned for cluster
-        # but the own release tasks is returned for release
         tasks = self.single.get_deployment_tasks(obj)
         if end or start:
             graph = deployment_graph.DeploymentGraph(tasks)

@@ -49,11 +49,6 @@ class BaseTaskSerializationTest(base.BaseTestCase):
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
-
-        # imitate behaviour of old-style tasks merge where cluster-level
-        # deployment graph is overriding all other graphs.
-        self.cluster.release.deployment_graphs.delete()
-
         graph = objects.DeploymentGraph.create(yaml.load(self.TASKS))
         objects.DeploymentGraph.attach_to_model(graph, self.cluster)
 

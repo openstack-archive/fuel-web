@@ -30,7 +30,6 @@ from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import stages
 from nailgun.test import base
-from nailgun.test.base import DeploymentTasksTestMixin
 from nailgun.utils import reverse
 
 from nailgun.orchestrator.deployment_graph import AstuteGraph
@@ -1023,8 +1022,7 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
 
 
 class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
-                                        PrepareDataMixin,
-                                        DeploymentTasksTestMixin):
+                                        PrepareDataMixin):
 
     env_version = '2015.1.0-7.0'
 
@@ -1148,8 +1146,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         serialized_data = serializer.serialize(
             self.cluster, self.cluster.nodes)
         self.maxDiff = None
-
-        self._compare_tasks([
+        self.assertItemsEqual(serialized_data[0]['tasks'], [
             {
                 'parameters': {
                     'puppet_modules': '/etc/puppet/modules',
@@ -1185,7 +1182,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
                 'type': 'puppet',
                 'id': 'globals',
                 'uids': [self.cluster.nodes[0].uid],
-            }], serialized_data[0]['tasks'])
+            }])
 
 
 class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,

@@ -44,7 +44,7 @@ class TestTaskSerializers(BaseTestCase):
                 "id": "task1", "role": ["controller"],
                 "type": "shell", "version": "2.0.0",
                 "parameters": {"cmd": "bash -c 'echo 1'"},
-                "cross-depends": [{"name": "task3", "role": ["compute"]}]
+                "cross_depends": [{"name": "task3", "role": ["compute"]}]
             },
             {
                 "id": "task2", "role": ["controller"],
@@ -56,7 +56,7 @@ class TestTaskSerializers(BaseTestCase):
                 "id": "task3", "role": ["compute"],
                 "type": "shell", "version": "2.0.0",
                 "parameters": {"cmd": "bash -c 'echo 2'"},
-                "cross-depended-by": [{"name": "task2", "role": "*"}]
+                "cross_depended_by": [{"name": "task2", "role": "*"}]
             },
         ]
         tasks, connections = self.serializer.serialize(
@@ -161,27 +161,6 @@ class TestTaskSerializers(BaseTestCase):
     def test_process_with_selected_task_id(self):
         self._check_run_selected_tasks(["task3"], ["task3"], ["task3"])
 
-    def test_noop_serializer_is_used_for_skipped_tasks(self):
-        tasks = [
-            {
-                "id": "task2", "role": ["compute"],
-                "type": "puppet", "version": "2.0.0",
-                "parameters": {"puppet_manifest": "task2.pp"}
-            },
-            {
-                "id": "task3", "role": ["compute"],
-                "type": "puppet", "version": "2.0.0", "parameters": {}
-            },
-        ]
-        dictionary = self.serializer.serialize(
-            self.env.clusters[-1], self.env.nodes, tasks, task_ids=['task2']
-        )[0]
-        self.assertEqual(
-            tasks[0]['parameters'], dictionary['task2']['parameters']
-        )
-        # noop serializer does not add parameters
-        self.assertNotIn('parameters', dictionary['task3'])
-
     def test_serialize_success_if_all_applicable_task_has_version_2(self):
         tasks = [
             {
@@ -245,6 +224,37 @@ class TestTaskSerializers(BaseTestCase):
         )
         self.assertNotIn(
             "skipped", self.serializer.tasks_connections["1"]["test"]
+        )
+
+    def test_process_separate_task_attributes_properly(self):
+        task = {"id": "test", "type": "puppet", "role": "*"}
+        task_prossesor = mock.MagicMock()
+        serialized_task = {
+            'id': 'test', 'type': 'puppet',
+            'uids': ['1'],
+            'parameters': {'cwd': '/'},
+            'requires': ['test2'], 'required_for': 'test3',
+            'cross_depends': [{'role': '*','name': 'test4'}],
+            'cross_depended_by': [{'role': '*','name': 'test5'}],
+            'requires_ex': [(None, 'test6')],
+            'required_for_ex': [(None, 'test7')]
+        }
+        task_prossesor.process_tasks.return_value = [serialized_task.copy()]
+        self.serializer.task_processor = task_prossesor
+
+        self.serializer.process_task(
+            task, task_based_deployment.NullResolver(["1"])
+        )
+        del serialized_task['uids']
+        paramters = serialized_task.pop('parameters')
+        self.assertItemsEqual(["1"], self.serializer.tasks_connections)
+        self.assertItemsEqual(["test"], self.serializer.tasks_connections["1"])
+        self.assertEqual(
+            serialized_task, self.serializer.tasks_connections["1"]['test']
+        )
+        self.assertEqual(
+            {'id': 'test', 'type': 'puppet', 'parameters': paramters},
+            self.serializer.tasks_dictionary['test']
         )
 
     def test_expand_task_groups(self):
@@ -364,8 +374,8 @@ class TestTaskSerializers(BaseTestCase):
         task_params = {
             "requires": ["task_2"],
             "required_for": ["task"],
-            "cross-depends": [{"role": "/.*/", "name": "task"}],
-            "cross-depended-by": [{"role": "/.*/", "name": "task_2"}]
+            "cross_depends": [{"role": "/.*/", "name": "task"}],
+            "cross_depended_by": [{"role": "/.*/", "name": "task_2"}]
         }
         self.serializer.tasks_connections = {
             node_id: {
@@ -530,13 +540,6 @@ class TestNoopSerializer(BaseTestCase):
             task
         )
 
-    def test_serialize_skipped_if_no_nodes(self):
-        serializer = task_based_deployment.NoopSerializer(
-            {'id': 'deploy_start', 'type': 'stage', 'role': ['non_existing']},
-            self.env, []
-        )
-        self.assertEqual([], list(serializer.serialize()))
-
 
 class TestDeploymentTaskSerializer(BaseUnitTest):
     def make_task(self, task_id, **kwargs):
@@ -643,7 +646,7 @@ class TestTaskProcessor(BaseTestCase):
         serialized = {'type': 'puppet'}
         self.processor._convert_task(
             serialized, origin_task, 'task_start',
-            ['requires', 'cross-depends']
+            ['requires', 'cross_depends']
         )
 
         self.assertEqual(
@@ -662,8 +665,8 @@ class TestTaskProcessor(BaseTestCase):
 
     def test_patch_first_task_in_chain(self):
         origin_task = {
-            'id': 'task', 'requires': [], 'cross-depends': [],
-            'required_for': [], 'cross-depended-by': []
+            'id': 'task', 'requires': [], 'cross_depends': [],
+            'required_for': [], 'cross_depended_by': []
         }
         serialized = {'type': 'puppet'}
         self.processor._convert_first_task(serialized, origin_task)
@@ -672,15 +675,15 @@ class TestTaskProcessor(BaseTestCase):
                 'id': 'task_start',
                 'type': 'puppet',
                 'requires': [],
-                'cross-depends': []
+                'cross_depends': []
             },
             serialized
         )
 
     def test_patch_last_task_in_chain(self):
         origin_task = {
-            'id': 'task', 'requires': [], 'cross-depends': [],
-            'required_for': [], 'cross-depended-by': []
+            'id': 'task', 'requires': [], 'cross_depends': [],
+            'required_for': [], 'cross_depended_by': []
         }
         serialized = {'type': 'puppet'}
         self.processor._convert_last_task(serialized, origin_task)
@@ -689,7 +692,7 @@ class TestTaskProcessor(BaseTestCase):
                 'id': 'task_end',
                 'type': 'puppet',
                 'required_for': [],
-                'cross-depended-by': []
+                'cross_depended_by': []
             },
             serialized
         )
@@ -704,8 +707,8 @@ class TestTaskProcessor(BaseTestCase):
     def test_process_tasks_if_not_chain(self):
         origin_task = {
             'id': 'task', 'version': '2.0.0',
-            'requires': ['a'], 'cross-depends': [{'name': 'b'}],
-            'required_for': ['c'], 'cross-depended-by': [{'name': 'd'}]
+            'requires': ['a'], 'cross_depends': [{'name': 'b'}],
+            'required_for': ['c'], 'cross_depended_by': [{'name': 'd'}]
         }
         serialized = iter([{'type': 'puppet'}])
 
@@ -720,8 +723,8 @@ class TestTaskProcessor(BaseTestCase):
     def test_process_if_chain(self):
         origin_task = {
             'id': 'task', 'version': '2.0.0',
-            'requires': ['a'], 'cross-depends': [{'name': 'b'}],
-            'required_for': ['c'], 'cross-depended-by': [{'name': 'd'}]
+            'requires': ['a'], 'cross_depends': [{'name': 'b'}],
+            'required_for': ['c'], 'cross_depended_by': [{'name': 'd'}]
         }
         serialized = iter([
             {'type': 'puppet', 'uids': [None]},
@@ -735,7 +738,7 @@ class TestTaskProcessor(BaseTestCase):
                 {
                     'id': 'task_start', 'type': 'puppet', 'uids': [None],
                     'requires': ['a'],
-                    'cross-depends': [{'name': 'b'}],
+                    'cross_depends': [{'name': 'b'}],
                 },
                 {
                     'id': 'task#1', 'type': 'shell', 'uids': [None],
@@ -745,7 +748,7 @@ class TestTaskProcessor(BaseTestCase):
                     'id': 'task_end', 'type': 'skipped', 'uids': [None],
                     'requires': ['task#1'],
                     'required_for': ['c'],
-                    'cross-depended-by': [{'name': 'd'}],
+                    'cross_depended_by': [{'name': 'd'}],
                 },
             ],
             tasks

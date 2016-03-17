@@ -1870,33 +1870,3 @@ class TestHandlers(BaseIntegrationTest):
             [node.uid for node in self.env.nodes],
             [node['uid'] for node in deployment_info]
         )
-
-    @patch('nailgun.rpc.cast')
-    def test_occurs_error_not_enough_memory_for_hugepages(self, *_):
-        meta = self.env.default_metadata()
-        meta['numa_topology']['numa_nodes'] = [
-            {'cpus': [0, 1, 2], 'id': 0, 'memory': 1024 ** 3}
-        ]
-
-        self.env.create(
-            release_kwargs={
-                'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': 'liberty-9.0',
-            },
-            nodes_kwargs=[
-                {'roles': ['compute'], 'pending_addition': True, 'meta': meta},
-            ]
-        )
-
-        node = self.env.nodes[0]
-        node.attributes['hugepages'] = {
-            'dpdk': {'type': 'text', 'value': '1026'},
-            'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}}
-        }
-
-        self.db.flush()
-        supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask)
-        self.assertRegexpMatches(
-            supertask.message,
-            r'Components .* could not require more memory than node has')

@@ -88,32 +88,3 @@ class TestNodeAttributes(base.BaseUnitTest):
         self.assertEqual(
             expected,
             objects.NodeAttributes.hugepages_kernel_opts(node))
-
-    def test_hugepages_distribution(self):
-        node = mock.Mock(
-            attributes={
-                'hugepages': {
-                    'comp1': {
-                        'type': 'custom_hugepages',
-                        'value': {
-                            '2048': 512,
-                            '1048576': 1,
-                        }
-                    },
-                    'comp2': {
-                        'type': 'text',
-                        'value': '512'}}},
-            meta={'numa_topology': {'numa_nodes': [
-                {'id': 0, 'memory': 2 ** 31},
-                {'id': 1, 'memory': 2 ** 31},
-            ]}}
-        )
-
-        expected = [
-            {'numa_id': 0, 'size': 2048, 'count': 512},
-            {'numa_id': 1, 'size': 2048, 'count': 512},
-            {'numa_id': 1, 'size': 1048576, 'count': 1},
-        ]
-
-        self.assertEqual(
-            objects.NodeAttributes.distribute_hugepages(node), expected)

@@ -1110,6 +1110,8 @@ class TestClusterObject(BaseTestCase):
     # cluster. To get more details, please, refer to [1]
     # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
     def test_set_deployed_before_flag(self):
+        # for new clusters that are created by Fuel of version >= 8.0
+        # the flag is set to False by default
         self.assertFalse(
             self.cluster.attributes.generated['deployed_before']['value'])
 
@@ -1124,14 +1126,29 @@ class TestClusterObject(BaseTestCase):
             self.cluster.attributes.generated['deployed_before']['value'])
 
         # check that flag is not changed when same value is given
-        # and interaction w/ db is not performed
-        with mock.patch.object(self.db, 'flush') as m_flush:
-            objects.Cluster.set_deployed_before_flag(self.cluster,
-                                                     value=False)
-            self.assertFalse(
-                self.cluster.attributes.generated['deployed_before']['value'])
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
 
-            m_flush.assert_not_called()
+    # FIXME(aroma): remove this test when stop action will be reworked for ha
+    # cluster. To get more details, please, refer to [1]
+    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+    def test_set_deployed_before_flag_if_it_is_not_in_generated(self):
+        # there will be no 'deployed_before' attribute present in
+        # existing clusters' attributes after master node upgrade to Fuel of
+        # versions >= 8.0 so it must be set in such case by the method under
+        # the test
+
+        def check_flag_set(value):
+            del self.cluster.attributes.generated['deployed_before']
+            objects.Cluster.set_deployed_before_flag(self.cluster, value)
+            self.assertEqual(
+                self.cluster.attributes.generated['deployed_before']['value'],
+                value
+            )
+
+        for value in (True, False):
+            check_flag_set(value)
 
     def test_network_defaults(self):
         cluster = objects.Cluster.get_by_uid(self.env.create(api=True)['id'])

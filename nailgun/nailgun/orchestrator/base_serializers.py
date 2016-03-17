@@ -262,13 +262,15 @@ class NetworkDeploymentSerializer(object):
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node."""
         admin_net = objects.NetworkGroup.get_default_admin_network()
+        roles_metadata = objects.Cluster.get_roles(cluster)
 
         for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
             netw_data = NetworkManager.get_node_networks(node, admin_net)
             addresses = {}
             for net in node.cluster.network_groups:
                 if net.name == 'public' and \
-                        not objects.Node.should_have_public_with_ip(node):
+                        not objects.Node.should_have_public_with_ip(
+                            node, roles_metadata):
                     continue
                 if net.meta.get('render_addr_mask'):
                     addresses.update(cls.get_addr_mask(

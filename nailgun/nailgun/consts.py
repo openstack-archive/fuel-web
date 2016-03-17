@@ -177,10 +177,6 @@ NETWORK_VIP_NAMES_V6_1 = Enum(
     'vrouter',
 )
 
-VIP_NAME_MAX_LEN = 25
-VIP_NAMESPACE_MAX_LEN = 25
-NETWORK_GROUP_NAME_MAX_LEN = 50
-
 BOND_MODES = Enum(
     # same for both OVS and linux
     'active-backup',

@@ -77,7 +77,7 @@ class PluginAdapterBase(object):
             logger.warning("Config {0} is not readable.".format(config))
 
     def _load_tasks(self, config):
-        data = self._load_config(config)
+        data = self._load_config(config) or []
         for item in data:
             # backward compatibility for plugins added in version 6.0,
             # and it is expected that task with role: [controller]

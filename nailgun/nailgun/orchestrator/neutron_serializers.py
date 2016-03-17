@@ -1049,8 +1049,10 @@ class NeutronNetworkDeploymentSerializer70(
             name = objects.Node.get_slave_name(node)
             node_roles = objects.Node.all_roles(node)
             network_roles = cls.get_network_role_mapping_to_ip(node)
+            # Dict key should be immutable through the node lifecycle.
+            key = objects.Node.default_slave_name(node)
 
-            nodes[name] = {
+            nodes[key] = {
                 "uid": node.uid,
                 "fqdn": objects.Node.get_node_fqdn(node),
                 "name": name,

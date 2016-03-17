@@ -1337,7 +1337,7 @@
         "fields": {
             "status": "discover",
             "name": "Supermicro X9DRW (srv07)",
-            "hostname": "node-8",
+            "hostname": "custom-node-8",
             "ip": "10.20.0.170",
             "online": true,
             "labels": {},

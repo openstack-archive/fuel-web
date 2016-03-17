@@ -144,8 +144,9 @@ class TestDeploymentAttributesSerialization90(
                 'nova': {
                     'type': 'custom_hugepages',
                     'value': {
-                        '2048': 512,
-                        '1048576': 1,
+                        # FIXME make counts integer after appropriate UI fix
+                        '2048': '512',
+                        '1048576': '1',
                     }
                 },
                 'dpdk': {

@@ -22,6 +22,7 @@ from netaddr import IPNetwork
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
+from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.settings import settings
 
@@ -260,8 +261,10 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node."""
+        admin_net = objects.NetworkGroup.get_default_admin_network()
+
         for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
-            netw_data = node.network_data
+            netw_data = NetworkManager.get_node_networks(node, admin_net)
             addresses = {}
             for net in node.cluster.network_groups:
                 if net.name == 'public' and \

@@ -546,7 +546,7 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         attrs = super(DeploymentHASerializer90, self).get_common_attrs(cluster)
 
         for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
-            name = objects.Node.get_slave_name(node)
+            name = objects.Node.default_slave_name(node)
             node_attrs = attrs['network_metadata']['nodes'][name]
 
             node_attrs['nova_cpu_pinning_enabled'] = \

@@ -53,7 +53,6 @@ from nailgun.objects import NetworkGroup
 from nailgun.objects import Notification
 from nailgun.objects.serializers.node import NodeSerializer
 from nailgun.policy import cpu_distribution
-from nailgun.policy import hugepages_distribution
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -1316,19 +1315,9 @@ class NodeAttributes(object):
     def is_nova_cpu_pinning_enabled(cls, node):
         return bool(Node.get_attributes(node)['cpu_pinning']['nova']['value'])
 
-    @staticmethod
-    def pages_per_numa_node(size):
-        """Convert memory size to 2 MiB pages count.
-
-        :param size: memory size in MiBs
-        :returns: amount of 2MiB pages
-        """
-        # for python3 compatibility we have to use int() and float()
-        return int(math.ceil(float(size) / 2))
-
     @classmethod
     def total_hugepages(cls, node):
-        """Return total hugepages for the node
+        """Return total hugepages for the instance
 
         Iterate over hugepages attributes and sum them
         according their type: custom_hugepages - contains
@@ -1352,8 +1341,9 @@ class NodeAttributes(object):
                     hugepages[size] += int(count)
             elif attrs.get('type') == 'text':
                 # type text means that value is the number of memory in MB
-                # per NUMA node which should be converted to pages count
-                count_per_numa_node = cls.pages_per_numa_node(attrs['value'])
+                # per NUMA node which should be covered by 2M hugepages
+                # for python3 capabilites we have to use int() and float()
+                count_per_numa_node = int(math.ceil(float(attrs['value']) / 2))
                 hugepages[consts.DEFAULT_HUGEPAGE_SIZE] += (
                     count_per_numa_node * numa_count)
 
@@ -1374,55 +1364,3 @@ class NodeAttributes(object):
                     human_size, hugepage_size)
 
         return kernel_opts
-
-    @classmethod
-    def is_nova_hugepages_enabled(cls, node):
-        nova_hugepages = Node.get_attributes(
-            node)['hugepages']['nova']['value']
-        return any(six.itervalues(nova_hugepages))
-
-    @classmethod
-    def dpdk_hugepages_attrs(cls, node):
-        """Return hugepages configuration for DPDK
-
-        DPDK hugepages configured as the number of memory in MB
-        per NUMA node. This configuration passed to deployment
-        as comma-separeted values. (e.g. 'ovs_socket_mem': N,N,N,N
-        where N is the specified number of memory and there are
-        4 NUMA nodes)
-        """
-        dpdk_memory = int(Node.get_attributes(
-            node)['hugepages']['dpdk']['value'])
-
-        if not dpdk_memory:
-            return {}
-
-        numa_nodes_len = len(node.meta['numa_topology']['numa_nodes'])
-
-        return {
-            'ovs_socket_mem': ",".join(
-                itertools.repeat(str(dpdk_memory), numa_nodes_len))}
-
-    @classmethod
-    def distribute_hugepages(cls, node):
-        topology = node.meta['numa_topology']
-        attributes = Node.get_attributes(node)['hugepages']
-
-        # split components to 2 groups:
-        # components that should have pages on all numa nodes (such as dpdk)
-        # and components that may have pages on any numa node
-        components = {'all': [], 'any': []}
-
-        for name, attrs in attributes.items():
-            if attrs.get('type') == 'text':
-                # type text means size of memory in MiB to allocate with
-                # 2MiB pages, so we need to calculate pages count
-                pages_count = cls.pages_per_numa_node(attrs['value'])
-                components['all'].append(
-                    {consts.DEFAULT_HUGEPAGE_SIZE: pages_count})
-
-            elif attrs.get('type') == 'custom_hugepages':
-                components['any'].append(attrs['value'])
-
-        return hugepages_distribution.distribute_hugepages(
-            topology, components)

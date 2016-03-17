@@ -40,11 +40,11 @@ class NoopSerializer(StandardConfigRolesHook):
         return True
 
     def get_uids(self):
-        roles = self.task.get('groups', self.task.get('role'))
-        if roles is None:
+        groups = self.task.get('groups', self.task.get('role'))
+        if groups is None:
             # it means that task is not associated with any node
             return [None]
-        return self.role_resolver.resolve(roles)
+        return self.role_resolver.resolve(groups)
 
     def serialize(self):
         uids = self.get_uids()
@@ -98,12 +98,13 @@ def add_plugin_deployment_hooks(tasks):
         {'id': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
          'version': consts.TASK_CROSS_DEPENDENCY,
          'type': consts.PLUGIN_PRE_DEPLOYMENT_HOOK,
-         'requires': [consts.STAGES.pre_deployment + '_end'],
-         'required_for': [consts.STAGES.deploy + '_start']},
+         'requires': [consts.STAGES.pre_deployment + '_start'],
+         'required_for': [consts.STAGES.pre_deployment + '_end']},
         {'id': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
          'version': consts.TASK_CROSS_DEPENDENCY,
          'type': consts.PLUGIN_POST_DEPLOYMENT_HOOK,
-         'requires': [consts.STAGES.post_deployment + '_end']}
+         'requires': [consts.STAGES.post_deployment + '_start'],
+         'required_for': [consts.STAGES.post_deployment + '_end']}
     ]
 
     return itertools.chain(iter(tasks), iter(hooks))
@@ -138,8 +139,8 @@ class TaskProcessor(object):
     """Helper class for deal with task chains."""
 
     task_attributes_to_copy = (
-        'requires', 'cross-depends',
-        'required_for', 'cross-depended-by'
+        'requires', 'cross_depends',
+        'required_for', 'cross_depended_by'
     )
 
     min_supported_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
@@ -190,11 +191,11 @@ class TaskProcessor(object):
         # generates a chain of several tasks from one library task
         # in this case we need to generate proper dependencies between
         # the tasks in this chain.
-        # the first task shall have only "requires" and "cross-depends"
+        # the first task shall have only "requires" and "cross_depends"
         # each task in chain shall have only link to previous
         # task in same chain
         # the last task also shall have the "required_for" and
-        # "cross-depended-by" fields.
+        # "cross_depended_by" fields.
         # as result we have next chain of task
         # scheme for chain:
         # [requires]
@@ -224,8 +225,6 @@ class TaskProcessor(object):
 
         if len(frame) == 1:
             # It is simple case when chain contains only 1 task
-            # do nothing
-            # check that that frame is not empty
             yield self._convert_task(frame.pop(), origin_task)
             return
 
@@ -265,13 +264,13 @@ class TaskProcessor(object):
         :returns: the patched serialized task
         """
 
-        # first task shall contains only requires and cross-depends
+        # first task shall contains only requires and cross_depends
         # see comment in def process
         return self._convert_task(
             serialized,
             origin,
             self.get_first_task_id(origin['id']),
-            ('requires', 'cross-depends')
+            ('requires', 'cross_depends')
         )
 
     def _convert_to_chain_task(self, serialized, origin, num):
@@ -298,13 +297,13 @@ class TaskProcessor(object):
         :returns: the patched serialized task
         """
 
-        # last task shall contains only required_for and cross-depended-by
+        # last task shall contains only required_for and cross_depended_by
         # see comment in def process
         return self._convert_task(
             serialized,
             origin,
             self.get_last_task_id(origin['id']),
-            ('required_for', 'cross-depended-by')
+            ('required_for', 'cross_depended_by')
         )
 
     def _convert_task(self, serialized, origin, task_id=None, attrs=None):
@@ -347,7 +346,7 @@ class TaskProcessor(object):
             )
             current.setdefault('requires', []).append(previous['id'])
         else:
-            # the list of nodes is different, make cross-depends
+            # the list of nodes is different, make cross_depends
             logger.debug(
                 "cross node dependencies: task '%s', previous task '%s', "
                 "nodes: %s",
@@ -488,13 +487,6 @@ class TasksSerializer(object):
         )
         skipped = skip or not task_serializer.should_execute()
         force = self.events and self.events.check_subscription(task)
-        if skipped and not force:
-            # Do not call real serializer if it should be skipped
-            task_serializer = NoopSerializer(
-                task, self.cluster, self.deployment_nodes,
-                role_resolver=role_resolver
-            )
-
         serialised_tasks = self.task_processor.process_tasks(
             task, task_serializer.serialize()
         )
@@ -512,8 +504,10 @@ class TasksSerializer(object):
                 'type': task_type,
                 'requires': serialized.pop('requires', []),
                 'required_for': serialized.pop('required_for', []),
-                'cross-depends': serialized.pop('cross-depends', []),
-                'cross-depended-by': serialized.pop('cross-depended-by', []),
+                'cross_depends': serialized.pop('cross_depends', []),
+                'cross_depended_by': serialized.pop('cross_depended_by', []),
+                'requires_ex': serialized.pop('requires_ex', []),
+                'required_for_ex': serialized.pop('required_for_ex', [])
             }
             node_ids = serialized.pop('uids', ())
             self.tasks_dictionary[serialized['id']] = serialized
@@ -535,21 +529,21 @@ class TasksSerializer(object):
         for node_id, tasks in six.iteritems(self.tasks_connections):
             for task in six.itervalues(tasks):
                 requires = set(self.expand_dependencies(
-                    node_id, task.pop('requires'),
+                    node_id, task.pop('requires', None),
                     self.task_processor.get_last_task_id
                 ))
                 requires.update(self.expand_cross_dependencies(
-                    node_id, task.pop('cross-depends', None),
+                    node_id, task.pop('cross_depends', None),
                     self.task_processor.get_last_task_id
                 ))
                 requires.update(task.pop('requires_ex', ()))
 
                 required_for = set(self.expand_dependencies(
-                    node_id, task.pop('required_for'),
+                    node_id, task.pop('required_for', None),
                     self.task_processor.get_first_task_id
                 ))
                 required_for.update(self.expand_cross_dependencies(
-                    node_id, task.pop('cross-depended-by', None),
+                    node_id, task.pop('cross_depended_by', None),
                     self.task_processor.get_first_task_id
                 ))
                 required_for.update(task.pop('required_for_ex', ()))

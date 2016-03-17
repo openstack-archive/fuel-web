@@ -987,7 +987,7 @@ class EnvironmentManager(object):
                 "Nothing to stop - try creating cluster"
             )
 
-    def reset_environment(self, expect_http=None, cluster_id=None):
+    def reset_environment(self, expect_http=202, cluster_id=None):
         if self.clusters:
             cluster_id = self._get_cluster_by_id(cluster_id).id
             resp = self.app.put(
@@ -996,13 +996,8 @@ class EnvironmentManager(object):
                     kwargs={'cluster_id': cluster_id}),
                 expect_errors=True,
                 headers=self.default_headers)
-            if expect_http is not None:
-                self.tester.assertEqual(resp.status_code, expect_http)
-            else:
-                # if task was started status code can be either 200 or 202
-                # depending on task status
-                self.tester.assertIn(resp.status_code, [200, 202])
-            if not (200 <= resp.status_code < 400):
+            self.tester.assertEqual(resp.status_code, expect_http)
+            if not str(expect_http).startswith("2"):
                 return resp.body
             return self.db.query(Task).filter_by(
                 uuid=resp.json_body['uuid']

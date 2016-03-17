@@ -61,6 +61,10 @@ class Release(Base):
     components_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
     modes = Column(MutableList.as_mutable(JSON), default=[])
+    deployment_graphs = relationship(
+        "ReleaseDeploymentGraph",
+        back_populates="release",
+        lazy="dynamic")
     clusters = relationship(
         "Cluster",
         primaryjoin="Release.id==Cluster.release_id",

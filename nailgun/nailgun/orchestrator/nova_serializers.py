@@ -363,6 +363,8 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
         for n in Cluster.get_nodes_not_for_deletion(cluster):
             name = Node.get_slave_name(n)
             node_roles = Node.all_roles(n)
+            # Dict key should be always identical here, in library and plugins
+            key = "node-{0}".format(n.uid)
 
             ip_by_net = {
                 'fuelweb_admin': None,
@@ -412,7 +414,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
                 'ceph/radosgw': ip_by_net['public'],
             }
 
-            nodes[name] = {
+            nodes[key] = {
                 "uid": n.uid,
                 "fqdn": Node.get_node_fqdn(n),
                 "name": name,

@@ -1149,7 +1149,6 @@ class EnvironmentManager(object):
         wait_until_in_statuses = (consts.TASK_STATUSES.running,
                                   consts.TASK_STATUSES.pending)
         self._wait_task_status(task, timeout, wait_until_in_statuses)
-        self.tester.assertEqual(task.progress, 100)
         if isinstance(message, self._regex_type):
             self.tester.assertRegexpMatches(task.message, message)
         elif isinstance(message, six.string_types):

@@ -33,8 +33,8 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
     validator = validators.ClusterUpgradeValidator
 
     def test_validate_release_upgrade(self):
-        self.validator.validate_release_upgrade(self.release_61,
-                                                self.release_80)
+        self.validator.validate_release_upgrade(self.src_release,
+                                                self.dst_release)
 
     @mock.patch.dict(settings.VERSION, {'feature_groups': []})
     def test_validate_release_upgrade_deprecated_release(self):
@@ -44,53 +44,53 @@ class TestClusterUpgradeValidator(tests_base.BaseCloneClusterTest):
             state=consts.RELEASE_STATES.manageonly
         )
         msg = "^Upgrade to the given release \({0}\).*is deprecated and " \
-              "cannot be installed\.$".format(self.release_61.id)
+              "cannot be installed\.$".format(self.src_release.id)
         with self.assertRaisesRegexp(errors.InvalidData, msg):
             self.validator.validate_release_upgrade(release_511,
-                                                    self.release_61)
+                                                    self.src_release)
 
     def test_validate_release_upgrade_to_older_release(self):
-        self.release_61.state = consts.RELEASE_STATES.available
+        self.src_release.state = consts.RELEASE_STATES.available
         msg = "^Upgrade to the given release \({0}\).*release is equal or " \
               "lower than the release of the original cluster\.$" \
-              .format(self.release_61.id)
+              .format(self.src_release.id)
         with self.assertRaisesRegexp(errors.InvalidData, msg):
-            self.validator.validate_release_upgrade(self.release_80,
-                                                    self.release_61)
+            self.validator.validate_release_upgrade(self.dst_release,
+                                                    self.src_release)
 
     def test_validate_cluster_name(self):
         self.validator.validate_cluster_name("cluster-42")
 
     def test_validate_cluster_name_already_exists(self):
         msg = "^Environment with this name '{0}' already exists\.$"\
-              .format(self.cluster_61.name)
+              .format(self.src_cluster.name)
         with self.assertRaisesRegexp(errors.AlreadyExists, msg):
-            self.validator.validate_cluster_name(self.cluster_61.name)
+            self.validator.validate_cluster_name(self.src_cluster.name)
 
     def test_validate_cluster_status(self):
-        self.validator.validate_cluster_status(self.cluster_61)
+        self.validator.validate_cluster_status(self.src_cluster)
 
     def test_validate_cluster_status_invalid(self):
-        cluster_80 = self.env.create_cluster(
+        dst_cluster = self.env.create_cluster(
             api=False,
-            release_id=self.release_80.id,
+            release_id=self.dst_release.id,
         )
-        relations.UpgradeRelationObject.create_relation(self.cluster_61.id,
-                                                        cluster_80.id)
+        relations.UpgradeRelationObject.create_relation(self.src_cluster.id,
+                                                        dst_cluster.id)
         msg = "^Upgrade is not possible because of the original cluster " \
               "\({0}\) is already involved in the upgrade routine\.$" \
-              .format(self.cluster_61.id)
+              .format(self.src_cluster.id)
         with self.assertRaisesRegexp(errors.InvalidData, msg):
-            self.validator.validate_cluster_status(self.cluster_61)
+            self.validator.validate_cluster_status(self.src_cluster)
 
     def test_validate(self):
         data = jsonutils.dumps(self.data)
-        self.validator.validate(data, self.cluster_61)
+        self.validator.validate(data, self.src_cluster)
 
     def test_validate_invalid_data(self):
         data = "{}"
         with self.assertRaises(errors.InvalidData):
-            self.validator.validate(data, self.cluster_61)
+            self.validator.validate(data, self.src_cluster)
 
 
 class TestNodeReassignValidator(base.BaseTestCase):

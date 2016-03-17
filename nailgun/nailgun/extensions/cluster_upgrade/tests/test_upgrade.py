@@ -25,32 +25,32 @@ from ..objects import relations
 
 class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
     def test_create_cluster_clone(self):
-        new_cluster = self.helper.create_cluster_clone(self.cluster_61,
+        new_cluster = self.helper.create_cluster_clone(self.src_cluster,
                                                        self.data)
-        cluster_61_data = self.cluster_61.get_create_data()
+        src_cluster_data = self.src_cluster.get_create_data()
         new_cluster_data = new_cluster.get_create_data()
-        for key, value in cluster_61_data.items():
+        for key, value in src_cluster_data.items():
             if key in ("name", "release_id"):
                 continue
             self.assertEqual(value, new_cluster_data[key])
 
     def test_copy_attributes(self):
-        new_cluster = self.helper.create_cluster_clone(self.cluster_61,
+        new_cluster = self.helper.create_cluster_clone(self.src_cluster,
                                                        self.data)
-        self.assertNotEqual(self.cluster_61.generated_attrs,
+        self.assertNotEqual(self.src_cluster.generated_attrs,
                             new_cluster.generated_attrs)
 
         # Do some unordinary changes
-        attrs = copy.deepcopy(self.cluster_61.editable_attrs)
+        attrs = copy.deepcopy(self.src_cluster.editable_attrs)
         attrs["access"]["user"]["value"] = "operator"
         attrs["access"]["password"]["value"] = "secrete"
-        self.cluster_61.editable_attrs = attrs
+        self.src_cluster.editable_attrs = attrs
 
-        self.helper.copy_attributes(self.cluster_61, new_cluster)
+        self.helper.copy_attributes(self.src_cluster, new_cluster)
 
-        self.assertEqual(self.cluster_61.generated_attrs,
+        self.assertEqual(self.src_cluster.generated_attrs,
                          new_cluster.generated_attrs)
-        editable_attrs = self.cluster_61.editable_attrs
+        editable_attrs = self.src_cluster.editable_attrs
         for section, params in six.iteritems(new_cluster.editable_attrs):
             if section == "repo_setup":
                 continue
@@ -61,15 +61,15 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
                                  value["value"])
 
     def test_copy_network_config(self):
-        new_cluster = self.helper.create_cluster_clone(self.cluster_61,
+        new_cluster = self.helper.create_cluster_clone(self.src_cluster,
                                                        self.data)
-        orig_net_manager = self.cluster_61.get_network_manager()
+        orig_net_manager = self.src_cluster.get_network_manager()
         serialize_nets = network_configuration.\
             NeutronNetworkConfigurationSerializer.\
             serialize_for_cluster
 
         # Do some unordinary changes
-        nets = serialize_nets(self.cluster_61.cluster)
+        nets = serialize_nets(self.src_cluster.cluster)
         nets["networks"][0].update({
             "cidr": "172.16.42.0/24",
             "gateway": "172.16.42.1",
@@ -78,9 +78,9 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
         orig_net_manager.update(nets)
         orig_net_manager.assign_vips_for_net_groups()
 
-        self.helper.copy_network_config(self.cluster_61, new_cluster)
+        self.helper.copy_network_config(self.src_cluster, new_cluster)
 
-        orig_nets = serialize_nets(self.cluster_61_db)
+        orig_nets = serialize_nets(self.src_cluster_db)
         new_nets = serialize_nets(new_cluster.cluster)
         self.assertEqual(orig_nets["management_vip"],
                          new_nets["management_vip"])
@@ -92,10 +92,10 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
                          new_nets["public_vrouter_vip"])
 
     def test_clone_cluster(self):
-        orig_net_manager = self.cluster_61.get_network_manager()
+        orig_net_manager = self.src_cluster.get_network_manager()
         orig_net_manager.assign_vips_for_net_groups()
-        new_cluster = self.helper.clone_cluster(self.cluster_61, self.data)
+        new_cluster = self.helper.clone_cluster(self.src_cluster, self.data)
         relation = relations.UpgradeRelationObject.get_cluster_relation(
-            self.cluster_61.id)
-        self.assertEqual(relation.orig_cluster_id, self.cluster_61.id)
+            self.src_cluster.id)
+        self.assertEqual(relation.orig_cluster_id, self.src_cluster.id)
         self.assertEqual(relation.seed_cluster_id, new_cluster.id)

@@ -66,29 +66,28 @@ class NetworkGroup(NailgunObject):
         ).order_by(models.NetworkGroup.id).all()
 
     @classmethod
-    def get_admin_network_group(cls, node=None):
+    def get_admin_network_group(cls, node=None, admin_net=None):
         """Method for receiving Admin NetworkGroup.
 
         :param node: return admin network groupd of this node
         :type node: nailgun.db.sqlalchemy.models.Node
+        :param admin_net: Default admin network
+        :param nailgun.db.sqlalchemy.models.NetworkGroup
         :returns: Admin NetworkGroup.
         :raises: errors.AdminNetworkNotFound
         """
-        admin_ng = None
-        admin_ngs = db().query(models.NetworkGroup).filter_by(
-            name=consts.NETWORKS.fuelweb_admin,
-        )
+        net = None
 
         if node is not None and node.nodegroup:
             networks = (net for net in node.nodegroup.networks
                         if net.name == consts.NETWORKS.fuelweb_admin)
-            admin_ng = next(networks, None)
+            net = next(networks, None)
 
-        admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
+        net = (net or admin_net or cls.get_default_admin_network())
 
-        if not admin_ng:
+        if not net:
             raise errors.AdminNetworkNotFound()
-        return admin_ng
+        return net
 
     @classmethod
     def get_assigned_ips(cls, network_id):
@@ -306,9 +305,9 @@ class NetworkGroup(NailgunObject):
             nm.assign_networks_by_template(node)
 
     @classmethod
-    def get_node_network_by_name(cls, node, network_name):
+    def get_node_network_by_name(cls, node, network_name, admin_net=None):
         if network_name == consts.NETWORKS.fuelweb_admin:
-            return cls.get_admin_network_group(node)
+            return cls.get_admin_network_group(node, admin_net)
         else:
             return cls.get_from_node_group_by_name(node.group_id, network_name)
 
@@ -330,7 +329,7 @@ class NetworkGroup(NailgunObject):
         #   to handle this very special case if we want to be able
         #   to allocate VIP in default admin network.
         if not network and name == consts.NETWORKS.fuelweb_admin:
-            network = cls.get_admin_network_group()
+            network = cls.get_default_admin_network()
 
         return network
 

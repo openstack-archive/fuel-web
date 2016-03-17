@@ -77,8 +77,15 @@ class InstallationInfo(object):
         WhiteListRule(('external_ntp', 'ntp_list', 'value'),
                       'external_ntp_list', bool),
 
-        WhiteListRule(('repo_setup', 'repos', 'value'), 'repos', bool),
-
+        WhiteListRule(('repo_setup', 'repos', 'value'), 'repos', None),
+        WhiteListRule(('repo_setup', 'pin_ceph', 'value'),
+                      'pin_ceph', bool),
+        WhiteListRule(('repo_setup', 'pin_haproxy', 'value'),
+                      'pin_haproxy', bool),
+        WhiteListRule(('repo_setup', 'pin_rabbitmq', 'value'),
+                      'pin_rabbitmq', bool),
+        WhiteListRule(('repo_setup', 'repo_type', 'value'),
+                      'repo_type', None),
         WhiteListRule(('storage', 'volumes_lvm', 'value'),
                       'volumes_lvm', None),
         WhiteListRule(('storage', 'iser', 'value'), 'iser', None),

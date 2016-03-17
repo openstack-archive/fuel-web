@@ -79,30 +79,35 @@ class RoleResolver(BaseRoleResolver):
                 self.__mapping[r].add(node.uid)
 
     def resolve(self, roles, policy=None):
-        if isinstance(roles, six.string_types) and roles in self.SPECIAL_ROLES:
-            result = self.SPECIAL_ROLES[roles]
-        elif roles == consts.TASK_ROLES.all:
-            result = list(set(
+        if roles == consts.TASK_ROLES.all:
+            result = set(
                 uid for nodes in six.itervalues(self.__mapping)
                 for uid in nodes
-            ))
-        elif isinstance(roles, (list, tuple)):
+            )
+        elif isinstance(roles, six.string_types) \
+                and roles in self.SPECIAL_ROLES:
+            result = self.SPECIAL_ROLES[roles]
+        else:
+            if isinstance(roles, six.string_types):
+                roles = [roles]
+
+            if not isinstance(roles, (list, tuple)):
+                # TODO(bgaifullin) fix wrong format for roles in tasks.yaml
+                # After it will be allowed to raise exception here
+                logger.warn(
+                    'Wrong roles format, `roles` should be a list or "*": %s',
+                    roles
+                )
+                return []
+
             result = set()
             for role in roles:
                 pattern = NameMatchingPolicy.create(role)
                 for node_role, nodes_ids in six.iteritems(self.__mapping):
                     if pattern.match(node_role):
                         result.update(nodes_ids)
-            result = list(result)
-        else:
-            # TODO(fix using wrong format for roles in tasks.yaml)
-            # After it will be allowed to raise exception here
-            logger.warn(
-                'Wrong roles format, `roles` should be a list or "*": %s',
-                roles
-            )
-            return []
 
+        result = list(result)
         # in some cases need only one any node from pool
         # for example if need only one any controller.
         # to distribute load select first node from pool

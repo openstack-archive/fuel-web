@@ -49,40 +49,54 @@ class TestInstallationInfo(BaseTestCase):
 
     def test_get_attributes_centos(self):
         self.skipTest('CentOS is unavailable in current release.')
-        self.env.upload_fixtures(['openstack'])
+        release_name = 'CentOS'
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='CentOS')
+        attr_key_list = [a[1] for a in info.attributes_white_list]
+        expected_attributes = set(attr_key_list) - set(
+            ('pin_haproxy', 'repo_type', 'pin_ceph', 'pin_rabbitmq'))
+        self._do_test_attributes_in_white_list(
+            release_name, expected_attributes)
+
+    def _do_test_attributes_in_white_list(self, release_name,
+                                          expected_attributes):
+        self.env.upload_fixtures(['openstack'])
+
+        releases = ReleaseCollection.filter_by(
+            None, name=release_name)
         cluster_data = self.env.create_cluster(
-            release_id=release[0].id
+            release_id=releases[0].id
         )
         cluster = Cluster.get_by_uid(cluster_data['id'])
         editable = cluster.attributes.editable
-        attr_key_list = [a[1] for a in info.attributes_white_list]
-        attrs_dict = info.get_attributes(editable, info.attributes_white_list)
+
+        info = InstallationInfo()
+        actual_attributes = info.get_attributes(
+            editable, info.attributes_white_list)
         self.assertEqual(
-            set(attr_key_list),
-            set(attrs_dict.keys())
+            set(expected_attributes),
+            set(actual_attributes.keys())
         )
 
     def test_get_attributes_ubuntu(self):
-        self.env.upload_fixtures(['openstack'])
+        release_name = 'Liberty on Ubuntu 14.04'
         info = InstallationInfo()
-        release = ReleaseCollection.filter_by(None, operating_system='Ubuntu')
-        cluster_data = self.env.create_cluster(
-            release_id=release[0].id
-        )
-        cluster = Cluster.get_by_uid(cluster_data['id'])
-        editable = cluster.attributes.editable
         attr_key_list = [a[1] for a in info.attributes_white_list]
-        attrs_dict = info.get_attributes(editable, info.attributes_white_list)
-        self.assertEqual(
-            # No vlan splinters for ubuntu.
-            # And no mellanox related entries since 8.0.
-            set(attr_key_list) - set(
-                ('vlan_splinters', 'vlan_splinters_ovs',
-                 'mellanox', 'mellanox_vf_num', 'iser')),
-            set(attrs_dict.keys())
-        )
+        expected_attributes = set(attr_key_list) - set(
+            ('vlan_splinters', 'vlan_splinters_ovs',
+             'mellanox', 'mellanox_vf_num', 'iser', 'pin_haproxy',
+             'repo_type', 'pin_ceph', 'pin_rabbitmq'))
+        self._do_test_attributes_in_white_list(
+            release_name, expected_attributes)
+
+    def test_get_attributes_ubuntu_uca(self):
+        release_name = 'Liberty on Ubuntu+UCA 14.04'
+        info = InstallationInfo()
+        attr_key_list = [a[1] for a in info.attributes_white_list]
+        expected_attributes = set(attr_key_list) - set(
+            ('vlan_splinters', 'vlan_splinters_ovs',
+             'mellanox', 'mellanox_vf_num', 'iser'))
+        self._do_test_attributes_in_white_list(
+            release_name, expected_attributes)
 
     def test_get_empty_attributes(self):
         info = InstallationInfo()

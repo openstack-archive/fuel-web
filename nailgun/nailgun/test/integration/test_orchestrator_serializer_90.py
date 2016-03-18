@@ -40,14 +40,6 @@ class TestSerializer90Mixin(object):
         return serializer_type(None)
 
 
-# NOTE(sbrzeczkowski): this one is skipped in test_orch*_80.py
-class TestBlockDeviceDevicesSerialization90(
-    TestSerializer90Mixin,
-    test_orchestrator_serializer_80.TestBlockDeviceDevicesSerialization80
-):
-    pass
-
-
 class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
     test_orchestrator_serializer_80.TestDeploymentAttributesSerialization80

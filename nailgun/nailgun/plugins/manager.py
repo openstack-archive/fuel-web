@@ -16,6 +16,7 @@ import copy
 import six
 from six.moves import map
 
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugins
@@ -204,13 +205,16 @@ class PluginManager(object):
         return list(all_roles.values())
 
     @classmethod
-    def get_plugins_deployment_tasks(cls, cluster):
+    def get_plugins_deployment_tasks(cls, cluster, graph_type=None):
+        if graph_type is None:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
+
         deployment_tasks = []
         processed_tasks = {}
 
         enabled_plugins = ClusterPlugins.get_enabled(cluster.id)
         for plugin_adapter in map(wrap_plugin, enabled_plugins):
-            depl_tasks = plugin_adapter.deployment_tasks
+            depl_tasks = plugin_adapter.get_deployment_tasks(graph_type)
 
             for t in depl_tasks:
                 t_id = t['id']

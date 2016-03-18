@@ -14,12 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
-
 import itertools
 import six
 
-from nailgun import consts
+from nailgin import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
@@ -179,9 +177,7 @@ class DeploymentGraph(NailgunObject):
         )
 
     @classmethod
-    def upsert_for_model(
-            cls, data, instance,
-            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def upsert_for_model(cls, data, instance, graph_type=None):
         """Create or update graph of given type attached to model instance.
 
         This method is recommended to create or update graphs.
@@ -191,9 +187,11 @@ class DeploymentGraph(NailgunObject):
         :param instance: external model
         :type instance: models.Cluster|models.Plugin|models.Release
         :param graph_type: graph type, default is 'default'
-        :type graph_type: basestring
+        :type graph_type: basestring|None
         :return: models.DeploymentGraph
         """
+        if graph_type is None:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         graph = cls.get_for_model(instance, graph_type=graph_type)
         if graph:
             cls.update(graph, data)
@@ -203,18 +201,18 @@ class DeploymentGraph(NailgunObject):
         return graph
 
     @classmethod
-    def get_for_model(
-            cls, instance,
-            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def get_for_model(cls, instance, graph_type=None):
         """Get deployment graph related to given model.
 
         :param instance: model that could have relation to graph
         :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_type: graph type
-        :type graph_type: basestring
+        :type graph_type: basestring|None
         :return: graph instance
         :rtype: model.DeploymentGraph
         """
+        if graph_type is None:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         association_model = cls.get_association_for_model(instance)
         if association_model:
             association = instance.deployment_graphs_assoc.filter(
@@ -229,8 +227,7 @@ class DeploymentGraph(NailgunObject):
 
     @classmethod
     def attach_to_model(
-            cls, graph_instance, instance,
-            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE, rewrite=True):
+            cls, graph_instance, instance, graph_type=None, rewrite=True):
         """Attach existing deployment graph to given model.
 
         graph_type is working like unique namespace and if there are existing
@@ -241,7 +238,7 @@ class DeploymentGraph(NailgunObject):
         :param instance: model that should have relation to graph
         :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_type: graph type
-        :type graph_type: basestring
+        :type graph_type: basestring|None
         :param rewrite: remove existing graph with given type if True or
                         integrity exception will be thrown if another graph is
                         exists if False
@@ -251,6 +248,8 @@ class DeploymentGraph(NailgunObject):
 
         :raises: IntegrityError
         """
+        if graph_type is None:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         if rewrite:
             cls.detach_from_model(instance, graph_type)
         association_class = cls.get_association_for_model(instance)
@@ -263,18 +262,18 @@ class DeploymentGraph(NailgunObject):
         db().flush()
 
     @classmethod
-    def detach_from_model(
-            cls, instance,
-            graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def detach_from_model(cls, instance, graph_type=None):
         """Detach existing deployment graph to given model if it exists.
 
         :param instance: model that should have relation to graph
         :type instance: models.Plugin|models.Cluster|models.Release|
         :param graph_type: graph type
-        :type graph_type: basestring
+        :type graph_type: basestring|None
         :returns: if graph was detached
         :rtype: bool
         """
+        if graph_type is None:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         existing_graph = cls.get_for_model(instance, graph_type)
         if existing_graph:
             association = cls.get_association_for_model(instance)

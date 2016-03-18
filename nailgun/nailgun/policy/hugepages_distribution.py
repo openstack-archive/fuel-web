@@ -78,7 +78,7 @@ class Component(object):
         pages_info: dict with pages sizes and counts.
         Example: {'2048': 1, '1048576': 2}
         """
-        pages = [(int(size), count)
+        pages = [(int(size), int(count))
                  for size, count in pages_info.items() if count != 0]
 
         # sort by page size from bigger to smaller

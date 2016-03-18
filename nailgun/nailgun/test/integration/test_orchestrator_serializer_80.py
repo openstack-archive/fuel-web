@@ -38,6 +38,8 @@ from nailgun.test.integration.test_orchestrator_serializer import \
     TestSerializeInterfaceDriversData
 from nailgun.test.integration.test_orchestrator_serializer_70 import \
     TestDeploymentHASerializer70
+from nailgun.test.integration.test_orchestrator_serializer_70 import \
+    TestNetworkTemplateSerializer70
 
 
 class TestSerializer80Mixin(object):
@@ -64,6 +66,14 @@ class TestSerializer80Mixin(object):
             self.assertEqual(consts.DEFAULT_BRIDGES_NAMES.br_ironic,
                              (node['quantum_settings']['L2']['phys_nets']
                               ["physnet-ironic"]["bridge"]))
+
+
+class TestNetworkTemplateSerializer80CompatibleWith70(
+    TestSerializer80Mixin,
+    TestNetworkTemplateSerializer70
+):
+    general_serializer = NeutronNetworkDeploymentSerializer80
+    template_serializer = NeutronNetworkTemplateSerializer80
 
 
 class TestNetworkTemplateSerializer80(

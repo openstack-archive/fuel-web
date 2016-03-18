@@ -101,6 +101,10 @@ maintainers:
       email:  mkwiek@mirantis.com
       IRC:    mkwiek
 
+    - name:   Spider Man
+      email:  peterparker@pp.com
+      IRC:    spidey
+
 - nailgun/nailgun/extensions/volume_manager/:
     - name:   Evgeny Li
       email:  eli@mirantis.com

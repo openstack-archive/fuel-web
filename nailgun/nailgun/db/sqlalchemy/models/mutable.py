@@ -16,6 +16,9 @@
 
 import copy
 
+import yaml
+import yaml.representer
+
 from sqlalchemy.ext.mutable import Mutable as MutableBase
 
 
@@ -210,3 +213,33 @@ class MutableList(MutableCollection, list):
     def __deepcopy__(self, memo, _deepcopy=copy.deepcopy):
         """Recursive copy each element."""
         return MutableList((_deepcopy(x, memo) for x in self))
+
+
+# For serialization of custom objects into yaml we need to add
+# appropriate representers. yaml library gets the first
+# class name from the object MRO and search it in the registered
+# representers list. Thus we are adding representers for Mutable
+# objects into yaml.
+yaml.add_representer(
+    MutableDict,
+    yaml.representer.SafeRepresenter.represent_dict,
+    yaml.SafeDumper
+)
+
+yaml.add_representer(
+    MutableDict,
+    yaml.representer.SafeRepresenter.represent_dict,
+    yaml.Dumper
+)
+
+yaml.add_representer(
+    MutableList,
+    yaml.representer.SafeRepresenter.represent_list,
+    yaml.SafeDumper
+)
+
+yaml.add_representer(
+    MutableList,
+    yaml.representer.SafeRepresenter.represent_list,
+    yaml.Dumper
+)

@@ -52,7 +52,7 @@ class BaseTaskSerializationTest(base.BaseTestCase):
 
         # imitate behaviour of old-style tasks merge where cluster-level
         # deployment graph is overriding all other graphs.
-        self.cluster.release.deployment_graphs.delete()
+        self.cluster.release.deployment_graphs_assoc.delete()
 
         objects.DeploymentGraph.create_for_model(
             {'tasks': yaml.load(self.TASKS)}, self.cluster)

@@ -29,8 +29,6 @@ from nailgun.orchestrator.neutron_serializers import \
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
-    TestBlockDeviceDevicesSerialization80
-from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestDeploymentAttributesSerialization80
 from nailgun.test.integration.test_orchestrator_serializer_80 import \
     TestDeploymentHASerializer80
@@ -46,14 +44,6 @@ from nailgun.test.integration.test_orchestrator_serializer_80 import \
 
 class TestSerializer90Mixin(object):
     env_version = "liberty-9.0"
-
-
-# NOTE(sbrzeczkowski): this one is skipped in test_orch*_80.py
-class TestBlockDeviceDevicesSerialization90(
-    TestSerializer90Mixin,
-    TestBlockDeviceDevicesSerialization80
-):
-    pass
 
 
 class TestDeploymentAttributesSerialization90(

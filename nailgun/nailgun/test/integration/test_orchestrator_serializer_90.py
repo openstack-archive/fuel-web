@@ -24,6 +24,8 @@ from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer90
+from nailgun.test.integration.test_orchestrator_serializer import \
+    BaseDeploymentSerializer
 
 from nailgun.test.integration import test_orchestrator_serializer_80
 
@@ -38,14 +40,6 @@ class TestSerializer90Mixin(object):
             cluster
         )
         return serializer_type(None)
-
-
-# NOTE(sbrzeczkowski): this one is skipped in test_orch*_80.py
-class TestBlockDeviceDevicesSerialization90(
-    TestSerializer90Mixin,
-    test_orchestrator_serializer_80.TestBlockDeviceDevicesSerialization80
-):
-    pass
 
 
 class TestDeploymentAttributesSerialization90(

@@ -18,7 +18,6 @@ from copy import deepcopy
 
 import mock
 import six
-import unittest2
 
 import nailgun
 from nailgun import consts
@@ -378,107 +377,6 @@ class TestDeploymentAttributesSerialization80(
                              consts.DEFAULT_BRIDGES_NAMES.br_baremetal)
             self.assertIn(expected_patch, transformations)
 
-    @unittest2.skip("Should be moved to volume_manager tests")
-    def test_disks_attrs(self):
-        disks = [
-            {
-                "model": "TOSHIBA MK1002TS",
-                "name": "sda",
-                "disk": "sda",
-                "size": 1004886016
-            },
-        ]
-        expected_node_volumes_hash = [
-            {
-                u'name': u'sda',
-                u'extra': [],
-                u'free_space': 330,
-                u'volumes': [
-                    {
-                        u'type': u'boot',
-                        u'size': 300
-                    },
-                    {
-                        u'mount': u'/boot',
-                        u'type': u'partition',
-                        u'file_system': u'ext2',
-                        u'name': u'Boot',
-                        u'size': 200
-                    },
-                    {
-                        u'type': u'lvm_meta_pool',
-                        u'size': 64
-                    },
-                    {
-                        u'vg': u'os',
-                        u'type': u'pv',
-                        u'lvm_meta_size': 64,
-                        u'size': 394
-                    },
-                    {
-                        u'vg': u'vm',
-                        u'type': u'pv',
-                        u'lvm_meta_size': 0,
-                        u'size': 0
-                    }
-                ],
-                u'type': u'disk',
-                u'id': u'sda',
-                u'size': 958
-            },
-            {
-                u'_allocate_size': u'min',
-                u'label': u'Base System',
-                u'min_size': 19456,
-                u'volumes': [
-                    {
-                        u'mount': u'/',
-                        u'size': -3766,
-                        u'type': u'lv',
-                        u'name': u'root',
-                        u'file_system': u'ext4'
-                    },
-                    {
-                        u'mount': u'swap',
-                        u'size': 4096,
-                        u'type': u'lv',
-                        u'name': u'swap',
-                        u'file_system': u'swap'
-                    }
-                ],
-                u'type': u'vg',
-                u'id': u'os'
-            },
-            {
-                u'_allocate_size': u'all',
-                u'label': u'Virtual Storage',
-                u'min_size': 5120,
-                u'volumes': [
-                    {
-                        u'mount': u'/var/lib/nova',
-                        u'size': 0,
-                        u'type': u'lv',
-                        u'name': u'nova',
-                        u'file_system': u'xfs'
-                    }
-                ],
-                u'type': u'vg',
-                u'id': u'vm'
-            }
-        ]
-        self.env.create_node(
-            cluster_id=self.cluster_db.id,
-            roles=['compute'],
-            meta={"disks": disks},
-        )
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-        for node in serialized_for_astute:
-            self.assertIn("node_volumes", node)
-            self.assertItemsEqual(
-                expected_node_volumes_hash, node["node_volumes"])
-
     def test_attributes_contains_plugins(self):
         self.env.create_plugin(
             cluster=self.cluster_db,
@@ -614,43 +512,6 @@ class TestMultiNodeGroupsSerialization80(
         self._add_node_group_with_node('199.99', 4)
         # networks in two racks have equal CIDRs
         self._check_routes_count(1)
-
-
-class TestBlockDeviceDevicesSerialization80(
-    TestSerializer80Mixin,
-    BaseDeploymentSerializer
-):
-    def setUp(self):
-        super(TestBlockDeviceDevicesSerialization80, self).setUp()
-        self.cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
-            cluster_kwargs={
-                'mode': consts.CLUSTER_MODES.ha_compact,
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
-                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
-        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        self.serializer = self.create_serializer(self.cluster_db)
-
-    @unittest2.skip("Should be moved to volume_manager tests")
-    def test_block_device_disks(self):
-        self.env.create_node(
-            cluster_id=self.cluster_db.id,
-            roles=['cinder-block-device']
-        )
-        self.env.create_node(
-            cluster_id=self.cluster_db.id,
-            roles=['controller']
-        )
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-        for node in serialized_for_astute:
-            self.assertIn("node_volumes", node)
-            for node_volume in node["node_volumes"]:
-                if node_volume["id"] == "cinder-block-device":
-                    self.assertEqual(node_volume["volumes"], [])
-                else:
-                    self.assertNotEqual(node_volume["volumes"], [])
 
 
 class TestSerializeInterfaceDriversData80(

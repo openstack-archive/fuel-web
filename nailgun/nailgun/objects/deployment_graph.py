@@ -201,7 +201,7 @@ class DeploymentGraph(NailgunObject):
         """
         association_model = cls.get_association_for_model(instance)
         if association_model:
-            association = instance.deployment_graphs.filter(
+            association = instance.deployment_graphs_assoc.filter(
                 association_model.type == graph_type
             ).scalar()
             if association:
@@ -243,7 +243,7 @@ class DeploymentGraph(NailgunObject):
                 type=graph_type,
                 deployment_graph_id=graph_instance.id
             )
-            instance.deployment_graphs.append(association)
+            instance.deployment_graphs_assoc.append(association)
         db().flush()
 
     @classmethod
@@ -262,7 +262,7 @@ class DeploymentGraph(NailgunObject):
         existing_graph = cls.get_for_model(instance, graph_type)
         if existing_graph:
             association = cls.get_association_for_model(instance)
-            instance.deployment_graphs.filter(
+            instance.deployment_graphs_assoc.filter(
                 association.type == graph_type
             ).delete()
             db().flush()
@@ -286,7 +286,9 @@ class DeploymentGraph(NailgunObject):
         """
         result = []
         for relation in itertools.chain(
-                instance.clusters, instance.releases, instance.plugins):
+                instance.clusters_assoc,
+                instance.releases_assoc,
+                instance.plugins_assoc):
             for attr in ('plugin', 'release', 'cluster'):
                 external_model = getattr(relation, attr, None)
                 if external_model:

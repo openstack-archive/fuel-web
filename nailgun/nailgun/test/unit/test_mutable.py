@@ -16,15 +16,16 @@
 
 from copy import copy
 from copy import deepcopy
-from mock import Mock
-from mock import patch
+import mock
+
+import yaml
 
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.test.base import BaseUnitTest
 
 
-@patch('sqlalchemy.ext.mutable.Mutable.coerce')
+@mock.patch('sqlalchemy.ext.mutable.Mutable.coerce')
 class TestMutableDictCoerce(BaseUnitTest):
     def setUp(self):
         super(TestMutableDictCoerce, self).setUp()
@@ -63,17 +64,27 @@ class TestMutableBase(BaseUnitTest):
         self.assertItemsEqual(self.standard, self.mutable_obj)
 
     def _check(self, method, *args, **kwargs):
-        with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
+        with mock.patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
             self.assertEqual(
                 getattr(self.mutable_obj, method)(*args, **kwargs),
                 getattr(self.standard, method)(*args, **kwargs))
             self._assert_call_object_changed_once(m_changed)
 
     def _check_failure(self, error, method, *args, **kwargs):
-        with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
+        with mock.patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
             self.assertRaises(
                 error, getattr(self.mutable_obj, method), *args, **kwargs)
             self._assert_object_not_changed(m_changed)
+
+    def check_yaml_serialization(self):
+        self.assertEqual(
+            yaml.safe_dump(self.standard),
+            yaml.safe_dump(self.mutable_obj)
+        )
+        self.assertEqual(
+            yaml.dump(self.standard),
+            yaml.dump(self.mutable_obj)
+        )
 
 
 class TestMutableDictBase(TestMutableBase):
@@ -85,11 +96,8 @@ class TestMutableDictBase(TestMutableBase):
 
 
 class TestMutableDict(TestMutableDictBase):
-    def setUp(self):
-        super(TestMutableDict, self).setUp()
-
     def test_initialize(self):
-        with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
+        with mock.patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
             MutableDict(key1='value1', key2='value2')
             self._assert_object_not_changed(m_changed)
 
@@ -106,7 +114,7 @@ class TestMutableDict(TestMutableDictBase):
         self._check('setdefault', '2', 4)
 
     def test_setdefault_with_default_dict(self):
-        with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
+        with mock.patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
             self.mutable_obj.setdefault('num', 1)
             self.mutable_obj.setdefault('num', 2)
             self.assertEqual(m_changed.call_count, 1)
@@ -147,7 +155,7 @@ class TestMutableDict(TestMutableDictBase):
         self._check_failure(KeyError, 'popitem')
 
 
-@patch('nailgun.db.sqlalchemy.models.mutable.MutableDict.changed')
+@mock.patch('nailgun.db.sqlalchemy.models.mutable.MutableDict.changed')
 class TestMutableDictIntegration(TestMutableDictBase):
     def setUp(self):
         super(TestMutableDictIntegration, self).setUp()
@@ -162,9 +170,9 @@ class TestMutableDictIntegration(TestMutableDictBase):
         self.mutable_obj.__setstate__(dct)
         self._assert_call_object_changed_once(m_changed)
 
-    @patch('nailgun.db.sqlalchemy.models.mutable.MutableDict.__deepcopy__')
+    @mock.patch('nailgun.db.sqlalchemy.models.mutable.MutableDict.__deepcopy__')
     def test_copy(self, m_deepcopy, _):
-        m_deepcopy.return_value = Mock()
+        m_deepcopy.return_value = mock.Mock()
         clone = copy(self.mutable_obj)
         self.assertEqual(clone, m_deepcopy.return_value)
         self.assertTrue(m_deepcopy.called)
@@ -180,8 +188,11 @@ class TestMutableDictIntegration(TestMutableDictBase):
         self.assertEqual(clone['2']['1'], 'element1')
         self.assertEqual(self.mutable_obj['2']['1'], 'new_element')
 
+    def test_yaml_serialization(self, _):
+        self.check_yaml_serialization()
 
-@patch('sqlalchemy.ext.mutable.Mutable.coerce')
+
+@mock.patch('sqlalchemy.ext.mutable.Mutable.coerce')
 class TestMutableListCoerce(BaseUnitTest):
     def setUp(self):
         self.mutable_list = MutableList()
@@ -214,11 +225,8 @@ class TestMutableListBase(TestMutableBase):
 
 
 class TestMutableList(TestMutableListBase):
-    def setUp(self):
-        super(TestMutableList, self).setUp()
-
     def test_initialize(self):
-        with patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
+        with mock.patch('sqlalchemy.ext.mutable.Mutable.changed') as m_changed:
             MutableList([1, 2, 3])
             self._assert_object_not_changed(m_changed)
 
@@ -285,11 +293,8 @@ class TestMutableList(TestMutableListBase):
         self._check_failure(TypeError, '__delslice__', 0, None)
 
 
-@patch('nailgun.db.sqlalchemy.models.mutable.MutableList.changed')
+@mock.patch('nailgun.db.sqlalchemy.models.mutable.MutableList.changed')
 class TestMutableListIntegration(TestMutableListBase):
-    def setUp(self):
-        super(TestMutableListIntegration, self).setUp()
-
     def test_set_item_operator(self, m_changed):
         self.mutable_obj[0] = 'new_element'
         self.standard[0] = 'new_element'
@@ -324,9 +329,9 @@ class TestMutableListIntegration(TestMutableListBase):
         del self.standard[0:2]
         self._assert_call_object_changed_once(m_changed)
 
-    @patch('nailgun.db.sqlalchemy.models.mutable.MutableList.__deepcopy__')
+    @mock.patch('nailgun.db.sqlalchemy.models.mutable.MutableList.__deepcopy__')
     def test_copy(self, m_deepcopy, _):
-        m_deepcopy.return_value = Mock()
+        m_deepcopy.return_value = mock.Mock()
         clone = copy(self.mutable_obj)
         self.assertEqual(clone, m_deepcopy.return_value)
         self.assertTrue(m_deepcopy.called)
@@ -342,3 +347,6 @@ class TestMutableListIntegration(TestMutableListBase):
         lst[0] = 'new_element'
         self.assertEqual(clone[0][0], 'element1')
         self.assertEqual(self.mutable_obj[0][0], 'new_element')
+
+    def test_yaml_serialization(self, _):
+        self.check_yaml_serialization()

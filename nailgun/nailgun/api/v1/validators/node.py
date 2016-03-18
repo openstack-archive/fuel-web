@@ -448,6 +448,7 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
         attrs = cls.validate_attributes(full_data)
 
         cls._validate_cpu_pinning(node, attrs)
+        cls._validate_hugepages(node, attrs)
 
         return data
 
@@ -463,3 +464,10 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
                 'Operating system requires at least one cpu '
                 'that must not be pinned.'
             )
+
+    @classmethod
+    def _validate_hugepages(cls, node, attrs):
+        try:
+            objects.NodeAttributes.distribute_hugepages(node, attrs)
+        except ValueError as exc:
+            raise errors.InvalidData(exc.args[0])

@@ -442,6 +442,12 @@ class TestHandlers(BaseIntegrationTest):
                 }
             },
             'cpu_pinning': {},
+            'hugepages': {
+                'comp1': {
+                    'type': 'text',
+                    'value': '1',
+                },
+            },
         }
         node.attributes.update(fake_attributes)
         update_attributes = {

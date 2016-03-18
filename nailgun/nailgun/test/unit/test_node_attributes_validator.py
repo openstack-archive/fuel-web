@@ -24,35 +24,102 @@ from nailgun.test import base
 validator = node_validator.NodeAttributesValidator.validate
 
 
-class TestNodeAttributesValidatorCpuPinning(base.BaseTestCase):
+class BaseNodeAttributeValidatorTest(base.BaseTestCase):
     def setUp(self):
-        attributes = {
-            'cpu_pinning': {
-                'dpdk': {'description': 'Number of CPUs for DPDK usage',
-                         'label': 'DPDK CPU pinning',
-                         'regex': {'error': 'Incorrect value',
-                                   'source': '^\\d+$'},
-                         'type': 'text',
-                         'value': '0',
-                         'weight': 20},
-                'metadata': {'group': 'nfv',
-                             'label': 'CPU pinning',
-                             'weight': 10},
-                'nova': {'description': 'Number of CPUs for Nova usage',
-                         'label': 'Nova CPU pinning',
-                         'regex': {'error': 'Incorrect value',
-                                   'source': '^\\d+$'},
-                         'type': 'text',
-                         'value': '0',
-                         'weight': 10}}
+        super(BaseNodeAttributeValidatorTest, self).setUp()
+
+        meta = self.env.default_metadata()
+
+        meta['numa_topology'] = {
+            "supported_hugepages": [2048, 1048576],
+            "numa_nodes": [
+                {"id": 0, "cpus": [0, 1], 'memory': 2 * 1024 ** 3},
+                {"id": 1, "cpus": [2, 3], 'memory': 2 * 1024 ** 3},
+            ]
         }
 
-        meta = {'cpu': {'total': 8}}
+        attributes = {
+            'hugepages': {
+                'nova': {
+                    'type': 'custom_hugepages',
+                    'value': {},
+                },
+                'dpdk': {
+                    'type': 'text',
+                    'value': '0',
+                },
+            },
+            'cpu_pinning': {
+                'dpdk': {
+                    'type': 'text',
+                    'value': '0',
+                },
+                'nova': {
+                    'type': 'text',
+                    'value': '0',
+                }
+            }
+        }
         self.node = mock.Mock(meta=meta, attributes=attributes)
 
-    def tearDown(self):
-        pass
 
+class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
+
+    def test_defaults(self):
+        data = {}
+
+        self.assertNotRaises(errors.InvalidData, validator,
+                             json.dumps(data), self.node)
+
+    def test_valid_hugepages(self):
+        data = {
+            'hugepages': {
+                'nova': {
+                    'value': {
+                        '2048': 1,
+                        '1048576': 1,
+                    },
+                },
+                'dpdk': {
+                    'value': '2',
+                },
+            }
+        }
+
+        self.assertNotRaises(errors.InvalidData, validator,
+                             json.dumps(data), self.node)
+
+    def test_too_much_hugepages(self):
+        data = {
+            'hugepages': {
+                'nova': {
+                    'value': {
+                        '2048': '100500',
+                        '1048576': '100500',
+                    },
+                },
+            },
+        }
+
+        self.assertRaisesWithMessageIn(
+            errors.InvalidData, 'Not enough memory for components',
+            validator, json.dumps(data), self.node)
+
+    def test_dpdk_requires_too_much(self):
+        data = {
+            'hugepages': {
+                'dpdk': {
+                    'value': '2049',
+                },
+            }
+        }
+
+        self.assertRaisesWithMessageIn(
+            errors.InvalidData, 'could not require more memory than node has',
+            validator, json.dumps(data), self.node)
+
+
+class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
     def test_valid_data(self):
         data = {
             'cpu_pinning': {

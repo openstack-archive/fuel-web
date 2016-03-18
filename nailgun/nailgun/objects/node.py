@@ -1408,16 +1408,17 @@ class NodeAttributes(object):
                 itertools.repeat(str(dpdk_memory), numa_nodes_len))}
 
     @classmethod
-    def distribute_hugepages(cls, node):
+    def distribute_hugepages(cls, node, attributes=None):
         topology = node.meta['numa_topology']
-        attributes = Node.get_attributes(node)['hugepages']
+        if attributes is None:
+            attributes = Node.get_attributes(node)
 
         # split components to 2 groups:
         # components that should have pages on all numa nodes (such as dpdk)
         # and components that may have pages on any numa node
         components = {'all': [], 'any': []}
 
-        for name, attrs in attributes.items():
+        for attrs in attributes['hugepages'].values():
             if attrs.get('type') == 'text':
                 # type text means size of memory in MiB to allocate with
                 # 2MiB pages, so we need to calculate pages count

@@ -95,6 +95,76 @@ class TestTaskSerializers(BaseTestCase):
             connections[computes[0]]
         )
 
+    def test_self_referring_cross_dependencies_serialize_result(self):
+        tasks = [
+            {
+                "id": "task1", "groups": ["controller", "compute"],
+                "type": "shell", "version": "2.0.0",
+                "requires": [],
+                "parameters": {"cmd": "bash -c 'echo 1'"},
+            },
+            {
+                "id": "task2", "groups": ["controller", "compute"],
+                "type": "shell", "version": "2.0.0",
+                "parameters": {"cmd": "bash -c 'echo 1'"},
+                "requires": ["task1"],
+                "cross_depends": [{"name": "task2", "role": ["controller"]}],
+            },
+            {
+                "id": "task3", "groups": ["controller", "compute"],
+                "type": "shell", "version": "2.0.0",
+                "parameters": {"cmd": "bash -c 'echo 1'"},
+                "requires": ["task1"],
+                "cross_depended_by": [{"name": "task3",
+                                       "role": ["controller"]}]
+            },
+        ]
+        _tasks, connections = self.serializer.serialize(
+            self.env.clusters[-1], self.env.nodes, tasks
+        )
+        controllers = [
+            n.uid for n in self.env.nodes if "controller" in n.roles
+        ]
+        computes = [
+            n.uid for n in self.env.nodes if "compute" in n.roles
+        ]
+        self.assertEqual(1, len(controllers))
+        self.assertEqual(1, len(computes))
+        controller_tasks = connections[controllers[0]]
+        compute_tasks = connections[computes[0]]
+
+        task_1_cnt = filter(lambda t: t['id'] == 'task1', controller_tasks)[0]
+        task_2_cnt = filter(lambda t: t['id'] == 'task2', controller_tasks)[0]
+        task_3_cnt = filter(lambda t: t['id'] == 'task3', controller_tasks)[0]
+
+        task_1_cmp = filter(lambda t: t['id'] == 'task1', compute_tasks)[0]
+        task_2_cmp = filter(lambda t: t['id'] == 'task2', compute_tasks)[0]
+        task_3_cmp = filter(lambda t: t['id'] == 'task3', compute_tasks)[0]
+
+        self.assertItemsEqual(task_1_cnt.get('requires', []), [])
+        self.assertItemsEqual(task_1_cnt.get('required_for', []), [])
+        self.assertItemsEqual(task_2_cnt.get('requires', []),
+                              [{"name": "task1", "node_id": controllers[0]}])
+        self.assertItemsEqual(task_2_cnt.get('required_for', []), [])
+        self.assertItemsEqual(task_3_cnt.get('requires', []),
+                              [{"name": "task1", "node_id": controllers[0]}])
+        self.assertItemsEqual(task_3_cnt.get('required_for', []), [])
+
+        self.assertItemsEqual(task_1_cmp.get('requires', []), [])
+        self.assertItemsEqual(task_1_cmp.get('required_for', []), [])
+        self.assertItemsEqual(task_2_cmp.get('requires', []),
+                              [
+                                  {"name": "task1", "node_id": computes[0]},
+                                  {"name": "task2", "node_id": controllers[0]}
+        ]
+        )
+        self.assertItemsEqual(task_2_cmp.get('required_for', []), [])
+        self.assertItemsEqual(task_3_cmp.get('requires', []),
+                              [{"name": "task1", "node_id": computes[0]}])
+        self.assertItemsEqual(task_3_cmp.get('required_for', []), [
+            {'name': 'task3', 'node_id': controllers[0]}
+        ])
+
     def test_serialize_fail_if_all_task_have_not_version_2(self):
         tasks = [
             {
@@ -345,7 +415,8 @@ class TestTaskSerializers(BaseTestCase):
             self.assertItemsEqual(
                 [('task_1', '1')],
                 self.serializer.expand_cross_dependencies(
-                    '2', [{'name': 'task_1'}], True
+                    '2', [{'name': 'task_1'}],
+                    self.serializer.task_processor.get_last_task_id
                 )
             )
             m_resolve.resolve.assert_called_with(
@@ -353,11 +424,11 @@ class TestTaskSerializers(BaseTestCase):
             )
             # concrete role and policy
             self.assertItemsEqual(
-                [('task_2', '2')],
+                [('task_1', '1')],
                 self.serializer.expand_cross_dependencies(
                     '2',
-                    [{'name': 'task_2', 'role': ['role'], 'policy': 'any'}],
-                    True
+                    [{'name': 'task_1', 'role': ['role'], 'policy': 'any'}],
+                    self.serializer.task_processor.get_last_task_id
                 )
             )
             m_resolve.resolve.assert_called_with(
@@ -370,7 +441,7 @@ class TestTaskSerializers(BaseTestCase):
                 self.serializer.expand_cross_dependencies(
                     '1',
                     [{'name': 'task_1', 'role': 'self'}],
-                    True
+                    self.serializer.task_processor.get_last_task_id
                 )
             )
             self.assertFalse(m_resolve.resolve.called)
@@ -383,28 +454,55 @@ class TestTaskSerializers(BaseTestCase):
         )
         self.assertItemsEqual(
             [('task_1', '1')],
-            self.serializer.resolve_relation('task_1', node_ids, True)
+            self.serializer.resolve_relation('task_1', node_ids, True, [])
         )
         self.assertItemsEqual(
             (('task_{0}'.format(i), i) for i in node_ids),
-            self.serializer.resolve_relation('/task/', node_ids, True)
+            self.serializer.resolve_relation('/task/', node_ids, True, [])
         )
 
     def test_resolve_relations(self):
         node_ids = ['1', '2']
-        task_params = {
-            "requires": ["task_2"],
-            "required_for": ["task"],
-            "cross_depends": [{"role": "/.*/", "name": "task"}],
-            "cross_depended_by": [{"role": "/.*/", "name": "task_2"}]
-        }
         self.serializer.tasks_connections = {
-            node_id: {
-                "task_1": task_params.copy(),
-                "task_2": task_params.copy()
-            } for node_id in node_ids
+            '1': {
+                "task_1": {
+                    "requires": ["task_2"],
+                    "cross_depends": {},
+                    "cross_depended_by": {},
+                    "type": "skipped",
+                    "required_for": ["task_2"],
+                },
+                "task_2": {
+                    "requires": ["task"],
+                    "required_for": ["task"],
+                    "cross_depended_by": {},
+                    "type": "skipped",
+                    "cross_depends": [
+                        {"name": "task"}
+                    ]
+                }
+            },
+            '2': {
+                "task_1": {
+                    "requires": ["task_2"],
+                    "required_for": [],
+                    "cross_depended_by": {},
+                    "type": "skipped",
+                    "cross_depends":
+                    [
+                        {"name": "task"}
+                    ]
+                },
+                "task_2": {
+                    "required_for": ["task"],
+                    "cross_depends": {},
+                    "cross_depended_by": {},
+                    "type": "skipped",
+                    "requires": []
+                }
+            },
+            None: {}
         }
-        self.serializer.tasks_connections[None] = {}
         self.serializer.task_processor.origin_task_ids = {
             'task_1': 'task'
         }
@@ -415,18 +513,34 @@ class TestTaskSerializers(BaseTestCase):
         self.assertItemsEqual(
             [
                 {'node_id': '1', 'name': 'task_2'},
-                {'node_id': '1', 'name': 'task_start'},
-                {'node_id': '2', 'name': 'task_2'}
             ],
             self.serializer.tasks_connections["1"]["task_1"]["required_for"]
         )
         self.assertItemsEqual(
             [
-                {'node_id': '1', 'name': 'task_2'},
                 {'node_id': '1', 'name': 'task_end'},
-                {'node_id': '2', 'name': 'task_end'}
+                {'node_id': '2', 'name': 'task_end'},
             ],
-            self.serializer.tasks_connections["1"]["task_1"]["requires"]
+            self.serializer.tasks_connections["1"]["task_2"]["requires"]
+        )
+        self.assertItemsEqual(
+            [
+                {'node_id': '1', 'name': 'task_start'},
+            ],
+            self.serializer.tasks_connections["1"]["task_2"]["required_for"]
+        )
+        self.assertItemsEqual(
+            [
+                {'node_id': '1', 'name': 'task_end'},
+                {'node_id': '2', 'name': 'task_2'},
+            ],
+            self.serializer.tasks_connections["2"]["task_1"]["requires"]
+        )
+        self.assertItemsEqual(
+            [
+                {'node_id': '2', 'name': 'task_start'},
+            ],
+            self.serializer.tasks_connections["2"]["task_2"]["required_for"]
         )
 
     def test_need_update_task(self):

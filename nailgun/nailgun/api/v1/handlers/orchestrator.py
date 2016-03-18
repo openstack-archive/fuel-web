@@ -298,6 +298,7 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
                * 400 (data validation failed)
                * 404 (cluster or nodes not found in db)
         """
+
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return self.handle_task(cluster)
 
@@ -334,9 +335,10 @@ class TaskDeployGraph(BaseHandler):
                * 400 (failed to get graph)
         """
         web.header('Content-Type', 'text/vnd.graphviz', unique=True)
+        graph_type = web.input(graph_type=None).graph_type
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        tasks = objects.Cluster.get_deployment_tasks(cluster)
+        tasks = objects.Cluster.get_deployment_tasks(cluster, graph_type)
         graph = orchestrator_graph.GraphSolver(tasks)
 
         tasks = web.input(tasks=None).tasks
@@ -391,12 +393,13 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
         self.checked_data(self.validator.validate_placement,
                           data=nodes, cluster=cluster)
         tasks = web.input(tasks=None).tasks
+        graph_type = web.input(graph_type=None).graph_type
         task_ids = [t.strip() for t in tasks.split(',')] if tasks else None
         try:
             serialized_tasks = task_based_deployment.TasksSerializer.serialize(
                 cluster,
                 nodes,
-                objects.Cluster.get_deployment_tasks(cluster),
+                objects.Cluster.get_deployment_tasks(cluster, graph_type),
                 task_ids=task_ids
             )
             return {'tasks_directory': serialized_tasks[0],

@@ -154,15 +154,18 @@ class Release(NailgunObject):
                 StrictVersion(consts.FUEL_MULTIPLE_FLOATING_IP_RANGES))
 
     @classmethod
-    def get_deployment_tasks(cls, instance,
-                             graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def get_deployment_tasks(cls, instance, graph_type=None):
         """Get deployment graph based on release version.
 
         :param instance: Release instance
         :type instance: models.Release
+        :param graph_type: deployment graph type
+        :type graph_type: basestring|None
         :returns: list of deployment tasks
         :rtype: list
         """
+        if not graph_type:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         env_version = instance.environment_version
         deployment_graph = DeploymentGraph.get_for_model(instance, graph_type)
         if not deployment_graph:

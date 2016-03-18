@@ -978,9 +978,11 @@ class Cluster(NailgunObject):
         return node_group
 
     @classmethod
-    def get_own_deployment_tasks(
-            cls, instance, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def get_own_deployment_tasks(cls, instance, graph_type=None):
         """Return only cluster own deployment graph."""
+        if not graph_type:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
+
         cluster_deployment_graph = DeploymentGraph.get_for_model(
             instance, graph_type=graph_type)
         if cluster_deployment_graph:
@@ -1010,8 +1012,7 @@ class Cluster(NailgunObject):
         return result
 
     @classmethod
-    def get_deployment_tasks(
-            cls, instance, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def get_deployment_tasks(cls, instance, graph_type=None):
         """Return deployment graph for cluster based on cluster attributes
 
             - if there is deployment_graph defined by user - use it instead of
@@ -1019,6 +1020,9 @@ class Cluster(NailgunObject):
             - else return default for release and enabled plugins
               deployment graph
         """
+        if not graph_type:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
+
         cluster_deployment_tasks = cls.get_own_deployment_tasks(
             instance, graph_type=graph_type)
 
@@ -1027,7 +1031,7 @@ class Cluster(NailgunObject):
 
         # graph types not supported by plugin manager interface yet
         plugins_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
-            instance)
+            instance, graph_type)
 
         return cls._merge_tasks_lists([
             release_deployment_tasks,

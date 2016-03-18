@@ -23,6 +23,7 @@ from urlparse import urljoin
 import six
 import yaml
 
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.deployment_graph import DeploymentGraph
@@ -126,13 +127,11 @@ class PluginAdapterBase(object):
         return settings.PLUGINS_SLAVES_SCRIPTS_PATH.format(
             plugin_name=self.path_name)
 
-    # todo(ikutukov): actually getter-setter approach don't allow us to
-    # work with graph types on plugins level.
-    # Should be reworked to getters and setters
-    @property
-    def deployment_tasks(self):
+    def get_deployment_tasks(self, graph_type=None):
+        if not graph_type:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         deployment_tasks = []
-        graph_instance = DeploymentGraph.get_for_model(self.plugin)
+        graph_instance = DeploymentGraph.get_for_model(self.plugin, graph_type)
         if graph_instance:
             for task in DeploymentGraph.get_tasks(graph_instance):
                 if task.get('parameters'):
@@ -140,6 +139,12 @@ class PluginAdapterBase(object):
                         'cwd', self.slaves_scripts_path)
                 deployment_tasks.append(task)
         return deployment_tasks
+
+    # fixme(ikutukov): this getter only for default graph type, drop this
+    # getter in future
+    @property
+    def deployment_tasks(self):
+        return self.get_deployment_tasks()
 
     # it will better to replace to getters and setters
     @deployment_tasks.setter

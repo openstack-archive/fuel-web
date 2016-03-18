@@ -32,13 +32,13 @@ class LinkedDeploymentGraphHandler(SingleHandler):
     serializer = DeploymentGraphSerializer
 
     @content
-    def GET(self, obj_id, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def GET(self, obj_id, graph_type=None):
         """Get deployment graph.
 
         :param obj_id: linked model ID
         :type obj_id: int|basestring
         :param graph_type: deployment graph type, default is 'default'
-        :type graph_type: basestring
+        :type graph_type: basestring|None
 
         :returns: Deployment graph
         :rtype: dict
@@ -57,13 +57,13 @@ class LinkedDeploymentGraphHandler(SingleHandler):
                 graph_type))
 
     @content
-    def PUT(self, obj_id, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def PUT(self, obj_id, graph_type=None):
         """Update deployment graph.
 
         :param obj_id: linked model ID
         :type obj_id: int|basestring
         :param graph_type: deployment graph type, default is 'default'
-        :type graph_type: basestring
+        :type graph_type: basestring|None
 
         :returns:  Deployment graph data
         :rtype: dict
@@ -80,13 +80,13 @@ class LinkedDeploymentGraphHandler(SingleHandler):
         return objects.DeploymentGraph.to_json(deployment_graph)
 
     @content
-    def PATCH(self, obj_id, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def PATCH(self, obj_id, graph_type=None):
         """Update deployment graph.
 
         :param obj_id: linked model ID
         :type obj_id: int|basestring
         :param graph_type: deployment graph type, default is 'default'
-        :type graph_type: basestring
+        :type graph_type: basestring|None
 
         :returns:  Deployment graph data
         :rtype: dict
@@ -97,18 +97,17 @@ class LinkedDeploymentGraphHandler(SingleHandler):
         """
         return self.PUT(obj_id, graph_type)
 
-    def DELETE(self, obj_id, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    def DELETE(self, obj_id, graph_type=None):
         """Delete deployment graph.
 
         :param obj_id: linked model ID
         :type obj_id: int|basestring
         :param graph_type: deployment graph type, default is 'default'
-        :type graph_type: basestring
+        :type graph_type: basestring|None
 
         :http: * 204 (OK)
                * 404 (object not found in db)
         """
-
         obj = self.get_object_or_404(self.single, int(obj_id))
         deployment_graph = objects.DeploymentGraph.get_for_model(
             obj, graph_type)

@@ -78,9 +78,16 @@ def fake_cast(queue, messages, **kwargs):
         )
         logger.debug("Fake thread called: data: %s, params: %s",
                      message, kwargs)
-        thread.start()
-        thread.name = message['method'].upper()
-        return thread
+        tests = settings.TESTS_WITH_NO_THREADS
+        if tests is None and not tests:
+            # Running real thread, if tests is not set or False
+            thread.start()
+            thread.name = message['method'].upper()
+            return thread
+        else:
+            # For testing purposes, we run the same code synchronously,
+            # threading is mocked in test/base.py
+            thread.run()
 
     def make_thread_task_in_orchestrator(message):
         task_in_orchestrator = {

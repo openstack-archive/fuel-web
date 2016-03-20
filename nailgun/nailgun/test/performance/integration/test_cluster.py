@@ -16,6 +16,7 @@
 import functools
 
 from mock import patch
+from nailgun import consts
 from nailgun.objects.task import Task
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance.base import BaseIntegrationLoadTestCase
@@ -57,7 +58,7 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
         self.deployment(self.cluster['id'], self.nodes_ids)
 
     @fake_tasks()
-    def test_put_cluster_changes(self):
+    def test_put_cluster_changes(self, _):
         func = functools.partial(
             self.put_handler,
             'ClusterChangesHandler',
@@ -67,7 +68,7 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
         self.check_time_exec(func, 4)
 
     @fake_tasks()
-    def test_put_cluster_changes_after_reset(self):
+    def test_put_cluster_changes_after_reset(self, _):
         self.deployment(self.cluster['id'], self.nodes_ids)
         func = functools.partial(
             self.put_handler,
@@ -96,11 +97,11 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
         self.deployment(self.cluster['id'], ids)
 
     @fake_tasks()
-    def test_rerun_stopped_deploy(self):
+    def test_rerun_stopped_deploy(self, _):
         cluster = self.cluster
 
         @fake_tasks(override_state={'progress': 50, 'status': 'running'})
-        def first_deploy(test):
+        def first_deploy(test, _):
             test.app.put(
                 reverse(
                     'ClusterChangesHandler',
@@ -116,8 +117,7 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
             headers=self.default_headers)
 
         task = Task.get_by_uuid(stop_response.json_body['uuid'])
-
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         second_deploy_response = self.app.put(
             reverse(
@@ -126,4 +126,4 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
             headers=self.default_headers)
 
         task = Task.get_by_uuid(second_deploy_response.json_body['uuid'])
-        self.env.wait_ready(task, 350)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)

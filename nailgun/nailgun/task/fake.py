@@ -566,9 +566,10 @@ class FakeVerificationThread(FakeThread):
         # we have to execute subtasks too, just like astute does. otherwise
         # we will have "running" subtasks in the database.
         for subtask in self.data.get('subtasks', []):
-            thread = FAKE_THREADS[subtask['method']](subtask, self.params)
-            thread.start()
-            thread.join()
+            func = FAKE_THREADS[subtask['method']](subtask, self.params)
+            # (mihgen): Don't try to create more threads here, it will
+            # break integration testing which relies on synchronous run
+            func.run()
 
         resp_method = getattr(NailgunReceiver, self.respond_to)
         try:

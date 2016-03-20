@@ -26,7 +26,7 @@ from nailgun.test.base import reverse
 class TestSpawnVMs(BaseIntegrationTest):
 
     @fake_tasks(recover_nodes=False)
-    def test_spawn_vms(self):
+    def test_spawn_vms(self, _):
         self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True,
@@ -46,11 +46,8 @@ class TestSpawnVMs(BaseIntegrationTest):
 
         task_deploy = objects.Task.get_by_uuid(deploy_uuid)
         self.assertEqual(task_deploy.name, consts.TASK_NAMES.spawn_vms)
-        self.assertIn(
-            task_deploy.status,
-            (consts.TASK_STATUSES.pending, consts.TASK_STATUSES.running,
-             consts.TASK_STATUSES.ready)
-        )
+        self.assertEqual(task_deploy.status, consts.TASK_STATUSES.ready)
+
         self.assertEqual(len(task_deploy.subtasks), 2)
 
     def test_create_vms_conf(self):

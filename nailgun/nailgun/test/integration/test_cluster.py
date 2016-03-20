@@ -95,7 +95,7 @@ class TestCluster(BaseIntegrationTest):
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_get_primary_node(self):
+    def test_get_primary_node(self, _):
         self.env.create(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
@@ -116,14 +116,14 @@ class TestCluster(BaseIntegrationTest):
 
         # Checking primary nodes after deployment
         deploy = self.env.launch_deployment()
-        self.env.wait_ready(deploy)
+        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
 
         self.check_has_primary_node(cluster, ('controller',))
         self.check_no_primary_node(cluster, ('compute', 'fake_role'))
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_get_primary_node_pending_deletion(self):
+    def test_get_primary_node_pending_deletion(self, _):
         self.env.create(
             api=True,
             nodes_kwargs=[
@@ -135,7 +135,7 @@ class TestCluster(BaseIntegrationTest):
 
         # Checking primary present
         deploy = self.env.launch_deployment()
-        self.env.wait_ready(deploy)
+        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
 
         self.check_has_primary_node(cluster, ('controller',))
         self.check_no_primary_node(cluster, ('compute', 'fake_role'))

@@ -25,7 +25,7 @@ class TestTaskHandlers(BaseTestCase):
 
     @fake_tasks(override_state={"progress": 100,
                                 "status": consts.TASK_STATUSES.ready})
-    def test_task_deletion(self):
+    def test_task_deletion(self, _):
         self.env.create(
             nodes_kwargs=[
                 {"roles": ["controller"]}
@@ -33,7 +33,7 @@ class TestTaskHandlers(BaseTestCase):
         )
         verify_task = self.env.launch_verify_networks()
         task_id = verify_task.id
-        self.env.wait_error(verify_task, 60)
+        self.assertEqual(verify_task.status, consts.TASK_STATUSES.error)
         resp = self.app.delete(
             reverse(
                 'TaskHandler',

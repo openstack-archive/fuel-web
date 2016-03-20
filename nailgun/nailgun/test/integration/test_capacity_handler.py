@@ -37,7 +37,7 @@ class TestHandlers(BaseIntegrationTest):
         capacity_task = self.db.query(Task).filter_by(
             name=consts.TASK_NAMES.capacity_log
         ).first()
-        self.env.wait_ready(capacity_task)
+        self.assertEqual(capacity_task.status, consts.TASK_STATUSES.ready)
 
     def _get_capacity_log_json(self):
         resp = self.app.get(
@@ -47,7 +47,7 @@ class TestHandlers(BaseIntegrationTest):
         return resp.json_body
 
     @fake_tasks()
-    def test_capacity_log_handler(self):
+    def test_capacity_log_handler(self, _):
         self.env.create_node(api=False)
 
         self._create_capacity_log()
@@ -94,7 +94,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertTrue(row in rows)
 
     @fake_tasks()
-    def test_capacity_nodes_allocation(self):
+    def test_capacity_nodes_allocation(self, _):
         self.env.create(
             cluster_kwargs={
                 'name': 'test_name'
@@ -109,7 +109,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         self._create_capacity_log()
         capacity_log = self._get_capacity_log_json()
@@ -131,7 +131,7 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks(override_state={"progress": 100,
                                 "status": consts.TASK_STATUSES.ready})
-    def test_capacity_csv_log_with_unicode(self):
+    def test_capacity_csv_log_with_unicode(self, _):
         self.env.create(
             cluster_kwargs={
                 'name': u'тест'
@@ -141,7 +141,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))

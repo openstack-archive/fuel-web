@@ -15,6 +15,7 @@
 #    under the License.
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Cluster
@@ -25,10 +26,6 @@ from nailgun.utils import reverse
 
 
 class TestClusterChanges(BaseIntegrationTest):
-
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestClusterChanges, self).tearDown()
 
     def test_cluster_creation_adds_pending_changes(self):
         self.env.create_cluster(api=True)
@@ -134,21 +131,22 @@ class TestClusterChanges(BaseIntegrationTest):
         self.assertEqual(len(pending_changes), 1)
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
-    def test_successful_deployment_drops_all_changes(self):
+    def test_successful_deployment_drops_all_changes(self, _):
         self.env.create(
             nodes_kwargs=[
                 {"api": True, "pending_addition": True}
             ]
         )
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, 60)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
+
         cluster_db = self.db.query(Cluster).get(
             self.env.clusters[0].id
         )
         self.assertEqual(list(cluster_db.changes), [])
 
     @fake_tasks(error="deployment", error_msg="Terrible error")
-    def test_failed_deployment_does_nothing_with_changes(self):
+    def test_failed_deployment_does_nothing_with_changes(self, _):
         cluster = self.env.create_cluster(api=True)
         self.env.create_node(
             cluster_id=cluster["id"],
@@ -158,7 +156,7 @@ class TestClusterChanges(BaseIntegrationTest):
         )
 
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 60)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
         attributes_changes = self.db.query(ClusterChanges).filter_by(
             name="attributes"
         ).all()
@@ -179,14 +177,14 @@ class TestClusterChanges(BaseIntegrationTest):
         self.assertEqual(len(all_changes), 5)
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
-    def test_role_unassignment_drops_changes(self):
+    def test_role_unassignment_drops_changes(self, _):
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "api": True}
             ]
         )
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
         new_node = self.env.create_node(
             cluster_id=self.env.clusters[0].id,
             pending_addition=True,

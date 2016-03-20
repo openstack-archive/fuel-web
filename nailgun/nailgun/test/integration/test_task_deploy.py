@@ -205,7 +205,8 @@ class TestTaskDeploy(BaseIntegrationTest):
     @fake_tasks(mock_rpc=True, fake_rpc=True,
                 override_state={'status': consts.NODE_STATUSES.ready})
     def test_task_executed_on_adding_node(self, *_):
-        self.env.wait_ready(self.env.launch_deployment(self.cluster.id))
+        task = self.env.launch_deployment(self.cluster.id)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
         self.db().refresh(self.cluster)
         self.assertEqual(
             consts.CLUSTER_STATUSES.operational, self.cluster.status

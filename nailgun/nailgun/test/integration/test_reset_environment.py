@@ -19,6 +19,7 @@ from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Notification
 
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -26,16 +27,12 @@ from nailgun.utils import reverse
 
 class TestResetEnvironment(BaseIntegrationTest):
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestResetEnvironment, self).tearDown()
-
     @fake_tasks(
         override_state={"progress": 100, "status": "ready"},
         recover_nodes=False,
         ia_nodes_count=1
     )
-    def test_reset_environment(self):
+    def test_reset_environment(self, _):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -48,14 +45,14 @@ class TestResetEnvironment(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, 60)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
         for n in cluster_db.nodes:
             self.assertEqual(n.status, "ready")
             self.assertEqual(n.pending_addition, False)
 
         reset_task = self.env.reset_environment()
-        self.env.wait_ready(reset_task, 60)
+        self.assertEqual(reset_task.status, consts.TASK_STATUSES.ready)
 
         self.assertEqual(cluster_db.status, "new")
 
@@ -94,7 +91,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         recover_nodes=False,
         ia_nodes_count=1
     )
-    def test_reset_node_pending_statuses(self):
+    def test_reset_node_pending_statuses(self, _):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -106,7 +103,7 @@ class TestResetEnvironment(BaseIntegrationTest):
 
         # deploy environment
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task, 60)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         # mark node as pending_deletion
         self.app.put(
@@ -121,7 +118,7 @@ class TestResetEnvironment(BaseIntegrationTest):
 
         # reset environment
         reset_task = self.env.reset_environment()
-        self.env.wait_ready(reset_task, 60)
+        self.assertEqual(reset_task.status, consts.TASK_STATUSES.ready)
 
         # check node statuses
         self.env.refresh_nodes()
@@ -133,7 +130,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         recover_nodes=False,
         ia_nodes_count=1
     )
-    def test_reset_environment_tasks(self):
+    def test_reset_environment_tasks(self, _):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -146,7 +143,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, 60)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
         for n in cluster_db.nodes:
             self.assertEqual(n.status, "ready")

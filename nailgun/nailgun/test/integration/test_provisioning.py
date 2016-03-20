@@ -129,7 +129,7 @@ class TestProvisioning(BaseIntegrationTest):
         )
 
         task = self.env.launch_provisioning_selected(cluster_id=cluster_db.id)
-        self.env.wait_ready(task, timeout=120)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         for n in cluster_db.nodes:
             self.assertEqual(consts.NODE_STATUSES.provisioned, n.status)

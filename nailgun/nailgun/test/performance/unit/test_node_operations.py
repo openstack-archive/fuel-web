@@ -134,7 +134,7 @@ class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
 
     @fake_tasks()
     @base.evaluate_unit_performance
-    def test_provision_nodes(self):
+    def test_provision_nodes(self, _):
         func = functools.partial(
             self.put_handler,
             'ProvisionSelectedNodes',

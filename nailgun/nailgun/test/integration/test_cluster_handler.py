@@ -154,21 +154,18 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(self.db.query(Cluster).count(), 0)
 
     @fake_tasks()
-    def test_cluster_deletion(self):
+    def test_cluster_deletion(self, _):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"status": "ready"}])
 
-        resp = self.delete(self.env.clusters[0].id)
+        cluster_id = self.env.clusters[0].id
+        resp = self.delete(cluster_id)
         self.assertEqual(resp.status_code, 202)
 
-        def cluster_is_empty():
-            return self.db.query(Cluster).count() == 0
-
-        self.env.wait_for_true(cluster_is_empty, timeout=5)
-        self._wait_for_threads()
+        self.assertIsNone(self.db.query(Cluster).get(cluster_id))
 
         # Nodes should be in discover status
         self.assertEqual(self.db.query(Node).count(), 2)
@@ -181,22 +178,19 @@ class TestHandlers(BaseIntegrationTest):
             self.assertFalse(node.pending_addition)
 
     @fake_tasks(recover_offline_nodes=False)
-    def test_cluster_deletion_with_offline_nodes(self):
+    def test_cluster_deletion_with_offline_nodes(self, _):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {'pending_addition': True},
                 {'online': False, 'status': 'ready'}])
 
-        resp = self.delete(self.env.clusters[0].id)
+        cluster_id = self.env.clusters[0].id
+        resp = self.delete(cluster_id)
         self.assertEqual(resp.status_code, 202)
 
-        def cluster_is_empty_and_in_db_one_node():
-            return self.db.query(Cluster).count() == 0 and \
-                self.db.query(Node).count() == 1
-
-        self.env.wait_for_true(cluster_is_empty_and_in_db_one_node, timeout=5)
-        self._wait_for_threads()
+        self.assertIsNone(self.db.query(Cluster).get(cluster_id))
+        self.assertEqual(self.db.query(Node).count(), 1)
 
         node = self.db.query(Node).first()
         self.assertEqual(node.status, 'discover')

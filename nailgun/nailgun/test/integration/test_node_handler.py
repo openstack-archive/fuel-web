@@ -282,7 +282,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertGreater(len(node.meta['disks']), 0)
 
     @fake_tasks()
-    def test_interface_changes_for_new_node(self):
+    def test_interface_changes_for_new_node(self, _):
         # Creating cluster with node
         self.env.create(
             cluster_kwargs={
@@ -305,7 +305,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(1, len(changes))
 
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         changes = filter_changes(
             consts.CLUSTER_CHANGES.interfaces,

@@ -207,7 +207,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
 
     @fake_tasks()
     @base.evaluate_unit_performance
-    def test_put_provision_selected_nodes(self):
+    def test_put_provision_selected_nodes(self, _):
         func = functools.partial(
             self.put_handler,
             'ProvisionSelectedNodes',
@@ -218,7 +218,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
 
     @fake_tasks()
     @base.evaluate_unit_performance
-    def test_put_deploy_selected_nodes(self):
+    def test_put_deploy_selected_nodes(self, _):
         func = functools.partial(
             self.put_handler,
             'DeploySelectedNodes',
@@ -229,7 +229,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
 
     @fake_tasks()
     @base.evaluate_unit_performance
-    def test_put_stop_deployment(self):
+    def test_put_stop_deployment(self, _):
         # simulate provisioned nodes so deploy will not be blocked
         for node in self.env.nodes:
             node.pending_addition = False
@@ -254,7 +254,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
     @unittest.skip("Skip it until ResetEnvironmentTaskManager.execute not "
                    "refactored to using objects with locking")
     @fake_tasks()
-    def test_put_reset(self):
+    def test_put_reset(self, _):
         func = functools.partial(
             self.put_handler,
             'ClusterResetHandler',

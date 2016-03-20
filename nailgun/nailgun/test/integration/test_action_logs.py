@@ -25,7 +25,7 @@ from nailgun.utils import reverse
 class TestActionLogs(BaseMasterNodeSettignsTest):
 
     @fake_tasks()
-    def test_action_log_updating_for_tasks(self):
+    def test_action_log_updating_for_tasks(self, _):
         meta1 = self.env.generate_interfaces_in_meta(2)
         mac1 = meta1['interfaces'][0]['mac']
         meta2 = self.env.generate_interfaces_in_meta(2)
@@ -40,7 +40,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         )
 
         task = self.env.launch_verify_networks()
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         action_logs = objects.ActionLogCollection.filter_by(
             None, action_type=consts.ACTION_TYPES.nailgun_task)
@@ -49,7 +49,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             self.assertEqual(task_status, consts.TASK_STATUSES.ready)
 
     @fake_tasks()
-    def test_only_utc_datetime_used(self):
+    def test_only_utc_datetime_used(self, _):
         start_dt = datetime.datetime.utcnow()
         self.env.create(
             api=True,
@@ -59,8 +59,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         cluster = self.env.clusters[0]
         self.app.delete(
@@ -78,7 +78,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             self.assertGreaterEqual(end_dt, action_log.end_timestamp)
 
     @fake_tasks()
-    def test_all_action_logs_types_saved(self):
+    def test_all_action_logs_types_saved(self, _):
         # Creating nailgun_tasks
         self.env.create(
             api=True,
@@ -88,8 +88,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         # Creating http_request
         cluster = self.env.clusters[0]
@@ -110,8 +110,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         # Checking sending stats is not enabled yet by saving user choice
         resp = self.app.get(
@@ -165,12 +165,12 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_create_stats_user_logged_put(self):
+    def test_create_stats_user_logged_put(self, _):
         self.check_create_stats_user_logged(self.app.put)
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_create_stats_user_logged_patch(self):
+    def test_create_stats_user_logged_patch(self, _):
         self.check_create_stats_user_logged(self.app.patch)
 
     def check_remove_stats_user_logged(self, modification_api_call):
@@ -180,8 +180,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         self.enable_sending_stats()
 
@@ -235,10 +235,10 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_remove_stats_user_logged_put(self):
+    def test_remove_stats_user_logged_put(self, _):
         self.check_remove_stats_user_logged(self.app.put)
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_remove_stats_user_logged_patch(self):
+    def test_remove_stats_user_logged_patch(self, _):
         self.check_remove_stats_user_logged(self.app.patch)

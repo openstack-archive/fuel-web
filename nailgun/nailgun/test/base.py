@@ -25,7 +25,6 @@ import mock
 import os
 import re
 import six
-import time
 import uuid
 
 from datetime import datetime
@@ -942,7 +941,10 @@ class EnvironmentManager(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEqual(202, resp.status_code)
+            # If @fake_tasks runs synchoronously, then API
+            # returns 200 (executed). If fake_rpc=False, then
+            # API returns 202 (scheduled)
+            self.tester.assertIn(resp.status_code, [200, 202])
             response = resp.json_body
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
@@ -1132,68 +1134,6 @@ class EnvironmentManager(object):
                 self.db.refresh(n)
             except Exception:
                 self.nodes.remove(n)
-
-    def _wait_task_status(self, task, timeout, wait_until_in_statuses):
-        timer = time.time()
-        while task.status in wait_until_in_statuses:
-            self.db.refresh(task)
-            if time.time() - timer > timeout:
-                raise Exception(
-                    "Task '{0}' seems to be hanged".format(
-                        task.name
-                    )
-                )
-            time.sleep(1)
-
-    def _wait_task(self, task, timeout, message):
-        wait_until_in_statuses = (consts.TASK_STATUSES.running,
-                                  consts.TASK_STATUSES.pending)
-        self._wait_task_status(task, timeout, wait_until_in_statuses)
-        if isinstance(message, self._regex_type):
-            self.tester.assertRegexpMatches(task.message, message)
-        elif isinstance(message, six.string_types):
-            self.tester.assertEqual(task.message, message)
-
-    def wait_ready(self, task, timeout=60, message=None):
-        self._wait_task(task, timeout, message)
-        self.tester.assertEqual(task.status, consts.TASK_STATUSES.ready)
-
-    def wait_until_task_pending(self, task, timeout=60):
-        wait_until_in_statuses = (consts.TASK_STATUSES.pending,)
-        self._wait_task_status(task, timeout,
-                               wait_until_in_statuses=wait_until_in_statuses)
-        self.tester.assertNotEqual(task.status, consts.TASK_STATUSES.pending)
-
-    def wait_error(self, task, timeout=60, message=None):
-        self._wait_task(task, timeout, message)
-        self.tester.assertEqual(task.status, consts.TASK_STATUSES.error)
-
-    def wait_for_nodes_status(self, nodes, status):
-        def check_statuses():
-            self.refresh_nodes()
-
-            nodes_with_status = filter(
-                lambda x: x.status in status,
-                nodes)
-
-            return len(nodes) == len(nodes_with_status)
-
-        self.wait_for_true(
-            check_statuses,
-            error_message='Something wrong with the statuses')
-
-    def wait_for_true(self, check, args=[], kwargs={},
-                      timeout=60, error_message='Timeout error'):
-
-        start_time = time.time()
-
-        while True:
-            result = check(*args, **kwargs)
-            if result:
-                return result
-            if time.time() - start_time > timeout:
-                raise TimeoutError(error_message)
-            time.sleep(0.1)
 
     def _api_get(self, method, instance_id, expect_errors=False):
         return self.app.get(
@@ -1431,10 +1371,6 @@ class BaseTestCase(TestCase):
 
 class BaseIntegrationTest(BaseTestCase):
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(BaseIntegrationTest, self).tearDown()
-
     @classmethod
     def setUpClass(cls):
         super(BaseIntegrationTest, cls).setUpClass()
@@ -1443,23 +1379,6 @@ class BaseIntegrationTest(BaseTestCase):
     @classmethod
     def tearDownClass(cls):
         super(BaseIntegrationTest, cls).tearDownClass()
-
-    def _wait_for_threads(self):
-        # wait for fake task thread termination
-        import threading
-        for thread in threading.enumerate():
-            if thread is not threading.currentThread():
-                if hasattr(thread, "rude_join"):
-                    timer = time.time()
-                    timeout = 25
-                    thread.rude_join(timeout)
-                    if time.time() - timer > timeout:
-                        raise Exception(
-                            '{0} seconds is not enough'
-                            ' - possible hanging'.format(
-                                timeout
-                            )
-                        )
 
 
 class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
@@ -1517,6 +1436,15 @@ def fake_tasks(fake_rpc=True,
                     nailgun.task.task.fake_cast,
                     **kwargs
                 )
+            )(func)
+            func = mock.patch(
+                'nailgun.task.fake.settings.TESTS_WITH_NO_THREADS',
+                True
+            )(func)
+            config = {'Event.return_value.isSet.return_value': False}
+            func = mock.patch(
+                'nailgun.task.fake.threading',
+                **config
             )(func)
         elif mock_rpc:
             func = mock.patch(

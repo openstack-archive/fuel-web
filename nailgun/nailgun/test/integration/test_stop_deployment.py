@@ -18,12 +18,9 @@ from mock import patch
 
 import nailgun
 from nailgun import consts
-from nailgun.db.sqlalchemy.models.notification import Notification
-from nailgun.db.sqlalchemy.models.task import Task
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
 
 
 class TestStopDeployment(BaseIntegrationTest):
@@ -43,75 +40,6 @@ class TestStopDeployment(BaseIntegrationTest):
         self.controller = self.env.nodes[0]
         self.compute = self.env.nodes[1]
         self.node_uids = [n.uid for n in self.cluster.nodes][:3]
-
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestStopDeployment, self).tearDown()
-
-    @fake_tasks(recover_nodes=False, tick_interval=1)
-    def test_stop_deployment(self):
-        supertask = self.env.launch_deployment()
-        deploy_task_uuid = supertask.uuid
-        self.env.wait_until_task_pending(supertask)
-        stop_task = self.env.stop_deployment()
-        self.env.wait_ready(stop_task, 60)
-        self.assertIsNone(
-            self.db.query(Task).filter_by(
-                uuid=deploy_task_uuid
-            ).first()
-        )
-        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
-        self.assertEqual(stop_task.progress, 100)
-
-        for n in self.cluster.nodes:
-            self.assertEqual(n.roles, [])
-            self.assertNotEqual(n.pending_roles, [])
-
-        notification = self.db.query(Notification).filter_by(
-            cluster_id=stop_task.cluster_id
-        ).order_by(
-            Notification.datetime.desc()
-        ).first()
-
-        self.assertRegexpMatches(
-            notification.message,
-            'was successfully stopped')
-
-    # FIXME(aroma): remove when stop action will be reworked for ha
-    # cluster. To get more details, please, refer to [1]
-    # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-    @fake_tasks(tick_interval=1)
-    def test_stop_deployment_fail_if_deployed_before(self):
-        deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
-
-        # changes to deploy
-        self.env.create_node(
-            cluster_id=self.cluster.id,
-            roles=["controller"],
-            pending_addition=True
-        )
-
-        redeploy_task = self.env.launch_deployment()
-        self.env.wait_until_task_pending(redeploy_task)
-
-        # stop task will not be created as in this situation
-        # the error will be raised by validator thus we cannot use
-        # self.env.stop_deployment to check the result
-        resp = self.app.put(
-            reverse(
-                'ClusterStopDeploymentHandler',
-                kwargs={'cluster_id': self.cluster.id}),
-            expect_errors=True,
-            headers=self.default_headers
-        )
-
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json_body['message'],
-                         'Stop action is forbidden for the cluster')
-
-        # wait that redeployment end successfully
-        self.env.wait_ready(redeploy_task)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -133,23 +61,6 @@ class TestStopDeployment(BaseIntegrationTest):
                     n_db.cluster
                 ).get_admin_ip_for_node(n_db.id)
             )
-
-    @fake_tasks(recover_nodes=False, tick_interval=1)
-    def test_stop_provisioning(self):
-        provision_task = self.env.launch_provisioning_selected(
-            self.node_uids
-        )
-        provision_task_uuid = provision_task.uuid
-        self.env.wait_until_task_pending(provision_task)
-        stop_task = self.env.stop_deployment()
-        self.env.wait_ready(stop_task, 60)
-        self.assertIsNone(
-            self.db().query(Task).filter_by(
-                uuid=provision_task_uuid
-            ).first()
-        )
-        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
-        self.assertEqual(stop_task.progress, 100)
 
     @patch('nailgun.rpc.cast')
     def test_latest_task_is_sent(self, mocked_rpc):

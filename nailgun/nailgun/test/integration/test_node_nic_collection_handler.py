@@ -82,7 +82,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
                 self.assertDictEqual(resp_net, node_net)
 
     @fake_tasks()
-    def test_interface_changes_added(self):
+    def test_interface_changes_added(self, _):
         # Creating cluster with node
         self.env.create_cluster()
         cluster = self.env.clusters[0]
@@ -95,7 +95,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         )
         # Deploying cluster
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         def filter_changes(chg_type, chg_list):
             return filter(lambda x: x.get('name') == chg_type, chg_list)

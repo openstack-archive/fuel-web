@@ -32,7 +32,7 @@ class TestClusterScaling(BaseIntegrationTest):
         return filter(lambda node: role in node.all_roles, nodes)
 
     @fake_tasks()
-    def test_deploy_single_controller(self):
+    def test_deploy_single_controller(self, _):
         self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True}])
@@ -40,11 +40,10 @@ class TestClusterScaling(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.name, 'deploy')
 
-        self.env.wait_ready(supertask)
         self.assertEqual(supertask.status, 'ready')
 
     @fake_tasks()
-    def test_deploy_grow_controllers(self):
+    def test_deploy_grow_controllers(self, _):
         cluster = self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller']},
@@ -55,21 +54,20 @@ class TestClusterScaling(BaseIntegrationTest):
         n_nodes = TaskHelper.nodes_to_provision(cluster)
         self.assertEqual(len(n_nodes), 2)
 
-        # All controllers must re-deploy (run puppet)
+        # All controllers must re-deploy
         r_nodes = TaskHelper.nodes_to_deploy(cluster)
         self.assertEqual(len(r_nodes), 3)
 
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.name, 'deploy')
 
-        self.env.wait_ready(supertask)
         self.assertEqual(supertask.status, 'ready')
 
         controllers = self.filter_by_role(cluster.nodes, 'controller')
         self.assertEqual(len(controllers), 3)
 
     @fake_tasks()
-    def test_deploy_shrink_controllers(self):
+    def test_deploy_shrink_controllers(self, _):
         cluster = self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller']},
@@ -83,7 +81,6 @@ class TestClusterScaling(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.name, 'deploy')
 
-        self.env.wait_ready(supertask)
         self.assertEqual(supertask.status, 'ready')
 
         controllers = self.filter_by_role(cluster.nodes, 'controller')

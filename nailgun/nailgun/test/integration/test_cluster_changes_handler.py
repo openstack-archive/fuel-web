@@ -37,10 +37,6 @@ from nailgun.utils import reverse
 
 class TestHandlers(BaseIntegrationTest):
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestHandlers, self).tearDown()
-
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
@@ -1694,7 +1690,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertIn("Deployment tasks not found", resp.body)
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
-    def test_enough_osds_for_ceph(self):
+    def test_enough_osds_for_ceph(self, _):
         cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd'],
@@ -1710,12 +1706,11 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         task = self.env.launch_deployment()
-        self.env.wait_until_task_pending(task)
         self.assertIn(task.status, (consts.TASK_STATUSES.running,
                                     consts.TASK_STATUSES.ready))
 
     @fake_tasks()
-    def test_admin_untagged_intersection(self):
+    def test_admin_untagged_intersection(self, _):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [{
             "mac": "00:00:00:00:00:66",
@@ -1749,7 +1744,7 @@ class TestHandlers(BaseIntegrationTest):
         self.env.neutron_networks_put(cluster_id, nets)
 
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
 
     def test_empty_cluster_deploy_error(self):
         self.env.create(nodes_kwargs=[])
@@ -1814,7 +1809,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(consts.TASK_STATUSES.pending, deploy_task.status)
 
     @fake_tasks()
-    def test_deploymend_possible_without_controllers(self):
+    def test_deploymend_possible_without_controllers(self, _):
         cluster = self.env.create_cluster(api=True)
         self.env.create_node(
             cluster_id=cluster["id"],
@@ -1823,7 +1818,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, timeout=60)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
     @patch('nailgun.task.manager.rpc.cast')
     def test_force_redeploy_changes(self, mcast):
@@ -1896,7 +1891,7 @@ class TestHandlers(BaseIntegrationTest):
 
         self.db.flush()
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
         self.assertRegexpMatches(
             supertask.message,
             r'Components .* could not require more memory than node has')

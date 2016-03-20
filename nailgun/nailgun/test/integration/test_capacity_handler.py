@@ -37,7 +37,7 @@ class TestHandlers(BaseIntegrationTest):
         capacity_task = self.db.query(Task).filter_by(
             name=consts.TASK_NAMES.capacity_log
         ).first()
-        self.env.wait_ready(capacity_task)
+        self.assertEqual(capacity_task.status, consts.TASK_STATUSES.ready)
 
     def _get_capacity_log_json(self):
         resp = self.app.get(
@@ -109,7 +109,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         self._create_capacity_log()
         capacity_log = self._get_capacity_log_json()
@@ -141,7 +141,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))

@@ -95,7 +95,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         )
         # Deploying cluster
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         def filter_changes(chg_type, chg_list):
             return filter(lambda x: x.get('name') == chg_type, chg_list)

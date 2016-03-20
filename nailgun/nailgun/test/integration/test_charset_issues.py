@@ -24,11 +24,8 @@ from nailgun.utils import reverse
 
 class TestCharsetIssues(BaseIntegrationTest):
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestCharsetIssues, self).tearDown()
-
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    # (mihgen): Can't we do unit tests instead.. ?
     def test_deployment_cyrillic_names(self):
         self.env.create(
             cluster_kwargs={"name": u"Тестовый кластер"},
@@ -39,18 +36,15 @@ class TestCharsetIssues(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.env.wait_until_task_pending(supertask)
 
         self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
-        self.assertIn(supertask.status, (consts.TASK_STATUSES.running,
-                                         consts.TASK_STATUSES.ready))
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
         # we have three subtasks here
         # repo connectivity check
         # deletion
         # provision
         # deployment
         self.assertEqual(len(supertask.subtasks), 3)
-        self.env.wait_ready(supertask)
 
     @fake_tasks(fake_rpc=False)
     def test_deletion_during_deployment(self, mock_rpc):

@@ -1518,6 +1518,13 @@ def fake_tasks(fake_rpc=True,
                     **kwargs
                 )
             )(func)
+            func = mock.patch(
+                'nailgun.task.fake.settings.FAKE_THREAD_SYNCHRONOUSLY',
+                True
+            )(func)
+            func = mock.patch(
+                'nailgun.task.fake.threading'
+            )(func)
         elif mock_rpc:
             func = mock.patch(
                 'nailgun.task.task.rpc.cast',

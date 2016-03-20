@@ -418,7 +418,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(tasks, [])
 
     @fake_tasks()
-    def test_deletion_cluster_task_manager(self):
+    def test_deletion_cluster_task_manager(self, _):
         self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "progress": 100},
@@ -436,23 +436,13 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         self.assertEqual(202, resp.status_code)
 
-        timer = time.time()
-        timeout = 15
-        clstr = self.db.query(models.Cluster).get(cluster_id)
-        while clstr:
-            time.sleep(1)
-            try:
-                self.db.refresh(clstr)
-            except Exception:
-                break
-            if time.time() - timer > timeout:
-                raise Exception("Cluster deletion seems to be hanged")
 
         notification = self.db.query(models.Notification)\
             .filter(models.Notification.topic == "done")\
             .filter(models.Notification.message == "Environment '%s' and all "
                     "its nodes are deleted" % cluster_name).first()
         self.assertIsNotNone(notification)
+        self.assertIsNone(self.db.query(models.Cluster).get(cluster_id))
 
         tasks = self.db.query(models.Task).all()
         self.assertEqual(tasks, [])

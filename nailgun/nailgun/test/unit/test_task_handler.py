@@ -33,7 +33,7 @@ class TestTaskHandlers(BaseTestCase):
         )
         verify_task = self.env.launch_verify_networks()
         task_id = verify_task.id
-        self.env.wait_error(verify_task, 60)
+        self.assertEqual(verify_task.status, consts.TASK_STATUSES.error)
         resp = self.app.delete(
             reverse(
                 'TaskHandler',

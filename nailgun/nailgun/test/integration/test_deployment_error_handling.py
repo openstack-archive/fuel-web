@@ -16,16 +16,13 @@
 
 import re
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
 
 class TestErrors(BaseIntegrationTest):
-
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestErrors, self).tearDown()
 
     @fake_tasks(error="provisioning")
     def test_deployment_error_during_provisioning(self):
@@ -40,9 +37,12 @@ class TestErrors(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 60, re.compile(
+        message = re.compile(
             "Provision has failed\. Check these nodes:\n'(First|Second)'"
-        ))
+        )
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
+        self.assertRegexpMatches(supertask.message, message)
+
         self.env.refresh_nodes()
         self.env.refresh_clusters()
         n_error = lambda n: (n.status, n.error_type) == ('error', 'provision')
@@ -75,7 +75,9 @@ class TestErrors(BaseIntegrationTest):
         )
         supertask = self.env.launch_deployment()
         err_msg = "Deployment has failed. Terrible error"
-        self.env.wait_error(supertask, 60, err_msg)
+
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
+        self.assertEqual(supertask.message, err_msg)
         self.assertIsNotNone(
             self.db.query(Notification).filter_by(message=err_msg).first()
         )
@@ -103,8 +105,12 @@ class TestErrors(BaseIntegrationTest):
                  "roles": ["compute"],
                  "pending_addition": True}])
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 60, re.compile(
-            "Deployment has failed\. Check these nodes:\n'(First|Second)'"))
+        message = re.compile(
+            "Deployment has failed\. Check these nodes:\n'(First|Second)'"
+        )
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
+        self.assertRegexpMatches(supertask.message, message)
+
         self.env.refresh_nodes()
         self.env.refresh_clusters()
         n_error = lambda n: (n.status, n.error_type) == ('error', 'deploy')
@@ -125,6 +131,8 @@ class TestErrors(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 60, re.compile(
+        message = re.compile(
             "Deployment has failed\. Check these nodes:\n'(First|Second)'"
-        ))
+        )
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
+        self.assertRegexpMatches(supertask.message, message)

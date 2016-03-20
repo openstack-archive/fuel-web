@@ -29,10 +29,6 @@ from nailgun.task.helpers import TaskHelper
 
 class TestTasksLogging(BaseIntegrationTest):
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestTasksLogging, self).tearDown()
-
     def check_keys_included(self, keys, data):
         """Check that only values with keys from keys are present in data"""
         if isinstance(data, list):
@@ -92,26 +88,26 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
-        self.assertEqual(len(logger.call_args_list), 6)
+        # (mihgen) this test used to check for 6 first, and after wait -
+        # for 7 items in the list. Since we started to run deployment
+        # synchronously in test, all 7 calls happen at one shot.
+        self.assertEqual(len(logger.call_args_list), 7)
+
         self.check_task_name_and_sanitized_data(
-            -6, logger, consts.TASK_NAMES.check_networks)
+            -7, logger, consts.TASK_NAMES.check_networks)
         self.check_task_name_and_sanitized_data(
-            -5, logger, consts.TASK_NAMES.check_networks, one_parameter=True)
+            -6, logger, consts.TASK_NAMES.check_networks, one_parameter=True)
         self.check_task_name_and_sanitized_data(
-            -4, logger, consts.TASK_NAMES.check_before_deployment)
+            -5, logger, consts.TASK_NAMES.check_before_deployment)
         self.check_task_name_and_sanitized_data(
-            -3, logger, consts.TASK_NAMES.check_before_deployment,
+            -4, logger, consts.TASK_NAMES.check_before_deployment,
             one_parameter=True)
         self.check_task_name_and_sanitized_data(
-            -2, logger, consts.TASK_NAMES.provision)
+            -3, logger, consts.TASK_NAMES.provision)
         self.check_task_name_and_sanitized_data(
-            -1, logger, consts.TASK_NAMES.deployment)
-
-        self.env.wait_ready(supertask, 15)
-
-        # call for 'deploy' is added
-        self.assertEqual(len(logger.call_args_list), 7)
+            -2, logger, consts.TASK_NAMES.deployment)
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.deploy, one_parameter=True)
 
@@ -158,7 +154,7 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         deploy = self.env.launch_deployment()
-        self.env.wait_ready(deploy)
+        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
 
         self.simulate_running_deployment(deploy)
 
@@ -180,7 +176,9 @@ class TestTasksLogging(BaseIntegrationTest):
         resp = self.app.put(
             reverse('LogPackageHandler'), headers=self.default_headers
         )
-        self.assertEqual(resp.status_code, 202)
+        # After switch to synchronous run, this task is ready when API
+        # returns exit code. That's why it's 200, not 202.
+        self.assertEqual(resp.status_code, 200)
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
         self.check_task_name_and_sanitized_data(
@@ -216,7 +214,7 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask, 15)
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
         logs = objects.ActionLogCollection.filter_by(
             None, action_type=consts.ACTION_TYPES.nailgun_task)
@@ -266,7 +264,7 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         deploy = self.env.launch_deployment()
-        self.env.wait_ready(deploy)
+        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
 
         # Dereferencing uuid value due to deploy task deletion
         # after stop deployment
@@ -296,7 +294,7 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         deploy = self.env.launch_deployment()
-        self.env.wait_ready(deploy)
+        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
 
         # Dereferencing uuid value due to deploy task deletion
         # after environment deletion

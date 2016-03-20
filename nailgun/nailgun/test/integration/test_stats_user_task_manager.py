@@ -39,7 +39,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         )
 
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
         self.assertFalse(objects.MasterNodeSettings.must_send_stats())
 
         data = {'settings': {'statistics': {
@@ -68,7 +68,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         )
 
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         # Tuple of tuples (task_name, must_send_stats)
         tasks_params = (
@@ -121,7 +121,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         )
 
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         cluster = self.env.clusters[0]
 
@@ -197,7 +197,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         self.enable_sending_stats()
         self.assertTrue(objects.MasterNodeSettings.must_send_stats())
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         data = {'settings': {'statistics': {
             'user_choice_saved': {'value': True},

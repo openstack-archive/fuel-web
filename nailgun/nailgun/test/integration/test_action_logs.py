@@ -40,7 +40,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         )
 
         task = self.env.launch_verify_networks()
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         action_logs = objects.ActionLogCollection.filter_by(
             None, action_type=consts.ACTION_TYPES.nailgun_task)
@@ -59,8 +59,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         cluster = self.env.clusters[0]
         self.app.delete(
@@ -88,8 +88,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         # Creating http_request
         cluster = self.env.clusters[0]
@@ -110,8 +110,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         # Checking sending stats is not enabled yet by saving user choice
         resp = self.app.get(
@@ -180,8 +180,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             ]
         )
 
-        deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        task = self.env.launch_deployment()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         self.enable_sending_stats()
 

@@ -48,14 +48,10 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ])
         self.cluster = self.env.clusters[0]
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestVerifyNetworkTaskManagers, self).tearDown()
-
     @fake_tasks()
     def test_network_verify_task_managers_dhcp_on_master(self):
         task = self.env.launch_verify_networks()
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @fake_tasks()
     def test_network_verify_compares_received_with_cached(self):
@@ -66,7 +62,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         nets['networks'][-1]["vlan_start"] = 500
         task = self.env.launch_verify_networks(nets)
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @fake_tasks(fake_rpc=False)
     def test_network_verify_fails_if_admin_intersection(self, mocked_rpc):
@@ -84,7 +80,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         network['cidr'] = admin_ng.cidr
 
         task = self.env.launch_verify_networks(nets)
-        self.env.wait_error(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.error)
         self.assertIn(
             "Address space intersection between networks:\n",
             task.message)
@@ -103,7 +99,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
                 net['vlan_start'] = None
 
         task = self.env.launch_verify_networks(nets)
-        self.env.wait_error(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.error)
         self.assertIn(
             'Some untagged networks are assigned to the same physical '
             'interface. You should assign them to different physical '
@@ -147,7 +143,8 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         task = self.env.launch_verify_networks(nets)
         self.assertEqual(task.cache['args']['offline'], 1)
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+
         error_msg = 'Notice: 1 node(s) were offline during connectivity ' \
                     'check so they were skipped from the check.'
         self.assertEqual(task.message, error_msg)
@@ -166,8 +163,6 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             nets = resp.json_body
 
             task = self.env.launch_verify_networks(nets)
-            self.db.refresh(task)
-
             self.assertEqual(task.status, consts.TASK_STATUSES.error)
             error_msg = (
                 "Environment is not ready to run network verification "
@@ -258,7 +253,7 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
     @fake_tasks()
     def test_network_verification_neutron_with_vlan_segmentation(self):
         task = self.env.launch_verify_networks()
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
 
 class TestNetworkVerificationWithBonds(BaseIntegrationTest):
@@ -377,8 +372,8 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
     @fake_tasks()
     def test_network_verification_neutron_with_bonds(self):
         task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
         self.assertEqual(task.cache['args']['nodes'], self.expected_args)
-        self.env.wait_ready(task, 30)
 
     @fake_tasks()
     def test_network_verification_neutron_with_bonds_warn(self):
@@ -397,7 +392,8 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEqual(202, resp.status_code)
+        # When run tasks synchronously, API returns 200 - task is finished
+        self.assertEqual(200, resp.status_code)
         self.assertEqual(
             resp.json_body['result'],
             {u'warning': [u"Node '{0}': interface 'ovs-bond0' slave NICs have "
@@ -426,6 +422,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             })
 
         task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
         self.assertEqual(task.cache['args']['nodes'], expected_task_args)
 
     @fake_tasks()
@@ -436,7 +433,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
                 bond.mode = consts.BOND_MODES.l_802_3ad
 
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         verify_network_task = self.env.launch_verify_networks()
         self.assertEqual(
@@ -589,7 +586,7 @@ class TestNetworkVerificationWithTemplates(BaseIntegrationTest):
     def test_get_ifaces_on_deployed_node(self):
         self.create_env()
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         self.verify_networks(
             self.expected_networks_on_deployed_node)
@@ -830,15 +827,11 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                 }]
         )
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestVerifyNeutronVlan, self).tearDown()
-
     @fake_tasks()
     def test_verify_networks_after_stop(self):
         cluster = self.env.clusters[0]
         deploy_task = self.env.launch_deployment()
-        self.env.wait_until_task_pending(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]
@@ -846,7 +839,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         objects.Cluster.set_deployed_before_flag(cluster, value=False)
 
         stop_task = self.env.stop_deployment()
-        self.env.wait_ready(stop_task, 60)
+        self.assertEqual(stop_task.status, consts.TASK_STATUSES.ready)
         self.db.refresh(cluster)
         self.assertEqual(cluster.status, consts.CLUSTER_STATUSES.stopped)
         # Moving nodes online by hands. Our fake threads do this with
@@ -855,7 +848,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
             node.online = True
         self.db.commit()
         verify_task = self.env.launch_verify_networks()
-        self.env.wait_ready(verify_task, 60)
+        self.assertEqual(verify_task.status, consts.TASK_STATUSES.ready)
 
     @fake_tasks(fake_rpc=False)
     def test_network_verification_neutron_with_vlan_segmentation(
@@ -897,16 +890,16 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
         # Public VLANs are not being checked on both nodes
         for n in range(2):
             self.assertEqual(
                 task.cache['args']['nodes'][n]['networks'],
                 [{'vlans': [0, 101, 102, 1000, 1001, 1002, 1003, 1004],
                   'iface': 'eth0'}])
-        self.env.wait_ready(task, 30)
 
     @fake_tasks()
-    def test_network_verification_parameters_w_two_nodes_having_public(self):
+    def test_network_verify_parameters_w_two_nodes_having_public(self):
         self.env.create_nodes_w_interfaces_count(
             nodes_count=1,
             if_count=3,
@@ -925,6 +918,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
         eth0_vlans = {'iface': 'eth0',
                       'vlans': [0, 101, 102, 1000, 1001, 1002, 1003, 1004]}
         eth1_vlans = {'iface': 'eth1',
@@ -941,11 +935,11 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         self.assertEqual(
             task.cache['args']['nodes'][2]['networks'],
             [eth0_vlans, eth1_vlans])
-        self.env.wait_ready(task, 30)
 
     @fake_tasks()
     def test_repo_availability_tasks_are_created(self):
         task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         check_repo_tasks = filter(
             lambda t: t.name in (

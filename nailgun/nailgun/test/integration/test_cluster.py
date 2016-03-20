@@ -116,7 +116,7 @@ class TestCluster(BaseIntegrationTest):
 
         # Checking primary nodes after deployment
         deploy = self.env.launch_deployment()
-        self.env.wait_ready(deploy)
+        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
 
         self.check_has_primary_node(cluster, ('controller',))
         self.check_no_primary_node(cluster, ('compute', 'fake_role'))
@@ -135,7 +135,7 @@ class TestCluster(BaseIntegrationTest):
 
         # Checking primary present
         deploy = self.env.launch_deployment()
-        self.env.wait_ready(deploy)
+        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
 
         self.check_has_primary_node(cluster, ('controller',))
         self.check_no_primary_node(cluster, ('compute', 'fake_role'))

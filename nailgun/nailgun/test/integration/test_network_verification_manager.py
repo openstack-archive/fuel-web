@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models.task import Task
 from nailgun.task import task
 from nailgun.test import base
@@ -29,10 +30,6 @@ class TestMulticastNetworkManager(base.BaseIntegrationTest):
             ]
         )
 
-    def tearDown(self):
-        super(TestMulticastNetworkManager, self).tearDown()
-        self._wait_for_threads()
-
     def execute(self):
         multicast = Task(
             name='multicast_verification',
@@ -43,20 +40,22 @@ class TestMulticastNetworkManager(base.BaseIntegrationTest):
         return multicast
 
     @base.fake_tasks()
-    def test_multicast_successfull_scenario(self):
+    def test_multicast_successfull_scenario(self, _):
         multicast_task = self.execute()
-        self.env.wait_ready(multicast_task, timeout=10)
+        self.assertEqual(multicast_task.status, consts.TASK_STATUSES.ready)
+
         corosync = multicast_task.cluster.attributes.editable['corosync']
         self.assertTrue(corosync['verified']['value'])
 
     @base.fake_tasks(prefix='error1')
-    def test_multicast_no_message_from_node(self):
-        self.env.wait_error(self.execute(), timeout=10)
+    def test_multicast_no_message_from_node(self, _):
+        self.assertEqual(self.execute().status, consts.TASK_STATUSES.error)
 
     @base.fake_tasks(prefix='error2')
-    def test_multicast_no_messages_for_one_node(self):
+    def test_multicast_no_messages_for_one_node(self, _):
         multicast = self.execute()
-        self.env.wait_error(multicast, timeout=10)
+        self.assertEqual(multicast.status, consts.TASK_STATUSES.error)
+
         node_ids = [node['node_id'] for node in multicast.result]
         not_received = [node['not_received'] for node in multicast.result]
         self.assertTrue(any(node_ids == node for node in not_received))

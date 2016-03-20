@@ -29,7 +29,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_create_stats_user(self):
+    def test_create_stats_user(self, _):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -39,7 +39,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         )
 
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
         self.assertFalse(objects.MasterNodeSettings.must_send_stats())
 
         data = {'settings': {'statistics': {
@@ -60,7 +60,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_no_tasks_duplication(self):
+    def test_no_tasks_duplication(self, _):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -68,7 +68,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         )
 
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         # Tuple of tuples (task_name, must_send_stats)
         tasks_params = (
@@ -113,7 +113,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_no_tasks_for_non_operational_clusters(self):
+    def test_no_tasks_for_non_operational_clusters(self, _):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -121,7 +121,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         )
 
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         cluster = self.env.clusters[0]
 
@@ -186,7 +186,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
-    def test_remove_stats_user(self):
+    def test_remove_stats_user(self, _):
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -197,7 +197,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
         self.enable_sending_stats()
         self.assertTrue(objects.MasterNodeSettings.must_send_stats())
         deploy_task = self.env.launch_deployment()
-        self.env.wait_ready(deploy_task)
+        self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         data = {'settings': {'statistics': {
             'user_choice_saved': {'value': True},

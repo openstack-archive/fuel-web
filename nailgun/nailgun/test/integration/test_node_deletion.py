@@ -38,7 +38,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         self.node_ids = [node.id for node in self.cluster.nodes]
 
     @fake_tasks()
-    def test_node_deletion_and_attributes_clearing(self):
+    def test_node_deletion_and_attributes_clearing(self, _):
         node_id = self.node_ids[0]
 
         resp = self.app.delete(
@@ -47,9 +47,11 @@ class TestNodeDeletion(BaseIntegrationTest):
                 kwargs={'obj_id': node_id}),
             headers=self.default_headers
         )
-        self.assertEqual(202, resp.status_code)
+        # @fake_tasks runs synchoronously, so nodes are removed
+        # that's why API returns 200, not 202
+        self.assertEqual(200, resp.status_code)
         task = objects.Task.get_by_uuid(resp.json_body['uuid'])
-        self.env.wait_ready(task)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         node_try = self.db.query(Node).filter_by(
             cluster_id=self.cluster.id
@@ -68,7 +70,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         self.assertEqual(list(ipaddrs), [])
 
     @fake_tasks()
-    def test_batch_node_deletion_and_attributes_clearing(self):
+    def test_batch_node_deletion_and_attributes_clearing(self, _):
         url = reverse('NodeCollectionHandler')
         query_str = 'ids={0}'.format(','.join(map(str, self.node_ids)))
 
@@ -76,9 +78,11 @@ class TestNodeDeletion(BaseIntegrationTest):
             '{0}?{1}'.format(url, query_str),
             headers=self.default_headers
         )
-        self.assertEqual(202, resp.status_code)
+        # @fake_tasks runs synchoronously, so nodes are removed
+        # that's why API returns 200, not 202
+        self.assertEqual(200, resp.status_code)
         task = objects.Task.get_by_uuid(resp.json_body['uuid'])
-        self.env.wait_ready(task)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         node_query = self.db.query(Node).filter_by(cluster_id=self.cluster.id)
         self.assertEquals(node_query.count(), 0)

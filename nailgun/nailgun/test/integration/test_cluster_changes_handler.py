@@ -1881,7 +1881,7 @@ class TestHandlers(BaseIntegrationTest):
         self.env.create(
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': 'liberty-9.0',
+                'version': 'newton-10.0',
             },
             nodes_kwargs=[
                 {'roles': ['compute'], 'pending_addition': True, 'meta': meta},

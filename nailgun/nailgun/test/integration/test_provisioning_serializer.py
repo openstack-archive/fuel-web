@@ -440,7 +440,7 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
 
     def test_user_account_info(self):
         self.env.create(
-            release_kwargs={'version': 'liberty-9.0'},
+            release_kwargs={'version': 'newton-10.0'},
         )
         self.cluster_db = self.env.clusters[0]
         self.env.create_nodes_w_interfaces_count(

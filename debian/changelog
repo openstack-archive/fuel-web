@@ -1,3 +1,9 @@
+fuel-nailgun (10.0.0-1) trusty; urgency=low
+
+  * Bump version to 10.0
+
+ -- Sergey Kulanov <skulanov@mirantis.com>  Mon, 21 Mar 2016 12:36:45 +0200
+
 fuel-nailgun (9.0.0-1) trusty; urgency=low
 
   * Bump version to 9.0

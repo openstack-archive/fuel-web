@@ -393,10 +393,10 @@ class TestDeploymentAttributesSerialization70(
             pending_roles=['controller'],
             pending_addition=True)
         objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serializer_type = get_serializer_for_cluster(self.cluster_db)
-        serializer = serializer_type(AstuteGraph(self.cluster_db))
+        serializer = self.create_serializer(self.cluster_db)
         serialized_for_astute = serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
+            self.cluster_db, self.cluster_db.nodes
+        )
         for node in serialized_for_astute:
             vips = node['network_metadata']['vips']
             roles = node['network_scheme']['roles']
@@ -696,7 +696,8 @@ class TestDeploymentSerializationForNovaNetwork70(
             "controllers")
 
 
-class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
+class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
+    env_version = '2015.1.0-7.0'
 
     release_deployment_tasks = [
         {'id': 'pre_deployment_start',
@@ -740,10 +741,13 @@ class TestPluginDeploymentTasksInjection(base.BaseIntegrationTest):
     ]
 
     def setUp(self):
-        super(TestPluginDeploymentTasksInjection, self).setUp()
-
+        super(TestPluginDeploymentTasksInjection70, self).setUp()
+        # Plugin task injection for Task based is checked in task based tests
         self.env.create(
-            release_kwargs={'deployment_tasks': self.release_deployment_tasks},
+            release_kwargs={
+                'deployment_tasks': self.release_deployment_tasks,
+                'version': self.env_version
+            },
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,

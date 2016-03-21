@@ -13,7 +13,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import copy
 
 import six
 from sqlalchemy.sql import not_
@@ -38,7 +37,7 @@ class DPDKMixin(object):
 
     @classmethod
     def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
-        interface_properties = copy.deepcopy(interface.interface_properties)
+        interface_properties = interface.interface_properties
         dpdk_properties = interface_properties.get('dpdk', {})
         dpdk_properties['available'] = cls.dpdk_available(interface,
                                                           dpdk_drivers)
@@ -46,8 +45,7 @@ class DPDKMixin(object):
                 dpdk_properties.get('enabled')):
             dpdk_properties['enabled'] = False
         interface_properties.update({'dpdk': dpdk_properties})
-        cls.update(interface,
-                   {'interface_properties': interface_properties})
+        interface.interface_properties.changed()
 
 
 class NIC(DPDKMixin, NailgunObject):

@@ -580,7 +580,15 @@ class NetworkManager(object):
         node_group = objects.NodeGroup.get_by_uid(group_id)
         admin_net = objects.NetworkGroup.get_admin_network_group(node.id)
 
-        ngs = node_group.networks + [admin_net]
+        # Default node groups do not have relation with admin network. Single
+        # default admin network is used for all of them.
+        # But all other node groups have relations with their admin networks.
+        # So, admin network should be added into collection for default node
+        # groups only. Thus, set() is used here to avoid including admin
+        # network twice.
+        ngs = set(node_group.networks)
+        ngs.add(admin_net)
+
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority
         to_assign_ids = list(

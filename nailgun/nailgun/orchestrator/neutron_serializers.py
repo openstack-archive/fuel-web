@@ -1503,6 +1503,7 @@ class NeutronNetworkDeploymentSerializer90(
 
         for iface in node.nic_interfaces:
             if objects.NIC.dpdk_enabled(iface) and not iface.bond:
+                nets_by_ifaces.pop(iface.name, {})
                 transformations.append(cls.add_port(
                     name=iface.name,
                     bridge=consts.DEFAULT_BRIDGES_NAMES.br_prv,

@@ -55,11 +55,10 @@ class TestStopDeployment(BaseIntegrationTest):
         self.env.wait_until_task_pending(supertask)
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
-        self.assertIsNone(
-            self.db.query(Task).filter_by(
-                uuid=deploy_task_uuid
-            ).first()
-        )
+        self.assertTrue(self.db().query(Task).filter_by(
+            uuid=deploy_task_uuid
+        ).first())
+        self.assertIsNone(objects.Task.get_by_uuid(deploy_task_uuid))
         self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
         self.assertEqual(stop_task.progress, 100)
 
@@ -143,11 +142,10 @@ class TestStopDeployment(BaseIntegrationTest):
         self.env.wait_until_task_pending(provision_task)
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
-        self.assertIsNone(
-            self.db().query(Task).filter_by(
-                uuid=provision_task_uuid
-            ).first()
-        )
+        self.assertTrue(self.db().query(Task).filter_by(
+            uuid=provision_task_uuid
+        ).first())
+        self.assertIsNone(objects.Task.get_by_uuid(provision_task_uuid))
         self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
         self.assertEqual(stop_task.progress, 100)
 

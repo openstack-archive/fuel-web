@@ -30,7 +30,7 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         super(TestOpenstackConfigHandlers, self).setUp()
 
         release_kwargs = {
-            'version': 'liberty-9.0',
+            'version': 'newton-10.0',
             'operating_system': consts.RELEASE_OS.ubuntu,
         }
         cluster_kwargs = {'net_provider': 'neutron'}

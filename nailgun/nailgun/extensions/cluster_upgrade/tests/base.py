@@ -34,7 +34,7 @@ class BaseCloneClusterTest(nailgun_test_base.BaseIntegrationTest):
 
         self.dst_release = self.env.create_release(
             operating_system=consts.RELEASE_OS.ubuntu,
-            version="liberty-9.0",
+            version="newton-10.0",
         )
 
         self.src_cluster_db = self.env.create_cluster(

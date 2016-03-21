@@ -577,8 +577,14 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         pinning_info = objects.NodeAttributes.distribute_node_cpus(node)
         cpu_pinning = pinning_info['components']
 
-        self._generate_nova_cpu_pinning(serialized_node, cpu_pinning['nova'])
-        self._generate_dpdk_cpu_pinning(serialized_node, cpu_pinning['dpdk'])
+        self._generate_nova_cpu_pinning(
+            serialized_node,
+            cpu_pinning.get('nova')
+        )
+        self._generate_dpdk_cpu_pinning(
+            serialized_node,
+            cpu_pinning.get('dpdk')
+        )
 
     def generate_node_hugepages(self, node, serialized_node):
         self._generate_nova_hugepages(node, serialized_node)

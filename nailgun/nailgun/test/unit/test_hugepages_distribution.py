@@ -118,10 +118,6 @@ class TestComponent(base.BaseTestCase):
         comp = hpd.Component({'2048': 1, '1048576': 3})
         self.assertEqual(list(comp.pages()), [(PAGE_1GIB, 3), (PAGE_2MIB, 1)])
 
-    def test_pages_count_as_string(self):
-        comp = hpd.Component({'2048': 1, '1048576': '3'})
-        self.assertEqual(list(comp.pages()), [(PAGE_1GIB, 3), (PAGE_2MIB, 1)])
-
 
 class TestHugePagesAllocations(base.BaseTestCase):
     def setUp(self):

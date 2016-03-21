@@ -1920,16 +1920,6 @@
               container: "gzip"
     #these values are needed only for tests
     node_attributes:
-      cpu_pinning:
-        nova:
-          value: 0
-        dpdk:
-          value: 0
-      hugepages:
-        dpdk:
-          value: 0
-        nova:
-          value: {}
 - &ubuntu_release
   pk: 2
   extend: *base_release

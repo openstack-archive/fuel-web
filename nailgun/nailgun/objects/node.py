@@ -1199,18 +1199,9 @@ class Node(NailgunObject):
                     instance.full_name))
             return
 
-        instance.attributes = instance.cluster.release.node_attributes
-        cls._set_default_hugepages(instance)
-
-    @classmethod
-    def _set_default_hugepages(cls, instance):
-        supported_hugepages = \
-            instance.meta['numa_topology']['supported_hugepages']
-
-        hugepages_attributes = instance.attributes['hugepages']
-        for name, attrs in six.iteritems(hugepages_attributes):
-            if attrs.get('type') == 'custom_hugepages':
-                attrs['value'] = dict.fromkeys(supported_hugepages, 0)
+        instance.attributes = copy.deepcopy(
+            instance.cluster.release.node_attributes)
+        NodeAttributes.set_default_hugepages(instance)
 
     @classmethod
     def get_attributes(cls, instance):
@@ -1291,25 +1282,69 @@ class NodeCollection(NailgunCollection):
 
 class NodeAttributes(object):
 
+    # FIXME(asvechnikov): remove this methods,
+    # after implementing of blueprint input-type-number in UI
+    @classmethod
+    def _safe_get_hugepages(cls, node, attributes=None):
+        if not attributes:
+            attributes = Node.get_attributes(node)
+        hugepages = attributes.get('hugepages', {})
+
+        for attr in six.itervalues(hugepages):
+            if attr.get('type') == 'text':
+                attr['value'] = int(attr['value'])
+            elif attr.get('type') == 'custom_hugepages':
+                for size in attr['value']:
+                    attr['value'][size] = int(attr['value'][size])
+
+        return hugepages
+
+    # FIXME(asvechnikov): remove this methods,
+    # after implementing of blueprint input-type-number in UI
+    @classmethod
+    def _safe_get_cpu_pinning(cls, node, attributes=None):
+        if not attributes:
+            attributes = Node.get_attributes(node)
+        cpu_pinning = attributes.get('cpu_pinning', {})
+
+        for attr in six.itervalues(cpu_pinning):
+            if attr.get('type') == 'text':
+                attr['value'] = int(attr['value'])
+
+        return cpu_pinning
+
+    @classmethod
+    def set_default_hugepages(cls, node):
+        supported_hugepages = node.meta['numa_topology']['supported_hugepages']
+        hugepages = cls._safe_get_hugepages(node)
+        if not hugepages:
+            return
+
+        for attrs in six.itervalues(hugepages):
+            if attrs.get('type') == 'custom_hugepages':
+                attrs['value'] = dict.fromkeys(supported_hugepages, 0)
+
+        Node.update_attributes(node, {'hugepages': hugepages})
+
     @classmethod
     def distribute_node_cpus(cls, node):
         return cpu_distribution.distribute_node_cpus(
             node.meta['numa_topology']['numa_nodes'],
-            six.itervalues(cls.node_cpu_pinning_info(node)['components']))
+            list(six.itervalues(cls.node_cpu_pinning_info(node)['components']))
+        )
 
     @classmethod
     def node_cpu_pinning_info(cls, node, attributes=None):
-        if attributes is None:
-            attributes = Node.get_attributes(node)
+        cpu_pinning_attrs = cls._safe_get_cpu_pinning(
+            node, attributes=attributes)
 
         total_required_cpus = 0
         components = {}
-        cpu_pinning_attrs = attributes['cpu_pinning']
 
         for name, attrs in six.iteritems(cpu_pinning_attrs):
             # skip meta
             if 'value' in attrs:
-                required_cpus = int(attrs['value'])
+                required_cpus = attrs['value']
                 total_required_cpus += required_cpus
                 components[name] = {'name': name,
                                     'required_cpus': required_cpus}
@@ -1318,7 +1353,8 @@ class NodeAttributes(object):
 
     @classmethod
     def is_nova_cpu_pinning_enabled(cls, node):
-        return bool(Node.get_attributes(node)['cpu_pinning']['nova']['value'])
+        cpu_pinning = cls._safe_get_cpu_pinning(node)
+        return 'nova' in cpu_pinning and bool(cpu_pinning['nova']['value'])
 
     @staticmethod
     def pages_per_numa_node(size):
@@ -1348,7 +1384,7 @@ class NodeAttributes(object):
         hugepages = collections.defaultdict(int)
         numa_count = len(node.meta['numa_topology']['numa_nodes'])
 
-        hugepages_attributes = Node.get_attributes(node)['hugepages']
+        hugepages_attributes = cls._safe_get_hugepages(node)
         for name, attrs in six.iteritems(hugepages_attributes):
             if attrs.get('type') == 'custom_hugepages':
                 value = attrs['value']
@@ -1381,9 +1417,9 @@ class NodeAttributes(object):
 
     @classmethod
     def is_nova_hugepages_enabled(cls, node):
-        nova_hugepages = Node.get_attributes(
-            node)['hugepages']['nova']['value']
-        return any(six.itervalues(nova_hugepages))
+        hugepages = cls._safe_get_hugepages(node)
+        return ('nova' in hugepages and
+                any(six.itervalues(hugepages['nova']['value'])))
 
     @classmethod
     def dpdk_hugepages_attrs(cls, node):
@@ -1395,12 +1431,12 @@ class NodeAttributes(object):
         where N is the specified number of memory and there are
         4 NUMA nodes)
         """
-        dpdk_memory = int(Node.get_attributes(
-            node)['hugepages']['dpdk']['value'])
+        hugepages = cls._safe_get_hugepages(node)
 
-        if not dpdk_memory:
+        if 'dpdk' not in hugepages or not hugepages['dpdk']['value']:
             return {}
 
+        dpdk_memory = hugepages['dpdk']['value']
         numa_nodes_len = len(node.meta['numa_topology']['numa_nodes'])
 
         return {
@@ -1409,16 +1445,16 @@ class NodeAttributes(object):
 
     @classmethod
     def distribute_hugepages(cls, node, attributes=None):
+        hugepages = cls._safe_get_hugepages(
+            node, attributes=attributes)
         topology = node.meta['numa_topology']
-        if attributes is None:
-            attributes = Node.get_attributes(node)
 
         # split components to 2 groups:
         # components that should have pages on all numa nodes (such as dpdk)
         # and components that may have pages on any numa node
         components = {'all': [], 'any': []}
 
-        for attrs in attributes['hugepages'].values():
+        for attrs in hugepages.values():
             if attrs.get('type') == 'text':
                 # type text means size of memory in MiB to allocate with
                 # 2MiB pages, so we need to calculate pages count

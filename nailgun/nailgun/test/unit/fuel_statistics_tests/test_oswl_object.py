@@ -100,7 +100,7 @@ class TestOSWLObject(BaseTestCase):
         self.assertIsNotNone(untouched_obj)
 
     def test_version_info_serialized(self):
-        version_info = {'release': '9.0'}
+        version_info = {'release': '10.0'}
         dt = datetime.datetime.utcnow()
         obj = OpenStackWorkloadStats.create(
             {

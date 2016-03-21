@@ -171,6 +171,53 @@ class TestDeploymentAttributesSerialization90(
 
         self.assertEqual(serialized_node['hugepages'], expected)
 
+    def test_cpu_pinning_disabled(self):
+        nodes_roles = [['compute'], ['controller']]
+        for roles in nodes_roles:
+            self.env.create_node(
+                cluster_id=self.cluster_db.id,
+                roles=roles)
+
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        for serialized_node in serialized_for_astute:
+            nova = serialized_node.get('nova', {})
+            self.assertNotIn('cpu_pinning', nova)
+
+            dpdk = serialized_node.get('dpdk', {})
+            self.assertNotIn('ovs_core_mask', dpdk)
+            self.assertNotIn('ovs_pmd_core_mask', dpdk)
+
+            nodes_attrs = serialized_node['network_metadata']['nodes']
+            for node_attrs in six.itervalues(nodes_attrs):
+                self.assertFalse(node_attrs['nova_cpu_pinning_enabled'])
+
+    def test_hugepages_disabled(self):
+        nodes_roles = [['compute'], ['controller']]
+        for roles in nodes_roles:
+            self.env.create_node(
+                cluster_id=self.cluster_db.id,
+                roles=roles)
+
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        for serialized_node in serialized_for_astute:
+            nova = serialized_node.get('nova', {})
+            self.assertFalse(nova.get('enable_hugepages', False))
+
+            dpdk = serialized_node.get('dpdk', {})
+            self.assertNotIn('ovs_socket_mem', dpdk)
+
+            self.assertNotIn('hugepages', serialized_node)
+
+            nodes_attrs = serialized_node['network_metadata']['nodes']
+            for node_attrs in six.itervalues(nodes_attrs):
+                self.assertFalse(node_attrs['nova_hugepages_enabled'])
+
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,

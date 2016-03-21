@@ -83,3 +83,36 @@ class TestTaskHandlers(BaseTestCase):
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 204)
+
+    def test_soft_deletion_behavior(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"roles": ["controller"]}
+            ]
+        )
+        task = Task(
+            name='deployment',
+            cluster=self.env.clusters[0],
+            status='running',
+            progress=10
+        )
+        self.db.add(task)
+        self.db.commit()
+        resp = self.app.delete(
+            reverse(
+                'TaskHandler',
+                kwargs={'obj_id': task.id}
+            ) + "?force=0",
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        resp = self.app.delete(
+            reverse(
+                'TaskHandler',
+                kwargs={'obj_id': task.id}
+            ) + "?force=1",
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 204)
+        self.assertTrue(self.db().query(Task).get(task.id))

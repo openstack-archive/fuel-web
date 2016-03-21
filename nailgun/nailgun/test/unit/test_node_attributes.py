@@ -22,17 +22,26 @@ from nailgun.test import base
 
 class TestNodeAttributes(base.BaseUnitTest):
 
-    @mock.patch('six.itervalues', mock.Mock(return_value=[42]))
+    @mock.patch.object(objects.NodeAttributes, 'node_cpu_pinning_info')
     @mock.patch('nailgun.policy.cpu_distribution.distribute_node_cpus')
-    def test_distribute_node_cpus(self, m_distribute):
+    def test_distribute_node_cpus(self, m_distribute, m_info):
         fake_numa_nodes = [{'id': 0}]
+        comp_entity = {
+            'cpu_required': [0],
+            'name': 'comp1'
+        }
+        m_info.return_value = {
+            'components': {
+                'comp1': comp_entity
+            }
+        }
         node = mock.Mock(
             meta={'numa_topology': {
                 'numa_nodes': fake_numa_nodes}},
             attributes={'cpu_pinning': {}})
         objects.NodeAttributes.distribute_node_cpus(node)
         m_distribute.assert_called_once_with(
-            fake_numa_nodes, [42])
+            fake_numa_nodes, [comp_entity])
 
     def test_node_cpu_pinning_info(self):
         node = mock.Mock(attributes={
@@ -117,3 +126,24 @@ class TestNodeAttributes(base.BaseUnitTest):
 
         self.assertEqual(
             objects.NodeAttributes.distribute_hugepages(node), expected)
+
+    def test_set_default_hugepages(self):
+        fake_hugepages = ['0', '1', '2', '3']
+        node = mock.Mock(
+            attributes={
+                'hugepages': {
+                    'nova': {
+                        'type': 'custom_hugepages',
+                        'value': {}
+                    }
+                }
+            },
+            meta={
+                'numa_topology': {
+                    'supported_hugepages': fake_hugepages,
+                    'numa_nodes': []}}
+        )
+        objects.NodeAttributes.set_default_hugepages(node)
+        hugepages = node.attributes['hugepages']['nova']['value']
+        for size in fake_hugepages:
+            self.assertEqual(0, hugepages[size])

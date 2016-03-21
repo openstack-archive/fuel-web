@@ -41,7 +41,8 @@ class TaskHandler(SingleHandler):
     def DELETE(self, obj_id):
         """:returns: Empty string
 
-        :http: * 204 (object successfully deleted)
+        :http: * 204 (object successfully marked as deleted)
+               * 400 (object could not deleted)
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(
@@ -81,4 +82,4 @@ class TaskCollectionHandler(CollectionHandler):
                 self.collection.get_by_cluster_id(cluster_id)
             )
         else:
-            return self.collection.to_json()
+            return self.collection.to_json(self.collection.all_not_deleted())

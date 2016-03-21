@@ -29,6 +29,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
 from nailgun.network.manager import NetworkManager
+from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -42,8 +43,9 @@ class TestHandlers(BaseIntegrationTest):
         super(TestHandlers, self).tearDown()
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     @patch('nailgun.rpc.cast')
-    def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
+    def test_nova_deploy_cast_with_right_args(self, mocked_rpc, _):
         self.env.create(
             release_kwargs={
                 'version': "2014.2-6.0"

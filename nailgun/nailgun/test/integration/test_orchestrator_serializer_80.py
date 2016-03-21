@@ -23,6 +23,7 @@ import nailgun
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun import objects
+from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun import rpc
 
 from nailgun.orchestrator.deployment_serializers import \
@@ -290,7 +291,8 @@ class TestDeploymentTasksSerialization80(
                 self.tasks_for_rerun.issubset(task_ids))
 
     @mock.patch('nailgun.rpc.cast')
-    def test_add_compute(self, _):
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
+    def test_add_compute(self, *_):
         new_node = self.add_node('compute')
         rpc_deploy_message = self.get_rpc_args()
         if self.task_deploy:
@@ -303,7 +305,8 @@ class TestDeploymentTasksSerialization80(
             )
 
     @mock.patch('nailgun.rpc.cast')
-    def test_add_controller(self, _):
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
+    def test_add_controller(self, *_):
         self.add_node('controller')
         rpc_deploy_message = self.get_rpc_args()
 

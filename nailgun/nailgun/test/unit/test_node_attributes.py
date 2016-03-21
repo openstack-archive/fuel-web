@@ -22,17 +22,26 @@ from nailgun.test import base
 
 class TestNodeAttributes(base.BaseUnitTest):
 
-    @mock.patch('six.itervalues', mock.Mock(return_value=[42]))
+    @mock.patch.object(objects.NodeAttributes, 'node_cpu_pinning_info')
     @mock.patch('nailgun.policy.cpu_distribution.distribute_node_cpus')
-    def test_distribute_node_cpus(self, m_distribute):
+    def test_distribute_node_cpus(self, m_distribute, m_info):
         fake_numa_nodes = [{'id': 0}]
+        comp_entity = {
+            'cpu_required': [0],
+            'name': 'comp1'
+        }
+        m_info.return_value = {
+            'components': {
+                'comp1': comp_entity
+            }
+        }
         node = mock.Mock(
             meta={'numa_topology': {
                 'numa_nodes': fake_numa_nodes}},
             attributes={'cpu_pinning': {}})
         objects.NodeAttributes.distribute_node_cpus(node)
         m_distribute.assert_called_once_with(
-            fake_numa_nodes, [42])
+            fake_numa_nodes, [comp_entity])
 
     def test_node_cpu_pinning_info(self):
         node = mock.Mock(attributes={

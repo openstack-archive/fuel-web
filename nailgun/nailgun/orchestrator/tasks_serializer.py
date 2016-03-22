@@ -93,9 +93,9 @@ class StandardConfigRolesHook(ExpressionBasedTask):
         self.role_resolver = role_resolver or RoleResolver(nodes)
 
     def get_uids(self):
-        return self.role_resolver.resolve(
+        return list(self.role_resolver.resolve(
             self.task.get('role', self.task.get('groups'))
-        )
+        ))
 
     def serialize(self):
         uids = self.get_uids()
@@ -113,7 +113,7 @@ class UploadMOSRepo(GenericRolesHook):
     identity = 'upload_core_repos'
 
     def get_uids(self):
-        return self.role_resolver.resolve(consts.TASK_ROLES.all)
+        return list(self.role_resolver.resolve(consts.TASK_ROLES.all))
 
     def serialize(self):
         uids = self.get_uids()
@@ -157,7 +157,7 @@ class RsyncPuppet(GenericRolesHook):
     identity = 'rsync_core_puppet'
 
     def get_uids(self):
-        return self.role_resolver.resolve(consts.TASK_ROLES.all)
+        return list(self.role_resolver.resolve(consts.TASK_ROLES.all))
 
     def serialize(self):
         src_path = self.task['parameters']['src'].format(

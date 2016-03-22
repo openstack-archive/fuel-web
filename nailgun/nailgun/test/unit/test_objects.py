@@ -1586,7 +1586,7 @@ class TestClusterObject(BaseTestCase):
             cluster, [node], consts.NETWORKS.management
         )
         admin_ng_id = \
-            objects.NetworkGroup.get_admin_network_group(node.id).id
+            objects.NetworkGroup.get_admin_network_group(node).id
         node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
         objects.Node.set_netgroups_ids(node, node_ng_ids)
         for ip in node.ip_addrs:
@@ -2074,7 +2074,7 @@ class TestIPAddrObject(BaseTestCase):
         self.env.network_manager.assign_ips(
             self.cluster, [node], consts.NETWORKS.management
         )
-        for ip in objects.IPAddr.get_ips_except_admin(node.id):
+        for ip in objects.IPAddr.get_ips_except_admin(node):
             self.assertEqual(ip.network_data.name, consts.NETWORKS.management)
 
     def test_delete_by_node(self):

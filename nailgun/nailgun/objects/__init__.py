@@ -37,6 +37,9 @@ from nailgun.objects.cluster import VmwareAttributes
 from nailgun.objects.task import Task
 from nailgun.objects.task import TaskCollection
 
+from nailgun.objects.transaction import Transaction
+from nailgun.objects.transaction import TransactionCollection
+
 from nailgun.objects.notification import Notification
 from nailgun.objects.notification import NotificationCollection
 

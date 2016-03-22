@@ -65,10 +65,11 @@ class Attributes(NailgunObject):
         """
         instance.generated = traverse(
             instance.generated or {},
-            AttributesGenerator,
-            {
-                'cluster': instance.cluster,
-                'settings': settings,
+            formatter_context={
+                'cluster': instance.cluster, 'settings': settings,
+            },
+            generators={
+                'generator': AttributesGenerator.evaluate
             }
         )
 
@@ -325,10 +326,11 @@ class Cluster(NailgunObject):
         plugin_attrs = PluginManager.get_plugins_attributes(
             instance, all_versions=True, default=True)
         editable = dict(plugin_attrs, **editable)
-        editable = traverse(editable, AttributesGenerator, {
-            'cluster': instance,
-            'settings': settings,
-        })
+        editable = traverse(
+            editable,
+            formatter_context={'cluster': instance, 'settings': settings},
+            keywords={'generator': AttributesGenerator.evaluate}
+        )
 
         return editable
 
@@ -359,10 +361,11 @@ class Cluster(NailgunObject):
         # Merge plugins attributes into editable ones
         plugin_attrs = PluginManager.get_plugins_attributes(
             instance, all_versions=all_plugins_versions)
-        plugin_attrs = traverse(plugin_attrs, AttributesGenerator, {
-            'cluster': instance,
-            'settings': settings,
-        })
+        plugin_attrs = traverse(
+            plugin_attrs,
+            formatter_context={'cluster': instance, 'settings': settings},
+            keywords={'generator': AttributesGenerator.evaluate}
+        )
         attrs['editable'].update(plugin_attrs)
 
         return attrs
@@ -1126,10 +1129,11 @@ class Cluster(NailgunObject):
     def get_default_vmware_attributes(cls, instance):
         """Get metadata from release with empty value section."""
         editable = instance.release.vmware_attributes_metadata.get("editable")
-        editable = traverse(editable, AttributesGenerator, {
-            'cluster': instance,
-            'settings': settings,
-        })
+        editable = traverse(
+            editable,
+            formatter_context={'cluster': instance, 'settings': settings},
+            keywords={'generator': AttributesGenerator.evaluate}
+        )
         return editable
 
     @classmethod

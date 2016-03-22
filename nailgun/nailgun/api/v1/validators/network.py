@@ -31,6 +31,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun import utils
 
 
 class NetworkConfigurationValidator(BasicValidator):
@@ -473,6 +474,107 @@ class NetAssignmentValidator(BasicValidator):
             )
 
     @classmethod
+    def _get_iface_by_id(cls, id_, db_interfaces, default=None):
+        for iface in db_interfaces:
+            if iface.id == id_:
+                return iface
+
+        return default
+
+    @classmethod
+    def _get_iface_by_name(cls, name, db_interfaces, default=None):
+        for iface in db_interfaces:
+            if iface.name == name:
+                return iface
+
+        return default
+
+    @classmethod
+    def _verify_iface_dpdk_properties(cls, iface, db_node):
+        dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
+            db_node.cluster.release)
+        db_interfaces = db_node.nic_interfaces
+        db_iface = cls._get_iface_by_id(iface.get('id'), db_interfaces)
+
+        if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
+            iface_cls = objects.NIC
+        elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
+            iface_cls = objects.Bond
+        else:
+            raise RuntimeError(
+                'Unknown type of network interface {}'.format(iface['type']))
+
+        if db_iface is None:
+            # looks like user create new bond
+            # lets check every slave in input data
+            slaves = iface.get('slaves', [])
+            db_available = bool(slaves)
+
+            for slave in slaves:
+                slave_iface = cls._get_iface_by_name(
+                    slave['name'], db_interfaces)
+                cls._verify_iface_dpdk_properties(slave_iface, db_node)
+                db_available &= objects.NIC.dpdk_available(
+                    slave_iface, dpdk_drivers)
+
+            interface_properties = iface.get('interface_properties', {})
+
+        else:
+            db_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
+            interface_properties = utils.dict_merge(
+                db_iface.interface_properties,
+                iface.get('interface_properties', {})
+            )
+
+        # sanity checks
+        available = interface_properties.get('dpdk', {}).get('available')
+        enabled = interface_properties.get('dpdk', {}).get('enabled', False)
+
+        if available is not None and db_available != available:
+            raise errors.InvalidData("DPDK availability is hardware property"
+                                     " and can't be changed manually.")
+
+        if not db_available and enabled:
+            raise errors.InvalidData('DPDK is not avalible for {}'.format(
+                iface['name']))
+
+        if db_iface is not None:
+            pci_id = interface_properties.get('pci_id')
+            db_pci_id = db_iface.interface_properties.get('pci_id')
+
+            if pci_id is not None and pci_id != db_pci_id:
+                raise errors.InvalidData(
+                    "PCI-ID of {} can't be changed manually".format(
+                        iface['name']))
+
+        # check that dpdk interface have only one network == 'private'
+        if enabled and not (
+                len(iface['assigned_networks']) == 1 and
+                iface['assigned_networks'][0]['name'] == 'private'
+        ):
+            raise errors.InvalidData('Only private network could be assigned'
+                                     ' to interface {}'.format(iface['name']))
+
+        return enabled
+
+    @classmethod
+    def _verify_node_dpdk_properties(cls, db_node, node):
+        if not objects.NodeAttributes.is_dpdk_hugepages_enabled(db_node):
+            raise errors.InvalidData('Hugepages for DPDK are not configured'
+                                     ' for node {}'.format(db_node['id']))
+
+        if not objects.NodeAttributes.is_nova_hugepages_enabled(db_node):
+            raise errors.InvalidData('Hugepages for Nova are not configured'
+                                     ' for node {}'.format(db_node['id']))
+
+        # check hypervisor type
+        h_type = objects.Cluster.get_editable_attributes(
+            db_node.cluster)['common']['libvirt_type']['value']
+
+        if h_type != 'kvm':
+            raise errors.InvalidData('Only KVM hypervisor works with DPDK.')
+
+    @classmethod
     def verify_data_correctness(cls, node):
         db_node = db().query(Node).filter_by(id=node['id']).first()
         if not db_node:
@@ -484,6 +586,11 @@ class NetAssignmentValidator(BasicValidator):
             raise errors.InvalidData(
                 "Node '{0}': Interfaces configuration can't be changed after "
                 "or during deployment.".format(db_node.id))
+
+        if db_node.cluster is None:
+            raise errors.InvalidData(
+                'Node {} not in cluster'.format(db_node.id))
+
         interfaces = node['interfaces']
         db_interfaces = db_node.nic_interfaces
         net_manager = objects.Cluster.get_network_manager(db_node.cluster)
@@ -514,10 +621,7 @@ class NetAssignmentValidator(BasicValidator):
                 )
 
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
-                db_iface = next(six.moves.filter(
-                    lambda i: i.id == iface['id'],
-                    db_interfaces
-                ), None)
+                db_iface = cls._get_iface_by_id(iface['id'], db_interfaces)
                 if not db_iface:
                     raise errors.InvalidData(
                         "Node '{0}': there is no interface with ID '{1}'"
@@ -534,22 +638,25 @@ class NetAssignmentValidator(BasicValidator):
                         )
                 if iface.get('interface_properties', {}).get('sriov'):
                     cls._verify_sriov_properties(db_iface, iface, node['id'])
+
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 pxe_iface_present = False
                 for slave in iface['slaves']:
-                    iface_id = [i.id for i in db_interfaces
-                                if i.name == slave['name']]
+                    db_slave = cls._get_iface_by_name(
+                        slave['name'], db_interfaces)
+
                     if slave["name"] == pxe_iface_name:
                         pxe_iface_present = True
-                    if iface_id:
-                        if iface_id[0] in bonded_eth_ids:
+
+                    if db_slave is not None:
+                        if db_slave.id in bonded_eth_ids:
                             raise errors.InvalidData(
                                 "Node '{0}': interface '{1}' is used in bonds "
                                 "more than once".format(
-                                    node['id'], iface_id[0]),
+                                    node['id'], db_slave.id),
                                 log_message=True
                             )
-                        bonded_eth_ids.add(iface_id[0])
+                        bonded_eth_ids.add(db_slave.id)
                     else:
                         raise errors.InvalidData(
                             "Node '{0}': there is no interface '{1}' found "
@@ -578,6 +685,8 @@ class NetAssignmentValidator(BasicValidator):
                             log_message=True
                         )
 
+        dpdk_enabled = False
+
         for iface in interfaces:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
                     and iface['id'] in bonded_eth_ids \
@@ -588,6 +697,14 @@ class NetAssignmentValidator(BasicValidator):
                     "bond".format(node['id'], iface['id']),
                     log_message=True
                 )
+
+            # checks dpdk settings for every interface
+            dpdk_enabled |= cls._verify_iface_dpdk_properties(
+                iface, db_node)
+
+        # run node validations if dpdk enabled on node
+        if dpdk_enabled:
+            cls._verify_node_dpdk_properties(db_node, node)
 
         if db_node.cluster:
             cls.check_networks_are_acceptable_for_node_to_assign(interfaces,

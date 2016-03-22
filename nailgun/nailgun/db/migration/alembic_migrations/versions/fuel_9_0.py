@@ -141,11 +141,11 @@ def upgrade():
     upgrade_neutron_l23_providers()
     upgrade_node_stop_deployment_error_type()
     upgrade_bond_modes()
-    add_deleted_at_tasks_field()
+    upgrade_task_attributes()
 
 
 def downgrade():
-    delete_deleted_at_tasks_field()
+    downgrade_task_attributes()
     downgrade_bond_modes()
     downgrade_node_stop_deployment_error_type()
     downgrade_neutron_l23_providers()
@@ -1251,7 +1251,7 @@ def downgrade_deployment_graph():
     op.drop_table('deployment_graphs')
 
 
-def add_deleted_at_tasks_field():
+def upgrade_task_attributes():
     op.add_column(
         'tasks',
         sa.Column(
@@ -1261,6 +1261,39 @@ def add_deleted_at_tasks_field():
         )
     )
 
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'deployment_info',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'cluster_settings',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'network_settings',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.create_index(
+        'cluster_name_idx',
+        'tasks', ['cluster_id', 'name']
+    )
 
-def delete_deleted_at_tasks_field():
+
+def downgrade_task_attributes():
+    op.drop_index('cluster_name_idx', 'tasks')
+    op.drop_column('tasks', 'network_settings')
+    op.drop_column('tasks', 'cluster_settings')
+    op.drop_column('tasks', 'deployment_info')
     op.drop_column('tasks', 'deleted_at')

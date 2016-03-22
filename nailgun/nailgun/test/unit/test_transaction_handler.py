@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -19,9 +19,9 @@ from nailgun.test.base import BaseTestCase
 from nailgun.utils import reverse
 
 
-class TestTaskHandlers(BaseTestCase):
+class TestTransactionHandlers(BaseTestCase):
 
-    def test_task_deletion(self):
+    def test_transaction_deletion(self):
         self.env.create(
             nodes_kwargs=[
                 {"roles": ["controller"]}
@@ -37,7 +37,7 @@ class TestTaskHandlers(BaseTestCase):
         self.db.commit()
         resp = self.app.delete(
             reverse(
-                'TaskHandler',
+                'TransactionHandler',
                 kwargs={'obj_id': task.id}
             ),
             headers=self.default_headers
@@ -45,7 +45,7 @@ class TestTaskHandlers(BaseTestCase):
         self.assertEqual(resp.status_code, 204)
         resp = self.app.get(
             reverse(
-                'TaskHandler',
+                'TransactionHandler',
                 kwargs={'obj_id': task.id}
             ),
             headers=self.default_headers,
@@ -53,7 +53,7 @@ class TestTaskHandlers(BaseTestCase):
         )
         self.assertEqual(resp.status_code, 404)
 
-    def test_forced_task_deletion(self):
+    def test_forced_transaction_deletion(self):
         self.env.create(
             nodes_kwargs=[
                 {"roles": ["controller"]}
@@ -69,7 +69,7 @@ class TestTaskHandlers(BaseTestCase):
         self.db.commit()
         resp = self.app.delete(
             reverse(
-                'TaskHandler',
+                'TransactionHandler',
                 kwargs={'obj_id': task.id}
             ) + "?force=0",
             headers=self.default_headers,
@@ -78,14 +78,14 @@ class TestTaskHandlers(BaseTestCase):
         self.assertEqual(resp.status_code, 400)
         resp = self.app.delete(
             reverse(
-                'TaskHandler',
+                'TransactionHandler',
                 kwargs={'obj_id': task.id}
             ) + "?force=1",
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 204)
 
-    def test_soft_deletion_behavior(self):
+    def test_hard_deletion_behavior(self):
         self.env.create(
             nodes_kwargs=[
                 {"roles": ["controller"]}
@@ -101,7 +101,7 @@ class TestTaskHandlers(BaseTestCase):
         self.db.commit()
         resp = self.app.delete(
             reverse(
-                'TaskHandler',
+                'TransactionHandler',
                 kwargs={'obj_id': task.id}
             ) + "?force=0",
             headers=self.default_headers,
@@ -110,19 +110,18 @@ class TestTaskHandlers(BaseTestCase):
         self.assertEqual(resp.status_code, 400)
         resp = self.app.delete(
             reverse(
-                'TaskHandler',
+                'TransactionHandler',
                 kwargs={'obj_id': task.id}
             ) + "?force=1",
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 204)
-        self.assertTrue(self.db().query(Task).get(task.id))
         resp = self.app.get(
             reverse(
-                'TaskHandler',
+                'TransactionHandler',
                 kwargs={'obj_id': task.id}
             ),
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEqual(resp.status_code, 404)
+        self.assertIsNone(self.db().query(Task).get(task.id))

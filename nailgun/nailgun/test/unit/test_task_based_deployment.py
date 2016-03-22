@@ -114,7 +114,10 @@ class TestTaskSerializers(BaseTestCase):
                 "id": "task3", "groups": ["controller", "compute"],
                 "type": "shell", "version": "2.0.0",
                 "parameters": {"cmd": "bash -c 'echo 1'"},
-                "requires": ["task1"],
+                "cross_depends": [
+                    {"name": "task1"},
+                    {"name": "task2", "role": "self"}
+                ],
                 "cross_depended_by": [{"name": "task3",
                                        "role": ["controller"]}]
             },
@@ -147,7 +150,12 @@ class TestTaskSerializers(BaseTestCase):
                               [{"name": "task1", "node_id": controllers[0]}])
         self.assertItemsEqual(task_2_cnt.get('required_for', []), [])
         self.assertItemsEqual(task_3_cnt.get('requires', []),
-                              [{"name": "task1", "node_id": controllers[0]}])
+                              [
+                                  {"name": "task1", "node_id": controllers[0]},
+                                  {"name": "task1", "node_id": computes[0]},
+                                  {"name": "task2", "node_id": controllers[0]}
+        ]
+        )
         self.assertItemsEqual(task_3_cnt.get('required_for', []), [])
 
         self.assertItemsEqual(task_1_cmp.get('requires', []), [])
@@ -156,11 +164,14 @@ class TestTaskSerializers(BaseTestCase):
                               [
                                   {"name": "task1", "node_id": computes[0]},
                                   {"name": "task2", "node_id": controllers[0]}
-        ]
-        )
+        ])
         self.assertItemsEqual(task_2_cmp.get('required_for', []), [])
         self.assertItemsEqual(task_3_cmp.get('requires', []),
-                              [{"name": "task1", "node_id": computes[0]}])
+                              [
+                                  {"name": "task1", "node_id": computes[0]},
+                                  {"name": "task1", "node_id": controllers[0]},
+                                  {"name": "task2", "node_id": computes[0]}
+        ])
         self.assertItemsEqual(task_3_cmp.get('required_for', []), [
             {'name': 'task3', 'node_id': controllers[0]}
         ])

@@ -540,8 +540,8 @@ class TasksSerializer(object):
                     self.task_processor.get_last_task_id
                 ))
                 requires.update(self.expand_cross_dependencies(
-                    node_id, task.pop('cross_depends', None),
-                    self.task_processor.get_last_task_id
+                    task['id'], node_id, task.pop('cross_depends', None),
+                    self.task_processor.get_last_task_id,
                 ))
                 requires.update(task.pop('requires_ex', ()))
 
@@ -550,7 +550,7 @@ class TasksSerializer(object):
                     self.task_processor.get_first_task_id
                 ))
                 required_for.update(self.expand_cross_dependencies(
-                    node_id, task.pop('cross_depended_by', None),
+                    task['id'], node_id, task.pop('cross_depended_by', None),
                     self.task_processor.get_first_task_id
                 ))
                 required_for.update(task.pop('required_for_ex', ()))
@@ -609,9 +609,11 @@ class TasksSerializer(object):
             for rel in relations:
                 yield rel
 
-    def expand_cross_dependencies(self, node_id, dependencies, task_resolver):
+    def expand_cross_dependencies(
+            self, task_id, node_id, dependencies, task_resolver):
         """Expands task dependencies on same node.
 
+        :param task_id: the ID of the task, for which we resolve the dependency
         :param node_id: the ID of target node
         :param dependencies: the list of cross-node dependencies
         :param task_resolver: the task name resolver
@@ -629,7 +631,7 @@ class TasksSerializer(object):
                 node_ids = self.role_resolver.resolve(
                     roles, dep.get('policy', consts.NODE_RESOLVE_POLICY.all)
                 )
-                excludes = [node_id]
+                excludes = [(node_id, task_id)]
 
             relations = self.resolve_relation(
                 dep['name'], node_ids, task_resolver, excludes
@@ -647,10 +649,10 @@ class TasksSerializer(object):
         """
         match_policy = NameMatchingPolicy.create(name)
         for node_id in node_ids:
-            if node_id in excludes:
-                continue
             applied_tasks = set()
             for task_name in self.tasks_connections[node_id]:
+                if (node_id, task_name) in excludes:
+                    continue
                 if task_name == name:
                     # the simple case when name of current task
                     # is exact math to name of task that is search

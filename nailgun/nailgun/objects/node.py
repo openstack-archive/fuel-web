@@ -315,7 +315,7 @@ class Node(NailgunObject):
         ).first()
 
     @classmethod
-    def should_have_public_with_ip(cls, instance):
+    def should_have_public_with_ip(cls, instance, roles_metadata=None):
         """Returns True if node should have IP belonging to Public network.
 
         :param instance: Node DB instance
@@ -325,7 +325,8 @@ class Node(NailgunObject):
             return True
 
         roles = itertools.chain(instance.roles, instance.pending_roles)
-        roles_metadata = Cluster.get_roles(instance.cluster)
+        if not roles_metadata:
+            roles_metadata = Cluster.get_roles(instance.cluster)
 
         for role in roles:
             if roles_metadata.get(role, {}).get('public_ip_required'):

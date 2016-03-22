@@ -241,3 +241,25 @@ class NeutronNetworkConfigurationVerifyHandler(
 
     validator = NeutronNetworkConfigurationValidator
     provider = consts.CLUSTER_NET_PROVIDERS.neutron
+
+
+class NetworkAttributesDeployedHandler(BaseHandler):
+    """Cluster deployed network attributes handler"""
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized deployed Cluster network configuration.
+
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+               * 404 (cluster does not have saved deployed attributes)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        attrs = objects.Transaction.get_network_settings(
+            objects.TransactionCollection.get_last_succeed_run(cluster)
+        )
+        if not attrs:
+            raise self.http(
+                404, "Cluster does not have saved deployed attributes!"
+            )
+        return attrs

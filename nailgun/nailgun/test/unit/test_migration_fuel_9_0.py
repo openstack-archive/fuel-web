@@ -798,3 +798,26 @@ class TestBondMode(base.BaseAlembicMigrationTest):
         for row in result.fetchall():
             mode = row[0]
             self.assertEqual(mode, 'balance-tcp')
+
+
+class TestTasksMigration(base.BaseAlembicMigrationTest):
+
+    def test_field_deployment_info_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['tasks'].c.deployment_info])
+        )
+        self.assertIsNone(result.scalar())
+
+    def test_field_deleted_at_exists(self):
+        result = db.execute(
+            sa.select([self.meta.tables['tasks'].c.deleted_at])
+        )
+        self.assertIsNone(result.scalar())
+
+    def text_cluster_name_index_exists(self):
+        cluster_name_idx = next(
+            (i for i in self.meta.tables['tasks'].indexexes
+             if i.name == 'cluster_name_idx'),
+            None
+        )
+        self.assertIsNotNone(cluster_name_idx)

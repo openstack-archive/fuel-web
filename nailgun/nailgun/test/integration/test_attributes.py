@@ -180,23 +180,42 @@ class TestClusterAttributes(BaseIntegrationTest):
         )
         self.assertEqual(400, resp.status_code)
 
-    def test_get_default_attributes(self):
-        cluster = self.env.create_cluster(api=True)
-        release = self.db.query(Release).get(
-            cluster['release_id']
+    def test_get_last_deployed_attributes(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[-1]
+        cluster_attrs = objects.Cluster.get_editable_attributes(
+            self.env.clusters[-1]
         )
-        resp = self.app.put(
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_cluster_settings(
+            transaction, {'editable': cluster_attrs}
+        )
+        self.assertIsNotNone(
+            objects.TransactionCollection.get_last_success_run(cluster)
+        )
+        resp = self.app.get(
             reverse(
-                'ClusterAttributesDefaultsHandler',
-                kwargs={'cluster_id': cluster['id']}),
+                'ClusterAttributesDeployedHandler',
+                kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self._compare_editable(
-            release.attributes_metadata['editable'],
-            resp.json_body['editable'],
-            self.env.clusters[0]
+        self.datadiff(cluster_attrs, resp.json_body['editable'])
+
+    def test_get_deployed_attributes_fails_if_no_attrs(self):
+        cluster = self.env.create_cluster(api=True)
+        resp = self.app.get(
+            reverse(
+                'ClusterAttributesDeployedHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers,
+            expect_errors=True,
         )
+        self.assertEqual(400, resp.status_code)
 
     def test_attributes_set_defaults(self):
         cluster = self.env.create_cluster(api=True)
@@ -382,6 +401,9 @@ class TestClusterAttributes(BaseIntegrationTest):
             set(editable["workloads_collector"]["metadata"].keys()),
             set(["label", "weight", "restrictions", "group"])
         )
+
+    def test_get_deployed_attributes(self):
+        self.env.create_cluster(api=True)
 
 
 class TestAlwaysEditable(BaseIntegrationTest):

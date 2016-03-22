@@ -798,3 +798,51 @@ class TestBondMode(base.BaseAlembicMigrationTest):
         for row in result.fetchall():
             mode = row[0]
             self.assertEqual(mode, 'balance-tcp')
+
+
+class TestTasksMigration(base.BaseAlembicMigrationTest):
+    def setUp(self):
+        super(TestTasksMigration, self).setUp()
+
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'cluster_id': None,
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'message': None,
+                'status': 'pending',
+                'progress': 0,
+                'cache': None,
+                'result': None,
+                'parent_id': None,
+                'weight': 1,
+                'deployment_info': '{}',
+                'cluster_settings': '{}',
+                'network_settings': '{}',
+                'deleted_at': datetime.datetime.utcnow()
+            }]
+        )
+
+    def test_fields_exist(self):
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'].c.cluster_settings,
+                self.meta.tables['tasks'].c.deployment_info,
+                self.meta.tables['tasks'].c.network_settings,
+                self.meta.tables['tasks'].c.deleted_at,
+            ])
+        ).first()
+        self.assertIsNotNone(result)
+        self.assertIsNotNone(result['cluster_settings'])
+        self.assertIsNotNone(result['deployment_info'])
+        self.assertIsNotNone(result['network_settings'])
+        self.assertIsNotNone(result['deleted_at'])
+
+    def text_cluster_name_index_exists(self):
+        cluster_name_idx = next(
+            (i for i in self.meta.tables['tasks'].indexexes
+             if i.name == 'cluster_name_idx'),
+            None
+        )
+        self.assertIsNotNone(cluster_name_idx)

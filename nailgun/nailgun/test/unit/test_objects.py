@@ -910,6 +910,86 @@ class TestTaskObject(BaseIntegrationTest):
         self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
 
 
+class TestTransactionObject(BaseIntegrationTest):
+    def setUp(self):
+        super(TestTransactionObject, self).setUp()
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+                {'roles': ['cinder']}])
+        self.cluster = self.env.clusters[-1]
+
+    def test_get_last_success_run(self):
+        objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'name': consts.TASK_NAMES.deployment,
+            'status': consts.TASK_STATUSES.pending
+        })
+        objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'name': consts.TASK_NAMES.deployment,
+            'status': consts.TASK_STATUSES.error
+        })
+        transaction = objects.TransactionCollection.get_last_succeed_run(
+            self.cluster
+        )
+        self.assertIsNone(transaction)
+        objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'name': consts.TASK_NAMES.deployment,
+            'status': consts.TASK_STATUSES.ready
+        })
+        finished2 = objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'name': consts.TASK_NAMES.deployment,
+            'status': consts.TASK_STATUSES.ready
+        })
+        transaction = objects.TransactionCollection.get_last_succeed_run(
+            self.cluster
+        )
+        self.assertEqual(finished2.id, transaction.id)
+
+    def test_get_deployment_info(self):
+        transaction = objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'name': consts.TASK_NAMES.deployment,
+            'status': consts.TASK_STATUSES.ready
+        })
+        info = {'test': 'test'}
+        objects.Transaction.attach_deployment_info(transaction, info)
+        self.assertEqual(
+            info, objects.Transaction.get_deployment_info(transaction)
+        )
+        self.assertIsNone(objects.Transaction.get_deployment_info(None))
+
+    def test_get_cluster_settings(self):
+        transaction = objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'name': consts.TASK_NAMES.deployment,
+            'status': consts.TASK_STATUSES.ready
+        })
+        info = {'test': 'test'}
+        objects.Transaction.attach_cluster_settings(transaction, info)
+        self.assertEqual(
+            info, objects.Transaction.get_cluster_settings(transaction)
+        )
+        self.assertIsNone(objects.Transaction.get_cluster_settings(None))
+
+    def test_get_network_settings(self):
+        transaction = objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'name': consts.TASK_NAMES.deployment,
+            'status': consts.TASK_STATUSES.ready
+        })
+        info = {'test': 'test'}
+        objects.Transaction.attach_network_settings(transaction, info)
+        self.assertEqual(
+            info, objects.Transaction.get_network_settings(transaction)
+        )
+        self.assertIsNone(objects.Transaction.get_network_settings(None))
+
+
 class TestActionLogObject(BaseIntegrationTest):
 
     def _create_log_entry(self, object_data):

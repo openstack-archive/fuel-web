@@ -211,6 +211,15 @@ class DeploymentTask(BaseDeploymentTask):
         for node in nodes:
             node.pending_addition = False
 
+        # cluster get_attributes returns
+        objects.Transaction.attach_cluster_settings(
+            task,
+            {'editable': objects.Cluster.get_editable_attributes(task.cluster)}
+        )
+        objects.Transaction.attach_network_settings(
+            task,
+            objects.Cluster.get_network_attributes(task.cluster)
+        )
         rpc_message = make_astute_message(
             task,
             deployment_mode,

@@ -678,6 +678,38 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.assertEqual(net.cidr, old_cidr)
         self.assertTrue(m_assign.called)  # Verifies no other error occured
 
+    def test_get_deployed_network_settings(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.assertEqual(200, resp.status_code)
+        net_attrs = resp.json_body
+        transaction = objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_network_settings(transaction, net_attrs)
+        self.assertIsNotNone(
+            objects.TransactionCollection.get_last_succeed_run(self.cluster)
+        )
+        resp = self.app.get(
+            reverse(
+                'NetworkAttributesDeployedHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.datadiff(net_attrs, resp.json_body)
+
+    def test_get_deployed_network_settings_fails_if_no_attrs(self):
+            resp = self.app.get(
+                reverse(
+                    'NetworkAttributesDeployedHandler',
+                    kwargs={'cluster_id': self.cluster['id']}),
+                headers=self.default_headers,
+                expect_errors=True,
+            )
+            self.assertEqual(404, resp.status_code)
+
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 

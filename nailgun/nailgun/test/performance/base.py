@@ -80,7 +80,7 @@ class BaseLoadTestCase(BaseTestCase):
                     line = '\t'.join([str(exec_time),
                                       '|'.join(cls.slowest_calls[exec_time]),
                                       '\n'])
-                    file_o.write(line)
+                    file_o.write(unicode(line))
 
             test_result_name = os.path.join(
                 settings.LOAD_TESTS_PATHS['load_tests_results'],

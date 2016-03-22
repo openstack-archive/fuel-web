@@ -267,3 +267,21 @@ def get_lines(text):
     """Returns all non-empty lines in input string
     """
     return list(six.moves.filter(bool, text.splitlines()))
+
+
+def dict_update(target, patch, level=None):
+    """Updates dict recursively.
+
+    :param target: the target dict, will be update inplace
+    :param patch: the modifications, that will be applied to target
+    :param level: how deeper the update will be applied
+                  (None means not limited)
+    """
+    for k, v in six.iteritems(patch):
+        if isinstance(v, dict):
+            if level is None or level > 1:
+                dict_update(target.setdefault(k, {}), v, level - 1)
+            else:
+                target.setdefault(k, {}).update(v)
+        else:
+            target[k] = v

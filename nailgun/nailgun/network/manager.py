@@ -139,6 +139,7 @@ class NetworkManager(object):
         nodes_need_ips = defaultdict(list)
         cluster_id = cluster.id
         default_admin_net = objects.NetworkGroup.get_default_admin_network()
+        roles_metadata = objects.Cluster.get_roles(cluster)
         for node in nodes:
             node_id = node.id
 
@@ -149,7 +150,8 @@ class NetworkManager(object):
                 )
 
             if (network_name == consts.NETWORKS.public and
-                    not objects.Node.should_have_public_with_ip(node)):
+                    not objects.Node.should_have_public_with_ip(
+                        node, roles_metadata)):
                 continue
 
             network = objects.NetworkGroup.get_node_network_by_name(

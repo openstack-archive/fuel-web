@@ -714,5 +714,5 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
         )
 
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("node is not added to any cluster",
+        self.assertIn("not in cluster",
                       resp.json_body['message'])

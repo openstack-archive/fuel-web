@@ -909,6 +909,40 @@ class TestTaskObject(BaseIntegrationTest):
         task_obj = objects.Task.get_by_uuid(task.uuid)
         self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
 
+    def test_get_last_success_run(self):
+        task_pending = Task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.pending
+        )
+        self.db.add(task_pending)
+        task_error = Task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.error
+        )
+        self.db.add(task_error)
+        task = objects.TaskCollection.get_last_success_run(task_pending)
+        self.assertIsNone(task)
+        task_ready = Task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.ready
+        )
+        self.db.add(task_ready)
+        self.db.flush()
+        task = objects.TaskCollection.get_last_success_run(task_pending)
+        self.assertEqual(task_ready.id, task.id)
+
+    def test_get_deployment_info(self):
+        task = Task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.pending
+        )
+        self.db.add(task)
+        self.db.flush()
+        info = {'test': 'test'}
+        objects.Task.attach_deployment_info(task, info)
+        self.assertEqual(info, objects.Task.get_deployment_info(task))
+        self.assertIsNone(objects.Task.get_deployment_info(None))
+
 
 class TestActionLogObject(BaseIntegrationTest):
 

@@ -46,3 +46,4 @@ stevedore>=1.5.0
 # the editable mode is broken
 # See: https://bugs.launchpad.net/fuel/+bug/1519727
 setuptools<=18.5
+yaql>=1.0.0

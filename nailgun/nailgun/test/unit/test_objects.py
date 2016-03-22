@@ -342,6 +342,24 @@ class TestNodeObject(BaseIntegrationTest):
             for node in self.env.nodes)
         self.assertEqual(nodes_w_public_count, len(nodes))
 
+    def test_should_have_public_with_ip_with_given_metadata(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            },
+            nodes_kwargs=[{}, {}])
+
+        node = self.env.nodes[0]
+        roles_metadata = objects.Cluster.get_roles(self.env.clusters[0])
+        with mock.patch.object(objects.Cluster, 'get_roles') as get_roles_mock:
+            get_roles_mock.return_value = roles_metadata
+            objects.Node.should_have_public_with_ip(node)
+            self.assertEqual(get_roles_mock.call_count, 1)
+
+        with mock.patch.object(objects.Cluster, 'get_roles') as get_roles_mock:
+            objects.Node.should_have_public_with_ip(node, roles_metadata)
+            self.assertEqual(get_roles_mock.call_count, 0)
+
     def test_should_have_public(self):
         nodes = [
             {'roles': ['controller', 'cinder'], 'pending_addition': True},

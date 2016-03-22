@@ -29,7 +29,7 @@ from nailgun.test.integration import test_orchestrator_serializer_80
 
 
 class TestSerializer90Mixin(object):
-    env_version = "liberty-9.0"
+    env_version = "mitaka-9.0"
     task_deploy = True
 
     @classmethod

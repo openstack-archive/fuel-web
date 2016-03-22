@@ -22,6 +22,7 @@ from nailgun.test import base
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
+from nailgun.utils import dict_update
 from nailgun.utils import flatten
 from nailgun.utils import get_lines
 from nailgun.utils import grouper
@@ -54,6 +55,45 @@ class TestUtils(base.BaseIntegrationTest):
                                            "transparency": 100,
                                            "dict": {"stuff": "hz",
                                                     "another_stuff": "hz"}}})
+
+    def test_dict_update_first_level(self):
+        target = {
+            'a': {'b': 1},
+            'c': {'d': {'e': {'f': 2}}}
+        }
+        update1 = {
+            'a': {'b': 2},
+            'c': {'d': {'g': 2}}
+        }
+        dict_update(target, update1, level=1)
+        self.assertEqual({'b': 2}, target['a'])
+        self.assertEqual({'d': {'g': 2}}, target['c'])
+
+    def test_dict_update_2nd_levels(self):
+        target = {
+            'a': {'b': 1},
+            'c': {'d': {'e': {'f': {'k': 2}}, 'l': 1}}
+        }
+        update1 = {
+            'a': {'b': 2},
+            'c': {'d': {'e': {'g': 2}}}
+        }
+        dict_update(target, update1, level=2)
+        self.assertEqual({'b': 2}, target['a'])
+        self.assertEqual({'d': {'e': {'g': 2}, 'l': 1}}, target['c'])
+
+    def test_dict_update_all_levels(self):
+        target = {
+            'a': {'b': 1},
+            'c': {'d': {'e': {'f': 2}}}
+        }
+        update1 = {
+            'a': {'b': 2},
+            'c': {'d': {'g': 2}}
+        }
+        dict_update(target, update1)
+        self.assertEqual({'b': 2}, target['a'])
+        self.assertEqual({'d': {'g': 2, 'e': {'f': 2}}}, target['c'])
 
     def test_camel_case_to_snake_case(self):
         self.assertTrue(

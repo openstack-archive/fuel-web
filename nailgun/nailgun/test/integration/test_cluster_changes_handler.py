@@ -303,7 +303,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    objects.NetworkGroup.get_admin_network_group(n.id).cidr
+                    objects.NetworkGroup.get_admin_network_group(n).cidr
                 }
             }
 
@@ -313,7 +313,7 @@ class TestHandlers(BaseIntegrationTest):
 
             NetworkManager.assign_admin_ips([n])
 
-            admin_ip = self.env.network_manager.get_admin_ip_for_node(n.id)
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
             for i in n.interfaces:
                 if 'interfaces' not in pnd:
@@ -766,7 +766,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    objects.NetworkGroup.get_admin_network_group(n.id).cidr
+                    objects.NetworkGroup.get_admin_network_group(n).cidr
                 }
             }
 
@@ -776,7 +776,7 @@ class TestHandlers(BaseIntegrationTest):
 
             NetworkManager.assign_admin_ips([n])
 
-            admin_ip = self.env.network_manager.get_admin_ip_for_node(n.id)
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
             for i in n.meta.get('interfaces', []):
                 if 'interfaces' not in pnd:
@@ -1270,7 +1270,7 @@ class TestHandlers(BaseIntegrationTest):
                     'gw':
                     self.env.network_manager.get_default_gateway(n.id),
                     'admin_net':
-                    objects.NetworkGroup.get_admin_network_group(n.id).cidr
+                    objects.NetworkGroup.get_admin_network_group(n).cidr
                 }
             }
 
@@ -1280,7 +1280,7 @@ class TestHandlers(BaseIntegrationTest):
 
             NetworkManager.assign_admin_ips([n])
 
-            admin_ip = self.env.network_manager.get_admin_ip_for_node(n.id)
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
             for i in n.meta.get('interfaces', []):
                 if 'interfaces' not in pnd:

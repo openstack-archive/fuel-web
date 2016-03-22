@@ -34,14 +34,15 @@ class IPAddr(NailgunObject):
     serializer = IPAddrSerializer
 
     @classmethod
-    def get_ips_except_admin(cls, node_id=None,
+    def get_ips_except_admin(cls, node=None,
                              network_id=None, include_network_data=False):
         """Get all non-admin IP addresses for node or network.
 
         This method will not return VIPs.
 
-        :param node_id: Node database ID.
-        :type  node_id: int
+        :param node: nailgun.db.sqlalchemy.models.Node. If it already
+         contains related data we will have performance boost.
+        :type node: nailgun.db.sqlalchemy.models.Node
         :param network_id: Network database ID.
         :type  network_id: int
         :param include_network_data: Include related network data.
@@ -56,14 +57,13 @@ class IPAddr(NailgunObject):
 
         if include_network_data:
             ips = ips.options(joinedload('network_data'))
-        if node_id:
-            ips = ips.filter_by(node=node_id)
+        if node is not None:
+            ips = ips.filter_by(node=node.id)
         if network_id:
             ips = ips.filter_by(network=network_id)
 
         try:
-            admin_net_id = NetworkGroup.get_admin_network_group(
-                node_id=node_id).id
+            admin_net_id = NetworkGroup.get_admin_network_group(node).id
         except errors.AdminNetworkNotFound:
             admin_net_id = None
         if admin_net_id:

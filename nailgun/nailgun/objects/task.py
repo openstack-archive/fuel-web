@@ -319,6 +319,16 @@ class Task(NailgunObject):
             .update({'deleted_at': datetime.utcnow()},
                     synchronize_session='fetch')
 
+    @classmethod
+    def attach_deployment_info(cls, instance, deployment_info):
+        instance.deployment_info = deployment_info
+        db().flush()
+
+    @classmethod
+    def get_deployment_info(cls, instance):
+        if instance is not None:
+            return instance.deployment_info
+
 
 class TaskCollection(NailgunCollection):
 
@@ -352,3 +362,10 @@ class TaskCollection(NailgunCollection):
     @classmethod
     def all_not_deleted(cls):
         return cls.filter_by(None, deleted_at=None)
+
+    @classmethod
+    def get_last_success_run(cls, task):
+        return cls.filter_by(
+            None, cluster_id=task.cluster_id, name=task.name,
+            status=consts.TASK_STATUSES.ready
+        ).order_by('-id').limit(1).first()

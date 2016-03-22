@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -42,6 +43,36 @@ class Transaction(NailgunObject):
             )
         return res
 
+    @classmethod
+    def attach_deployment_info(cls, instance, deployment_info):
+        instance.deployment_info = deployment_info
+        db().flush()
+
+    @classmethod
+    def get_deployment_info(cls, instance):
+        if instance is not None:
+            return instance.deployment_info
+
+    @classmethod
+    def attach_network_settings(cls, instance, settings):
+        instance.network_settings = settings
+        db().flush()
+
+    @classmethod
+    def get_network_settings(cls, instance):
+        if instance is not None:
+            return instance.network_settings
+
+    @classmethod
+    def attach_cluster_settings(cls, instance, settings):
+        instance.cluster_settings = settings
+        db().flush()
+
+    @classmethod
+    def get_cluster_settings(cls, instance):
+        if instance is not None:
+            return instance.cluster_settings
+
 
 class TransactionCollection(NailgunCollection):
 
@@ -50,3 +81,11 @@ class TransactionCollection(NailgunCollection):
     @classmethod
     def get_by_cluster_id(cls, cluster_id):
         return cls.filter_by(None, cluster_id=cluster_id)
+
+    @classmethod
+    def get_last_success_run(cls, cluster):
+        # TODO(bgaifullin) remove hardcoded name of task
+        return cls.filter_by(
+            None, cluster_id=cluster.id, name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.ready
+        ).order_by('-id').limit(1).first()

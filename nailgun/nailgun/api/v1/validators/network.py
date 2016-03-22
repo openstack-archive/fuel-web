@@ -473,6 +473,78 @@ class NetAssignmentValidator(BasicValidator):
             )
 
     @classmethod
+    def _get_iface_by_id(cls, id_, db_interfaces, default=None):
+        for iface in db_interfaces:
+            if iface.id == id_:
+                return iface
+        else:
+            return default
+
+    @classmethod
+    def _verify_iface_dpdk_properties(cls, iface, db_node):
+        dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
+            db_node.cluster.release)
+        db_interfaces = db_node.nic_interfaces
+        db_iface = cls._get_iface_by_id(iface['id'], db_interfaces)
+
+        if db_iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
+            db_available = objects.NIC.dpdk_available(db_iface, dpdk_drivers)
+            available = objects.NIC.dpdk_available(iface, dpdk_drivers)
+            enabled = objects.NIC.dpdk_enabled(iface)
+        elif db_iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
+            db_available = objects.Bond.dpdk_available(db_iface, dpdk_drivers)
+            available = objects.Bond.dpdk_available(iface, dpdk_drivers)
+            enabled = objects.Bond.dpdk_enabled(iface)
+        else:
+            raise RuntimeError(
+                'Unknown type of network interface {}'.format(iface['type']))
+
+        # sanity checks
+        if db_available != available:
+            raise errors.InvalidData("DPDK availability is hardware property"
+                                     " and can't be changed manually.")
+        if not db_available and enabled:
+            raise errors.InvalidData('DPDK is not avalible for {}'.format(
+                iface['name']))
+
+        pci_id = iface['interface_properties'].get('pci_id')
+        db_pci_id = db_iface['interface_properties'].get('pci_id')
+
+        if db_pci_id and pci_id and pci_id != db_pci_id:
+            raise errors.InvalidData(
+                "PCI-ID of {} can't be changed manually".format(iface['name']))
+
+        # check that dpdk interface have only one network == 'private'
+        if enabled and not (
+                len(iface['assigned_networks']) == 1 and
+                iface['assigned_networks'][0]['name'] == 'private'
+        ):
+            raise errors.InvalidData('Interface {} with enabled DPDK can be'
+                                     ' assined only to private network')
+
+        return bool(enabled)
+
+    @classmethod
+    def _verify_node_dpdk_properties(cls, db_node, node):
+        if not objects.Node.dpdk_enabled(db_node):
+            return
+
+        if not objects.NodeAttributes.is_dpdk_hugepages_enabled(db_node):
+            raise errors.InvalidData('Hugepages for DPDK are not configured'
+                                     ' for node {}'.format(db_node['id']))
+
+        if not objects.NodeAttributes.is_nova_hugepages_enabled(db_node):
+            raise errors.InvalidData('Hugepages for Nova are not configured'
+                                     ' for node {}'.format(db_node['id']))
+
+        # check hypervisor type
+        h_type = objects.Cluster.get_editable_attributes(
+            db_node['cluster'])['common']['libvirt_type']['value']
+
+        if h_type != 'kvm':
+            raise errors.InvalidData('Only KVM hypervisor works with DPDK.')
+
+    @classmethod
     def verify_data_correctness(cls, node):
         db_node = db().query(Node).filter_by(id=node['id']).first()
         if not db_node:
@@ -497,6 +569,8 @@ class NetAssignmentValidator(BasicValidator):
                 log_message=True
             )
 
+        dpdk_enabled = False
+
         for iface in interfaces:
             iface_nets = [n.get('name')
                           for n in iface.get('assigned_networks')]
@@ -514,10 +588,7 @@ class NetAssignmentValidator(BasicValidator):
                 )
 
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
-                db_iface = next(six.moves.filter(
-                    lambda i: i.id == iface['id'],
-                    db_interfaces
-                ), None)
+                db_iface = cls._get_iface_by_id(iface['id'], db_interfaces)
                 if not db_iface:
                     raise errors.InvalidData(
                         "Node '{0}': there is no interface with ID '{1}'"
@@ -534,6 +605,10 @@ class NetAssignmentValidator(BasicValidator):
                         )
                 if iface.get('interface_properties', {}).get('sriov'):
                     cls._verify_sriov_properties(db_iface, iface, node['id'])
+
+                dpdk_enabled |= cls._verify_iface_dpdk_properties(
+                    iface, db_node)
+
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 pxe_iface_present = False
                 for slave in iface['slaves']:
@@ -577,6 +652,13 @@ class NetAssignmentValidator(BasicValidator):
                                 node['id'], iface['name'], pxe_iface_name),
                             log_message=True
                         )
+
+                dpdk_enabled |= cls._verify_iface_dpdk_properties(
+                    iface, db_node)
+
+        # run node validations if dpdk enabled on node
+        if dpdk_enabled:
+            cls._verify_node_dpdk_properties(db_node, node)
 
         for iface in interfaces:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \

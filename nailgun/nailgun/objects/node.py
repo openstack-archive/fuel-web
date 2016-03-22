@@ -1448,6 +1448,11 @@ class NodeAttributes(object):
                 any(six.itervalues(hugepages['nova']['value'])))
 
     @classmethod
+    def is_dpdk_hugepages_enabled(cls, node):
+        return int(Node.get_attributes(
+            node)['hugepages']['dpdk']['value']) != 0
+
+    @classmethod
     def dpdk_hugepages_attrs(cls, node):
         """Return hugepages configuration for DPDK
 

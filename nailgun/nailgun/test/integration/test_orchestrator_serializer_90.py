@@ -302,6 +302,62 @@ class TestDeploymentAttributesSerialization90(
 
         self.assertEqual(serialized_node['hugepages'], expected)
 
+    def test_openstack_config_in_serialized(self):
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute']
+        )
+        self.env.create_openstack_config(
+            cluster_id=self.cluster_db.id,
+            configuration={
+                'glance_config': 'value1',
+                'nova_config': 'value1',
+                'ceph_config': 'value1'
+            }
+        )
+        self.env.create_openstack_config(
+            cluster_id=self.cluster_db.id, node_role='compute',
+            configuration={'ceph_config': 'value2'}
+        )
+        self.env.create_openstack_config(
+            cluster_id=self.cluster_db.id, node_id=node.id,
+            configuration={'nova_config': 'value3'}
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [node])
+        self.assertEqual(
+            {'glance_config': 'value1',
+             'nova_config': 'value3',
+             'ceph_config': 'value2'},
+            serialized[0]['configs']
+        )
+
+    def test_cluster_attributes_in_serialized(self):
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute']
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [node])
+        for node_info in serialized:
+            self.assertEqual(
+                objects.Cluster.to_dict(self.cluster_db),
+                node_info['cluster']
+            )
+            self.assertEqual(
+                objects.Release.to_dict(self.cluster_db.release),
+                node_info['release']
+            )
+
+        self.assertEqual(
+            ['compute'],
+            serialized[0]['roles']
+        )
+        self.assertEqual(
+            [consts.TASK_ROLES.master],
+            serialized[1]['roles']
+        )
+
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,

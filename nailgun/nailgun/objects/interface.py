@@ -32,8 +32,8 @@ class DPDKMixin(object):
 
     @classmethod
     def dpdk_enabled(cls, instance):
-        dpdk = instance.interface_properties.get('dpdk')
-        return dpdk and dpdk.get('enabled')
+        dpdk = instance['interface_properties'].get('dpdk')
+        return bool(dpdk and dpdk.get('enabled'))
 
     @classmethod
     def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
@@ -67,7 +67,7 @@ class NIC(DPDKMixin, NailgunObject):
 
     @classmethod
     def get_dpdk_driver(cls, instance, dpdk_drivers):
-        pci_id = instance.interface_properties.get('pci_id', '').lower()
+        pci_id = instance['interface_properties'].get('pci_id', '').lower()
         for driver, device_ids in six.iteritems(dpdk_drivers):
             if pci_id in device_ids:
                 return driver

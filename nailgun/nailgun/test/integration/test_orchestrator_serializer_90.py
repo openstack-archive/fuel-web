@@ -118,6 +118,16 @@ class TestDeploymentAttributesSerialization90(
             1, 4,
             cluster_id=self.cluster_db.id,
             roles=['compute'])[0]
+
+        node.attributes['hugepages'] = {
+            'dpdk': {'type': 'text', 'value': '1024'},
+            'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}}
+        }
+        cluster_attrs = objects.Cluster.get_editable_attributes(node.cluster)
+        cluster_attrs['common']['libvirt_type']['value'] = 'kvm'
+        objects.Cluster.update_attributes(
+            node.cluster, {'editable': cluster_attrs})
+
         for iface in node.interfaces:
             iface['interface_properties'].update({'pci_id': 'test_id:1'})
         interfaces = self.env.node_nics_get(node.id).json_body

@@ -1111,8 +1111,13 @@ class EnvironmentManager(object):
         }
         if bond_properties:
             bond_dict["bond_properties"] = bond_properties
+        else:
+            bond_dict["bond_properties"] = {}
+
         if interface_properties:
             bond_dict["interface_properties"] = interface_properties
+        else:
+            bond_dict["interface_properties"] = {}
         data.append(bond_dict)
         resp = self.node_nics_put(node_id, data)
         self.tester.assertEqual(resp.status_code, 200)

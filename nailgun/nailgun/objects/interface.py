@@ -33,7 +33,7 @@ class DPDKMixin(object):
     @classmethod
     def dpdk_enabled(cls, instance):
         dpdk = instance.interface_properties.get('dpdk')
-        return dpdk and dpdk.get('enabled')
+        return bool(dpdk and dpdk.get('enabled'))
 
     @classmethod
     def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):

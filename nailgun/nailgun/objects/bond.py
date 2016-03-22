@@ -55,7 +55,7 @@ class Bond(DPDKMixin, NailgunObject):
     @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):
         return all(NIC.get_dpdk_driver(iface, dpdk_drivers)
-                   for iface in instance.slaves)
+                   for iface in instance['slaves'])
 
 
 class BondCollection(NailgunCollection):

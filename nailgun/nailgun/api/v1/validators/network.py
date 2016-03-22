@@ -473,6 +473,40 @@ class NetAssignmentValidator(BasicValidator):
             )
 
     @classmethod
+    def _verify_iface_dpdk_properties(cls, iface, dpdk_drivers):
+        if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
+            available = objects.NIC.dpdk_available(iface, dpdk_drivers)
+            enabled = objects.NIC.dpdk_enabled(iface)
+        elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
+            available = objects.Bond.dpdk_available(iface, dpdk_drivers)
+            enabled = objects.Bond.dpdk_enabled(iface)
+        else:
+            raise RuntimeError(
+                'Unknown type of network interface {}'.format(iface['type']))
+
+        if not available and enabled:
+            raise errors.InvalidData('DPDK is not avalible for {}'.format(
+                iface.name))
+
+        return enabled
+
+    @classmethod
+    def _verify_node_dpdk_properties(cls, node):
+        if not objects.Node.dpdk_enabled(node):
+            return
+
+        if not objects.NodeAttributes.is_dpdk_hugepages_enabled(node):
+            raise errors.InvalidData('Hugepages for dpdk are not configured'
+                                     ' for node {}'.format(node['id']))
+
+        # check hypervisor type
+        h_type = objects.Cluster.get_editable_attributes(
+            node['cluster'])['common']['libvirt_type']['value']
+
+        if h_type != 'kvm':
+            raise errors.InvalidData('Only KVM hypervisor works with DPDK.')
+
+    @classmethod
     def verify_data_correctness(cls, node):
         db_node = db().query(Node).filter_by(id=node['id']).first()
         if not db_node:
@@ -497,9 +531,17 @@ class NetAssignmentValidator(BasicValidator):
                 log_message=True
             )
 
+        dpdk_enabled = False
+        dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
+            db_node.cluster.release)
+
         for iface in interfaces:
             iface_nets = [n.get('name')
                           for n in iface.get('assigned_networks')]
+
+            # check DPDK for interface
+            dpdk_enabled |= cls._verify_iface_dpdk_properties(
+                iface, dpdk_drivers)
 
             # networks can be assigned only to nodes added
             # into cluster
@@ -577,6 +619,10 @@ class NetAssignmentValidator(BasicValidator):
                                 node['id'], iface['name'], pxe_iface_name),
                             log_message=True
                         )
+
+        # if dpdk enabled than run node validations
+        if dpdk_enabled:
+            cls._verify_node_dpdk_properties(db_node)
 
         for iface in interfaces:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \

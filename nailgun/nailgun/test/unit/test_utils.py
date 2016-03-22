@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
+import mock
 
 import requests
 
@@ -146,6 +146,10 @@ class TestTraverse(base.BaseUnitTest):
         def test(cls, arg=None):
             return 'testvalue'
 
+        @classmethod
+        def evaluate(cls, func, arg=None):
+            return getattr(cls, func)(arg)
+
     data = {
         'foo': {
             'generator': 'test',
@@ -168,7 +172,10 @@ class TestTraverse(base.BaseUnitTest):
     }
 
     def test_wo_formatting_context(self):
-        result = traverse(self.data, self.TestGenerator)
+        result = traverse(
+            self.data,
+            keywords={'generator': self.TestGenerator.evaluate}
+        )
 
         self.assertEqual(result, {
             'foo': 'testvalue',
@@ -188,7 +195,11 @@ class TestTraverse(base.BaseUnitTest):
             ]})
 
     def test_w_formatting_context(self):
-        result = traverse(self.data, self.TestGenerator, {'a': 13})
+        result = traverse(
+            self.data,
+            formatter_context={'a': 13},
+            keywords={'generator': self.TestGenerator.evaluate}
+        )
 
         self.assertEqual(result, {
             'foo': 'testvalue',
@@ -209,14 +220,18 @@ class TestTraverse(base.BaseUnitTest):
 
     def test_formatter_returns_informative_error(self):
         with self.assertRaisesRegexp(ValueError, '{a}'):
-            traverse(self.data, self.TestGenerator, {'b': 13})
+            traverse(
+                self.data,
+                formatter_context={'b': 13},
+                keywords={'generator': self.TestGenerator.evaluate}
+            )
 
     def test_w_safe_formatting_context(self):
         data = self.data.copy()
         data['bar'] = 'test {b} value'
         result = traverse(
-            data, self.TestGenerator, {'a': 13},
-            text_format_safe
+            data, text_format_safe, {'a': 13},
+            keywords={'generator': self.TestGenerator.evaluate}
         )
 
         self.assertEqual(result, {
@@ -236,10 +251,25 @@ class TestTraverse(base.BaseUnitTest):
                 }
             ]})
 
+    def test_custom_keywords(self):
+        data = {
+            'key1': {'exp1': 'name1', 'exp1_arg': 'arg1'},
+            'key2': {'exp2': 'name2'},
+        }
+        generator1 = mock.MagicMock(return_value='val1')
+        generator2 = mock.MagicMock(return_value='val2')
+        result = traverse(data, keywords={
+            'exp1': generator1,
+            'exp2': generator2
+        })
+        self.assertEqual({'key1': 'val1', 'key2': 'val2'}, result)
+        generator1.assert_called_once_with('name1', 'arg1')
+        generator2.assert_called_once_with('name2')
+
 
 class TestGetDebianReleaseFile(base.BaseUnitTest):
 
-    @patch('nailgun.utils.debian.requests.get')
+    @mock.patch('nailgun.utils.debian.requests.get')
     def test_normal_ubuntu_repo(self, m_get):
         get_release_file({
             'name': 'myrepo',
@@ -250,7 +280,7 @@ class TestGetDebianReleaseFile(base.BaseUnitTest):
         m_get.assert_called_with(
             'http://some-uri.com/path/dists/mysuite/Release')
 
-    @patch('nailgun.utils.debian.requests.get')
+    @mock.patch('nailgun.utils.debian.requests.get')
     def test_flat_ubuntu_repo(self, m_get):
         testcases = [
             # (suite, uri)
@@ -268,7 +298,7 @@ class TestGetDebianReleaseFile(base.BaseUnitTest):
             })
             m_get.assert_called_with(uri)
 
-    @patch('nailgun.utils.debian.requests.get')
+    @mock.patch('nailgun.utils.debian.requests.get')
     def test_do_not_silence_http_errors(self, m_get):
         r = requests.Response()
         r.status_code = 404
@@ -281,7 +311,7 @@ class TestGetDebianReleaseFile(base.BaseUnitTest):
             'section': 'main university',
         })
 
-    @patch('nailgun.utils.debian.requests.get')
+    @mock.patch('nailgun.utils.debian.requests.get')
     def test_do_not_retry_on_404(self, m_get):
         r = requests.Response()
         r.status_code = 404
@@ -295,7 +325,7 @@ class TestGetDebianReleaseFile(base.BaseUnitTest):
         }, retries=3)
         self.assertEqual(m_get.call_count, 1)
 
-    @patch('nailgun.utils.debian.requests.get')
+    @mock.patch('nailgun.utils.debian.requests.get')
     def test_do_retry_on_error(self, m_get):
         r = requests.Response()
         r.status_code = 500
@@ -309,7 +339,7 @@ class TestGetDebianReleaseFile(base.BaseUnitTest):
         }, retries=3)
         self.assertEqual(m_get.call_count, 3)
 
-    @patch('nailgun.utils.debian.requests.get')
+    @mock.patch('nailgun.utils.debian.requests.get')
     def test_returns_content_if_http_ok(self, m_get):
         r = requests.Response()
         r._content = 'content'
@@ -579,8 +609,8 @@ class TestFakeNodeGenerator(base.BaseUnitTest):
             }
         ]
 
-        with patch('random.choice',
-                   side_effect=memory_random_side_effect) as mock_random:
+        with mock.patch('random.choice',
+                        side_effect=memory_random_side_effect) as mock_random:
             disks_meta = self.generator._generate_disks_meta(1)
             self.assertNotEqual(disks_meta[0]['size'], 0)
             self.assertEqual(mock_random.call_count, 3)

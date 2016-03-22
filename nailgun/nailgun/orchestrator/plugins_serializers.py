@@ -18,6 +18,8 @@
 
 import itertools
 
+import six
+
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -148,7 +150,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         # plugin tasks
         tasks_to_process = plugin.tasks + plugin.deployment_tasks
 
-        roles = []
+        roles = set()
         for task in tasks_to_process:
             # plugin tasks may store information about node
             # role not only in `role` key but also in `groups`
@@ -156,15 +158,10 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
             if task_role == consts.TASK_ROLES.all:
                 # just return all nodes
                 return self.role_resolver.resolve(consts.TASK_ROLES.all)
-            elif task_role == consts.TASK_ROLES.master:
-                # NOTE(aroma): pre-deployment tasks should not be executed on
-                # master node because in some cases it leads to errors due to
-                # commands need to be run are not compatible with master node
-                # OS (CentOS). E.g. of such situation - create repository
-                # executes `apt-get update` which fails on CentOS
-                continue
+            elif isinstance(task_role, six.string_types):
+                roles.add(task_role)
             elif isinstance(task_role, list):
-                roles.extend(task_role)
+                roles.update(task_role)
             # if task has 'skipped' status it is allowed that 'roles' and
             # 'groups' are not be specified
             elif task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped:
@@ -173,6 +170,13 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
                     '`roles` or `groups` must be specified and contain '
                     'a list of roles or "*"',
                     task)
+
+        # NOTE(aroma): pre-deployment tasks should not be executed on
+        # master node because in some cases it leads to errors due to
+        # commands need to be run are not compatible with master node
+        # OS (CentOS). E.g. of such situation - create repository
+        # executes `apt-get update` which fails on CentOS
+        roles.discard(consts.TASK_ROLES.master)
 
         return self.role_resolver.resolve(roles)
 

@@ -152,7 +152,6 @@ class DefaultTaskSerializer(NoopTaskSerializer):
             utils.text_format_safe,
             self.context.get_formatter_context(node_id),
             {
-                'generator': self.context.get_attribute_generator(node_id),
                 'yaql_exp': self.context.get_yaql_interpreter(node_id)
             }
         )

@@ -83,6 +83,19 @@ class OpenstackConfigCollection(NailgunCollection):
     single = OpenstackConfig
 
     @classmethod
+    def create(cls, data):
+        configs = []
+        # If node_ids list is passed, separate OpenstackConfig object
+        # should be created for each node. For global config (cluster scope or
+        # specific role scope) single config record is created
+        # with node_id=None.
+        node_ids = data.pop('node_ids', [None])
+        for node_id in node_ids:
+            config_data = dict(data, node_id=node_id)
+            configs.append(cls.single.create(config_data))
+        return configs
+
+    @classmethod
     def find_configs_for_nodes(cls, cluster, nodes):
         """Returns list of configurations that should be applied.
 

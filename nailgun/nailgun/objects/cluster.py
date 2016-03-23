@@ -1340,7 +1340,7 @@ class Cluster(NailgunObject):
         )
 
     @classmethod
-    def get_nodes_to_update_config(cls, cluster, node_id=None, node_role=None,
+    def get_nodes_to_update_config(cls, cluster, node_ids=None, node_role=None,
                                    only_ready_nodes=True):
         """Get nodes for specified cluster that should be updated.
 
@@ -1355,8 +1355,8 @@ class Cluster(NailgunObject):
 
         if only_ready_nodes:
             query = query.filter_by(status=consts.NODE_STATUSES.ready)
-        if node_id:
-            query = query.filter_by(id=node_id)
+        if node_ids:
+            query = query.filter(models.Node.id.in_(node_ids))
         elif node_role:
             query = query.filter(
                 models.Node.roles.any(node_role))

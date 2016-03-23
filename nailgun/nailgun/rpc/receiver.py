@@ -262,6 +262,7 @@ class NailgunReceiver(object):
         # message with descriptive error
         nodes_by_id = {str(n['uid']): n for n in nodes}
         master = nodes_by_id.pop(consts.MASTER_NODE_UID, {})
+        nodes_by_id.pop('None', {})
 
         if nodes_by_id:
             # lock nodes for updating so they can't be deleted
@@ -315,6 +316,17 @@ class NailgunReceiver(object):
         if nodes_by_id:
             logger.warning("The following nodes is not found: %s",
                            ",".join(sorted(nodes_by_id)))
+
+        for node in nodes:
+            if node.get('deployment_graph_task_name') \
+                    and node.get('task_status'):
+                objects.DeploymentHistory.update_if_exist(
+                    task.id,
+                    node['uid'],
+                    node['deployment_graph_task_name'],
+                    node['task_status'],
+                    node.get('custom')
+                )
 
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)

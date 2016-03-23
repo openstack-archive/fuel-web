@@ -461,6 +461,78 @@ class TestDeploymentLCMSerialization90(
         )
 
 
+class TestDeploymentLCMSerialization90(
+    TestSerializer90Mixin,
+    test_orchestrator_serializer_80.BaseDeploymentSerializer
+):
+    def setUp(self):
+        super(TestDeploymentLCMSerialization90, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
+        self.cluster_db = self.env.clusters[-1]
+        self.node = self.env.create_node(
+            cluster_id=self.cluster_db.id, roles=['compute']
+        )
+        self.serializer = self.create_serializer(self.cluster_db)
+
+    @classmethod
+    def create_serializer(cls, cluster):
+        return deployment_serializers.DeploymentLCMSerializer()
+
+    def test_openstack_configuration_in_serialized(self):
+
+        self.env.create_openstack_config(
+            cluster_id=self.cluster_db.id,
+            configuration={
+                'glance_config': 'value1',
+                'nova_config': 'value1',
+                'ceph_config': 'value1'
+            }
+        )
+        self.env.create_openstack_config(
+            cluster_id=self.cluster_db.id, node_role='compute',
+            configuration={'ceph_config': 'value2'}
+        )
+        self.env.create_openstack_config(
+            cluster_id=self.cluster_db.id, node_id=self.node.id,
+            configuration={'nova_config': 'value3'}
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        self.assertEqual(
+            {'glance_config': 'value1',
+             'nova_config': 'value3',
+             'ceph_config': 'value2'},
+            serialized[0]['configuration']
+        )
+
+    def test_cluster_attributes_in_serialized(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        for node_info in serialized:
+            self.assertEqual(
+                objects.Cluster.to_dict(self.cluster_db),
+                node_info['cluster']
+            )
+            self.assertEqual(
+                objects.Release.to_dict(self.cluster_db.release),
+                node_info['release']
+            )
+
+        self.assertEqual(
+            ['compute'],
+            serialized[0]['roles']
+        )
+        self.assertEqual(
+            [consts.TASK_ROLES.master],
+            serialized[1]['roles']
+        )
+
+
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,
     test_orchestrator_serializer_80.TestDeploymentHASerializer80

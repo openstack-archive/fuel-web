@@ -1327,7 +1327,58 @@ class EnvironmentManager(object):
         return plugin
 
 
-class BaseTestCase(TestCase):
+class BaseUnitTest(TestCase):
+    def datadiff(self, data1, data2, path=None, ignore_keys=[],
+                 compare_sorted=False):
+        if path is None:
+            path = []
+
+        def fail(msg, failed_path):
+            self.fail('Path "{0}": {1}'.format("->".join(failed_path), msg))
+
+        if not isinstance(data1, dict) or not isinstance(data2, dict):
+            if isinstance(data1, (list, tuple)):
+                newpath = path[:]
+                if compare_sorted:
+                    data1 = sorted(data1)
+                    data2 = sorted(data2)
+                for i, keys in enumerate(izip(data1, data2)):
+                    newpath.append(str(i))
+                    self.datadiff(keys[0], keys[1], newpath, ignore_keys,
+                                  compare_sorted)
+                    newpath.pop()
+            elif data1 != data2:
+                err = "Values differ: {0} != {1}".format(
+                    str(data1),
+                    str(data2)
+                )
+                fail(err, path)
+        else:
+            newpath = path[:]
+
+            if len(data1) != len(data2):
+                fail('Dicts have different keys number: {0} != {1}'.format(
+                    len(data1), len(data2)), path)
+
+            for key1, key2 in zip(
+                sorted(data1),
+                sorted(data2)
+            ):
+                if key1 != key2:
+                    err = "Keys differ: {0} != {1}".format(
+                        str(key1),
+                        str(key2)
+                    )
+                    fail(err, path)
+                if key1 in ignore_keys:
+                    continue
+                newpath.append(key1)
+                self.datadiff(data1[key1], data2[key2], newpath, ignore_keys,
+                              compare_sorted)
+                newpath.pop()
+
+
+class BaseTestCase(BaseUnitTest):
 
     fixtures = ['admin_network', 'master_node_settings']
 
@@ -1378,55 +1429,6 @@ class BaseTestCase(TestCase):
 
     def assertValidJSON(self, data):
         self.assertNotRaises(ValueError, jsonutils.loads, data)
-
-    def datadiff(self, data1, data2, path=None, ignore_keys=[],
-                 compare_sorted=False):
-        if path is None:
-            path = []
-
-        def fail(msg, failed_path):
-            self.fail('Path "{0}": {1}'.format("->".join(failed_path), msg))
-
-        if not isinstance(data1, dict) or not isinstance(data2, dict):
-            if isinstance(data1, (list, tuple)):
-                newpath = path[:]
-                if compare_sorted:
-                    data1 = sorted(data1)
-                    data2 = sorted(data2)
-                for i, keys in enumerate(izip(data1, data2)):
-                    newpath.append(str(i))
-                    self.datadiff(keys[0], keys[1], newpath, ignore_keys,
-                                  compare_sorted)
-                    newpath.pop()
-            elif data1 != data2:
-                err = "Values differ: {0} != {1}".format(
-                    str(data1),
-                    str(data2)
-                )
-                fail(err, path)
-        else:
-            newpath = path[:]
-
-            if len(data1) != len(data2):
-                fail('Dicts have different keys number: {0} != {1}'.format(
-                    len(data1), len(data2)), path)
-
-            for key1, key2 in zip(
-                sorted(data1),
-                sorted(data2)
-            ):
-                if key1 != key2:
-                    err = "Keys differ: {0} != {1}".format(
-                        str(key1),
-                        str(key2)
-                    )
-                    fail(err, path)
-                if key1 in ignore_keys:
-                    continue
-                newpath.append(key1)
-                self.datadiff(data1[key1], data2[key2], newpath, ignore_keys,
-                              compare_sorted)
-                newpath.pop()
 
 
 class BaseIntegrationTest(BaseTestCase):
@@ -1486,10 +1488,6 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
         )
 
         return resp.json['access']['token']['id'].encode('utf-8')
-
-
-class BaseUnitTest(TestCase):
-    pass
 
 
 def fake_tasks(fake_rpc=True,

@@ -2050,6 +2050,52 @@ class TestOpenstackConfig(BaseTestCase):
         self.assertFalse(config.is_active)
 
 
+class TestOpenstackConfigCollection(BaseTestCase):
+
+    def setUp(self):
+        super(TestOpenstackConfigCollection, self).setUp()
+
+        self.env.create(
+            nodes_kwargs=[
+                {'role': 'controller', 'status': 'ready'},
+                {'role': 'compute', 'status': 'ready'},
+                {'role': 'cinder', 'status': 'ready'},
+            ])
+
+        self.cluster = self.env.clusters[0]
+        self.nodes = self.env.nodes
+
+    def test_create(self):
+        configs = objects.OpenstackConfigCollection.create({
+            'cluster_id': self.cluster.id,
+            'configuration': {'key': 'value'},
+        })
+        self.assertEqual(len(configs), 1)
+        self.assertEqual(configs[0].cluster_id, self.cluster.id)
+        self.assertIsNone(configs[0].node_id)
+
+    def test_create_singlenode(self):
+        configs = objects.OpenstackConfigCollection.create({
+            'cluster_id': self.cluster.id,
+            'node_ids': [self.nodes[0].id],
+            'configuration': {'key': 'value'},
+        })
+        self.assertEqual(len(configs), 1)
+        self.assertEqual(configs[0].cluster_id, self.cluster.id)
+        self.assertEqual(configs[0].node_id, self.nodes[0].id)
+
+    def test_create_multinode(self):
+        node_ids = [n.id for n in self.nodes]
+        configs = objects.OpenstackConfigCollection.create({
+            'cluster_id': self.cluster.id,
+            'node_ids': node_ids,
+            'configuration': {'key': 'value'},
+        })
+        self.assertEqual(len(configs), len(self.nodes))
+        for config, node_id in six.moves.zip(configs, node_ids):
+            self.assertEqual(config.node_id, node_id)
+
+
 class TestBondObject(BaseTestCase):
 
     def setUp(self):

@@ -1300,7 +1300,7 @@ class OpenstackConfigTaskManager(TaskManager):
         db().add(task)
 
         nodes_to_update = objects.Cluster.get_nodes_to_update_config(
-            self.cluster, filters.get('node_id'), filters.get('node_role'))
+            self.cluster, filters.get('node_ids'), filters.get('node_role'))
 
         message = self._call_silently(
             task, tasks.UpdateOpenstackConfigTask,

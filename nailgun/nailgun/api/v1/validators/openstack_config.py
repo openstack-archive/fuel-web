@@ -20,12 +20,12 @@ from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun import utils
 
 
 class OpenstackConfigValidator(BasicValidator):
 
-    int_fields = frozenset(['cluster_id', 'node_id', 'is_active'])
-    exclusive_fields = frozenset(['node_id', 'node_role'])
+    exclusive_fields = frozenset(['node_id', 'node_ids', 'node_role'])
 
     supported_configs = frozenset([
         'nova_config', 'nova_paste_api_ini', 'neutron_config',
@@ -68,7 +68,7 @@ class OpenstackConfigValidator(BasicValidator):
                                      "'operational'")
 
         target_nodes = objects.Cluster.get_nodes_to_update_config(
-            cluster, filters.get('node_id'), filters.get('node_role'),
+            cluster, filters.get('node_ids'), filters.get('node_role'),
             only_ready_nodes=False)
 
         ready_target_nodes_uids = set(
@@ -99,15 +99,24 @@ class OpenstackConfigValidator(BasicValidator):
         cls.validate_schema(data, schema)
         cls._check_exclusive_fields(data)
 
-        cluster = objects.Cluster.get_by_uid(data['cluster_id'],
-                                             fail_if_not_found=True)
-        if 'node_id' in data:
-            node = objects.Node.get_by_uid(
-                data['node_id'], fail_if_not_found=True)
-            if node.cluster_id != cluster.id:
+        # node_id is supported for backward compatibility
+        node_id = data.pop('node_id', None)
+        if node_id is not None:
+            data['node_ids'] = [node_id]
+
+        cluster = objects.Cluster.get_by_uid(
+            data['cluster_id'], fail_if_not_found=True)
+
+        node_ids = data.get('node_ids')
+        if node_ids:
+            nodes = objects.NodeCollection.get_by_ids(node_ids, cluster.id)
+            invalid_node_ids = set(node_ids) - set(n.id for n in nodes)
+
+            if invalid_node_ids:
                 raise errors.InvalidData(
-                    "Node '{0}' is not assigned to cluster '{1}'".format(
-                        data['node_id'], cluster.id))
+                    "Nodes '{0}' are not assigned to cluster '{1}'".format(
+                        ', '.join(str(n) for n in sorted(invalid_node_ids)),
+                        cluster.id))
 
         cls._check_no_running_deploy_tasks(cluster)
         return data
@@ -136,7 +145,7 @@ class OpenstackConfigValidator(BasicValidator):
         cls._check_exclusive_fields(data)
         cls.validate_schema(data, schema.OPENSTACK_CONFIG_QUERY)
 
-        data['is_active'] = bool(data.get('is_active', True))
+        data.setdefault('is_active', True)
         return data
 
     @classmethod
@@ -156,9 +165,21 @@ class OpenstackConfigValidator(BasicValidator):
         Schema validation doesn't perform any type conversion, so
         it is required to convert them before schema validation.
         """
-        for field in cls.int_fields:
-            if field in data and data[field] is not None:
-                data[field] = int(data[field])
+        for field in ['cluster_id', 'node_id']:
+            value = data.get(field, None)
+            if value is not None:
+                data[field] = int(value)
+
+        node_ids = data.get('node_ids', None)
+        if node_ids is not None:
+            data['node_ids'] = [int(n) for n in node_ids.split(',')]
+
+        if 'is_active' in data:
+            try:
+                data['is_active'] = utils.parse_bool(data['is_active'])
+            except ValueError:
+                raise errors.InvalidData("Invalid 'is_active' value: '{0}'"
+                                         .format(data['is_active']))
 
     @classmethod
     def _check_exclusive_fields(cls, data):

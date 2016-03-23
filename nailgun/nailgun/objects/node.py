@@ -1271,8 +1271,13 @@ class NodeCollection(NailgunCollection):
         return cls.filter_by(None, group_id=group_id)
 
     @classmethod
-    def get_by_ids(cls, ids):
-        return db.query(models.Node).filter(models.Node.id.in_(ids)).all()
+    def get_by_ids(cls, ids, cluster_id=None):
+        query = db.query(models.Node).filter(models.Node.id.in_(ids))
+
+        if cluster_id is not None:
+            query = query.filter(models.Node.cluster_id == cluster_id)
+
+        return query.all()
 
     @classmethod
     def reset_network_template(cls, instances):

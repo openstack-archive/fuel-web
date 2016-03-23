@@ -19,8 +19,12 @@ _base_config = {
 }
 
 _base_properties = {
-    'cluster_id': {'type': 'number', },
-    'node_id': {'type': 'number'},
+    'cluster_id': {'type': 'integer'},
+    'node_id': {'type': 'integer'},
+    'node_ids': {
+        'type': ['array', 'null'],
+        'items': {'type': 'integer'},
+    },
     'node_role': {'type': 'string'},
 }
 
@@ -28,7 +32,7 @@ OPENSTACK_CONFIG = {
     'title': 'OpenstackConfig',
     'description': 'Openstack Configuration',
     'properties': {
-        'id': {'type': 'number'},
+        'id': {'type': 'integer'},
         'configuration': {'type': 'object'},
     },
     'required': ['cluster_id', 'configuration'],
@@ -38,7 +42,7 @@ OPENSTACK_CONFIG_EXECUTE = {
     'title': 'OpenstackConfig execute',
     'description': 'Openstack Configuration filters for execute',
     'properties': {
-        'id': {'type': 'number'},
+        'id': {'type': 'integer'},
         'force': {'type': 'boolean'}
     },
     'required': ['cluster_id'],
@@ -48,12 +52,7 @@ OPENSTACK_CONFIG_QUERY = {
     'title': 'OpenstackConfig query',
     'description': 'URL query for Openstack Configuration filter',
     'properties': {
-        'is_active': {
-            'type': 'number',
-            'description': "is_active is a number since GET request"
-                           " query parameters don't carry type information"
-                           " and are parsed as strings"},
-        'cluster_id': {'type': 'number'},
+        'is_active': {'type': 'boolean'}
     },
     'required': ['cluster_id'],
 }

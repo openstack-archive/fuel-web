@@ -26,6 +26,7 @@ from nailgun.utils import dict_update
 from nailgun.utils import flatten
 from nailgun.utils import get_lines
 from nailgun.utils import grouper
+from nailgun.utils import parse_bool
 from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
 
@@ -137,6 +138,18 @@ class TestUtils(base.BaseIntegrationTest):
         self.assertEqual(get_lines(non_empty), ['abc', 'foo', 'bar'])
 
         self.assertEqual(get_lines(mixed), ['abc', 'foo', 'bar'])
+
+    def test_parse_bool(self):
+        true_values = ['1', 't', 'T', 'TRUE', 'True', 'true']
+        false_values = ['0', 'f', 'F', 'FALSE', 'False', 'false']
+
+        for value in true_values:
+            self.assertTrue(parse_bool(value))
+        for value in false_values:
+            self.assertFalse(parse_bool(value))
+
+        self.assertRaises(ValueError, parse_bool, 'tru')
+        self.assertRaises(ValueError, parse_bool, 'fals')
 
 
 class TestTraverse(base.BaseUnitTest):

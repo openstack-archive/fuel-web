@@ -249,6 +249,14 @@ TASK_STATUSES = Enum(
     'error'
 )
 
+HISTORY_TASK_STATUSES = Enum(
+    'pending',
+    'ready',
+    'running',
+    'error',
+    'skipped'
+)
+
 TASK_NAMES = Enum(
     'super',
 

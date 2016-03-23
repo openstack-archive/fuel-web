@@ -19,7 +19,6 @@ from nailgun.db.sqlalchemy.models import DeploymentGraphTask
 from nailgun.orchestrator.tasks_templates import make_generic_task
 from nailgun.task.manager import OpenstackConfigTaskManager
 from nailgun.test import base
-from nailgun.test.base import fake_tasks
 
 
 class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
@@ -82,7 +81,6 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
                 'keystone_config': {},
             })
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_configuration_execute(self, mocked_rpc):
         task_manager = OpenstackConfigTaskManager(self.cluster.id)
@@ -121,6 +119,19 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
         self.assertItemsEqual([self.nodes[0].uid], node_uids)
         self.assertItemsEqual(deployment_tasks, [
             make_generic_task([self.nodes[0].uid], self.refreshable_task)])
+
+    @patch('nailgun.rpc.cast')
+    def test_configuration_execute_by_node_id(self, mocked_rpc):
+        task_manager = OpenstackConfigTaskManager(self.cluster.id)
+        task = task_manager.execute({
+            'cluster_id': self.cluster.id,
+            'node_ids': [self.nodes[0].id],
+        })
+
+        self.assertEqual(task.status, consts.TASK_STATUSES.pending)
+
+        all_node_ids = [self.nodes[0].id]
+        self.assertEqual(task.cache['nodes'], all_node_ids)
 
 
 class TestOpenstackConfigTaskManager90(TestOpenstackConfigTaskManager80):

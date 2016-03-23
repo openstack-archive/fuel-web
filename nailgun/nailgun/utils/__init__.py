@@ -302,3 +302,24 @@ def dict_update(target, patch, level=None):
                 target.setdefault(k, {}).update(v)
         else:
             target[k] = v
+
+
+def parse_bool(value):
+    """
+    Returns boolean value from string representation.
+
+    Function returns ``True`` for ``"1", "t", "true"`` values
+    and ``False`` for ``"0", "f", "false"``.
+    Otherwise raises ValueError.
+
+    :param str value: string representation of boolean value
+    :rtype: bool
+    :raises ValueError: if the value cannot be converted to bool
+    """
+    value = value.lower()
+    if value in ('1', 't', 'true'):
+        return True
+    elif value in ('0', 'f', 'false'):
+        return False
+    raise ValueError('Invalid value: {0}'.format(value))
+

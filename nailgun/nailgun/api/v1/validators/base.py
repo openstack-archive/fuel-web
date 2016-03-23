@@ -104,14 +104,18 @@ class BasicValidator(object):
             raise errors.InvalidData(str(exc))
 
     @classmethod
-    def validate_release(cls, data=None, cluster=None):
+    def validate_release(cls, data=None, cluster=None, graph_type=None):
         """Validate if deployment tasks are present in db
 
+        :param data: data
         :param cluster: Cluster instance
+        :param graph_type: deployment graph type
         :raises NoDeploymentTasks:
         """
+        # TODO https://bugs.launchpad.net/fuel/+bug/1561485
         if (cluster and objects.Release.is_granular_enabled(cluster.release)
-                and not objects.Cluster.get_deployment_tasks(cluster)):
+                and not objects.Cluster.get_deployment_tasks(
+                cluster, graph_type)):
             raise errors.NoDeploymentTasks(
                 "Deployment tasks not found for '{0}' release in the "
                 "database. Please upload them. If you're operating "

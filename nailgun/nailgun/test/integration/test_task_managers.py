@@ -105,6 +105,67 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEqual(n.status, NODE_STATUSES.ready)
             self.assertEqual(n.progress, 100)
 
+    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    def test_settings_saved_in_transaction(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+                {"pending_deletion": True,
+                 'status': NODE_STATUSES.provisioned},
+            ]
+        )
+        cluster = self.env.clusters[-1]
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertIn(
+            supertask.status,
+            (TASK_STATUSES.pending, TASK_STATUSES.running,
+             TASK_STATUSES.ready)
+        )
+        deployment_task = next(
+            t for t in supertask.subtasks if t.name == TASK_NAMES.deployment
+        )
+        self.datadiff(
+            {'editable': objects.Cluster.get_editable_attributes(cluster)},
+            objects.Transaction.get_cluster_settings(deployment_task)
+        )
+        # TODO(bgaifullin) need to compare with expected data
+        # it is not easy to get expected data for compare.
+        # only check that network settings is not empty
+        self.assertTrue(
+            objects.Transaction.get_network_settings(deployment_task)
+        )
+
+    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    def test_deployment_info_saves_in_transaction(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+                {"pending_deletion": True,
+                 'status': NODE_STATUSES.provisioned},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'liberty-9.0',
+            },
+        )
+        cluster = self.env.clusters[-1]
+        nodes_ids = [n.uid for n in self.env.nodes if not n.pending_deletion]
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertIn(
+            supertask.status,
+            (TASK_STATUSES.pending, TASK_STATUSES.running,
+             TASK_STATUSES.ready)
+        )
+        deployment_task = next(
+            t for t in supertask.subtasks if t.name == TASK_NAMES.deployment
+        )
+        info = objects.Transaction.get_deployment_info(deployment_task)
+        # information about master node should be in deployment info
+        nodes_ids.append(consts.MASTER_NODE_UID)
+        # check that deployment info contains information about all nodes
+        # that are not deleted
+        self.assertItemsEqual(nodes_ids, info)
+
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
         self.env.create(

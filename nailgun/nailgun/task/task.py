@@ -16,6 +16,7 @@
 
 import collections
 from copy import deepcopy
+from distutils.version import StrictVersion
 import os
 import socket
 
@@ -36,10 +37,15 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun import lcm
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
+from nailgun.objects.serializers.network_configuration \
+    import NeutronNetworkConfigurationSerializer
+from nailgun.objects.serializers.network_configuration \
+    import NovaNetworkConfigurationSerializer
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
@@ -102,19 +108,22 @@ def fake_cast(queue, messages, **kwargs):
 
 class BaseDeploymentTask(object):
     @classmethod
-    def _get_deployment_method(cls, cluster, ignore_task_deploy=False):
+    def _get_deployment_methods(cls, cluster):
         """Get deployment method name based on cluster version
 
         :param cluster: Cluster db object
-        :param ignore_task_deploy: do not check that task deploy enabled
-        :returns: string - deploy/granular_deploy
+        :returns: list of available methods
         """
-        if not ignore_task_deploy and \
-                objects.Cluster.is_task_deploy_enabled(cluster):
-            return "task_deploy"
+        methods = []
+        if objects.Release.is_lcm_supported(cluster.release):
+            methods.append('lcm_transaction')
+        if objects.Cluster.is_task_deploy_enabled(cluster):
+            methods.append('task_deploy')
         if objects.Release.is_granular_enabled(cluster.release):
-            return 'granular_deploy'
-        return 'deploy'
+            methods.append('granular_deploy')
+        else:
+            methods.append('deploy')
+        return methods
 
     @classmethod
     def call_deployment_method(cls, task, *args, **kwargs):
@@ -124,14 +133,60 @@ class BaseDeploymentTask(object):
         :param args: the positional arguments
         :param kwargs: the keyword arguments
         """
-        for flag in (False, True):
+        for name in cls._get_deployment_methods(task.cluster):
             try:
-                method = cls._get_deployment_method(task.cluster, flag)
-                message = getattr(cls, method)(task, *args, **kwargs)
-                return method, message
+                method = getattr(cls, name)
+            except AttributeError:
+                logger.warning(
+                    "%s is not allowed, fallback to next method.", name
+                )
+                continue
+
+            try:
+                return method(task, *args, **kwargs)
             except errors.TaskBaseDeploymentNotAllowed:
-                logger.warning("Task deploy is not allowed, "
-                               "fallback to granular deploy.")
+                logger.warning(
+                    "%s is not allowed, fallback to next method.", name
+                )
+
+    @classmethod
+    def lcm_transaction(cls, task, *args, **kwargs):
+        tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+        # TODO(bgaifullin) remove task version check
+        # after related Library changes will be committed
+        # if there is at least one task that is supported LCM, use it.
+        lcm_readiness = StrictVersion(consts.TASK_LCM_READINESS)
+        lcm_ready = (
+            any(StrictVersion(t['version']) >= lcm_readiness for t in tasks)
+        )
+        if not lcm_ready:
+            raise errors.TaskBaseDeploymentNotAllowed()
+
+        logger.debug("start cluster serialization.")
+        # we should update information for all nodes except deleted
+        deployment_info = deployment_serializers.serialize_for_lcm(
+            task.cluster,
+            objects.Cluster.get_nodes_not_for_deletion(task.cluster)
+        )
+        logger.debug("finish cluster serialization.")
+        logger.debug("The LCM serializers will be used.")
+        role_resolver = RoleResolver(
+            objects.Cluster.get_nodes_not_for_deletion(task.cluster)
+        )
+        current_state = objects.Transaction.get_deployment_info(
+            objects.TransactionCollection.get_last_success_run(task.cluster)
+        )
+        expected_state = {node['uid']: node for node in deployment_info}
+        context = lcm.TransactionContext(expected_state, current_state)
+        graph = lcm.TransactionSerializer.serialize(
+            context, tasks, role_resolver
+        )
+        directory = {}
+        objects.Transaction.attach_deployment_info(task, expected_state)
+        return 'task_deploy', {
+            "tasks_directory": directory,
+            "tasks_graph": graph
+        }
 
 
 class DeploymentTask(BaseDeploymentTask):
@@ -211,6 +266,14 @@ class DeploymentTask(BaseDeploymentTask):
         for node in nodes:
             node.pending_addition = False
 
+        # cluster get_attributes returns
+        objects.Transaction.attach_cluster_settings(
+            task,
+            {'editable': objects.Cluster.get_editable_attributes(task.cluster)}
+        )
+        objects.Transaction.attach_network_settings(
+            task, cls._get_networks(task.cluster)
+        )
         rpc_message = make_astute_message(
             task,
             deployment_mode,
@@ -219,6 +282,18 @@ class DeploymentTask(BaseDeploymentTask):
         )
         db().flush()
         return rpc_message
+
+    @classmethod
+    def _get_networks(cls, cluster):
+        if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
+            serializer = NovaNetworkConfigurationSerializer
+        elif cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
+            serializer = NeutronNetworkConfigurationSerializer
+        else:
+            raise errors.NetProviderNotFound(
+                "Cannot find network provider '{0}' for "
+                "cluster '{1}'".format(cluster.net_provider, cluster.id))
+        return serializer.serialize_for_cluster(cluster)
 
     @classmethod
     def granular_deploy(cls, task, nodes, affected_nodes, task_ids, events):
@@ -230,7 +305,7 @@ class DeploymentTask(BaseDeploymentTask):
         :task_ids: the list of tasks_ids to execute,
                            if None, all tasks will be executed
         :events: the list of events to find subscribed tasks
-        :return: the arguments for RPC message
+        :return: RPC method name, the arguments for RPC message
         """
         graph = orchestrator_graph.AstuteGraph(task.cluster)
         graph.only_tasks(task_ids)
@@ -255,13 +330,16 @@ class DeploymentTask(BaseDeploymentTask):
             graph, task.cluster, nodes,
             role_resolver=role_resolver)
 
-        return {
+        return 'granular_deploy', {
             'deployment_info': serialized_cluster,
             'pre_deployment': pre_deployment,
             'post_deployment': post_deployment
         }
 
-    deploy = granular_deploy
+    @classmethod
+    def deploy(cls, *args, **kwargs):
+        args = cls.granular_deploy(*args, **kwargs)[1]
+        return 'deploy', args
 
     @classmethod
     def task_deploy(cls, task, nodes, affected_nodes, task_ids, events):
@@ -273,29 +351,27 @@ class DeploymentTask(BaseDeploymentTask):
         :task_ids: the list of tasks_ids to execute,
                            if None, all tasks will be executed
         :events: the list of events to find subscribed tasks
-        :return: the arguments for RPC message
+        :return:  RPC method name, the arguments for RPC message
         """
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         logger.debug("start cluster serialization.")
-        serialized_cluster = deployment_serializers.serialize(
+        deployment_info = deployment_serializers.serialize(
             None, task.cluster, nodes
         )
         logger.debug("finish cluster serialization.")
+        logger.debug("The legacy task serializers will be used.")
         tasks_events = events and \
             task_based_deployment.TaskEvents('reexecute_on', events)
-
-        logger.debug("start tasks serialization.")
         directory, graph = task_based_deployment.TasksSerializer.serialize(
             task.cluster, nodes, deployment_tasks, affected_nodes,
             task_ids, tasks_events
         )
         logger.debug("finish tasks serialization.")
-        return {
-            "deployment_info": serialized_cluster,
+        return 'task_deploy', {
+            "deployment_info": deployment_info,
             "tasks_directory": directory,
             "tasks_graph": graph
-
         }
 
 
@@ -1880,7 +1956,7 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
         directory, graph = task_based_deployment.TasksSerializer.serialize(
             task.cluster, nodes, tasks, task_ids=task_ids
         )
-        return make_astute_message(
+        return 'task_deploy', make_astute_message(
             task, "task_deploy", "update_config_resp", {
                 "tasks_directory": directory,
                 "tasks_graph": graph
@@ -1894,7 +1970,7 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
         deployment_tasks = graph.stage_tasks_serialize(
             graph.graph.topology, nodes
         )
-        return make_astute_message(
+        return 'granular_deploy', make_astute_message(
             task, 'execute_tasks', 'update_config_resp', {
                 'tasks': deployment_tasks,
             })

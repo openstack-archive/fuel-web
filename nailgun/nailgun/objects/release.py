@@ -133,6 +133,18 @@ class Release(NailgunObject):
                 StrictVersion(consts.FUEL_GRANULAR_DEPLOY))
 
     @classmethod
+    def is_lcm_supported(cls, instance):
+        """Check if LCM is available for release
+
+        :param instance: a Release instance
+        :returns: boolean
+        """
+        return (
+            StrictVersion(instance.environment_version) >=
+            StrictVersion(consts.FUEL_LCM_AVAILABLE)
+        )
+
+    @classmethod
     def is_external_mongo_enabled(cls, instance):
         """Check if external mongo is available for release
 

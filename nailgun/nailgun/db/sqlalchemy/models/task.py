@@ -70,6 +70,8 @@ class Task(Base):
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
     deleted_at = Column(DateTime)
+    settings = Column(JSON, default={}, nullable=False, server_default='{}')
+    networks = Column(JSON, default={}, nullable=False, server_default='{}')
 
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(

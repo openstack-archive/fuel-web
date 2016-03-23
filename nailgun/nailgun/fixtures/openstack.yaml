@@ -205,6 +205,10 @@
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
       -
+        id: "glance/glare"
+        default_mapping: "management"
+        properties: *default_network_roles_metadata_properties
+      -
         id: "heat/api"
         default_mapping: "management"
         properties: *default_network_roles_metadata_properties
@@ -1379,6 +1383,9 @@
         glance:
           db_password:
             generator: "password"
+          user_password:
+            generator: "password"
+        glance_glare:
           user_password:
             generator: "password"
         nova:

@@ -109,7 +109,9 @@ class TransactionSerializer(object):
                 self.process_task(task, self.role_resolver)
 
         for task in groups:
-            node_ids = self.role_resolver.resolve(task.get('role', ()))
+            node_ids = self.role_resolver.resolve(
+                task.get('roles', task.get('groups'))
+            )
             for sub_task_id in task.get('tasks', ()):
                 try:
                     sub_task = tasks_mapping[sub_task_id]
@@ -158,13 +160,13 @@ class TransactionSerializer(object):
                     node_id, task.pop('requires', None)
                 ))
                 requires.update(self.expand_cross_dependencies(
-                    node_id, task.pop('cross_depends', None)
+                    task['id'], node_id, task.pop('cross_depends', None)
                 ))
                 required_for = set(self.expand_dependencies(
                     node_id, task.pop('required_for', None)
                 ))
                 required_for.update(self.expand_cross_dependencies(
-                    node_id, task.pop('cross_depended_by', None)
+                    task['id'], node_id, task.pop('cross_depended_by', None)
                 ))
                 # render
                 if requires:
@@ -193,9 +195,10 @@ class TransactionSerializer(object):
             for rel in self.resolve_relation(name, node_ids):
                 yield rel
 
-    def expand_cross_dependencies(self, node_id, dependencies):
+    def expand_cross_dependencies(self, task_id, node_id, dependencies):
         """Expands task dependencies on same node.
 
+        :param task_id: the ID of task
         :param node_id: the ID of target node
         :param dependencies: the list of cross-node dependencies
         """
@@ -215,7 +218,7 @@ class TransactionSerializer(object):
                 node_ids = self.role_resolver.resolve(
                     roles, dep.get('policy', consts.NODE_RESOLVE_POLICY.all)
                 )
-                excludes = [node_id]
+                excludes = [(task_id, node_id)]
 
             relations = self.resolve_relation(dep['name'], node_ids, excludes)
             for rel in relations:
@@ -230,9 +233,9 @@ class TransactionSerializer(object):
         """
         match_policy = NameMatchingPolicy.create(name)
         for node_id in node_ids:
-            if excludes and node_id in excludes:
-                continue
             for task_name in self.tasks_graph.get(node_id, ()):
+                if excludes and (task_name, node_id) in excludes:
+                    continue
                 if match_policy.match(task_name):
                     yield task_name, node_id
 

@@ -100,8 +100,12 @@ class TestDeploymentAttributesSerialization90(
         dpdk_ports = filter(lambda t: t.get('name') ==
                             dpdk_interface_name,
                             transformations)
+        all_ports = filter(lambda t: t.get('action') ==
+                           'add-port',
+                           transformations)
         self.assertEqual(private_br.get('vendor_specific'),
                          {'datapath_type': 'netdev'})
+        self.assertEqual(len(all_ports) - len(dpdk_ports), len(nets_1))
         self.assertEqual(len(dpdk_ports), 1)
         self.assertEqual(dpdk_ports[0]['bridge'],
                          consts.DEFAULT_BRIDGES_NAMES.br_prv)

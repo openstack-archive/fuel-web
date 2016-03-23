@@ -373,8 +373,8 @@
     networks_metadata:
       bonding:
         availability:
-          - linux: "true"
-          - ovs: "false"
+          - linux: "not interface:interface_properties.dpdk.enabled"
+          - ovs: "interface:pxe == false and interface:interface_properties.dpdk.enabled"
         properties:
           linux:
             mode:

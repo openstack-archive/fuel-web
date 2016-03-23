@@ -238,10 +238,10 @@ class TestDeploymentTasksSerialization80(
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         return args[1][1]['args']
 
-    def check_add_compute_for_task_deploy(self, new_node_uid, rpc_message):
+    def check_add_node_for_task_deploy(self, rpc_message):
         tasks_graph = rpc_message['tasks_graph']
         for node_id, tasks in six.iteritems(tasks_graph):
-            if node_id is None:
+            if node_id is None or node_id == consts.MASTER_NODE_UID:
                 # skip virtual node
                 continue
 
@@ -249,13 +249,8 @@ class TestDeploymentTasksSerialization80(
                 t['id'] for t in tasks
                 if t['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
             }
-            if node_id == new_node_uid:
-                # all tasks are run on a new node
-                self.assertTrue(
-                    self.tasks_for_rerun.issubset(task_ids))
-            else:
-                # only selected tasks are run on a deployed node
-                self.assertEqual(self.tasks_for_rerun, task_ids)
+            # all tasks are run on all nodes
+            self.assertTrue(self.tasks_for_rerun.issubset(task_ids))
 
     def check_add_compute_for_granular_deploy(self, new_node_uid, rpc_message):
         for node in rpc_message['deployment_info']:
@@ -267,19 +262,6 @@ class TestDeploymentTasksSerialization80(
             else:
                 # only selected tasks are run on a deployed node
                 self.assertItemsEqual(self.tasks_for_rerun, task_ids)
-
-    def check_add_controller_for_task_deploy(self, rpc_message):
-        tasks_graph = rpc_message['tasks_graph']
-        for node_id, tasks in six.iteritems(tasks_graph):
-            if node_id is None:
-                # skip virtual node
-                continue
-
-            task_ids = {
-                t['id'] for t in tasks
-                if t['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
-            }
-            self.assertTrue(self.tasks_for_rerun.issubset(task_ids))
 
     def check_add_controller_for_granular_deploy(self, rpc_message):
         for node in rpc_message['deployment_info']:
@@ -294,9 +276,7 @@ class TestDeploymentTasksSerialization80(
         new_node = self.add_node('compute')
         rpc_deploy_message = self.get_rpc_args()
         if self.task_deploy:
-            self.check_add_compute_for_task_deploy(
-                new_node.uid, rpc_deploy_message
-            )
+            self.check_add_node_for_task_deploy(rpc_deploy_message)
         else:
             self.check_add_compute_for_granular_deploy(
                 new_node.uid, rpc_deploy_message
@@ -308,7 +288,7 @@ class TestDeploymentTasksSerialization80(
         rpc_deploy_message = self.get_rpc_args()
 
         if self.task_deploy:
-            self.check_add_controller_for_task_deploy(rpc_deploy_message)
+            self.check_add_node_for_task_deploy(rpc_deploy_message)
         else:
             self.check_add_controller_for_granular_deploy(rpc_deploy_message)
 

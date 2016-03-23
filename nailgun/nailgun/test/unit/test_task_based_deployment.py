@@ -354,8 +354,10 @@ class TestTaskSerializers(BaseTestCase):
             m_resolve.resolve.return_value = node_ids
             self.serializer.expand_task_groups(
                 [
-                    {"type": "group", "id": "group1", "role": "compute",
-                     "tasks": ["task1", "task2"]}
+                    {"type": "group", "id": "group1", "roles": "compute",
+                     "tasks": ["task1"]},
+                    {"type": "group", "id": "group1", "groups": "compute",
+                     "tasks": ["task2"]}
                 ],
                 {
                     'task1': {'id': 'task1', 'version': '2.0.0',

@@ -33,7 +33,11 @@ def get_old(expression, context):
     try:
         return expression(context['$%old'])
     except Exception as e:
-        # exception in evaluation on old data interprets as data changed
+        # exception in evaluation on old data interprets
+        # we return special sentinel to check that data was actually changed
+        # we cannot use empty object here, because new data can be empty
+        # as well, and in this case there is no chance to detect
+        # data was changed or not
         logger.debug('Cannot evaluate expression on old data: %s', e)
         return _UNDEFINED
 

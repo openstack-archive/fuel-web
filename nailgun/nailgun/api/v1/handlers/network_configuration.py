@@ -252,7 +252,7 @@ class NetworkAttributesDeployedHandler(BaseHandler):
 
         :http: * 200 (OK)
                * 404 (cluster not found in db)
-               * 404 (cluster does not have saved deployed attributes)
+               * 404 (cluster does not have deployed configuration)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         attrs = objects.Transaction.get_network_settings(
@@ -260,6 +260,6 @@ class NetworkAttributesDeployedHandler(BaseHandler):
         )
         if not attrs:
             raise self.http(
-                404, "Cluster does not have saved deployed attributes!"
+                404, "Cluster does not have deployed configuration!"
             )
         return attrs

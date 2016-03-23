@@ -177,6 +177,9 @@ urls = (
     ClusterAttributesDefaultsHandler,
     r'/clusters/(?P<cluster_id>\d+)/attributes/deployed/?$',
     ClusterAttributesDeployedHandler,
+    # network related
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration/deployed?$',
+    NetworkAttributesDeployedHandler,
     # nova network-related
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/nova_network/?$',
     NovaNetworkConfigurationHandler,
@@ -186,8 +189,6 @@ urls = (
     # neutron-related
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/neutron/?$',
     NeutronNetworkConfigurationHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/deployed?$',
-    NetworkAttributesDeployedHandler,
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
     'neutron/verify/?$',
     NeutronNetworkConfigurationVerifyHandler,

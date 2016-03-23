@@ -129,6 +129,33 @@ class TestTaskManagers(BaseIntegrationTest):
             objects.Transaction.get_network_settings(deployment_task),
         )
 
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_deployment_info_saves_in_transaction(self, _):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+                {"pending_deletion": True,
+                 'status': NODE_STATUSES.provisioned},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'liberty-9.0',
+            },
+        )
+        cluster = self.env.clusters[-1]
+        nodes_ids = [n.uid for n in self.env.nodes if not n.pending_deletion]
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(TASK_STATUSES.error, supertask.status)
+        deployment_task = next(
+            t for t in supertask.subtasks if t.name == TASK_NAMES.deployment
+        )
+        info = objects.Transaction.get_deployment_info(deployment_task)
+        # information about master node should be in deployment info
+        nodes_ids.append(consts.MASTER_NODE_UID)
+        # check that deployment info contains information about all nodes
+        # that are not deleted
+        self.assertItemsEqual(nodes_ids, info)
+
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
         self.env.create(

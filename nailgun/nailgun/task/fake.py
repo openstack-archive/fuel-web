@@ -190,7 +190,7 @@ class FakeThread(threading.Thread):
             Node.id.in_(nodes_map)
         )
         for node_db in nodes_db:
-            node = nodes_map[str(node_db.id)]
+            node = nodes_map[node_db.uid]
             for field in self.NODE_FIELDS:
                 v = getattr(node_db, field)
                 if v is not None:
@@ -219,7 +219,9 @@ class FakeThread(threading.Thread):
             for sn in smart_nodes:
                 continue_cases = (
                     sn.current in (status, consts.NODE_STATUSES.error),
-                    role and (sn.data['role'] != role)
+                    role and
+                    (('role' in sn.data and sn.data['role'] != role) or
+                     ('roles' in sn.data and role not in sn.data['roles']))
                 )
                 if any(continue_cases):
                     continue
@@ -237,7 +239,8 @@ class FakeThread(threading.Thread):
             if role:
                 test_nodes = [
                     sn for sn in smart_nodes
-                    if sn.data['role'] == role
+                    if (('role' in sn.data and sn.data['role']) or
+                        ('roles' in sn.data and role in sn.data['roles']))
                 ]
             else:
                 test_nodes = smart_nodes
@@ -303,9 +306,19 @@ class FakeDeploymentThread(FakeAmpqThread):
 
         override_state = self.params.get("override_state", False)
 
+        if 'tasks_graph' in self.data['args']:
+            nodes = [
+                {'uid': uid}
+                for uid in self.data['args']['tasks_graph']
+                if uid and uid != consts.MASTER_NODE_UID
+            ]
+        else:
+            nodes = self.data['args']['deployment_info']
+        self.refresh_nodes(nodes)
+
         kwargs = {
             'task_uuid': self.task_uuid,
-            'nodes': self.data['args']['deployment_info'],
+            'nodes': nodes,
             'status': 'running'
         }
 
@@ -319,7 +332,6 @@ class FakeDeploymentThread(FakeAmpqThread):
             yield kwargs
             raise StopIteration
 
-        self.refresh_nodes(kwargs['nodes'])
         smart_nodes = [
             FSMNodeFlow(n, consts.NODE_STATUSES.provisioned)
             for n in kwargs['nodes']

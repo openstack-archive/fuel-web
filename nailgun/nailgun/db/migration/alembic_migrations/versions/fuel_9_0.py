@@ -141,9 +141,11 @@ def upgrade():
     upgrade_neutron_l23_providers()
     upgrade_node_stop_deployment_error_type()
     upgrade_bond_modes()
+    add_deleted_at_tasks_field()
 
 
 def downgrade():
+    delete_deleted_at_tasks_field()
     downgrade_bond_modes()
     downgrade_node_stop_deployment_error_type()
     downgrade_neutron_l23_providers()
@@ -1247,3 +1249,18 @@ def downgrade_deployment_graph():
     op.drop_table('deployment_graph_tasks')
     drop_enum('deployment_graph_tasks_type')
     op.drop_table('deployment_graphs')
+
+
+def add_deleted_at_tasks_field():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'deleted_at',
+            sa.DateTime(),
+            nullable=True,
+        )
+    )
+
+
+def delete_deleted_at_tasks_field():
+    op.drop_column('tasks', 'deleted_at')

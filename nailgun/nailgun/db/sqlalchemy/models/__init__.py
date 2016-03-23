@@ -57,6 +57,7 @@ from nailgun.db.sqlalchemy.models.cluster_plugin_link import ClusterPluginLink
 from nailgun.db.sqlalchemy.models.plugin_link import PluginLink
 
 from nailgun.db.sqlalchemy.models.task import Task
+from nailgun.db.sqlalchemy.models.deployment_history import DeploymentHistory
 
 from nailgun.db.sqlalchemy.models.master_node_settings \
     import MasterNodeSettings

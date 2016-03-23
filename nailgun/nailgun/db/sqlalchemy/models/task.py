@@ -71,6 +71,9 @@ class Task(Base):
     weight = Column(Float, default=1.0)
     deleted_at = Column(DateTime)
 
+    deployment_history = relationship(
+           "DeploymentHistory", backref="task", cascade="all,delete")
+
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(
             self.name,

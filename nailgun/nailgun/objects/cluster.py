@@ -1033,7 +1033,6 @@ class Cluster(NailgunObject):
         # graph types not supported by plugin manager interface yet
         plugins_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
             instance, graph_type)
-
         return cls._merge_tasks_lists([
             release_deployment_tasks,
             plugins_deployment_tasks,

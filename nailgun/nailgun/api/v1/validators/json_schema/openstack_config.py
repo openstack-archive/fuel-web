@@ -21,6 +21,10 @@ _base_config = {
 _base_properties = {
     'cluster_id': {'type': 'integer'},
     'node_id': {'type': 'integer'},
+    'node_ids': {
+        'type': ['array', 'null'],
+        'items': {'type': 'integer'},
+    },
     'node_role': {'type': 'string'},
 }
 

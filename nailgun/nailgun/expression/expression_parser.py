@@ -77,6 +77,8 @@ def t_error(t):
     t.lexer.skip(1)
 
 
+ply.lex.lex()
+
 expression = None
 
 precedence = (

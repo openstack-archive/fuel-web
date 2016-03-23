@@ -45,6 +45,7 @@ from nailgun.test.integration.test_orchestrator_serializer_70 import \
 class TestSerializer80Mixin(object):
     env_version = "liberty-8.0"
     task_deploy = False
+    lcm_enabled = False
 
     def _check_baremetal_neutron_attrs(self, cluster):
         self.env._set_additional_component(cluster, 'ironic', True)
@@ -249,7 +250,7 @@ class TestDeploymentTasksSerialization80(
                 t['id'] for t in tasks
                 if t['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
             }
-            if node_id == new_node_uid:
+            if self.lcm_enabled or node_id == new_node_uid:
                 # all tasks are run on a new node
                 self.assertTrue(
                     self.tasks_for_rerun.issubset(task_ids))

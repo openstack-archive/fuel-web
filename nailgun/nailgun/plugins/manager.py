@@ -96,8 +96,7 @@ class PluginManager(object):
                     actual_attrs = copy.deepcopy(plugin.attributes)
                     actual_attrs['metadata'] = default_attrs.get('metadata',
                                                                  {})
-                cls.fill_plugin_metadata(
-                    plugin, actual_attrs['metadata'], True)
+                cls.fill_plugin_metadata(plugin, actual_attrs['metadata'])
                 versions.append(actual_attrs)
 
                 container['metadata'].setdefault('chosen_id', plugin.id)
@@ -146,15 +145,13 @@ class PluginManager(object):
         metadata['enabled'] = enabled or metadata.get('enabled', False)
 
     @classmethod
-    def fill_plugin_metadata(cls, plugin, metadata, all_versions=False):
+    def fill_plugin_metadata(cls, plugin, metadata):
         """Fill a plugin's metadata attribute.
 
         :param plugin: A plugin instance
         :type plugin: nailgun.db.sqlalchemy.models.plugins.Plugin
         :param metadata: Plugin metadata
         :type metadata: dict
-        :param all_versions: Create for all versions of plugin or not
-        :type all_versions: bool
         """
         metadata['plugin_id'] = plugin.id
         metadata['plugin_version'] = plugin.version
@@ -352,7 +349,8 @@ class PluginManager(object):
 
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
-            plugin_adapter.sync_metadata_to_db()
+            metadata = plugin_adapter.get_metadata()
+            Plugin.update(plugin, metadata)
 
     @classmethod
     def enable_plugins_by_components(cls, cluster):

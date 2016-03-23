@@ -26,8 +26,6 @@ import yaml
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.deployment_graph import DeploymentGraph
-from nailgun.objects.plugin import ClusterPlugins
-from nailgun.objects.plugin import Plugin
 from nailgun.settings import settings
 
 
@@ -40,31 +38,40 @@ class PluginAdapterBase(object):
     3. Enabling/Disabling of plugin based on cluster attributes
     4. Providing repositories/deployment scripts related info to clients
     """
-
-    environment_config_name = 'environment_config.yaml'
-    plugin_metadata = 'metadata.yaml'
-    task_config_name = 'tasks.yaml'
+    config_metadata = 'metadata.yaml'
+    config_tasks = 'tasks.yaml'
 
     def __init__(self, plugin):
         self.plugin = plugin
-        self.plugin_path = os.path.join(
-            settings.PLUGINS_PATH,
-            self.path_name)
+        self.plugin_path = os.path.join(settings.PLUGINS_PATH, self.path_name)
         self.tasks = []
+        self.db_cfg_mapping = {}
 
     @abc.abstractmethod
     def path_name(self):
         """A name which is used to create path to plugin scripts and repos"""
 
-    def sync_metadata_to_db(self):
-        """Sync metadata from config yaml files into DB"""
-        metadata_file_path = os.path.join(
-            self.plugin_path, self.plugin_metadata)
+    def get_metadata(self):
+        """Get parsed plugin metadata from config yaml files.
 
-        metadata = self._load_config(metadata_file_path) or {}
-        Plugin.update(self.plugin, metadata)
+        :return: All plugin metadata
+        :rtype: dict
+        """
+        metadata = self._load_config(self.config_metadata) or {}
 
-    def _load_config(self, config):
+        for attribute, config in six.iteritems(self.db_cfg_mapping):
+            attribute_data = self._load_config(config)
+            # Plugin columns have constraints for nullable data,
+            # so we need to check it
+            if attribute_data:
+                if attribute == 'attributes_metadata':
+                    attribute_data = attribute_data['attributes']
+                metadata[attribute] = attribute_data
+
+        return metadata
+
+    def _load_config(self, file_name):
+        config = os.path.join(self.plugin_path, file_name)
         if os.access(config, os.R_OK):
             with open(config, "r") as conf:
                 try:
@@ -76,8 +83,8 @@ class PluginAdapterBase(object):
         else:
             logger.warning("Config {0} is not readable.".format(config))
 
-    def _load_tasks(self, config):
-        data = self._load_config(config) or []
+    def _load_tasks(self, file_name):
+        data = self._load_config(file_name) or []
         for item in data:
             # backward compatibility for plugins added in version 6.0,
             # and it is expected that task with role: [controller]
@@ -95,17 +102,7 @@ class PluginAdapterBase(object):
 
         Provided tasks are loaded from tasks config file.
         """
-        task_yaml = os.path.join(
-            self.plugin_path, self.task_config_name)
-        if os.path.exists(task_yaml):
-            self.tasks = self._load_tasks(task_yaml)
-
-    def filter_tasks(self, tasks, stage):
-        filtered = []
-        for task in tasks:
-            if stage and stage == task.get('stage'):
-                filtered.append(task)
-        return filtered
+        self.tasks = self._load_tasks(self.config_tasks)
 
     @property
     def plugin_release_versions(self):
@@ -173,6 +170,52 @@ class PluginAdapterBase(object):
 
         return result
 
+    @staticmethod
+    def _is_release_version_compatible(rel_version, plugin_rel_version):
+        """Checks if release version is compatible with plugin version.
+
+        :param rel_version: Release version
+        :type rel_version: str
+        :param plugin_rel_version: Plugin release version
+        :type plugin_rel_version: str
+        :return: True if compatible, False if not
+        :rtype: bool
+        """
+        rel_os, rel_fuel = rel_version.split('-')
+        plugin_os, plugin_rel = plugin_rel_version.split('-')
+
+        return rel_os.startswith(plugin_os) and rel_fuel.startswith(plugin_rel)
+
+    def validate_compatibility(self, cluster):
+        """Validates if plugin is compatible with cluster.
+
+        - validates operating systems
+        - modes of clusters (simple or ha)
+        - release version
+
+        :param cluster: A cluster instance
+        :type cluster: nailgun.db.sqlalchemy.models.cluster.Cluster
+        :return: True if compatible, False if not
+        :rtype: bool
+        """
+        cluster_os = cluster.release.operating_system.lower()
+        for release in self.plugin.releases:
+            if cluster_os != release['os'].lower():
+                continue
+            # plugin writer should be able to specify ha in release['mode']
+            # and know nothing about ha_compact
+            if not any(
+                cluster.mode.startswith(mode) for mode in release['mode']
+            ):
+                continue
+
+            if not self._is_release_version_compatible(
+                cluster.release.version, release['version']
+            ):
+                continue
+            return True
+        return False
+
     def get_release_info(self, release):
         """Get plugin release information which corresponds to given release"""
         rel_os = release.operating_system.lower()
@@ -181,8 +224,7 @@ class PluginAdapterBase(object):
         release_info = filter(
             lambda r: (
                 r['os'] == rel_os and
-                ClusterPlugins.is_release_version_compatible(version,
-                                                             r['version'])),
+                self._is_release_version_compatible(version, r['version'])),
             self.plugin.releases)
 
         return release_info[0]
@@ -263,64 +305,28 @@ class PluginAdapterV2(PluginAdapterBase):
 class PluginAdapterV3(PluginAdapterV2):
     """Plugin wrapper class for package version 3.0.0"""
 
-    node_roles_config_name = 'node_roles.yaml'
-    volumes_config_name = 'volumes.yaml'
-    deployment_tasks_config_name = 'deployment_tasks.yaml'
-    network_roles_config_name = 'network_roles.yaml'
+    def __init__(self, plugin):
+        super(PluginAdapterV3, self).__init__(plugin)
+        self.db_cfg_mapping['attributes_metadata'] = 'environment_config.yaml'
+        self.db_cfg_mapping['network_roles_metadata'] = 'network_roles.yaml'
+        self.db_cfg_mapping['roles_metadata'] = 'node_roles.yaml'
+        self.db_cfg_mapping['tasks'] = self.config_tasks
+        self.db_cfg_mapping['volumes_metadata'] = 'volumes.yaml'
 
-    def sync_metadata_to_db(self):
-        """Sync metadata from all config yaml files to DB"""
-        super(PluginAdapterV3, self).sync_metadata_to_db()
+    def get_metadata(self):
+        # FIXME (ikutukov): rework to getters and setters to be able to
+        # change deployment graph type
+        self.deployment_tasks = self._load_config('deployment_tasks.yaml')
 
-        db_config_metadata_mapping = {
-            'attributes_metadata': self.environment_config_name,
-            'roles_metadata': self.node_roles_config_name,
-            'volumes_metadata': self.volumes_config_name,
-            'network_roles_metadata': self.network_roles_config_name,
-            'tasks': self.task_config_name
-        }
-
-        self._update_plugin(db_config_metadata_mapping)
-
-    def _update_plugin(self, mapping):
-        data_to_update = {}
-
-        for attribute, config in six.iteritems(mapping):
-            config_file_path = os.path.join(self.plugin_path, config)
-            attribute_data = self._load_config(config_file_path)
-            # Plugin columns have constraints for nullable data, so
-            # we need to check it
-            if attribute_data:
-                if attribute == 'attributes_metadata':
-                    attribute_data = attribute_data['attributes']
-                data_to_update[attribute] = attribute_data
-
-        Plugin.update(self.plugin, data_to_update)
-
-        # update deployment tasks
-        deployment_tasks_file_path = os.path.join(
-            self.plugin_path,
-            self.deployment_tasks_config_name)
-        deployment_tasks_data = self._load_config(deployment_tasks_file_path)
-        if deployment_tasks_data:
-            # fixme(ikutukov) rework to getters and setters to be able to
-            # change deployment graph type
-            self.deployment_tasks = deployment_tasks_data
+        return super(PluginAdapterV3, self).get_metadata()
 
 
 class PluginAdapterV4(PluginAdapterV3):
     """Plugin wrapper class for package version 4.0.0"""
 
-    components = 'components.yaml'
-
-    def sync_metadata_to_db(self):
-        super(PluginAdapterV4, self).sync_metadata_to_db()
-
-        db_config_metadata_mapping = {
-            'components_metadata': self.components
-        }
-
-        self._update_plugin(db_config_metadata_mapping)
+    def __init__(self, plugin):
+        super(PluginAdapterV4, self).__init__(plugin)
+        self.db_cfg_mapping['components_metadata'] = 'components.yaml'
 
 
 class PluginAdapterV5(PluginAdapterV4):

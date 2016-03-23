@@ -156,12 +156,12 @@ class TestPluginManager(base.BaseIntegrationTest):
                                      expected_message):
             PluginManager.get_volumes_metadata(self.cluster)
 
-    @mock.patch.object(PluginAdapterV3, 'sync_metadata_to_db')
+    @mock.patch.object(PluginAdapterV3, 'get_metadata')
     def test_sync_metadata_for_all_plugins(self, sync_mock):
         PluginManager.sync_plugins_metadata()
         self.assertEqual(sync_mock.call_count, 2)
 
-    @mock.patch.object(PluginAdapterV3, 'sync_metadata_to_db')
+    @mock.patch.object(PluginAdapterV3, 'get_metadata')
     def test_sync_metadata_for_specific_plugin(self, sync_mock):
         PluginManager.sync_plugins_metadata([self.env.plugins[0].id])
         self.assertEqual(sync_mock.call_count, 1)

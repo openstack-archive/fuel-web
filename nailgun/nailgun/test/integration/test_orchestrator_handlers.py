@@ -21,6 +21,7 @@ import six
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun.objects import DeploymentGraph
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
 
 from nailgun.db.sqlalchemy.models import Cluster
@@ -344,6 +345,94 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.assertEqual(resp.status_code, 400)
         self.assertIn("Deployment tasks not found", resp_msg)
         self.assertIn(self.cluster.release.name, resp_msg)
+
+
+class TestCustomGraphAction(BaseSelectedNodesTest):
+
+    def setUp(self):
+        super(TestCustomGraphAction, self).setUp()
+        self.custom_graph = DeploymentGraph.upsert_for_model(
+            {
+                'name': 'custom-graph-name',
+                'tasks': [
+                    {
+                        'id': 'custom-task1',
+                        'type': 'puppet',
+                        'role': '*',
+                        'required_for': ['deploy_end'],
+                        'requires': ['deploy_start'],
+                        'version': '2.0.0',
+                        'parameters': {'timeout': 180}
+                    }, {
+                        'id': 'custom-task2',
+                        'type': 'puppet',
+                        'role': '*',
+                        'required_for': ['deploy_end'],
+                        'requires': ['deploy_start'],
+                        'version': '2.0.0',
+                        'parameters': {'timeout': 180}
+                    }
+                ]
+            },
+            self.cluster,
+            graph_type='custom-graph'
+        )
+        self.env.db().commit()
+
+    def make_action_url(self, handler_name, node_uids, graph_type=None):
+        if graph_type is None:
+            graph_type = 'default'
+        return reverse(
+            handler_name,
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_query(graph_type=graph_type, nodes=node_uids)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_default_graph(self, mcast):
+        self.emulate_nodes_provisioning(self.nodes)
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            self.node_uids,
+            ["default"]
+        )
+
+        self.send_put(deploy_action_url)
+        self.assertEqual(
+            3,
+            len(mcast.call_args[0][1]['args']['deployment_info'][0]['tasks']))
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_existing_custom_graph(self, mcast):
+        # fixme(ikutukov): this test should fail because nodes is not revolved
+        # for currently unknown reason
+        self.emulate_nodes_provisioning(self.nodes)
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            self.node_uids,
+            ["custom-graph"]
+        )
+
+        self.send_put(deploy_action_url)
+        self.assertEqual(
+            2,
+            len(mcast.call_args[0][1]['args']['deployment_info'][0]['tasks']))
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_not_existing_custom_graph(self, mcast):
+        self.emulate_nodes_provisioning(self.nodes)
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            self.node_uids,
+            ["not-existing-custom-graph"]
+        )
+
+        self.send_put(deploy_action_url)
+        self.assertNotIn(
+            'tasks',
+            mcast.call_args[0][1]['args']['deployment_info'][0])
 
 
 class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):

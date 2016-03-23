@@ -19,7 +19,6 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 from sqlalchemy.exc import DataError, IntegrityError
 
-from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -507,7 +506,7 @@ class TestNodeRolesMigration(base.BaseAlembicMigrationTest):
             role_group = roles_metadata[role_name].get('group')
             self.assertEquals(
                 role_group,
-                role_groups.get(role_name, consts.NODE_ROLE_GROUPS.other)
+                role_groups.get(role_name, 'other')
             )
 
 
@@ -553,7 +552,7 @@ class TestClusterStatusMigration(base.BaseAlembicMigrationTest):
 
         db.execute(clusters_table.update().where(
             clusters_table.c.id == cluster.id
-        ).values(status=consts.CLUSTER_STATUSES.partially_deployed))
+        ).values(status='partially_deployed'))
 
 
 class TestRemoveWizardMetadata(base.BaseAlembicMigrationTest):
@@ -660,7 +659,7 @@ class TestDeploymentGraphMigration(
             {
                 'deployment_graph_id': deployment_graph_id,
                 'task_name': 'minimal task',
-                'type': consts.ORCHESTRATOR_TASK_TYPES.puppet
+                'type': 'puppet'
             },
         )
 
@@ -685,7 +684,7 @@ class TestDeploymentGraphMigration(
                 self.meta.tables['deployment_graph_tasks'].insert(),
                 {
                     'deployment_graph_id': deployment_graph_id,
-                    'type': consts.ORCHESTRATOR_TASK_TYPES.puppet
+                    'type': 'puppet'
                 })
         db.rollback()
 
@@ -788,7 +787,7 @@ class TestBondMode(base.BaseAlembicMigrationTest):
                 {
                     'name': 'bond0',
                     'node_id': rel_row[0],
-                    'mode': consts.BOND_MODES.balance_tcp,
+                    'mode': 'balance-tcp',
                     'interface_properties': ''
                 }
             ])
@@ -798,4 +797,4 @@ class TestBondMode(base.BaseAlembicMigrationTest):
 
         for row in result.fetchall():
             mode = row[0]
-            self.assertEqual(mode, consts.BOND_MODES.balance_tcp)
+            self.assertEqual(mode, 'balance-tcp')

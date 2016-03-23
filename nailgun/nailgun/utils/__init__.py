@@ -106,13 +106,13 @@ def text_format_safe(data, context):
         return data
 
 
-def traverse(data, generator_class, formatter_context=None, formatter=None):
+def traverse(data, formatter=None, formatter_context=None, keywords=None):
     """Traverse data.
 
     :param data: an input data to be traversed
-    :param generator_class: a generator class to be used
     :param formatter_context: a dict to be passed into .format() for strings
     :param formatter: the text formatter, by default text_format will be used
+    :param keywords: the mapping keyword, handler
     :returns: a dict with traversed data
     """
 
@@ -120,16 +120,24 @@ def traverse(data, generator_class, formatter_context=None, formatter=None):
         formatter = text_format
 
     # generate value if generator is specified
-    if isinstance(data, collections.Mapping) and 'generator' in data:
-        try:
-            generator = getattr(generator_class, data['generator'])
-            return generator(data.get('generator_arg'))
-        except AttributeError:
-            logger.error('Attribute error: %s', data['generator'])
-            raise
+    if isinstance(data, collections.Mapping) and keywords:
+        for k in keywords:
+            if k in data:
+                arg_name = k + '_arg'
+                try:
+                    if arg_name in data:
+                        return keywords[k](data[k], data[arg_name])
+                    else:
+                        return keywords[k](data[k])
+                except Exception as e:
+                    logger.error(
+                        "Cannot evaluate expression - '%s' (%s), : %s",
+                        data[k], data.get(arg_name), e
+                    )
+                    raise
 
     # we want to traverse in all levels, so dive in child mappings
-    elif isinstance(data, collections.Mapping):
+    if isinstance(data, collections.Mapping):
         rv = {}
         for key, value in six.iteritems(data):
             # NOTE(ikalnitsky): regex node has python's formatting symbols,
@@ -137,7 +145,7 @@ def traverse(data, generator_class, formatter_context=None, formatter=None):
             # can skip them and do copy as is.
             if key != 'regex':
                 rv[key] = traverse(
-                    value, generator_class, formatter_context, formatter
+                    value, formatter, formatter_context, keywords
                 )
             else:
                 rv[key] = value
@@ -149,7 +157,7 @@ def traverse(data, generator_class, formatter_context=None, formatter=None):
     # we want to traverse all sequences also (lists, tuples, etc)
     elif isinstance(data, (list, tuple, set)):
         return type(data)(
-            traverse(i, generator_class, formatter_context, formatter)
+            traverse(i, formatter, formatter_context, keywords)
             for i in data
         )
 
@@ -215,6 +223,10 @@ class AttributesGenerator(object):
         )
         return base64.b64encode(header + key)
 
+    @classmethod
+    def evaluate(cls, func, arg=None):
+        return getattr(cls, func)(arg)
+
 
 def camel_to_snake_case(name):
     """Convert camel case format into snake case
@@ -255,3 +267,22 @@ def get_lines(text):
     """Returns all non-empty lines in input string
     """
     return list(six.moves.filter(bool, text.splitlines()))
+
+
+def dict_update(target, patch, level=None):
+    """Update dict with patch.
+
+     Note: the patch is applied to elements in 2nd level
+
+    :param target: the target dict, will be update inplace
+    :param patch: the modifications, that will be applied to target
+    :param level: how deeper the update will be applied (-1 means for all)
+    """
+    for k, v in six.iteritems(patch):
+        if isinstance(v, dict):
+            if level is None or level > 1:
+                dict_update(target.setdefault(k, {}), v, level - 1)
+            else:
+                target.setdefault(k, {}).update(v)
+        else:
+            target[k] = v

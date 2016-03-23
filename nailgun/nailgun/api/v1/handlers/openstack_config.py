@@ -58,8 +58,9 @@ class OpenstackConfigCollectionHandler(BaseHandler):
         :reutrn: New config object in JSON format.
         """
         data = self.checked_data()
-        obj = objects.OpenstackConfig.create(data)
-        raise self.http(201, objects.OpenstackConfig.to_json(obj))
+        configs = objects.OpenstackConfigCollection.create(data)
+        raise self.http(
+            201, objects.OpenstackConfigCollection.to_json(configs))
 
 
 class OpenstackConfigHandler(SingleHandler):

@@ -1977,6 +1977,17 @@ class TestOpenstackConfig(BaseTestCase):
         objects.OpenstackConfig.disable(config)
         self.assertFalse(config.is_active)
 
+    def test_bulk_create(self):
+        node_ids = [n.id for n in self.nodes]
+        configs = objects.OpenstackConfigCollection.create({
+            'cluster_id': self.cluster.id,
+            'node_ids': node_ids,
+            'configuration': {'key': 'value'},
+        })
+        self.assertEqual(len(configs), len(self.nodes))
+        for config, node_id in zip(configs, node_ids):
+            self.assertEqual(config.node_id, node_id)
+
 
 class TestBondObject(BaseTestCase):
 

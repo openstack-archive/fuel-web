@@ -17,6 +17,7 @@ import six
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import openstack_config as schema
 from nailgun import consts
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun import objects
@@ -24,8 +25,7 @@ from nailgun import objects
 
 class OpenstackConfigValidator(BasicValidator):
 
-    int_fields = frozenset(['cluster_id', 'node_id', 'is_active'])
-    exclusive_fields = frozenset(['node_id', 'node_role'])
+    exclusive_fields = frozenset(['node_id', 'node_ids', 'node_role'])
 
     supported_configs = frozenset([
         'nova_config', 'nova_paste_api_ini', 'neutron_config',
@@ -68,7 +68,7 @@ class OpenstackConfigValidator(BasicValidator):
                                      "'operational'")
 
         target_nodes = objects.Cluster.get_nodes_to_update_config(
-            cluster, filters.get('node_id'), filters.get('node_role'),
+            cluster, filters.get('node_ids'), filters.get('node_role'),
             only_ready_nodes=False)
 
         ready_target_nodes_uids = set(
@@ -99,15 +99,24 @@ class OpenstackConfigValidator(BasicValidator):
         cls.validate_schema(data, schema)
         cls._check_exclusive_fields(data)
 
-        cluster = objects.Cluster.get_by_uid(data['cluster_id'],
-                                             fail_if_not_found=True)
-        if 'node_id' in data:
-            node = objects.Node.get_by_uid(
-                data['node_id'], fail_if_not_found=True)
-            if node.cluster_id != cluster.id:
+        # node_id is supported for backward compatibility
+        node_id = data.pop('node_id', None)
+        if node_id is not None:
+            data['node_ids'] = [node_id]
+
+        cluster = objects.Cluster.get_by_uid(
+            data['cluster_id'], fail_if_not_found=True)
+
+        node_ids = data.get('node_ids')
+        if node_ids:
+            invalid_nodes = db().query(models.Node).filter(
+                models.Node.id.in_(node_ids),
+                models.Node.cluster_id != cluster.id).all()
+            if invalid_nodes:
                 raise errors.InvalidData(
-                    "Node '{0}' is not assigned to cluster '{1}'".format(
-                        data['node_id'], cluster.id))
+                    "Nodes '{0}' are not assigned to cluster '{1}'".format(
+                        ', '.join(str(n.id) for n in invalid_nodes),
+                        cluster.id))
 
         cls._check_no_running_deploy_tasks(cluster)
         return data
@@ -136,6 +145,8 @@ class OpenstackConfigValidator(BasicValidator):
         cls._check_exclusive_fields(data)
         cls.validate_schema(data, schema.OPENSTACK_CONFIG_QUERY)
 
+        # FIXME(asaprykin): It's not the right place for
+        # default value conversion
         data['is_active'] = bool(data.get('is_active', True))
         return data
 
@@ -156,9 +167,25 @@ class OpenstackConfigValidator(BasicValidator):
         Schema validation doesn't perform any type conversion, so
         it is required to convert them before schema validation.
         """
-        for field in cls.int_fields:
-            if field in data and data[field] is not None:
-                data[field] = int(data[field])
+        for field in ['cluster_id', 'node_id']:
+            value = data.pop(field, None)
+            if value is not None:
+                data[field] = int(value)
+
+        node_ids = data.pop('node_ids', None)
+        if node_ids is not None:
+            data['node_ids'] = [int(n) for n in node_ids.split(',')]
+
+        # TODO(asaprykin): Maybe not needed
+        is_active = data.pop('is_active', '').lower()
+        if is_active in ('1', 't', 'true'):
+            data['is_active'] = True
+        elif is_active in ('0', 'f', 'false'):
+            data['is_active'] = False
+        elif not is_active:
+            pass
+        else:
+            raise errors.InvalidData("Invalid parameter value: 'is_active'")
 
     @classmethod
     def _check_exclusive_fields(cls, data):

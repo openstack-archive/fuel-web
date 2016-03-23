@@ -14,13 +14,14 @@
 
 import yaql
 
+from nailgun.settings import settings
 from nailgun.yaql_ext import datadiff
 from nailgun.yaql_ext import serializers
 
 
-LIMIT_ITERATORS = 5000
+LIMIT_ITERATORS = 10000
 
-MEMORY_QUOTA = 20000
+MEMORY_QUOTA = 100 * 1024 * 1024  # 100 MB
 
 _global_engine = None
 
@@ -38,8 +39,8 @@ def create_engine():
     global _global_engine
 
     engine_options = {
-        'yaql.limitIterators': LIMIT_ITERATORS,
-        'yaql.memoryQuota': MEMORY_QUOTA,
+        'yaql.limitIterators': settings.LIMIT_ITERATORS or LIMIT_ITERATORS,
+        'yaql.memoryQuota': settings.MEMORY_QUOTA or MEMORY_QUOTA,
         'yaql.convertTuplesToLists': True,
         'yaql.convertSetsToLists': True
     }

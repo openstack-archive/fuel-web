@@ -236,6 +236,28 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         return {"editable": cluster.attributes.editable}
 
 
+class ClusterAttributesDeployedHandler(BaseHandler):
+    """Cluster deployed attributes handler"""
+
+    fields = ("editable",)
+
+    @content
+    def GET(self, cluster_id):
+        """:returns: JSONized default Cluster attributes.
+
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+               * 404 (cluster has no attributes)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        attrs = objects.Transaction.get_cluster_settings(
+            objects.TransactionCollection.get_last_succeed_run(cluster)
+        )
+        if not attrs:
+            raise self.http(404, "No deployed attributes found!")
+        return attrs
+
+
 class ClusterGeneratedData(BaseHandler):
     """Cluster generated data"""
 

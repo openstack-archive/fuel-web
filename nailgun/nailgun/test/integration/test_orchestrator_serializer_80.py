@@ -249,13 +249,8 @@ class TestDeploymentTasksSerialization80(
                 t['id'] for t in tasks
                 if t['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
             }
-            if node_id == new_node_uid:
-                # all tasks are run on a new node
-                self.assertTrue(
-                    self.tasks_for_rerun.issubset(task_ids))
-            else:
-                # only selected tasks are run on a deployed node
-                self.assertEqual(self.tasks_for_rerun, task_ids)
+            # all tasks are run on all nodes
+            self.assertTrue(self.tasks_for_rerun.issubset(task_ids))
 
     def check_add_compute_for_granular_deploy(self, new_node_uid, rpc_message):
         for node in rpc_message['deployment_info']:
@@ -271,8 +266,8 @@ class TestDeploymentTasksSerialization80(
     def check_add_controller_for_task_deploy(self, rpc_message):
         tasks_graph = rpc_message['tasks_graph']
         for node_id, tasks in six.iteritems(tasks_graph):
-            if node_id is None:
-                # skip virtual node
+            if node_id is None or node_id == consts.MASTER_NODE_UID:
+                # skip virtual node and master node
                 continue
 
             task_ids = {

@@ -574,7 +574,8 @@ class TasksSerializer(object):
         """
         for task in groups:
             skipped = not self.task_filter(task['id'])
-            node_ids = self.role_resolver.resolve(task.get('role', ()))
+            node_ids = self.role_resolver.resolve(task.get('roles',
+                                                  task.get('groups', ())))
             for sub_task_id in task.get('tasks', ()):
                 try:
                     sub_task = task_mapping[sub_task_id]

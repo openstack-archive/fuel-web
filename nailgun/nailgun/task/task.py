@@ -876,6 +876,13 @@ class BaseNetworkVerification(object):
                     continue
                 if ng.name == consts.NETWORKS.public and not has_public:
                     continue
+                # After deployment we can't check traffic on DPDK enabled
+                # interface since it's no longer visible in the system. So we
+                # should skip "Private" network from network verification
+                # after deployment.
+                if (ng.name == consts.NETWORKS.private and
+                        objects.NIC.dpdk_enabled(iface)):
+                    continue
 
                 data_ng = filter(lambda i: i['name'] == ng.name,
                                  self.config)[0]
@@ -1012,6 +1019,15 @@ class VerifyNetworksForTemplateMixin(object):
             vlan_ids = cls._get_private_vlan_range(cluster, template)
 
             for transformation in transformations:
+                if transformation['action'] in ['add-port', 'add-bond']:
+                    # After deployment we can't check traffic on DPDK enabled
+                    # interface since it's not visible in the system. So we
+                    # should skip "Private" network from network verification.
+                    if (transformation.get('provider', '') == 'dpdkovs' and
+                            node.status == consts.NODE_STATUSES.ready and
+                            transformation.get('bridge', '') ==
+                            consts.DEFAULT_BRIDGES_NAMES.br_prv):
+                        continue
                 yield transformation, vlan_ids
 
     @staticmethod

@@ -23,7 +23,7 @@
 
 - id: primary-controller
   type: group
-  role: [primary-controller]
+  roles: [primary-controller]
   required_for: [deploy_end]
   requires: [deploy_start]
   parameters:
@@ -31,7 +31,7 @@
       type: one_by_one
 - id: controller
   type: group
-  role: [controller]
+  roles: [controller]
   requires: [primary-controller]
   required_for: [deploy_end]
   parameters:
@@ -40,7 +40,7 @@
       amount: 6
 - id: cinder
   type: group
-  role: [cinder]
+  roles: [cinder]
   requires: [controller]
   required_for: [deploy_end]
   parameters:
@@ -48,7 +48,7 @@
       type: parallel
 - id: cinder-block-device
   type: group
-  role: [cinder-block-device]
+  roles: [cinder-block-device]
   requires: [controller]
   required_for: [deploy_end]
   parameters:
@@ -56,7 +56,7 @@
       type: parallel
 - id: compute
   type: group
-  role: [compute]
+  roles: [compute]
   requires: [controller]
   required_for: [deploy_end]
   parameters:
@@ -64,7 +64,7 @@
       type: parallel
 - id: zabbix-server
   type: group
-  role: [zabbix-server]
+  roles: [zabbix-server]
   required_for: [deploy_end]
   requires: [deploy_start]
   parameters:
@@ -72,7 +72,7 @@
       type: one_by_one
 - id: mongo
   type: group
-  role: [mongo]
+  roles: [mongo]
   requires: [zabbix-server]
   required_for: [deploy_end, primary-controller, controller]
   parameters:
@@ -80,7 +80,7 @@
       type: parallel
 - id: primary-mongo
   type: group
-  role: [primary-mongo]
+  roles: [primary-mongo]
   requires: [mongo]
   required_for: [deploy_end, primary-controller, controller]
   parameters:
@@ -88,7 +88,7 @@
       type: one_by_one
 - id: ceph-osd
   type: group
-  role: [ceph-osd]
+  roles: [ceph-osd]
   requires: [controller]
   required_for: [deploy_end]
   parameters:
@@ -96,7 +96,7 @@
       type: parallel
 - id: base-os
   type: group
-  role: [base-os]
+  roles: [base-os]
   required_for: [deploy_end]
   parameters:
     strategy:
@@ -142,7 +142,7 @@
 
 - id: virt
   type: group
-  role: [virt]
+  roles: [virt]
   required_for: [deploy_end]
   parameters:
     strategy:
@@ -151,15 +151,17 @@
 - id: upload_nodes_info
   version: 2.0.0
   type: upload_file
-  role: '*'
+  roles: ['/.*/']
   requires: [post_deployment_start]
   parameters:
     path: /etc/hiera/nodes.yaml
+    data:
+      yaql_exp: '$.nodes.toYaml()'
 
 - id: update_hosts
   version: 2.0.0
   type: puppet
-  role: '*'
+  roles: ['/.*/']
   required_for: [post_deployment_end]
   requires: [upload_nodes_info]
   parameters:
@@ -170,7 +172,7 @@
 
 - id: ironic
   type: group
-  role: [ironic]
+  roles: [ironic]
   requires: [controller]
   required_for: [deploy_end]
   parameters:
@@ -193,10 +195,13 @@
 
 - id: upload_configuration
   type: upload_file
-  version: 2.0.0
-  role: '*'
+  version: 2.1.0
+  roles: [master, '/.*/']
   requires: [pre_deployment_start]
   required_for: [pre_deployment_end]
   parameters:
     timeout: 180
+    path: /etc/openstack/config.yml
+    data:
+      yaql_exp: '$.toYaml()'
   refresh_on: ['*']

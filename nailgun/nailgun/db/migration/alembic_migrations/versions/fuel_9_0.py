@@ -1264,3 +1264,35 @@ def add_deleted_at_tasks_field():
 
 def delete_deleted_at_tasks_field():
     op.drop_column('tasks', 'deleted_at')
+
+
+def add_settings_tasks_filed():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'settings',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}',
+        )
+    )
+
+
+def delete_settings_tasks_field():
+    op.drop_column('tasks', 'settings')
+
+
+def add_networks_tasks_filed():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'networks',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}',
+        )
+    )
+
+
+def delete_settings_tasks_field():
+    op.drop_column('tasks', 'networks')

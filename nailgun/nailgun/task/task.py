@@ -211,6 +211,12 @@ class DeploymentTask(BaseDeploymentTask):
         for node in nodes:
             node.pending_addition = False
 
+        task.update({
+            'settings': objects.Cluster.get_attributes(
+                task.cluster.id, all_plugins_versions=True)})
+
+        task.update('networks': cls._get_networks(task.cluster))
+
         rpc_message = make_astute_message(
             task,
             deployment_mode,
@@ -219,6 +225,16 @@ class DeploymentTask(BaseDeploymentTask):
         )
         db().flush()
         return rpc_message
+
+    @classmethod
+    def _get_networks(cls, cluster):
+        if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
+            serializer = NovaNetworkConfigurationSerializer
+        elif cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
+            serializer = NeutronNetworkConfigurationSerializer
+        else:
+            raise
+        return serializer.serialize_for_cluster(cluster)
 
     @classmethod
     def granular_deploy(cls, task, nodes, affected_nodes, task_ids, events):

@@ -151,15 +151,17 @@
 - id: upload_nodes_info
   version: 2.0.0
   type: upload_file
-  role: '*'
+  role: ['/.*/']
   requires: [post_deployment_start]
   parameters:
     path: /etc/hiera/nodes.yaml
+    data:
+      yaql_exp: '$.nodes.toYaml()'
 
 - id: update_hosts
   version: 2.0.0
   type: puppet
-  role: '*'
+  role: ['/.*/']
   required_for: [post_deployment_end]
   requires: [upload_nodes_info]
   parameters:
@@ -193,10 +195,13 @@
 
 - id: upload_configuration
   type: upload_file
-  version: 2.0.0
-  role: '*'
+  version: 2.1.0
+  role: ['/.*/']
   requires: [pre_deployment_start]
   required_for: [pre_deployment_end]
   parameters:
     timeout: 180
+    path: /etc/openstack/config.yml
+    data:
+      yaql_exp: '$.configs.toYaml()'
   refresh_on: ['*']

@@ -77,8 +77,6 @@ def t_error(t):
     t.lexer.skip(1)
 
 
-ply.lex.lex()
-
 expression = None
 
 precedence = (
@@ -143,10 +141,11 @@ def p_error(p):
     raise errors.ParseError("Syntax error at '%s'" % getattr(p, 'value', ''))
 
 
+lexer = ply.lex.lex()
 parser = ply.yacc.yacc(debug=False, write_tables=False)
 
 
 def parse(expr):
     global expression
     expression = expr
-    return parser.parse(expression.expression_text)
+    return parser.parse(expression.expression_text, lexer=lexer)

@@ -116,3 +116,12 @@ class TestTaskHandlers(BaseTestCase):
         )
         self.assertEqual(resp.status_code, 204)
         self.assertTrue(self.db().query(Task).get(task.id))
+        resp = self.app.get(
+            reverse(
+                'TaskHandler',
+                kwargs={'obj_id': task.id}
+            ) + "?force=0",
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 404)

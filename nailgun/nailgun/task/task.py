@@ -335,6 +335,7 @@ class DeploymentTask(BaseDeploymentTask):
         :return: RPC method name, the arguments for RPC message
         """
         graph = orchestrator_graph.AstuteGraph(transaction.cluster, tasks)
+        graph.check()
         graph.only_tasks(selected_task_ids)
 
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
@@ -1314,7 +1315,6 @@ class CheckBeforeDeploymentTask(object):
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
         cls._validate_network_template(task)
-        cls._check_deployment_graph_for_correctness(task)
         cls._check_sriov_properties(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
@@ -1604,17 +1604,7 @@ class CheckBeforeDeploymentTask(object):
                          'network configuration template').format(error_roles)
             raise errors.NetworkTemplateMissingRoles(error_msg)
 
-    @classmethod
-    def _check_deployment_graph_for_correctness(self, task):
-        """Check that deployment graph doesn't have existing dependencies
-
-        example dependencies are: requires|required_for|tasks|groups
-        """
         # TODO(akostrikov) https://bugs.launchpad.net/fuel/+bug/1561485
-        deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
-        graph_validator = orchestrator_graph.GraphSolverValidator(
-            deployment_tasks)
-        graph_validator.check()
 
     @classmethod
     def _check_sriov_properties(self, task):

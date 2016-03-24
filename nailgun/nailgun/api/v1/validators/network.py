@@ -598,6 +598,12 @@ class NetAssignmentValidator(BasicValidator):
             raise errors.InvalidData('Only KVM hypervisor works with DPDK.')
 
     @classmethod
+    def _find_interface_by_name(cls, interfaces, name):
+        for interface in interfaces:
+            if interface['name'] == name:
+                return interface
+
+    @classmethod
     def verify_data_correctness(cls, node):
         db_node = db().query(Node).filter_by(id=node['id']).first()
         if not db_node:
@@ -682,6 +688,21 @@ class NetAssignmentValidator(BasicValidator):
                             "for bond '{2}' in DB".format(
                                 node['id'], slave['name'], iface['name']),
                             log_message=True
+                        )
+                    db_iface = cls._find_interface_by_name(db_interfaces,
+                                                           slave['name']) or {}
+                    cur_iface = cls._find_interface_by_name(interfaces,
+                                                            slave['name']) or {}
+                    iface_props = utils.dict_merge(
+                        db_iface.get('interface_properties', {}),
+                        cur_iface.get('interface_properties', {}))
+                    if iface_props.get('sriov', {}).get('enabled'):
+                        raise errors.InvalidData(
+                            "Node '{0}': bond {1} contains SRIOV "
+                            "enabled interface {2}".format(
+                                node['id'],
+                                iface['name'],
+                                slave['name'])
                         )
 
                 if consts.NETWORKS.fuelweb_admin in iface_nets:

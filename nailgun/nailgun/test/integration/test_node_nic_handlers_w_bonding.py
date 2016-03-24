@@ -655,3 +655,22 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.assertEqual(2, len(slaves))
         self.assertTrue(bond_offloading_modes[0]['state'])
+
+    def test_nics_bond_cannot_contain_sriov_enabled_interfaces(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": BOND_MODES.balance_slb,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.other_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+        self.other_nic['interface_properties'] = {'sriov': {'enabled': True}}
+
+        self.node_nics_put_check_error(
+            "Node '{0}': bond ovs-bond0 contains SRIOV "
+            "enabled interface {1}".format(self.env.nodes[0]["id"],
+                                           self.other_nic['name'])
+        )

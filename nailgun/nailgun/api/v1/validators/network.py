@@ -657,6 +657,7 @@ class NetAssignmentValidator(BasicValidator):
                 "or during deployment.".format(db_node.id))
 
         interfaces = node['interfaces']
+        interfaces_by_name = {iface['name']: iface for iface in interfaces}
         db_interfaces = db_node.nic_interfaces
         net_manager = objects.Cluster.get_network_manager(db_node.cluster)
 
@@ -728,6 +729,18 @@ class NetAssignmentValidator(BasicValidator):
                             "for bond '{2}' in DB".format(
                                 node['id'], slave['name'], iface['name']),
                             log_message=True
+                        )
+                    cur_iface = interfaces_by_name.get(slave['name'], {})
+                    iface_props = utils.dict_merge(
+                        db_slave.interface_properties,
+                        cur_iface.get('interface_properties', {}))
+                    if iface_props.get('sriov', {}).get('enabled'):
+                        raise errors.InvalidData(
+                            "Node '{0}': bond '{1}' cannot contain SRIOV "
+                            "enabled interface '{2}'".format(
+                                node['id'],
+                                iface['name'],
+                                slave['name'])
                         )
 
                 if consts.NETWORKS.fuelweb_admin in iface_nets:

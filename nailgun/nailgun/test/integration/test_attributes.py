@@ -477,46 +477,6 @@ class TestAlwaysEditable(BaseIntegrationTest):
             'uri': 'http://127.0.0.1:8080/myrepo',
         }])
 
-    def test_cannot_change_repos_on_operational_cluster(self):
-        self.cluster.status = consts.CLUSTER_STATUSES.operational
-        self.db.flush()
-
-        data = {'editable': {}}
-        data['editable'].update(self._reposetup)
-        data['editable'].update({'access': {}})     # always_editable is False
-
-        self._put(data, expect_code=403)
-
-        attrs = self.cluster.attributes.editable
-        self.assertItemsEqual(attrs['repo_setup']['repos']['value'], [
-            {
-                'type': 'rpm',
-                'name': 'mos',
-                'uri': 'http://127.0.0.1:8080/liberty-8.0/centos/x86_64',
-                'priority': None,
-            },
-            {
-                'type': 'rpm',
-                'name': 'mos-updates',
-                'uri': 'http://mirror.fuel-infra.org/mos-repos/centos/'
-                       'mos8.0-centos7-fuel/updates/x86_64',
-                'priority': None,
-            },
-            {
-                'type': 'rpm',
-                'name': 'mos-security',
-                'uri': 'http://mirror.fuel-infra.org/mos-repos/centos/'
-                       'mos8.0-centos7-fuel/security/x86_64',
-                'priority': None,
-            },
-            {
-                'type': 'rpm',
-                'name': 'Auxiliary',
-                'uri': 'http://127.0.0.1:8080/liberty-8.0/centos/auxiliary',
-                'priority': 15,
-            },
-        ])
-
 
 class TestVmwareAttributes(BaseIntegrationTest):
 
@@ -871,7 +831,7 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
 
     def test_install_plugins_after_deployment(self):
         self.cluster.status = consts.CLUSTER_STATUSES.operational
-        self.assertTrue(self.cluster.is_locked)
+        self.assertFalse(self.cluster.is_locked)
         runtime_plugin = self.env.create_plugin(
             cluster=self.cluster,
             is_hotpluggable=True,
@@ -879,22 +839,11 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
             enabled=False,
             **self.plugin_data
         )
-        plugin = self.env.create_plugin(
-            cluster=self.cluster,
-            name=runtime_plugin.name,
-            version='1.0.3',
-            is_hotpluggable=False,
-            enabled=False,
-            **self.plugin_data
-        )
-
         resp = self._modify_plugin(runtime_plugin, True)
         self.assertEqual(200, resp.status_code, resp.body)
         editable = objects.Cluster.get_editable_attributes(self.cluster)
         self.assertIn(runtime_plugin.name, editable)
         self.assertTrue(editable[runtime_plugin.name]['metadata']['enabled'])
-        resp = self._modify_plugin(plugin, True)
-        self.assertEqual(403, resp.status_code)
 
     def test_enable_plugin_is_idempotent(self):
         plugin = self.env.create_plugin(
@@ -906,6 +855,6 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
         )
 
         self.cluster.status = consts.CLUSTER_STATUSES.operational
-        self.assertTrue(self.cluster.is_locked)
+        self.assertFalse(self.cluster.is_locked)
         resp = self._modify_plugin(plugin, True)
         self.assertEqual(200, resp.status_code, resp.body)

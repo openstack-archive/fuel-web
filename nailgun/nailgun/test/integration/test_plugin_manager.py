@@ -316,7 +316,7 @@ class TestPluginManager(base.BaseIntegrationTest):
         )
         cluster.status = consts.CLUSTER_STATUSES.operational
         self.db.flush()
-        self.assertTrue(cluster.is_locked)
+        self.assertFalse(cluster.is_locked)
         attributes = PluginManager.get_plugins_attributes(
             cluster, all_versions=True, default=True
         )

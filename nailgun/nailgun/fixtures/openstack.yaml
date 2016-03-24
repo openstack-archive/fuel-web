@@ -1668,7 +1668,7 @@
             message: "dialog.create_cluster_wizard.network.vlan_tun_alert"
         compatible:
           - name: network:neutron:core:ml2
-          - name: hypervisor:qemu
+          - name: hypervisor:*
         requires:
           - name: network:neutron:core:ml2
       - name: network:neutron:ml2:tun

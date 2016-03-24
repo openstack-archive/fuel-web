@@ -26,7 +26,6 @@ from nailgun.orchestrator import graph_configuration
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.test import base
 
-
 TASKS = """
 
 - id: pre_deployment_start
@@ -757,7 +756,12 @@ class TestIncludeSkipped(base.BaseTestCase):
             [t['id'] for t in self.tasks])
 
 
-class TestGraphSolverValidator(base.BaseTestCase):
+class TestLegacyGraphChecker(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestLegacyGraphChecker, self).setUp()
+        mock.patch('nailgun.objects.Cluster')
+        self.cluster = mock.Mock()
 
     def test_validation_pass_with_existing_dependencies(self):
         yaml_tasks = """
@@ -776,8 +780,8 @@ class TestGraphSolverValidator(base.BaseTestCase):
               amount: 2
           """
         tasks = yaml.load(yaml_tasks)
-        graph_validator = orchestrator_graph.GraphSolverValidator(tasks)
-        graph_validator.check()
+        graph = orchestrator_graph.AstuteGraph(self.cluster, tasks)
+        self.assertNotRaises(errors.InvalidData, graph.check)
 
     def test_validation_failed_with_not_existing_dependencies(self):
         dependencies_types = ['requires', 'required_for', 'groups', 'tasks']
@@ -792,16 +796,16 @@ class TestGraphSolverValidator(base.BaseTestCase):
                 strategy:
                   type: one_by_one
               """.format(dependency_type=dependency_type)
+
             tasks = yaml.load(yaml_tasks)
-            graph_validator = orchestrator_graph.GraphSolverValidator(
-                tasks)
+            graph = orchestrator_graph.AstuteGraph(self.cluster, tasks)
 
             with self.assertRaisesRegexp(
                     errors.InvalidData,
                     "Tasks 'non_existing_stage' can't be in requires|"
                     "required_for|groups|tasks for \['test-controller'\] "
                     "because they don't exist in the graph"):
-                graph_validator.check()
+                graph.check()
 
     def test_validation_failed_with_cycling_dependencies(self):
         yaml_tasks = """
@@ -813,8 +817,8 @@ class TestGraphSolverValidator(base.BaseTestCase):
           requires: [test-controller-1]
         """
         tasks = yaml.load(yaml_tasks)
-        graph_validator = orchestrator_graph.GraphSolverValidator(tasks)
+        graph = orchestrator_graph.AstuteGraph(self.cluster, tasks)
         with self.assertRaisesRegexp(
                 errors.InvalidData,
-                "Tasks can not be processed because it contains cycles in it"):
-            graph_validator.check()
+                "Graph cannot be processed because it contains cycles in it"):
+            graph.check()

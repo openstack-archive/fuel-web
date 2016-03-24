@@ -1383,6 +1383,14 @@ class BaseIntegrationTest(BaseTestCase):
         super(BaseIntegrationTest, cls).setUpClass()
         nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
 
+    def emulate_nodes_provisioning(self, nodes):
+        for node in nodes:
+            node.status = consts.NODE_STATUSES.provisioned
+            node.pending_addition = False
+
+        self.db.add_all(nodes)
+        self.db.flush()
+
     @classmethod
     def tearDownClass(cls):
         super(BaseIntegrationTest, cls).tearDownClass()

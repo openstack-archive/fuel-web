@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
 from mock import patch
 
 from oslo_serialization import jsonutils
@@ -109,7 +108,6 @@ class TestNetworkModels(BaseIntegrationTest):
         test_nets = self.env.neutron_networks_get(
             self.env.clusters[0].id).json_body
 
-        test_network_params = copy.deepcopy(test_nets['networking_parameters'])
         # change something from 'networking_parameters'
         test_nets['networking_parameters']['dns_nameservers'] = \
             ['8.8.8.8', '8.8.4.4']
@@ -145,8 +143,8 @@ class TestNetworkModels(BaseIntegrationTest):
                               new_nets['networks'])[0]
         self.assertEqual(u'192.168.0.0/30', modified_net['cidr'])
 
-        # test that networking_parameters were not changed
-        self.assertDictEqual(test_network_params,
+        # test that networking_parameters were changed
+        self.assertDictEqual(test_nets['networking_parameters'],
                              new_nets['networking_parameters'])
 
     def test_admin_network_update_after_deployment(self):

@@ -36,11 +36,22 @@ from nailgun.settings import settings
 from nailgun.urls import urls
 
 
+def log_exceptions(handler):
+    try:
+        return handler()
+    except web.HTTPError:
+        raise
+    except Exception:
+        logger.exception('Unexpected exception occured')
+        raise
+
+
 def build_app(db_driver=None):
     """Build app and disable debug mode in case of production"""
     web.config.debug = bool(int(settings.DEVELOPMENT))
     app = web.application(urls(), locals(),
                           autoreload=bool(int(settings.AUTO_RELOAD)))
+    app.add_processor(log_exceptions)
     app.add_processor(db_driver or load_db_driver)
     app.add_processor(forbid_client_caching)
     return app

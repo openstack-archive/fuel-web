@@ -87,7 +87,8 @@ class TaskHelper(object):
             filter(Task.name.in_(
                 ['check_before_deployment', 'check_networks'])).count()
 
-        return not task.cluster.is_locked and error_checking_tasks_count
+        return (task.cluster.status != consts.CLUSTER_STATUSES.new
+                and error_checking_tasks_count)
 
     # TODO(aroma): move this method to utils module
     @classmethod

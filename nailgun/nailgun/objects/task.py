@@ -243,14 +243,14 @@ class Task(NailgunObject):
         elif instance.name == consts.TASK_NAMES.spawn_vms:
             if instance.status == consts.TASK_STATUSES.ready:
                 Cluster.set_vms_created_state(cluster)
-            elif instance.status == consts.TASK_STATUSES.error and \
-                    not TaskHelper.before_deployment_error(instance):
+            elif (instance.status == consts.TASK_STATUSES.error and
+                  TaskHelper.before_deployment_error(instance)):
                 cls.__update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.error, None
                 )
         elif instance.name == consts.TASK_NAMES.deploy and \
                 instance.status == consts.TASK_STATUSES.error and \
-                not TaskHelper.before_deployment_error(instance):
+                TaskHelper.before_deployment_error(instance):
             # We don't want to set cluster status to
             # error because we don't want to lock
             # settings if cluster wasn't deployed

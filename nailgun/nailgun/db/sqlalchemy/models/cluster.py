@@ -145,15 +145,12 @@ class Cluster(Base):
     @property
     def is_locked(self):
         allowed_status = (
-            consts.CLUSTER_STATUSES.new, consts.CLUSTER_STATUSES.stopped,
+            consts.CLUSTER_STATUSES.new,
+            consts.CLUSTER_STATUSES.operational,
+            consts.CLUSTER_STATUSES.stopped,
             consts.CLUSTER_STATUSES.partially_deployed
         )
-        return self.status not in allowed_status or bool(db().query(
-            db().query(Node).filter_by(
-                cluster_id=self.id,
-                status=consts.NODE_STATUSES.ready
-            ).exists()
-        ).scalar())
+        return self.status not in allowed_status
 
     @property
     def network_groups(self):

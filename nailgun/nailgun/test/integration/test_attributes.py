@@ -834,7 +834,7 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
 
     def test_install_plugins_after_deployment(self):
         self.cluster.status = consts.CLUSTER_STATUSES.operational
-        self.assertTrue(self.cluster.is_locked)
+        self.assertFalse(self.cluster.is_locked)
         runtime_plugin = self.env.create_plugin(
             cluster=self.cluster,
             is_hotpluggable=True,
@@ -869,6 +869,6 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
         )
 
         self.cluster.status = consts.CLUSTER_STATUSES.operational
-        self.assertTrue(self.cluster.is_locked)
+        self.assertFalse(self.cluster.is_locked)
         resp = self._modify_plugin(plugin, True)
         self.assertEqual(200, resp.status_code, resp.body)

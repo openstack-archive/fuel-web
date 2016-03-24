@@ -284,8 +284,10 @@ def content_json(func, cls, *args, **kwargs):
 
         resp = func(cls, *args, **kwargs)
     except web.notmodified:
+        logger.error('', exc_info=True)
         raise
     except web.HTTPError as http_error:
+        logger.error('', exc_info=True)
         if http_error.status_code != 204:
             web.header('Content-Type', 'application/json', unique=True)
         if http_error.status_code >= 400:
@@ -298,6 +300,7 @@ def content_json(func, cls, *args, **kwargs):
         raise
     # intercepting all errors to avoid huge HTML output
     except Exception as exc:
+        logger.error('', exc_info=True)
         http_error = BaseHandler.http(
             500,
             (

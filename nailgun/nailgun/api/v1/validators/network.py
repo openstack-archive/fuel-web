@@ -444,11 +444,11 @@ class NetAssignmentValidator(BasicValidator):
     @classmethod
     def _verify_sriov_properties(cls, iface, data, node_id):
         non_changeable = ['sriov_totalvfs', 'available', 'pci_id']
-        sriov_new = data['interface_properties']['sriov']
-        check_for_changes = [n for n in sriov_new if n in non_changeable]
-        if not check_for_changes:
-            return
+        sriov_data = data['interface_properties']['sriov']
         sriov_db = iface.interface_properties['sriov']
+        sriov_new = sriov_db.copy()
+        sriov_new.update(sriov_data)
+        check_for_changes = [n for n in sriov_data if n in non_changeable]
         for param_name in check_for_changes:
             if sriov_db[param_name] != sriov_new[param_name]:
                 raise errors.InvalidData(
@@ -465,10 +465,18 @@ class NetAssignmentValidator(BasicValidator):
             )
         if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
             raise errors.InvalidData(
-                "Node '{0}' interface '{1}': '{2}' virtual functions was"
+                "Node '{0}' interface '{1}': '{2}' virtual functions was "
                 "requested but just '{3}' are available".format(
                     node_id, iface.name, sriov_new['sriov_numvfs'],
                     sriov_db['sriov_totalvfs']),
+                log_message=True
+            )
+        if (sriov_new['enabled'] and
+                (data.get('assigned_networks', iface.assigned_networks))):
+            raise errors.InvalidData(
+                "Node '{0}' interface '{1}': SR-IOV cannot be enabled when "
+                "networks are assigned to the interface".format(
+                    node_id, iface.name),
                 log_message=True
             )
 

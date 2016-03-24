@@ -47,10 +47,11 @@ function($, _, i18n, React, utils, models, componentMixins, SettingSection) {
             componentMixins.unsavedChangesMixin
         ],
         statics: {
-            fetchData: function(options) {
-                return $.when(options.cluster.get('settings').fetch({cache: true}), options.cluster.get('networkConfiguration').fetch({cache: true})).then(function() {
-                    return {};
-                });
+            fetchData: function({cluster}) {
+                return $.when(
+                    cluster.get('settings').fetch({cache: true}),
+                    cluster.get('networkConfiguration').fetch({cache: true})
+                ).then(() => ({}));
             }
         },
         getInitialState: function() {

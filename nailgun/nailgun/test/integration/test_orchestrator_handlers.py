@@ -178,14 +178,6 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
             kwargs={'cluster_id': self.cluster.id}) + \
             make_query(nodes=node_uids)
 
-    def emulate_nodes_provisioning(self, nodes):
-        for node in nodes:
-            node.status = consts.NODE_STATUSES.provisioned
-            node.pending_addition = False
-
-        self.db.add_all(nodes)
-        self.db.flush()
-
     def check_deployment_call_made(self, nodes_uids, mcast):
         args, kwargs = mcast.call_args
         deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]

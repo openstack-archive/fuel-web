@@ -801,36 +801,37 @@ class TestSriovHandlers(BaseIntegrationTest):
 
     def setUp(self):
         super(TestSriovHandlers, self).setUp()
-        self.env.create(
-            cluster_kwargs={
-                'editable_attributes': {
-                    'common': {
-                        'libvirt_type': {
-                            'value': consts.HYPERVISORS.kvm
-                        }
+        self.env.create_cluster(
+            editable_attributes={
+                'common': {
+                    'libvirt_type': {
+                        'value': consts.HYPERVISORS.kvm
                     }
                 }
-            },
-            nodes_kwargs=[{"api": False}]
+            }
         )
+        self.env.create_nodes_w_interfaces_count(
+            1, 3, cluster_id=self.env.clusters[0].id, api=True)
 
-    def test_get_update_sriov_properties(self):
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
+        self.nics = resp.json_body
 
-        nics = resp.json_body
+    def test_get_update_sriov_properties(self):
         sriov_default = \
             self.env.network_manager.get_default_interface_properties()[
                 'sriov']
-        self.assertEqual(nics[0]['interface_properties']['sriov'],
+        # Use NIC #2 as SR-IOV can be enabled only on NICs that have no
+        # assigned networks. First two NICs have assigned networks.
+        self.assertEqual(self.nics[2]['interface_properties']['sriov'],
                          sriov_default)
 
         # change NIC properties in DB as SR-IOV parameters can be set up only
         # for NICs that have hardware SR-IOV support
-        nic = self.env.nodes[0].nic_interfaces[0]
+        nic = self.env.nodes[0].nic_interfaces[2]
         nic.interface_properties['sriov']['available'] = True
         nic.interface_properties['sriov']['sriov_totalvfs'] = 8
         objects.NIC.update(nic, {})
@@ -839,34 +840,27 @@ class TestSriovHandlers(BaseIntegrationTest):
         sriov['enabled'] = True
         sriov['sriov_numvfs'] = 8
         sriov['physnet'] = 'new_physnet'
-        nics[0]['interface_properties']['sriov'] = sriov
+        self.nics[2]['interface_properties']['sriov'] = sriov
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
 
-        sriov = resp.json_body[0]['interface_properties']['sriov']
+        sriov = resp.json_body[2]['interface_properties']['sriov']
         self.assertEqual(sriov['enabled'], True)
         self.assertEqual(sriov['sriov_numvfs'], 8)
         self.assertEqual(sriov['physnet'], 'new_physnet')
 
     def test_update_readonly_sriov_properties_failed(self):
-        resp = self.app.get(
-            reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
-            headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        nics = resp.json_body
-        sriov = nics[0]['interface_properties']['sriov']
+        sriov = self.nics[0]['interface_properties']['sriov']
         sriov['available'] = True
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             expect_errors=True,
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 400)
@@ -874,70 +868,50 @@ class TestSriovHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             "Node '{0}' interface '{1}': SR-IOV parameter 'available' cannot "
             "be changed through API".format(
-                self.env.nodes[0].id, nics[0]['name']))
+                self.env.nodes[0].id, self.nics[0]['name']))
 
-    def test_enable_sriov_failed(self):
-        resp = self.app.get(
-            reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
-            headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        nics = resp.json_body
-        sriov = nics[0]['interface_properties']['sriov']
+    def test_enable_sriov_failed_when_not_available(self):
+        sriov = self.nics[0]['interface_properties']['sriov']
         sriov['enabled'] = True
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             expect_errors=True,
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json_body['message'],
             "Node '{0}' interface '{1}': SR-IOV cannot be enabled as it is"
-            " not available".format(self.env.nodes[0].id, nics[0]['name']))
+            " not available".format(
+                self.env.nodes[0].id, self.nics[0]['name']))
 
     def test_set_sriov_numvfs_failed(self):
-        resp = self.app.get(
-            reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
-            headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        nics = resp.json_body
-        sriov = nics[0]['interface_properties']['sriov']
+        sriov = self.nics[0]['interface_properties']['sriov']
         sriov['sriov_numvfs'] = 8
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             expect_errors=True,
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json_body['message'],
-            "Node '{0}' interface '{1}': '8' virtual functions was"
+            "Node '{0}' interface '{1}': '8' virtual functions was "
             "requested but just '0' are available".format(
-                self.env.nodes[0].id, nics[0]['name']))
+                self.env.nodes[0].id, self.nics[0]['name']))
 
     def test_set_sriov_numvfs_failed_negative_value(self):
-        resp = self.app.get(
-            reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
-            headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        nics = resp.json_body
-        sriov = nics[0]['interface_properties']['sriov']
+        sriov = self.nics[0]['interface_properties']['sriov']
         sriov['sriov_numvfs'] = -40
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             expect_errors=True,
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 400)
@@ -947,20 +921,13 @@ class TestSriovHandlers(BaseIntegrationTest):
         )
 
     def test_set_sriov_numvfs_failed_float_value(self):
-        resp = self.app.get(
-            reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
-            headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        nics = resp.json_body
-        sriov = nics[0]['interface_properties']['sriov']
+        sriov = self.nics[0]['interface_properties']['sriov']
         sriov['sriov_numvfs'] = 2.5
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             expect_errors=True,
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 400)
@@ -970,20 +937,13 @@ class TestSriovHandlers(BaseIntegrationTest):
         )
 
     def test_set_sriov_numvfs_zero_value(self):
-        resp = self.app.get(
-            reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
-            headers=self.default_headers)
-        self.assertEqual(resp.status_code, 200)
-
-        nics = resp.json_body
-        sriov = nics[0]['interface_properties']['sriov']
+        sriov = self.nics[0]['interface_properties']['sriov']
         sriov['sriov_numvfs'] = 0
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             expect_errors=True,
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 400)
@@ -1000,19 +960,12 @@ class TestSriovHandlers(BaseIntegrationTest):
         nic.interface_properties['sriov']['sriov_totalvfs'] = 8
         nic.interface_properties.changed()
 
-        resp = self.app.get(
-            reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
-            headers=self.default_headers)
-
-        self.assertEqual(resp.status_code, 200)
-        nics = resp.json_body
-        nics[0]['interface_properties']['sriov']['enabled'] = True
+        self.nics[0]['interface_properties']['sriov']['enabled'] = True
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
-            jsonutils.dumps(nics),
+            jsonutils.dumps(self.nics),
             expect_errors=True,
             headers=self.default_headers)
 
@@ -1059,3 +1012,26 @@ class TestSriovHandlers(BaseIntegrationTest):
             "Only KVM hypervisor works with SR-IOV.",
             resp.json_body['message']
         )
+
+    def test_enable_sriov_failed_when_nic_has_networks_assigned(self):
+        nic = self.env.nodes[0].nic_interfaces[0]
+        nic.interface_properties['sriov']['available'] = True
+        nic.interface_properties['sriov']['sriov_totalvfs'] = 8
+        objects.NIC.update(nic, {})
+
+        sriov = nic.interface_properties['sriov']
+        sriov['enabled'] = True
+        sriov['sriov_numvfs'] = 8
+        self.nics[0]['interface_properties']['sriov'] = sriov
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0].id}),
+            jsonutils.dumps(self.nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json_body['message'],
+            "Node '{0}' interface '{1}': SR-IOV cannot be enabled when "
+            "networks are assigned to the interface".format(
+                self.env.nodes[0].id, self.nics[0]['name']))

@@ -28,10 +28,6 @@ class GraphSolverTasksValidator(BasicValidator):
     def validate_update(cls, data, instance):
         parsed = cls.validate(data)
         cls.validate_schema(parsed, tasks.TASKS_SCHEMA)
-        graph_validator = orchestrator_graph.GraphSolverValidator(
-            parsed)
-        graph_validator.check()
-
         return parsed
 
 

@@ -21,6 +21,215 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
 
+class TestGraphHandlers(BaseIntegrationTest):
+
+    maxDiff = None
+
+    def setUp(self):
+        super(TestGraphHandlers, self).setUp()
+        self.cluster = self.env.create_cluster(api=False)
+        self.custom_graph = DeploymentGraph.create_for_model(
+            {
+                'name': 'custom-graph-name',
+                'tasks': [{
+                    'id': 'custom-task',
+                    'type': 'puppet'
+                }]
+            },
+            self.cluster,
+            graph_type='custom-graph'
+        )
+
+    def tearDown(self):
+        super(TestGraphHandlers, self).tearDown()
+
+    def test_graphs_list_request(self):
+        default_graph = DeploymentGraph.get_for_model(self.cluster)
+
+        expected_list = [
+            {
+                'id': DeploymentGraph.get_for_model(
+                    self.cluster.release, graph_type='default').id,
+                'name': None,
+                'relations': [{
+                    'model_id': self.cluster.release.id,
+                    'model': 'Release',
+                    'type': 'default'
+                }]
+            },
+            {
+                'id': self.custom_graph.id,
+                'name': 'custom-graph-name',
+                'relations': [{
+                    'type': 'custom-graph',
+                    'model': 'Cluster',
+                    'model_id': self.cluster.id
+                }]
+            },
+            {
+                'id': default_graph.id,
+                'relations': [
+                    {
+                        'model': 'Cluster',
+                        'model_id': self.cluster.id,
+                        'type': 'default'
+                    }
+                ],
+                'name': None
+            }
+        ]
+        resp = self.app.get(
+            reverse(
+                'DeploymentGraphCollectionHandler',
+                kwargs={}
+            ),
+            headers=self.default_headers
+        )
+        response = resp.json_body
+        for r in response:
+            r.pop('tasks')
+        self.assertItemsEqual(expected_list, response)
+
+    def test_graphs_by_id_request(self):
+
+        resp = self.app.get(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': self.custom_graph.id}
+            ),
+            headers=self.default_headers
+        )
+        self.assertItemsEqual(
+            {
+                'id': self.custom_graph.id,
+                'name': 'custom-graph-name',
+                'tasks': [{
+                    'id': 'custom-task',
+                    'type': 'puppet',
+                    'version': '1.0.0'
+                }],
+                'relations': [{
+                    'model': 'Cluster',
+                    'model_id': self.cluster.id,
+                    'type': 'custom-graph'
+                }],
+            },
+            resp.json_body
+        )
+
+    def test_graph_update(self):
+        self.maxDiff = None
+        resp = self.app.put(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': self.custom_graph.id}
+            ),
+            jsonutils.dumps({
+                'name': 'updated-graph-name',
+                'tasks': [{
+                    'id': 'test-task2',
+                    'type': 'puppet',
+                    'version': '2.0.0'
+                }]
+            }),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            {
+                'name': 'updated-graph-name',
+                'tasks': [{
+                    'id': 'test-task2',
+                    'type': 'puppet',
+                    'task_name': 'test-task2',
+                    'version': '2.0.0'
+                }],
+                'relations': [{
+                    'model': 'Cluster',
+                    'model_id': self.cluster.id,
+                    'type': 'custom-graph'
+                }],
+                'id': self.custom_graph.id
+            },
+            resp.json_body
+        )
+
+        resp = self.app.patch(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': self.custom_graph.id}
+            ),
+            jsonutils.dumps({
+                'name': 'updated-graph-name2'
+            }),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            {
+                'name': 'updated-graph-name2',
+                'tasks': [{
+                    'id': 'test-task2',
+                    'type': 'puppet',
+                    'task_name': 'test-task2',
+                    'version': '2.0.0'
+                }],
+                'relations': [{
+                    'model': 'Cluster',
+                    'model_id': self.cluster.id,
+                    'type': 'custom-graph'
+                }],
+                'id': self.custom_graph.id
+            },
+            resp.json_body
+        )
+
+    def test_graph_delete(self):
+        graph_id = self.custom_graph.id
+        resp = self.app.delete(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': graph_id}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(204, resp.status_code)
+        graph = DeploymentGraph.get_by_uid(graph_id)
+        self.assertIsNone(graph)
+
+    def test_graph_update_fail_on_bad_schema(self):
+        resp = self.app.put(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': self.custom_graph.id}
+            ),
+            jsonutils.dumps({
+                'no-such-field': 'BOOM'
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "Additional properties are not allowed "
+            "(u'no-such-field' was unexpected)", resp.json_body['message'])
+
+    def test_graph_update_fail_on_not_existing_id(self):
+        not_existing_id = 100500
+
+        resp = self.app.put(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': not_existing_id}
+            ),
+            '{}',
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(404, resp.status_code)
+
+
 class TestLinkedGraphHandlers(BaseIntegrationTest):
 
     maxDiff = None

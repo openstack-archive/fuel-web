@@ -109,8 +109,8 @@ class NetworkConfigurationValidator(BasicValidator):
         if is_admin_network:
             if admin_ranges is not None:
                 admin_ranges[ng_db.id] = ranges
-        if (is_admin_network or cluster.is_locked) and \
-                cls._check_ips_out_of_ip_ranges(ng_db, nm, ranges):
+        if (is_admin_network or cluster.status != consts.CLUSTER_STATUSES.new)\
+           and cls._check_ips_out_of_ip_ranges(ng_db, nm, ranges):
             raise errors.InvalidData(
                 "New IP ranges for network '{0}'({1}) do not cover "
                 "already allocated IPs.".format(

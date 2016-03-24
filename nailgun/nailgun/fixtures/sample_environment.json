@@ -649,7 +649,7 @@
                                 "enabled": false,
                                 "pci_id": "1234:5678",
                                 "physnet": "physnet2",
-                                "sriov_numvfs": 0,
+                                "sriov_numvfs": null,
                                 "sriov_totalvfs": 2
                             },
                             "pci_id": "8086:100e"

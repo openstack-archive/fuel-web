@@ -519,7 +519,7 @@ class NetworkManager(object):
             'disable_offloading': False,
             'sriov': {
                 'enabled': False,
-                'sriov_numvfs': 0,
+                'sriov_numvfs': None,
                 'sriov_totalvfs': 0,
                 'available': False,
                 'pci_id': '',

@@ -557,6 +557,17 @@ class NetAssignmentValidator(BasicValidator):
                                 node['id'], slave['name'], iface['name']),
                             log_message=True
                         )
+                    for other in interfaces:
+                        if other['name'] == slave['name']:
+                            if other.get('interface_properties',
+                                         {}).get('sriov', {}).get('enabled'):
+                                raise errors.InvalidData(
+                                    "Node '{0}': bond {1} contains SRIOV "
+                                    "enabled interface {2}".format(
+                                        node['id'],
+                                        iface['name'],
+                                        slave['name'])
+                                )
 
                 if consts.NETWORKS.fuelweb_admin in iface_nets:
                     prohibited_modes = net_manager.\

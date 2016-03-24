@@ -153,8 +153,8 @@ class DeploymentGraph(NailgunObject):
         super(DeploymentGraph, cls).update(instance, data)
 
         # remove old tasks
-        instance.tasks = []
         if tasks:
+            instance.tasks = []
             for task in tasks:
                 instance.tasks.append(
                     DeploymentGraphTask.create(task, False))

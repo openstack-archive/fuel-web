@@ -222,33 +222,6 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         )
         self.assertEqual(resp.status_code, 400)
 
-    def test_upload_tasks_with_cycles(self):
-        tasks = self.get_tasks_with_cycles()
-        resp = self.app.put(
-            reverse('ReleaseDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.release_id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-
-    def test_upload_tasks_with_incorrect_dependencies(self):
-        tasks = self.get_tasks_with_incorrect_dependencies()
-        resp = self.app.put(
-            reverse('ReleaseDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.release_id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(
-            "Tasks 'non_existing_stage' can't be in requires|required_for|"
-            "groups|tasks for [test-controller] because they don't exist in "
-            "the graph", resp.json_body['message'])
-
     def test_post_tasks(self):
         resp = self.app.post(
             reverse('ReleaseDeploymentTasksHandler',
@@ -346,32 +319,6 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-
-    def test_upload_tasks_with_cycles(self):
-        tasks = self.get_tasks_with_cycles()
-        resp = self.app.put(
-            reverse('ClusterDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-
-    def test_upload_tasks_with_incorrect_dependencies(self):
-        tasks = self.get_tasks_with_incorrect_dependencies()
-        resp = self.app.put(
-            reverse('ClusterDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(
-            "Tasks 'non_existing_stage' can't be in requires|required_for|"
-            "groups|tasks for [test-controller] because they don't exist in "
-            "the graph", resp.json_body['message'])
 
     def test_upload_tasks_without_unsupported_role(self):
         tasks = self.get_tasks_with_unsuported_role()

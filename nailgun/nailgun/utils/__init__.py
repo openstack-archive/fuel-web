@@ -112,14 +112,27 @@ def traverse(data, formatter=None, formatter_context=None, keywords=None):
     :param data: an input data to be traversed
     :param formatter_context: a dict to be passed into .format() for strings
     :param formatter: the text formatter, by default text_format will be used
-    :param keywords: the mapping keyword, handler
+    :param keywords: the dict where keys is name of keyword,
+        value is callable to handle value of keyword.
+        if original data contains key with name <keyword_name>_arg
+        its value will be passed to callable as argument.
+        for example:
+        the keywords is {"generator": AttributeGenerator}
+
+        data:
+            generator: from_settings
+            generator_arg: MASTER_IP
+
+        the AttributeGenerator will be called with arguments:
+            "from_settings", "MASTER_IP"
+
     :returns: a dict with traversed data
     """
 
     if formatter is None:
         formatter = text_format
 
-    # generate value if generator is specified
+    # check if keywords is specified and generate value if it is
     if isinstance(data, collections.Mapping) and keywords:
         for k in keywords:
             if k in data:

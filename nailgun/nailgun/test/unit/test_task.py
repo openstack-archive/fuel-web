@@ -17,7 +17,6 @@ import mock
 import six
 
 from oslo_serialization import jsonutils
-import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
@@ -525,75 +524,6 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             errors.NetworkCheckError,
             task.CheckBeforeDeploymentTask._check_public_network,
             self.task)
-
-    def test_check_deployment_graph_with_correct_data(self):
-        correct_yaml_tasks = """
-        - id: test-controller
-          type: group
-          role: [test-controller]
-          requires: [primary-controller]
-          required_for: [deploy_end]
-          parameters:
-            strategy:
-              type: parallel
-              amount: 2
-        """
-        tasks = yaml.load(correct_yaml_tasks)
-        deployment_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
-        deployment_tasks.extend(tasks)
-        objects.Cluster.update(
-            self.cluster,
-            {'deployment_tasks': deployment_tasks})
-        task.CheckBeforeDeploymentTask.\
-            _check_deployment_graph_for_correctness(
-                self.task)
-
-    def test_check_deployment_graph_with_incorrect_dependencies_data(self):
-        incorrect_dependencies_yaml_tasks = """
-        - id: test-controller
-          type: group
-          role: [primary-controller]
-          required_for: [non_existing_stage]
-          parameters:
-            strategy:
-              type: one_by_one
-        """
-        tasks = yaml.load(incorrect_dependencies_yaml_tasks)
-        deployment_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
-        deployment_tasks.extend(tasks)
-        objects.Cluster.update(
-            self.cluster,
-            {'deployment_tasks': deployment_tasks})
-        with self.assertRaisesRegexp(
-                errors.InvalidData,
-                "Tasks 'non_existing_stage' can't be in requires|required_for|"
-                "groups|tasks for \['test-controller'\] because they don't "
-                "exist in the graph"):
-            task.CheckBeforeDeploymentTask.\
-                _check_deployment_graph_for_correctness(
-                    self.task)
-
-    def test_check_deployment_graph_with_cycling_dependencies_data(self):
-        incorrect_cycle_yaml_tasks = """
-        - id: test-controller-1
-          type: role
-          requires: [test-controller-2]
-        - id: test-controller-2
-          type: role
-          requires: [test-controller-1]
-        """
-        tasks = yaml.load(incorrect_cycle_yaml_tasks)
-        deployment_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
-        deployment_tasks.extend(tasks)
-        objects.Cluster.update(
-            self.cluster,
-            {'deployment_tasks': deployment_tasks})
-        with self.assertRaisesRegexp(
-                errors.InvalidData,
-                "Tasks can not be processed because it contains cycles in it"):
-            task.CheckBeforeDeploymentTask.\
-                _check_deployment_graph_for_correctness(
-                    self.task)
 
     def test_check_missed_nodes_vmware_nova_computes(self):
         operational_node = self.env.create_node(

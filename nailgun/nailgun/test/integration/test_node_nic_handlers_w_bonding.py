@@ -23,6 +23,8 @@ from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
+from nailgun import objects
+from nailgun.db import db
 
 
 class TestNodeNICsBonding(BaseIntegrationTest):
@@ -80,7 +82,17 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                      "state": None,
                      "sub": []
                  }
-             ]}])
+             ]},
+            {"name": "eth3",
+             "mac": "00:00:00:00:00:99",
+             'interface_properties': {
+                 'sriov': {
+                     'sriov_totalvfs': 8,
+                     'available': True,
+                     'pci_id': '1234:5678'
+                 }
+             }}
+        ])
 
         self.env.create(
             cluster_kwargs={
@@ -103,15 +115,19 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.data = resp.json_body
         self.admin_nic, self.other_nic, self.empty_nic = None, None, None
+        self.sriov_nic = None
         for nic in self.data:
             net_names = [n["name"] for n in nic["assigned_networks"]]
             if "fuelweb_admin" in net_names:
                 self.admin_nic = nic
             elif net_names:
                 self.other_nic = nic
+            elif nic['interface_properties']['sriov']['available']:
+                self.sriov_nic = nic
             else:
                 self.empty_nic = nic
-        self.assertTrue(self.admin_nic and self.other_nic and self.empty_nic)
+        self.assertTrue(self.admin_nic and self.other_nic and
+                        self.empty_nic and self.sriov_nic)
 
     def put_single(self):
         return self.env.node_nics_put(self.env.nodes[0]["id"], self.data,
@@ -655,3 +671,28 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         self.assertEqual(2, len(slaves))
         self.assertTrue(bond_offloading_modes[0]['state'])
+
+    def test_nics_bond_cannot_contain_sriov_enabled_interfaces(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": BOND_MODES.balance_slb,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.sriov_nic["name"]}],
+            "assigned_networks": self.sriov_nic["assigned_networks"]
+        })
+        self.sriov_nic['interface_properties']['sriov']['enabled'] = True
+        self.sriov_nic['interface_properties']['sriov']['sriov_numvfs'] = 2
+        cluster_db = self.env.clusters[-1]
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        cluster_attrs['common']['libvirt_type']['value'] = 'kvm'
+        objects.Cluster.update_attributes(
+            cluster_db, {'editable': cluster_attrs})
+        db().commit()
+
+        self.node_nics_put_check_error(
+            "Node '{0}': bond 'ovs-bond0' cannot contain SRIOV "
+            "enabled interface '{1}'".format(self.env.nodes[0]["id"],
+                                             self.sriov_nic['name'])
+        )

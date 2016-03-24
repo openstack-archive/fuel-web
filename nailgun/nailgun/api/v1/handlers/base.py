@@ -298,6 +298,7 @@ def content_json(func, cls, *args, **kwargs):
         raise
     # intercepting all errors to avoid huge HTML output
     except Exception as exc:
+        logger.exception('Unexpected exception occured')
         http_error = BaseHandler.http(
             500,
             (

@@ -143,7 +143,7 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
             {'tasks': JSON_TASKS, 'name': 'test_graph'})
         serialized = DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
-        self.assertItemsEqual(serialized['deployment_tasks'], EXPECTED_TASKS)
+        self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
 
     def test_deployment_graph_update(self):
         self.maxDiff = None
@@ -166,12 +166,15 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
         serialized = DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
         self._compare_tasks(
-            expected_updated_tasks, serialized['deployment_tasks'])
+            expected_updated_tasks, serialized['tasks'])
 
     def test_deployment_graph_delete(self):
         self.env.create()
         cluster = self.env.clusters[0]
-        dg = DeploymentGraph.create_for_model(
-            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster)
-        self._compare_tasks(EXPECTED_TASKS, DeploymentGraph.get_tasks(dg))
+        DeploymentGraph.create_for_model(
+            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph')
+        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        self.assertIsNotNone(dg)
         DeploymentGraph.delete(dg)
+        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        self.assertIsNone(dg)

@@ -31,7 +31,10 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def setUp(self):
         super(BaseGraphTasksTests, self).setUp()
-        self.env.create()
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['test-controller'], 'pending_addition': True},
+            ])
         self.cluster = self.env.clusters[0]
 
     def get_correct_tasks(self):
@@ -90,11 +93,20 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def get_tasks_with_cycles(self):
         yaml_tasks = """
+        - id: test-controller
+          type: group
+          role: test-controller
         - id: test-controller-1
-          type: role
+          groups: [test-controller]
+          type: shell
           requires: [test-controller-2]
+          parameters:
+            cmd: bash -c 'echo 1'
         - id: test-controller-2
-          type: role
+          type: shell
+          parameters:
+            cmd: bash -c 'echo 1'
+          groups: [test-controller]
           requires: [test-controller-1]
         """
         return yaml.load(yaml_tasks)
@@ -108,6 +120,12 @@ class BaseGraphTasksTests(BaseIntegrationTest):
           parameters:
             strategy:
               type: one_by_one
+        - id: test-controller-1
+          groups: [test-controller]
+          type: shell
+          requires: [test-controller-2]
+          parameters:
+            cmd: bash -c 'echo 1'
         """
         return yaml.load(yaml_tasks)
 
@@ -199,6 +217,29 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             ]
         )
 
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_run_deployment_with_cycles(self, mocked_rpc):
+        tasks = self.get_tasks_with_cycles()
+        with mock.patch.object(objects.Cluster, 'get_deployment_tasks',
+                               return_value=tasks):
+
+            self.emulate_nodes_provisioning(self.cluster.nodes)
+
+            supertask = self.env.launch_deployment()
+            self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
+            self.assertRegexpMatches(supertask.message, '.*cycles.*')
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_run_deployment_with_incorrect_dependencies(self, mocked_rpc):
+        tasks = self.get_tasks_with_incorrect_dependencies()
+        with mock.patch.object(objects.Cluster, 'get_deployment_tasks',
+                               return_value=tasks):
+            self.emulate_nodes_provisioning(self.cluster.nodes)
+            supertask = self.env.launch_deployment()
+            self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
+            self.assertRegexpMatches(supertask.message,
+                                     ".*can't be in requires.*")
+
     def test_upload_deployment_tasks(self):
         tasks = self.get_correct_tasks()
         resp = self.app.put(
@@ -221,33 +262,6 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-
-    def test_upload_tasks_with_cycles(self):
-        tasks = self.get_tasks_with_cycles()
-        resp = self.app.put(
-            reverse('ReleaseDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.release_id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-
-    def test_upload_tasks_with_incorrect_dependencies(self):
-        tasks = self.get_tasks_with_incorrect_dependencies()
-        resp = self.app.put(
-            reverse('ReleaseDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.release_id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(
-            "Tasks 'non_existing_stage' can't be in requires|required_for|"
-            "groups|tasks for [test-controller] because they don't exist in "
-            "the graph", resp.json_body['message'])
 
     def test_post_tasks(self):
         resp = self.app.post(
@@ -346,32 +360,6 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
-
-    def test_upload_tasks_with_cycles(self):
-        tasks = self.get_tasks_with_cycles()
-        resp = self.app.put(
-            reverse('ClusterDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-
-    def test_upload_tasks_with_incorrect_dependencies(self):
-        tasks = self.get_tasks_with_incorrect_dependencies()
-        resp = self.app.put(
-            reverse('ClusterDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.id}),
-            params=jsonutils.dumps(tasks),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(
-            "Tasks 'non_existing_stage' can't be in requires|required_for|"
-            "groups|tasks for [test-controller] because they don't exist in "
-            "the graph", resp.json_body['message'])
 
     def test_upload_tasks_without_unsupported_role(self):
         tasks = self.get_tasks_with_unsuported_role()

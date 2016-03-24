@@ -480,17 +480,14 @@ class AstuteGraph(object):
         priority.one_by_one(serialized)
         return serialized
 
-
-class GraphSolverValidator(object):
-
-    def __init__(self, tasks):
-        self.graph = GraphSolver()
-        self.graph.add_tasks(tasks)
-
     def check(self):
         if not self.graph.is_acyclic():
-            raise errors.InvalidData(
-                "Tasks can not be processed because it contains cycles in it.")
+            err = "Graph cannot be processed because it contains cycles in it."
+            # FIXME(mattymo): GraphSolver cannot be used to call this method
+            for loop in nx.simple_cycles(nx.DiGraph(self.graph)):
+                err += (str(loop) + ', ')
+            err = err[:-2]
+            raise errors.InvalidData(err)
 
         non_existing_tasks = []
         invalid_tasks = []

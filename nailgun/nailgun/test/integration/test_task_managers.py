@@ -105,6 +105,30 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEqual(n.status, NODE_STATUSES.ready)
             self.assertEqual(n.progress, 100)
 
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_settings_saved_in_transaction(self, _):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+                {"pending_deletion": True,
+                 'status': NODE_STATUSES.provisioned},
+            ]
+        )
+        cluster = self.env.clusters[-1]
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(TASK_STATUSES.error, supertask.status)
+        deployment_task = next(
+            t for t in supertask.subtasks if t.name == TASK_NAMES.deployment
+        )
+        self.datadiff(
+            {'editable': objects.Cluster.get_editable_attributes(cluster)},
+            objects.Transaction.get_cluster_settings(deployment_task)
+        )
+        self.datadiff(
+            objects.Cluster.get_network_attributes(cluster),
+            objects.Transaction.get_network_settings(deployment_task),
+        )
+
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
         self.env.create(

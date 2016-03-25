@@ -198,6 +198,43 @@ class TestClusterAttributes(BaseIntegrationTest):
             self.env.clusters[0]
         )
 
+    def test_get_last_deployed_attributes(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[-1]
+        cluster_attrs = objects.Cluster.get_editable_attributes(
+            self.env.clusters[-1]
+        )
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_cluster_settings(
+            transaction, {'editable': cluster_attrs}
+        )
+        self.assertIsNotNone(
+            objects.TransactionCollection.get_last_succeed_run(cluster)
+        )
+        resp = self.app.get(
+            reverse(
+                'ClusterAttributesDeployedHandler',
+                kwargs={'cluster_id': cluster.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.datadiff(cluster_attrs, resp.json_body['editable'])
+
+    def test_get_deployed_attributes_fails_if_no_attrs(self):
+        cluster = self.env.create_cluster(api=True)
+        resp = self.app.get(
+            reverse(
+                'ClusterAttributesDeployedHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers,
+            expect_errors=True,
+        )
+        self.assertEqual(404, resp.status_code)
+
     def test_attributes_set_defaults(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]

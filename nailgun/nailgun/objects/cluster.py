@@ -19,7 +19,6 @@ Cluster-related objects and collections
 """
 
 import copy
-from distutils.version import StrictVersion
 import itertools
 
 
@@ -419,47 +418,8 @@ class Cluster(NailgunObject):
         :param instance: Cluster instance
         :returns: NetworkManager/NovaNetworkManager/NeutronManager
         """
-        if not instance:
-            from nailgun.network.manager import NetworkManager
-            return NetworkManager
-
-        ver = instance.release.environment_version
-        net_provider = instance.net_provider
-        if net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
-            from nailgun.network import neutron
-            if StrictVersion(ver) < StrictVersion('6.1'):
-                return neutron.NeutronManagerLegacy
-
-            if StrictVersion(ver) == StrictVersion('6.1'):
-                return neutron.NeutronManager61
-
-            if StrictVersion(ver) == StrictVersion('7.0'):
-                return neutron.NeutronManager70
-
-            if StrictVersion(ver) >= StrictVersion('8.0'):
-                return neutron.NeutronManager80
-
-            return neutron.NeutronManager
-        elif net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
-            from nailgun.network import nova_network
-            if StrictVersion(ver) < StrictVersion('6.1'):
-                return nova_network.NovaNetworkManagerLegacy
-
-            if StrictVersion(ver) == StrictVersion('6.1'):
-                return nova_network.NovaNetworkManager61
-
-            if StrictVersion(ver) == StrictVersion('7.0'):
-                return nova_network.NovaNetworkManager70
-
-            if StrictVersion(ver) >= StrictVersion('8.0'):
-                raise errors.NovaNetworkNotSupported()
-
-            return nova_network.NovaNetworkManager
-
-        raise ValueError(
-            'The network provider "{0}" is not supported.'
-            .format(net_provider)
-        )
+        from nailgun.extensions.network_manager.manager import NetworkManager
+        return NetworkManager(instance)
 
     @classmethod
     def add_pending_changes(cls, instance, changes_type, node_id=None):

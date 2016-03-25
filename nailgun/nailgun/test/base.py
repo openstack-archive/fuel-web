@@ -76,9 +76,9 @@ from nailgun.objects import Release
 
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
-from nailgun.network.manager import NetworkManager
 from nailgun.network.template import NetworkTemplate
 from nailgun.utils import dict_merge
 from nailgun.utils import reverse
@@ -122,7 +122,7 @@ class EnvironmentManager(object):
         self.nodes = []
         self.plugins = []
         self.openstack_configs = []
-        self.network_manager = NetworkManager
+        self.network_manager = NetworkManager()
 
     def create(self, **kwargs):
         release_data = kwargs.pop('release_kwargs', {"api": False})

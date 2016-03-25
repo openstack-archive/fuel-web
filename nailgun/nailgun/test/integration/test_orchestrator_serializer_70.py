@@ -26,7 +26,7 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import stages
 from nailgun.test import base

@@ -36,9 +36,9 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
-from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import orchestrator_graph
@@ -1692,6 +1692,7 @@ class CheckRepoAvailabilityWithSetup(object):
         if not urls:
             return
 
+        nm = NetworkManager(cluster)
         all_public = \
             objects.Cluster.should_assign_public_to_all_nodes(cluster)
 
@@ -1713,7 +1714,7 @@ class CheckRepoAvailabilityWithSetup(object):
                         objects.Node.should_have_public_with_ip(node)):
                     continue
 
-                ip = NetworkManager.get_ip_by_network_name(node, public.name)
+                ip = nm.get_ip_by_network_name(node, public.name)
                 nodes_with_public_ip.append((node, ip))
                 if ip is None:
                     required_ips += 1
@@ -1723,7 +1724,7 @@ class CheckRepoAvailabilityWithSetup(object):
 
             # we are not doing any allocations during verification
             # just ask for free ips and use them
-            free_ips = iter(NetworkManager.get_free_ips(public, required_ips))
+            free_ips = iter(nm.get_free_ips(public, required_ips))
             mask = public.cidr.split('/')[1]
 
             lacp_modes = (
@@ -1734,7 +1735,7 @@ class CheckRepoAvailabilityWithSetup(object):
                 if not node.online:
                     continue
 
-                iface = NetworkManager.find_nic_assoc_with_ng(
+                iface = nm.find_nic_assoc_with_ng(
                     node, public)
 
                 if iface.bond and iface.bond.mode in lacp_modes:

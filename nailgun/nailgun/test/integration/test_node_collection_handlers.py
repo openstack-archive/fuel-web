@@ -112,11 +112,8 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
-        self.env.network_manager.assign_ips(
-            self.env.clusters[-1],
-            self.env.nodes,
-            "management"
-        )
+        self.env.network_manager.prepare_for_deployment(
+            self.env.clusters[-1], self.env.nodes)
 
         resp = self.app.get(
             reverse('NodeCollectionHandler'),

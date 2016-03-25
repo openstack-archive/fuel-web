@@ -48,14 +48,9 @@ from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import Task
 
-from nailgun.network.manager import NetworkManager
-from nailgun.network.neutron import NeutronManager61
-from nailgun.network.neutron import NeutronManager70
-from nailgun.network.neutron import NeutronManager80
-from nailgun.network.neutron import NeutronManagerLegacy
-from nailgun.network.nova_network import NovaNetworkManager61
-from nailgun.network.nova_network import NovaNetworkManager70
-from nailgun.network.nova_network import NovaNetworkManagerLegacy
+from nailgun.extensions.network_manager.manager import default
+from nailgun.extensions.network_manager.managers import neutron
+from nailgun.extensions.network_manager.managers import nova_network
 
 
 from nailgun import objects
@@ -577,6 +572,8 @@ class TestNodeObject(BaseIntegrationTest):
         )
         netmanager = objects.Cluster.get_network_manager()
         netmanager.assign_admin_ips(self.env.nodes)
+        netmanager.prepare_for_deployment(
+            self.env.clusters[-1], self.env.nodes)
         for node in self.env.nodes:
             networks = [ip.network_data.name for ip in node.ip_addrs]
             prev_roles = node.roles
@@ -1654,9 +1651,7 @@ class TestClusterObject(BaseTestCase):
     def test_set_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)
         node = self.env.create_node(cluster_id=cluster.id)
-        self.env.network_manager.assign_ips(
-            cluster, [node], consts.NETWORKS.management
-        )
+        self.env.network_manager.prepare_for_deployment(cluster, [node])
         admin_ng_id = \
             objects.NetworkGroup.get_admin_network_group(node).id
         node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
@@ -1808,7 +1803,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def test_get_default(self):
         nm = objects.Cluster.get_network_manager()
-        self.assertIs(nm, NetworkManager)
+        self.assertIs(default.DefaultNetworkManager, nm.impl)
 
     def check_neutron_network_manager(
             self, net_provider, version, expected_manager):
@@ -1816,7 +1811,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
         cluster.net_provider = net_provider
         cluster.release.version = version
         nm = objects.Cluster.get_network_manager(cluster)
-        self.assertIs(expected_manager, nm)
+        self.assertIs(expected_manager, nm.impl)
 
     def test_raise_if_unknown(self):
         cluster = self.env.clusters[0]
@@ -1829,10 +1824,10 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def test_neutron_network_managers_by_version(self):
         for version, manager_class in (
-            ('2014.2.2-6.0', NeutronManagerLegacy),
-            ('2014.2.2-6.1', NeutronManager61),
-            ('2015.6.7-7.0', NeutronManager70),
-            ('2016.1.1-8.0', NeutronManager80),
+            ('2014.2.2-6.0', neutron.NeutronManagerLegacy),
+            ('2014.2.2-6.1', neutron.NeutronManager61),
+            ('2015.6.7-7.0', neutron.NeutronManager70),
+            ('2016.1.1-8.0', neutron.NeutronManager80),
         ):
             self.check_neutron_network_manager(
                 consts.CLUSTER_NET_PROVIDERS.neutron,
@@ -1841,9 +1836,9 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def test_nova_network_managers_by_version(self):
         for version, manager_class in (
-            ('2014.2.2-6.0', NovaNetworkManagerLegacy),
-            ('2014.2.2-6.1', NovaNetworkManager61),
-            ('2015.6.7-7.0', NovaNetworkManager70),
+            ('2014.2.2-6.0', nova_network.NovaNetworkManagerLegacy),
+            ('2014.2.2-6.1', nova_network.NovaNetworkManager61),
+            ('2015.6.7-7.0', nova_network.NovaNetworkManager70),
         ):
             self.check_neutron_network_manager(
                 consts.CLUSTER_NET_PROVIDERS.nova_network,
@@ -1853,7 +1848,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
     def test_get_neutron_80(self):
         self.env.clusters[0].release.version = '2014.2.2-8.0'
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        self.assertEqual(nm, NeutronManager80)
+        self.assertEqual(nm.impl, neutron.NeutronManager80)
 
 
 class TestNetworkGroup(BaseTestCase):
@@ -2136,45 +2131,43 @@ class TestIPAddrObject(BaseTestCase):
         super(TestIPAddrObject, self).setUp()
 
         self.env.create(
+            release_kwargs={'version': '1111-8.0'},
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'role': 'controller'}])
         self.cluster = self.env.clusters[0]
+        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
 
     def test_get_ips_except_admin(self):
         node = self.env.nodes[0]
-        self.env.network_manager.assign_admin_ips([node])
-        self.env.network_manager.assign_ips(
-            self.cluster, [node], consts.NETWORKS.management
-        )
-        for ip in objects.IPAddr.get_ips_except_admin(node):
+        self.env.network_manager.prepare_for_deployment(self.cluster, [node])
+        for ip in objects.IPAddr.get_ips_except_admin(node.id):
             self.assertEqual(ip.network_data.name, consts.NETWORKS.management)
 
     def test_delete_by_node(self):
         self.env.create_node(api=False, cluster_id=self.cluster.id)
-        self.env.network_manager.assign_ips(
-            self.cluster, self.env.nodes, consts.NETWORKS.management
-        )
+        self.env.network_manager.prepare_for_deployment(
+            self.cluster, self.env.nodes)
 
+        self.net_manager.prepare_for_deployment(
+            self.cluster, self.env.nodes)
         all_ips = list(objects.IPAddr.get_ips_except_admin())
-        self.assertEqual(len(all_ips), 2)
+        self.assertEqual(len(all_ips), 5)
 
         node = self.env.nodes[0]
         objects.IPAddr.delete_by_node(node.id)
 
         all_ips = list(objects.IPAddr.get_ips_except_admin())
-        self.assertEqual(len(all_ips), 1)
+        self.assertEqual(len(all_ips), 2)
         self.assertEqual(all_ips[0].node, self.env.nodes[1].id)
 
     def test_delete_by_network(self):
         node = self.env.nodes[0]
-        self.env.network_manager.assign_ips(
-            self.cluster, [node], consts.NETWORKS.management
-        )
+        self.net_manager.prepare_for_deployment(self.cluster, [node])
         ips = list(objects.IPAddr.get_ips_except_admin())
-        self.assertEqual(len(ips), 1)
+        self.assertEqual(len(ips), 3)
 
-        mgmt_ng = self.env.network_manager.get_network_by_netname(
-            consts.NETWORKS.management, self.cluster.network_groups)
+        public_ng = self.env.network_manager.get_network_by_netname(
+            consts.NETWORKS.public, self.cluster.network_groups)
         storage_ng = self.env.network_manager.get_network_by_netname(
             consts.NETWORKS.storage, self.cluster.network_groups)
 
@@ -2187,20 +2180,19 @@ class TestIPAddrObject(BaseTestCase):
         }
         objects.IPAddr.create(new_ip)
         ips = list(objects.IPAddr.get_ips_except_admin())
-        self.assertEqual(len(ips), 2)
+        self.assertEqual(len(ips), 4)
 
         # Delete newly created IP, existing IP in mgmt ng should remain
         objects.IPAddr.delete_by_network(node_ip, storage_ng.id)
 
         ips = list(objects.IPAddr.get_ips_except_admin())
-        self.assertEqual(len(ips), 1)
-        self.assertEqual(ips[0].network, mgmt_ng.id)
+        self.assertEqual(len(ips), 3)
+        self.assertEqual(ips[0].network, public_ng.id)
 
     def test_get_distinct_in_list(self):
         self.env.create_node(api=False, cluster_id=self.cluster.id)
-        self.env.network_manager.assign_ips(
-            self.cluster, self.env.nodes, consts.NETWORKS.management
-        )
+        self.env.network_manager.prepare_for_deployment(
+            self.cluster, self.env.nodes)
 
         mgmt_ng = self.env.network_manager.get_network_by_netname(
             consts.NETWORKS.management, self.cluster.network_groups)

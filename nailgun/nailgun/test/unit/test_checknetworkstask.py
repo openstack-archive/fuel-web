@@ -17,13 +17,13 @@
 from netaddr import IPNetwork
 from netaddr import IPRange
 
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
 
 
 class TestHandlers(BaseIntegrationTest):
     def test_ip_range_intersection(self):
-        nm = NetworkManager
+        nm = NetworkManager()
         self.assertEqual(nm.is_range_intersection(
             IPRange('192.168.0.0', '192.168.255.255'),
             IPNetwork('192.168.1.0/24')

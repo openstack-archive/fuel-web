@@ -24,19 +24,25 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.logger import logger
 
-from nailgun.network.manager import AllocateVIPs70Mixin
-from nailgun.network.manager import AllocateVIPs80Mixin
-from nailgun.network.manager import AssignIPs61Mixin
-from nailgun.network.manager import AssignIPs70Mixin
-from nailgun.network.manager import AssignIPsLegacyMixin
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.managers.default import \
+    AllocateVIPs70Mixin
+from nailgun.extensions.network_manager.managers.default import \
+    AllocateVIPs80Mixin
+from nailgun.extensions.network_manager.managers.default import \
+    AssignIPs61Mixin
+from nailgun.extensions.network_manager.managers.default import \
+    AssignIPs70Mixin
+from nailgun.extensions.network_manager.managers.default import \
+    AssignIPsLegacyMixin
+from nailgun.extensions.network_manager.managers.default import \
+    DefaultNetworkManager
 from nailgun import objects
 
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 
 
-class NeutronManager(NetworkManager):
+class NeutronManager(DefaultNetworkManager):
 
     @classmethod
     def create_neutron_config(
@@ -207,32 +213,6 @@ class NeutronManager70(
         for netgroup, endpoint in six.iteritems(mappings):
             if endpoint['ep'] in endpoints:
                 output.append((netgroup, endpoint['ep']))
-
-        return output
-
-    @classmethod
-    def get_network_name_to_endpoint_mappings(cls, cluster):
-        """Returns endpoint-to-network mappings for node groups in cluster
-
-            {
-                "node_group1": {
-                    "endpoint1": "network_name1",
-                    "endpoint2": "network_name2",
-                    ...
-                },
-                ...
-            }
-
-        """
-        output = {}
-        template = cluster.network_config.configuration_template[
-            'adv_net_template']
-
-        for ng in cluster.node_groups:
-            output[ng.id] = {}
-            mappings = template[ng.name]['network_assignments']
-            for network, endpoint in six.iteritems(mappings):
-                output[ng.id][endpoint['ep']] = network
 
         return output
 

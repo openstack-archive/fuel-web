@@ -19,8 +19,8 @@ import random
 from contextlib import contextmanager
 
 from nailgun import consts
+from nailgun.extensions.network_manager import manager
 from nailgun.logger import set_logger
-from nailgun.network import manager
 from nailgun.settings import settings
 from nailgun.statistics import errors
 
@@ -33,7 +33,7 @@ WhiteListRule = namedtuple(
 
 
 def get_mgmt_ip_of_cluster_controller(cluster):
-    return manager.NetworkManager.get_ip_by_network_name(
+    return manager.NetworkManager(cluster).get_ip_by_network_name(
         get_online_controller(cluster),
         consts.NETWORKS.management
     ).ip_addr

@@ -39,12 +39,9 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.extensions.network_manager.managers import neutron
+from nailgun.extensions.network_manager.managers import nova_network
 from nailgun.logger import logger
-from nailgun.network.neutron import NeutronManager
-from nailgun.network.neutron import NeutronManager70
-from nailgun.network.neutron import NeutronManager80
-from nailgun.network.nova_network import NovaNetworkManager
-from nailgun.network.nova_network import NovaNetworkManager70
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -976,8 +973,8 @@ class TestNovaNetworkManager(BaseIntegrationTest):
         ).first()
         other_nets = [n.name for n in other_nic.assigned_networks_list]
 
-        nics = NovaNetworkManager.get_default_interfaces_configuration(
-            self.node_db)
+        nics = nova_network.NovaNetworkManager.\
+            get_default_interfaces_configuration(self.node_db)
 
         def_admin_nic = [n for n in nics if n['id'] == admin_nic_id]
         def_other_nic = [n for n in nics if n['id'] == other_nic.id]
@@ -999,7 +996,8 @@ class TestNeutronManager(BaseIntegrationTest):
             node_id=node_db.id
         ).all()
 
-        def_nics = NeutronManager.get_default_interfaces_configuration(node_db)
+        def_nics = neutron.NeutronManager.\
+            get_default_interfaces_configuration(node_db)
 
         self.assertEqual(len(node_nics), len(def_nics))
         for n_nic in node_nics:
@@ -1140,7 +1138,8 @@ class TestNeutronManager70(BaseIntegrationTest):
     def setUp(self):
         super(TestNeutronManager70, self).setUp()
         self.cluster = self._create_env()
-        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
+        self.net_manager = \
+            objects.Cluster.get_network_manager(self.cluster).impl
 
     def _create_env(self):
         release = self._prepare_release()
@@ -1231,7 +1230,7 @@ class TestNeutronManager70(BaseIntegrationTest):
         return network_role
 
     def test_get_network_manager(self):
-        self.assertIs(self.net_manager, NeutronManager70)
+        self.assertIs(self.net_manager, neutron.NeutronManager70)
 
     def test_purge_stalled_vips(self):
         vips_before = self.net_manager.get_assigned_vips(self.cluster)
@@ -1498,7 +1497,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
         )
 
     def test_get_network_manager(self):
-        self.assertIs(self.net_manager, NovaNetworkManager70)
+        self.assertIs(self.net_manager, nova_network.NovaNetworkManager70)
 
     def test_get_network_group_for_role(self):
         node_group = objects.Cluster.get_controllers_node_group(self.cluster)
@@ -1530,7 +1529,7 @@ class TestTemplateManager70(BaseIntegrationTest):
             }
         )
         self.cluster = objects.Cluster.get_by_uid(self.cluster['id'])
-        self.nm = objects.Cluster.get_network_manager(self.cluster)
+        self.nm = objects.Cluster.get_network_manager(self.cluster).impl
         self.net_template = self.env.read_fixtures(['network_template_70'])[1]
         self.env.create_nodes_w_interfaces_count(
             1, 5,
@@ -1705,7 +1704,7 @@ class TestNeutronManager80(BaseIntegrationTest):
         self.assertListEqual(expected_vips_names, sorted(real_vips.keys()))
 
     def test_get_network_manager(self):
-        self.assertIs(self.net_manager, NeutronManager80)
+        self.assertIs(self.net_manager.impl, neutron.NeutronManager80)
 
     def test_assign_vips_with_unmapped_net_groups(self):
         expected_vips = [

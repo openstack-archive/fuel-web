@@ -26,9 +26,9 @@ from nailgun import objects
 
 from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
-from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -311,7 +311,7 @@ class TestHandlers(BaseIntegrationTest):
             if vlan_splinters == 'kernel_lt':
                 pnd['ks_meta']['kernel_lt'] = 1
 
-            NetworkManager.assign_admin_ips([n])
+            NetworkManager().prepare_for_provisioning([n])
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
@@ -774,7 +774,7 @@ class TestHandlers(BaseIntegrationTest):
             if vlan_splinters == 'kernel_lt':
                 pnd['ks_meta']['kernel_lt'] = 1
 
-            NetworkManager.assign_admin_ips([n])
+            NetworkManager().prepare_for_provisioning([n])
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
@@ -1278,7 +1278,7 @@ class TestHandlers(BaseIntegrationTest):
             if vlan_splinters == 'kernel_lt':
                 pnd['ks_meta']['kernel_lt'] = 1
 
-            NetworkManager.assign_admin_ips([n])
+            NetworkManager().prepare_for_provisioning([n])
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 

@@ -1296,7 +1296,7 @@
             weight: 60
             group: "general"
           kernel:
-            value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset"
+            value: "console=tty0 biosdevname=0 rootdelay=90 nomodeset raid=noautodetect nomdadm noraid mdassemble=none"
             label: "Initial parameters"
             description: "Default kernel parameters"
             type: "text"
@@ -1901,7 +1901,7 @@
       editable:
         kernel_params:
           kernel:
-            value: "console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset"
+            value: "console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset raid=noautodetect nomdadm noraid mdassemble=none"
         use_fedora_lt:
           metadata:
             label: "Use Fedora longterm kernel"
@@ -1975,7 +1975,7 @@
       editable:
         kernel_params:
           kernel:
-            value: "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
+            value: "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset raid=noautodetect nomdadm noraid mdassemble=none"
         repo_setup:
           metadata:
             label: "Repositories"

@@ -144,8 +144,8 @@ class Node(Base):
     @property
     def network_data(self):
         # TODO(enchantner): move to object
-        from nailgun.network.manager import NetworkManager
-        return NetworkManager.get_node_networks(self)
+        from nailgun.extensions.network_manager.manager import NetworkManager
+        return NetworkManager(self.cluster).get_node_networks(self)
 
     @property
     def volume_manager(self):

@@ -68,18 +68,7 @@ class TestProvisioning(BaseIntegrationTest):
         )
         cluster = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster)
-        self.env.network_manager.assign_ips(
-            cluster, self.env.nodes, consts.NETWORKS.fuelweb_admin
-        )
-        self.env.network_manager.assign_ips(
-            cluster, self.env.nodes, consts.NETWORKS.management
-        )
-        self.env.network_manager.assign_ips(
-            cluster, self.env.nodes, consts.NETWORKS.storage
-        )
-        self.env.network_manager.assign_ips(
-            cluster, self.env.nodes, consts.NETWORKS.public
-        )
+        self.env.network_manager.prepare_for_deployment(cluster, cluster.nodes)
 
         self.env.launch_deployment()
 
@@ -115,19 +104,7 @@ class TestProvisioning(BaseIntegrationTest):
             ]
         )
         cluster_db = self.env.clusters[-1]
-        self.env.network_manager.assign_ips(
-            cluster_db, self.env.nodes, consts.NETWORKS.fuelweb_admin
-        )
-        self.env.network_manager.assign_ips(
-            cluster_db, self.env.nodes, consts.NETWORKS.management
-        )
-        self.env.network_manager.assign_ips(
-            cluster_db, self.env.nodes, consts.NETWORKS.storage
-        )
-        self.env.network_manager.assign_ips(
-            cluster_db, self.env.nodes, consts.NETWORKS.public
-        )
-
+        self.env.network_manager.prepare_for_provisioning(self.env.nodes)
         task = self.env.launch_provisioning_selected(cluster_id=cluster_db.id)
         self.env.wait_ready(task, timeout=120)
 

@@ -26,7 +26,7 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import stages
 from nailgun.test import base
@@ -457,7 +457,7 @@ class TestDeploymentAttributesSerialization70(
         changed_offloading_modes = {}
         for interface in meta['interfaces']:
             changed_offloading_modes[interface['name']] = \
-                NetworkManager._get_modified_offloading_modes(
+                NetworkManager()._get_modified_offloading_modes(
                     interface.get('offloading_modes'))
 
         for node in self.serialized_for_astute:
@@ -1795,22 +1795,6 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             for node_roles, networks in node_roles_vs_networks:
                 if node.all_roles == set(node_roles):
                     self.assertItemsEqual(net_names_and_eps, networks)
-
-    def test_get_network_name_to_endpoint_mappings(self):
-        nm = objects.Cluster.get_network_manager(self.cluster)
-        group_id = objects.Cluster.get_default_group(self.cluster).id
-        self.assertEqual(
-            nm.get_network_name_to_endpoint_mappings(self.cluster),
-            {
-                group_id: {
-                    'br-ex': 'public',
-                    'br-mgmt': 'management',
-                    'br-fw-admin': 'fuelweb_admin',
-                    'br-prv': 'private',
-                    'br-storage': 'storage',
-                }
-            }
-        )
 
     def test_assign_ips_in_node_group(self):
         mgmt = self.db.query(models.NetworkGroup).\

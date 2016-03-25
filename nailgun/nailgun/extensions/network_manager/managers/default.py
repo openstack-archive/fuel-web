@@ -38,7 +38,7 @@ from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
 
 
-class NetworkManager(object):
+class DefaultNetworkManager(object):
     @classmethod
     def prepare_for_deployment(cls, cluster, nodes):
         """Prepare environment for deployment.
@@ -519,7 +519,7 @@ class NetworkManager(object):
             'disable_offloading': False,
             'sriov': {
                 'enabled': False,
-                'sriov_numvfs': None,
+                'sriov_numvfs': 0,
                 'sriov_totalvfs': 0,
                 'available': False,
                 'pci_id': '',
@@ -1782,8 +1782,7 @@ class AllocateVIPs70Mixin(object):
         for nodegroup, net_group, vip_name, role, vip_info \
                 in cls.get_node_groups_info(cluster):
 
-            net_mgr = objects.Cluster.get_network_manager(cluster)
-            vip_addr = net_mgr.get_assigned_vip(
+            vip_addr = cls.get_assigned_vip(
                 nodegroup, net_group, vip_name)
 
             vip_info = cls._build_vip_info(vip_info, vip_addr)

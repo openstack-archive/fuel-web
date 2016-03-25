@@ -835,9 +835,6 @@ DUMP:
         command: rpm -qa
         to_file: centos_installed_rpms.txt
       - type: command
-        command: "for c in $(dockerctl list); do echo Container: ${c}; dockerctl shell ${c} rpm -qa; done;"
-        to_file: centos_containers_installed_rpms.txt
-      - type: command
         command: yum repolist
         to_file: centos_repo_list.txt
       - type: dir

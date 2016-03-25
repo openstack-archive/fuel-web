@@ -1393,7 +1393,7 @@ class NodeAttributes(object):
         return int(math.ceil(float(size) / 2))
 
     @classmethod
-    def total_hugepages(cls, node):
+    def total_hugepages(cls, node, attributes=None):
         """Return total hugepages for the node
 
         Iterate over hugepages attributes and sum them
@@ -1406,11 +1406,11 @@ class NodeAttributes(object):
 
         :return: Dictionary with (size: count) items
         """
+        hugepages_attributes = cls._safe_get_hugepages(node, attributes)
 
         hugepages = collections.defaultdict(int)
         numa_count = len(node.meta['numa_topology']['numa_nodes'])
 
-        hugepages_attributes = cls._safe_get_hugepages(node)
         for name, attrs in six.iteritems(hugepages_attributes):
             if attrs.get('type') == 'custom_hugepages':
                 value = attrs['value']

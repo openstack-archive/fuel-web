@@ -106,7 +106,7 @@ class TestNodeAttributes(base.BaseUnitTest):
                         'type': 'custom_hugepages',
                         'value': {
                             '2048': 512,
-                            '1048576': 1,
+                            '1048576': 1
                         }
                     },
                     'comp2': {
@@ -121,7 +121,7 @@ class TestNodeAttributes(base.BaseUnitTest):
         expected = [
             {'numa_id': 0, 'size': 2048, 'count': 512},
             {'numa_id': 1, 'size': 2048, 'count': 512},
-            {'numa_id': 1, 'size': 1048576, 'count': 1},
+            {'numa_id': 1, 'size': 1048576, 'count': 1}
         ]
 
         self.assertEqual(

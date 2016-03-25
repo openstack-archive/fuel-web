@@ -247,7 +247,7 @@ class TestDeploymentAttributesSerialization90(
         node.attributes.update({
             'hugepages': {
                 'dpdk': {
-                    'value': 128},
+                    'value': '128'},
                 'nova': {
                     'value': {'2048': 1}}}}
         )
@@ -283,7 +283,6 @@ class TestDeploymentAttributesSerialization90(
                     'value': {
                         # FIXME make counts integer after appropriate UI fix
                         '2048': '512',
-                        '1048576': '1',
                     }
                 },
                 'dpdk': {
@@ -301,7 +300,6 @@ class TestDeploymentAttributesSerialization90(
         expected = [
             {'numa_id': 0, 'size': 2048, 'count': 512},
             {'numa_id': 1, 'size': 2048, 'count': 512},
-            {'numa_id': 1, 'size': 1048576, 'count': 1},
         ]
 
         self.assertEqual(serialized_node['hugepages'], expected)

@@ -26,9 +26,9 @@ from nailgun import objects
 
 from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager import manager
-from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks

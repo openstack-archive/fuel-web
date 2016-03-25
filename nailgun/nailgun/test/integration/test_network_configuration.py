@@ -662,8 +662,9 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
                 net['cidr'] = net['cidr'].partition('/')[0] + '/25'
 
         with patch(
-                'nailgun.network.manager.AllocateVIPs70Mixin.'
-                '_get_vips_for_net_groups', new=Mock(side_effect=Exception)
+            'nailgun.extensions.network_manager.managers.' +
+            'default.AllocateVIPs70Mixin.'
+            '_get_vips_for_net_groups', new=Mock(side_effect=Exception)
         ) as m_assign:
             resp = self.env.neutron_networks_put(self.cluster.id,
                                                  net_conf,

@@ -17,14 +17,19 @@
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 
-from nailgun.network.manager import AllocateVIPs70Mixin
-from nailgun.network.manager import AssignIPs61Mixin
-from nailgun.network.manager import AssignIPs70Mixin
-from nailgun.network.manager import AssignIPsLegacyMixin
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.managers.default import \
+    AllocateVIPs70Mixin
+from nailgun.extensions.network_manager.managers.default import \
+    AssignIPs61Mixin
+from nailgun.extensions.network_manager.managers.default import \
+    AssignIPs70Mixin
+from nailgun.extensions.network_manager.managers.default import \
+    AssignIPsLegacyMixin
+from nailgun.extensions.network_manager.managers.default import \
+    DefaultNetworkManager
 
 
-class NovaNetworkManager(NetworkManager):
+class NovaNetworkManager(DefaultNetworkManager):
 
     @classmethod
     def create_nova_network_config(cls, cluster):

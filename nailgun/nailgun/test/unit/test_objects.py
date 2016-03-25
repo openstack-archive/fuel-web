@@ -48,14 +48,9 @@ from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import Task
 
-from nailgun.network.manager import NetworkManager
-from nailgun.network.neutron import NeutronManager61
-from nailgun.network.neutron import NeutronManager70
-from nailgun.network.neutron import NeutronManager80
-from nailgun.network.neutron import NeutronManagerLegacy
-from nailgun.network.nova_network import NovaNetworkManager61
-from nailgun.network.nova_network import NovaNetworkManager70
-from nailgun.network.nova_network import NovaNetworkManagerLegacy
+from nailgun.extensions.network_manager.manager import default
+from nailgun.extensions.network_manager.managers import neutron
+from nailgun.extensions.network_manager.managers import nova_network
 
 
 from nailgun import objects
@@ -1808,7 +1803,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def test_get_default(self):
         nm = objects.Cluster.get_network_manager()
-        self.assertIs(nm, NetworkManager)
+        self.assertIs(default.DefaultNetworkManager, nm.impl)
 
     def check_neutron_network_manager(
             self, net_provider, version, expected_manager):
@@ -1816,7 +1811,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
         cluster.net_provider = net_provider
         cluster.release.version = version
         nm = objects.Cluster.get_network_manager(cluster)
-        self.assertIs(expected_manager, nm)
+        self.assertIs(expected_manager, nm.impl)
 
     def test_raise_if_unknown(self):
         cluster = self.env.clusters[0]
@@ -1829,10 +1824,10 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def test_neutron_network_managers_by_version(self):
         for version, manager_class in (
-            ('2014.2.2-6.0', NeutronManagerLegacy),
-            ('2014.2.2-6.1', NeutronManager61),
-            ('2015.6.7-7.0', NeutronManager70),
-            ('2016.1.1-8.0', NeutronManager80),
+            ('2014.2.2-6.0', neutron.NeutronManagerLegacy),
+            ('2014.2.2-6.1', neutron.NeutronManager61),
+            ('2015.6.7-7.0', neutron.NeutronManager70),
+            ('2016.1.1-8.0', neutron.NeutronManager80),
         ):
             self.check_neutron_network_manager(
                 consts.CLUSTER_NET_PROVIDERS.neutron,
@@ -1841,9 +1836,9 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def test_nova_network_managers_by_version(self):
         for version, manager_class in (
-            ('2014.2.2-6.0', NovaNetworkManagerLegacy),
-            ('2014.2.2-6.1', NovaNetworkManager61),
-            ('2015.6.7-7.0', NovaNetworkManager70),
+            ('2014.2.2-6.0', nova_network.NovaNetworkManagerLegacy),
+            ('2014.2.2-6.1', nova_network.NovaNetworkManager61),
+            ('2015.6.7-7.0', nova_network.NovaNetworkManager70),
         ):
             self.check_neutron_network_manager(
                 consts.CLUSTER_NET_PROVIDERS.nova_network,
@@ -1853,7 +1848,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
     def test_get_neutron_80(self):
         self.env.clusters[0].release.version = '2014.2.2-8.0'
         nm = objects.Cluster.get_network_manager(self.env.clusters[0])
-        self.assertEqual(nm, NeutronManager80)
+        self.assertEqual(nm.impl, neutron.NeutronManager80)
 
 
 class TestNetworkGroup(BaseTestCase):

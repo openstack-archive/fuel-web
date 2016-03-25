@@ -16,7 +16,7 @@
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.network import manager
+from nailgun.extensions.network_manager import manager
 from nailgun.test import base
 
 
@@ -40,7 +40,7 @@ class TestReusingAdminAddress(base.BaseTestCase):
             last='10.10.0.9')
         self.admin_ng.ip_ranges.append(ip_range)
         db().flush()
-        manager.NetworkManager.assign_admin_ips(self.env.nodes)
+        manager.NetworkManager().assign_admin_ips(self.env.nodes)
         for node in self.reuse_nodes:
             self.assertEqual(len(node.ip_addrs), 1)
             ip = node.ip_addrs[0]

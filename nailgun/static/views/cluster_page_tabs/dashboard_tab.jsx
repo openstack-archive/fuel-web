@@ -395,10 +395,10 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
                         return !role.checkRestrictions(configModels).result;
                     }),
                     limitValidations = _.zipObject(validRoleModels.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels)];
+                        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'))];
                     })),
                     limitRecommendations = _.zipObject(validRoleModels.map(function(role) {
-                        return [role.get('name'), role.checkLimits(configModels, true, ['recommended'])];
+                        return [role.get('name'), role.checkLimits(configModels, cluster.get('nodes'), true, ['recommended'])];
                     }));
                 return {
                     blocker: roleModels.map(_.bind(

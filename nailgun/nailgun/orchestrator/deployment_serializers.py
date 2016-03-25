@@ -627,7 +627,11 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def _generate_hugepages_distribution(self, node, serialized_node):
         hugepages = objects.NodeAttributes.distribute_hugepages(node)
 
-        if hugepages:
+        # FIXME(asvechnikov): We should skip our distribution
+        # due to LP bug #1560532, so we can't configure 1G hugepages
+        # in runtime. This limitation should gone with kernel 3.16
+        skip = any((x['size'] == 1024 ** 2) for x in hugepages)
+        if hugepages and not skip:
             serialized_node.setdefault('hugepages', []).extend(
                 hugepages)
 

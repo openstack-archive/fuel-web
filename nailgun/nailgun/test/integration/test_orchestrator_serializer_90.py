@@ -247,7 +247,7 @@ class TestDeploymentAttributesSerialization90(
         node.attributes.update({
             'hugepages': {
                 'dpdk': {
-                    'value': 128},
+                    'value': '128'},
                 'nova': {
                     'value': {'2048': 1}}}}
         )
@@ -262,6 +262,43 @@ class TestDeploymentAttributesSerialization90(
             "128,128,128",
             serialized_node['dpdk']['ovs_socket_mem'])
         self.assertTrue(serialized_node['nova']['enable_hugepages'])
+
+    def test_attributes_no_hugepages_distribution_with_gig_hugepage(self):
+        meta = {
+            'numa_topology': {
+                'supported_hugepages': [2048, 1048576],
+                'numa_nodes': [
+                    {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
+                    {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}],
+            }
+        }
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute'],
+            meta=meta)
+        node.attributes.update({
+            'hugepages': {
+                'nova': {
+                    'type': 'custom_hugepages',
+                    'value': {
+                        # FIXME make counts integer after appropriate UI fix
+                        '2048': '512',
+                        '1048576': '1'
+                    }
+                },
+                'dpdk': {
+                    'type': 'text',
+                    'value': '512',
+                }
+            }
+        })
+
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        serialized_node = serialized_for_astute[0]
+
+        self.assertNotIn('hugepages', serialized_node)
 
     def test_attributes_hugepages_distribution(self):
         meta = {
@@ -283,7 +320,6 @@ class TestDeploymentAttributesSerialization90(
                     'value': {
                         # FIXME make counts integer after appropriate UI fix
                         '2048': '512',
-                        '1048576': '1',
                     }
                 },
                 'dpdk': {
@@ -301,7 +337,6 @@ class TestDeploymentAttributesSerialization90(
         expected = [
             {'numa_id': 0, 'size': 2048, 'count': 512},
             {'numa_id': 1, 'size': 2048, 'count': 512},
-            {'numa_id': 1, 'size': 1048576, 'count': 1},
         ]
 
         self.assertEqual(serialized_node['hugepages'], expected)

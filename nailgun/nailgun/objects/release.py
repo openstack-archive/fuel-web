@@ -57,9 +57,8 @@ class Release(NailgunObject):
         deployment_tasks = data.pop("deployment_tasks", [])
         release_obj = super(Release, cls).create(data)
 
-        if deployment_tasks:
-            DeploymentGraph.create_for_model(
-                {'tasks': deployment_tasks}, release_obj)
+        DeploymentGraph.create_for_model(
+            {'tasks': deployment_tasks}, release_obj)
         return release_obj
 
     @classmethod

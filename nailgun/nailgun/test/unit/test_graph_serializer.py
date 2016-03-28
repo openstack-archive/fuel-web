@@ -816,5 +816,5 @@ class TestGraphSolverValidator(base.BaseTestCase):
         graph_validator = orchestrator_graph.GraphSolverValidator(tasks)
         with self.assertRaisesRegexp(
                 errors.InvalidData,
-                "Tasks can not be processed because it contains cycles in it"):
+                "Tasks cannot be processed because it contains cycles in it"):
             graph_validator.check()

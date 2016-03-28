@@ -134,7 +134,7 @@ class GraphSolver(nx.DiGraph):
                 self.add_edge(req, task['id'])
 
     def is_acyclic(self):
-        """Verify that graph doesnot contain any cycles in it."""
+        """Verify that graph does not contain any cycles in it."""
         return nx.is_directed_acyclic_graph(self)
 
     def get_next_groups(self, processed_nodes):
@@ -488,8 +488,12 @@ class GraphSolverValidator(object):
 
     def check(self):
         if not self.graph.is_acyclic():
-            raise errors.InvalidData(
-                "Tasks can not be processed because it contains cycles in it.")
+            err = "Tasks cannot be processed because it contains cycles in it."
+            # FIXME(mattymo): GraphSolver cannot be used to call this method
+            for loop in nx.simple_cycles(nx.DiGraph(self.graph)):
+                err += (str(loop) + ', ')
+            err = err[:-2]
+            raise errors.InvalidData(err)
 
         non_existing_tasks = []
         invalid_tasks = []

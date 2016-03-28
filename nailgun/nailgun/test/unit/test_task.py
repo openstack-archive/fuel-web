@@ -590,7 +590,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             {'deployment_tasks': deployment_tasks})
         with self.assertRaisesRegexp(
                 errors.InvalidData,
-                "Tasks can not be processed because it contains cycles in it"):
+                "Tasks cannot be processed because it contains cycles in it"):
             task.CheckBeforeDeploymentTask.\
                 _check_deployment_graph_for_correctness(
                     self.task)

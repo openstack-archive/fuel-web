@@ -241,7 +241,8 @@ ATTRIBUTE_SCHEMA = {
                 'file',
                 'text_list',
                 'textarea_list',
-                'custom_hugepages'
+                'custom_hugepages',
+                'simple_hugepages'
             ]
         },
         # 'value': None,  # custom validation depending on type
@@ -321,6 +322,7 @@ ATTRIBUTE_TYPE_SCHEMAS = {
     'radio': ALLOWED_VALUES_SCHEMA,
     'select': ALLOWED_VALUES_SCHEMA,
     'text': {'value': {'type': 'string'}},
+    'simple_hugepages': {'value': {'type': ['string', 'integer']}},
     'textarea': {'value': {'type': 'string'}},
     'text_list': MULTIPLE_TEXT_FIELDS_SCHEMA,
     'textarea_list': MULTIPLE_TEXT_FIELDS_SCHEMA

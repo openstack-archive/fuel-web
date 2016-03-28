@@ -318,13 +318,12 @@ class TestDeploymentAttributesSerialization90(
                 'nova': {
                     'type': 'custom_hugepages',
                     'value': {
-                        # FIXME make counts integer after appropriate UI fix
-                        '2048': '512',
+                        '2048': 512,
                     }
                 },
                 'dpdk': {
-                    'type': 'text',
-                    'value': '512',
+                    'type': 'simple_hugepages',
+                    'value': 512,
                 }
             }
         })

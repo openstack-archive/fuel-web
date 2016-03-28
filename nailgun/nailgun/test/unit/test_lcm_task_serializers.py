@@ -131,7 +131,9 @@ class TestDefaultTaskSerializer(BaseUnitTest):
         }
         serializer = self.serializer_class(self.context, task_template)
         for node_id, result in expected:
-            self.assertEqual(result, serializer.should_execute(node_id))
+            self.assertEqual(result, serializer.should_execute(
+                task_template, node_id
+            ))
 
     def test_should_execute_legacy_condition_for_settings(self):
         self.check_condition(
@@ -162,6 +164,7 @@ class TestDefaultTaskSerializer(BaseUnitTest):
     def test_serialize_with_format(self):
         task_template = {
             'id': 'test',
+            'version': '2.0.0',
             'roles': ['controller'],
             'condition': '1',
             'type': 'upload_file',
@@ -172,7 +175,9 @@ class TestDefaultTaskSerializer(BaseUnitTest):
                 'path': '/etc/{CLUSTER_ID}/astute.yaml'
             },
             'requires': ['deploy_start'],
-            'required_for': ['deploy_end']
+            'required_for': ['deploy_end'],
+            'cross_depends': [],
+            'cross_depended_by': [],
         }
         serializer = self.serializer_class(self.context, task_template)
         serialized = serializer.serialize('1')
@@ -188,12 +193,17 @@ class TestDefaultTaskSerializer(BaseUnitTest):
     def test_serialize_does_not_fail_if_format_fail(self):
         task_template = {
             'id': 'test',
+            'version': '2.0.0',
             'type': 'upload_file',
             'parameters': {
                 'cmd': "cat /etc/astute.yaml | awk '{ print $1 }'",
                 'cwd': '/tmp/'
             },
-            'fail_on_error': False
+            'fail_on_error': False,
+            'required_for': None,
+            'requires': None,
+            'cross_depends': [],
+            'cross_depended_by': []
         }
         serializer = self.serializer_class(self.context, task_template)
         serialized = serializer.serialize('1')
@@ -202,6 +212,7 @@ class TestDefaultTaskSerializer(BaseUnitTest):
     def test_serialize_skipped_task(self):
         task_template = {
             'id': 'test',
+            'version': '2.0.0',
             'type': 'upload_file',
             'condition': '0',
             'parameters': {
@@ -219,6 +230,7 @@ class TestDefaultTaskSerializer(BaseUnitTest):
         self.assertEqual(
             {
                 'id': 'test',
+                'version': '2.0.0',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'fail_on_error': False,
                 'requires': ['deploy_start'],

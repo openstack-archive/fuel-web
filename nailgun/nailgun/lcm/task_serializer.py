@@ -112,6 +112,12 @@ class Context(object):
 
 @six.add_metaclass(abc.ABCMeta)
 class DeploymentTaskSerializer(object):
+    attributes = (
+        'id', 'type', 'version', 'parameters', 'fail_on_error',
+        'requires', 'required_for',
+        'cross_depends', 'cross_depended_by',
+    )
+
     @abc.abstractmethod
     def serialize(self, node_id):
         """Serialize task in expected by orchestrator format.
@@ -129,34 +135,27 @@ class NoopTaskSerializer(DeploymentTaskSerializer):
         self.context = context
 
     def serialize(self, node_id):
-        return {
-            'id': self.task_template['id'],
-            'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
-            'fail_on_error': False,
-            'requires': self.task_template.get('requires'),
-            'required_for': self.task_template.get('required_for'),
-            'cross_depends': self.task_template.get('cross_depends'),
-            'cross_depended_by': self.task_template.get('cross_depended_by'),
-        }
+        task = {k: self.task_template.get(k) for k in self.attributes}
+        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
+        task['fail_on_error'] = False
+        task.pop('parameters', None)
+        return task
 
 
 class DefaultTaskSerializer(NoopTaskSerializer):
-    hidden_attributes = ('roles', 'role', 'groups', 'condition')
-
-    def should_execute(self, node_id):
-        if 'condition' not in self.task_template:
+    def should_execute(self, task, node_id):
+        if 'condition' not in task:
             return True
 
-        # the utils.traverse removes all '.value' attributes.
-        # the option prune_value_attribute is used
-        # to keep backward compatibility
-        interpreter = self.context.get_legacy_interpreter(node_id)
-        return interpreter(self.task_template['condition'])
+        if isinstance(task['condition'], six.string_types):
+            # the utils.traverse removes all '.value' attributes.
+            # the option prune_value_attribute is used
+            # to keep backward compatibility
+            interpreter = self.context.get_legacy_interpreter(node_id)
+            return interpreter(self.task_template['condition'])
+        return task['condition']
 
     def serialize(self, node_id):
-        if not self.should_execute(node_id):
-            return super(DefaultTaskSerializer, self).serialize(node_id)
-
         task = utils.traverse(
             self.task_template,
             utils.text_format_safe,
@@ -165,11 +164,12 @@ class DefaultTaskSerializer(NoopTaskSerializer):
                 'yaql_exp': self.context.get_yaql_interpreter(node_id)
             }
         )
+        if not self.should_execute(task, node_id):
+            return super(DefaultTaskSerializer, self).serialize(node_id)
+
         task.setdefault('parameters', {}).setdefault('cwd', '/')
         task.setdefault('fail_on_error', True)
-        for attr in self.hidden_attributes:
-            task.pop(attr, None)
-        return task
+        return {k: task.get(k) for k in self.attributes}
 
 
 def handle_unsupported(_, task_template):

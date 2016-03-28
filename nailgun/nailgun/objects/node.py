@@ -1317,7 +1317,7 @@ class NodeAttributes(object):
         # FIXME(asvechnikov): remove this part,
         # after implementing of blueprint input-type-number in UI
         for attr in six.itervalues(hugepages):
-            if attr.get('type') == 'text':
+            if attr.get('type') == 'simple_hugepages':
                 attr['value'] = int(attr['value'])
             elif attr.get('type') == 'custom_hugepages':
                 for size in attr['value']:
@@ -1481,7 +1481,7 @@ class NodeAttributes(object):
         components = {'all': [], 'any': []}
 
         for attrs in hugepages.values():
-            if attrs.get('type') == 'text':
+            if attrs.get('type') == 'simple_hugepages':
                 # type text means size of memory in MiB to allocate with
                 # 2MiB pages, so we need to calculate pages count
                 pages_count = cls.pages_per_numa_node(attrs['value'])

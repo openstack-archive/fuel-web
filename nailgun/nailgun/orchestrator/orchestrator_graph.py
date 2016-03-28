@@ -286,9 +286,10 @@ class GraphSolver(nx.DiGraph):
 class AstuteGraph(object):
     """This object stores logic that required for working with astute"""
 
-    def __init__(self, cluster):
+    def __init__(self, cluster, tasks=None):
         self.cluster = cluster
-        self.tasks = objects.Cluster.get_deployment_tasks(cluster)
+        self.tasks = tasks or \
+            objects.Cluster.get_deployment_tasks(cluster)
         self.graph = GraphSolver()
         self.graph.add_tasks(self.tasks)
         self.serializers = TaskSerializers()

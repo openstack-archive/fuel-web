@@ -19,6 +19,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -181,6 +182,9 @@ class DeploymentGraph(NailgunObject):
             graph = cls.create(data)
             cls.attach_to_model(graph, instance, graph_type)
             return graph
+        else:
+            raise errors.AlreadyExists(
+                'Graph of given type already exists for this model.')
 
     @classmethod
     def get_for_model(cls, instance, graph_type=None):

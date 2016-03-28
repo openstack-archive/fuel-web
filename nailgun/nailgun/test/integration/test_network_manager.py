@@ -1247,17 +1247,6 @@ class TestNeutronManager70(BaseIntegrationTest):
                     default_mapping='default_net_group'), net_group_mapping),
             'default_net_group')
 
-    def test_get_endpoint_ip(self):
-        vip = '172.16.0.1'
-
-        with patch.object(NeutronManager70, 'assign_vip',
-                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
-            endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
-            assign_vip_mock.assert_called_once_with(
-                objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_name='public')
-            self.assertEqual(endpoint_ip, vip)
-
     def assign_vips_for_api_and_check_configuration(self, allocate):
         expected_aliases = [
             'management_vip', 'management_vrouter_vip',
@@ -1483,17 +1472,6 @@ class TestNovaNetworkManager70(TestNeutronManager70):
                     id='role_not_in_template',
                     default_mapping='default_net_group'), net_group_mapping),
             'default_net_group')
-
-    def test_get_endpoint_ip(self):
-        vip = '172.16.0.1'
-
-        with patch.object(NovaNetworkManager70, 'assign_vip',
-                          return_value=Mock(ip_addr=vip)) as assign_vip_mock:
-            endpoint_ip = self.net_manager.get_end_point_ip(self.cluster.id)
-            assign_vip_mock.assert_called_once_with(
-                objects.Cluster.get_controllers_node_group(self.cluster),
-                mock.ANY, vip_name='public')
-            self.assertEqual(endpoint_ip, vip)
 
 
 class TestTemplateManager70(BaseIntegrationTest):

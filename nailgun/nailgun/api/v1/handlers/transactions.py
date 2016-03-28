@@ -56,3 +56,34 @@ class TransactionCollectionHandler(CollectionHandler):
             )
         else:
             return self.collection.to_json()
+
+
+class BaseTransactionDataHandler(TransactionHandler):
+
+    get_data = None
+
+    @content
+    def GET(self, transaction_id):
+        """:returns: Collection of JSONized DeploymentInfo objects.
+
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        transaction = self.get_object_or_404(objects.Transaction,
+                                             transaction_id)
+        return self.get_data(transaction)
+
+
+class TransactionDeploymentInfo(BaseTransactionDataHandler):
+
+    get_data = objects.Transaction.get_deployment_info
+
+
+class TransactionClusterSettings(BaseTransactionDataHandler):
+
+    get_data = objects.Transaction.get_cluster_settings
+
+
+class TransactionNetworkSettings(BaseTransactionDataHandler):
+
+    get_data = objects.Transaction.get_network_settings

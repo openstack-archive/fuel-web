@@ -71,7 +71,7 @@ class TestNodeAttributes(base.BaseUnitTest):
                             '2048': 14,
                             '1048576': '2'}},
                     'comp2': {
-                        'type': 'text',
+                        'type': 'simple_hugepages',
                         'value': 20}}},
             meta={'numa_topology': {'numa_nodes': [{'id': 0}]}})
         expected = {
@@ -90,7 +90,7 @@ class TestNodeAttributes(base.BaseUnitTest):
                         'value': {
                             '1048576': 2}},
                     'comp2': {
-                        'type': 'text',
+                        'type': 'simple_hugepages',
                         'value': '10'}}},
             meta={'numa_topology': {'numa_nodes': [{'id': '0'}]}})
         expected = " hugepagesz=2M hugepages=5 hugepagesz=1G hugepages=2"
@@ -110,7 +110,7 @@ class TestNodeAttributes(base.BaseUnitTest):
                         }
                     },
                     'comp2': {
-                        'type': 'text',
+                        'type': 'simple_hugepages',
                         'value': '512'}}},
             meta={'numa_topology': {'numa_nodes': [
                 {'id': 0, 'memory': 2 ** 31},

@@ -45,7 +45,7 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
                     'value': {},
                 },
                 'dpdk': {
-                    'type': 'text',
+                    'type': 'simple_hugepages',
                     'value': '0',
                 },
             },
@@ -81,7 +81,7 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
                     },
                 },
                 'dpdk': {
-                    'value': '2',
+                    'value': 2,
                 },
             }
         }

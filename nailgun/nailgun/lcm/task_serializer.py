@@ -57,7 +57,7 @@ class Context(object):
         self._yaql_context = yaql_ext.create_context(
             add_serializers=True, add_datadiff=True
         )
-        self.yaql_expressions_cache = {}
+        self._yaql_expressions_cache = {}
 
     def get_new_data(self, node_id):
         return self._transaction.get_new_data(node_id)
@@ -66,7 +66,7 @@ class Context(object):
         context = self._yaql_context.create_child_context()
         context['$%new'] = self._transaction.get_new_data(node_id)
         context['$%old'] = self._transaction.get_old_data(node_id)
-        cache = self.yaql_expressions_cache
+        cache = self._yaql_expressions_cache
 
         def evaluate(expression):
             try:
@@ -112,6 +112,12 @@ class Context(object):
 
 @six.add_metaclass(abc.ABCMeta)
 class DeploymentTaskSerializer(object):
+    fields = frozenset((
+        'id', 'type', 'parameters', 'fail_on_error',
+        'requires', 'required_for',
+        'cross_depends', 'cross_depended_by',
+    ))
+
     @abc.abstractmethod
     def serialize(self, node_id):
         """Serialize task in expected by orchestrator format.
@@ -122,6 +128,15 @@ class DeploymentTaskSerializer(object):
         :param node_id: the target node_id
         """
 
+    @classmethod
+    def finalize(cls, task, fields=None):
+        """Gets rid off extra attributes.
+
+        :param task: the serialized task
+        :param fields: the list of fields for including
+        """
+        return {k: task.get(k) for k in (fields or cls.fields)}
+
 
 class NoopTaskSerializer(DeploymentTaskSerializer):
     def __init__(self, context, task_template):
@@ -129,34 +144,25 @@ class NoopTaskSerializer(DeploymentTaskSerializer):
         self.context = context
 
     def serialize(self, node_id):
-        return {
-            'id': self.task_template['id'],
-            'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
-            'fail_on_error': False,
-            'requires': self.task_template.get('requires'),
-            'required_for': self.task_template.get('required_for'),
-            'cross_depends': self.task_template.get('cross_depends'),
-            'cross_depended_by': self.task_template.get('cross_depended_by'),
-        }
+        task = self.finalize(
+            self.task_template, self.fields - {'parameters'}
+        )
+        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
+        task['fail_on_error'] = False
+        return task
 
 
 class DefaultTaskSerializer(NoopTaskSerializer):
-    hidden_attributes = ('roles', 'role', 'groups', 'condition')
-
-    def should_execute(self, node_id):
-        if 'condition' not in self.task_template:
-            return True
-
-        # the utils.traverse removes all '.value' attributes.
-        # the option prune_value_attribute is used
-        # to keep backward compatibility
-        interpreter = self.context.get_legacy_interpreter(node_id)
-        return interpreter(self.task_template['condition'])
+    def should_execute(self, task, node_id):
+        condition = task.get('condition', True)
+        if isinstance(condition, six.string_types):
+            # string condition interprets as legacy condition
+            # and it should be evaluated
+            interpreter = self.context.get_legacy_interpreter(node_id)
+            return interpreter(condition)
+        return condition
 
     def serialize(self, node_id):
-        if not self.should_execute(node_id):
-            return super(DefaultTaskSerializer, self).serialize(node_id)
-
         task = utils.traverse(
             self.task_template,
             utils.text_format_safe,
@@ -165,11 +171,12 @@ class DefaultTaskSerializer(NoopTaskSerializer):
                 'yaql_exp': self.context.get_yaql_interpreter(node_id)
             }
         )
+        if not self.should_execute(task, node_id):
+            return super(DefaultTaskSerializer, self).serialize(node_id)
+
         task.setdefault('parameters', {}).setdefault('cwd', '/')
         task.setdefault('fail_on_error', True)
-        for attr in self.hidden_attributes:
-            task.pop(attr, None)
-        return task
+        return self.finalize(task)
 
 
 def handle_unsupported(_, task_template):

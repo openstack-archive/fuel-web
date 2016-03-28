@@ -353,6 +353,11 @@ class DeploymentTask(BaseDeploymentTask):
         """
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+
+        TaskProcessor = task_based_deployment.TaskProcessor
+        for tsk in deployment_tasks:
+            TaskProcessor.ensure_task_based_deploy_allowed(tsk)
+
         logger.info("start cluster serialization.")
         serialized_cluster = deployment_serializers.serialize(
             None, task.cluster, nodes

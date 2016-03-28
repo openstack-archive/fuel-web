@@ -131,4 +131,8 @@ maintainers:
       email:  kpimenova@mirantis.com
       IRC:    kpimenova
 
+    - name:   Nikolay Bogdanov
+      email:  nbogdanov@mirantis.com
+      IRC:    nbogdanov
+
 - specs/: *packaging_team

@@ -131,7 +131,9 @@ class TestDefaultTaskSerializer(BaseUnitTest):
         }
         serializer = self.serializer_class(self.context, task_template)
         for node_id, result in expected:
-            self.assertEqual(result, serializer.should_execute(node_id))
+            self.assertEqual(result, serializer.should_execute(
+                task_template, node_id
+            ))
 
     def test_should_execute_legacy_condition_for_settings(self):
         self.check_condition(
@@ -172,7 +174,9 @@ class TestDefaultTaskSerializer(BaseUnitTest):
                 'path': '/etc/{CLUSTER_ID}/astute.yaml'
             },
             'requires': ['deploy_start'],
-            'required_for': ['deploy_end']
+            'required_for': ['deploy_end'],
+            'cross_depends': [],
+            'cross_depended_by': [],
         }
         serializer = self.serializer_class(self.context, task_template)
         serialized = serializer.serialize('1')
@@ -193,7 +197,11 @@ class TestDefaultTaskSerializer(BaseUnitTest):
                 'cmd': "cat /etc/astute.yaml | awk '{ print $1 }'",
                 'cwd': '/tmp/'
             },
-            'fail_on_error': False
+            'fail_on_error': False,
+            'required_for': None,
+            'requires': None,
+            'cross_depends': [],
+            'cross_depended_by': []
         }
         serializer = self.serializer_class(self.context, task_template)
         serialized = serializer.serialize('1')

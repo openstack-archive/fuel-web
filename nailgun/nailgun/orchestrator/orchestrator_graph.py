@@ -488,8 +488,10 @@ class GraphSolverValidator(object):
 
     def check(self):
         if not self.graph.is_acyclic():
-            raise errors.InvalidData(
-                "Tasks can not be processed because it contains cycles in it.")
+            err = "Tasks cannot be processed because it contains cycles in it."
+            for loop in nx.simple_cycles(nx.DiGraph(self.graph)):
+                err += (str(loop) + ', ')
+            raise errors.InvalidData(err)
 
         non_existing_tasks = []
         invalid_tasks = []

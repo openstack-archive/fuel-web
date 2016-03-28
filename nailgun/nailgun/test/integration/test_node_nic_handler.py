@@ -285,7 +285,7 @@ class TestHandlers(BaseIntegrationTest):
             resp_nic['interface_properties']['sriov'],
             {
                 'enabled': False,
-                'sriov_numvfs': 0,
+                'sriov_numvfs': None,
                 'sriov_totalvfs': 8,
                 'available': True,
                 'pci_id': '1234:5678',
@@ -972,5 +972,78 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertIn(
             "2.5 is not valid under any of the given schemas",
+            resp.json_body['message']
+        )
+
+    def test_set_sriov_numvfs_zero_value(self):
+        self.env.create(
+            nodes_kwargs=[{"api": True}]
+        )
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0].id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov['sriov_numvfs'] = 0
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0].id}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(
+            "0 is not valid under any of the given schemas",
+            resp.json_body['message']
+        )
+
+    def test_enable_sriov_without_number_of_functions(self):
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'new_nic',
+             'mac': '00:00:00:00:00:00',
+             'current_speed': 10,
+             'max_speed': 10,
+             'state': 'down',
+             'interface_properties': {
+                 'sriov': {
+                     'sriov_totalvfs': 8,
+                     'available': True,
+                     'pci_id': '1234:5678'
+                 },
+                 'pci_id': '8765:4321',
+                 'numa_node': 1
+             }}]
+        )
+
+        node = self.env.create_node(api=True, roles=['compute'], meta=meta)
+        self.env.create_cluster(api=True, nodes=[node['id']])
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov['enabled'] = True
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": node['id']}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(
+            "Node '{0}' interface 'new_nic': virtual functions can not be"
+            " enabled for interface when 'sriov_numfs' option is not"
+            " specified!".format(node['id']),
             resp.json_body['message']
         )

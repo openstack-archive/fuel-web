@@ -463,6 +463,13 @@ class NetAssignmentValidator(BasicValidator):
                 " not available".format(node_id, iface.name),
                 log_message=True
             )
+        if not sriov_new['sriov_numvfs'] and sriov_new['enabled']:
+            raise errors.InvalidData(
+                "Node '{0}' interface '{1}': virtual functions can not be"
+                " enabled for interface when 'sriov_numfs' option is not"
+                " specified!".format(node_id, iface.name),
+                log_message=True
+            )
         if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': '{2}' virtual functions was"

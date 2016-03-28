@@ -55,7 +55,7 @@ INTERFACES = {
                             "enabled": base_types.NULLABLE_BOOL,
                             "available": {"type": "boolean"},
                             "sriov_numvfs":
-                                base_types.NULLABLE_NON_NEGATIVE_INTEGER,
+                                base_types.NULLABLE_POSITIVE_INTEGER,
                             "sriov_totalvfs": base_types.NON_NEGATIVE_INTEGER,
                             "pci_id": {"type": "string"},
                             "physnet": {"type": "string"}

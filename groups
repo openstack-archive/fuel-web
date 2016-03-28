@@ -2,5 +2,6 @@
 c6815b2e03f2481e312eea95dfdd4a3c61c0ff3b	fuel-web-core
 528b9d603ab50605cd6c04465f61936c39c1ae81	fuel-release
 87fd32797f81799ad4ee167d7194d3987af3c29b	fuel-ci
-0b7e07aac3c371e6c58971bc8fb2374050c4fc63	fuel-stable-core
 global:Change-Owner	Change Owner
+0b7e07aac3c371e6c58971bc8fb2374050c4fc63	fuel-stable-core
+ec3420e0495ce80c7a8f6fc1bb6aa1dce50a5b47	fuel-abandon-bot

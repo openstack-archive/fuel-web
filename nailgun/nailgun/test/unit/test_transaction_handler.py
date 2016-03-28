@@ -15,6 +15,8 @@
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
+from nailgun import objects
+from nailgun.orchestrator import deployment_serializers
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import reverse
 
@@ -131,3 +133,81 @@ class TestTransactionHandlers(BaseTestCase):
         )
         self.assertEqual(resp.status_code, 404)
         self.assertIsNone(self.db().query(Task).get(task.id))
+
+    def test_get_transaction_cluster_attributes(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[-1]
+        cluster_attrs = objects.Cluster.get_editable_attributes(
+            self.env.clusters[-1]
+        )
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_cluster_settings(
+            transaction, {'editable': cluster_attrs}
+        )
+        self.assertIsNotNone(
+            objects.Transaction.get_cluster_settings(transaction)
+        )
+        resp = self.app.get(
+            reverse(
+                'TransactionClusterSettings',
+                kwargs={'transaction_id': transaction.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.datadiff(cluster_attrs, resp.json_body['editable'])
+
+    def test_get_transaction_deployment_info(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[-1]
+        nodes = objects.Cluster.get_nodes_not_for_deletion(cluster)
+        deployment_node_info = deployment_serializers.serialize_for_lcm(
+            cluster, nodes
+        )
+        deployment_info = {node['uid']: node for node in deployment_node_info}
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_deployment_info(
+            transaction, deployment_info
+        )
+        self.assertIsNotNone(
+            objects.Transaction.get_deployment_info(transaction)
+        )
+        resp = self.app.get(
+            reverse(
+                'TransactionDeploymentInfo',
+                kwargs={'transaction_id': transaction.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.datadiff(deployment_info, resp.json_body)
+
+    def test_get_transaction_network_settings(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[-1]
+        resp = self.env.neutron_networks_get(cluster.id)
+        self.assertEqual(200, resp.status_code)
+        net_attrs = resp.json_body
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_network_settings(transaction, net_attrs)
+        self.assertIsNotNone(
+            objects.Transaction.get_network_settings(transaction)
+        )
+        resp = self.app.get(
+            reverse(
+                'TransactionNetworkSettings',
+                kwargs={'transaction_id': transaction.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.datadiff(net_attrs, resp.json_body)

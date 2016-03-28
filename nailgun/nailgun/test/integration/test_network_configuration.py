@@ -710,6 +710,28 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             )
             self.assertEqual(404, resp.status_code)
 
+    def test_get_transaction_network_settings(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.assertEqual(200, resp.status_code)
+        net_attrs = resp.json_body
+        transaction = objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_network_settings(transaction, net_attrs)
+        self.assertIsNotNone(
+            objects.Transaction.get_network_settings(transaction)
+        )
+        resp = self.app.get(
+            reverse(
+                'TransactionNetworkSettings',
+                kwargs={'transaction_id': transaction.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.datadiff(net_attrs, resp.json_body)
+
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
 

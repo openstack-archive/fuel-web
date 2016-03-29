@@ -664,7 +664,10 @@
                         "bus_info": "0000:07:00.0",
                         "max_speed": 1000,
                         "current_speed": 1000,
-                        "pxe": false
+                        "pxe": false,
+                        "interface_properties": {
+                            "pci_id": "8086:100e"
+                        }
                     },
                     {
                         "name": "eth3",
@@ -675,7 +678,10 @@
                         "bus_info": "0000:08:00.0",
                         "max_speed": 10000,
                         "current_speed": 10000,
-                        "pxe": false
+                        "pxe": false,
+                        "interface_properties": {
+                            "pci_id": "8086:100e"
+                        }
                     },
                     {
                         "ip": "10.20.0.167",
@@ -685,7 +691,10 @@
                         "current_speed": 1000,
                         "driver": "igb",
                         "bus_info": "0000:09:00.0",
-                        "pxe": true
+                        "pxe": true,
+                        "interface_properties": {
+                            "pci_id": "8086:100e"
+                        }
                     },
                     {
                         "name": "eth5",

@@ -377,8 +377,8 @@
     networks_metadata:
       bonding:
         availability:
+          - ovs: "interface:pxe == false and interface:interface_properties.dpdk.available"
           - linux: "true"
-          - ovs: "false"
         properties:
           linux:
             mode:

@@ -514,3 +514,8 @@ DEFAULT_HUGEPAGE_SIZE = '2048'
 HUGE_PAGES_SIZE_MAP = [('2048', '2M'), ('1048576', '1G')]
 
 MEMORY_RESERVED_FOR_OPERATING_SYSTEM = 1024 ** 3  # one GiB in bytes
+
+HYPERVISORS = Enum(
+    "kvm",
+    "qemu"
+)

@@ -798,7 +798,16 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_get_update_sriov_properties(self):
         self.env.create(
-            nodes_kwargs=[{"api": True}]
+            nodes_kwargs=[{"api": True}],
+            cluster_kwargs={
+                'editable_attributes': {
+                    'common': {
+                        'libvirt_type': {
+                            'value': consts.HYPERVISORS.kvm
+                        }
+                    }
+                }
+            }
         )
 
         resp = self.app.get(
@@ -840,7 +849,16 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_update_readonly_sriov_properties_failed(self):
         self.env.create(
-            nodes_kwargs=[{"api": True}]
+            nodes_kwargs=[{"api": True}],
+            cluster_kwargs={
+                'editable_attributes': {
+                    'common': {
+                        'libvirt_type': {
+                            'value': consts.HYPERVISORS.kvm
+                        }
+                    }
+                }
+            }
         )
 
         resp = self.app.get(
@@ -868,7 +886,16 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_enable_sriov_failed(self):
         self.env.create(
-            nodes_kwargs=[{"api": True}]
+            nodes_kwargs=[{"api": True}],
+            cluster_kwargs={
+                'editable_attributes': {
+                    'common': {
+                        'libvirt_type': {
+                            'value': consts.HYPERVISORS.kvm
+                        }
+                    }
+                }
+            }
         )
 
         resp = self.app.get(
@@ -1022,7 +1049,17 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         node = self.env.create_node(api=True, roles=['compute'], meta=meta)
-        self.env.create_cluster(api=True, nodes=[node['id']])
+        self.env.create_cluster(
+            api=True,
+            nodes=[node['id']],
+            editable_attributes={
+                'common': {
+                    'libvirt_type': {
+                        'value': consts.HYPERVISORS.kvm
+                    }
+                }
+            }
+        )
 
         resp = self.app.get(
             reverse('NodeNICsHandler',
@@ -1045,5 +1082,40 @@ class TestHandlers(BaseIntegrationTest):
             "Node '{0}' interface 'new_nic': virtual functions can not be"
             " enabled for interface when 'sriov_numfs' option is not"
             " specified!".format(node['id']),
+            resp.json_body['message']
+        )
+
+    def test_enable_sriov_failed_with_non_kvm_hypervisor(self):
+        node = self.env.create_node(api=True, roles=['compute'])
+        self.env.create_cluster(
+            api=True,
+            nodes=[node['id']],
+            editable_attributes={
+                'common': {
+                    'libvirt_type': {
+                        'value': consts.HYPERVISORS.qemu
+                    }
+                }
+            }
+        )
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov['enabled'] = True
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": node['id']}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            "Only KVM hypervisor works with SR-IOV.",
             resp.json_body['message']
         )

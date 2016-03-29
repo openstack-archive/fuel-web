@@ -443,39 +443,48 @@ class NetAssignmentValidator(BasicValidator):
         return interfaces_data
 
     @classmethod
-    def _verify_sriov_properties(cls, iface, data, node_id):
+    def _verify_sriov_properties(cls, iface, data, db_node):
         non_changeable = ['sriov_totalvfs', 'available', 'pci_id']
         sriov_new = data['interface_properties']['sriov']
         check_for_changes = [n for n in sriov_new if n in non_changeable]
         if not check_for_changes:
             return
         sriov_db = iface.interface_properties['sriov']
+
+        if sriov_new['enabled']:
+            # check hypervisor type
+            h_type = objects.Cluster.get_editable_attributes(
+                db_node.cluster)['common']['libvirt_type']['value']
+            if h_type != consts.HYPERVISORS.kvm:
+                raise errors.InvalidData(
+                    'Only KVM hypervisor works with SR-IOV.')
+
         for param_name in check_for_changes:
             if sriov_db[param_name] != sriov_new[param_name]:
                 raise errors.InvalidData(
                     "Node '{0}' interface '{1}': SR-IOV parameter '{2}' cannot"
                     " be changed through API".format(
-                        node_id, iface.name, param_name),
+                        db_node.id, iface.name, param_name),
                     log_message=True
                 )
         if not sriov_db['available'] and sriov_new['enabled']:
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': SR-IOV cannot be enabled as it is"
-                " not available".format(node_id, iface.name),
+                " not available".format(db_node.id, iface.name),
                 log_message=True
             )
         if not sriov_new['sriov_numvfs'] and sriov_new['enabled']:
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': virtual functions can not be"
                 " enabled for interface when 'sriov_numfs' option is not"
-                " specified!".format(node_id, iface.name),
+                " specified!".format(db_node.id, iface.name),
                 log_message=True
             )
         if sriov_db['sriov_totalvfs'] < sriov_new['sriov_numvfs']:
             raise errors.InvalidData(
                 "Node '{0}' interface '{1}': '{2}' virtual functions was"
                 "requested but just '{3}' are available".format(
-                    node_id, iface.name, sriov_new['sriov_numvfs'],
+                    db_node.id, iface.name, sriov_new['sriov_numvfs'],
                     sriov_db['sriov_totalvfs']),
                 log_message=True
             )
@@ -577,7 +586,7 @@ class NetAssignmentValidator(BasicValidator):
         h_type = objects.Cluster.get_editable_attributes(
             db_node.cluster)['common']['libvirt_type']['value']
 
-        if h_type != 'kvm':
+        if h_type != consts.HYPERVISORS.kvm:
             raise errors.InvalidData('Only KVM hypervisor works with DPDK.')
 
     @classmethod
@@ -639,7 +648,7 @@ class NetAssignmentValidator(BasicValidator):
                             log_message=True
                         )
                 if iface.get('interface_properties', {}).get('sriov'):
-                    cls._verify_sriov_properties(db_iface, iface, node['id'])
+                    cls._verify_sriov_properties(db_iface, iface, db_node)
 
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 pxe_iface_present = False

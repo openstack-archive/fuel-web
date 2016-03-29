@@ -128,7 +128,8 @@ class TestDeploymentAttributesSerialization90(
             'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}}
         }
         cluster_attrs = objects.Cluster.get_editable_attributes(node.cluster)
-        cluster_attrs['common']['libvirt_type']['value'] = 'kvm'
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
         objects.Cluster.update_attributes(
             node.cluster, {'editable': cluster_attrs})
 

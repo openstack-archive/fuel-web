@@ -524,9 +524,16 @@ class TestHandlers(BaseIntegrationTest):
              'pxe': True, 'state': 'up'}])
         self.env.create(
             nodes_kwargs=[
-                {"api": True, 'meta': meta}
+                {"api": False, 'meta': meta}
             ]
         )
+        cluster = self.env.clusters[0]
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
+
         node = self.env.nodes[0]
         node_data = {'mac': node['mac'], 'meta': meta}
         # check default interface_properties values
@@ -763,9 +770,16 @@ class TestHandlers(BaseIntegrationTest):
             {'name': 'eth0', 'mac': self.env.generate_random_mac(),
              'pxe': False},
         ]
+
         self.env.create(nodes_kwargs=[{'api': False, 'meta': meta}])
 
         cluster = self.env.clusters[0]
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
+
         node = cluster.nodes[0]
 
         # Processing data through NodeHandler
@@ -800,6 +814,13 @@ class TestHandlers(BaseIntegrationTest):
         self.env.create(
             nodes_kwargs=[{"api": True}]
         )
+
+        cluster = self.env.clusters[0]
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
 
         resp = self.app.get(
             reverse('NodeNICsHandler',
@@ -839,13 +860,22 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(sriov['physnet'], 'new_physnet')
 
     def test_update_readonly_sriov_properties_failed(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
+        node = self.env.create_node(
+            api=True,
+            roles=['compute']
         )
+
+        cluster = self.env.create_cluster(api=False, nodes=[node['id']])
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
+
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
 
         resp = self.app.get(
             reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
+                    kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
 
@@ -855,7 +885,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
-                    kwargs={"node_id": self.env.nodes[0].id}),
+                    kwargs={"node_id": node['id']}),
             jsonutils.dumps(nics),
             expect_errors=True,
             headers=self.default_headers)
@@ -864,16 +894,24 @@ class TestHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             "Node '{0}' interface '{1}': SR-IOV parameter 'available' cannot "
             "be changed through API".format(
-                self.env.nodes[0].id, nics[0]['name']))
+                node['id'], nics[0]['name']))
 
     def test_enable_sriov_failed(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
+        node = self.env.create_node(
+            api=True,
+            roles=['compute']
         )
+
+        cluster = self.env.create_cluster(api=False, nodes=[node['id']])
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
 
         resp = self.app.get(
             reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
+                    kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
 
@@ -883,7 +921,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
-                    kwargs={"node_id": self.env.nodes[0].id}),
+                    kwargs={"node_id": node['id']}),
             jsonutils.dumps(nics),
             expect_errors=True,
             headers=self.default_headers)
@@ -891,16 +929,24 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(
             resp.json_body['message'],
             "Node '{0}' interface '{1}': SR-IOV cannot be enabled as it is"
-            " not available".format(self.env.nodes[0].id, nics[0]['name']))
+            " not available".format(node['id'], nics[0]['name']))
 
     def test_set_sriov_numvfs_failed(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
+        node = self.env.create_node(
+            api=True,
+            roles=['compute']
         )
+
+        cluster = self.env.create_cluster(api=False, nodes=[node['id']])
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
 
         resp = self.app.get(
             reverse('NodeNICsHandler',
-                    kwargs={'node_id': self.env.nodes[0].id}),
+                    kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
 
@@ -910,7 +956,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
-                    kwargs={"node_id": self.env.nodes[0].id}),
+                    kwargs={"node_id": node['id']}),
             jsonutils.dumps(nics),
             expect_errors=True,
             headers=self.default_headers)
@@ -919,7 +965,7 @@ class TestHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             "Node '{0}' interface '{1}': '8' virtual functions was"
             "requested but just '0' are available".format(
-                self.env.nodes[0].id, nics[0]['name']))
+                node['id'], nics[0]['name']))
 
     def test_set_sriov_numvfs_failed_negative_value(self):
         self.env.create(
@@ -1022,7 +1068,13 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         node = self.env.create_node(api=True, roles=['compute'], meta=meta)
-        self.env.create_cluster(api=True, nodes=[node['id']])
+        cluster = self.env.create_cluster(api=False, nodes=[node['id']])
+
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.kvm})
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
 
         resp = self.app.get(
             reverse('NodeNICsHandler',
@@ -1045,5 +1097,42 @@ class TestHandlers(BaseIntegrationTest):
             "Node '{0}' interface 'new_nic': virtual functions can not be"
             " enabled for interface when 'sriov_numfs' option is not"
             " specified!".format(node['id']),
+            resp.json_body['message']
+        )
+
+    def test_enable_sriov_failed_with_non_kvm_hypervisor(self):
+        node = self.env.create_node(
+            api=True,
+            roles=['compute'],
+        )
+        node = self.env.create_node(api=True, roles=['compute'])
+        cluster = self.env.create_cluster(api=False, nodes=[node['id']])
+
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['libvirt_type'].update(
+            {'value': consts.HYPERVISORS.qemu})
+
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        nics = resp.json_body
+        sriov = nics[0]['interface_properties']['sriov']
+        sriov['enabled'] = True
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": node['id']}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            "Only KVM hypervisor works with SR-IOV.",
             resp.json_body['message']
         )

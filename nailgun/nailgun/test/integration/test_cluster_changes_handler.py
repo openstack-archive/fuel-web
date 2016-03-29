@@ -1894,3 +1894,32 @@ class TestHandlers(BaseIntegrationTest):
         self.assertRegexpMatches(
             supertask.message,
             r'Components .* could not require more memory than node has')
+
+    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    @patch('nailgun.task.task.DeploymentTask.granular_deploy')
+    @patch('nailgun.orchestrator.deployment_serializers.serialize')
+    def test_fallback_to_granular(self, mock_serialize, mock_granular_deploy):
+        tasks = [
+            {'id': 'first-fake-depl-task',
+             'type': 'puppet',
+             'parameters': {'puppet_manifest': 'first-fake-depl-task',
+                            'puppet_modules': 'test',
+                            'timeout': 0}}
+        ]
+
+        self.env.create(
+            release_kwargs={'deployment_tasks': tasks},
+            nodes_kwargs=[{'pending_roles': ['controller']}])
+
+        mock_granular_deploy.return_value = 'granular_deploy', {
+            'deployment_info': {},
+            'pre_deployment': {},
+            'post_deployment': {}
+        }
+        mock_serialize.return_value = {}
+        supertask = self.env.launch_deployment()
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
+
+        self.assertEqual(mock_granular_deploy.call_count, 1)
+        # Check we didn't serialize cluster in task_deploy
+        self.assertEqual(mock_serialize.call_count, 0)

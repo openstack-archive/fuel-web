@@ -561,25 +561,6 @@ class NetAssignmentValidator(BasicValidator):
                 " to interface '{}' where DPDK is enabled".format(
                     iface['name']))
 
-        return enabled
-
-    @classmethod
-    def _verify_node_dpdk_properties(cls, db_node, node):
-        if not objects.NodeAttributes.is_dpdk_hugepages_enabled(db_node):
-            raise errors.InvalidData("Hugepages for DPDK are not configured"
-                                     " for node '{}'".format(db_node.id))
-
-        if not objects.NodeAttributes.is_nova_hugepages_enabled(db_node):
-            raise errors.InvalidData("Hugepages for Nova are not configured"
-                                     " for node '{}'".format(db_node.id))
-
-        # check hypervisor type
-        h_type = objects.Cluster.get_editable_attributes(
-            db_node.cluster)['common']['libvirt_type']['value']
-
-        if h_type != 'kvm':
-            raise errors.InvalidData('Only KVM hypervisor works with DPDK.')
-
     @classmethod
     def verify_data_correctness(cls, node):
         db_node = db().query(Node).filter_by(id=node['id']).first()
@@ -708,12 +689,8 @@ class NetAssignmentValidator(BasicValidator):
                 )
 
             # checks dpdk settings for every interface
-            dpdk_enabled |= cls._verify_iface_dpdk_properties(
+            cls._verify_iface_dpdk_properties(
                 iface, db_interfaces, dpdk_drivers)
-
-        # run node validations if dpdk enabled on node
-        if dpdk_enabled:
-            cls._verify_node_dpdk_properties(db_node, node)
 
         if db_node.cluster:
             cls.check_networks_are_acceptable_for_node_to_assign(interfaces,

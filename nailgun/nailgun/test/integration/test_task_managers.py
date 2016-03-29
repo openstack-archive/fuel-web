@@ -131,6 +131,19 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_deployment_info_saves_in_transaction(self, _):
+        self.check_deployment_info_was_saved_in_transaction(
+            'liberty-9.0', True, True
+        )
+        self.check_deployment_info_was_saved_in_transaction(
+            'liberty-8.0', True, False
+        )
+        self.check_deployment_info_was_saved_in_transaction(
+            '2015.1.0-7.0', False, False
+        )
+
+    def check_deployment_info_was_saved_in_transaction(
+            self, release_ver, is_task_deploy, is_lcm
+    ):
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
@@ -139,11 +152,14 @@ class TestTaskManagers(BaseIntegrationTest):
             ],
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': 'liberty-9.0',
+                'version': release_ver
             },
         )
         cluster = self.env.clusters[-1]
-        nodes_ids = [n.uid for n in self.env.nodes if not n.pending_deletion]
+        if not is_task_deploy:
+            self.env.disable_task_deploy(cluster)
+
+        nodes_ids = [n.uid for n in cluster.nodes if not n.pending_deletion]
         supertask = self.env.launch_deployment(cluster.id)
         self.assertNotEqual(TASK_STATUSES.error, supertask.status)
         deployment_task = next(
@@ -151,7 +167,8 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         info = objects.Transaction.get_deployment_info(deployment_task)
         # information about master node should be in deployment info
-        nodes_ids.append(consts.MASTER_NODE_UID)
+        if is_lcm:
+            nodes_ids.append(consts.MASTER_NODE_UID)
         # check that deployment info contains information about all nodes
         # that are not deleted
         self.assertItemsEqual(nodes_ids, info)

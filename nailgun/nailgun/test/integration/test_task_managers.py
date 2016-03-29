@@ -156,6 +156,44 @@ class TestTaskManagers(BaseIntegrationTest):
         # that are not deleted
         self.assertItemsEqual(nodes_ids, info)
 
+    @mock.patch('nailgun.task.task.rpc.cast')
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    def test_deployment_tasks_assigned_for_primary_roles(
+            self, tasks_mock, rpc_mock
+    ):
+        tasks_mock.return_value = [
+            {
+                'id': 'primary_test', 'parameters': {}, 'type': 'puppet',
+                'roles': ['primary-controller'], 'version': '2.1.0',
+            },
+            {
+                'id': 'test', 'parameters': {}, 'type': 'puppet',
+                'roles': ['controller'], 'version': '2.1.0',
+            }
+        ]
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ['controller']},
+                {"pending_addition": True, "pending_roles": ['controller']},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'liberty-9.0',
+            },
+        )
+        cluster = self.env.clusters[-1]
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][1]['args']['tasks_graph']
+        self.assertEqual(
+            ['primary_test'],
+            [x['id'] for x in tasks_graph[cluster.nodes[0].uid]]
+        )
+        self.assertEqual(
+            ['test'],
+            [x['id'] for x in tasks_graph[cluster.nodes[1].uid]]
+        )
+
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
         self.env.create(

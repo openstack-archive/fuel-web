@@ -170,7 +170,6 @@ class BaseDeploymentTask(object):
         # and run for selected nodes uses same logic,
         #  and need to differentiate this methods at first
         nodes = objects.Cluster.get_nodes_not_for_deletion(transaction.cluster)
-        role_resolver = RoleResolver(nodes)
         logger.info("start serialization of cluster.")
         # we should update information for all nodes except deleted
         # TODO(bgaifullin) pass role resolver to serializers
@@ -186,6 +185,10 @@ class BaseDeploymentTask(object):
         expected_state = {node['uid']: node for node in deployment_info}
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("start serialization of tasks.")
+        # TODO(bgaifullin) Primary roles applied in deployment_serializers
+        # need to move this code from deployment serializer
+        # also role resolver should be created after serialization completed
+        role_resolver = RoleResolver(nodes)
         directory, graph = lcm.TransactionSerializer.serialize(
             context, tasks, role_resolver
         )

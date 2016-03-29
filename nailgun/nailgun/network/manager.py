@@ -88,9 +88,11 @@ class NetworkManager(object):
         # to one of the ranges of required to be able to reuse admin ip address
         # also such approach is backward compatible
         nodes_need_ips = defaultdict(list)
+        default_admin_net = objects.NetworkGroup.get_default_admin_network()
         for node in nodes:
             node_id = node.id
-            admin_net = objects.NetworkGroup.get_admin_network_group(node)
+            admin_net = objects.NetworkGroup.get_admin_network_group(
+                node, default_admin_net)
             node_admin_ips_count = objects.Node.get_network_ips_count(
                 node_id, admin_net.id)
             logger.debug(u"Trying to assign admin ip: node=%s", node_id)
@@ -136,6 +138,7 @@ class NetworkManager(object):
         # Check which nodes need ips
         nodes_need_ips = defaultdict(list)
         cluster_id = cluster.id
+        default_admin_net = objects.NetworkGroup.get_default_admin_network()
         for node in nodes:
             node_id = node.id
 
@@ -150,14 +153,15 @@ class NetworkManager(object):
                 continue
 
             network = objects.NetworkGroup.get_node_network_by_name(
-                node, network_name
+                node, network_name, default_admin_net
             )
 
             node_ips = six.moves.map(
                 lambda i: i.ip_addr,
                 objects.IPAddr.get_ips_except_admin(
                     node=node,
-                    network_id=network.id
+                    network_id=network.id,
+                    default_admin_net=default_admin_net
                 )
             )
 
@@ -688,10 +692,11 @@ class NetworkManager(object):
                 for ng in nic.assigned_networks_list]
 
     @classmethod
-    def _get_admin_node_network(cls, node):
-        net = objects.NetworkGroup.get_admin_network_group(node)
+    def _get_admin_node_network(cls, node, default_admin_net=None):
+        net = objects.NetworkGroup.get_admin_network_group(
+            node, default_admin_net)
         net_cidr = IPNetwork(net.cidr)
-        ip_addr = cls.get_admin_ip_for_node(node)
+        ip_addr = cls.get_admin_ip_for_node(node, net)
         if ip_addr:
             ip_addr = cls.get_ip_w_cidr_prefix_len(ip_addr, net)
 
@@ -741,7 +746,7 @@ class NetworkManager(object):
                 if net.name != 'fuelweb_admin')
 
     @classmethod
-    def get_node_networks(cls, node):
+    def get_node_networks(cls, node, default_admin_net=None):
         cluster_db = node.cluster
         if cluster_db is None:
             # Node doesn't belong to any cluster, so it should not have nets
@@ -760,7 +765,8 @@ class NetworkManager(object):
                     network_data.append(cls._get_network_data_wo_ip(
                         node, interface, net))
 
-        network_data.append(cls._get_admin_node_network(node))
+        admin_net = cls._get_admin_node_network(node, default_admin_net)
+        network_data.append(admin_net)
 
         return network_data
 
@@ -952,8 +958,10 @@ class NetworkManager(object):
                 )
 
     @classmethod
-    def is_ip_belongs_to_admin_subnet(cls, ip_addr, node=None):
-        ng = objects.NetworkGroup.get_admin_network_group(node)
+    def is_ip_belongs_to_admin_subnet(cls, ip_addr,
+                                      node=None, default_admin_net=None):
+        ng = objects.NetworkGroup.get_admin_network_group(
+            node, default_admin_net)
         if ip_addr and IPAddress(ip_addr) in IPNetwork(ng.cidr):
             return True
         return False
@@ -1031,9 +1039,10 @@ class NetworkManager(object):
             objects.NIC.bulk_delete([i.id for i in interfaces_to_delete])
 
     @classmethod
-    def get_admin_ip_for_node(cls, node=None):
+    def get_admin_ip_for_node(cls, node=None, admin_net=None):
         """Returns first admin IP address for node."""
-        return objects.Node.get_admin_ip(node)
+        admin_net_id = admin_net.id if admin_net else None
+        return objects.Node.get_admin_ip(node, admin_net_id)
 
     @classmethod
     def get_admin_interface(cls, node):

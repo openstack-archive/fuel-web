@@ -66,29 +66,29 @@ class NetworkGroup(NailgunObject):
         ).order_by(models.NetworkGroup.id).all()
 
     @classmethod
-    def get_admin_network_group(cls, node=None):
+    def get_admin_network_group(cls, node=None, default_admin_net=None):
         """Method for receiving Admin NetworkGroup.
 
         :param node: return admin network groupd of this node
         :type node: nailgun.db.sqlalchemy.models.Node
+        :param default_admin_net: Default admin network
+        :param nailgun.db.sqlalchemy.models.NetworkGroup
         :returns: Admin NetworkGroup.
         :raises: errors.AdminNetworkNotFound
         """
-        admin_ng = None
-        admin_ngs = db().query(models.NetworkGroup).filter_by(
-            name=consts.NETWORKS.fuelweb_admin,
-        )
+        network = None
 
         if node is not None and node.nodegroup:
-            networks = (net for net in node.nodegroup.networks
-                        if net.name == consts.NETWORKS.fuelweb_admin)
-            admin_ng = next(networks, None)
+            networks = (network for network in node.nodegroup.networks
+                        if network.name == consts.NETWORKS.fuelweb_admin)
+            network = next(networks, None)
 
-        admin_ng = admin_ng or admin_ngs.filter_by(group_id=None).first()
+        network = (network or default_admin_net or
+                   cls.get_default_admin_network())
 
-        if not admin_ng:
+        if not network:
             raise errors.AdminNetworkNotFound()
-        return admin_ng
+        return network
 
     @classmethod
     def get_assigned_ips(cls, network_id):
@@ -306,9 +306,22 @@ class NetworkGroup(NailgunObject):
             nm.assign_networks_by_template(node)
 
     @classmethod
-    def get_node_network_by_name(cls, node, network_name):
+    def get_node_network_by_name(cls, node, network_name,
+                                 default_admin_net=None):
+        """Find a network with given name, to which a node is connected.
+
+        :param node: node, which is connected to a network
+        :type node: nailgun.db.sqlalchemy.models.Node
+        :param network_name: Name of the network
+        :type network_name: str
+        :param default_admin_net: if fuelweb_admin network is
+         requested and node doen't have custom admin network,
+         then this one will be returned (it's may be provided
+         for performance reasons)
+        :return: nailgun.db.sqlalchemy.models.NetworkGroup
+        """
         if network_name == consts.NETWORKS.fuelweb_admin:
-            return cls.get_admin_network_group(node)
+            return cls.get_admin_network_group(node, default_admin_net)
         else:
             return cls.get_from_node_group_by_name(node.group_id, network_name)
 
@@ -330,7 +343,7 @@ class NetworkGroup(NailgunObject):
         #   to handle this very special case if we want to be able
         #   to allocate VIP in default admin network.
         if not network and name == consts.NETWORKS.fuelweb_admin:
-            network = cls.get_admin_network_group()
+            network = cls.get_default_admin_network()
 
         return network
 

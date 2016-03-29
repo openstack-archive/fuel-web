@@ -1316,6 +1316,7 @@ class CheckBeforeDeploymentTask(object):
         cls._validate_network_template(task)
         cls._check_deployment_graph_for_correctness(task)
         cls._check_sriov_properties(task)
+        cls._check_dpdk_properties(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)
@@ -1595,6 +1596,9 @@ class CheckBeforeDeploymentTask(object):
             template_node_roles.update(
                 template_for_node_group['templates_for_node_role'])
 
+            cls._check_dpdk_network_scheme(
+                template_for_node_group['network_scheme'], node_group)
+
         cluster_roles = objects.Cluster.get_assigned_roles(cluster)
 
         missing_roles = cluster_roles - template_node_roles
@@ -1629,6 +1633,68 @@ class CheckBeforeDeploymentTask(object):
             if h_type != consts.HYPERVISORS.kvm:
                 raise errors.InvalidData(
                     'Only KVM hypervisor works with SRIOV.')
+
+    @classmethod
+    def _check_dpdk_network_scheme(cls, network_scheme, node_group):
+        """Check that endpoint with dpdk provider mapped only to neutron/private
+
+        """
+        for net_template in network_scheme.values():
+            roles = net_template['roles']
+
+            endpoints = set()
+            for transformation in net_template['transformations']:
+                if (
+                        transformation.get('provider') ==
+                        consts.NEUTRON_L23_PROVIDERS.dpdkovs
+                ):
+                    endpoints.add(transformation['bridge'])
+
+            if not endpoints:
+                continue
+
+            endpoint_roles = {}
+            for role_name, endpoint in roles.items():
+                endpoint_roles[endpoint] = role_name
+
+            if len(endpoints) > 1:
+                raise errors.NetworkCheckError(
+                    'dpdkovs provider can be assigned only for one endpoint.'
+                    ' You trying for {}: {}'.format(len(endpoints),
+                                                    ', '.join(endpoints))
+                )
+
+            endpoint = endpoints.pop()
+            if endpoint_roles[endpoint] != 'neutron/private':
+                raise errors.NetworkCheckError(
+                    "Only neutron/private network role could be assined to"
+                    " node group '{}' with DPDK".format(
+                        node_group.name)
+                )
+
+    @classmethod
+    def _check_dpdk_properties(self, task):
+        for node in task.cluster.nodes:
+            if not objects.Node.dpdk_enabled(node):
+                continue
+
+            if not objects.NodeAttributes.is_dpdk_hugepages_enabled(node):
+                raise errors.InvalidData(
+                    "Hugepages for DPDK are not configured"
+                    " for node '{}'".format(node.id))
+
+            if not objects.NodeAttributes.is_nova_hugepages_enabled(node):
+                raise errors.InvalidData(
+                    "Hugepages for Nova are not configured"
+                    " for node '{}'".format(node.id))
+
+            # check hypervisor type
+            h_type = objects.Cluster.get_editable_attributes(
+                node.cluster)['common']['libvirt_type']['value']
+
+            if h_type != 'kvm':
+                raise errors.InvalidData(
+                    'Only KVM hypervisor works with DPDK.')
 
 
 class DumpTask(object):

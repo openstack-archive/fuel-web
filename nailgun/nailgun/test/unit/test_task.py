@@ -463,6 +463,76 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             self.task
         )
 
+    def test_wrong_net_role_for_dpdk(self):
+        net_template = self.env.read_fixtures(['network_template_90'])[0]
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+        conf_template = self.cluster.network_config.configuration_template
+        template = conf_template['adv_net_template']['default']
+        network_scheme = template['network_scheme']['private']
+        network_scheme['roles']['test'] = 'test'
+
+        self.assertRaisesRegexp(
+            errors.NetworkCheckError,
+            'Only private network role .* with DPDK',
+            task.CheckBeforeDeploymentTask._validate_network_template,
+            self.task,
+        )
+
+    def test_dpdk_hugepages_are_not_configured(self):
+        net_template = self.env.read_fixtures(['network_template_90'])[0]
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+        objects.Node.update_attributes(
+            self.node, {'hugepages': {'dpdk': {'value': '0'}}})
+        objects.NIC.update(self.node.nic_interfaces[0],
+                           {'interface_properties':
+                               {
+                                   'dpdk': {'enabled': True,
+                                            'available': True},
+                               }})
+
+        self.assertRaisesRegexp(
+            errors.InvalidData,
+            'Hugepages for DPDK are not configured',
+            task.CheckBeforeDeploymentTask._check_dpdk_properties,
+            self.task,
+        )
+
+    def test_nova_hugepages_are_not_configured_with_dpdk_enabled(self):
+        net_template = self.env.read_fixtures(['network_template_90'])[0]
+
+        objects.Cluster.set_network_template(
+            self.cluster,
+            net_template
+        )
+
+        objects.Node.update_attributes(
+            self.node, {'hugepages': {
+                'nova': {'value': {2048: 0}},
+                'dpdk': {'value': 1},
+            }})
+
+        objects.NIC.update(self.node.nic_interfaces[0],
+                           {'interface_properties':
+                               {
+                                   'dpdk': {'enabled': True,
+                                            'available': True},
+                               }})
+
+        self.assertRaisesRegexp(
+            errors.InvalidData,
+            'Hugepages for Nova are not configured',
+            task.CheckBeforeDeploymentTask._check_dpdk_properties,
+            self.task,
+        )
+
     def test_check_public_networks(self):
         cluster = self.env.clusters[0]
         self.env.create_nodes(

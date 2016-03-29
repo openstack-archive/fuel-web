@@ -31,6 +31,9 @@ class TestTransactionSerializer(BaseUnitTest):
             {
                 'id': 'task1', 'roles': ['controller'],
                 'type': 'puppet', 'version': '2.0.0',
+                'condition': {
+                    'yaql_exp': '$.public_ssl.hostname = localhost'
+                },
                 'parameters': {},
                 'requires': ['task3'],
                 'required_for': ['task2'],
@@ -40,15 +43,25 @@ class TestTransactionSerializer(BaseUnitTest):
             {
                 'id': 'task2', 'roles': ['compute', 'controller'],
                 'type': 'puppet', 'version': '2.0.0',
+                'condition': {
+                    'yaql_exp': '$.public_ssl.hostname != localhost'
+                },
                 'parameters': {},
                 'cross_depends': [{'name': 'task3', 'role': 'cinder'}]
             },
             {
                 'id': 'task3', 'roles': ['cinder', 'controller'],
                 'type': 'puppet', 'version': '2.0.0',
+                'condition': 'settings:public_ssl.hostname != "localhost"',
                 'parameters': {},
                 'cross_depends': [{'name': 'task3', 'role': '/.*/'}],
                 'cross_depended_by': [{'name': 'task2', 'role': 'self'}]
+            },
+            {
+                'id': 'task4', 'roles': ['controller'],
+                'type': 'puppet', 'version': '2.0.0',
+                'parameters': {},
+                'cross_depended_by': [{'name': 'task3'}]
             },
         ]
 
@@ -114,8 +127,8 @@ class TestTransactionSerializer(BaseUnitTest):
         self.datadiff(
             [
                 {
-                    'id': 'task1', 'type': 'puppet', 'version': '2.0.0',
-                    'parameters': {}, 'fail_on_error': True,
+                    'id': 'task1', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {},
                     'requires': [
                         {'node_id': '1', 'name': 'task3'},
                         {'node_id': '2', 'name': 'task2'},
@@ -126,15 +139,13 @@ class TestTransactionSerializer(BaseUnitTest):
                     ]
                 },
                 {
-                    'id': 'task2', 'type': 'puppet', 'version': '2.0.0',
-                    'parameters': {}, 'fail_on_error': True,
+                    'id': 'task2', 'type': 'skipped', 'fail_on_error': False,
                     'requires': [
                         {'node_id': '3', 'name': 'task3'},
                     ],
                 },
                 {
-                    'id': 'task3', 'type': 'puppet', 'version': '2.0.0',
-                    'parameters': {}, 'fail_on_error': True,
+                    'id': 'task3', 'type': 'skipped', 'fail_on_error': False,
                     'requires': [
                         {'node_id': '3', 'name': 'task3'},
                     ],
@@ -142,6 +153,15 @@ class TestTransactionSerializer(BaseUnitTest):
                         {'node_id': '1', 'name': 'task2'},
                     ]
                 },
+                {
+                    'id': 'task4', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {},
+                    'required_for': [
+                        {'node_id': '1', 'name': 'task3'},
+                        {'node_id': '3', 'name': 'task3'},
+                    ]
+                }
+
             ],
             serialized['1'],
             ignore_keys=['parameters', 'fail_on_error'],
@@ -151,8 +171,7 @@ class TestTransactionSerializer(BaseUnitTest):
         self.datadiff(
             [
                 {
-                    'id': 'task2', 'type': 'puppet', 'version': '2.0.0',
-                    'parameters': {}, 'fail_on_error': True,
+                    'id': 'task2', 'type': 'skipped', 'fail_on_error': True,
                     'requires': [
                         {'node_id': '3', 'name': 'task3'},
                     ],
@@ -166,8 +185,7 @@ class TestTransactionSerializer(BaseUnitTest):
         self.datadiff(
             [
                 {
-                    'id': 'task3', 'type': 'puppet', 'version': '2.0.0',
-                    'parameters': {}, 'fail_on_error': True,
+                    'id': 'task3', 'type': 'skipped', 'fail_on_error': True,
                     'requires': [
                         {'node_id': '1', 'name': 'task3'},
                     ]
@@ -261,14 +279,13 @@ class TestTransactionSerializer(BaseUnitTest):
         self.datadiff(
             [
                 {
-                    'id': 'task2', 'type': 'puppet', 'version': '2.0.0',
-                    'parameters': {}, 'fail_on_error': True,
+                    'id': 'task2', 'type': 'skipped', 'fail_on_error': True,
                     'requires': [{'name': 'task3', 'node_id': '3'}]
 
                 },
                 {
-                    'id': 'task4', 'type': 'puppet', 'version': '2.0.0',
-                    'parameters': {}, 'fail_on_error': True,
+                    'id': 'task4', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {},
                     'requires': [{'name': 'task2', 'node_id': '4'}]
 
                 },

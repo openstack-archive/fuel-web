@@ -1086,38 +1086,6 @@ class NetworkManager(object):
         return None
 
     @classmethod
-    def get_end_point_ip(cls, cluster_id):
-        cluster_db = objects.Cluster.get_by_uid(cluster_id)
-        ip = None
-        if cluster_db.is_ha_mode:
-            nodegroup = objects.Cluster.get_controllers_node_group(cluster_db)
-            ip = cls.assign_vip(nodegroup, consts.NETWORKS.public).ip_addr
-        elif cluster_db.mode in ('singlenode', 'multinode'):
-            controller = objects.Cluster.get_single_controller(cluster_id)
-
-            public_net = filter(
-                lambda network: network['name'] == 'public',
-                controller.network_data)[0]
-
-            if public_net.get('ip'):
-                ip = public_net['ip'].split('/')[0]
-
-        if not ip:
-            raise errors.CanNotDetermineEndPointIP(
-                u'Can not determine end point IP for cluster %s' %
-                cluster_db.full_name)
-
-        return ip
-
-    @classmethod
-    def get_horizon_url(cls, cluster_id):
-        return 'http://%s/' % cls.get_end_point_ip(cluster_id)
-
-    @classmethod
-    def get_keystone_url(cls, cluster_id):
-        return 'http://%s:5000/' % cls.get_end_point_ip(cluster_id)
-
-    @classmethod
     def get_zabbix_url(cls, cluster):
         zabbix_node = ZabbixManager.get_zabbix_node(cluster)
         if zabbix_node is None:
@@ -1544,23 +1512,6 @@ class AllocateVIPs70Mixin(object):
             if role['id'] == role_id:
                 return role
         return None
-
-    @classmethod
-    def get_end_point_ip(cls, cluster_id):
-        cluster_db = objects.Cluster.get_by_uid(cluster_id)
-        net_role = cls.find_network_role_by_id(cluster_db, 'public/vip')
-        if not net_role:
-            raise errors.CanNotDetermineEndPointIP(
-                u'Can not determine end point IP for cluster {0}'.format(
-                    cluster_db.full_name))
-        node_group = objects.Cluster.get_controllers_node_group(cluster_db)
-        net_group_mapping = cls.build_role_to_network_group_mapping(
-            cluster_db, node_group.name)
-        net_group = cls.get_network_group_for_role(
-            net_role, net_group_mapping)
-        return cls.assign_vip(node_group,
-                              net_group,
-                              vip_name='public').ip_addr
 
     @classmethod
     def _get_vip_to_preserve(cls, vips_db, nodegroup,

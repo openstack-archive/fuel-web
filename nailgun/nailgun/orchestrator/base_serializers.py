@@ -347,12 +347,12 @@ class NetworkDeploymentSerializer(object):
     def get_admin_ip_w_prefix(node):
         """Getting admin ip and assign prefix from admin network."""
         network_manager = objects.Cluster.get_network_manager(node.cluster)
-        admin_ip = network_manager.get_admin_ip_for_node(node.id)
+        admin_ip = network_manager.get_admin_ip_for_node(node)
         admin_ip = IPNetwork(admin_ip)
 
         # Assign prefix from admin network
         admin_net = IPNetwork(
-            objects.NetworkGroup.get_admin_network_group(node.id).cidr
+            objects.NetworkGroup.get_admin_network_group(node).cidr
         )
         admin_ip.prefixlen = admin_net.prefixlen
 

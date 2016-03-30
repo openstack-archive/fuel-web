@@ -78,7 +78,9 @@ if __name__ == "__main__":
                 ('cluster_upgrade = nailgun.extensions.cluster_upgrade'
                  '.extension:ClusterUpgradeExtension'),
                 ('volume_manager = nailgun.extensions.volume_manager'
-                 '.extension:VolumeManagerExtension')
+                 '.extension:VolumeManagerExtension'),
+                ('network_manager = nailgun.extensions.network_manager'
+                 '.extension:NetworkManagerExtension')
             ],
         },
     )

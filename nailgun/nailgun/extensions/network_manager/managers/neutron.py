@@ -24,12 +24,12 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.logger import logger
 
-from nailgun.network.manager import AllocateVIPs70Mixin
-from nailgun.network.manager import AllocateVIPs80Mixin
-from nailgun.network.manager import AssignIPs61Mixin
-from nailgun.network.manager import AssignIPs70Mixin
-from nailgun.network.manager import AssignIPsLegacyMixin
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.manager import AllocateVIPs70Mixin
+from nailgun.extensions.network_manager.manager import AllocateVIPs80Mixin
+from nailgun.extensions.network_manager.manager import AssignIPs61Mixin
+from nailgun.extensions.network_manager.manager import AssignIPs70Mixin
+from nailgun.extensions.network_manager.manager import AssignIPsLegacyMixin
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
 
 from nailgun.orchestrator.neutron_serializers import \

@@ -19,8 +19,8 @@ import random
 from contextlib import contextmanager
 
 from nailgun import consts
+from nailgun.extensions.network_manager import manager
 from nailgun.logger import set_logger
-from nailgun.network import manager
 from nailgun.settings import settings
 from nailgun.statistics import errors
 

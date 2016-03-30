@@ -14,7 +14,7 @@
 #    under the License.
 
 from nailgun import consts
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
 from nailgun.task.task import CheckRepoAvailability
 from nailgun.task.task import CheckRepoAvailabilityWithSetup

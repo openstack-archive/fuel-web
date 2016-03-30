@@ -237,6 +237,34 @@ class TestDeploymentAttributesSerialization90(
             serialized_node['network_metadata']['nodes'][node_name]
         self.assertTrue(node_common_attrs['nova_cpu_pinning_enabled'])
 
+    def test_pinning_one_cpu_for_dpdk(self):
+        numa_nodes = [
+            {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
+            {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}
+        ]
+        node = self.env.create_node(cluster_id=self.cluster_db.id,
+                                    roles=['compute'])
+
+        node.meta['numa_topology']['numa_nodes'] = numa_nodes
+        node.attributes.update({
+            'cpu_pinning': {
+                'dpdk': {'value': 1},
+            }
+        })
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        serialized_node = serialized_for_astute[0]
+
+        self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
+        self.assertNotIn('ovs_pmd_core_mask', serialized_node['dpdk'])
+        self.assertNotIn('cpu_pinning', serialized_node['nova'])
+        node_name = objects.Node.get_slave_name(node)
+        node_common_attrs = \
+            serialized_node['network_metadata']['nodes'][node_name]
+        self.assertFalse(node_common_attrs['nova_cpu_pinning_enabled'])
+
     def test_dpdk_hugepages(self):
         numa_nodes = []
         for i in six.moves.range(3):

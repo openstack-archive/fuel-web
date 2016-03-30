@@ -630,10 +630,10 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         for cpu in cpus[1:]:
             ovs_pmd_core_mask |= 1 << cpu
 
-        serialized_node.setdefault('dpdk', {}).update({
-            'ovs_core_mask': hex(ovs_core_mask),
-            'ovs_pmd_core_mask': hex(ovs_pmd_core_mask)
-        })
+        core_masks = {'ovs_core_mask': hex(ovs_core_mask)}
+        if ovs_pmd_core_mask > 0:
+            core_masks['ovs_pmd_core_mask'] = hex(ovs_pmd_core_mask)
+        serialized_node.setdefault('dpdk', {}).update(core_masks)
 
     @staticmethod
     def _generate_nova_hugepages(node, serialized_node):

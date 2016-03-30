@@ -419,13 +419,13 @@ class Cluster(NailgunObject):
         :returns: NetworkManager/NovaNetworkManager/NeutronManager
         """
         if not instance:
-            from nailgun.network.manager import NetworkManager
+            from nailgun.extensions.network_manager.manager import NetworkManager
             return NetworkManager
 
         ver = instance.release.environment_version
         net_provider = instance.net_provider
         if net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
-            from nailgun.network import neutron
+            from nailgun.extensions.network_manager.managers import neutron
             if StrictVersion(ver) < StrictVersion('6.1'):
                 return neutron.NeutronManagerLegacy
 
@@ -440,7 +440,7 @@ class Cluster(NailgunObject):
 
             return neutron.NeutronManager
         elif net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
-            from nailgun.network import nova_network
+            from nailgun.extensions.network_manager.managers import nova_network
             if StrictVersion(ver) < StrictVersion('6.1'):
                 return nova_network.NovaNetworkManagerLegacy
 

@@ -144,7 +144,7 @@ class Node(Base):
     @property
     def network_data(self):
         # TODO(enchantner): move to object
-        from nailgun.network.manager import NetworkManager
+        from nailgun.extensions.network_manager.manager import NetworkManager
         return NetworkManager.get_node_networks(self)
 
     @property

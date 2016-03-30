@@ -2099,16 +2099,9 @@
               virt-what
               vlan
       generated:
-        repo_setup:
-          installer_kernel:
-            remote_relative: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux"
-            local: "/var/www/nailgun/ubuntu/x86_64/images/linux"
-          installer_initrd:
-            remote_relative: "dists/trusty/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz"
-            local: "/var/www/nailgun/ubuntu/x86_64/images/initrd.gz"
         cobbler:
           profile:
-            generator_arg: "ubuntu_1404_x86_64"
+            generator_arg: "ubuntu_bootstrap"
         provision:
           codename: "trusty"
           image_data:

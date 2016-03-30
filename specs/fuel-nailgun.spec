@@ -92,7 +92,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/nailgun
 mkdir -p %{buildroot}%{_localstatedir}/log/nailgun
 install -m 755 %{_builddir}/%{name}-%{version}/bin/fencing-agent.rb %{buildroot}/opt/nailgun/bin/fencing-agent.rb
 install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/%{_sysconfdir}/cron.d/fencing-agent
-install -p -D -m 755 %{_builddir}/%{name}-%{version}/bin/download-debian-installer %{buildroot}%{_bindir}/download-debian-installer
 install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/settings.yaml %{buildroot}/%{_sysconfdir}/nailgun/settings.yaml
 install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml %{buildroot}%{_datadir}/fuel-openstack-metadata/openstack.yaml
 python -c "import yaml; print filter(lambda r: r['fields'].get('name'), yaml.safe_load(open('%{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml')))[0]['fields']['version']" > %{buildroot}%{_sysconfdir}/fuel_openstack_version
@@ -149,24 +148,3 @@ Fuel fencing agent
 /etc/cron.d/fencing-agent
 %defattr(-,root,root)
 
-
-%package -n fuel-provisioning-scripts
-
-Summary: Fuel provisioning scripts
-Version: %{version}
-Release: %{release}
-URL:     http://mirantis.com
-License: Apache
-BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
-Prefix: %{_prefix}
-BuildArch: noarch
-Requires:    wget
-
-%description -n fuel-provisioning-scripts
-Fuel provisioning scripts package.
-This is a part of Fuel All-in-one Controle plane
-for Openstack. For more info go to http://wiki.openstack.org/Fuel
-
-%files -n fuel-provisioning-scripts
-%defattr(-,root,root)
-%{_bindir}/download-debian-installer

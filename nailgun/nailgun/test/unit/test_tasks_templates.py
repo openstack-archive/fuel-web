@@ -240,52 +240,6 @@ class TestMakeTask(base.BaseTestCase):
                 'interval': 1,
                 'cwd': '/'}})
 
-    def test_make_download_debian_installer_task(self):
-        remote_kernel = ('http://some/a/dists/trusty/main/'
-                         'installer-amd64/current/images/'
-                         'netboot/ubuntu-installer/amd64/linux')
-        remote_initrd = ('http://some/a/dists/trusty/main/'
-                         'installer-amd64/current/images/'
-                         'netboot/ubuntu-installer/amd64/initrd.gz')
-
-        relative_kernel = ('dists/trusty/main/installer-amd64/current/'
-                           'images/netboot/ubuntu-installer/amd64/linux')
-        relative_initrd = ('dists/trusty/main/installer-amd64/current/'
-                           'images/netboot/ubuntu-installer/amd64/initrd.gz')
-
-        local_kernel = '/var/www/nailgun/ubuntu/x86_64/images/linux'
-        local_initrd = '/var/www/nailgun/ubuntu/x86_64/images/initrd.gz'
-
-        # we have to be able to handle both cases with trailing slash
-        # and without it
-        for uri in ('http://some/a/', 'http://some/a'):
-            result = tasks_templates.make_download_debian_installer_task(
-                [1, 2, 3],
-                repos=[{'name': 'repo', 'uri': uri}],
-                installer_kernel={'remote_relative': relative_kernel,
-                                  'local': local_kernel},
-                installer_initrd={'remote_relative': relative_initrd,
-                                  'local': local_initrd})
-
-            self.assertEqual(result, {
-                'id': None,
-                'type': 'shell',
-                'uids': [1, 2, 3],
-                'parameters': {
-                    'cmd': ('LOCAL_KERNEL_FILE={local_kernel} '
-                            'LOCAL_INITRD_FILE={local_initrd} '
-                            'download-debian-installer '
-                            '{remote_kernel} {remote_initrd}').format(
-                                local_kernel=local_kernel,
-                                local_initrd=local_initrd,
-                                remote_kernel=remote_kernel,
-                                remote_initrd=remote_initrd),
-                    'timeout': 600,
-                    'retries': 1,
-                    'interval': 1,
-                    'cwd': '/',
-                }})
-
 
 class TestMakeUbuntuPreferencesTask(base.BaseTestCase):
 

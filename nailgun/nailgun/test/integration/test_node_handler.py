@@ -305,7 +305,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(1, len(changes))
 
         deployment_task = self.env.launch_deployment()
-        self.env.wait_ready(deployment_task)
+        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
 
         changes = filter_changes(
             consts.CLUSTER_CHANGES.interfaces,

@@ -14,6 +14,7 @@
 #    under the License.
 
 import functools
+import mock
 import unittest2 as unittest
 
 from oslo_serialization import jsonutils
@@ -228,21 +229,19 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
         )
         self.check_time_exec(func)
 
-    @fake_tasks()
-    @base.evaluate_unit_performance
-    def test_put_stop_deployment(self):
+    @mock.patch('nailgun.rpc.cast')
+    def test_put_stop_deployment(self, _):
         # simulate provisioned nodes so deploy will not be blocked
         for node in self.env.nodes:
             node.pending_addition = False
             node.status = consts.NODE_STATUSES.provisioned
-
-        self.env.db.flush()
 
         self.put_handler(
             'DeploySelectedNodes',
             [],
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
+        self.cluster.tasks[0].status = consts.TASK_STATUSES.running
 
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]

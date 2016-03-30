@@ -16,6 +16,7 @@
 import functools
 
 from mock import patch
+from nailgun import consts
 from nailgun.objects.task import Task
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance.base import BaseIntegrationLoadTestCase
@@ -116,8 +117,7 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
             headers=self.default_headers)
 
         task = Task.get_by_uuid(stop_response.json_body['uuid'])
-
-        self.env.wait_ready(task, 30)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         second_deploy_response = self.app.put(
             reverse(
@@ -126,4 +126,4 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
             headers=self.default_headers)
 
         task = Task.get_by_uuid(second_deploy_response.json_body['uuid'])
-        self.env.wait_ready(task, 350)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)

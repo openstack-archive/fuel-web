@@ -161,14 +161,11 @@ class TestHandlers(BaseIntegrationTest):
                 {"pending_addition": True},
                 {"status": "ready"}])
 
-        resp = self.delete(self.env.clusters[0].id)
+        cluster_id = self.env.clusters[0].id
+        resp = self.delete(cluster_id)
         self.assertEqual(resp.status_code, 202)
 
-        def cluster_is_empty():
-            return self.db.query(Cluster).count() == 0
-
-        self.env.wait_for_true(cluster_is_empty, timeout=5)
-        self._wait_for_threads()
+        self.assertIsNone(self.db.query(Cluster).get(cluster_id))
 
         # Nodes should be in discover status
         self.assertEqual(self.db.query(Node).count(), 2)
@@ -188,15 +185,12 @@ class TestHandlers(BaseIntegrationTest):
                 {'pending_addition': True},
                 {'online': False, 'status': 'ready'}])
 
-        resp = self.delete(self.env.clusters[0].id)
+        cluster_id = self.env.clusters[0].id
+        resp = self.delete(cluster_id)
         self.assertEqual(resp.status_code, 202)
 
-        def cluster_is_empty_and_in_db_one_node():
-            return self.db.query(Cluster).count() == 0 and \
-                self.db.query(Node).count() == 1
-
-        self.env.wait_for_true(cluster_is_empty_and_in_db_one_node, timeout=5)
-        self._wait_for_threads()
+        self.assertIsNone(self.db.query(Cluster).get(cluster_id))
+        self.assertEqual(self.db.query(Node).count(), 1)
 
         node = self.db.query(Node).first()
         self.assertEqual(node.status, 'discover')

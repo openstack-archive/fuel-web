@@ -52,10 +52,6 @@ class TestNetworkModels(BaseIntegrationTest):
         "configuration_template": {}
     }
 
-    def tearDown(self):
-        self._wait_for_threads()
-        super(TestNetworkModels, self).tearDown()
-
     def create_env_using_statuses(self, cluster_status, node_status):
         self.env.create(
             cluster_kwargs={

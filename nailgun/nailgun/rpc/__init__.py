@@ -42,6 +42,9 @@ conn_str = 'amqp://{0}:{1}@{2}:{3}//'.format(
     *[settings.RABBITMQ.get(*cred) for cred in creds]
 )
 
+conn_heartbeat_interval = settings.config.get('RABBITMQ_HEARTBEAT_INTERVAL',
+                                              60)
+
 naily_exchange = Exchange(
     'naily',
     'topic',

@@ -377,7 +377,7 @@
     networks_metadata:
       bonding:
         availability:
-          - ovs: "interface:pxe == false and interface:interface_properties.dpdk.available and not interface:interface_properties.sriov.enabled"
+          - ovs: "interface:pxe == false and interface:interface_properties.dpdk.enabled and not interface:interface_properties.sriov.enabled"
           - linux: "not interface:interface_properties.sriov.enabled"
         properties:
           linux:

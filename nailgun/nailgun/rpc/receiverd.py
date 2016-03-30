@@ -35,7 +35,7 @@ import nailgun.rpc as rpc
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.rpc import utils
 from nailgun.settings import settings
-from nailgun.utils import logs
+from nailgun.utils import logs, scheduler
 
 
 logger = logging.getLogger('receiverd')
@@ -84,12 +84,18 @@ class RPCConsumer(ConsumerMixin):
             self.run(*args, **kwargs)
 
 
+HEARTBEAT_PRECISION = 10  # seconds
+
+
 def run():
     logger = logs.prepare_submodule_logger('receiverd',
                                            settings.RPC_CONSUMER_LOG_PATH)
     logger.info("Starting standalone RPC consumer...")
-    with Connection(rpc.conn_str) as conn:
+    with Connection(rpc.conn_str,
+                    heartbeat=rpc.conn_heartbeat_interval) as conn:
         try:
-            RPCConsumer(conn, NailgunReceiver).run()
+            with scheduler.call_every(HEARTBEAT_PRECISION,
+                                      conn.heartbeat_check):
+                RPCConsumer(conn, NailgunReceiver).run()
         except (KeyboardInterrupt, SystemExit):
             logger.info("Stopping standalone RPC consumer...")

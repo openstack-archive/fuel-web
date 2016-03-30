@@ -17,7 +17,7 @@
 from netaddr import IPNetwork
 from netaddr import IPRange
 
-from nailgun.network.manager import NetworkManager
+from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
 
 

@@ -1890,7 +1890,7 @@ class TestHandlers(BaseIntegrationTest):
 
         node = self.env.nodes[0]
         node.attributes['hugepages'] = {
-            'dpdk': {'type': 'text', 'value': '1026'},
+            'dpdk': {'type': 'simple_hugepages', 'value': '1026'},
             'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}}
         }
 

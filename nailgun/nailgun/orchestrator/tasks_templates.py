@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-
 from oslo_serialization import jsonutils
 import requests
 import six
@@ -281,32 +279,6 @@ def make_ironic_bootstrap_task(uids, cid):
                     bootstrap_path=bootstrap_path,
                     log_file=log_file),
             'timeout': settings.PROVISIONING_IMAGES_BUILD_TIMEOUT,
-            'retries': 1}})
-
-
-def make_download_debian_installer_task(
-        uids, repos, installer_kernel, installer_initrd):
-    # NOTE(kozhukalov): This task is going to go away by 7.0
-    # because we going to get rid of classic way of provision.
-
-    # NOTE(ikalnitsky): We can't use urljoin here because it works
-    # pretty bad in cases when 'uri' doesn't have a trailing slash.
-    remote_kernel = os.path.join(
-        repos[0]['uri'], installer_kernel['remote_relative'])
-    remote_initrd = os.path.join(
-        repos[0]['uri'], installer_initrd['remote_relative'])
-
-    return make_shell_task(uids, {
-        'parameters': {
-            'cmd': ('LOCAL_KERNEL_FILE={local_kernel} '
-                    'LOCAL_INITRD_FILE={local_initrd} '
-                    'download-debian-installer '
-                    '{remote_kernel} {remote_initrd}').format(
-                        local_kernel=installer_kernel['local'],
-                        local_initrd=installer_initrd['local'],
-                        remote_kernel=remote_kernel,
-                        remote_initrd=remote_initrd),
-            'timeout': 10 * 60,
             'retries': 1}})
 
 

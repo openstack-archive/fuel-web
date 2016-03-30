@@ -24,7 +24,8 @@ from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Release
-from nailgun.network.nova_network import NovaNetworkManager
+from nailgun.extensions.network_manager.managers.nova_network import \
+    NovaNetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 

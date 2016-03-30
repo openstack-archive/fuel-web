@@ -16,7 +16,7 @@
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.network import manager
+from nailgun.extensions.network_manager import manager
 from nailgun.test import base
 
 

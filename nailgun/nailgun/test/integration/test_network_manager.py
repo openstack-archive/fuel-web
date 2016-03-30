@@ -40,11 +40,15 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
-from nailgun.network.neutron import NeutronManager
-from nailgun.network.neutron import NeutronManager70
-from nailgun.network.neutron import NeutronManager80
-from nailgun.network.nova_network import NovaNetworkManager
-from nailgun.network.nova_network import NovaNetworkManager70
+from nailgun.extensions.network_manager.managers.neutron import NeutronManager
+from nailgun.extensions.network_manager.managers.neutron import \
+    NeutronManager70
+from nailgun.extensions.network_manager.managers.neutron import \
+    NeutronManager80
+from nailgun.extensions.network_manager.managers.nova_network import \
+    NovaNetworkManager
+from nailgun.extensions.network_manager.managers.nova_network import \
+    NovaNetworkManager70
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 

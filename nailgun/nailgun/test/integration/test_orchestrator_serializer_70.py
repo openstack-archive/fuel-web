@@ -1639,7 +1639,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         template_meta = net_template["adv_net_template"]["default"]
         # wipe out network from template
         del(template_meta["network_assignments"][net_name])
-        for k, v in template_meta["templates_for_node_role"].iteritems():
+        for k, v in six.iteritems(template_meta["templates_for_node_role"]):
             if net_name in v:
                 v.remove(net_name)
         del(template_meta["network_scheme"][net_name])

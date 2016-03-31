@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 
@@ -30,7 +32,7 @@ class NovaNetworkManager(NetworkManager):
     def create_nova_network_config(cls, cluster):
         nova_net_config = NovaNetworkConfig(cluster_id=cluster.id)
         meta = cluster.release.networks_metadata["nova_network"]["config"]
-        for key, value in meta.iteritems():
+        for key, value in six.iteritems(meta):
             if hasattr(nova_net_config, key):
                 setattr(nova_net_config, key, value)
 

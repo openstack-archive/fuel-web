@@ -23,6 +23,7 @@ from copy import deepcopy
 from functools import partial
 
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -1041,7 +1042,7 @@ class VolumeManager(object):
                 return genval
             else:
                 return dict((k, self.expand_generators(v))
-                            for (k, v) in value.iteritems())
+                            for (k, v) in six.iteritems(value))
         elif isinstance(value, list):
             return [self.expand_generators(i) for i in value]
         return value

@@ -570,6 +570,14 @@ class NetAssignmentValidator(BasicValidator):
                 " to interface '{}' where DPDK is enabled".format(
                     iface['name']))
 
+        # check mtu <= 1500
+        # github.com/openvswitch/ovs/blob/master/INSTALL.DPDK.md#restrictions
+        mtu = interface_properties.get('mtu')
+        if enabled and mtu is not None and mtu > 1500:
+            raise errors.InvalidData(
+                "For interface '{}' with enabled DPDK MTU"
+                " size must be less than 1500 bytes".format(iface['name']))
+
         return enabled
 
     @classmethod

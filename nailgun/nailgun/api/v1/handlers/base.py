@@ -598,7 +598,7 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         """:returns: Deployment tasks
 
         :http: * 200 OK
-               * 404 (release object not found)
+               * 404 (object not found)
         """
         obj = self.get_object_or_404(self.single, obj_id)
         end = web.input(end=None).end
@@ -625,22 +625,22 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)
+        graph_type = web.input(graph_type=None).graph_type
 
         data = self.checked_data(
             self.validator.validate_update,
             instance=obj
         )
 
-        deployment_graph_instance = objects.DeploymentGraph.get_for_model(obj)
-        if deployment_graph_instance:
+        deployment_graph = objects.DeploymentGraph.get_for_model(
+            obj, graph_type=graph_type)
+        if deployment_graph:
             objects.DeploymentGraph.update(
-                deployment_graph_instance, {'tasks': data})
+                deployment_graph, {'tasks': data})
         else:
-            # todo(ikutukov): graph-type processing should be added in
-            # next patch
-            deployment_graph_instance = \
-                objects.DeploymentGraph.create_for_model({'tasks': data}, obj)
-        return objects.DeploymentGraph.get_tasks(deployment_graph_instance)
+            deployment_graph = objects.DeploymentGraph.create_for_model(
+                {'tasks': data}, obj, graph_type=graph_type)
+        return objects.DeploymentGraph.get_tasks(deployment_graph)
 
     def POST(self, obj_id):
         """Creation of metadata disallowed

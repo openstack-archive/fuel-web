@@ -1540,6 +1540,7 @@ class DeploymentTasksTestMixin(object):
         """
         reference.sort(key=lambda x: x.get('id', x.get('task_name')))
         result.sort(key=lambda x: x.get('id', x.get('task_name')))
+        self.assertEqual(len(reference), len(result))
         for ref, res in six.moves.zip(reference, result):
             for field in ref:
                 if field == '_custom':

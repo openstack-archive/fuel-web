@@ -17,6 +17,8 @@
 import Cookie
 import re
 
+import six
+
 from nailgun.api.v1 import urls as api_urls
 from nailgun.fake_keystone import validate_token
 from nailgun.settings import settings
@@ -26,7 +28,7 @@ from keystonemiddleware import auth_token
 
 def public_urls():
     urls = {}
-    for url, methods in api_urls.public_urls().iteritems():
+    for url, methods in six.iteritems(api_urls.public_urls()):
         urls['{0}{1}'.format('/api/v1', url)] = methods
         urls['{0}{1}'.format('/api', url)] = methods
     urls["/$"] = ['GET']
@@ -63,7 +65,7 @@ class SkipAuthMixin(object):
         self.public_api_routes = {}
         self.app = app
         try:
-            for route_tpl, methods in public_urls().iteritems():
+            for route_tpl, methods in six.iteritems(public_urls()):
                 self.public_api_routes[re.compile(route_tpl)] = methods
         except re.error as e:
             msg = 'Cannot compile public API routes: {0}'.format(e)
@@ -79,7 +81,7 @@ class SkipAuthMixin(object):
         # public API may be useful. Saving it to the
         # WSGI environment is reasonable thereby.
         env['is_public_api'] = False
-        for pattern, methods in self.public_api_routes.iteritems():
+        for pattern, methods in six.iteritems(self.public_api_routes):
             if re.match(pattern, path):
                 if method in methods:
                     env['is_public_api'] = True

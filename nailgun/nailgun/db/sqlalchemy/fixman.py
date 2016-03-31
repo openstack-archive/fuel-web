@@ -19,6 +19,7 @@ import itertools
 import jinja2
 import os.path
 import Queue
+import six
 from six import StringIO
 import sys
 import yaml
@@ -129,7 +130,7 @@ def upload_fixture(fileobj, loader=None):
 
         new_obj = obj['model']()
         fk_fields = {}
-        for field, value in obj["fields"].iteritems():
+        for field, value in six.iteritems(obj["fields"]):
             f = getattr(obj['model'], field)
             impl = getattr(f, 'impl', None)
             fk_model = None
@@ -184,7 +185,7 @@ def upload_fixture(fileobj, loader=None):
             else:
                 setattr(new_obj, field, value)
 
-        for field, data in fk_fields.iteritems():
+        for field, data in six.iteritems(fk_fields):
             if isinstance(data[0], int):
                 setattr(new_obj, field, db().query(data[1]).get(data[0]))
             elif isinstance(data[0], list):

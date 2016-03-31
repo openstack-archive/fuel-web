@@ -191,7 +191,9 @@ class BaseDeploymentTask(object):
                 transaction.cluster
             )
         )
-        expected_state = {node['uid']: node for node in deployment_info}
+        expected_state = cls._save_deployment_info(
+            transaction, deployment_info
+        )
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("start serialization of tasks.")
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
@@ -202,11 +204,18 @@ class BaseDeploymentTask(object):
             context, tasks, role_resolver
         )
         logger.info("finish serialization of tasks.")
-        objects.Transaction.attach_deployment_info(transaction, expected_state)
         return 'task_deploy', {
             "tasks_directory": directory,
             "tasks_graph": graph
         }
+
+    @classmethod
+    def _save_deployment_info(cls, transaction, deployment_info):
+        # TODO(bgaifullin) need to rework serializers, it should return dict
+        # instead of list
+        normalized = {node['uid']: node for node in deployment_info}
+        objects.Transaction.attach_deployment_info(transaction, normalized)
+        return normalized
 
 
 class DeploymentTask(BaseDeploymentTask):
@@ -335,6 +344,8 @@ class DeploymentTask(BaseDeploymentTask):
         serialized_cluster = deployment_serializers.serialize(
             graph, transaction.cluster, nodes)
 
+        cls._save_deployment_info(transaction, serialized_cluster)
+
         if affected_nodes:
             graph.reexecutable_tasks(events)
             serialized_cluster.extend(deployment_serializers.serialize(
@@ -378,6 +389,7 @@ class DeploymentTask(BaseDeploymentTask):
         serialized_cluster = deployment_serializers.serialize(
             None, transaction.cluster, nodes
         )
+        cls._save_deployment_info(transaction, serialized_cluster)
         logger.debug("finish cluster serialization.")
         tasks_events = events and \
             task_based_deployment.TaskEvents('reexecute_on', events)

@@ -978,7 +978,7 @@ def upgrade_deployment_graph():
 
         sa.Column(
             'condition',
-            sa.Text(),
+            fields.JSON(),
             nullable=True),
 
         sa.Column(

@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.deployment_graph import DeploymentGraph
+from nailgun.objects import deployment_graph
 from nailgun.test import base
-from nailgun.test.base import DeploymentTasksTestMixin
+
 
 JSON_TASKS = [
     {
@@ -134,12 +134,15 @@ EXPECTED_TASKS = [
 ]
 
 
-class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
+class TestDeploymentGraphModel(
+    base.BaseTestCase,
+    base.DeploymentTasksTestMixin
+):
 
     def test_deployment_graph_creation(self):
-        dg = DeploymentGraph.create(
+        dg = deployment_graph.DeploymentGraph.create(
             {'tasks': JSON_TASKS, 'name': 'test_graph'})
-        serialized = DeploymentGraph.to_dict(dg)
+        serialized = deployment_graph.DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
         self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
 
@@ -157,10 +160,10 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
             }
         ]
 
-        dg = DeploymentGraph.create(
+        dg = deployment_graph.DeploymentGraph.create(
             {'tasks': JSON_TASKS, 'name': 'test_graph'})
-        DeploymentGraph.update(dg, {'tasks': updated_tasks})
-        serialized = DeploymentGraph.to_dict(dg)
+        deployment_graph.DeploymentGraph.update(dg, {'tasks': updated_tasks})
+        serialized = deployment_graph.DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
         self._compare_tasks(
             expected_updated_tasks, serialized['tasks'])
@@ -168,19 +171,44 @@ class TestDeploymentGraphModel(base.BaseTestCase, DeploymentTasksTestMixin):
     def test_deployment_graph_delete(self):
         self.env.create()
         cluster = self.env.clusters[-1]
-        DeploymentGraph.create_for_model(
-            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph')
-        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        deployment_graph.DeploymentGraph.create_for_model(
+            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph'
+        )
+        dg = deployment_graph.DeploymentGraph.get_for_model(
+            cluster, 'test_graph'
+        )
         self.assertIsNotNone(dg)
-        DeploymentGraph.delete(dg)
-        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        deployment_graph.DeploymentGraph.delete(dg)
+        dg = deployment_graph.DeploymentGraph.get_for_model(
+            cluster, 'test_graph'
+        )
         self.assertIsNone(dg)
 
     def test_deployment_graph_create_for_model(self):
         self.env.create()
         cluster = self.env.clusters[-1]
-        DeploymentGraph.create_for_model(
-            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph')
-        dg = DeploymentGraph.get_for_model(cluster, 'test_graph')
+        deployment_graph.DeploymentGraph.create_for_model(
+            {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph'
+        )
+        dg = deployment_graph.DeploymentGraph.get_for_model(
+            cluster, 'test_graph'
+        )
         self._compare_tasks(
-            EXPECTED_TASKS, DeploymentGraph.get_tasks(dg))
+            EXPECTED_TASKS, deployment_graph.DeploymentGraph.get_tasks(dg)
+        )
+
+    def test_create_tasks_with_yaql_condition(self):
+        task = {
+            'task_name': 'test',
+            'type': 'puppet',
+            'condition': {'yaql_exp': 'changed($.nodes)'},
+            'roles': ['/.*/'],
+            'requires': ['other_task'],
+        }
+
+        graph = deployment_graph.DeploymentGraph.create(
+            {'name': 'test_graph', 'tasks': [task]}
+        )
+        self._compare_tasks(
+            [task], deployment_graph.DeploymentGraph.get_tasks(graph)
+        )

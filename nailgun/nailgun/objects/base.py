@@ -74,7 +74,7 @@ class NailgunObject(object):
         :returns: instance of an object (model)
         """
         new_obj = cls.model()
-        for key, value in data.iteritems():
+        for key, value in data.items():
             setattr(new_obj, key, value)
         db().add(new_obj)
         db().flush()

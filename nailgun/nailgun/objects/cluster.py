@@ -106,14 +106,14 @@ class Attributes(NailgunObject):
         :returns: dict of merged attributes
         """
         attrs = cls.merged_attrs(instance)
-        for group_attrs in attrs.itervalues():
-            for attr, value in group_attrs.iteritems():
+        for group_attrs in six.itervalues(attrs):
+            for attr, value in six.iteritems(group_attrs):
                 if isinstance(value, dict) and 'value' in value:
                     group_attrs[attr] = value['value']
         if 'common' in attrs:
             attrs.update(attrs.pop('common'))
         if 'additional_components' in attrs:
-            for comp, enabled in attrs['additional_components'].iteritems():
+            for comp, enabled in six.iteritems(attrs['additional_components']):
                 if isinstance(enabled, bool):
                     attrs.setdefault(comp, {}).update({
                         "enabled": enabled
@@ -382,7 +382,7 @@ class Cluster(NailgunObject):
     @classmethod
     def update_attributes(cls, instance, data):
         PluginManager.process_cluster_attributes(instance, data['editable'])
-        for key, value in data.iteritems():
+        for key, value in six.iteritems(data):
             setattr(instance.attributes, key, value)
         cls.add_pending_changes(instance, "attributes")
         db().flush()

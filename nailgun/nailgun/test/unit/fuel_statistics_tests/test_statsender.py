@@ -19,6 +19,8 @@ from mock import patch
 import requests
 import urllib3
 
+import six
+
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
@@ -316,7 +318,7 @@ class TestStatisticsSender(BaseTestCase):
             "updated": True,
             "failed": False
         }
-        for status, is_sent in status_vs_sent.iteritems():
+        for status, is_sent in six.iteritems(status_vs_sent):
             self.check_oswl_data_send_result(send_data_to_url, status, is_sent)
 
     @patch('nailgun.statistics.statsenderd.requests.post')

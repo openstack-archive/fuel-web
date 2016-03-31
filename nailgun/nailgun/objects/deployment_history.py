@@ -42,6 +42,9 @@ class DeploymentHistory(NailgunObject):
                                               deployment_graph_task_name)
 
         if not deployment_history:
+            logger.warn("Failed to find task in history for transaction id %s"
+                        ", node_id %s and deployment_graph_task_name %s",
+                        task_id, node_id, deployment_graph_task_name)
             return
 
         getattr(cls, 'to_{0}'.format(status))(deployment_history)

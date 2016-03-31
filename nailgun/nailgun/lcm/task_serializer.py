@@ -85,9 +85,9 @@ class Context(object):
         }
 
         def evaluate(condition):
-            return Expression(
-                Context.transform_legacy_condition(condition), context
-            ).evaluate()
+            return Expression(Context.transform_legacy_condition(condition),
+                              context,
+                              strict=False).evaluate()
 
         return evaluate
 

@@ -63,8 +63,9 @@ class DeploymentGraphTask(Base):
         nullable=False,
         server_default='1.0.0',
         default='1.0.0')
+    # this field may contain string or dict
     condition = sa.Column(
-        sa.Text,
+        JSON(),
         nullable=True)
     type = sa.Column(
         sa.Enum(

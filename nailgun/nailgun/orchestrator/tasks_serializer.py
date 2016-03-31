@@ -63,8 +63,9 @@ class ExpressionBasedTask(DeploymentHook):
     def should_execute(self):
         if 'condition' not in self.task:
             return True
-        return Expression(
-            self.task['condition'], self._expression_context).evaluate()
+        return Expression(self.task['condition'],
+                          self._expression_context,
+                          strict=False).evaluate()
 
 
 class GenericNodeHook(ExpressionBasedTask):

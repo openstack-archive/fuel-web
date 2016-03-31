@@ -796,11 +796,25 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 200)
 
-    def test_get_update_sriov_properties(self):
+
+class TestSriovHandlers(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestSriovHandlers, self).setUp()
         self.env.create(
-            nodes_kwargs=[{"api": True}]
+            cluster_kwargs={
+                'editable_attributes': {
+                    'common': {
+                        'libvirt_type': {
+                            'value': consts.HYPERVISORS.kvm
+                        }
+                    }
+                }
+            },
+            nodes_kwargs=[{"api": False}]
         )
 
+    def test_get_update_sriov_properties(self):
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
@@ -839,10 +853,6 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(sriov['physnet'], 'new_physnet')
 
     def test_update_readonly_sriov_properties_failed(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
-        )
-
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
@@ -867,10 +877,6 @@ class TestHandlers(BaseIntegrationTest):
                 self.env.nodes[0].id, nics[0]['name']))
 
     def test_enable_sriov_failed(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
-        )
-
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
@@ -894,10 +900,6 @@ class TestHandlers(BaseIntegrationTest):
             " not available".format(self.env.nodes[0].id, nics[0]['name']))
 
     def test_set_sriov_numvfs_failed(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
-        )
-
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
@@ -922,10 +924,6 @@ class TestHandlers(BaseIntegrationTest):
                 self.env.nodes[0].id, nics[0]['name']))
 
     def test_set_sriov_numvfs_failed_negative_value(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
-        )
-
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
@@ -949,10 +947,6 @@ class TestHandlers(BaseIntegrationTest):
         )
 
     def test_set_sriov_numvfs_failed_float_value(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
-        )
-
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
@@ -976,10 +970,6 @@ class TestHandlers(BaseIntegrationTest):
         )
 
     def test_set_sriov_numvfs_zero_value(self):
-        self.env.create(
-            nodes_kwargs=[{"api": True}]
-        )
-
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': self.env.nodes[0].id}),
@@ -1003,27 +993,51 @@ class TestHandlers(BaseIntegrationTest):
         )
 
     def test_enable_sriov_without_number_of_functions(self):
-        meta = self.env.default_metadata()
-        self.env.set_interfaces_in_meta(meta, [
-            {'name': 'new_nic',
-             'mac': '00:00:00:00:00:00',
-             'current_speed': 10,
-             'max_speed': 10,
-             'state': 'down',
-             'interface_properties': {
-                 'sriov': {
-                     'sriov_totalvfs': 8,
-                     'available': True,
-                     'pci_id': '1234:5678'
-                 },
-                 'pci_id': '8765:4321',
-                 'numa_node': 1
-             }}]
+        # change NIC properties in DB as SR-IOV parameters can be set up only
+        # for NICs that have hardware SR-IOV support
+        nic = objects.NIC.get_by_uid(self.env.nodes[0].nic_interfaces[0].id)
+        nic.interface_properties['sriov']['available'] = True
+        nic.interface_properties['sriov']['sriov_totalvfs'] = 8
+        nic.interface_properties.changed()
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0].id}),
+            headers=self.default_headers)
+
+        self.assertEqual(resp.status_code, 200)
+        nics = resp.json_body
+        nics[0]['interface_properties']['sriov']['enabled'] = True
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0].id}),
+            jsonutils.dumps(nics),
+            expect_errors=True,
+            headers=self.default_headers)
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(
+            "Node '{0}' interface '{1}': virtual functions can not be"
+            " enabled for interface when 'sriov_numfs' option is not"
+            " specified!".format(self.env.nodes[0].id,
+                                 self.env.nodes[0].nic_interfaces[0].name),
+            resp.json_body['message']
         )
 
-        node = self.env.create_node(api=True, roles=['compute'], meta=meta)
-        self.env.create_cluster(api=True, nodes=[node['id']])
-
+    def test_enable_sriov_failed_with_non_kvm_hypervisor(self):
+        node = self.env.create_node(api=True, roles=['compute'])
+        self.env.create_cluster(
+            api=True,
+            nodes=[node['id']],
+            editable_attributes={
+                'common': {
+                    'libvirt_type': {
+                        'value': consts.HYPERVISORS.qemu
+                    }
+                }
+            }
+        )
         resp = self.app.get(
             reverse('NodeNICsHandler',
                     kwargs={'node_id': node['id']}),
@@ -1041,9 +1055,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True,
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 400)
-        self.assertIn(
-            "Node '{0}' interface 'new_nic': virtual functions can not be"
-            " enabled for interface when 'sriov_numfs' option is not"
-            " specified!".format(node['id']),
+        self.assertEqual(
+            "Only KVM hypervisor works with SR-IOV.",
             resp.json_body['message']
         )

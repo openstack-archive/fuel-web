@@ -983,13 +983,54 @@ class Cluster(NailgunObject):
     @classmethod
     def get_own_deployment_tasks(
             cls, instance, graph_type=None):
-        """Return only cluster own deployment graph."""
+        """Return only cluster own deployment graph.
+
+        :param instance: models.Cluster instance
+        :type instance: models.Cluster
+        :param graph_type: deployment graph type
+        :type graph_type: basestring|None
+
+        :return: deployment tasks list
+        :rtype: list[dict]
+        """
         cluster_deployment_graph = DeploymentGraph.get_for_model(
             instance, graph_type=graph_type)
         if cluster_deployment_graph:
             return DeploymentGraph.get_tasks(cluster_deployment_graph)
         else:
             return []
+
+    @classmethod
+    def get_plugins_deployment_tasks(
+            cls, instance, graph_type=None):
+        """Get merged deployment tasks for plugins enabled to given cluster.
+
+        :param instance: models.Cluster instance
+        :type instance: models.Cluster
+        :param graph_type: deployment graph type
+        :type graph_type: basestring|None
+
+        :return: deployment tasks list
+        :rtype: list[dict]
+        """
+        return PluginManager.get_plugins_deployment_tasks(
+            instance, graph_type=graph_type)
+
+    @classmethod
+    def get_release_deployment_tasks(
+            cls, instance, graph_type=None):
+        """Get merged deployment for release related to the cluster.
+
+        :param instance: models.Cluster instance
+        :type instance: models.Cluster
+        :param graph_type: deployment graph type
+        :type graph_type: basestring|None
+
+        :return: deployment tasks list
+        :rtype: list[dict]
+        """
+        return Release.get_deployment_tasks(
+            instance.release, graph_type=graph_type)
 
     @classmethod
     def _merge_tasks_lists(cls, tasks_lists):
@@ -1014,22 +1055,24 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_deployment_tasks(cls, instance, graph_type=None):
-        """Return deployment graph for cluster based on cluster attributes
+        """Return deployment tasks for cluster considering release and plugins.
 
-            - if there is deployment_graph defined by user - use it instead of
-              defined
-            - else return default for release and enabled plugins
-              deployment graph
+        :param instance: models.Cluster instance
+        :type instance: models.Cluster
+        :param graph_type: deployment graph type
+        :type graph_type: basestring|None
+
+        :return: deployment tasks list
+        :rtype: list[dict]
         """
-        cluster_deployment_tasks = cls.get_own_deployment_tasks(
+        release_deployment_tasks = cls.get_release_deployment_tasks(
             instance, graph_type=graph_type)
 
-        release_deployment_tasks = Release.get_deployment_tasks(
-            instance.release, graph_type=graph_type)
+        plugins_deployment_tasks = cls.get_plugins_deployment_tasks(
+            instance, graph_type=graph_type)
 
-        # graph types not supported by plugin manager interface yet
-        plugins_deployment_tasks = PluginManager.get_plugins_deployment_tasks(
-            instance, graph_type)
+        cluster_deployment_tasks = cls.get_own_deployment_tasks(
+            instance, graph_type=graph_type)
 
         return cls._merge_tasks_lists([
             release_deployment_tasks,

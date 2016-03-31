@@ -151,3 +151,8 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
         iface = self.data['interfaces'][1]
         iface['interface_properties']['pci_id'] = '123:345'
         self.check_fail("PCI-ID .* can't be changed manually")
+
+    def test_wrong_mtu(self):
+        iface = self.data['interfaces'][1]
+        iface['interface_properties']['mtu'] = 1501
+        self.check_fail("MTU size must be less than 1500 bytes")

@@ -16,7 +16,6 @@
 from nailgun.consts import DEPLOY_STRATEGY
 from nailgun.consts import NODE_RESOLVE_POLICY
 from nailgun.consts import ORCHESTRATOR_TASK_TYPES
-from nailgun.consts import TASK_ROLES
 
 
 RELATION_SCHEMA = {
@@ -27,7 +26,7 @@ RELATION_SCHEMA = {
         'name': {'type': 'string'},
         'role': {
             'oneOf': [
-                {'type': 'string', 'enum': list(TASK_ROLES)},
+                {'type': 'string'},
                 {'type': 'array'},
             ]
         },

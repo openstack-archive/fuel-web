@@ -282,6 +282,42 @@ class ClusterDeploymentTasksHandler(OrchestratorDeploymentTasksHandler):
     single = objects.Cluster
 
 
+class ClusterPluginsDeploymentTasksHandler(BaseHandler):
+    """Handler for cluster plugins merged deployment tasks serialization."""
+    single = objects.Cluster
+
+    @content
+    def GET(self, obj_id):
+        """:returns: Deployment tasks
+
+        :http: * 200 OK
+               * 404 (object not found)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+        graph_type = web.input(graph_type=None).graph_type
+        tasks = self.single.get_plugins_deployment_tasks(
+            obj, graph_type=graph_type)
+        return tasks
+
+
+class ClusterReleaseDeploymentTasksHandler(BaseHandler):
+    """Handler for cluster release deployment tasks serialization."""
+    single = objects.Cluster
+
+    @content
+    def GET(self, obj_id):
+        """:returns: Deployment tasks
+
+        :http: * 200 OK
+               * 404 (object not found)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+        graph_type = web.input(graph_type=None).graph_type
+        tasks = self.single.get_release_deployment_tasks(
+            obj, graph_type=graph_type)
+        return tasks
+
+
 class VmwareAttributesHandler(BaseHandler):
     """Vmware attributes handler"""
 

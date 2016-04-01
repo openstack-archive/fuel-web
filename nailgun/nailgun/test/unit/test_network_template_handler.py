@@ -14,7 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import uuid
+
 from oslo_serialization import jsonutils
+import six
 
 from nailgun.db import db
 
@@ -120,6 +123,49 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
+
+    def test_upload_template_w_incorrect_nic_mapping_failed(self):
+        cluster = self.env.create(
+            release_kwargs={'api': False, 'version': 'mitaka-9.0'},
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{}]
+        )
+        node = cluster.nodes[0]
+
+        template = self.env.read_fixtures(['network_template_90'])[0]
+        template.pop('pk')  # PK is not needed
+
+        # change names of those interfaces in NIC mapping for which networks
+        # must be assigned after building of networks to nodes mapping; this
+        # must result in error as look up by NIC name is performed for node
+        # in such case, and network controllers of that node will have
+        # different names, thus will not be returned by query
+
+        node_nic_names = [nic.name for nic in node.nic_interfaces]
+        nic_mapping = \
+            template['adv_net_template'][node.nodegroup.name]['nic_mapping']
+
+        new_mapping = {}
+        for substitute, iface_name in six.iteritems(nic_mapping['default']):
+            if iface_name in node_nic_names:
+                new_mapping[substitute] = uuid.uuid4().hex
+            else:
+                new_mapping[substitute] = iface_name
+
+        nic_mapping['default'] = new_mapping
+
+        resp = self.app.put(
+            reverse(
+                'TemplateNetworkConfigurationHandler',
+                kwargs={'cluster_id': cluster.id},
+            ),
+            jsonutils.dumps(template),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('does not exist for node', resp.json_body['message'])
 
     def test_template_not_set(self):
         resp = self.get_template(1, expect_errors=True)

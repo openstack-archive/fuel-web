@@ -33,6 +33,7 @@ from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
 
@@ -48,6 +49,32 @@ class ClusterHandler(SingleHandler):
 
     single = objects.Cluster
     validator = ClusterValidator
+
+    @content
+    def PUT(self, obj_id):
+        """:returns: JSONized Cluster object.
+
+        :http: * 200 (OK)
+               * 400 (error occured while processing of data)
+               * 404 (cluster not found in db)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=obj
+        )
+        # NOTE(aroma):if node is being assigned to the cluster, and if network
+        # template has been set for the cluster, network template will
+        # also be applied to node; in such case relevant errors might
+        # occur so they must be handled in order to form proper HTTP
+        # response for user
+        try:
+            self.single.update(obj, data)
+        except errors.NetworkTemplateCannotBeApplied as exc:
+            raise self.http(400, exc.message)
+
+        return self.single.to_json(obj)
 
     @content
     def DELETE(self, obj_id):

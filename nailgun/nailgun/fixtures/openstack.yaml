@@ -869,7 +869,7 @@
         external_mongo:
           metadata:
             label: "External MongoDB"
-            weight: 20
+            weight: 30
             group: "openstack_services"
             restrictions:
               - condition: "settings:additional_components.mongo.value == false"
@@ -920,7 +920,7 @@
         additional_components:
           metadata:
             label: "Additional Components"
-            weight: 20
+            weight: 10
             group: "openstack_services"
           sahara:
             value: false

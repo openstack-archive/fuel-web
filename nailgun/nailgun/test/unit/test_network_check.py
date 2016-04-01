@@ -19,7 +19,7 @@ from mock import patch
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.db.sqlalchemy.models import node
+from nailgun.db.sqlalchemy.models import network
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.network.checker import NetworkCheck
@@ -502,12 +502,12 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.check_bond_slaves_speeds()
 
         self.assertEqual(checker.err_msgs, [])
-        bond_if1 = node.NodeBondInterface()
-        bond_if2 = node.NodeBondInterface()
+        bond_if1 = network.NodeBondInterface()
+        bond_if2 = network.NodeBondInterface()
 
-        nic1 = node.NodeNICInterface()
-        nic2 = node.NodeNICInterface()
-        nic3 = node.NodeNICInterface()
+        nic1 = network.NodeNICInterface()
+        nic2 = network.NodeNICInterface()
+        nic3 = network.NodeNICInterface()
         nic1.current_speed = 100
         nic2.current_speed = 10
         nic3.current_speed = None

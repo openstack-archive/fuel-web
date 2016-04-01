@@ -187,6 +187,28 @@ class NodeValidator(base.BasicValidator):
                 )
 
     @classmethod
+    def validate_pending_roles(cls, data, node):
+        roles = data['pending_roles']
+        if not (isinstance(roles, list) or
+                any(not isinstance(role, six.string_types)
+                    for role in roles)):
+            raise errors.InvalidData(
+                "Pending roles list must be list of strings",
+                log_message=True
+            )
+
+        available_roles = objects.Cluster.get_roles(node.cluster)
+        roles = set(roles)
+        not_valid_roles = roles - set(available_roles)
+
+        if not_valid_roles:
+            raise errors.InvalidData(
+                u"{0} are not valid roles for node in environment {1}"
+                .format(u", ".join(not_valid_roles), node.cluster_id),
+                log_message=True
+            )
+
+    @classmethod
     def validate_hostname(cls, hostname, instance):
         if hostname == instance.hostname:
             return
@@ -256,6 +278,9 @@ class NodeValidator(base.BasicValidator):
 
         if "roles" in d:
             cls.validate_roles(d, instance)
+
+        if "pending_roles" in d and d['pending_roles']:
+            cls.validate_pending_roles(d, instance)
 
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])

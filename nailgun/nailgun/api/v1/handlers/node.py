@@ -54,6 +54,35 @@ class NodeHandler(SingleHandler):
 
     @handle_errors
     @validate
+    @serialize
+    def PUT(self, obj_id):
+        """:returns: JSONized Node object.
+
+        :http: * 200 (OK)
+               * 400 (error occured while processing of data)
+               * 404 (Node not found in db)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=obj
+        )
+
+        # NOTE(aroma):if node is being assigned to the cluster, and if network
+        # template has been set for the cluster, network template will
+        # also be applied to node; in such case relevant errors might
+        # occur so they must be handled in order to form proper HTTP
+        # response for user
+        try:
+            self.single.update(obj, data)
+        except errors.NetworkTemplateCannotBeApplied as exc:
+            raise self.http(400, exc.message)
+
+        return self.single.to_json(obj)
+
+    @handle_errors
+    @validate
     def DELETE(self, obj_id):
         """Deletes a node from DB and from Cobbler.
 
@@ -121,7 +150,11 @@ class NodeCollectionHandler(CollectionHandler):
             if not node:
                 raise self.http(404, "Can't find node: {0}".format(nd))
 
-            self.collection.single.update(node, nd)
+            try:
+                self.collection.single.update(node, nd)
+            except errors.NetworkTemplateCannotBeApplied as exc:
+                raise self.http(400, exc.message)
+
             nodes_updated.append(node.id)
 
         # we need eagerload everything that is used in render
@@ -157,6 +190,7 @@ class NodeCollectionHandler(CollectionHandler):
 
         task_manager = NodeDeletionTaskManager(cluster_id=nodes[0].cluster_id)
 
+        # NOTE(aroma): ditto as in comments for NodeHandler's PUT method;
         try:
             task = task_manager.execute(nodes, mclient_remove=False)
         except errors.ControllerInErrorState as e:

@@ -19,6 +19,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 from nailgun.test.base import BaseValidatorTest
+from nailgun import utils
 
 
 class BaseNetAssignmentValidatorTest(BaseValidatorTest):
@@ -61,10 +62,11 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
 
         self.cluster_db = self.env.clusters[-1]
         node = self.env.create_nodes_w_interfaces_count(
-            1, 2, roles=['compute'], cluster_id=cluster['id'])[0]
+            1, 3, roles=['compute'], cluster_id=cluster['id'])[0]
 
         nic_1 = node.nic_interfaces[0]
         nic_2 = node.nic_interfaces[1]
+        nic_3 = node.nic_interfaces[2]
         nets_1 = nic_1.assigned_networks_list
         nets_2 = nic_2.assigned_networks_list
 
@@ -78,14 +80,19 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
 
         objects.NIC.assign_networks(nic_1, nets_1)
         objects.NIC.assign_networks(nic_2, nets_2)
+        objects.NIC.assign_networks(nic_3, [])
 
-        objects.NIC.update(nic_2,
-                           {'interface_properties':
-                               {
-                                   'dpdk': {'enabled': True,
-                                            'available': True},
-                                   'pci_id': 'test_id:2',
-                               }})
+        dpdk_settings = {
+            'dpdk': {'enabled': True,
+                     'available': True},
+            'pci_id': 'test_id:2',
+        }
+        objects.NIC.update(nic_2, {'interface_properties': utils.dict_merge(
+            nic_2.interface_properties, dpdk_settings)})
+
+        dpdk_settings['dpdk']['enabled'] = False
+        objects.NIC.update(nic_3, {'interface_properties': utils.dict_merge(
+            nic_3.interface_properties, dpdk_settings)})
 
         node.attributes['hugepages'] = {
             'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}},
@@ -127,7 +134,7 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
 
     def test_hugepages_not_configured(self):
         self.node.attributes['hugepages']['nova'] = {'value': {}}
-        self.check_fail('Hugepages for Nova are not configured', self.node)
+        self.check_fail('Hugepages for Nova are not configured')
 
     def test_hugepages_not_configured2(self):
         self.node.attributes['hugepages']['dpdk'] = {'value': '0'}
@@ -151,3 +158,38 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
         iface = self.data['interfaces'][1]
         iface['interface_properties']['pci_id'] = '123:345'
         self.check_fail("PCI-ID .* can't be changed manually")
+
+    def test_bond_dpdk(self):
+        nic_2 = self.data['interfaces'][1]
+        nic_3 = self.data['interfaces'][2]
+
+        nets = nic_2['assigned_networks']
+        nic_2['assigned_networks'] = []
+        nic_3['interface_properties']['dpdk']['enabled'] = True
+
+        bond_data = {
+            'type': "bond",
+            'name': "ovs-bond0",
+            'mode': "active-backup",
+            'assigned_networks': nets,
+            'interface_properties': {
+                'mtu': None,
+                'disable_offloading': True,
+                'dpdk': {
+                    'enabled': True,
+                    'available': True
+                }
+            },
+            'bond_properties': {
+                'mode': "active-backup",
+                'type__': "ovs"
+            },
+            'slaves': [
+                {'name': nic_2['name']},
+                {'name': nic_3['name']}
+            ]
+        }
+
+        self.data['interfaces'].append(bond_data)
+        self.assertNotRaises(errors.InvalidData,
+                             self.validator, self.data)

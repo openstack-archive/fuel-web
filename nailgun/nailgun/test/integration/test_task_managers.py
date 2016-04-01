@@ -1197,6 +1197,7 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
         self.db.refresh(update_task)
         self.assertEqual(update_task.status, consts.TASK_STATUSES.ready)
         self.assertEqual(update_task.message, update_dnsmasq_msg['msg'])
+        self.assertIsNone(update_task.deleted_at)
 
         # run it one more time
         self.change_ip_range()
@@ -1206,8 +1207,10 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
             name=consts.TASK_NAMES.update_dnsmasq)
         new_tasks = update_tasks.filter_by(status=consts.TASK_STATUSES.running)
         self.assertEqual(new_tasks.count(), 1)
-        # old task was deleted
-        self.assertEqual(update_tasks.count(), 1)
+        # old task was marked as deleted
+        self.assertEqual(update_tasks.count(), 2)
+        self.db.refresh(update_task)
+        self.assertIsNotNone(update_task.deleted_at)
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_update_dnsmasq_started_and_failed(self, mocked_rpc):
@@ -1227,6 +1230,7 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
         self.db.refresh(update_task)
         self.assertEqual(update_task.status, consts.TASK_STATUSES.error)
         self.assertEqual(update_task.message, update_dnsmasq_msg['error'])
+        self.assertIsNone(update_task.deleted_at)
 
         # run it one more time
         self.change_ip_range()
@@ -1236,8 +1240,10 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
             name=consts.TASK_NAMES.update_dnsmasq)
         new_tasks = update_tasks.filter_by(status=consts.TASK_STATUSES.running)
         self.assertEqual(new_tasks.count(), 1)
-        # old task was deleted
-        self.assertEqual(update_tasks.count(), 1)
+        # old task was marked as deleted
+        self.assertEqual(update_tasks.count(), 2)
+        self.db.refresh(update_task)
+        self.assertIsNotNone(update_task.deleted_at)
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_update_admin_failed_while_previous_in_progress(self, mocked_rpc):

@@ -22,6 +22,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 
 from nailgun.network.manager import AllocateVIPs70Mixin
@@ -458,6 +459,19 @@ class NeutronManager70(
             if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
                     and not is_sub_iface:
                 nic = objects.Node.get_nic_by_name(node, iface)
+
+                # NIC names in the template, that networks should be
+                # assigned to, might not be consistent with names of actually
+                # existing NICs for the node; in this case the queried object
+                # will not be found and consequently applying of the template
+                # must be stopped
+                if nic is None:
+                    raise errors.NetworkTemplateCannotBeApplied(
+                        "Networks cannot be assigned as interface with name "
+                        "{0} does not exist for node {1}"
+                        .format(iface, objects.Node.get_slave_name(node))
+                    )
+
                 node_ifaces[iface]['id'] = nic.id
 
         node_data = {

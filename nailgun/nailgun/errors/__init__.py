@@ -86,6 +86,7 @@ default_messages = {
     "NetworkTemplateMissingRoles": "Roles are missing from network template",
     "NetworkTemplateMissingNetRoles": "Network roles are missing",
     "NetworkTemplateMissingNetworkGroup": "Network group is missing",
+    "NetworkTemplateCannotBeApplied": "Network template cannot be applied",
     "DuplicatedVIPNames": ("Cannot assign VIPs for the cluster due to "
                            "overlapping of names of the VIPs"),
     "UpdateDnsmasqTaskIsRunning": ("update_dnsmasq task is not finished "

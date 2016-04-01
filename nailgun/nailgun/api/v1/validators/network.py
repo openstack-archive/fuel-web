@@ -678,18 +678,22 @@ class NetworkTemplateValidator(BasicValidator):
         # present in network_scheme
         if not parsed['adv_net_template']:
             raise errors.InvalidData("No node groups are defined")
+
         for ng_name, node_group in six.iteritems(parsed['adv_net_template']):
             defined_templates = set(six.iterkeys(node_group['network_scheme']))
             not_found = set()
+
             for templates_by_role in six.itervalues(
                     node_group['templates_for_node_role']):
                 for template in templates_by_role:
                     if template not in defined_templates:
                         not_found.add(template)
+
             if not_found:
                 raise errors.InvalidData(
                     "Requested templates {0} were not found for node "
                     "group {1}".format(', '.join(not_found), ng_name))
+
             if not defined_templates:
                 raise errors.InvalidData(
                     "No templates are defined for node group {0}".format(

@@ -190,8 +190,8 @@ single_schema = {
             },
             "additionalProperties": False,
         },
-        "roles": {"type": "array"},
-        "pending_roles": {"type": "array"},
+        "roles": {"type": "array", "items": {"type": "string"}},
+        "pending_roles": {"type": "array", "items": {"type": "string"}},
         "agent_checksum": {"type": "string"}
     },
 }

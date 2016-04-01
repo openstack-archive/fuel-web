@@ -496,3 +496,78 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         node_name_test(node_mac.lower())
+
+    def check_pending_roles(self, to_check, msg):
+        node = self.env.create_node(api=False)
+
+        data = {'id': node.id,
+                'cluster_id': 1}
+        data.update(to_check)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps([data]),
+            headers=self.default_headers,
+            expect_errors=True)
+
+        self.assertEqual(400, resp.status_code)
+        self.assertIn(msg, resp.json_body["message"])
+
+    def test_pending_role_non_existing(self):
+        cluster = self.env.create()
+        self.check_pending_roles({'pending_roles': ['qwe'],
+                                  'cluster_id': cluster.id},
+                                 'are not valid for node')
+
+    def test_pending_role_duplicates(self):
+        self.check_pending_roles({'pending_roles': ['cinder', 'cinder']},
+                                 'contains duplicates')
+
+    def test_pending_role_not_list(self):
+        self.check_pending_roles({'pending_roles': 'cinder'},
+                                 "Failed validating 'type'")
+
+    def test_pending_role_not_strings(self):
+        self.check_pending_roles({'pending_roles': ['cinder', 1]},
+                                 "Failed validating 'type'")
+
+    def test_role_non_existing(self):
+        cluster = self.env.create()
+        self.check_pending_roles({'roles': ['qwe'],
+                                  'cluster_id': cluster.id},
+                                 'are not valid for node')
+
+    def test_role_duplicates(self):
+        self.check_pending_roles({'roles': ['cinder', 'cinder']},
+                                 'contains duplicates')
+
+    def test_roles_not_list(self):
+        self.check_pending_roles({'roles': 'cinder'},
+                                 'Failed validating')
+
+    def test_roles_not_strings(self):
+        self.check_pending_roles({'roles': ['cinder', 1]},
+                                 'Failed validating')
+
+    def check_update_role_no_cluster_id(self, data_to_check):
+        self.env.create()
+
+        node = self.env.create_node(api=False)
+
+        data = {'id': node.id}
+        data.update(data_to_check)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps([data]),
+            headers=self.default_headers,
+            expect_errors=True)
+
+        self.assertEqual(400, resp.status_code)
+        self.assertIn("doesn't belong to any cluster", resp.json_body["message"])
+
+    def test_update_role_no_cluster_id(self):
+        self.check_update_role_no_cluster_id({'pending_roles': ['compute']})
+
+    def test_update_pending_role_no_cluster_id(self):
+        self.check_update_role_no_cluster_id({'roles': ['compute']})

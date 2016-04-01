@@ -94,8 +94,13 @@ class TaskManager(object):
             if task.status == "running":
                 raise errors.TaskAlreadyRunning()
             elif task.status in ("ready", "error"):
-                db().delete(task)
-                db().commit()
+                if task_name in [consts.TASK_NAMES.deployment,
+                                 consts.TASK_NAMES.deploy]:
+                    objects.Task.delete(task)
+                else:
+                    db().delete(task)
+
+        db().flush()
 
     def serialize_network_cfg(self, cluster):
         serializer = {'nova_network': NovaNetworkConfigurationSerializer,
@@ -150,7 +155,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         for task in current_tasks:
             if task.status in (consts.TASK_STATUSES.ready,
                                consts.TASK_STATUSES.error):
-                db().delete(task)
+                objects.Task.delete(task)
         db().flush()
 
         obsolete_tasks = objects.TaskCollection.filter_by_list(

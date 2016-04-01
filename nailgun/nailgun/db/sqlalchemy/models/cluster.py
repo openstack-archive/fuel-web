@@ -18,6 +18,7 @@ from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
+from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
@@ -39,6 +40,9 @@ from nailgun.db.sqlalchemy.models.mutable import MutableList
 
 class ClusterChanges(Base):
     __tablename__ = 'cluster_changes'
+    __tableargs__ = (
+        Index('cluster_name_node_idx', 'cluster_id', 'node_id', 'name'),
+    )
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))

@@ -230,10 +230,8 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
                          ' found for cluster_id %s' % cluster_id)
             raise self.http(500, "No attributes found!")
 
-        cluster.attributes.editable = (
-            objects.Cluster.get_default_editable_attributes(cluster))
-        objects.Cluster.add_pending_changes(cluster, "attributes")
-
+        default = objects.Cluster.get_default_editable_attributes(cluster)
+        objects.Cluster.update_attributes(cluster, {'editable': default})
         logger.debug('ClusterAttributesDefaultsHandler:'
                      ' editable attributes for cluster_id %s were reset'
                      ' to default' % cluster_id)
@@ -259,6 +257,30 @@ class ClusterAttributesDeployedHandler(BaseHandler):
             raise self.http(
                 404, "Cluster does not have deployed attributes!"
             )
+        return attrs
+
+
+class ClusterAttributesResetHandler(BaseHandler):
+    """Resets cluster attributes to the previously deployed state"""
+
+    @content
+    def POST(self, cluster_id):
+        """:returns: JSONized deployed Cluster editable attributes with plugins
+
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+               * 404 (cluster does not have deployed attributes)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        attrs = objects.Transaction.get_cluster_settings(
+            objects.TransactionCollection.get_last_succeed_run(cluster)
+        )
+        if not attrs:
+            raise self.http(
+                404, "Cluster does not have deployed attributes!"
+            )
+
+        objects.Cluster.reset_attributes(cluster, attrs)
         return attrs
 
 

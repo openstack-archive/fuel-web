@@ -191,7 +191,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             self.assertEqual(len(disk['volumes']), 0)
 
     def test_volumes_regeneration_after_roles_update(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"roles": [], "pending_roles": ['compute']}
             ]
@@ -202,7 +202,9 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         def update_node_roles(roles):
             resp = self.app.put(
                 reverse('NodeCollectionHandler'),
-                jsonutils.dumps([{'id': node_db.id, 'pending_roles': roles}]),
+                jsonutils.dumps([{'id': node_db.id,
+                                  'pending_roles': roles,
+                                  'cluster_id': cluster.id}]),
                 headers=self.default_headers)
             self.assertEqual(200, resp.status_code)
 

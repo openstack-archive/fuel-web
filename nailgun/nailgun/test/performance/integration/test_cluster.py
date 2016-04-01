@@ -40,13 +40,13 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
             if created_controllers < controllers:
                 nodes.append({'id': node.id,
                               'pending_roles': ['controller'],
-                              'cluster': self.cluster['id'],
+                              'cluster_id': self.cluster['id'],
                               'pending_addition': True})
                 created_controllers += 1
             else:
                 nodes.append({'id': node.id,
                               'pending_roles': ['compute'],
-                              'cluster': self.cluster['id'],
+                              'cluster_id': self.cluster['id'],
                               'pending_addition': True})
             self.nodes_ids.append(str(node.id))
         self.put_handler('NodeCollectionHandler', nodes)

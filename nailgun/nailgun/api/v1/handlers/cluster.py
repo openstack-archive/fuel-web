@@ -63,6 +63,34 @@ class ClusterHandler(SingleHandler):
 
     @handle_errors
     @validate
+    @serialize
+    def PUT(self, obj_id):
+        """:returns: JSONized Cluster object.
+
+        :http: * 200 (OK)
+               * 400 (error occured while processing of data)
+               * 404 (cluster not found in db)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=obj
+        )
+        # NOTE(aroma):if node is being assigned to the cluster, and if network
+        # template has been set for the cluster, network template will
+        # also be applied to node; in such case relevant errors might
+        # occur so they must be handled in order to form proper HTTP
+        # response for user
+        try:
+            self.single.update(obj, data)
+        except errors.NetworkTemplateCannotBeApplied as exc:
+            raise self.http(400, exc.message)
+
+        return self.single.to_json(obj)
+
+    @handle_errors
+    @validate
     def DELETE(self, obj_id):
         """:returns: {}
 

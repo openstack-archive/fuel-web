@@ -188,6 +188,33 @@ class NodeValidator(base.BasicValidator):
                 )
 
     @classmethod
+    def validate_pending_roles(cls, data, node):
+        roles = data['pending_roles']
+        cluster_id = data.get('cluster_id', node.cluster_id)
+        if not cluster_id:
+            raise errors.InvalidData(
+                "Cannot assign pending_roles to node {0}. "
+                "Node is not allocated to cluster."
+                .format(node.id), log_message=True)
+
+        roles_set = set(roles)
+        if len(roles_set) != len(roles):
+            raise errors.InvalidData(
+                "pending_roles list for node {0} contains "
+                "duplicates.".format(node.id), log_message=True)
+
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        available_roles = objects.Cluster.get_roles(cluster)
+        invalid_roles = roles_set - set(available_roles)
+
+        if invalid_roles:
+            raise errors.InvalidData(
+                u"Roles {0} are not valid for node {1} in environment {2}"
+                .format(u", ".join(invalid_roles), node.id, cluster.id),
+                log_message=True
+            )
+
+    @classmethod
     def validate_hostname(cls, hostname, instance):
         if hostname == instance.hostname:
             return
@@ -257,6 +284,9 @@ class NodeValidator(base.BasicValidator):
 
         if "roles" in d:
             cls.validate_roles(d, instance)
+
+        if "pending_roles" in d and d['pending_roles']:
+            cls.validate_pending_roles(d, instance)
 
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])

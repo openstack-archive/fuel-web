@@ -151,9 +151,11 @@ def upgrade():
     upgrade_bond_modes()
     upgrade_task_attributes()
     upgrade_store_deployment_history()
+    upgrade_cluster_changes()
 
 
 def downgrade():
+    downgrade_cluster_changes()
     downgrade_store_deployment_history()
     downgrade_task_attributes()
     downgrade_bond_modes()
@@ -1353,3 +1355,14 @@ def upgrade_store_deployment_history():
 def downgrade_store_deployment_history():
     op.drop_table('deployment_history')
     drop_enum('history_task_statuses')
+
+
+def upgrade_cluster_changes():
+    op.create_index(
+        'cluster_name_node_idx',
+        'cluster_changes', ['cluster_id', 'node_id', 'name']
+    )
+
+
+def downgrade_cluster_changes():
+    op.drop_index('cluster_name_node_idx', 'tasks')

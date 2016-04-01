@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from mock import Mock
 from mock import patch
 import netaddr
@@ -716,14 +717,49 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         self.datadiff(net_attrs, resp.json_body)
 
     def test_get_deployed_network_settings_fails_if_no_attrs(self):
-            resp = self.app.get(
-                reverse(
-                    'NetworkAttributesDeployedHandler',
-                    kwargs={'cluster_id': self.cluster['id']}),
-                headers=self.default_headers,
-                expect_errors=True,
-            )
-            self.assertEqual(404, resp.status_code)
+        resp = self.app.get(
+            reverse(
+                'NetworkAttributesDeployedHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            headers=self.default_headers,
+            expect_errors=True,
+        )
+        self.assertEqual(404, resp.status_code)
+
+    def test_reset_to_deployed_network_configuration(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.assertEqual(200, resp.status_code)
+        net_attrs = resp.json_body
+        transaction = objects.Transaction.create({
+            'cluster_id': self.cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_network_settings(transaction, net_attrs)
+        self.assertIsNotNone(
+            objects.TransactionCollection.get_last_succeed_run(self.cluster)
+        )
+        data = copy.deepcopy(net_attrs)
+        data['networks'][0]['vlan_start'] = 500  # non-used vlan id
+        objects.Cluster.clear_pending_changes(self.cluster)
+        self.assertEqual(0, len(self.cluster.changes))
+        resp = self.env.neutron_networks_put(self.cluster.id, data)
+        self.assertEqual(resp.status_code, 200)
+        self.db.refresh(self.cluster)
+        self.assertEqual(1, len(self.cluster.changes))
+        self.assertEqual(
+            consts.CLUSTER_CHANGES.networks, self.cluster.changes[0]['name']
+        )
+        resp = self.app.put(
+            reverse(
+                'NetworkAttributesResetHandler',
+                kwargs={'cluster_id': self.cluster['id']}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.db.refresh(self.cluster)
+        self.assertEqual(0, len(self.cluster.changes))
+        self.datadiff(net_attrs, resp.json_body)
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

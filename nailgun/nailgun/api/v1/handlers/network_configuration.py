@@ -112,7 +112,7 @@ class ProviderHandler(BaseHandler):
 
         nm = objects.Cluster.get_network_manager(cluster)
         admin_nets = nm.get_admin_networks()
-        nm.update(cluster, data)
+        objects.Cluster.update_network_attributes(cluster, data)
 
         network_config = self.serializer.serialize_for_cluster(cluster)
 
@@ -262,4 +262,27 @@ class NetworkAttributesDeployedHandler(BaseHandler):
             raise self.http(
                 404, "Cluster does not have deployed configuration!"
             )
+        return attrs
+
+
+class NetworkAttributesResetHandler(BaseHandler):
+    """Resets network attributes on the previously deployed state"""
+
+    @content
+    def PUT(self, cluster_id):
+        """:returns: JSONized deployed Cluster network configuration.
+
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+               * 404 (cluster does not have deployed configuration)
+        """
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        attrs = objects.Transaction.get_network_settings(
+            objects.TransactionCollection.get_last_succeed_run(cluster)
+        )
+        if not attrs:
+            raise self.http(
+                404, "Cluster does not have deployed configuration!"
+            )
+        objects.Cluster.reset_network_attributes(cluster, attrs)
         return attrs

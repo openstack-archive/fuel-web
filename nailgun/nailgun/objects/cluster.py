@@ -397,6 +397,30 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
+    def reset_attributes(cls, instance, data):
+        cls.update_attributes(instance, data)
+        cls.delete_pending_changes(
+            instance,
+            node_id=None,  # delete changes only for cluster
+            change_type=consts.CLUSTER_CHANGES.attributes
+        )
+
+    @classmethod
+    def update_network_attributes(cls, instance, data):
+        nm = cls.get_network_manager(instance)
+        nm.update(instance, data)
+        cls.add_pending_changes(instance, consts.CLUSTER_CHANGES.networks)
+
+    @classmethod
+    def reset_network_attributes(cls, instance, data):
+        cls.update_network_attributes(instance, data)
+        cls.delete_pending_changes(
+            instance,
+            node_id=None,  # delete changes only for cluster
+            change_type=consts.CLUSTER_CHANGES.networks
+        )
+
+    @classmethod
     def get_updated_editable_attributes(cls, instance, data):
         """Same as get_editable_attributes but also merges given data.
 
@@ -471,34 +495,28 @@ class Cluster(NailgunObject):
         :param node_id: node id for changes
         :returns: None
         """
-        logger.debug(
-            u"New pending changes in environment {0}: {1}{2}".format(
-                instance.id,
-                changes_type,
-                u" node_id={0}".format(node_id) if node_id else u""
+        if node_id is None:
+            logger.debug(
+                "Add pending changes for cluster %s", instance.id
             )
-        )
-
-        # TODO(enchantner): check if node belongs to cluster
-        ex_chs = db().query(models.ClusterChanges).filter_by(
-            cluster=instance,
-            name=changes_type
-        )
-        if not node_id:
-            ex_chs = ex_chs.first()
         else:
-            ex_chs = ex_chs.filter_by(node_id=node_id).first()
-        # do nothing if changes with the same name already pending
-        if ex_chs:
-            return
-        ch = models.ClusterChanges(
-            cluster_id=instance.id,
-            name=changes_type
-        )
-        if node_id:
-            ch.node_id = node_id
+            logger.debug(
+                "Add pending changes for node %s in cluster %s ",
+                node_id, instance.id
+            )
 
-        db().add(ch)
+        # we assume that cluster is locked
+        # TODO(enchantner): check if node belongs to cluster
+        changes_query = db().query(models.ClusterChanges).filter_by(
+            cluster_id=instance.id, name=changes_type, node_id=node_id
+        )
+        if db().query(changes_query.exists()).scalar():
+            return
+
+        change = models.ClusterChanges(
+            cluster_id=instance.id, name=changes_type, node_id=node_id
+        )
+        db().add(change)
         db().flush()
 
     @classmethod
@@ -518,18 +536,44 @@ class Cluster(NailgunObject):
         :param node_id: node id for changes
         :returns: None
         """
-        logger.debug(
-            u"Removing pending changes in environment {0}{1}".format(
-                instance.id,
-                u" where node_id={0}".format(node_id) if node_id else u""
+        if node_id is None:
+            logger.debug(
+                "Clear pending changes for cluster %s", instance.id
             )
-        )
-        chs = db().query(models.ClusterChanges).filter_by(
+        else:
+            logger.debug(
+                "Clear pending changes for node %s in cluster %s ",
+                node_id, instance.id
+            )
+
+        changes = db().query(models.ClusterChanges.id).filter_by(
             cluster_id=instance.id
         )
-        if node_id:
-            chs = chs.filter_by(node_id=node_id)
-        map(db().delete, chs.all())
+        if node_id is not None:
+            changes = changes.filter_by(node_id=node_id)
+        changes.delete(synchronize_session='fetch')
+        db().flush()
+
+    @classmethod
+    def delete_pending_changes(cls, instance, node_id, change_type=None):
+        """Delete pending changes for cluster by node_id and change_type.
+
+        :param instance: Cluster instance
+        :param node_id: node id for changes, if node_id is None,
+               the cluster specific changes will be removed
+        :param change_type: the change type, by default delete all changes
+        :returns: None
+        """
+        logger.debug(
+            "Removing pending changes: cluster %s, change_type '%s', node %s",
+            instance.id, change_type or 'all', node_id or 'none'
+        )
+        changes = db().query(models.ClusterChanges.id).filter_by(
+            cluster_id=instance.id, node_id=node_id
+        )
+        if change_type is not None:
+            changes = changes.filter_by(name=change_type)
+        changes.delete(synchronize_session='fetch')
         db().flush()
 
     @classmethod
@@ -546,9 +590,9 @@ class Cluster(NailgunObject):
         # remove read-only attributes
         data.pop("fuel_version", None)
         data.pop("is_locked", None)
+        data.pop("changes", None)
 
         nodes = data.pop("nodes", None)
-        changes = data.pop("changes", None)
         deployment_tasks = data.pop("deployment_tasks", None)
 
         super(Cluster, cls).update(instance, data)
@@ -559,8 +603,6 @@ class Cluster(NailgunObject):
                 deployment_graph_instance, {"tasks": deployment_tasks})
         if nodes is not None:
             cls.update_nodes(instance, nodes)
-        if changes is not None:
-            cls.update_changes(instance, changes)
         return instance
 
     @classmethod
@@ -628,13 +670,6 @@ class Cluster(NailgunObject):
         map(Node.set_default_attributes, nodes_to_add)
         map(Node.refresh_dpdk_properties, nodes_to_add)
         cls.update_nodes_network_template(instance, nodes_to_add)
-        db().flush()
-
-    @classmethod
-    def update_changes(cls, instance, changes):
-        instance.changes_list = [
-            models.ClusterChanges(**change) for change in changes
-        ]
         db().flush()
 
     @classmethod
@@ -1261,6 +1296,7 @@ class Cluster(NailgunObject):
     @classmethod
     def set_network_template(cls, instance, template):
         instance.network_config.configuration_template = template
+        cls.add_pending_changes(instance, consts.CLUSTER_CHANGES.networks)
         cls.update_nodes_network_template(instance, instance.nodes)
         db().flush()
 

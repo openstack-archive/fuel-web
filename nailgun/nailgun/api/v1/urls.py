@@ -27,6 +27,7 @@ from nailgun.api.v1.handlers.capacity import CapacityLogHandler
 from nailgun.api.v1.handlers.cluster import ClusterAttributesDefaultsHandler
 from nailgun.api.v1.handlers.cluster import ClusterAttributesDeployedHandler
 from nailgun.api.v1.handlers.cluster import ClusterAttributesHandler
+from nailgun.api.v1.handlers.cluster import ClusterAttributesResetHandler
 from nailgun.api.v1.handlers.cluster import ClusterChangesForceRedeployHandler
 from nailgun.api.v1.handlers.cluster import ClusterChangesHandler
 from nailgun.api.v1.handlers.cluster import ClusterCollectionHandler
@@ -70,6 +71,8 @@ from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
 from nailgun.api.v1.handlers.network_configuration \
     import NetworkAttributesDeployedHandler
+from nailgun.api.v1.handlers.network_configuration \
+    import NetworkAttributesResetHandler
 from nailgun.api.v1.handlers.network_configuration \
     import NeutronNetworkConfigurationHandler
 from nailgun.api.v1.handlers.network_configuration \
@@ -204,9 +207,13 @@ urls = (
     ClusterAttributesDefaultsHandler,
     r'/clusters/(?P<cluster_id>\d+)/attributes/deployed/?$',
     ClusterAttributesDeployedHandler,
+    r'/clusters/(?P<cluster_id>\d+)/attributes/reset/deployed?$',
+    ClusterAttributesResetHandler,
     # network related
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/deployed?$',
     NetworkAttributesDeployedHandler,
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration/reset/deployed?$',
+    NetworkAttributesResetHandler,
     # nova network-related
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/nova_network/?$',
     NovaNetworkConfigurationHandler,

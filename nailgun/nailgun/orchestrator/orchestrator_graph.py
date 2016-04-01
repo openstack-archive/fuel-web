@@ -187,8 +187,7 @@ class GraphSolver(nx.DiGraph):
                 ' for internal reasons.', task)
             return True
         elif self.node[task].get('skipped'):
-            logger.debug(
-                'Task %s will be skipped for %s', task)
+            logger.debug('Task %s will be skipped for.', task)
             return True
         return False
 

@@ -386,8 +386,11 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_NIC_change_offloading_modes(self):
         meta = self.env.default_metadata()
-        meta["interfaces"] = []
-        node = self.env.create_node(api=True, meta=meta)
+        meta["interfaces"] = [{'name': 'new_nic', 'mac': '00:00:00:00:00:00'}]
+        cluster = self.env.create_cluster(api=True)
+        node = self.env.create_node(api=True,
+                                    cluster_id=cluster["id"],
+                                    meta=meta)
         new_meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(new_meta, [
             {'name': 'new_nic',

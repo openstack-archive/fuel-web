@@ -496,3 +496,19 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         node_name_test(node_mac.lower())
+
+    def test_invalid_pending_role(self):
+        self.env.create(nodes_kwargs=[{}])
+
+        node = self.env.nodes[0]
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps([{'id': node.id,
+                              'cluster_id': None,
+                              'pending_roles': ['xyz']}]),
+            headers=self.default_headers,
+            expect_errors=True)
+
+        self.assertEqual(400, resp.status_code)
+        self.assertIn('not valid roles', resp.json_body["message"])

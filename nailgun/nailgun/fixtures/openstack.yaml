@@ -2160,7 +2160,7 @@
           weight: 20
           description: "DPDK Huge Pages per NUMA node in MB"
           label: "DPDK Huge Pages"
-          type: "simple_hugepages"
+          type: "text"
           value: "0"
           regex:
             source: '^\d+$'

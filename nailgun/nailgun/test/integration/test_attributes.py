@@ -235,6 +235,53 @@ class TestClusterAttributes(BaseIntegrationTest):
         )
         self.assertEqual(404, resp.status_code)
 
+    def test_reset_to_deployed_attributes(self):
+        self.env.create_cluster(api=True)
+        cluster = self.env.clusters[-1]
+        cluster_attrs = objects.Cluster.get_editable_attributes(
+            self.env.clusters[-1]
+        )
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_cluster_settings(
+            transaction, {'editable': cluster_attrs}
+        )
+        self.assertIsNotNone(
+            objects.TransactionCollection.get_last_succeed_run(cluster)
+        )
+        objects.Cluster.clear_pending_changes(cluster)
+
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({
+                'editable': {
+                    'foo': {'bar': None}
+                },
+            }),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.db.refresh(cluster)
+        self.assertEqual(1, len(cluster.changes))
+        resp = self.app.put(
+            reverse(
+                'ClusterAttributesResetHandler',
+                kwargs={'cluster_id': cluster.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.db.refresh(cluster)
+        self.assertEqual(0, len(cluster.changes))
+        self.datadiff(
+            cluster_attrs,
+            objects.Cluster.get_editable_attributes(self.env.clusters[-1])
+        )
+
     def test_attributes_set_defaults(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]

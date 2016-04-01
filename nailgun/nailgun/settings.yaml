@@ -840,6 +840,9 @@ DUMP:
       - type: command
         command: yum repolist
         to_file: centos_repo_list.txt
+      - type: command
+        command: fuel-bootstrap list
+        to_file: fuel_bootstrap_list.txt
       - type: dir
         path: /etc/sysconfig/network-scripts
       - type: file
@@ -848,6 +851,8 @@ DUMP:
         path: /root/*.log
       - type: file
         path: /etc/cobbler*
+      - type: file
+        path: /var/www/nailgun/bootstraps/active_bootstrap/metadata.yaml
       - type: dir
         path: /var/log
         exclude:
@@ -1009,6 +1014,9 @@ DUMP:
       - type: command
         command: sysctl -a
         to_file: sysctl.txt
+      - type: command
+        command: dmsetup info -c --nameprefixes --noheadings -o blkdevname,subsystem,blkdevs_used,name,uuid
+        to_file: dmsetup_info.txt
 
       - type: dir
         path: /var/lib/cloud

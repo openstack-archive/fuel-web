@@ -839,10 +839,20 @@ class TestTasksMigration(base.BaseAlembicMigrationTest):
         self.assertIsNotNone(result['network_settings'])
         self.assertIsNotNone(result['deleted_at'])
 
-    def text_cluster_name_index_exists(self):
+    def test_cluster_name_index_exists(self):
         cluster_name_idx = next(
-            (i for i in self.meta.tables['tasks'].indexexes
+            (i for i in self.meta.tables['tasks'].indexes
              if i.name == 'cluster_name_idx'),
             None
         )
         self.assertIsNotNone(cluster_name_idx)
+
+
+class TestClusterChangesMigration(base.BaseAlembicMigrationTest):
+    def test_cluster_node_name_index_exists(self):
+        db_index = next(
+            (i for i in self.meta.tables['cluster_changes'].indexes
+             if i.name == 'cluster_name_node_idx'),
+            None
+        )
+        self.assertIsNotNone(db_index)

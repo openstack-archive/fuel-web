@@ -1315,6 +1315,7 @@ class CheckBeforeDeploymentTask(object):
         cls._check_vmware_consistency(task)
         cls._validate_network_template(task)
         cls._check_deployment_graph_for_correctness(task)
+        cls._check_sriov_properties(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)
@@ -1614,6 +1615,20 @@ class CheckBeforeDeploymentTask(object):
         graph_validator = orchestrator_graph.GraphSolverValidator(
             deployment_tasks)
         graph_validator.check()
+
+    @classmethod
+    def _check_sriov_properties(self, task):
+        for node in task.cluster.nodes:
+            if not objects.Node.sriov_enabled(node):
+                continue
+
+            # check hypervisor type
+            h_type = objects.Cluster.get_editable_attributes(
+                node.cluster)['common']['libvirt_type']['value']
+
+            if h_type != consts.HYPERVISORS.kvm:
+                raise errors.InvalidData(
+                    'Only KVM hypervisor works with SRIOV.')
 
 
 class DumpTask(object):

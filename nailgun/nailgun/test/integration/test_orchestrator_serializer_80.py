@@ -115,7 +115,7 @@ class TestNetworkTemplateSerializer80(
 
     def test_baremetal_neutron_attrs(self):
         brmtl_template = deepcopy(
-            self.net_template['adv_net_template']['default'])
+            self.net_template['adv_net_template']['Default'])
         brmtl_template['network_assignments']['baremetal'] = {
             'ep': 'br-baremetal'}
         brmtl_template['templates_for_node_role']['controller'].append(
@@ -126,7 +126,7 @@ class TestNetworkTemplateSerializer80(
             'transformations': [],
             'roles': {'baremetal': 'br-baremetal'}}
         self.cluster.network_config.configuration_template = {
-            'adv_net_template': {'default': brmtl_template}, 'pk': 1}
+            'adv_net_template': {'Default': brmtl_template}, 'pk': 1}
         self._check_baremetal_neutron_attrs(self.cluster)
 
     def test_network_schemes_priorities(self):

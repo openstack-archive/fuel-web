@@ -139,7 +139,8 @@ NODE_ERRORS = Enum(
 )
 
 NODE_GROUPS = Enum(
-    'default'
+    'Default',
+    names=('default',)
 )
 
 NODE_VIEW_MODES = Enum(

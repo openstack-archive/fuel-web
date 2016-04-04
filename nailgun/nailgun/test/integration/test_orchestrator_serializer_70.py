@@ -1277,7 +1277,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             (['controller', 'cinder'],
              ['public', 'storage', 'management', 'fuelweb_admin'])]
 
-        template_meta = self.net_template["adv_net_template"]["default"]
+        template_meta = self.net_template["adv_net_template"]['Default']
         # wipe out 'storage' template for 'compute' node role to make
         # node roles more distinct
         for node_role, template_list in six.iteritems(
@@ -1384,7 +1384,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             (['compute', 'cinder'],
              ['storage', 'management', 'fuelweb_admin'])]
 
-        template_meta = self.net_template["adv_net_template"]["default"]
+        template_meta = self.net_template["adv_net_template"]['Default']
 
         iface_var = template_meta['nic_mapping']['default'].keys()[0]
 
@@ -1636,7 +1636,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         objects.NetworkGroup.delete(storage_net)
         # download default template and fix it
         net_template = self.env.read_fixtures(['network_template_70'])[0]
-        template_meta = net_template["adv_net_template"]["default"]
+        template_meta = net_template["adv_net_template"]['Default']
         # wipe out network from template
         del(template_meta["network_assignments"][net_name])
         for k, v in template_meta["templates_for_node_role"].iteritems():
@@ -1743,7 +1743,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
     def test_floating_role_belongs_to_public_bridge(self):
         # download default template and assign floating role to public bridge
         net_template = self.env.read_fixtures(['network_template_70'])[0]
-        schemes = net_template["adv_net_template"]["default"]["network_scheme"]
+        schemes = net_template["adv_net_template"]['Default']["network_scheme"]
         schemes["public"]["roles"]["neutron/floating"] = "br-ex"
         # apply updated template to the cluster
         objects.Cluster.set_network_template(

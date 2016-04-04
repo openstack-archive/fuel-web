@@ -1,7 +1,7 @@
 [{
     "pk": 1,
     "adv_net_template": {
-        "default": {
+        "Default": {
             "network_assignments": {
                 "management": {
                     "ep": "br-mgmt"

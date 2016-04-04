@@ -97,7 +97,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertDictEqual(
             node1.network_template['templates'],
-            base.get_nodegroup_network_schema_template(template, 'default')
+            base.get_nodegroup_network_schema_template(template, 'Default')
         )
         self.assertDictEqual(
             node2.network_template['templates'],
@@ -108,7 +108,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_wrong_network_template_upload_failed(self):
         cluster = self.env.create_cluster(api=False)
         template = self.env.read_fixtures(['network_template_80'])[0]
-        template['adv_net_template']['default'] = {}
+        template['adv_net_template']['Default'] = {}
 
         resp = self.app.put(
             reverse(

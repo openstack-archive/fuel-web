@@ -675,7 +675,7 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
         self.node_nics_put_check_error(
             "Node '{0}': networks with IDs '{1}' cannot be used "
             "because they are not in node group '{2}'"
-            .format(self.env.nodes[0]["id"], net_id, 'default')
+            .format(self.env.nodes[0]["id"], net_id, 'Default')
         )
 
     def test_assignment_change_failed_network_left_unassigned(self):

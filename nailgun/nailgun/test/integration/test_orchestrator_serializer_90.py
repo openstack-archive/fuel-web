@@ -614,7 +614,7 @@ class TestNetworkTemplateSerializer90(
             node, networks_list)['endpoints']
 
         na = self.net_template[
-            'adv_net_template']['default']['network_assignments']
+            'adv_net_template']['Default']['network_assignments']
         ep_net_map = {na[net_name]['ep']: net_name for net_name in na}
 
         for name in endpoints:

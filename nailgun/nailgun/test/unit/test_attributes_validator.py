@@ -388,3 +388,70 @@ class TestBasicAttributesValidator(base_test.BaseTestCase):
                 errors.InvalidData,
                 base.BasicAttributesValidator.validate_attributes,
                 yaml.load(attributes))
+
+    def test_custom_hugepages_value(self):
+        attrs = '''
+            hugepages:
+                nova:
+                    description: desc
+                    label: Label
+                    type: custom_hugepages
+                    value:
+                      '2048': 4
+                      '1048576': 2
+                    weight: 10
+        '''
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+
+        attrs = '''
+            storage:
+              osd_pool_size:
+                description: desc
+                label: OSD Pool Size
+                type: custrom_hugepages
+                value:
+                  '2048': '1'
+                weight: 10
+        '''
+
+        self.assertRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+
+    def test_number_value(self):
+        attrs = '''
+            cpu_pinning:
+                nova:
+                    description: desc
+                    label: Label
+                    type: number
+                    value: 1
+                    min: 0
+                    weight: 10
+        '''
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+
+        attrs = '''
+           cpu_pinning:
+               nova:
+                   description: desc
+                   label: Label
+                   type: number
+                   value: -1
+                   min: 0
+                   weight: 10
+        '''
+
+        self.assertRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))

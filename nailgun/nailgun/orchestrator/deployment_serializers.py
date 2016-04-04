@@ -99,16 +99,22 @@ class DeploymentMultinodeSerializer(object):
             self.initialize(cluster)
             serialized_nodes = []
             nodes = sorted(nodes, key=is_customized)
-            node_groups = itertools.groupby(nodes, is_customized)
-            for customized, node_group in node_groups:
-                if customized and not ignore_customized:
-                    serialized_nodes.extend(
-                        self.serialize_customized(cluster, node_group)
-                    )
-                else:
-                    serialized_nodes.extend(
-                        self.serialize_generated(cluster, node_group)
-                    )
+            if nodes:
+                node_groups = itertools.groupby(nodes, is_customized)
+                for customized, node_group in node_groups:
+                    if customized and not ignore_customized:
+                        serialized_nodes.extend(
+                            self.serialize_customized(cluster, node_group)
+                        )
+                    else:
+                        serialized_nodes.extend(
+                            self.serialize_generated(cluster, node_group)
+                        )
+            else:
+                # The LCM serializer adds master node in any case.
+                # if there is no nodes in cluster, the master node only
+                # will be serialized
+                serialized_nodes.extend(self.serialize_generated(cluster, []))
 
             # NOTE(dshulyak) tasks should not be preserved from replaced
             #  deployment info, there is different mechanism to control

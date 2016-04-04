@@ -536,6 +536,7 @@ class DeferredTaskHandler(BaseHandler):
     log_error = u"Error during execution of deferred task " \
                 u"on environment '{env_id}': {error}"
     task_manager = None
+    arguments = {}
 
     @content
     def PUT(self, cluster_id):
@@ -561,7 +562,11 @@ class DeferredTaskHandler(BaseHandler):
         try:
             self.validator.validate(cluster)
             task_manager = self.task_manager(cluster_id=cluster.id)
-            task = task_manager.execute()
+            options = web.input(**self.arguments)
+            kwargs = {
+                k: getattr(options, k) for k, v in self.arguments.items()
+            }
+            task = task_manager.execute(**kwargs)
         except (
             errors.AlreadyExists,
             errors.StopAlreadyRunning

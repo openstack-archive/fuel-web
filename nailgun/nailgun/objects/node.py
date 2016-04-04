@@ -1322,15 +1322,6 @@ class NodeAttributes(object):
             attributes = Node.get_attributes(node)
         hugepages = attributes.get('hugepages', {})
 
-        # FIXME(asvechnikov): remove this part,
-        # after implementing of blueprint input-type-number in UI
-        for attr in six.itervalues(hugepages):
-            if attr.get('type') == 'text':
-                attr['value'] = int(attr['value'])
-            elif attr.get('type') == 'custom_hugepages':
-                for size in attr['value']:
-                    attr['value'][size] = int(attr['value'][size])
-
         return hugepages
 
     @classmethod
@@ -1338,12 +1329,6 @@ class NodeAttributes(object):
         if not attributes:
             attributes = Node.get_attributes(node)
         cpu_pinning = attributes.get('cpu_pinning', {})
-
-        # FIXME(asvechnikov): remove this part,
-        # after implementing of blueprint input-type-number in UI
-        for attr in six.itervalues(cpu_pinning):
-            if attr.get('type') == 'text':
-                attr['value'] = int(attr['value'])
 
         return cpu_pinning
 
@@ -1406,7 +1391,7 @@ class NodeAttributes(object):
 
         Iterate over hugepages attributes and sum them
         according their type: custom_hugepages - contains
-        items (size: count), text - this is the number of
+        items (size: count), number - this is the number of
         memory in MB which must be allocated as hugepages
         on each NUMA node (default hugepages size 2M will
         be used and count will be calculated according to
@@ -1424,8 +1409,8 @@ class NodeAttributes(object):
                 value = attrs['value']
                 for size, count in six.iteritems(value):
                     hugepages[size] += int(count)
-            elif attrs.get('type') == 'text':
-                # type text means that value is the number of memory in MB
+            elif attrs.get('type') == 'number':
+                # type number means that value is the number of memory in MB
                 # per NUMA node which should be converted to pages count
                 count_per_numa_node = cls.pages_per_numa_node(attrs['value'])
                 hugepages[consts.DEFAULT_HUGEPAGE_SIZE] += (
@@ -1494,8 +1479,8 @@ class NodeAttributes(object):
         components = {'all': [], 'any': []}
 
         for attrs in hugepages.values():
-            if attrs.get('type') == 'text':
-                # type text means size of memory in MiB to allocate with
+            if attrs.get('type') == 'number':
+                # type number means size of memory in MiB to allocate with
                 # 2MiB pages, so we need to calculate pages count
                 pages_count = cls.pages_per_numa_node(attrs['value'])
                 components['all'].append(

@@ -69,9 +69,9 @@ class TestNodeAttributes(base.BaseUnitTest):
                         'type': 'custom_hugepages',
                         'value': {
                             '2048': 14,
-                            '1048576': '2'}},
+                            '1048576': 2}},
                     'comp2': {
-                        'type': 'text',
+                        'type': 'number',
                         'value': 20}}},
             meta={'numa_topology': {'numa_nodes': [{'id': 0}]}})
         expected = {
@@ -90,8 +90,8 @@ class TestNodeAttributes(base.BaseUnitTest):
                         'value': {
                             '1048576': 2}},
                     'comp2': {
-                        'type': 'text',
-                        'value': '10'}}},
+                        'type': 'number',
+                        'value': 10}}},
             meta={'numa_topology': {'numa_nodes': [{'id': '0'}]}})
         expected = " hugepagesz=2M hugepages=5 hugepagesz=1G hugepages=2"
         self.assertEqual(
@@ -110,8 +110,8 @@ class TestNodeAttributes(base.BaseUnitTest):
                         }
                     },
                     'comp2': {
-                        'type': 'text',
-                        'value': '512'}}},
+                        'type': 'number',
+                        'value': 512}}},
             meta={'numa_topology': {'numa_nodes': [
                 {'id': 0, 'memory': 2 ** 31},
                 {'id': 1, 'memory': 2 ** 31},

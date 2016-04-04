@@ -18,7 +18,8 @@ import copy
 import six
 
 from nailgun import consts
-from nailgun.objects.serializers import network_configuration
+from nailgun.extensions.network_manager.objects.serializers import \
+    network_configuration
 
 from . import base as base_tests
 from ..objects import adapters

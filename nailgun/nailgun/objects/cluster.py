@@ -1525,7 +1525,8 @@ class Cluster(NailgunObject):
     @classmethod
     def get_network_attributes(cls, instance):
         # use local import to avoid recursive imports
-        from nailgun.objects.serializers import network_configuration
+        from nailgun.extensions.network_manager.objects.serializers import \
+            network_configuration
 
         if instance.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
             serializer = \

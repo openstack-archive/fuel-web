@@ -21,10 +21,10 @@ Handlers dealing with network configurations
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 
-from nailgun.objects.serializers.network_configuration \
-    import NeutronNetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
-    import NovaNetworkConfigurationSerializer
+from nailgun.extensions.network_manager.objects.serializers.\
+    network_configuration import NeutronNetworkConfigurationSerializer
+from nailgun.extensions.network_manager.objects.serializers.\
+    network_configuration import NovaNetworkConfigurationSerializer
 
 from nailgun.api.v1.validators.network import NetworkConfigurationValidator
 from nailgun.api.v1.validators.network import NetworkTemplateValidator

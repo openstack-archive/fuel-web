@@ -33,8 +33,11 @@ from nailgun.task import manager
 class SpawnVmsHandler(BaseHandler):
     """Handler for provision and spawn vms on virt nodes."""
 
-    task_manager = manager.SpawnVMsTaskManager
     validator = DeploySelectedNodesValidator
+
+    @classmethod
+    def task_manager(cls, cluster_id):
+        return manager.create_spawn_vms_task(cluster_id)
 
     def get_tasks(self, cluster):
         tasks = objects.Cluster.get_deployment_tasks(cluster)
@@ -49,8 +52,8 @@ class SpawnVmsHandler(BaseHandler):
     def handle_task(self, cluster, **kwargs):
         nodes = self.get_nodes(cluster)
         if nodes:
+            task_manager = self.task_manager(cluster_id=cluster.id)
             try:
-                task_manager = self.task_manager(cluster_id=cluster.id)
                 task = task_manager.execute(nodes_to_provision_deploy=nodes,
                                             **kwargs)
             except Exception as exc:

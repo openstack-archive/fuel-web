@@ -171,7 +171,27 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             self.cluster.release)
         self.assertEqual(resp.json, release_tasks)
 
-    def test_get_custom_deployment_tasks(self):
+    def test_upload_custom_deployment_graph_tasks(self):
+        tasks = self.get_correct_tasks()
+        resp = self.app.put(
+            reverse('ReleaseDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.release.id}) +
+            '?graph_type=custom-graph',
+            params=jsonutils.dumps(tasks),
+            headers=self.default_headers,
+        )
+        release_tasks = objects.Release.get_deployment_tasks(
+            self.cluster.release, 'custom-graph')
+
+        # merged deployment tasks
+        cluster_tasks = objects.Cluster.get_deployment_tasks(
+            self.cluster, 'custom-graph')
+
+        self._compare_tasks(resp.json, release_tasks)
+        for task in resp.json:
+            self.assertIn(task, cluster_tasks)
+
+    def test_get_custom_deployment_graph_tasks(self):
         objects.DeploymentGraph.create_for_model(
             {'tasks': [
                 {
@@ -183,7 +203,7 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         resp = self.app.get(
             reverse(
                 'ReleaseDeploymentTasksHandler',
-                kwargs={'obj_id': self.cluster.release_id}
+                kwargs={'obj_id': self.cluster.release.id}
             ) + '?graph_type=custom-graph',
             headers=self.default_headers
         )
@@ -291,7 +311,7 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             self.cluster.release)
         self.assertItemsEqual(resp.json, release_tasks)
 
-    def test_get_custom_deployment_tasks(self):
+    def test_get_custom_deployment_graph_tasks(self):
         objects.DeploymentGraph.create_for_model(
             {'tasks': [
                 {
@@ -333,6 +353,24 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
 
         self._compare_tasks(resp.json, cluster_own_tasks)
         # cluster tasks is a merged tasks with underlying release tasks
+        for task in resp.json:
+            self.assertIn(task, cluster_tasks)
+
+    def test_upload_custom_deployment_graph_tasks(self):
+        tasks = self.get_correct_tasks()
+        resp = self.app.put(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}) +
+            '?graph_type=custom-graph',
+            params=jsonutils.dumps(tasks),
+            headers=self.default_headers,
+        )
+        cluster_own_tasks = objects.Cluster.get_own_deployment_tasks(
+            self.cluster, 'custom-graph')
+        cluster_tasks = objects.Cluster.get_deployment_tasks(
+            self.cluster, 'custom-graph')
+
+        self._compare_tasks(resp.json, cluster_own_tasks)
         for task in resp.json:
             self.assertIn(task, cluster_tasks)
 

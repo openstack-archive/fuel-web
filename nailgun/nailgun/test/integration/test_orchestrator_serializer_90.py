@@ -20,6 +20,7 @@ import six
 from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
+from nailgun.plugins import adapters
 
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
@@ -437,7 +438,10 @@ class TestDeploymentLCMSerialization90(
     def setUp(self):
         super(TestDeploymentLCMSerialization90, self).setUp()
         self.cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
+            release_kwargs={
+                'version': self.env_version,
+                'operating_system': consts.RELEASE_OS.ubuntu
+            },
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
@@ -500,6 +504,69 @@ class TestDeploymentLCMSerialization90(
             [consts.TASK_ROLES.master],
             serialized[1]['roles']
         )
+
+    @mock.patch.object(
+        adapters.PluginAdapterBase, 'repo_files',
+        mock.MagicMock(return_value=True)
+    )
+    def test_plugins_in_serialized(self):
+        releases = [
+            {'repository_path': 'repositories/ubuntu',
+             'version': 'mitaka-9.0', 'os': 'ubuntu',
+             'mode': ['ha', 'multinode'],
+             'deployment_scripts_path': 'deployment_scripts/'}
+        ]
+        plugin1 = self.env.create_plugin(
+            cluster=self.cluster_db,
+            name='plugin_1',
+            attributes_metadata={'attributes': {'name': 'plugin_1'}},
+            package_version='4.0.0',
+            releases=releases
+        )
+        plugin2 = self.env.create_plugin(
+            cluster=self.cluster_db,
+            name='plugin_2',
+            attributes_metadata={'attributes': {'name': 'plugin_2'}},
+            package_version='4.0.0',
+            releases=releases
+        )
+        self.env.create_plugin(
+            cluster=self.cluster_db,
+            enabled=False,
+            name='plugin_3',
+            attributes_metadata={'attributes': {'name': 'plugin_3'}},
+            package_version='4.0.0',
+            releases=releases
+        )
+
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute']
+        )
+        plugins_data = [
+            {
+                'name': p.name,
+                'scripts': [{
+                    'remote_url': p.master_scripts_path(self.cluster_db),
+                    'local_path': p.slaves_scripts_path
+                }],
+                'repositories': [{
+                    'type': 'deb',
+                    'name': p.full_name,
+                    'uri': p.repo_url(self.cluster_db),
+                    'suite': '/',
+                    'section': '',
+                    'priority': 1100
+                }]
+            }
+            for p in six.moves.map(adapters.wrap_plugin, [plugin1, plugin2])
+        ]
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+        for node in serialized:
+            self.assertIn('plugins', node)
+            self.datadiff(plugins_data, node['plugins'], compare_sorted=True)
 
 
 class TestDeploymentHASerializer90(

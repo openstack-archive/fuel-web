@@ -27,6 +27,8 @@ from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
 from nailgun import objects
+from nailgun.plugins import adapters
+from nailgun.settings import settings
 from nailgun import utils
 from nailgun.utils.ceph import get_pool_pg_count
 from nailgun.utils.role_resolver import NameMatchingPolicy
@@ -333,10 +335,25 @@ class DeploymentMultinodeSerializer(object):
             for node in serialized_nodes:
                 node['tasks'] = self.task_graph.deploy_task_serialize(node)
 
-    @classmethod
-    def inject_list_of_plugins(cls, attributes, cluster):
+    def inject_list_of_plugins(self, attributes, cluster):
+        """Added information about plugins to serialized attributes.
+
+        :param attributes: the serialized attributes
+        :param cluster: the cluster object
+        """
         plugins = objects.ClusterPlugins.get_enabled(cluster.id)
-        attributes['plugins'] = [p['name'] for p in plugins]
+        attributes['plugins'] = [
+            self.serialize_plugin(cluster, p) for p in plugins
+        ]
+
+    @classmethod
+    def serialize_plugin(cls, cluster, plugin):
+        """Gets plugin information to include into serialized attributes.
+
+        :param cluster: the cluster object
+        :param plugin: the plugin object
+        """
+        return plugin['name']
 
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):
@@ -723,6 +740,47 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         )
         self.inject_configs(node, roles, serialized_node)
         return serialized_node
+
+    @classmethod
+    def serialize_plugin(cls, cluster, plugin):
+        os_name = cluster.release.operating_system
+        adapter = adapters.wrap_plugin(plugin)
+        result = {
+            'name': plugin['name'],
+            'scripts': [
+                {
+                    'remote_url': adapter.master_scripts_path(cluster),
+                    'local_path': adapter.slaves_scripts_path
+                }
+            ]
+        }
+
+        if not adapter.repo_files(cluster):
+            return result
+
+        # TODO(bgaifullin) move priority to plugin metadata
+        if os_name == consts.RELEASE_OS.centos:
+            repo = {
+                'type': 'rpm',
+                'name': adapter.full_name,
+                'uri': adapter.repo_url(cluster),
+                'priority': settings.REPO_PRIORITIES['plugins']['centos']
+            }
+        elif os_name == consts.RELEASE_OS.ubuntu:
+            repo = {
+                'type': 'deb',
+                'name': adapter.full_name,
+                'uri': adapter.repo_url(cluster),
+                'suite': '/',
+                'section': '',
+                'priority': settings.REPO_PRIORITIES['plugins']['ubuntu']
+            }
+        else:
+            logger.warning("Unsupported OS: %s.", os_name)
+            return result
+
+        result['repositories'] = [repo]
+        return result
 
     def inject_configs(self, node, roles, output):
         node_config = output.setdefault('configuration', {})

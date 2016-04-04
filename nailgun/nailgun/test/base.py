@@ -981,13 +981,13 @@ class EnvironmentManager(object):
                 "Nothing to provision - try creating cluster"
             )
 
-    def launch_deployment(self, cluster_id=None):
+    def launch_deployment(self, cluster_id=None, **kwargs):
         if self.clusters:
             cluster_id = self._get_cluster_by_id(cluster_id).id
             resp = self.app.put(
                 reverse(
                     'ClusterChangesHandler',
-                    kwargs={'cluster_id': cluster_id}),
+                    kwargs=dict(cluster_id=cluster_id, **kwargs)),
                 headers=self.default_headers)
 
             return self.db.query(Task).filter_by(

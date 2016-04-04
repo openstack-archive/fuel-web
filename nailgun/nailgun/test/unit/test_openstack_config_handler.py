@@ -478,3 +478,16 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         return '{0}?{1}'.format(
             reverse('OpenstackConfigCollectionHandler'),
             urlparse.urlencode(kwargs))
+
+    @mock.patch("nailgun.objects.Release.is_lcm_supported")
+    @mock.patch("nailgun.task.manager.ApplyChangesTaskManager.execute")
+    def test_openstack_config_call_apply_changes_if_lcm(
+            self, execute_mock, lcm_supported_mock):
+        lcm_supported_mock.return_value = True
+        execute_mock.return_value = self.env.create_task(
+            cluster_id=self.clusters[0].id,
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.ready
+        )
+        self.execute_update_open_stack_config()
+        self.assertEqual(1, execute_mock.call_count)

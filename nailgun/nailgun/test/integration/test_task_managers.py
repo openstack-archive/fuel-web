@@ -698,7 +698,7 @@ class TestTaskManagers(BaseIntegrationTest):
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
         cluster_id = cluster['id']
-        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_id)
         task = models.Task(name='provision', cluster_id=cluster_id,
                            status=consts.TASK_STATUSES.ready)
         self.db.add(task)
@@ -767,7 +767,7 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @mock.patch('nailgun.task.manager.rpc.cast')
@@ -783,8 +783,8 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager_ = manager.ApplyChangesForceTaskManager(cluster_db.id)
-        supertask = manager_.execute()
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_db.id)
+        supertask = manager_.execute(force=True)
         self.assertEqual(supertask.name, TASK_NAMES.deploy)
         self.assertIn(supertask.status, TASK_STATUSES.pending)
 
@@ -1110,6 +1110,109 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.assertNotEqual(primary_node.id, new_primary.id)
 
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_node_group_deletion_failed_while_previous_in_progress(self,
+                                                                   mocked_rpc):
+        ng1 = self.env.create_node_group(name='ng_1').json_body
+        ng2 = self.env.create_node_group(name='ng_2').json_body
+        self.assertEqual(mocked_rpc.call_count, 0)
+
+        self.env.delete_node_group(ng1['id'])
+        self.assertEqual(mocked_rpc.call_count, 1)
+        # delete other node group
+        # request should be rejected as previous update_dnsmasq task is still
+        # in progress
+        resp = self.env.delete_node_group(ng2['id'], status_code=409)
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json_body['message'],
+                         errors.UpdateDnsmasqTaskIsRunning.message)
+        # no more calls were made
+        self.assertEqual(mocked_rpc.call_count, 1)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_deployment_starts_if_nodes_not_changed(self, rpc_mock):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            },
+            nodes_kwargs=[
+                {'status': NODE_STATUSES.ready, 'roles': ['controller']},
+                {'status': NODE_STATUSES.ready, 'roles': ['compute']},
+            ]
+        )
+        cluster = self.env.clusters[-1]
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        # check that nodes presents in tasks_graph
+        self.assertItemsEqual(
+            [n.uid for n in cluster.nodes] + [consts.MASTER_NODE_UID, None],
+            tasks_graph
+        )
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    def tet_redeployment(self, tasks_mock, rpc_mock):
+        tasks_mock.return_value = [
+            {
+                "id": "test", "roles": ['master'],
+                "type": "puppet", "parameters": {},
+                "condition": {"yaql_exp": "changed($)"}
+            }
+        ]
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            }
+        )
+        cluster = self.env.clusters[-1]
+
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        self.assertEqual('puppet', tasks_graph['master'][0]['type'])
+
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        self.assertEqual('skipped', tasks_graph['master'][0]['type'])
+
+        supertask = self.env.launch_redeployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        self.assertEqual('puppet', tasks_graph['master'][0]['type'])
+
+    @mock.patch('nailgun.rpc.cast')
+    def test_deploy_part_of_pending_addition_nodes(self, rpc_mock):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            },
+            nodes_kwargs=[
+                {'status': NODE_STATUSES.provisioned, 'roles': ['controller']},
+                {'status': NODE_STATUSES.provisioned, 'roles': ['compute']},
+            ]
+        )
+        cluster = self.env.clusters[-1]
+        nodes_uids = [n.uid for n in cluster.nodes]
+        node3 = self.env.create_node(
+            api=False, cluster_id=cluster.id,
+            roles=["compute"],
+            pending_addition=True
+        )
+        t = self.env.launch_deployment_selected(nodes_uids, cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, t.status)
+        self.db.refresh(node3)
+        self.assertEqual(consts.NODE_STATUSES.discover, node3.status)
+        self.assertTrue(node3.pending_addition)
+        tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+        self.assertItemsEqual(
+            [consts.MASTER_NODE_UID, None] + nodes_uids, tasks_graph
+        )
+
 
 class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
 
@@ -1290,22 +1393,3 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
         update_task = self.db.query(models.Task).filter_by(
             name=consts.TASK_NAMES.update_dnsmasq).first()
         self.assertEqual(update_task.status, consts.TASK_STATUSES.running)
-
-    @mock.patch('nailgun.task.task.rpc.cast')
-    def test_node_group_deletion_failed_while_previous_in_progress(self,
-                                                                   mocked_rpc):
-        ng1 = self.env.create_node_group(name='ng_1').json_body
-        ng2 = self.env.create_node_group(name='ng_2').json_body
-        self.assertEqual(mocked_rpc.call_count, 0)
-
-        self.env.delete_node_group(ng1['id'])
-        self.assertEqual(mocked_rpc.call_count, 1)
-        # delete other node group
-        # request should be rejected as previous update_dnsmasq task is still
-        # in progress
-        resp = self.env.delete_node_group(ng2['id'], status_code=409)
-        self.assertEqual(resp.status_code, 409)
-        self.assertEqual(resp.json_body['message'],
-                         errors.UpdateDnsmasqTaskIsRunning.message)
-        # no more calls were made
-        self.assertEqual(mocked_rpc.call_count, 1)

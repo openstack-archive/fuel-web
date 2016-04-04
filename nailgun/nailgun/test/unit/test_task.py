@@ -285,7 +285,14 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             release_kwargs={'version': '1111-8.0'},
             cluster_kwargs={
                 'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'net_segment_type': 'vlan',
+                'editable_attributes': {
+                    'common': {
+                        'libvirt_type': {
+                            'value': consts.HYPERVISORS.qemu
+                        }
+                    }
+                }
             },
             nodes_kwargs=[{'roles': ['controller']}])
 
@@ -461,6 +468,23 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             Exception,
             task.CheckBeforeDeploymentTask._validate_network_template,
             self.task
+        )
+
+    def test_sriov_is_enabled_with_non_kvm_hypervisor(self):
+        objects.NIC.update(self.node.nic_interfaces[0],
+                           {'interface_properties':
+                               {
+                                   'sriov': {'enabled': True,
+                                             'sriov_totalvfs': 4,
+                                             'sriov_numfs': 2,
+                                             'available': True},
+                               }})
+
+        self.assertRaisesRegexp(
+            errors.InvalidData,
+            'Only KVM hypervisor works with SRIOV',
+            task.CheckBeforeDeploymentTask._check_sriov_properties,
+            self.task,
         )
 
     def test_check_public_networks(self):

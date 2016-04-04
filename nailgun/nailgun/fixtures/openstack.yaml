@@ -1628,6 +1628,11 @@
                 regex:
                   source: *non_empty_string
                   error: "Invalid datastore"
+              -
+                name: "ca_file"
+                type: "file"
+                label: "CA file"
+                description: "File conaining the trusted CA bundle that emitted vCenter server certificate. If empty vCenters certificate is not verified."
         value:
           availability_zones:
             -
@@ -1653,6 +1658,7 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
+            ca_file: ""
     components_metadata:
       - name: hypervisor:qemu
         default: true

@@ -129,6 +129,12 @@
                             "source": "\\S",
                             "error": "Empty datastore"
                         }
+                    },
+                    {
+                        "type": "file",
+                        "description": "File conaining the trusted CA bundle that emitted vCenter server certificate. If empty vCenters certificate is not verified.",
+                        "name": "ca_file",
+                        "label": "CA file"
                     }
                 ],
                 "type": "object",
@@ -195,7 +201,8 @@
                 "vcenter_username": "admin",
                 "vcenter_password": "secret",
                 "datacenter": "test_datacenter",
-                "datastore": "test_datastore"
+                "datastore": "test_datastore",
+                "ca_file": "file_blob"
             },
             "network": {
                 "esxi_vlan_interface": "eth0"

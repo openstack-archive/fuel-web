@@ -20,11 +20,11 @@ from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun import objects
+from nailgun import utils
 
 
 class OpenstackConfigValidator(BasicValidator):
 
-    int_fields = frozenset(['cluster_id', 'node_id', 'is_active'])
     exclusive_fields = frozenset(['node_id', 'node_role'])
 
     supported_configs = frozenset([
@@ -136,7 +136,7 @@ class OpenstackConfigValidator(BasicValidator):
         cls._check_exclusive_fields(data)
         cls.validate_schema(data, schema.OPENSTACK_CONFIG_QUERY)
 
-        data['is_active'] = bool(data.get('is_active', True))
+        data.setdefault('is_active', True)
         return data
 
     @classmethod
@@ -156,9 +156,21 @@ class OpenstackConfigValidator(BasicValidator):
         Schema validation doesn't perform any type conversion, so
         it is required to convert them before schema validation.
         """
-        for field in cls.int_fields:
-            if field in data and data[field] is not None:
-                data[field] = int(data[field])
+        for field in ['cluster_id', 'node_id']:
+            value = data.get(field, None)
+            if value is not None:
+                try:
+                    data[field] = int(value)
+                except ValueError:
+                    raise errors.InvalidData("Invalid '{0}' value: '{1}'"
+                                             .format(field, value))
+
+        if 'is_active' in data:
+            try:
+                data['is_active'] = utils.parse_bool(data['is_active'])
+            except ValueError:
+                raise errors.InvalidData("Invalid 'is_active' value: '{0}'"
+                                         .format(data['is_active']))
 
     @classmethod
     def _check_exclusive_fields(cls, data):

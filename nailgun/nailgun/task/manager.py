@@ -137,6 +137,28 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
     deployment_type = consts.TASK_NAMES.deploy
 
+    def get_deployment_task(self):
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            return tasks.ClusterTransaction
+        return tasks.DeploymentTask
+
+    def ensure_nodes_changed(
+            self, nodes_to_provision, nodes_to_deploy, nodes_to_delete
+    ):
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            return
+
+        if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
+            db().rollback()
+            raise errors.WrongNodeStatus("No changes to deploy")
+
+    def get_nodes_to_deploy(self, force=False):
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            return list(
+                objects.Cluster.get_nodes_not_for_deletion(self.cluster).all()
+            )
+        return TaskHelper.nodes_to_deploy(self.cluster, force)
+
     def _remove_obsolete_tasks(self):
         cluster_tasks = objects.TaskCollection.get_cluster_tasks(
             cluster_id=self.cluster.id)
@@ -169,7 +191,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         db().flush()
 
     def execute(self, nodes_to_provision_deploy=None, deployment_tasks=None,
-                force=False, graph_type=None):
+                force=False, graph_type=None, **kwargs):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
                 self.cluster.name or self.cluster.id
@@ -188,9 +210,9 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             TaskHelper.nodes_to_deploy(self.cluster, force)
         nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
 
-        if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
-            db().rollback()
-            raise errors.WrongNodeStatus("No changes to deploy")
+        self.ensure_nodes_changed(
+            nodes_to_provision, nodes_to_deploy, nodes_to_delete
+        )
 
         db().flush()
         TaskHelper.create_action_log(supertask)
@@ -212,9 +234,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
         return supertask
 
-    def _execute_async(self, supertask_id, deployment_tasks=None,
-                       nodes_to_provision_deploy=None, force=False,
-                       graph_type=None):
+    def _execute_async(self, supertask_id, **kwargs):
         """Function for execute task in the mule
 
         :param supertask_id: id of parent task
@@ -225,12 +245,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         supertask = objects.Task.get_by_uid(supertask_id)
 
         try:
-            self._execute_async_content(
-                supertask,
-                deployment_tasks=deployment_tasks,
-                nodes_to_provision_deploy=nodes_to_provision_deploy,
-                force=force,
-                graph_type=graph_type)
+            self._execute_async_content(supertask, **kwargs)
         except Exception as e:
             logger.exception('Error occurred when running task')
             data = {
@@ -273,7 +288,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 n.needs_reprovision]),
                 nodes_to_deploy)
         else:
-            nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster, force)
+            nodes_to_deploy = self.get_nodes_to_deploy(force=force)
             nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
             nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
 
@@ -346,7 +361,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             task_messages.append(provision_message)
 
         deployment_message = None
-        if nodes_to_deploy or affected_nodes:
+        if (nodes_to_deploy or affected_nodes or
+                objects.Release.is_lcm_supported(self.cluster.release)):
             if nodes_to_deploy:
                 logger.debug("There are nodes to deploy: %s",
                              " ".join((objects.Node.get_node_fqdn(n)
@@ -365,13 +381,14 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             db().commit()
             deployment_message = self._call_silently(
                 task_deployment,
-                tasks.DeploymentTask,
+                self.get_deployment_task(),
                 nodes_to_deploy,
                 affected_nodes=affected_nodes,
                 deployment_tasks=deployment_tasks,
                 method_name='message',
                 reexecutable_filter=consts.TASKS_TO_RERUN_ON_DEPLOY_CHANGES,
-                graph_type=graph_type
+                graph_type=graph_type,
+                force=force
             )
 
             db().commit()
@@ -396,7 +413,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         # nodes.yaml and /etc/hosts on all slaves. Since we need only
         # those two tasks, let's create stripped version of
         # deployment.
-        if nodes_to_delete and not nodes_to_deploy:
+        if (nodes_to_delete and not nodes_to_deploy and
+                not objects.Release.is_lcm_supported(self.cluster.release)):
             logger.debug(
                 "No nodes to deploy, just update nodes.yaml everywhere.")
 
@@ -525,13 +543,6 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         db().flush()
 
 
-class ApplyChangesForceTaskManager(ApplyChangesTaskManager):
-
-    def execute(self, **kwargs):
-        kwargs['force'] = True
-        return super(ApplyChangesForceTaskManager, self).execute(**kwargs)
-
-
 class SpawnVMsTaskManager(ApplyChangesTaskManager):
 
     deployment_type = consts.TASK_NAMES.spawn_vms
@@ -542,7 +553,7 @@ class SpawnVMsTaskManager(ApplyChangesTaskManager):
 
 class ProvisioningTaskManager(TaskManager):
 
-    def execute(self, nodes_to_provision):
+    def execute(self, nodes_to_provision, **kwargs):
         """Run provisioning task on specified nodes."""
         # locking nodes
         nodes_ids = [node.id for node in nodes_to_provision]
@@ -596,8 +607,13 @@ class ProvisioningTaskManager(TaskManager):
 
 class DeploymentTaskManager(TaskManager):
 
+    def get_deployment_task(self):
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            return tasks.ClusterTransaction
+        return tasks.DeploymentTask
+
     def execute(self, nodes_to_deployment, deployment_tasks=None,
-                graph_type=None):
+                graph_type=None, force=False):
         deployment_tasks = deployment_tasks or []
 
         logger.debug('Nodes to deploy: {0}'.format(
@@ -611,11 +627,12 @@ class DeploymentTaskManager(TaskManager):
 
         deployment_message = self._call_silently(
             task_deployment,
-            tasks.DeploymentTask,
+            self.get_deployment_task(),
             nodes_to_deployment,
             deployment_tasks=deployment_tasks,
             method_name='message',
-            graph_type=graph_type)
+            graph_type=graph_type,
+            force=force)
 
         db().refresh(task_deployment)
 
@@ -643,7 +660,7 @@ class DeploymentTaskManager(TaskManager):
 
 class StopDeploymentTaskManager(TaskManager):
 
-    def execute(self):
+    def execute(self, **kwargs):
         stop_running = objects.TaskCollection.filter_by(
             None,
             cluster_id=self.cluster.id,
@@ -727,7 +744,7 @@ class StopDeploymentTaskManager(TaskManager):
 
 class ResetEnvironmentTaskManager(TaskManager):
 
-    def execute(self):
+    def execute(self, **kwargs):
 
         # FIXME(aroma): remove updating of 'deployed_before'
         # when stop action is reworked. 'deployed_before'
@@ -797,7 +814,7 @@ class ResetEnvironmentTaskManager(TaskManager):
 
 class CheckNetworksTaskManager(TaskManager):
 
-    def execute(self, data, check_all_parameters=False):
+    def execute(self, data, check_all_parameters=False, **kwargs):
         # Make a copy of original 'data' due to being changed by
         # 'tasks.CheckNetworksTask'
         data_copy = copy.deepcopy(data)
@@ -890,7 +907,7 @@ class VerifyNetworksTaskManager(TaskManager):
             db().delete(ver_task)
             db().flush()
 
-    def execute(self, nets, vlan_ids):
+    def execute(self, nets, vlan_ids, **kwargs):
         self.remove_previous_task()
 
         task = Task(
@@ -997,7 +1014,7 @@ class VerifyNetworksTaskManager(TaskManager):
 
 class ClusterDeletionManager(TaskManager):
 
-    def execute(self):
+    def execute(self, **kwargs):
         current_tasks = objects.TaskCollection.get_cluster_tasks(
             self.cluster.id, names=(consts.TASK_NAMES.cluster_deletion,)
         )
@@ -1071,7 +1088,7 @@ class ClusterDeletionManager(TaskManager):
 
 class DumpTaskManager(TaskManager):
 
-    def execute(self, conf=None):
+    def execute(self, conf=None, **kwargs):
         logger.info("Trying to start dump_environment task")
         self.check_running_task(consts.TASK_NAMES.dump)
 
@@ -1088,7 +1105,7 @@ class DumpTaskManager(TaskManager):
 
 class GenerateCapacityLogTaskManager(TaskManager):
 
-    def execute(self):
+    def execute(self, **kwargs):
         logger.info("Trying to start capacity_log task")
         self.check_running_task(consts.TASK_NAMES.capacity_log)
 
@@ -1125,7 +1142,7 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
                     [node.id for node in invalid_nodes], cluster_id)
             )
 
-    def execute(self, nodes_to_delete, mclient_remove=True):
+    def execute(self, nodes_to_delete, mclient_remove=True, **kwargs):
         cluster = None
         if hasattr(self, 'cluster'):
             cluster = self.cluster
@@ -1221,7 +1238,7 @@ class BaseStatsUserTaskManager(TaskManager):
 
     task_cls = None
 
-    def execute(self):
+    def execute(self, **kwargs):
         logger.info("Trying to execute %s in the operational "
                     "environments", self.task_name)
         created_tasks = []
@@ -1280,7 +1297,7 @@ class RemoveStatsUserTaskManager(BaseStatsUserTaskManager):
 
 class UpdateDnsmasqTaskManager(TaskManager):
 
-    def execute(self):
+    def execute(self, **kwargs):
         logger.info("Starting update_dnsmasq task")
         self.check_running_task(consts.TASK_NAMES.update_dnsmasq)
 
@@ -1296,7 +1313,12 @@ class UpdateDnsmasqTaskManager(TaskManager):
 
 class OpenstackConfigTaskManager(TaskManager):
 
-    def execute(self, filters):
+    def get_deployment_task(self):
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            return tasks.ClusterTransaction
+        return tasks.UpdateOpenstackConfigTask
+
+    def execute(self, filters, force=False, **kwargs):
         self.check_running_task(consts.TASK_NAMES.deployment)
 
         task = Task(name=consts.TASK_NAMES.deployment,
@@ -1308,8 +1330,13 @@ class OpenstackConfigTaskManager(TaskManager):
             self.cluster, filters.get('node_ids'), filters.get('node_role'))
 
         message = self._call_silently(
-            task, tasks.UpdateOpenstackConfigTask,
-            self.cluster, nodes_to_update, method_name='message')
+            task,
+            self.get_deployment_task(),
+            nodes_to_update,
+            method_name='message',
+            cluster=self.cluster,
+            force=force
+        )
 
         # locking task
         task = objects.Task.get_by_uid(

@@ -372,7 +372,7 @@ class NailgunReceiver(object):
         db_nodes = objects.NodeCollection.lock_for_update(q_nodes).all()
 
         for node_db in db_nodes:
-            node = nodes_by_id[node_db.uid]
+            node = nodes_by_id.pop(node_db.uid)
             if node.get('status') == consts.TASK_STATUSES.error:
                 node_db.status = consts.TASK_STATUSES.error
                 node_db.progress = 100

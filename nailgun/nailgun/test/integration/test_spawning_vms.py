@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
 from oslo_serialization import jsonutils
 
 from nailgun import consts
@@ -92,3 +94,30 @@ class TestSpawnVMs(BaseIntegrationTest):
         )
 
         self.assertEqual(resp.status_code, 400)
+
+    @mock.patch("nailgun.task.manager.ApplyChangesTaskManager.execute")
+    def test_openstack_config_call_apply_changes_if_lcm(self, execute_mock):
+        self.env.create(
+            release_kwargs={
+                'version': 'liberty-9.0',
+                'operating_system': consts.RELEASE_OS.ubuntu,
+            },
+            nodes_kwargs=[
+                {"status": "ready", "roles": ["virt"]},
+            ]
+        )
+        cluster = self.env.clusters[-1]
+        cluster.nodes[0].vms_conf = [{'id': 1, 'cluster_id': cluster.id}]
+        execute_mock.return_value = self.env.create_task(
+            cluster_id=cluster.id,
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.ready
+        )
+        resp = self.app.put(
+            reverse(
+                'SpawnVmsHandler',
+                kwargs={'cluster_id': cluster.id}),
+            headers=self.default_headers,
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(1, execute_mock.call_count)

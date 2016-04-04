@@ -698,7 +698,7 @@ class TestTaskManagers(BaseIntegrationTest):
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
         cluster_id = cluster['id']
-        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_id)
         task = models.Task(name='provision', cluster_id=cluster_id,
                            status=consts.TASK_STATUSES.ready)
         self.db.add(task)
@@ -767,7 +767,7 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @mock.patch('nailgun.task.manager.rpc.cast')
@@ -783,8 +783,8 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager_ = manager.ApplyChangesForceTaskManager(cluster_db.id)
-        supertask = manager_.execute()
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_db.id)
+        supertask = manager_.execute(force=True)
         self.assertEqual(supertask.name, TASK_NAMES.deploy)
         self.assertIn(supertask.status, TASK_STATUSES.pending)
 
@@ -1309,3 +1309,58 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
                          errors.UpdateDnsmasqTaskIsRunning.message)
         # no more calls were made
         self.assertEqual(mocked_rpc.call_count, 1)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_deployment_starts_if_nodes_not_changed(self, rpc_mock):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            },
+            nodes_kwargs=[
+                {'status': NODE_STATUSES.ready, 'roles': ['controller']},
+                {'status': NODE_STATUSES.ready, 'roles': ['compute']},
+            ]
+        )
+        cluster = self.env.clusters[-1]
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        # check that nodes presents in tasks_graph
+        self.assertItemsEqual(
+            [n.uid for n in cluster.nodes] + [consts.MASTER_NODE_UID, None],
+            tasks_graph
+        )
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    def tet_force_deployment(self, tasks_mock, rpc_mock):
+        tasks_mock.return_value = [
+            {
+                "id": "test", "roles": ['master'],
+                "type": "puppet", "parameters": {},
+                "condition": {"yaql_exp": "changed($)"}
+            }
+        ]
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            }
+        )
+        cluster = self.env.clusters[-1]
+
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        self.assertEqual('puppet', tasks_graph['master'][0]['type'])
+
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        self.assertEqual('skipped', tasks_graph['master'][0]['type'])
+
+        supertask = self.env.launch_deployment(cluster.id, force=1)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+        self.assertEqual('puppet', tasks_graph['master'][0]['type'])

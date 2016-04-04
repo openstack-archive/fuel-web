@@ -904,3 +904,62 @@ class TestNetworkConfigurationVerifyHandler(TestNetworkChecking):
         self.assertIn("uniqueItem", json['message'])
         self.assertIn("vlan_range", json['message'])
         self.assertIn("[1000, 1000]", json['message'])
+
+
+class TestNeutronHandlers90(TestNetworkChecking):
+
+    def check_baremetal_gateway_vs_iprange(self, baremetal_parameters, result):
+        net_meta = self.env.get_default_networks_metadata()
+        bm = filter(lambda n: n['name'] == 'baremetal',
+                    net_meta['neutron']['networks'])[0]
+        bm.update(baremetal_parameters)
+
+        self.env.create(
+            release_kwargs={
+                'networks_metadata': net_meta,
+                'version': 'mitaka-9.0',
+                'operating_system': consts.RELEASE_OS.ubuntu
+            },
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
+            }
+        )
+        cluster = self.env.clusters[0]
+
+        self.env._set_additional_component(cluster, 'ironic', True)
+
+        self.env.create_node_group(cluster_id=cluster.id)
+        resp = self.env.neutron_networks_get(cluster.id)
+        nets = resp.json_body
+        if result:
+            return self.update_neutron_networks_success(cluster.id, nets)
+        else:
+            return self.update_neutron_networks_w_error(cluster.id, nets)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_baremetal_ranges_with_default_gateway_ok(self, _):
+        self.check_baremetal_gateway_vs_iprange({
+            'cidr': '192.168.3.0/24',
+            'ip_range': ['192.168.3.2', '192.168.3.50'],
+            'use_gateway': False,
+            'notation': 'ip_ranges'
+        }, True)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_baremetal_ranges_with_default_gateway_fail(self, _):
+        # if IP ranges start with X.X.X.1 when gateway is not set explicitly
+        # it results in IP intersection if multiple node groups are in use
+        # because all networks must have gateways in this case and gateways are
+        # set to default values X.X.X.1 if they are missing for some networks
+        resp = self.check_baremetal_gateway_vs_iprange({
+            'cidr': '192.168.3.0/24',
+            'ip_range': ['192.168.3.1', '192.168.3.50'],
+            'use_gateway': False,
+            'notation': 'ip_ranges'
+        }, False)
+        self.assertIn(
+            u"Gateway address belongs to the network's IP range "
+            u"[192.168.3.1-192.168.3.50].",
+            resp['message']
+        )

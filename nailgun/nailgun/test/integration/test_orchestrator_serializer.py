@@ -164,7 +164,9 @@ class TestReplacedDeploymentInfoSerialization(OrchestratorSerializerTestBase):
         node.replaced_deployment_info = [
             {'role': 'controller', 'priority': 'XXX', 'tasks': [], 'uid': '1'}]
         self.db.flush()
-
+        objects.Cluster.prepare_for_deployment(
+            self.cluster, self.cluster.nodes
+        )
         serialized_data = self.serializer.serialize(self.cluster, [node])
         # verify that task list is not empty
         self.assertTrue(serialized_data[0]['tasks'])

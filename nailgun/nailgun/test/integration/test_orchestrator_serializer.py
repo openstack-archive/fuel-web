@@ -2580,6 +2580,7 @@ class BaseDeploymentSerializer(BaseSerializerTest):
         self.assertEqual(result['glance']['vc_password'], "secret")
         self.assertEqual(result['glance']['vc_datacenter'], "test_datacenter")
         self.assertEqual(result['glance']['vc_datastore'], "test_datastore")
+        self.assertEqual(result['glance']['vc_ca_file'], "file_blob")
 
     def check_no_murano_data(self):
         glance_properties = self.serializer.generate_test_vm_image_data(

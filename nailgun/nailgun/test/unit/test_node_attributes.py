@@ -146,4 +146,4 @@ class TestNodeAttributes(base.BaseUnitTest):
         objects.NodeAttributes.set_default_hugepages(node)
         hugepages = node.attributes['hugepages']['nova']['value']
         for size in fake_hugepages:
-            self.assertEqual(0, hugepages[size])
+            self.assertEqual('0', hugepages[size])

@@ -1342,11 +1342,14 @@ class NodeAttributes(object):
         if not hugepages:
             return
 
-        for attrs in six.itervalues(hugepages):
+        updated_hugepages = {}
+        for name, attrs in six.iteritems(hugepages):
             if attrs.get('type') == 'custom_hugepages':
-                attrs['value'] = dict.fromkeys(supported_hugepages, 0)
+                updated_hugepages[name] = {
+                    'value': dict.fromkeys(supported_hugepages, "0")
+                }
 
-        Node.update_attributes(node, {'hugepages': hugepages})
+        Node.update_attributes(node, {'hugepages': updated_hugepages})
 
     @classmethod
     def distribute_node_cpus(cls, node):

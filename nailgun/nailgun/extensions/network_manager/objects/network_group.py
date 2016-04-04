@@ -20,11 +20,12 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
+from nailgun.extensions.network_manager.objects.serializers.network_group \
+    import NetworkGroupSerializer
 from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-from nailgun.objects.serializers.network_group import NetworkGroupSerializer
 
 from sqlalchemy.sql import or_
 

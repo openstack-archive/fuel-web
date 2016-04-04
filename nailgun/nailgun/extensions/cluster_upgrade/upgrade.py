@@ -21,7 +21,8 @@ import six
 
 from nailgun import consts
 from nailgun import objects
-from nailgun.objects.serializers import network_configuration
+from nailgun.extensions.network_manager.objects.serializers import \
+    network_configuration
 from nailgun import utils
 
 from .objects import adapters

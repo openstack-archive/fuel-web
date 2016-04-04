@@ -47,18 +47,20 @@ from nailgun.objects.deployment_history import DeploymentHistoryCollection
 from nailgun.objects.notification import Notification
 from nailgun.objects.notification import NotificationCollection
 
-from nailgun.objects.network_group import NetworkGroup
-from nailgun.objects.network_group import NetworkGroupCollection
+from nailgun.extensions.network_manager.objects.network_group import \
+    NetworkGroup
+from nailgun.extensions.network_manager.objects.network_group import \
+    NetworkGroupCollection
 
-from nailgun.objects.ip_addr import IPAddr
-from nailgun.objects.ip_addr import IPAddrCollection
-from nailgun.objects.ip_addr import IPAddrRange
+from nailgun.extensions.network_manager.objects.ip_addr import IPAddr
+from nailgun.extensions.network_manager.objects.ip_addr import IPAddrCollection
+from nailgun.extensions.network_manager.objects.ip_addr import IPAddrRange
 
-from nailgun.objects.interface import NIC
-from nailgun.objects.interface import NICCollection
+from nailgun.extensions.network_manager.objects.interface import NIC
+from nailgun.extensions.network_manager.objects.interface import NICCollection
 
-from nailgun.objects.bond import Bond
-from nailgun.objects.bond import BondCollection
+from nailgun.extensions.network_manager.objects.bond import Bond
+from nailgun.extensions.network_manager.objects.bond import BondCollection
 
 from nailgun.objects.node import Node
 from nailgun.objects.node import NodeAttributes

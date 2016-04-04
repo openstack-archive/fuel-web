@@ -327,14 +327,14 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_a1.id,
                 'plugin_version': plugin_a1.version,
-                'always_editable': False
+                'hot_pluggable': False
             }, pl_a1['metadata']
         )
         self.assertItemsEqual(
             {
                 'plugin_id': plugin_a2.id,
                 'plugin_version': plugin_a2.version,
-                'always_editable': True
+                'hot_pluggable': True
             },
             pl_a2['metadata']
         )
@@ -342,7 +342,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_b.id,
                 'plugin_version': plugin_b.version,
-                'always_editable': False,
+                'hot_pluggable': False,
                 'restrictions': [
                     {
                         "condition": "cluster:net_provider != 'neutron'",
@@ -404,14 +404,14 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_a1.id,
                 'plugin_version': plugin_a1.version,
-                'always_editable': False
+                'hot_pluggable': False
             }, pl_a1['metadata']
         )
         self.assertItemsEqual(
             {
                 'plugin_id': plugin_a2.id,
                 'plugin_version': plugin_a2.version,
-                'always_editable': True,
+                'hot_pluggable': True,
             },
             pl_a2['metadata']
         )
@@ -419,7 +419,7 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_b.id,
                 'plugin_version': plugin_b.version,
-                'always_editable': False,
+                'hot_pluggable': False,
                 'restrictions': [
                     {
                         "condition": "cluster:net_provider != 'neutron'",

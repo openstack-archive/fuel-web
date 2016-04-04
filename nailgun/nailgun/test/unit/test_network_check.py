@@ -678,11 +678,11 @@ class TestNetworkCheck(BaseIntegrationTest):
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         fake_template = self.env.read_fixtures(['network_template_80'])[0]
-        default_nt = fake_template['adv_net_template']['default']
+        default_nt = fake_template['adv_net_template']['Default']
 
         # Left only default node group with only controller template
         fake_template['adv_net_template'] = {
-            'default': default_nt
+            'Default': default_nt
         }
         default_nt['templates_for_node_role'] = {
             'controller': default_nt['templates_for_node_role']['controller'],

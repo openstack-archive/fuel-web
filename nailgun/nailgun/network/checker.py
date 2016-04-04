@@ -745,7 +745,7 @@ class NetworkCheck(object):
         if not template:
             return
         assigned_roles = objects.Cluster.get_assigned_roles(self.cluster)
-        default_ng_template = template['adv_net_template']['default']
+        default_ng_template = template['adv_net_template']['Default']
 
         for role in assigned_roles:
             node_groups = objects.Cluster.get_node_groups(self.cluster, [role])

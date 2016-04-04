@@ -16,7 +16,6 @@
 
 import collections
 from copy import deepcopy
-from distutils.version import StrictVersion
 import os
 import socket
 
@@ -113,15 +112,13 @@ def fake_cast(queue, messages, **kwargs):
 
 class BaseDeploymentTask(object):
     @classmethod
-    def _get_deployment_methods(cls, cluster):
+    def get_deployment_methods(cls, cluster):
         """Get deployment method name based on cluster version
 
         :param cluster: Cluster db object
         :returns: list of available methods
         """
         methods = []
-        if objects.Release.is_lcm_supported(cluster.release):
-            methods.append('lcm_transaction')
         if objects.Cluster.is_task_deploy_enabled(cluster):
             methods.append('task_deploy')
         if objects.Release.is_granular_enabled(cluster.release):
@@ -131,24 +128,21 @@ class BaseDeploymentTask(object):
         return methods
 
     @classmethod
-    def call_deployment_method(cls, transaction, *args, **kwargs):
+    def call_deployment_method(cls, transaction, **kwargs):
         """Calls the deployment method with fallback.
 
         :param transaction: the transaction object
-        :param args: the positional arguments
         :param kwargs: the keyword arguments
         """
-        for name in cls._get_deployment_methods(transaction.cluster):
-            try:
-                message_builder = getattr(cls, name)
-            except AttributeError:
-                logger.warning(
-                    "%s is not allowed, fallback to next method.", name
-                )
-                continue
 
+        available_methods = iter(
+            cls.get_deployment_methods(transaction.cluster)
+        )
+
+        method = next(available_methods, None)
+        while method:
             try:
-                method, args = message_builder(transaction, *args, **kwargs)
+                args = getattr(cls, method)(transaction, **kwargs)
                 # save tasks history
                 if 'tasks_graph' in args:
                     logger.info("start saving tasks history.")
@@ -160,54 +154,13 @@ class BaseDeploymentTask(object):
                 return method, args
             except errors.TaskBaseDeploymentNotAllowed:
                 logger.warning(
-                    "%s is not allowed, fallback to next method.", name
+                    "%s is not allowed, fallback to next method.", method
                 )
+                method = next(available_methods, None)
+                if method is None:
+                    raise
 
-    @classmethod
-    def lcm_transaction(cls, transaction, tasks, *args, **kwargs):
-        # TODO(bgaifullin) remove task version check
-        # after related Library changes will be committed
-        # if there is at least one task that is supported LCM, use it.
-        lcm_readiness = StrictVersion(consts.TASK_LCM_READINESS)
-        lcm_ready = (
-            any(StrictVersion(t['version']) >= lcm_readiness for t in tasks)
-        )
-        if not lcm_ready:
-            raise errors.TaskBaseDeploymentNotAllowed()
-
-        # TODO(bgaifullin) always run for all nodes, because deploy-changes
-        # and run for selected nodes uses same logic,
-        #  and need to differentiate this methods at first
-        nodes = objects.Cluster.get_nodes_not_for_deletion(transaction.cluster)
-        logger.info("start serialization of cluster.")
-        # we should update information for all nodes except deleted
-        # TODO(bgaifullin) pass role resolver to serializers
-        deployment_info = deployment_serializers.serialize_for_lcm(
-            transaction.cluster, nodes
-        )
-        logger.info("finish serialization of cluster.")
-        current_state = objects.Transaction.get_deployment_info(
-            objects.TransactionCollection.get_last_succeed_run(
-                transaction.cluster
-            )
-        )
-        expected_state = cls._save_deployment_info(
-            transaction, deployment_info
-        )
-        context = lcm.TransactionContext(expected_state, current_state)
-        logger.debug("start serialization of tasks.")
-        # TODO(bgaifullin) Primary roles applied in deployment_serializers
-        # need to move this code from deployment serializer
-        # also role resolver should be created after serialization completed
-        role_resolver = RoleResolver(nodes)
-        directory, graph = lcm.TransactionSerializer.serialize(
-            context, tasks, role_resolver
-        )
-        logger.info("finish serialization of tasks.")
-        return 'task_deploy', {
-            "tasks_directory": directory,
-            "tasks_graph": graph
-        }
+        raise RuntimeError("There is no available deployment engines.")
 
     @classmethod
     def _save_deployment_info(cls, transaction, deployment_info):
@@ -258,7 +211,7 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
-                reexecutable_filter=None, graph_type=None):
+                reexecutable_filter=None, graph_type=None, force=False):
         """Builds RPC message for deployment task.
 
         :param task: the database task object instance
@@ -292,8 +245,9 @@ class DeploymentTask(BaseDeploymentTask):
         )
 
         deployment_mode, message = cls.call_deployment_method(
-            task, deployment_tasks, nodes,
-            affected_nodes, task_ids, reexecutable_filter
+            task, tasks=deployment_tasks, nodes=nodes,
+            affected_nodes=affected_nodes, selected_task_ids=task_ids,
+            events=reexecutable_filter, force=force
         )
 
         # After serialization set pending_addition to False
@@ -322,7 +276,7 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def granular_deploy(cls, transaction, tasks,
-                        nodes, affected_nodes, selected_task_ids, events):
+                        nodes, affected_nodes, selected_task_ids, events, **_):
         """Builds parameters for granular deployment.
 
         :param transaction: the transaction object
@@ -332,7 +286,7 @@ class DeploymentTask(BaseDeploymentTask):
         :param selected_task_ids: the list of tasks_ids to execute,
                                    if None, all tasks will be executed
         :param events: the list of events to find subscribed tasks
-        :return: RPC method name, the arguments for RPC message
+        :return: the arguments for RPC message
         """
         graph = orchestrator_graph.AstuteGraph(transaction.cluster, tasks)
         graph.only_tasks(selected_task_ids)
@@ -359,20 +313,17 @@ class DeploymentTask(BaseDeploymentTask):
             graph, transaction.cluster, nodes,
             role_resolver=role_resolver)
 
-        return 'granular_deploy', {
+        return {
             'deployment_info': serialized_cluster,
             'pre_deployment': pre_deployment,
             'post_deployment': post_deployment
         }
 
-    @classmethod
-    def deploy(cls, *args, **kwargs):
-        args = cls.granular_deploy(*args, **kwargs)[1]
-        return 'deploy', args
+    deploy = granular_deploy
 
     @classmethod
     def task_deploy(cls, transaction, tasks, nodes, affected_nodes,
-                    selected_task_ids, events):
+                    selected_task_ids, events, **_):
         """Builds parameters for task based deployment.
 
         :param transaction: the transaction object
@@ -385,24 +336,65 @@ class DeploymentTask(BaseDeploymentTask):
         :return:  RPC method name, the arguments for RPC message
         """
 
-        logger.info("start cluster serialization.")
+        logger.info("cluster serialization is started.")
         serialized_cluster = deployment_serializers.serialize(
             None, transaction.cluster, nodes
         )
         cls._save_deployment_info(transaction, serialized_cluster)
-        logger.debug("finish cluster serialization.")
+        logger.info("cluster serialization is finished.")
         tasks_events = events and \
             task_based_deployment.TaskEvents('reexecute_on', events)
 
-        logger.info("start tasks serialization.")
+        logger.debug("tasks serialization is started.")
         directory, graph = task_based_deployment.TasksSerializer.serialize(
             transaction.cluster, nodes, tasks, affected_nodes,
             selected_task_ids, tasks_events
         )
-        logger.info("finish tasks serialization.")
+        logger.info("tasks serialization is finished.")
 
-        return 'task_deploy', {
+        return {
             "deployment_info": serialized_cluster,
+            "tasks_directory": directory,
+            "tasks_graph": graph
+        }
+
+
+class ClusterTransaction(DeploymentTask):
+    @classmethod
+    def get_deployment_methods(cls, cluster):
+        return ['task_deploy']
+
+    @classmethod
+    def task_deploy(cls, transaction, tasks, nodes, force=False, **_):
+        logger.info("cluster serialization is started.")
+        # we should update information for all nodes except deleted
+        # TODO(bgaifullin) pass role resolver to serializers
+        deployment_info = deployment_serializers.serialize_for_lcm(
+            transaction.cluster, nodes
+        )
+        logger.info("cluster serialization is finished.")
+        if force:
+            current_state = {}
+        else:
+            current_state = objects.Transaction.get_deployment_info(
+                objects.TransactionCollection.get_last_succeed_run(
+                    transaction.cluster
+                )
+            )
+        expected_state = cls._save_deployment_info(
+            transaction, deployment_info
+        )
+        context = lcm.TransactionContext(expected_state, current_state)
+        logger.debug("tasks serialization is started.")
+        # TODO(bgaifullin) Primary roles applied in deployment_serializers
+        # need to move this code from deployment serializer
+        # also role resolver should be created after serialization completed
+        role_resolver = RoleResolver(nodes)
+        directory, graph = lcm.TransactionSerializer.serialize(
+            context, tasks, role_resolver
+        )
+        logger.info("tasks serialization is finished.")
+        return {
             "tasks_directory": directory,
             "tasks_graph": graph
         }
@@ -2000,12 +1992,12 @@ class UpdateDnsmasqTask(object):
 class UpdateOpenstackConfigTask(BaseDeploymentTask):
 
     @staticmethod
-    def task_deploy(transaction, tasks, nodes, task_ids):
+    def task_deploy(transaction, nodes, tasks, task_ids):
         # TODO(akostrikov) https://bugs.launchpad.net/fuel/+bug/1561485
         directory, graph = task_based_deployment.TasksSerializer.serialize(
             transaction.cluster, nodes, tasks, task_ids=task_ids
         )
-        return 'task_deploy', make_astute_message(
+        return make_astute_message(
             transaction, "task_deploy", "update_config_resp", {
                 "tasks_directory": directory,
                 "tasks_graph": graph
@@ -2013,13 +2005,13 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
         )
 
     @staticmethod
-    def granular_deploy(transaction, tasks, nodes, task_ids):
+    def granular_deploy(transaction, nodes, tasks, task_ids):
         graph = orchestrator_graph.AstuteGraph(transaction.cluster, tasks)
         graph.only_tasks(task_ids)
         deployment_tasks = graph.stage_tasks_serialize(
             graph.graph.topology, nodes
         )
-        return 'granular_deploy', make_astute_message(
+        return make_astute_message(
             transaction, 'execute_tasks', 'update_config_resp', {
                 'tasks': deployment_tasks,
             })
@@ -2043,7 +2035,7 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
         task_ids = {t['id'] for t in refreshable_tasks}
         deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
         return cls.call_deployment_method(
-            task, deployment_tasks, nodes, task_ids
+            task, tasks=deployment_tasks, nodes=nodes, task_ids=task_ids
         )[1]
 
 

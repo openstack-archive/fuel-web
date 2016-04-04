@@ -124,7 +124,7 @@ class TestDeploymentAttributesSerialization90(
             roles=['compute'])[0]
 
         node.attributes['hugepages'] = {
-            'dpdk': {'type': 'text', 'value': '1024'},
+            'dpdk': {'type': 'number', 'value': 1024},
             'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}}
         }
         cluster_attrs = objects.Cluster.get_editable_attributes(node.cluster)
@@ -288,7 +288,7 @@ class TestDeploymentAttributesSerialization90(
         node.attributes.update({
             'hugepages': {
                 'dpdk': {
-                    'value': '128'},
+                    'value': 128},
                 'nova': {
                     'value': {'2048': 1}}}}
         )
@@ -322,14 +322,13 @@ class TestDeploymentAttributesSerialization90(
                 'nova': {
                     'type': 'custom_hugepages',
                     'value': {
-                        # FIXME make counts integer after appropriate UI fix
-                        '2048': '512',
-                        '1048576': '1'
+                        '2048': 512,
+                        '1048576': 1
                     }
                 },
                 'dpdk': {
-                    'type': 'text',
-                    'value': '512',
+                    'type': 'number',
+                    'value': 512,
                 }
             }
         })
@@ -359,13 +358,12 @@ class TestDeploymentAttributesSerialization90(
                 'nova': {
                     'type': 'custom_hugepages',
                     'value': {
-                        # FIXME make counts integer after appropriate UI fix
-                        '2048': '512',
+                        '2048': 512,
                     }
                 },
                 'dpdk': {
-                    'type': 'text',
-                    'value': '512',
+                    'type': 'number',
+                    'value': 512,
                 }
             }
         })

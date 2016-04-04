@@ -241,7 +241,8 @@ ATTRIBUTE_SCHEMA = {
                 'file',
                 'text_list',
                 'textarea_list',
-                'custom_hugepages'
+                'custom_hugepages',
+                'number',
             ]
         },
         # 'value': None,  # custom validation depending on type
@@ -323,5 +324,12 @@ ATTRIBUTE_TYPE_SCHEMAS = {
     'text': {'value': {'type': 'string'}},
     'textarea': {'value': {'type': 'string'}},
     'text_list': MULTIPLE_TEXT_FIELDS_SCHEMA,
-    'textarea_list': MULTIPLE_TEXT_FIELDS_SCHEMA
+    'textarea_list': MULTIPLE_TEXT_FIELDS_SCHEMA,
+    'custom_hugepages': {
+        'type': 'object',
+        'properties': {
+            size: {'type': 'integer'} for size, _ in consts.HUGE_PAGES_SIZE_MAP
+        }
+    },
+    'number': {'type': 'integer'},
 }

@@ -2128,20 +2128,16 @@
           weight: 10
           description: "Number of CPUs for Nova usage"
           label: "Nova CPU pinning"
-          type: "text"
-          value: "0"
-          regex:
-            source: '^\d+$'
-            error: "Incorrect value"
+          type: "number"
+          min: 0
+          value: 0
         dpdk:
           weight: 20
           description: "Number of CPUs for DPDK usage"
           label: "DPDK CPU pinning"
-          type: "text"
-          value: "0"
-          regex:
-            source: '^\d+$'
-            error: "Incorrect value"
+          type: "number"
+          min: 0
+          value: 0
       hugepages:
         metadata:
           group: "nfv"
@@ -2160,11 +2156,9 @@
           weight: 20
           description: "DPDK Huge Pages per NUMA node in MB"
           label: "DPDK Huge Pages"
-          type: "text"
-          value: "0"
-          regex:
-            source: '^\d+$'
-            error: "Incorrect value"
+          type: "number"
+          min: 0
+          value: 0
     networks_metadata:
       dpdk_drivers:
         # Sources:

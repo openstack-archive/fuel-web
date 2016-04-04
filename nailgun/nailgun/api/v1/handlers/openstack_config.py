@@ -24,7 +24,7 @@ from nailgun.api.v1.validators.openstack_config import OpenstackConfigValidator
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
-from nailgun.task.manager import OpenstackConfigTaskManager
+from nailgun.task.manager import create_openstack_config_update_task
 
 
 class OpenstackConfigCollectionHandler(BaseHandler):
@@ -104,7 +104,6 @@ class OpenstackConfigHandler(SingleHandler):
 class OpenstackConfigExecuteHandler(BaseHandler):
 
     validator = OpenstackConfigValidator
-    task_manager = OpenstackConfigTaskManager
 
     @content
     def PUT(self):
@@ -121,13 +120,15 @@ class OpenstackConfigExecuteHandler(BaseHandler):
             objects.Cluster, filters['cluster_id'])
 
         # Execute upload task for nodes
-        task_manager = self.task_manager(cluster_id=cluster.id)
+        task_manager = create_openstack_config_update_task(
+            cluster_id=cluster.id
+        )
         try:
             task = task_manager.execute(filters)
         except Exception as exc:
             logger.warn(
                 u'Cannot execute %s task nodes: %s',
-                self.task_manager.__name__, traceback.format_exc())
+                task_manager.__name__, traceback.format_exc())
             raise self.http(400, six.text_type(exc))
 
         self.raise_task(task)

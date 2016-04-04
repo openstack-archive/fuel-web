@@ -41,8 +41,7 @@ from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 from nailgun.logger import logger
 from nailgun import objects
 
-from nailgun.task.manager import ApplyChangesForceTaskManager
-from nailgun.task.manager import ApplyChangesTaskManager
+from nailgun.task.manager import create_apply_changes_task
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
@@ -88,8 +87,13 @@ class ClusterChangesHandler(DeferredTaskHandler):
     log_message = u"Trying to start deployment at environment '{env_id}'"
     log_error = u"Error during execution of deployment " \
                 u"task on environment '{env_id}': {error}"
-    task_manager = ApplyChangesTaskManager
+
     validator = ClusterChangesValidator
+    arguments = {'graph_type': None, 'force': False}
+
+    @classmethod
+    def task_manager(cls, cluster_id):
+        return create_apply_changes_task(cluster_id)
 
 
 class ClusterChangesForceRedeployHandler(DeferredTaskHandler):
@@ -97,8 +101,12 @@ class ClusterChangesForceRedeployHandler(DeferredTaskHandler):
     log_message = u"Trying to force deployment of the environment '{env_id}'"
     log_error = u"Error during execution of a forced deployment task " \
                 u"on environment '{env_id}': {error}"
-    task_manager = ApplyChangesForceTaskManager
     validator = ClusterChangesValidator
+    arguments = {'graph_type': None, 'force': True}
+
+    @classmethod
+    def task_manager(cls, cluster_id):
+        return create_apply_changes_task(cluster_id)
 
 
 class ClusterStopDeploymentHandler(DeferredTaskHandler):

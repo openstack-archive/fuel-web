@@ -685,7 +685,7 @@ class TestTaskManagers(BaseIntegrationTest):
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
         cluster_id = cluster['id']
-        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_id)
         task = models.Task(name='provision', cluster_id=cluster_id,
                            status=consts.TASK_STATUSES.ready)
         self.db.add(task)
@@ -754,7 +754,7 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @mock.patch('nailgun.task.manager.rpc.cast')
@@ -770,8 +770,8 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
-        manager_ = manager.ApplyChangesForceTaskManager(cluster_db.id)
-        supertask = manager_.execute()
+        manager_ = manager.ApplyChangesTaskManagerLegacy(cluster_db.id)
+        supertask = manager_.execute(force=True)
         self.assertEqual(supertask.name, TASK_NAMES.deploy)
         self.assertIn(supertask.status, TASK_STATUSES.pending)
 

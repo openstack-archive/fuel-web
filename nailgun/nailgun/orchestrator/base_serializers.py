@@ -239,7 +239,8 @@ class VmwareDeploymentSerializerMixin(object):
                     'vc_user': glance_username,
                     'vc_password': glance_password,
                     'vc_datacenter': glance_instance.get('datacenter', ''),
-                    'vc_datastore': glance_instance.get('datastore', '')
+                    'vc_datastore': glance_instance.get('datastore', ''),
+                    'vc_ca_file': glance_instance.get('ca_file', '')
                 }
 
         return vmware_data

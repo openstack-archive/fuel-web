@@ -46,13 +46,13 @@
           recommended: 1
         restrictions:
           - condition: "settings:storage.volumes_lvm.value == false"
-            message: "Cinder LVM should be enabled in settings"
+            message: "Cinder LVM should be enabled in the environment settings."
           # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder"
       cinder-block-device:
         name: 'Cinder Block Device'
-        description: 'Host node for Cinder Block Devices'
+        description: 'Host node for Cinder Block Devices.'
         has_primary: false
         public_ip_required: false
         weight: 35
@@ -64,7 +64,7 @@
           - ceph-osd
         restrictions:
           - condition: "settings:storage.volumes_block_device.value == false"
-            message: "Cinder Block Device should be enabled in settings"
+            message: "Cinder Block Device driver should be enabled in the environment settings."
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder Block Device"
       cinder-vmware:
@@ -86,7 +86,7 @@
             min: "settings:storage.osd_pool_size.value"
         restrictions:
           - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false and settings:storage.objects_ceph.value == false"
-            message: "Ceph must be enabled in settings"
+            message: "Ceph should be enabled in the environment settings."
         update_once:
           - controller
       mongo:
@@ -109,7 +109,7 @@
               message: "At least 3 MongoDB nodes are recommended for HA deployment."
         restrictions:
           - condition: "settings:additional_components.ceilometer.value == false"
-            message: "Ceilometer should be enabled."
+            message: "Ceilometer should be enabled in the environment settings."
           - condition: "settings:additional_components.mongo.value == true"
             message: "You are already using external MongoDB."
       base-os:
@@ -149,7 +149,7 @@
             action: "hide"
       ironic:
         name: "Ironic"
-        description: "Ironic conductor"
+        description: "Ironic conductor."
         weight: 100
         group: "compute"
         limits:
@@ -159,7 +159,7 @@
           - compute
         restrictions:
           - condition: "settings:additional_components.ironic.value == false"
-            message: "Ironic should be enabled."
+            message: "Ironic should be enabled in the environment settings."
 
     network_roles_metadata:
       -

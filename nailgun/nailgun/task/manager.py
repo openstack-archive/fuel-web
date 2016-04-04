@@ -20,10 +20,10 @@ import traceback
 
 from oslo_serialization import jsonutils
 
-from nailgun.objects.serializers.network_configuration \
-    import NeutronNetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
-    import NovaNetworkConfigurationSerializer
+from nailgun.extensions.network_manager.objects.serializers.\
+    network_configuration import NeutronNetworkConfigurationSerializer
+from nailgun.extensions.network_manager.objects.serializers.\
+    network_configuration import NovaNetworkConfigurationSerializer
 
 from nailgun import consts
 from nailgun.db import db

@@ -28,10 +28,11 @@ import six
 
 from nailgun import consts
 from nailgun.errors import errors
+from nailgun.extensions.network_manager.objects.serializers.nic import \
+    NodeInterfacesSerializer
 from nailgun.logger import logger
 from nailgun.network import utils
 from nailgun import objects
-from nailgun.objects.serializers.node import NodeInterfacesSerializer
 from nailgun.settings import settings
 from nailgun import utils as nailgun_utils
 from nailgun.utils.restrictions import RestrictionBase

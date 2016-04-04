@@ -33,7 +33,8 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun import objects
 
-from nailgun.objects.serializers.node import NodeInterfacesSerializer
+from nailgun.extensions.network_manager.objects.serializers.nic import \
+    NodeInterfacesSerializer
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup

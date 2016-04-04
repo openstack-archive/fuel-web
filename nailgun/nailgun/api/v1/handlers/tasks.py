@@ -22,8 +22,8 @@ from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.task import TaskValidator
 
 from nailgun.errors import errors
-
 from nailgun import objects
+from nailgun import utils
 
 
 """
@@ -50,7 +50,7 @@ class TaskHandler(SingleHandler):
             obj_id
         )
 
-        force = web.input(force=None).force not in (None, u'', u'0')
+        force = utils.parse_bool(web.input(force='0').force)
 
         try:
             self.validator.validate_delete(None, obj, force=force)

@@ -42,6 +42,7 @@ from nailgun.orchestrator.stages import pre_deployment_serialize
 from nailgun.orchestrator import task_based_deployment
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
+from nailgun import utils
 
 
 class NodesFilterMixin(object):
@@ -202,13 +203,23 @@ class DeploymentInfo(OrchestratorInfo):
 class SelectedNodesBase(NodesFilterMixin, BaseHandler):
     """Base class for running task manager on selected nodes."""
 
-    def handle_task(self, cluster, **kwargs):
+    task_manager = None
+    validator = None
+
+    def get_options(self, cluster):
+        return {}
+
+    def validate(self, **_):
+        pass
+
+    def handle_task(self, cluster):
 
         nodes = self.get_nodes(cluster)
-
+        options = self.get_options(cluster)
+        self.validate(cluster=cluster, nodes=nodes, **options)
         try:
             task_manager = self.task_manager(cluster_id=cluster.id)
-            task = task_manager.execute(nodes, **kwargs)
+            task = task_manager.execute(nodes, **options)
         except Exception as exc:
             logger.warn(
                 u'Cannot execute %s task nodes: %s',
@@ -236,25 +247,11 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     validator = ProvisionSelectedNodesValidator
     task_manager = manager.ProvisioningTaskManager
 
+    def validate(self, cluster, nodes):
+        self.checked_data(self.validator.validate_provision, cluster=cluster)
+
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_provision(cluster)
-
-    @content
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-
-        :http: * 200 (task successfully executed)
-               * 202 (task scheduled for execution)
-               * 400 (data validation failed)
-               * 404 (cluster or nodes not found in db)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-
-        # actually, there is no data in http body. the only reason why
-        # we use it here is to follow dry rule and do not convert exceptions
-        # into http status codes again.
-        self.checked_data(self.validator.validate_provision, cluster=cluster)
-        return self.handle_task(cluster)
 
 
 class BaseDeploySelectedNodes(SelectedNodesBase):
@@ -265,18 +262,16 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)
 
-    def get_graph_type(self):
-        return web.input(graph_type=None).graph_type
+    def get_options(self, cluster):
+        data = web.input(graph_type=None, force='0')
+        return {
+            'graph_type': data.graph_type,
+            'force': utils.parse_bool(data.force)
+        }
 
-    def get_nodes(self, cluster):
-        nodes_to_deploy = super(
-            BaseDeploySelectedNodes, self).get_nodes(cluster)
-        self.validate(cluster, nodes_to_deploy, self.get_graph_type())
-        return nodes_to_deploy
-
-    def validate(self, cluster, nodes_to_deploy, graph_type=None):
+    def validate(self, cluster, nodes, graph_type=None, force=False):
         self.checked_data(self.validator.validate_nodes_to_deploy,
-                          nodes=nodes_to_deploy, cluster_id=cluster.id)
+                          nodes=nodes, cluster_id=cluster.id)
 
         self.checked_data(self.validator.validate_release, cluster=cluster,
                           graph_type=graph_type)
@@ -285,37 +280,25 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
 class DeploySelectedNodes(BaseDeploySelectedNodes):
     """Handler for deployment selected nodes."""
 
-    @content
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-
-        :http: * 200 (task successfully executed)
-               * 202 (task scheduled for execution)
-               * 400 (data validation failed)
-               * 404 (cluster or nodes not found in db)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        return self.handle_task(cluster, graph_type=self.get_graph_type())
-
 
 class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
 
     validator = NodeDeploymentValidator
 
-    @content
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-
-        :http: * 200 (task successfully executed)
-               * 202 (task scheduled for execution)
-               * 400 (data validation failed)
-               * 404 (cluster or nodes not found in db)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        data = self.checked_data(
+    def get_options(self, cluster):
+        options = super(DeploySelectedNodesWithTasks, self).get_options(
+            cluster
+        )
+        options['deployment_tasks'] = self.checked_data(
             self.validator.validate_deployment,
-            cluster=cluster)
-        return self.handle_task(cluster, deployment_tasks=data)
+            cluster=cluster
+        )
+        return options
+
+    def validate(self, cluster, nodes, deployment_tasks, **kwargs):
+        return super(DeploySelectedNodesWithTasks, self).validate(
+            cluster, nodes, **kwargs
+        )
 
 
 class TaskDeployGraph(BaseHandler):

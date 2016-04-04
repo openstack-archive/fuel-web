@@ -26,12 +26,12 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.task.helpers import TaskHelper
 
-from nailgun.objects.serializers.network_configuration \
-    import NetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
-    import NeutronNetworkConfigurationSerializer
-from nailgun.objects.serializers.network_configuration \
-    import NovaNetworkConfigurationSerializer
+from nailgun.extensions.network_manager.objects.serializers.\
+    network_configuration import NetworkConfigurationSerializer
+from nailgun.extensions.network_manager.objects.serializers.\
+    network_configuration import NeutronNetworkConfigurationSerializer
+from nailgun.extensions.network_manager.objects.serializers.\
+    network_configuration import NovaNetworkConfigurationSerializer
 
 
 class NetworkCheck(object):

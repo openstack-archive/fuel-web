@@ -41,8 +41,8 @@ from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import objects
+from nailgun import utils
 
-from nailgun.task.manager import ApplyChangesForceTaskManager
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
@@ -119,14 +119,30 @@ class ClusterChangesHandler(DeferredTaskHandler):
     task_manager = ApplyChangesTaskManager
     validator = ClusterChangesValidator
 
+    @classmethod
+    def get_options(cls):
+        data = web.input(graph_type=None)
+        return {
+            'graph_type': data.graph_type,
+            'force': False
+        }
+
 
 class ClusterChangesForceRedeployHandler(DeferredTaskHandler):
 
     log_message = u"Trying to force deployment of the environment '{env_id}'"
     log_error = u"Error during execution of a forced deployment task " \
                 u"on environment '{env_id}': {error}"
-    task_manager = ApplyChangesForceTaskManager
+    task_manager = ApplyChangesTaskManager
     validator = ClusterChangesValidator
+
+    @classmethod
+    def get_options(cls):
+        data = web.input(graph_type=None)
+        return {
+            'graph_type': data.graph_type,
+            'force': True
+        }
 
 
 class ClusterStopDeploymentHandler(DeferredTaskHandler):
@@ -202,7 +218,7 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
-        force = web.input(force=None).force not in (None, '', '0')
+        force = utils.parse_bool(web.input(force='0').force)
 
         data = self.checked_data(cluster=cluster, force=force)
         objects.Cluster.patch_attributes(cluster, data)

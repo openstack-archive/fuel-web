@@ -520,7 +520,7 @@
             configurable: true
           - name: "baremetal"
             cidr: "192.168.3.0/24"
-            ip_range: ["192.168.3.1", "192.168.3.50"]
+            ip_range: ["192.168.3.2", "192.168.3.50"]
             vlan_start: 104
             use_gateway: false
             notation: "ip_ranges"

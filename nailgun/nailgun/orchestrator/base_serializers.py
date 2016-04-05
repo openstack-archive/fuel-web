@@ -150,6 +150,8 @@ class MuranoMetadataSerializerMixin(object):
         murano_data = ' '.join(["""--property murano_image_info='{"title":"""
                                """ "Murano Demo", "type": "cirros.demo"}'"""])
         test_vm_image['glance_properties'] = existing_properties + murano_data
+        test_vm_image['properties']['murano_image_info'] = """'{"title": \
+        "Murano Demo", "type": "cirros.demo"}'"""
         return {'test_vm_image': test_vm_image}
 
 

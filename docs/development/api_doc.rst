@@ -35,7 +35,7 @@ Disks API
 Network Configuration API
 -------------------------
 
-.. automodule:: nailgun.api.v1.handlers.network_configuration
+.. automodule:: nailgun.extensions.network_manager.handlers.network_configuration
 	:inherited-members:
 
 

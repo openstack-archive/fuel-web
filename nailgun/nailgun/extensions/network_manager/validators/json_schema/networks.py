@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from . import network_template
 from nailgun.api.v1.validators.json_schema import base_types
-from nailgun.api.v1.validators.json_schema import network_template
 from nailgun import consts
 
 NETWORK_META = {

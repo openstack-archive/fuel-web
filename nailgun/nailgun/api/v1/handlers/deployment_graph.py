@@ -24,7 +24,7 @@ from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators import deployment_graph as validators
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.objects.serializers.deployment_graph import \
     DeploymentGraphSerializer

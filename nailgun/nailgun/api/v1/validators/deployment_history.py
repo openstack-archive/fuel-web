@@ -14,7 +14,7 @@
 #    under the License.
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 
 
 class DeploymentHistoryValidator(BasicValidator):

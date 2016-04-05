@@ -14,7 +14,7 @@
 
 from nailgun.consts import TASK_NAMES
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test import base

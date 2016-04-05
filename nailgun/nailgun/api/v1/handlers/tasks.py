@@ -23,7 +23,8 @@ from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.task import TaskValidator
 
-from nailgun.errors import errors
+from nailgun import errors
+
 from nailgun import objects
 from nailgun import utils
 

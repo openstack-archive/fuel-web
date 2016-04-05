@@ -21,7 +21,7 @@ import string
 from oslo_serialization import jsonutils
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager.manager import Disk
 from nailgun.extensions.volume_manager.manager import DisksFormatConvertor

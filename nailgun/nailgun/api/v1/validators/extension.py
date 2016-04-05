@@ -16,7 +16,7 @@
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import extension as extension_schema
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions import get_all_extensions
 
 

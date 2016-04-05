@@ -19,7 +19,7 @@ import json
 from mock import Mock
 from mock import patch
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.test.base import BaseTestCase
 from nailgun.utils.zabbix import ZabbixManager
 

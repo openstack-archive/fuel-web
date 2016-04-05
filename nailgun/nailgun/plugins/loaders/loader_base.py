@@ -19,7 +19,7 @@ import os
 import six
 
 from files_manager import FilesManager
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import utils
 
 

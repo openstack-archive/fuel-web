@@ -21,7 +21,7 @@ from nailgun.api.v1.validators.json_schema import release
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 
 
 class ReleaseValidator(BasicValidator):

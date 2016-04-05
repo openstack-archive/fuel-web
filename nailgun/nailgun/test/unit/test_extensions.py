@@ -18,7 +18,7 @@ import mock
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.extension import ExtensionValidator
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions import BaseExtension
 from nailgun.extensions import BasePipeline
 from nailgun.extensions import fire_callback_on_cluster_delete

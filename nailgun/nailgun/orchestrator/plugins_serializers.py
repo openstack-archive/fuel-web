@@ -21,7 +21,7 @@ import itertools
 import six
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.settings import settings

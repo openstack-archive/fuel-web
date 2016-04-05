@@ -24,7 +24,7 @@ import six
 import yaml
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.settings import settings

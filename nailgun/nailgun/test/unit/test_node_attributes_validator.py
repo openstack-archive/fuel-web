@@ -17,7 +17,7 @@
 import json
 import mock
 from nailgun.api.v1.validators import node as node_validator
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.test import base
 
 

@@ -24,7 +24,7 @@ from nailgun.api.v1.validators.node_group import NodeGroupValidator
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse

@@ -18,7 +18,7 @@ import mock
 import yaml
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.orchestrator import orchestrator_graph

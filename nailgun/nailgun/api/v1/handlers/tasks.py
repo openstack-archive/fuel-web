@@ -21,7 +21,7 @@ from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.task import TaskValidator
 
-from nailgun.errors import errors
+from nailgun import errors
 
 from nailgun import objects
 

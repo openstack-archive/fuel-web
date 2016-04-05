@@ -18,7 +18,7 @@ import copy
 import mock
 
 from nailgun.api.v1.validators import ip_addr
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.test import base
 
 

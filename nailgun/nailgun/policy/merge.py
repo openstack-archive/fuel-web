@@ -17,7 +17,7 @@
 import abc
 import six
 
-from nailgun.errors import errors
+from nailgun import errors
 
 
 @six.add_metaclass(abc.ABCMeta)

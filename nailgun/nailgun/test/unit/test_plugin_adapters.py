@@ -21,7 +21,7 @@ import yaml
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.expression import Expression
 from nailgun.objects import ClusterPlugins
 from nailgun.objects import Plugin

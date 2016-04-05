@@ -863,8 +863,7 @@ class NetworkManager(object):
                                                 update_by_agent)
             else:
                 cls.__add_new_interface(node, interface, update_by_agent)
-        if update_by_agent:
-            objects.Node.refresh_dpdk_properties(node)
+        objects.Node.refresh_dpdk_properties(node)
 
         cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
         if node.cluster:

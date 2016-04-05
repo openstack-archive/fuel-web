@@ -17,8 +17,8 @@ import copy
 
 import mock
 
-from nailgun.api.v1.validators import ip_addr
 from nailgun.errors import errors
+from nailgun.extensions.network_manager.validators import ip_addr
 from nailgun.test import base
 
 
@@ -40,13 +40,13 @@ class TestIpAddrValidator(base.BaseUnitTest):
         self.ip_addr = mock.Mock()
 
         self.ng_object_patcher = mock.patch(
-            'nailgun.api.v1.validators.ip_addr.objects.NetworkGroup'
-            '.get_by_uid',
+            'nailgun.extensions.network_manager.validators.ip_addr'
+            '.objects.NetworkGroup.get_by_uid',
             new=mock.Mock(return_value=self.ng)
         )
         self.ip_addr_col_patcher = mock.patch(
-            'nailgun.api.v1.validators.ip_addr.objects.IPAddrCollection'
-            '.get_all_by_addr',
+            'nailgun.extensions.network_manager.validators.ip_addr'
+            '.objects.IPAddrCollection.get_all_by_addr',
             new=mock.Mock(
                 return_value=mock.Mock(
                     first=mock.Mock(return_value=self.ip_addr)
@@ -62,8 +62,8 @@ class TestIpAddrValidator(base.BaseUnitTest):
             }
         ]
         self.get_nr_patcher = mock.patch(
-            'nailgun.api.v1.validators.ip_addr.objects.Cluster'
-            '.get_network_roles',
+            'nailgun.extensions.network_manager.validators.ip_addr'
+            '.objects.Cluster.get_network_roles',
             return_value=net_roles
         )
 
@@ -108,8 +108,8 @@ class TestIpAddrValidator(base.BaseUnitTest):
 
     def test_vip_name_not_in_net_roles_vip_data(self):
         with mock.patch(
-            'nailgun.api.v1.validators.ip_addr.objects.Cluster'
-            '.get_network_roles',
+            'nailgun.extensions.network_manager.validators.ip_addr'
+            '.objects.Cluster.get_network_roles',
             return_value=[]
         ):
             self.assertRaises(
@@ -121,8 +121,8 @@ class TestIpAddrValidator(base.BaseUnitTest):
 
     def test_network_not_found_fail(self):
         with mock.patch(
-            'nailgun.api.v1.validators.ip_addr.objects.NetworkGroup'
-            '.get_by_uid',
+            'nailgun.extensions.network_manager.validators.ip_addr'
+            '.objects.NetworkGroup.get_by_uid',
             new=mock.Mock(return_value=None)
         ):
             self.assertRaises(
@@ -166,8 +166,8 @@ class TestIpAddrValidator(base.BaseUnitTest):
         self.ng.nodegroup.cluster_id = -1
 
         with mock.patch(
-            'nailgun.api.v1.validators.ip_addr.objects.IPAddrCollection'
-            '.get_all_by_addr',
+            'nailgun.extensions.network_manager.validators.ip_addr'
+            '.objects.IPAddrCollection.get_all_by_addr',
             new=mock.Mock(
                 return_value=mock.Mock(
                     first=mock.Mock(return_value=None)

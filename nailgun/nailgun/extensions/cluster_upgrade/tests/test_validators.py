@@ -190,3 +190,37 @@ class TestNodeReassignNoReinstallValidator(tests_base.BaseCloneClusterTest):
         msg = '^Role "controller" in conflict with role compute$'
         with self.assertRaisesRegexp(errors.InvalidData, msg):
             self.validator.validate(data, self.dst_cluster)
+
+
+class TestCopyVIPsValidator(base.BaseTestCase):
+    validator = validators.CopyVIPsValidator
+
+    def test_non_existing_relation_fail(self):
+        with self.assertRaises(errors.InvalidData) as cm:
+            self.validator.validate(data=None, cluster=None, relation=None)
+
+        self.assertEqual(
+            cm.exception.message,
+            "Relation for given cluster does not exist"
+        )
+
+    def test_cluster_is_not_seed(self):
+        cluster = self.env.create_cluster(api=False)
+        seed_cluster = self.env.create_cluster(api=False)
+
+        relations.UpgradeRelationObject.create_relation(
+            orig_cluster_id=cluster.id,
+            seed_cluster_id=cluster.id,
+        )
+
+        relation = relations.UpgradeRelationObject.get_cluster_relation(
+            cluster.id)
+
+        with self.assertRaises(errors.InvalidData) as cm:
+            self.validator.validate(data=None, cluster=seed_cluster,
+                                    relation=relation)
+
+        self.assertEqual(
+            cm.exception.message,
+            "Given cluster is not seed cluster"
+        )

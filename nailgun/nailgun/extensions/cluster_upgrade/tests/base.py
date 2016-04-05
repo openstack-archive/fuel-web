@@ -37,14 +37,18 @@ class BaseCloneClusterTest(nailgun_test_base.BaseIntegrationTest):
             version="liberty-9.0",
         )
 
-        self.src_cluster_db = self.env.create_cluster(
-            api=False,
-            release_id=self.src_release.id,
-            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron,
-            net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+        self.src_cluster_db = self.env.create(
+            cluster_kwargs={
+                'api': False,
+                'release_id': self.src_release.id,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_l23_provider': consts.NEUTRON_L23_PROVIDERS.ovs,
+            },
+            nodes_kwargs=[{'roles': ['controller']}]
         )
         self.src_cluster = adapters.NailgunClusterAdapter(
             self.src_cluster_db)
+
         self.data = {
             "name": "cluster-clone-{0}".format(self.src_cluster.id),
             "release_id": self.dst_release.id,

@@ -54,32 +54,14 @@ from nailgun.api.v1.handlers.cluster_plugin_link \
 from nailgun.api.v1.handlers.deployment_history \
     import DeploymentHistoryCollectionHandler
 
-from nailgun.api.v1.handlers.vip import ClusterVIPCollectionHandler
-from nailgun.api.v1.handlers.vip import ClusterVIPHandler
-
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
 from nailgun.api.v1.handlers.logs import LogPackageHandler
 from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
 from nailgun.api.v1.handlers.logs import SnapshotDownloadHandler
-from nailgun.api.v1.handlers.network_group import NetworkGroupCollectionHandler
-from nailgun.api.v1.handlers.network_group import NetworkGroupHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
-
-from nailgun.api.v1.handlers.network_configuration \
-    import NetworkAttributesDeployedHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import NeutronNetworkConfigurationHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import NeutronNetworkConfigurationVerifyHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import NovaNetworkConfigurationHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import NovaNetworkConfigurationVerifyHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import TemplateNetworkConfigurationHandler
 
 from nailgun.api.v1.handlers.node import NodeAgentHandler
 from nailgun.api.v1.handlers.node import NodeAttributesHandler
@@ -95,11 +77,6 @@ from nailgun.api.v1.handlers.plugin import PluginHandler
 from nailgun.api.v1.handlers.plugin import PluginSyncHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkCollectionHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkHandler
-
-from nailgun.api.v1.handlers.node import NodeCollectionNICsDefaultHandler
-from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
-from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
-from nailgun.api.v1.handlers.node import NodeNICsHandler
 
 from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
 from nailgun.api.v1.handlers.notifications import NotificationHandler
@@ -204,23 +181,6 @@ urls = (
     ClusterAttributesDefaultsHandler,
     r'/clusters/(?P<cluster_id>\d+)/attributes/deployed/?$',
     ClusterAttributesDeployedHandler,
-    # network related
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/deployed?$',
-    NetworkAttributesDeployedHandler,
-    # nova network-related
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/nova_network/?$',
-    NovaNetworkConfigurationHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
-    'nova_network/verify/?$',
-    NovaNetworkConfigurationVerifyHandler,
-    # neutron-related
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/neutron/?$',
-    NeutronNetworkConfigurationHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
-    'neutron/verify/?$',
-    NeutronNetworkConfigurationVerifyHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/template/?$',
-    TemplateNetworkConfigurationHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$',
     DeploymentInfo,
@@ -270,11 +230,6 @@ urls = (
     r'/graphs/(?P<obj_id>\d+)/?$',
     DeploymentGraphHandler,
 
-    r'/networks/?$',
-    NetworkGroupCollectionHandler,
-    r'/networks/(?P<obj_id>\d+)/?$',
-    NetworkGroupHandler,
-
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
@@ -290,13 +245,6 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/plugin_links/(?P<obj_id>\d+)/?$',
     ClusterPluginLinkHandler,
 
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration'
-    r'/ips/vips/?$',
-    ClusterVIPCollectionHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration'
-    r'/ips/(?P<ip_addr_id>\d+)/vips/?$',
-    ClusterVIPHandler,
-
     r'/nodegroups/?$',
     NodeGroupCollectionHandler,
     r'/nodegroups/(?P<obj_id>\d+)/?$',
@@ -310,14 +258,6 @@ urls = (
     NodeHandler,
     r'/nodes/(?P<node_id>\d+)/attributes/?$',
     NodeAttributesHandler,
-    r'/nodes/interfaces/?$',
-    NodeCollectionNICsHandler,
-    r'/nodes/interfaces/default_assignment/?$',
-    NodeCollectionNICsDefaultHandler,
-    r'/nodes/(?P<node_id>\d+)/interfaces/?$',
-    NodeNICsHandler,
-    r'/nodes/(?P<node_id>\d+)/interfaces/default_assignment/?$',
-    NodeNICsDefaultHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',

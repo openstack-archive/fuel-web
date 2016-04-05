@@ -26,12 +26,14 @@ from nailgun.extensions.network_manager.objects.serializers.\
 from nailgun.extensions.network_manager.objects.serializers.\
     network_configuration import NovaNetworkConfigurationSerializer
 
-from nailgun.api.v1.validators.network import NetworkConfigurationValidator
-from nailgun.api.v1.validators.network import NetworkTemplateValidator
-from nailgun.api.v1.validators.network \
-    import NeutronNetworkConfigurationValidator
-from nailgun.api.v1.validators.network \
-    import NovaNetworkConfigurationValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NetworkConfigurationValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NetworkTemplateValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NeutronNetworkConfigurationValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NovaNetworkConfigurationValidator
 
 from nailgun import consts
 from nailgun import objects

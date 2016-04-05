@@ -515,6 +515,7 @@ class NetAssignmentValidator(BasicValidator):
         elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
             iface_cls = objects.Bond
 
+        bond_type = None
         if db_iface is None:
             # looks like user create new bond
             # lets check every slave in input data
@@ -529,7 +530,7 @@ class NetAssignmentValidator(BasicValidator):
                     slave_iface, dpdk_drivers)
 
             interface_properties = iface.get('interface_properties', {})
-
+            bond_type = iface.get('bond_properties', {}).get('type__')
         else:
             hw_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
             interface_properties = utils.dict_merge(
@@ -540,6 +541,13 @@ class NetAssignmentValidator(BasicValidator):
         # sanity checks
         available = interface_properties.get('dpdk', {}).get('available')
         enabled = interface_properties.get('dpdk', {}).get('enabled', False)
+
+        if bond_type != consts.BOND_TYPES.ovs and enabled:
+            raise errors.InvalidData(
+                "Bond interface '{0}': DPDK should be"
+                " enabled for 'ovs' bond type".format(iface['name']),
+                log_message=True
+            )
 
         if available is not None and hw_available != available:
             raise errors.InvalidData(

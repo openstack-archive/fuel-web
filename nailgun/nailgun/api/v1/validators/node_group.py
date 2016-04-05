@@ -18,7 +18,7 @@ from distutils.version import StrictVersion
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun import consts
 from nailgun.db import db
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 
 from nailgun.api.v1.validators.json_schema import node_group

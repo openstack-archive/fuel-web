@@ -21,7 +21,7 @@ import six
 import yaml
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.expression import Expression
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers

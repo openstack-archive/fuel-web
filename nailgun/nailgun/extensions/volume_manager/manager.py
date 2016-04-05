@@ -25,7 +25,7 @@ import re
 
 from oslo_serialization import jsonutils
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 
 from .objects.adapters import NailgunNodeAdapter

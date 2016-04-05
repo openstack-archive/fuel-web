@@ -23,7 +23,7 @@ from nailgun.api.v1.validators.network import \
 from nailgun.api.v1.validators.network import NovaNetworkConfigurationValidator
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.test import base
 

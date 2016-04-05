@@ -19,7 +19,7 @@ from itertools import chain
 from stevedore.extension import ExtensionManager
 
 from nailgun.db import db
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions import consts
 
 _EXTENSION_MANAGER = None

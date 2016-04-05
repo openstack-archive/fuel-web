@@ -21,7 +21,7 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import notifier
 from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest

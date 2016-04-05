@@ -20,7 +20,7 @@ from six.moves import map
 
 from adapters import wrap_plugin
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import Plugin

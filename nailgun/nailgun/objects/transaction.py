@@ -19,7 +19,7 @@ from datetime import datetime
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.node_deployment_info import NodeDeploymentInfo

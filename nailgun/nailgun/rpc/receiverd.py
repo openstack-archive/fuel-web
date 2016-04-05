@@ -27,7 +27,7 @@ import six
 from sqlalchemy.exc import OperationalError
 
 from nailgun.db import db
-from nailgun.errors import errors
+from nailgun import errors
 import nailgun.rpc as rpc
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.rpc import utils

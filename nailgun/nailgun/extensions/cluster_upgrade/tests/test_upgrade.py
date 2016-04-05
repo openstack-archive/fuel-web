@@ -107,6 +107,11 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
                          self.public_net_data['ip_ranges'])
 
     def test_copy_vips(self):
+        # save network information before node reassignment to seed cluster
+        # as after that no VIP will be allocated/serialized due to
+        # absence of assigned nodes for the source cluster
+        orig_nets = self.serialize_nets(self.src_cluster.cluster)
+
         new_cluster = self.helper.clone_cluster(self.src_cluster, self.data)
 
         # we have to move node to new cluster before VIP assignment
@@ -117,7 +122,6 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
 
         self.helper.copy_vips(self.src_cluster, new_cluster)
 
-        orig_nets = self.serialize_nets(self.src_cluster.cluster)
         new_nets = self.serialize_nets(new_cluster.cluster)
 
         self.assertEqual(orig_nets["management_vip"],

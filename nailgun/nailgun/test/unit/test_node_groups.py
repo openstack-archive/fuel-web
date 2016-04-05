@@ -42,7 +42,8 @@ class TestNodeGroups(BaseIntegrationTest):
                 'api': False,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': self.segmentation_type
-            }
+            },
+            nodes_kwargs=[{'roles': ['controller']}]
         )
 
     def test_nodegroup_creation(self):
@@ -68,7 +69,7 @@ class TestNodeGroups(BaseIntegrationTest):
     def test_nodegroup_assignment(self):
         cluster = self.env.create(
             cluster_kwargs={
-                'api': True,
+                'api': False,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre
             },
@@ -78,13 +79,13 @@ class TestNodeGroups(BaseIntegrationTest):
                 'pending_addition': True,
                 'api': True}]
         )
-        node = self.env.nodes[0]
+        node = cluster.nodes[0]
 
-        resp = self.env.create_node_group(cluster_id=cluster.get('id'))
+        resp = self.env.create_node_group(cluster_id=cluster.id)
         ng_id = resp.json_body['id']
 
         resp = self.app.put(
-            reverse('NodeHandler', kwargs={'obj_id': node['id']}),
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps({'group_id': ng_id}),
             headers=self.default_headers,
             expect_errors=False

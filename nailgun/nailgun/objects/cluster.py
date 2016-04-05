@@ -909,14 +909,8 @@ class Cluster(NailgunObject):
 
         nodegroups = cls.get_node_groups(instance, noderoles).all()
 
-        # NOTE(ikalnitsky):
-        #   The 'nodegroups' may be an empty list only in case when there's
-        #   no nodes with a given 'noderoles' in the cluster. I think we
-        #   should reconsider this behaviour, and propogate some error up
-        #   above, because returning default node group doesn't look like
-        #   a right choice here.
         if not nodegroups:
-            return cls.get_default_group(instance)
+            return None
 
         if len(nodegroups) > 1:
             raise errors.CanNotFindCommonNodeGroup(

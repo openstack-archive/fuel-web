@@ -14,7 +14,7 @@
 #    under the License.
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.lcm.context import TransactionContext
 from nailgun.lcm import task_serializer
 from nailgun.settings import settings

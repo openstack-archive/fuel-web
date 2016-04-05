@@ -21,7 +21,7 @@ from oslo_serialization import jsonutils
 from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.test.base import BaseTestCase
 

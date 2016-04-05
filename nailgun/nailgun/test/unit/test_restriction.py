@@ -17,7 +17,7 @@
 import six
 import yaml
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.settings import settings
 from nailgun.test import base

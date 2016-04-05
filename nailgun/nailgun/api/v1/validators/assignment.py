@@ -22,7 +22,7 @@ from nailgun.api.v1.validators.json_schema.assignment \
     import unassignment_format_schema
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.expression import Expression
 from nailgun import objects
 

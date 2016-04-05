@@ -21,7 +21,7 @@ from oslo_serialization import jsonutils
 import six
 
 from nailgun.api.v1.validators.json_schema import base_types
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.utils import restrictions
 
@@ -39,7 +39,7 @@ class BasicValidator(object):
             try:
                 res = jsonutils.loads(data)
             except Exception:
-                raise errors.InvalidData(
+                raise errors.JsonDecodeError(
                     "Invalid json received",
                     log_message=True
                 )
@@ -65,7 +65,7 @@ class BasicValidator(object):
             jsonschema.validate(json_req, use_schema)
         except exceptions.ValidationError as exc:
             if len(exc.path) > 0:
-                raise errors.InvalidData(
+                raise errors.JsonValidationError(
                     # NOTE(ikutukov): here was a exc.path.pop(). It was buggy
                     # because JSONSchema error path could contain integers
                     # and joining integers as string is not a good idea in
@@ -73,7 +73,7 @@ class BasicValidator(object):
                     # properly and give 500 error code except 400.
                     ": ".join([six.text_type(exc.path), exc.message])
                 )
-            raise errors.InvalidData(exc.message)
+            raise errors.JsonValidationError(exc.message)
 
     @classmethod
     def validate_response(cls, resp, resource_type,
@@ -195,13 +195,14 @@ class BasicAttributesValidator(BasicValidator):
 
         try:
             cls.validate_schema(attr, schema)
-        except errors.InvalidData as e:
-            raise errors.InvalidData('[{0}] {1}'.format(attr_name, e.message))
+        except errors.JsonValidationError as e:
+            raise errors.JsonValidationError(
+                '[{0}] {1}'.format(attr_name, e.message))
 
         # Validate regexp only if some value is present
         # Otherwise regexp might be invalid
         if attr['value']:
             regex_err = restrictions.AttributesRestriction.validate_regex(attr)
             if regex_err is not None:
-                raise errors.InvalidData(
+                raise errors.JsonValidationError(
                     '[{0}] {1}'.format(attr_name, regex_err))

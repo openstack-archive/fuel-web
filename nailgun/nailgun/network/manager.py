@@ -520,23 +520,46 @@ class NetworkManager(object):
         objects.Bond.bulk_delete([bond.id for bond in node.bond_interfaces])
 
     @classmethod
-    def get_default_interface_properties(cls):
-        return {
+    def get_default_interface_properties(cls, interface_properties=None):
+        """Interface properties defaults.
+
+        Some interface's "defaults" properties come from hardware (for
+        example pci_id). If interface_properties parameter is provided
+        than hardware dependent properties would be get from it.
+
+        :param interface_properties: interface properties dict
+
+        """
+        data = {
             'mtu': None,
             'disable_offloading': False,
             'sriov': {
                 'enabled': False,
                 'sriov_numvfs': None,
-                'sriov_totalvfs': 0,
-                'available': False,
-                'pci_id': '',
-                'physnet': 'physnet2'
+                'physnet': 'physnet2',
             },
             'dpdk': {
-                'available': False,
-                'enabled': False
+                'enabled': False,
             }
         }
+        if interface_properties is None:
+            interface_properties = {}
+
+        sriov = interface_properties.get('sriov', {})
+        dpdk = interface_properties.get('dpdk', {})
+
+        hw_default_properties = {
+            'sriov': {
+                'pci_id': sriov.get('pci_id', ''),
+                'available': sriov.get('available', False),
+                'sriov_totalvfs': sriov.get('sriov_totalvfs', 0),
+            },
+            'dpdk': {
+                'available': dpdk.get('available', False),
+            }
+        }
+
+        return nailgun_utils.dict_merge(data, hw_default_properties)
 
     @classmethod
     def assign_network_to_interface_by_default(cls, ng):
@@ -619,7 +642,8 @@ class NetworkManager(object):
         for nic in node.nic_interfaces:
             nic_dict = NodeInterfacesSerializer.serialize(nic)
             if 'interface_properties' in nic_dict:
-                default_properties = cls.get_default_interface_properties()
+                default_properties = cls.get_default_interface_properties(
+                    nic_dict['interface_properties'])
                 nic_dict['interface_properties'] = nailgun_utils.dict_merge(
                     nic_dict['interface_properties'],
                     default_properties)

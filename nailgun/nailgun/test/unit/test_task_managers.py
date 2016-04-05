@@ -18,7 +18,7 @@ import datetime
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.task.manager import DeploymentCheckMixin
 from nailgun.test.base import BaseTestCase
 

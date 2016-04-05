@@ -13,10 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun.logger import logger
 
 
+@six.python_2_unicode_compatible
 class NailgunException(Exception):
+    message = ""
 
     def __init__(self,
                  message="",
@@ -33,7 +37,4 @@ class NailgunException(Exception):
         super(NailgunException, self).__init__()
 
     def __str__(self):
-        return self.message
-
-    def __unicode__(self):
         return self.message

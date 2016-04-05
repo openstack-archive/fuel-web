@@ -16,7 +16,7 @@
 
 from nailgun.api.v1.validators.json_schema import node_schema
 from nailgun.api.v1.validators import node
-from nailgun.errors import errors
+from nailgun import errors
 
 from nailgun.test import base
 

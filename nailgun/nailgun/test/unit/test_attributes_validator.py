@@ -20,7 +20,7 @@ import yaml
 
 from nailgun.api.v1.validators import base
 from nailgun.api.v1.validators import cluster
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.test import base as base_test
 
 

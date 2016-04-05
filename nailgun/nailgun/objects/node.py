@@ -44,6 +44,7 @@ from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.logger import logger
 from nailgun.network.template import NetworkTemplate
+from nailgun.network import utils as network_utils
 from nailgun.objects import Bond
 from nailgun.objects import Cluster
 from nailgun.objects import IPAddr
@@ -207,6 +208,19 @@ class Node(NailgunObject):
         ).filter(
             models.NodeBondInterface.node_id == instance_id
         ).first()
+
+    @classmethod
+    def get_interface_by_mac_or_name(cls, instance, mac=None, name=None):
+        # try to get interface by mac address
+        interface = next((
+            n for n in instance.nic_interfaces
+            if network_utils.is_same_mac(n.mac, mac)), None)
+
+        # try to get interface instance by interface name. this protects
+        # us from loosing nodes when some NICs was replaced with a new one
+        interface = interface or next((
+            n for n in instance.nic_interfaces if n.name == name), None)
+        return interface
 
     @classmethod
     def get_admin_ip(cls, node, admin_net_id=None):
@@ -539,7 +553,7 @@ class Node(NailgunObject):
         )
 
     @classmethod
-    def update_interfaces(cls, instance, update_by_agent=False):
+    def update_interfaces(cls, instance):
         """Update interfaces for Node instance using Cluster
 
         network manager (see :func:`get_network_manager`)
@@ -549,7 +563,7 @@ class Node(NailgunObject):
         """
         try:
             network_manager = Cluster.get_network_manager(instance.cluster)
-            network_manager.update_interfaces_info(instance, update_by_agent)
+            network_manager.update_interfaces_info(instance)
 
             db().refresh(instance)
         except errors.InvalidInterfacesInfo as exc:
@@ -631,8 +645,6 @@ class Node(NailgunObject):
         pending_roles = data.pop("pending_roles", None)
         new_meta = data.pop("meta", None)
 
-        update_by_agent = data.pop("is_agent", False)
-
         disks_changed = None
         if new_meta and "disks" in new_meta and "disks" in instance.meta:
             key = operator.itemgetter("name")
@@ -660,7 +672,7 @@ class Node(NailgunObject):
                 instance.ip = data.pop("ip", None) or instance.ip
                 instance.mac = data.pop("mac", None) or instance.mac
                 db().flush()
-                cls.update_interfaces(instance, update_by_agent)
+                cls.update_interfaces(instance)
 
         cluster_changed = False
         add_to_cluster = False
@@ -847,7 +859,21 @@ class Node(NailgunObject):
                         instance.status = consts.NODE_STATUSES.discover
             else:
                 data.pop('status', None)
-        return cls.update(instance, data)
+        instance = cls.update(instance, data)
+
+        for interface in instance.meta["interfaces"]:
+            new_offloading_modes = interface.get('offloading_modes')
+            if new_offloading_modes:
+                NIC.update_offloading_modes(
+                    cls.get_interface_by_mac_or_name(
+                        instance,
+                        interface['mac'],
+                        interface['name']
+                    ),
+                    new_offloading_modes
+                )
+
+        return instance
 
     @classmethod
     def update_roles(cls, instance, new_roles):

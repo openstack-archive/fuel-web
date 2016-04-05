@@ -17,7 +17,7 @@
 from ..objects.adapters import NailgunNodeAdapter
 from .json_schema.disks import disks_simple_format_schema
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.errors import errors
+from nailgun import errors
 
 
 class NodeDisksValidator(BasicValidator):

@@ -24,7 +24,7 @@ from nailgun.api.v1.handlers.deployment_graph import \
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphHandler
 from nailgun.api.v1.validators import plugin
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
 

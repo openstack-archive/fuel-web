@@ -17,7 +17,7 @@ from nailgun import consts
 from nailgun import objects
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.errors import errors
+from nailgun import errors
 
 
 class NotificationValidator(BasicValidator):

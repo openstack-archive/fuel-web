@@ -26,7 +26,7 @@ from oslo_serialization import jsonutils
 from sqlalchemy import or_
 
 from nailgun import consts
-from nailgun.errors import errors as nailgun_errors
+from nailgun import errors as nailgun_errors
 from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings

@@ -18,7 +18,7 @@ import mock
 import uuid
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.objects import ClusterPlugin
 from nailgun.plugins.adapters import PluginAdapterV3
 from nailgun.plugins.manager import PluginManager

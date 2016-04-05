@@ -18,7 +18,7 @@ from mock import ANY
 from mock import patch
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.objects import ClusterPlugin
 from nailgun.objects import Plugin
 from nailgun.rpc.receiver import NailgunReceiver

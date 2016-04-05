@@ -33,7 +33,7 @@ from nailgun.api.v1.validators.orchestrator_graph import \
 from nailgun.logger import logger
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun import utils
 

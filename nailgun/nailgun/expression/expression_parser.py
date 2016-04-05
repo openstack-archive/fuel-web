@@ -17,7 +17,7 @@
 import ply.lex
 import ply.yacc
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.expression.objects import ModelPathWrapper
 from nailgun.expression.objects import ScalarWrapper
 from nailgun.expression.objects import SubexpressionWrapper

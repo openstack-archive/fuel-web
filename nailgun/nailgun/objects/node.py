@@ -36,7 +36,7 @@ from sqlalchemy.orm import subqueryload_all
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.extensions import fire_callback_on_node_create
 from nailgun.extensions import fire_callback_on_node_delete

@@ -529,17 +529,32 @@ class NetAssignmentValidator(BasicValidator):
                     slave_iface, dpdk_drivers)
 
             interface_properties = iface.get('interface_properties', {})
+            enabled = interface_properties.get('dpdk', {}).get('enabled', False)
 
+            bond_type = iface.get('bond_properties', {}).get('type__')
+
+            if bond_type == consts.BOND_TYPES.ovs and not enabled:
+                raise errors.InvalidData(
+                    "Bond interface '{0}': DPDK should be"
+                    " enabled for 'ovs' bond type".format(iface['name']),
+                    log_message=True
+                )
+            if bond_type != consts.BOND_TYPES.ovs and enabled:
+                raise errors.InvalidData(
+                    "Bond interface '{0}': DPDK can be enabled"
+                    " only for 'ovs' bond type".format(iface['name']),
+                    log_message=True
+                )
         else:
             hw_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
             interface_properties = utils.dict_merge(
                 db_iface.interface_properties,
                 iface.get('interface_properties', {})
             )
+            enabled = interface_properties.get('dpdk', {}).get('enabled', False)
 
         # sanity checks
         available = interface_properties.get('dpdk', {}).get('available')
-        enabled = interface_properties.get('dpdk', {}).get('enabled', False)
 
         if available is not None and hw_available != available:
             raise errors.InvalidData(

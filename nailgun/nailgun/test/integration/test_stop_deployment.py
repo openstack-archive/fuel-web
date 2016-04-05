@@ -75,6 +75,7 @@ class TestStopDeployment(BaseIntegrationTest):
 
         self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
         self.assertEqual(stop_task.progress, 100)
+        self.assertFalse(self.cluster.is_locked)
 
         for n in self.cluster.nodes:
             self.assertEqual(n.roles, [])
@@ -198,6 +199,7 @@ class TestStopDeployment(BaseIntegrationTest):
 
         self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
         self.assertEqual(stop_task.progress, 100)
+        self.assertFalse(self.cluster.is_locked)
 
     @patch('nailgun.rpc.cast')
     def test_latest_task_is_sent(self, mocked_rpc):

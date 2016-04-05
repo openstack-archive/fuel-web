@@ -165,6 +165,8 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
+        self.assertFalse(self.cluster.is_locked)
+
         self.node_should_be_error_with_type(self.cluster.nodes[0], 'deploy')
         self.nodes_should_not_be_error(self.cluster.nodes[1:])
 
@@ -177,6 +179,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
+        self.assertFalse(self.cluster.is_locked)
 
     def test_update_nodes_to_error_if_provision_task_failed(self):
         self.cluster.nodes[0].status = 'provisioning'
@@ -190,6 +193,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
+        self.assertFalse(self.cluster.is_locked)
         self.node_should_be_error_with_type(self.cluster.nodes[0], 'provision')
         self.nodes_should_not_be_error(self.cluster.nodes[1:])
 
@@ -208,6 +212,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         self.assertEqual(
             self.cluster.status, consts.CLUSTER_STATUSES.operational)
+        self.assertFalse(self.cluster.is_locked)
 
     def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
         for node in self.cluster.nodes:
@@ -229,6 +234,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         self.assertEqual(
             self.cluster.status, consts.CLUSTER_STATUSES.operational)
+        self.assertFalse(self.cluster.is_locked)
 
         for node in self.cluster.nodes:
             self.assertEqual(node.status, consts.NODE_STATUSES.ready)
@@ -250,6 +256,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         self.assertEqual(self.cluster.status, 'error')
         self.assertEqual(provision_task.status, 'error')
+        self.assertFalse(self.cluster.is_locked)
 
         for node in self.cluster.nodes:
             self.assertEqual(node.status, 'error')
@@ -275,6 +282,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             self.db.flush()
 
             self.assertEqual(self.cluster.status, 'new')
+            self.assertFalse(self.cluster.is_locked)
 
 
 class TestCheckBeforeDeploymentTask(BaseTestCase):

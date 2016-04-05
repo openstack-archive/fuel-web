@@ -57,6 +57,7 @@ class TestErrors(BaseIntegrationTest):
             1
         )
         self.assertEqual(supertask.cluster.status, 'error')
+        self.assertFalse(supertask.cluster.is_locked)
 
     @fake_tasks(error="deployment", error_msg="Terrible error")
     def test_deployment_error_from_orchestrator(self):
@@ -93,6 +94,7 @@ class TestErrors(BaseIntegrationTest):
         ).first()
         self.assertIsNotNone(err_notification)
         self.assertEqual(supertask.cluster.status, 'error')
+        self.assertFalse(supertask.cluster.is_locked)
 
     @fake_tasks(error="deployment")
     def test_deployment_error_during_deployment(self):
@@ -117,6 +119,7 @@ class TestErrors(BaseIntegrationTest):
 
         self.assertEqual(len(map(n_error, self.env.nodes)), 2)
         self.assertEqual(supertask.cluster.status, 'error')
+        self.assertFalse(supertask.cluster.is_locked)
 
     @fake_tasks(error="deployment", task_ready=True)
     def test_task_ready_node_error(self):
@@ -136,3 +139,4 @@ class TestErrors(BaseIntegrationTest):
         )
         self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
         self.assertRegexpMatches(supertask.message, message)
+        self.assertFalse(supertask.cluster.is_locked)

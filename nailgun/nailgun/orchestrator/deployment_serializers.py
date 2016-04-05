@@ -148,7 +148,6 @@ class DeploymentMultinodeSerializer(object):
         attrs['deployment_id'] = cluster.id
         attrs['openstack_version'] = cluster.release.version
         attrs['fuel_version'] = cluster.fuel_version
-        attrs['nodes'] = self.node_list(self.all_nodes)
 
         # Adding params to workloads_collector
         if 'workloads_collector' not in attrs:
@@ -367,12 +366,9 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         'controller'
     ))
 
-    def get_last_controller(self, nodes):
-        sorted_nodes = sorted(
-            nodes, key=lambda node: int(node['uid']))
-
+    def get_last_controller(self, sorted_nodes):
         controller_nodes = self.filter_by_roles(
-            sorted_nodes, ['controller', 'primary-controller'])
+            sorted_nodes.all(), ['controller', 'primary-controller'])
 
         last_controller = None
         if len(controller_nodes) > 0:
@@ -406,7 +402,8 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             {'point': '1', 'weight': '1'},
             {'point': '2', 'weight': '2'}]
 
-        last_controller = self.get_last_controller(common_attrs['nodes'])
+        last_controller = self.get_last_controller(
+            objects.Cluster.get_nodes_not_for_deletion(cluster))
         common_attrs.update(last_controller)
 
         return common_attrs

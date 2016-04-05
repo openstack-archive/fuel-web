@@ -16,7 +16,6 @@
 
 """Base classes of deployment serializers for orchestrator"""
 
-from copy import deepcopy
 from netaddr import IPNetwork
 
 from nailgun.db import db
@@ -283,9 +282,6 @@ class NetworkDeploymentSerializer(object):
         common.update(
             cls.network_ranges(objects.Cluster.get_default_group(cluster).id))
         common.update({'master_ip': settings.MASTER_IP})
-
-        common['nodes'] = deepcopy(attrs['nodes'])
-        common['nodes'] = cls.update_nodes_net_info(cluster, common['nodes'])
 
         return common
 

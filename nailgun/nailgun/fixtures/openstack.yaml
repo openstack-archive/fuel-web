@@ -975,7 +975,7 @@
             weight: 70
             type: "checkbox"
             restrictions:
-              - "settings:additional_components.ceilometer.value == false"
+              - "settings:additional_components.ceilometer.value == false": "External Mongo aims to be an external backend for Ceilometer. Without Ceilometer enabled, External Mongo is useless and should not be installed."
           ironic:
             value: false
             label: "Install Ironic"

@@ -25,7 +25,7 @@ from nailgun import utils
 
 class OpenstackConfigValidator(BasicValidator):
 
-    exclusive_fields = frozenset(['node_id', 'node_role'])
+    exclusive_fields = frozenset(['node_id', 'node_ids', 'node_role'])
 
     supported_configs = frozenset([
         'nova_config', 'nova_paste_api_ini', 'neutron_config',
@@ -68,7 +68,7 @@ class OpenstackConfigValidator(BasicValidator):
                                      "'operational'")
 
         target_nodes = objects.Cluster.get_nodes_to_update_config(
-            cluster, filters.get('node_id'), filters.get('node_role'),
+            cluster, filters.get('node_ids'), filters.get('node_role'),
             only_ready_nodes=False)
 
         ready_target_nodes_uids = set(
@@ -99,15 +99,24 @@ class OpenstackConfigValidator(BasicValidator):
         cls.validate_schema(data, schema)
         cls._check_exclusive_fields(data)
 
-        cluster = objects.Cluster.get_by_uid(data['cluster_id'],
-                                             fail_if_not_found=True)
-        if 'node_id' in data:
-            node = objects.Node.get_by_uid(
-                data['node_id'], fail_if_not_found=True)
-            if node.cluster_id != cluster.id:
+        # node_id is supported for backward compatibility
+        node_id = data.pop('node_id', None)
+        if node_id is not None:
+            data['node_ids'] = [node_id]
+
+        cluster = objects.Cluster.get_by_uid(
+            data['cluster_id'], fail_if_not_found=True)
+
+        node_ids = data.get('node_ids')
+        if node_ids:
+            nodes = objects.NodeCollection.get_by_ids(node_ids, cluster.id)
+            invalid_node_ids = set(node_ids) - set(n.id for n in nodes)
+
+            if invalid_node_ids:
                 raise errors.InvalidData(
-                    "Node '{0}' is not assigned to cluster '{1}'".format(
-                        data['node_id'], cluster.id))
+                    "Nodes '{0}' are not assigned to cluster '{1}'".format(
+                        ', '.join(str(n) for n in sorted(invalid_node_ids)),
+                        cluster.id))
 
         cls._check_no_running_deploy_tasks(cluster)
         return data
@@ -164,6 +173,14 @@ class OpenstackConfigValidator(BasicValidator):
                 except ValueError:
                     raise errors.InvalidData("Invalid '{0}' value: '{1}'"
                                              .format(field, value))
+
+        node_ids = data.get('node_ids', None)
+        if node_ids is not None:
+            try:
+                data['node_ids'] = [int(n) for n in node_ids.split(',')]
+            except ValueError:
+                raise errors.InvalidData("Invalid 'node_ids' value: '{0}'"
+                                         .format(node_ids))
 
         if 'is_active' in data:
             try:

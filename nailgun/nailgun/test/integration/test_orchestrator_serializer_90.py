@@ -179,8 +179,8 @@ class TestDeploymentAttributesSerialization90(
                          {'datapath_type': 'netdev'})
         self.assertEqual(dpdk_bonds[0].get('provider'),
                          consts.NEUTRON_L23_PROVIDERS.dpdkovs)
-        self.assertEqual(dpdk_bonds[0].get('bond_properties'),
-                         bond_interface['bond_properties'])
+        self.assertEqual(dpdk_bonds[0].get('bond_properties').get('mode'),
+                         bond_interface['bond_properties'].get('mode'))
         interfaces = node['network_scheme']['interfaces']
         for iface in nics_for_bond:
             dpdk_interface = interfaces[iface['name']]
@@ -193,7 +193,8 @@ class TestDeploymentAttributesSerialization90(
             'driver_1': ['test_id:1', 'test_id:2']
         }
         bond_properties = {
-            'mode': consts.BOND_MODES.balance_slb
+            'mode': consts.BOND_MODES.balance_slb,
+            'type__': consts.BOND_TYPES.ovs,
         }
 
         self._check_dpdk_bond_serializing(bond_properties)
@@ -207,7 +208,8 @@ class TestDeploymentAttributesSerialization90(
             'mode': consts.BOND_MODES.balance_tcp,
             'lacp': 'active',
             'lacp_rate': 'fast',
-            'xmit_hash_policy': 'layer2'}
+            'xmit_hash_policy': 'layer2',
+            'type__': consts.BOND_TYPES.ovs}
         self._check_dpdk_bond_serializing(bond_properties)
 
     def test_attributes_cpu_pinning(self):

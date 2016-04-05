@@ -29,7 +29,7 @@ from nailgun.api.v1.validators.node_group import NodeGroupValidator
 from nailgun import consts
 from nailgun.db import db
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.task.manager import UpdateDnsmasqTaskManager
 

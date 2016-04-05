@@ -29,7 +29,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun import notifier
 from nailgun import objects

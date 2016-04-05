@@ -16,7 +16,7 @@
 
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.policy.merge import NetworkRoleMergePolicy
 from nailgun.policy.name_match import ExactMatchingPolicy
 from nailgun.policy.name_match import NameMatchingPolicy

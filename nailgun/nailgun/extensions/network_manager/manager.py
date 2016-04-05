@@ -27,7 +27,8 @@ from netaddr import IPRange
 import six
 
 from nailgun import consts
-from nailgun.errors import errors
+
+from nailgun import errors
 from nailgun.extensions.network_manager.objects.serializers.nic import \
     NodeInterfacesSerializer
 from nailgun.logger import logger

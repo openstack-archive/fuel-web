@@ -16,7 +16,7 @@ from mock import patch
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import DeploymentGraphTask
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.orchestrator.tasks_templates import make_generic_task
 from nailgun.rpc.receiver import NailgunReceiver

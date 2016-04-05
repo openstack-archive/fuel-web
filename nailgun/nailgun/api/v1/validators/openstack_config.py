@@ -18,7 +18,7 @@ from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import openstack_config as schema
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun import utils
 

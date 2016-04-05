@@ -30,8 +30,7 @@ from nailgun.api.v1.validators.orchestrator_graph import \
     GraphSolverTasksValidator
 from nailgun import consts
 from nailgun.db import db
-from nailgun.errors.base import NailgunException
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
@@ -306,7 +305,7 @@ def handle_errors(func, cls, *args, **kwargs):
         else:
             http_error.data = json_resp(http_error.data)
         raise
-    except NailgunException as exc:
+    except errors.NailgunException as exc:
         logger.exception('NailgunException occured')
         http_error = BaseHandler.http(400, exc.message)
         web.header('Content-Type', 'text/plain')

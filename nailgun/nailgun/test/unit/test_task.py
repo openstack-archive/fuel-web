@@ -20,7 +20,7 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun import objects
 from nailgun.task import task

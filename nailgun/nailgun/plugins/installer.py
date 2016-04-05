@@ -17,7 +17,7 @@ import yaml
 
 import mapping
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 
 PLUGIN_ROOT_FILE = 'metadata.yaml'

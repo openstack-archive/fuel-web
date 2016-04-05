@@ -29,7 +29,7 @@ from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeGroup
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun import utils
 

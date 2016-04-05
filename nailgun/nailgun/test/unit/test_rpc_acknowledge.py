@@ -19,7 +19,7 @@ import mock
 from psycopg2.extensions import TransactionRollbackError
 from sqlalchemy.exc import OperationalError
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.rpc import receiverd
 from nailgun.test import base
 

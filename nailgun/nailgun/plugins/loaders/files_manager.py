@@ -20,7 +20,7 @@ import os
 
 import yaml
 
-from nailgun.errors import errors
+from nailgun import errors
 
 
 def deserializer_json(raw_data, *args, **kwargs):

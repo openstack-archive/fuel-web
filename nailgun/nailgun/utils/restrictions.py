@@ -22,7 +22,7 @@ from functools import partial
 import re
 import six
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.expression import Expression
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact

@@ -13,7 +13,7 @@
 #    under the License.
 
 from nailgun.api.v1.validators.assignment import NodeAssignmentValidator
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.test.base import BaseUnitTest
 
 

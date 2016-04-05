@@ -14,7 +14,7 @@
 from oslo_serialization import jsonutils
 
 from nailgun.api.v1.validators.release import ReleaseValidator
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.test.base import BaseTestCase
 
 

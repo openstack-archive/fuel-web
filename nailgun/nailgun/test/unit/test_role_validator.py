@@ -15,7 +15,7 @@
 from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import role
 from nailgun.api.v1.validators.role import RoleValidator
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.test.base import BaseUnitTest
 
 

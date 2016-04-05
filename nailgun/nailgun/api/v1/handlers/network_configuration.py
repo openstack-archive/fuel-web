@@ -38,7 +38,7 @@ from nailgun.api.v1.validators.network \
 from nailgun import consts
 from nailgun import objects
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import UpdateDnsmasqTaskManager

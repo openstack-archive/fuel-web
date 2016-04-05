@@ -26,21 +26,14 @@ from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
-from nailgun.api.v1.validators.network import NetAssignmentValidator
 from nailgun.api.v1.validators import node as node_validators
 
-from nailgun import consts
 from nailgun import errors
 from nailgun import objects
 
-from nailgun.extensions.network_manager.objects.serializers.nic import \
-    NodeInterfacesSerializer
-
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NodeNICInterface
 
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.task.manager import NodeDeletionTaskManager
 
 from nailgun.logger import logger
@@ -230,6 +223,7 @@ class NodeAgentHandler(BaseHandler):
         return {"id": node.id}
 
 
+<<<<<<< HEAD
 class NodeNICsHandler(BaseHandler):
     """Node network interfaces handler"""
 

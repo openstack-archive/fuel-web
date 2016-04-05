@@ -16,7 +16,7 @@
 
 import inspect
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.expression import Expression
 from nailgun.test.base import BaseTestCase
 

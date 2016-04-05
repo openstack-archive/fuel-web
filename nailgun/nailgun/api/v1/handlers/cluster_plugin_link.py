@@ -17,7 +17,7 @@
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators import plugin_link
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 
 

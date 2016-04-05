@@ -29,7 +29,7 @@ from nailgun.api.v1.validators.orchestrator_graph import \
     GraphSolverTasksValidator
 from nailgun import consts
 from nailgun.db import db
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer

@@ -16,7 +16,7 @@
 
 import mock
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.rpc import receiverd
 from nailgun.test import base
 

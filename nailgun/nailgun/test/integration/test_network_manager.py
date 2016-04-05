@@ -29,7 +29,7 @@ import yaml
 
 import nailgun
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions.network_manager.objects.serializers \
     import network_configuration
 from nailgun import objects

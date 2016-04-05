@@ -713,6 +713,7 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
 
         self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
+        self.assertFalse(self.cluster.is_locked)
         self._node_should_be_error_with_type(self.cluster.nodes[0],
                                              consts.NODE_ERRORS.deploy)
         self._nodes_should_not_be_error(self.cluster.nodes[1:])
@@ -728,6 +729,7 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
 
         self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
+        self.assertFalse(self.cluster.is_locked)
 
     def test_update_nodes_to_error_if_provision_task_failed(self):
         self.cluster.nodes[0].status = consts.NODE_STATUSES.provisioning
@@ -742,6 +744,7 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
 
         self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
+        self.assertFalse(self.cluster.is_locked)
         self._node_should_be_error_with_type(self.cluster.nodes[0],
                                              consts.NODE_ERRORS.provision)
         self._nodes_should_not_be_error(self.cluster.nodes[1:])
@@ -761,6 +764,7 @@ class TestTaskObject(BaseIntegrationTest):
 
         self.assertEqual(self.cluster.status,
                          consts.CLUSTER_STATUSES.operational)
+        self.assertFalse(self.cluster.is_locked)
         self.assertTrue(
             self.cluster.attributes.generated['deployed_before']['value'])
 
@@ -803,6 +807,7 @@ class TestTaskObject(BaseIntegrationTest):
 
         self.assertEquals(self.cluster.status,
                           consts.CLUSTER_STATUSES.operational)
+        self.assertFalse(self.cluster.is_locked)
 
         for node in self.cluster.nodes:
             self.assertEquals(node.status, consts.NODE_STATUSES.ready)
@@ -825,6 +830,7 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
 
         self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.error)
+        self.assertFalse(self.cluster.is_locked)
         self.assertEquals(task.status, consts.TASK_STATUSES.error)
 
         for node in self.cluster.nodes:
@@ -852,6 +858,7 @@ class TestTaskObject(BaseIntegrationTest):
             self.db.flush()
 
             self.assertEquals(self.cluster.status, consts.CLUSTER_STATUSES.new)
+            self.assertFalse(self.cluster.is_locked)
 
     def test_get_task_by_uuid_returns_task(self):
         task = Task(name=consts.TASK_NAMES.deploy)

@@ -18,6 +18,7 @@ import mock
 from oslo_serialization import jsonutils
 
 from nailgun.consts import BOND_MODES
+from nailgun.consts import BOND_TYPES
 from nailgun.consts import BOND_XMIT_HASH_POLICY
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.settings import settings
@@ -129,47 +130,24 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             self.assertEqual(resp.status_code, 400)
             self.assertEqual(resp.json_body["message"], message)
 
-    def nics_bond_create(self, put_func):
+    def nics_bond_create_and_check(self, put_func):
+        bond_name = 'bond0'
+        self.prepare_bond_w_props(bond_name=bond_name)
+        self.check_bond_creation(put_func, bond_name=bond_name)
+
+    def prepare_bond_w_props(self, bond_name='bond0',
+                             bond_type=BOND_TYPES.linux,
+                             iface_props={}):
         self.data.append({
-            "name": 'ovs-bond0',
-            "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": BOND_MODES.balance_slb,
-            "slaves": [
-                {"name": self.other_nic["name"]},
-                {"name": self.empty_nic["name"]}],
-            "assigned_networks": self.other_nic["assigned_networks"]
-        })
-        self.other_nic["assigned_networks"] = []
-
-        resp = put_func()
-        self.assertEqual(resp.status_code, 200)
-
-        resp = self.env.node_nics_get(self.env.nodes[0]["id"])
-        self.assertEqual(resp.status_code, 200)
-
-        bonds = filter(
-            lambda iface: iface["type"] == NETWORK_INTERFACE_TYPES.bond,
-            resp.json_body)
-        self.assertEqual(len(bonds), 1)
-        self.assertEqual(bonds[0]["name"], 'ovs-bond0')
-        bond_offloading_modes = bonds[0]['offloading_modes']
-        self.assertEqual(len(bond_offloading_modes), 1)
-        self.assertDictEqual(
-            bond_offloading_modes[0],
-            {'name': 'mode_common',
-             'state': None,
-             'sub': []})
-
-    def nics_bond_create_w_properties(self, put_func):
-        self.data.append({
-            "name": 'bond0',
+            "name": bond_name,
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
                 "mode": BOND_MODES.l_802_3ad,
                 "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3,
                 "lacp_rate": "slow",
-                "type__": "linux"
+                "type__": bond_type
             },
+            "interface_properties": iface_props,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -177,6 +155,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         })
         self.other_nic["assigned_networks"] = []
 
+    def check_bond_creation(self, put_func, bond_name='bond0'):
         resp = put_func()
         self.assertEqual(resp.status_code, 200)
 
@@ -187,7 +166,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             lambda iface: iface["type"] == NETWORK_INTERFACE_TYPES.bond,
             resp.json_body)
         self.assertEqual(len(bonds), 1)
-        self.assertEqual(bonds[0]["name"], 'bond0')
+        self.assertEqual(bonds[0]["name"], bond_name)
         bond_offloading_modes = bonds[0]['offloading_modes']
         self.assertEqual(len(bond_offloading_modes), 1)
         self.assertDictEqual(
@@ -220,7 +199,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
     def test_nics_bond_delete(self):
         for put_func in (self.put_single, self.put_collection):
             self.get_node_nics_info()
-            self.nics_bond_create(put_func)
+            self.nics_bond_create_and_check(put_func)
             self.nics_bond_remove(put_func)
 
             resp = self.env.node_nics_get(self.env.nodes[0]["id"])
@@ -230,9 +209,11 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                 self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
 
     def test_nics_linux_bond_create_delete(self):
+        bond_name = 'bond0'
         for put_func in (self.put_single, self.put_collection):
             self.get_node_nics_info()
-            self.nics_bond_create_w_properties(put_func)
+            self.prepare_bond_w_props(bond_name=bond_name)
+            self.check_bond_creation(put_func, bond_name=bond_name)
             self.nics_bond_remove(put_func)
 
             resp = self.env.node_nics_get(self.env.nodes[0]["id"])
@@ -241,9 +222,26 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             for nic in resp.json_body:
                 self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
 
+    def test_nics_ovs_bond_create_failed_without_dpdk(self):
+        bond_name = 'bond0'
+        self.prepare_bond_w_props(bond_name=bond_name,
+                                  bond_type=BOND_TYPES.ovs)
+        self.node_nics_put_check_error("Bond interface '{0}': DPDK should be"
+                                       " enabled for 'ovs' bond type".
+                                       format(bond_name))
+
+    def test_nics_lnx_bond_create_failed_with_dpdk(self):
+        bond_name = 'bond0'
+        self.prepare_bond_w_props(bond_name=bond_name,
+                                  bond_type=BOND_TYPES.linux,
+                                  iface_props= {'dpdk': {'enabled': True}})
+        self.node_nics_put_check_error("Bond interface '{0}': DPDK can be"
+                                       " enabled only for 'ovs' bond type".
+                                       format(bond_name))
+
     def test_nics_bond_removed_on_node_unassign(self):
         self.get_node_nics_info()
-        self.nics_bond_create(self.put_single)
+        self.nics_bond_create_and_check(self.put_single)
 
         node = self.env.nodes[0]
         resp = self.app.post(
@@ -265,7 +263,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
     def test_nics_bond_removed_on_remove_node_from_cluster(self):
         self.get_node_nics_info()
-        self.nics_bond_create(self.put_single)
+        self.nics_bond_create_and_check(self.put_single)
 
         node = self.env.nodes[0]
         resp = self.app.put(
@@ -616,7 +614,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
     def test_nics_bond_change_offloading_modes(self):
         self.get_node_nics_info()
-        self.nics_bond_create(self.put_single)
+        self.nics_bond_create_and_check(self.put_single)
         resp = self.app.get(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0]["id"]}),

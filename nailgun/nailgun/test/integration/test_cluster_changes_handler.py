@@ -166,6 +166,10 @@ class TestHandlers(BaseIntegrationTest):
                 """--property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
             ),
+            'properties': {
+                'murano_image_info': """'{"title": "Murano Demo", "type":"""
+                """ "cirros.demo"}'""",
+            },
         }
 
         critical_mapping = {
@@ -578,6 +582,10 @@ class TestHandlers(BaseIntegrationTest):
                 """--property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
             ),
+            'properties': {
+                'murano_image_info': """'{"title": "Murano Demo", "type":"""
+                """ "cirros.demo"}'""",
+            },
         }
 
         critical_mapping = {
@@ -1062,6 +1070,10 @@ class TestHandlers(BaseIntegrationTest):
                 """--property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
             ),
+            'properties': {
+                'murano_image_info': """'{"title": "Murano Demo", "type":"""
+                """ "cirros.demo"}'""",
+            },
         }
 
         critical_mapping = {

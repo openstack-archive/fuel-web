@@ -14,7 +14,8 @@
 
 from oslo_serialization import jsonutils
 
-from nailgun.api.v1.validators.network import NetworkTemplateValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NetworkTemplateValidator
 from nailgun.test.base import BaseValidatorTest
 
 

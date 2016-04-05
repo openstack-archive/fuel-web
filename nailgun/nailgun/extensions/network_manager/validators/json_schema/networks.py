@@ -13,8 +13,9 @@
 #    under the License.
 
 from nailgun.api.v1.validators.json_schema import base_types
-from nailgun.api.v1.validators.json_schema import network_template
 from nailgun import consts
+from nailgun.extensions.network_manager.validators.json_schema import \
+    network_template
 
 NETWORK_META = {
     "$schema": "http://json-schema.org/draft-04/schema#",

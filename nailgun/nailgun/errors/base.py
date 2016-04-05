@@ -13,9 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun.logger import logger
 
 
+@six.python_2_unicode_compatible
 class NailgunException(Exception):
 
     def __init__(self,
@@ -35,5 +38,54 @@ class NailgunException(Exception):
     def __str__(self):
         return self.message
 
-    def __unicode__(self):
-        return self.message
+
+class TaskException(NailgunException):
+    message = "Base task exception"
+
+
+class NetworkException(NailgunException):
+    message = "Base network exception"
+
+
+class RESTException(NailgunException):
+    message = "Base REST exception"
+
+
+class NodeDiscoveringException(NailgunException):
+    message = "Base node discovering exception"
+
+
+class DiskException(NailgunException):
+    message = "Base disk exception"
+
+
+class MongoException(NailgunException):
+    message = "Base mongodb exception"
+
+
+class RPCException(NailgunException):
+    message = "Base RPC exception"
+
+
+class ExpressionParserException(NailgunException):
+    message = "Base expression parser exception"
+
+
+class ZabbixException(NailgunException):
+    message = "Base zabbix exception"
+
+
+class PluginException(NailgunException):
+    message = "Base plugn exception"
+
+
+class ExtensionException(NailgunException):
+    message = "Base extension exception"
+
+
+class UnhandledException(NailgunException):
+    message = "Base unhandled exception"
+
+
+class ValidationException(NailgunException):
+    message = "Base validateion exception"

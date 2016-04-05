@@ -19,9 +19,6 @@ import six
 
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import iface_schema
-from nailgun.api.v1.validators.json_schema.network_template import \
-    NETWORK_TEMPLATE
-from nailgun.api.v1.validators.json_schema import networks
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
@@ -30,6 +27,9 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun import errors
+from nailgun.extensions.network_manager.validators.json_schema import \
+    network_template
+from nailgun.extensions.network_manager.validators.json_schema import networks
 from nailgun import objects
 from nailgun import utils
 
@@ -911,7 +911,7 @@ class NetworkTemplateValidator(BasicValidator):
     @classmethod
     def validate(cls, data, instance=None):
         parsed = super(NetworkTemplateValidator, cls).validate(data)
-        cls.validate_schema(parsed, NETWORK_TEMPLATE)
+        cls.validate_schema(parsed, network_template.NETWORK_TEMPLATE)
 
         # Ensure templates requested in templates_for_node_role are
         # present in network_scheme

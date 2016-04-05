@@ -14,7 +14,8 @@
 
 import mock
 
-from nailgun.api.v1.validators.network import NetAssignmentValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NetAssignmentValidator
 from nailgun import consts
 from nailgun import errors
 from nailgun import objects

@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1.validators.json_schema import networks
+from nailgun.extensions.network_manager.validators.json_schema import networks
 
 
 NOVA_NETWORK_SCHEMA = {

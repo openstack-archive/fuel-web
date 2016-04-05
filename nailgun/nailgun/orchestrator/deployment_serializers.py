@@ -299,6 +299,7 @@ class DeploymentMultinodeSerializer(object):
             img_dir = '/opt/vm/'
         image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
 
+        properties_data = {}
         glance_properties = []
 
         # Alternate VMWare specific values.
@@ -307,11 +308,18 @@ class DeploymentMultinodeSerializer(object):
                 'disk_format': 'vmdk',
                 'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
             })
-            glance_properties.append('--property vmware_disktype=sparse')
-            glance_properties.append('--property vmware_adaptertype=lsiLogic')
-            glance_properties.append('--property hypervisor_type=vmware')
+            properties_data = {
+                'vmware_disktype': 'sparse',
+                'vmware_adaptertype': 'lsiLogic',
+                'hypervisor_type': 'vmware'
+            }
+            for key, value in six.iteritems(properties_data):
+                glance_properties.append('--property {key}={value}'.format(
+                    key=key, value=value))
 
+        # TODO(aschultz): remove glance_properties in O, properties replaces it
         image_data['glance_properties'] = ' '.join(glance_properties)
+        image_data['properties'] = properties_data
 
         return {'test_vm_image': image_data}
 
@@ -520,10 +528,20 @@ class DeploymentHASerializer61(DeploymentHASerializer,
                 'disk_format': 'vmdk',
                 'img_path': img_path,
             })
-            image_vmdk_data['glance_properties'] = ' '.join([
-                '--property vmware_disktype=sparse',
-                '--property vmware_adaptertype=lsiLogic',
-                '--property hypervisor_type=vmware'])
+            properties_data = {
+                'vmware_disktype': 'sparse',
+                'vmware_adaptertype': 'lsiLogic',
+                'hypervisor_type': 'vmware'
+            }
+            glance_properties = []
+            for key, value in six.iteritems(properties_data):
+                glance_properties.append('--property {key}={value}'.format(
+                    key=key, value=value))
+
+            # TODO(aschultz): remove glance_properties in O, properties
+            # replaces it
+            image_vmdk_data['glance_properties'] = ' '.join(glance_properties)
+            image_vmdk_data['properties'] = properties_data
             images_data['test_vm_image'].append(image_vmdk_data)
             images_data['test_vm_image'].append(image_data['test_vm_image'])
         else:

@@ -20,6 +20,7 @@ from stevedore.extension import ExtensionManager
 
 from nailgun.errors import errors
 from nailgun.extensions import consts
+from nailgun.logger import logger
 
 _EXTENSION_MANAGER = None
 

@@ -82,6 +82,16 @@ class NIC(DPDKMixin, NailgunObject):
         sriov = instance.interface_properties.get('sriov')
         return sriov and sriov['enabled']
 
+    @classmethod
+    def update_offloading_modes(cls, instance, new_modes, keep_states=False):
+        if keep_states:
+            old_modes_states = instance. \
+                offloading_modes_as_flat_dict(instance.offloading_modes)
+            for mode in new_modes:
+                if mode["name"] in old_modes_states:
+                    mode["state"] = old_modes_states[mode["name"]]
+        instance.offloading_modes = new_modes
+
 
 class NICCollection(NailgunCollection):
 

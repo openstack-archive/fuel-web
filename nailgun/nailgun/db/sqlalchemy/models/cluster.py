@@ -143,6 +143,7 @@ class Cluster(Base):
     @property
     def is_locked(self):
         allowed_status = (
+            consts.CLUSTER_STATUSES.error,
             consts.CLUSTER_STATUSES.new,
             consts.CLUSTER_STATUSES.operational,
             consts.CLUSTER_STATUSES.stopped,

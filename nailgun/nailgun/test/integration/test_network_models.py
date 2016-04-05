@@ -92,6 +92,13 @@ class TestNetworkModels(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
 
+        resp_cluster_get = self.app.get(
+            reverse('ClusterHandler',
+                    kwargs={'obj_id': self.env.clusters[0].id}),
+            headers=self.default_headers)
+
+        self.assertTrue(resp_cluster_get.json_body['is_locked'])
+
         self.assertEqual(resp_nova_net.status_code, 400)
         # it's 400 because we used Nova network
         self.assertEqual(resp_neutron_net.status_code, 403)

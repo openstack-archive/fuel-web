@@ -841,6 +841,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         self.assertEqual(stop_task.status, consts.TASK_STATUSES.ready)
         self.db.refresh(cluster)
         self.assertEqual(cluster.status, consts.CLUSTER_STATUSES.stopped)
+        self.assertFalse(self.cluster.is_locked)
         # Moving nodes online by hands. Our fake threads do this with
         # random success
         for node in sorted(cluster.nodes, key=lambda n: n.id):

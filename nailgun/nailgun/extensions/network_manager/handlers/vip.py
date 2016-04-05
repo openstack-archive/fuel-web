@@ -19,7 +19,7 @@ import web
 
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.validators import ip_addr
+from nailgun.extensions.network_manager.validators import ip_addr
 from nailgun import objects
 
 

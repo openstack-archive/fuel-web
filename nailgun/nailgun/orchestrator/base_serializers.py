@@ -21,7 +21,7 @@ from netaddr import IPNetwork
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.settings import settings
 

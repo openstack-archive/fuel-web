@@ -19,7 +19,7 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun import rpc

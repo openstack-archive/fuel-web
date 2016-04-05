@@ -34,7 +34,7 @@ from nailgun.consts import TASK_NAMES
 from nailgun.consts import TASK_STATUSES
 
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager

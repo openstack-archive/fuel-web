@@ -18,7 +18,7 @@ from datetime import datetime
 
 from nailgun.db.sqlalchemy import models
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 
 from nailgun.objects import NailgunCollection

@@ -19,7 +19,7 @@ from oslo_serialization import jsonutils
 import six
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.objects import DeploymentGraph
 from nailgun.orchestrator.task_based_deployment import TaskProcessor

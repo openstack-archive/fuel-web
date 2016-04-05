@@ -202,6 +202,16 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             r"Parameter '\w+' conflicts with '\w+(, \w+)*'")
 
+    def test_openstack_config_list_invalid_params(self):
+        for param in ['cluster_id', 'node_id', 'is_active']:
+            url = self._make_filter_url(**{param: 'invalidvalue'})
+            resp = self.app.get(url, headers=self.default_headers,
+                                expect_errors=True)
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(
+                resp.json_body['message'],
+                "Invalid '{0}' value: 'invalidvalue'".format(param))
+
     def test_openstack_config_get(self):
         resp = self.app.get(
             reverse('OpenstackConfigHandler',

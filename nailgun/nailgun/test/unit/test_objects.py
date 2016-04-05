@@ -38,7 +38,7 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import reverse
 
-from nailgun.errors import errors
+from nailgun import errors
 
 from nailgun import consts
 from nailgun import plugins

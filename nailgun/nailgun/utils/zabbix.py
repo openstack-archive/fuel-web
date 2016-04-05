@@ -17,7 +17,7 @@
 import simplejson as json
 import urllib2
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 
 

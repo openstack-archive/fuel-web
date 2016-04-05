@@ -17,7 +17,7 @@
 import mock
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.objects import Task
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun.test.base import BaseIntegrationTest

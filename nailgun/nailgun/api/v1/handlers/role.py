@@ -19,7 +19,7 @@ import six
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.role import RoleValidator
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import objects
 from nailgun.objects.serializers.role import RoleSerializer
 

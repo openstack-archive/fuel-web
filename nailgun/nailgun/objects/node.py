@@ -1214,6 +1214,13 @@ class Node(NailgunObject):
         return False
 
     @classmethod
+    def sriov_enabled(cls, instance):
+        for iface in instance.nic_interfaces:
+            if NIC.is_sriov_enabled(iface):
+                return True
+        return False
+
+    @classmethod
     def get_attributes(cls, instance):
         return copy.deepcopy(instance.attributes)
 

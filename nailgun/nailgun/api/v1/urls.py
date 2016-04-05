@@ -36,6 +36,10 @@ from nailgun.api.v1.handlers.cluster import ClusterDeploymentGraphHandler
 from nailgun.api.v1.handlers.cluster import ClusterDeploymentTasksHandler
 from nailgun.api.v1.handlers.cluster import ClusterGeneratedData
 from nailgun.api.v1.handlers.cluster import ClusterHandler
+from nailgun.api.v1.handlers.cluster import \
+    ClusterPluginsDeploymentTasksHandler
+from nailgun.api.v1.handlers.cluster import \
+    ClusterReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.cluster import ClusterResetHandler
 from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
 from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
@@ -246,6 +250,10 @@ urls = (
     ClusterResetHandler,
     r'/clusters/(?P<obj_id>\d+)/deployment_tasks/?$',
     ClusterDeploymentTasksHandler,
+    r'/clusters/(?P<obj_id>\d+)/deployment_tasks/plugins/?$',
+    ClusterPluginsDeploymentTasksHandler,
+    r'/clusters/(?P<obj_id>\d+)/deployment_tasks/release/?$',
+    ClusterReleaseDeploymentTasksHandler,
 
     r'/clusters/(?P<obj_id>\d+)/deployment_graphs/?$',
     ClusterDeploymentGraphCollectionHandler,

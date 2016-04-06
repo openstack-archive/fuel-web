@@ -696,6 +696,8 @@ class NailgunReceiver(object):
                 message,
                 task.cluster_id
             )
+
+            db().flush()
         elif status == consts.TASK_STATUSES.error:
             task.cluster.status = consts.CLUSTER_STATUSES.error
 

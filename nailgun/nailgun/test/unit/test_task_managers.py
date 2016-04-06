@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -41,3 +43,17 @@ class TestDeploymentCheckMixin(BaseTestCase):
                 self.cluster)
 
             db.query(models.Task).delete()
+
+    def test_does_not_fail_if_there_is_deleted_task(self):
+        for task_name in DeploymentCheckMixin.deployment_tasks:
+            task = models.Task(name=task_name,
+                               deleted_at=datetime.datetime.now(),
+                               cluster_id=self.cluster.id)
+            db.add(task)
+            db.flush()
+            self.addCleanup(db.query(models.Task).delete)
+
+            self.assertNotRaises(
+                errors.DeploymentAlreadyStarted,
+                DeploymentCheckMixin.check_no_running_deployment,
+                self.cluster)

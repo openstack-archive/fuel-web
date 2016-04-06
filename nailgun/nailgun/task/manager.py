@@ -122,7 +122,7 @@ class DeploymentCheckMixin(object):
     @classmethod
     def check_no_running_deployment(cls, cluster):
         tasks_q = objects.TaskCollection.get_by_name_and_cluster(
-            cluster, cls.deployment_tasks).filter_by(
+            cluster, cls.deployment_tasks, show_deleted=False).filter_by(
                 status=consts.TASK_STATUSES.running)
 
         tasks_exists = db.query(tasks_q.exists()).scalar()

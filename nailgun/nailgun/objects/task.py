@@ -340,9 +340,14 @@ class TaskCollection(NailgunCollection):
         return query.all()
 
     @classmethod
-    def get_by_name_and_cluster(cls, cluster, names):
-        return db().query(cls.single.model).filter_by(
+    def get_by_name_and_cluster(cls, cluster, names, show_deleted=True):
+        tasks_query = db().query(cls.single.model).filter_by(
             cluster_id=cluster.id).filter(cls.single.model.name.in_(names))
+
+        if not show_deleted:
+            tasks_query = tasks_query.filter_by(deleted_at=None)
+
+        return tasks_query
 
     @classmethod
     def delete_by_names(cls, cluster, names):

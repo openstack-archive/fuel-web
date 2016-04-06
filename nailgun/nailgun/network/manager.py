@@ -856,14 +856,13 @@ class NetworkManager(object):
         return node_db.id
 
     @classmethod
-    def update_interfaces_info(cls, node, update_by_agent=False):
+    def update_interfaces_info(cls, node):
         """Updates interfaces on node.
 
         The interfaces has been updated in case of correct interfaces
         in meta field in node's model
 
         :param node: The Node instance
-        :param: update_by_agent: Indicates that update initiated by agent.
         """
         try:
             cls.check_interfaces_correctness(node)
@@ -875,22 +874,13 @@ class NetworkManager(object):
             # set 'pxe' property for appropriate iface
             interface['pxe'] = (interface['name'] == pxe_iface_name)
             # try to get interface by mac address
-            interface_db = next((
-                n for n in node.nic_interfaces
-                if utils.is_same_mac(n.mac, interface['mac'])),
-                None)
-
-            # try to get interface instance by interface name. this protects
-            # us from loosing nodes when some NICs was replaced with a new one
-            interface_db = interface_db or next((
-                n for n in node.nic_interfaces if n.name == interface['name']),
-                None)
+            interface_db = objects.Node.get_interface_by_mac_or_name(
+                node, interface['mac'], interface['name'])
 
             if interface_db:
-                cls.__update_existing_interface(interface_db, interface,
-                                                update_by_agent)
+                cls.__update_existing_interface(interface_db, interface)
             else:
-                cls.__add_new_interface(node, interface, update_by_agent)
+                cls.__add_new_interface(node, interface)
         objects.Node.refresh_dpdk_properties(node)
 
         cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
@@ -986,7 +976,7 @@ class NetworkManager(object):
         return False
 
     @classmethod
-    def __add_new_interface(cls, node, interface_attrs, update_by_agent):
+    def __add_new_interface(cls, node, interface_attrs):
         data = {
             'node_id': node.id,
             'mac': interface_attrs['mac'],
@@ -994,20 +984,16 @@ class NetworkManager(object):
         }
 
         interface = objects.NIC.create(data)
-        cls.__set_interface_attributes(interface, interface_attrs,
-                                       update_by_agent)
+        cls.__set_interface_attributes(interface, interface_attrs)
         objects.NIC.update(interface, {})
 
     @classmethod
-    def __update_existing_interface(cls, interface, interface_attrs,
-                                    update_by_agent=False):
-        cls.__set_interface_attributes(interface, interface_attrs,
-                                       update_by_agent)
+    def __update_existing_interface(cls, interface, interface_attrs):
+        cls.__set_interface_attributes(interface, interface_attrs)
         objects.NIC.update(interface, {})
 
     @classmethod
-    def __set_interface_attributes(cls, interface, interface_attrs,
-                                   update_by_agent=False):
+    def __set_interface_attributes(cls, interface, interface_attrs):
         interface.name = interface_attrs['name']
         interface.mac = interface_attrs['mac']
 
@@ -1027,16 +1013,6 @@ class NetworkManager(object):
                 interface.interface_properties,
                 interface_attrs['interface_properties']
             )
-
-        new_offloading_modes = interface_attrs.get('offloading_modes')
-        old_modes_states = interface.\
-            offloading_modes_as_flat_dict(interface.offloading_modes)
-        if new_offloading_modes:
-            if update_by_agent:
-                for mode in new_offloading_modes:
-                    if mode["name"] in old_modes_states:
-                        mode["state"] = old_modes_states[mode["name"]]
-            interface.offloading_modes = new_offloading_modes
 
     @classmethod
     def __delete_not_found_interfaces(cls, node, interfaces):

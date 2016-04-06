@@ -341,8 +341,9 @@ class TaskCollection(NailgunCollection):
 
     @classmethod
     def get_by_name_and_cluster(cls, cluster, names):
-        return db().query(cls.single.model).filter_by(
-            cluster_id=cluster.id).filter(cls.single.model.name.in_(names))
+        return db().query(cls.single.model)\
+                   .filter_by(cluster_id=cluster.id, deleted_at=None)\
+                   .filter(cls.single.model.name.in_(names))
 
     @classmethod
     def delete_by_names(cls, cluster, names):

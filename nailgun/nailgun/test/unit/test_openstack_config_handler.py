@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+
 import mock
 import six.moves.urllib.parse as urlparse
 
@@ -413,6 +415,14 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         deploy_task_id = self.create_running_deployment_task()
         resp = self.execute_update_open_stack_config(expect_errors=True)
         self.check_fail_deploy_running(deploy_task_id, resp)
+
+    def test_openstack_config_execute_does_not_fail_deploy_task_deleted(self):
+        self.env.create_task(cluster_id=self.clusters[0].id,
+                             name=consts.TASK_NAMES.deployment,
+                             status=consts.TASK_STATUSES.running,
+                             deleted_at=datetime.datetime.now()).id
+        resp = self.execute_update_open_stack_config(expect_errors=False)
+        self.assertEqual(resp.status_code, 202)
 
     def test_openstack_config_execute_fail_no_ready_nodes(self):
         # Turn node 0 into provisioned state

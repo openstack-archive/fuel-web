@@ -309,9 +309,12 @@ class Task(NailgunObject):
             cls._update_parent_instance(instance.parent)
 
     @classmethod
-    def delete(cls, instance):
-        logger.debug("Mark task as deleted: %s", instance.uuid)
-        cls.update(instance, {'deleted_at': datetime.utcnow()})
+    def delete(cls, instance, hard=False):
+        if hard:
+            super(Task, cls).delete(instance)
+        else:
+            logger.debug("Mark task as deleted: %s", instance.uuid)
+            cls.update(instance, {'deleted_at': datetime.utcnow()})
 
     @classmethod
     def bulk_delete(cls, instance_ids):

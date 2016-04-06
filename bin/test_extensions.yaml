@@ -1,0 +1,3 @@
+git_base: git://github.com
+zuul_cloner_bin: zuul-cloner
+test_cmd: tox -e pep8

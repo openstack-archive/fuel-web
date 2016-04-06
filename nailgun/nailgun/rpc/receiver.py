@@ -185,7 +185,7 @@ class NailgunReceiver(object):
             objects.Task.delete(task)
             for task_ in cluster.tasks:
                 if task_ != task:
-                    objects.Task.delete(task_, hard=True)
+                    objects.Transaction.delete(task_)
 
             objects.Cluster.delete(cluster)
             if admin_nets != nm.get_admin_networks():

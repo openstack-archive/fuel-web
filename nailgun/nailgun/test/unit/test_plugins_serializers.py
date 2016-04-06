@@ -246,7 +246,7 @@ class TestPluginsPreDeploymentHooksSerializer(
              'apt_update_task'])
 
     @mock.patch('nailgun.plugins.manager.PluginManager.'
-                'get_cluster_plugins_with_tasks', return_value=[])
+                'get_enabled_plugins', return_value=[])
     @mock.patch('nailgun.orchestrator.plugins_serializers.'
                 'PluginsPreDeploymentHooksSerializer.create_repositories')
     @mock.patch('nailgun.orchestrator.plugins_serializers.'
@@ -254,21 +254,21 @@ class TestPluginsPreDeploymentHooksSerializer(
     def test_serialize_begin_tasks(self,
                                    m_sync_scripts,
                                    m_create_repositories,
-                                   m_get_cluster_plugins_with_tasks):
+                                   m_get_enabled_plugins):
         self.hook.serialize_begin_tasks()
-        m_get_cluster_plugins_with_tasks.assert_called_once_with(self.cluster)
+        m_get_enabled_plugins.assert_called_once_with(self.cluster)
         m_create_repositories.assert_called_once_with([])
         m_sync_scripts.assert_called_once_with([])
 
     @mock.patch('nailgun.plugins.manager.PluginManager.'
-                'get_cluster_plugins_with_tasks', return_value=[])
+                'get_enabled_plugins', return_value=[])
     @mock.patch('nailgun.orchestrator.plugins_serializers.'
                 'PluginsPreDeploymentHooksSerializer.deployment_tasks')
     def test_serialize_end_tasks(self,
                                  m_deployment_tasks,
-                                 m_get_cluster_plugins_with_tasks):
+                                 m_get_enabled_plugins):
         self.hook.serialize_end_tasks()
-        m_get_cluster_plugins_with_tasks.assert_called_once_with(self.cluster)
+        m_get_enabled_plugins.assert_called_once_with(self.cluster)
         m_deployment_tasks.assert_called_once_with([])
 
 
@@ -286,12 +286,12 @@ class TestPluginsPostDeploymentHooksSerializer(
         self.assertItemsEqual(self.hook.serialize_begin_tasks(), list())
 
     @mock.patch('nailgun.plugins.manager.PluginManager.'
-                'get_cluster_plugins_with_tasks', return_value=[])
+                'get_enabled_plugins', return_value=[])
     @mock.patch('nailgun.orchestrator.plugins_serializers.'
                 'PluginsPostDeploymentHooksSerializer.deployment_tasks')
     def test_serialize_end_tasks(self,
                                  m_deployment_tasks,
-                                 m_get_cluster_plugins_with_tasks):
+                                 m_get_enabled_plugins):
         self.hook.serialize_end_tasks()
-        m_get_cluster_plugins_with_tasks.assert_called_once_with(self.cluster)
+        m_get_enabled_plugins.assert_called_once_with(self.cluster)
         m_deployment_tasks.assert_called_once_with([])

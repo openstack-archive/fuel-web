@@ -447,6 +447,20 @@ class Manager(object):
         with open(os.path.join(chroot, 'etc/nailgun-agent/nodiscover'), 'w'):
             pass
 
+        # FIXME(kozhukalov): When we have just os-root fs image and don't have
+        # os-var-log fs image while / and /var/log are supposed to be
+        # separate file systems and os-var-log is mounted into
+        # non-empty directory on the / file system, those files in /var/log
+        # directory become unavailable.
+        # The thing is that among those file there is /var/log/upstart
+        # where upstart daemon writes its logs. We have specific upstart job
+        # which is to flush open files once all file systems are mounted.
+        # This job needs upstart directory to be available on os-var-log
+        # file system.
+        # This is just a temporary fix and correct fix will be available soon
+        # via updates.
+        utils.execute('mkdir', '-p', chroot + '/var/log/upstart')
+
         with open(chroot + '/etc/fstab', 'wb') as f:
             for fs in self.driver.partition_scheme.fss:
                 # TODO(kozhukalov): Think of improving the logic so as to

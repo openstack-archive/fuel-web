@@ -43,7 +43,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "mitaka-9.0",
+                    "version": "newton-10.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"
@@ -103,7 +103,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "mitaka-9.0",
+                    "version": "newton-10.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"
@@ -150,7 +150,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "mitaka-9.0",
+                    "version": "newton-10.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"
@@ -214,7 +214,7 @@
                 },
                 {
                     "os": "ubuntu",
-                    "version": "mitaka-9.0",
+                    "version": "newton-10.0",
                     "mode": ["ha"],
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu"

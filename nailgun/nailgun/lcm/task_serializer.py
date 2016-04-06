@@ -22,6 +22,7 @@ import six
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.expression import Expression
+from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun import utils
 from nailgun import yaql_ext
@@ -57,6 +58,7 @@ class Context(object):
         self._yaql_context = yaql_ext.create_context(
             add_serializers=True, add_datadiff=True
         )
+        self._yaql_engine = yaql_ext.create_engine()
         self._yaql_expressions_cache = {}
 
     def get_new_data(self, node_id):
@@ -69,10 +71,11 @@ class Context(object):
         cache = self._yaql_expressions_cache
 
         def evaluate(expression):
+            logger.debug("evaluate yaql expression: %s", expression)
             try:
                 parsed_exp = cache[expression]
             except KeyError:
-                parsed_exp = yaql_ext.create_engine()(expression)
+                parsed_exp = self._yaql_engine(expression)
                 cache[expression] = parsed_exp
             return parsed_exp.evaluate(data=context['$%new'], context=context)
         return evaluate
@@ -85,9 +88,19 @@ class Context(object):
         }
 
         def evaluate(condition):
-            return Expression(Context.transform_legacy_condition(condition),
-                              context,
-                              strict=False).evaluate()
+            try:
+                logger.debug("evaluate legacy condition: %s", condition)
+                return Expression(
+                    Context.transform_legacy_condition(condition),
+                    context,
+                    strict=False
+                ).evaluate()
+            except Exception as e:
+                logger.error(
+                    "Failed to evaluate legacy condition '%s': %s",
+                    condition, e
+                )
+                raise
 
         return evaluate
 
@@ -163,6 +176,10 @@ class DefaultTaskSerializer(NoopTaskSerializer):
         return condition
 
     def serialize(self, node_id):
+        logger.debug(
+            "serialize task %s for node %s",
+            self.task_template['id'], node_id
+        )
         task = utils.traverse(
             self.task_template,
             utils.text_format_safe,
@@ -172,6 +189,9 @@ class DefaultTaskSerializer(NoopTaskSerializer):
             }
         )
         if not self.should_execute(task, node_id):
+            logger.debug(
+                "Task %s is skipped by condition.", self.task_template['id']
+            )
             return super(DefaultTaskSerializer, self).serialize(node_id)
 
         task.setdefault('parameters', {}).setdefault('cwd', '/')

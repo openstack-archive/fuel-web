@@ -661,7 +661,11 @@ class NailgunReceiver(object):
             task.cluster.status = consts.CLUSTER_STATUSES.stopped
 
             if stop_tasks:
-                objects.Task.bulk_delete(x.id for x in stop_tasks)
+                ids = [x.id for x in stop_tasks]
+                notifier.notify('warning',
+                                'IDs to delete: %s' % ' '.join(ids),
+                                task.cluster_id)
+                objects.Task.bulk_delete(ids)
 
             node_uids = [n['uid'] for n in itertools.chain(nodes, ia_nodes)]
             q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
@@ -696,6 +700,8 @@ class NailgunReceiver(object):
                 message,
                 task.cluster_id
             )
+
+            db().flush()
         elif status == consts.TASK_STATUSES.error:
             task.cluster.status = consts.CLUSTER_STATUSES.error
 

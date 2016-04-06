@@ -1091,6 +1091,10 @@ class Node(NailgunObject):
 
     @classmethod
     def default_slave_name(cls, instance):
+        return cls.permanent_id(instance)
+
+    @classmethod
+    def permanent_id(cls, instance):
         return u"node-{node_id}".format(node_id=instance.id)
 
     @classmethod

@@ -2224,3 +2224,34 @@ class TestIPAddrObject(BaseTestCase):
         found = objects.IPAddrCollection.get_all_by_addr(addr).first()
         self.assertIsNotNone(found)
         self.assertEqual(found.ip_addr, addr)
+
+    def test_get_admin_ip_for_node_with_admin_net(self):
+        netmanager = objects.Cluster.get_network_manager()
+        node = self.env.nodes[0]
+        with mock.patch.object(objects.NetworkGroup,
+                               'get_default_admin_network') as get_mock:
+            netmanager.get_admin_ip_for_node(node)
+            self.assertEqual(get_mock.call_count, 1)
+
+        default_admin_net = objects.NetworkGroup.get_default_admin_network()
+        with mock.patch.object(objects.NetworkGroup,
+                               'get_default_admin_network') as get_mock:
+            self.env.network_manager.get_admin_ip_for_node(
+                node,
+                default_admin_net)
+            self.assertEqual(get_mock.call_count, 0)
+
+    def test_get_node_networks_with_admin_net(self):
+        node = self.env.nodes[0]
+
+        default_admin_net = objects.NetworkGroup.get_default_admin_network()
+        with mock.patch.object(objects.NetworkGroup,
+                               'get_default_admin_network') as get_mock:
+            get_mock.return_value = default_admin_net
+            self.env.network_manager.get_node_networks(node)
+            self.assertEqual(get_mock.call_count, 1)
+
+        with mock.patch.object(objects.NetworkGroup,
+                               'get_default_admin_network') as get_mock:
+            self.env.network_manager.get_node_networks(node, default_admin_net)
+            self.assertEqual(get_mock.call_count, 0)

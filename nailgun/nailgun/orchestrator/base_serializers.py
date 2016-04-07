@@ -260,8 +260,11 @@ class NetworkDeploymentSerializer(object):
     @classmethod
     def update_nodes_net_info(cls, cluster, nodes):
         """Adds information about networks to each node."""
+        default_admin_net = objects.NetworkGroup.get_default_admin_network()
+
+        nm = objects.Cluster.get_network_manager(cluster)
         for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
-            netw_data = node.network_data
+            netw_data = nm.get_node_networks(node, default_admin_net)
             addresses = {}
             for net in node.cluster.network_groups:
                 if net.name == 'public' and \

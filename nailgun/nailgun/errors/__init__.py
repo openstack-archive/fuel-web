@@ -120,7 +120,9 @@ default_messages = {
     "UnresolvableConflict": "Unresolvable conflict",
     "NodeNotBelongToCluster": "The Node doesn't belong to the Cluster",
     "TaskBaseDeploymentNotAllowed": "The task-based deployment is not allowed",
-    "NoChanges": "There is no changes to apply."
+    "NoChanges": "There is no changes to apply.",
+
+    "ValidationException": "Base validation exception"
 }
 
 

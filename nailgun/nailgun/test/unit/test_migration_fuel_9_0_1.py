@@ -83,3 +83,22 @@ class TestClusterReplacedDeploymentInfo(base.BaseAlembicMigrationTest):
         columns = [clusters_table.c.replaced_deployment_info]
         cluster = db.execute(sa.select(columns)).fetchone()
         self.assertEqual(cluster.replaced_deployment_info, '[]')
+
+
+class TestTasksSnapshotField(base.BaseAlembicMigrationTest):
+    def test_fields_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending',
+                'tasks_snapshot': '[{"id":"taskid","type":"puppet"}]'
+            }]
+        )
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'].c.tasks_snapshot,
+            ])
+        ).first()
+        self.assertIsNotNone(result['tasks_snapshot'])

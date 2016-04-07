@@ -70,6 +70,15 @@ class Transaction(NailgunObject):
         if instance is not None:
             return instance.cluster_settings
 
+    @classmethod
+    def attach_tasks_snapshot(cls, instance, tasks_snapshot):
+        instance.tasks_snapshot = tasks_snapshot
+
+    @classmethod
+    def get_tasks_snapshot(cls, instance):
+        if instance is not None:
+            return instance.tasks_snapshot
+
 
 class TransactionCollection(NailgunCollection):
 

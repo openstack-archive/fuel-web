@@ -361,6 +361,16 @@ class NetAssignmentValidator(BasicValidator):
                                     node['id'], iface['name'], k),
                                 log_message=True
                             )
+                    bond_type = iface['bond_properties'].get('type__')
+                    if bond_type not in consts.BOND_TYPES:
+                        bond_types = ', '.join(
+                            ("'{0}'".format(t) for t in consts.BOND_TYPES))
+                        raise errors.InvalidData(
+                            "Node '{0}', interface '{1}': bond type__ "
+                            "allowed values: {2}. Can not be {3}"
+                            "".format(node['id'], iface['name'],
+                                      bond_types, bond_type),
+                            log_message=True)
                 bond_mode = cls.get_bond_mode(iface)
                 if not bond_mode:
                     raise errors.InvalidData(
@@ -615,7 +625,7 @@ class NetAssignmentValidator(BasicValidator):
                 nets[0]['name'] == consts.NETWORKS.private
         ):
             raise errors.InvalidData(
-                "Only private network could be assigned"
+                "Only private network tescould be assigned"
                 " to interface '{}' where DPDK is enabled".format(
                     iface['name']))
 

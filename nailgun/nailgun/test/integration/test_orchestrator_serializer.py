@@ -608,13 +608,15 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         )
         for node in cluster.nodes:
             self.move_network(node.id, 'management', 'eth0', 'eth1')
-            self.env.make_bond_via_api('lnx_bond',
-                                       '',
-                                       ['eth1', 'eth2'],
-                                       node.id,
-                                       bond_properties={
-                                           'mode': consts.BOND_MODES.balance_rr
-                                       })
+            self.env.make_bond_via_api(
+                'lnx_bond',
+                '',
+                ['eth1', 'eth2'],
+                node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.balance_rr,
+                    'type__': consts.BOND_TYPES.linux
+                })
         serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
@@ -639,7 +641,10 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                      'bridge': 'br-ex',
                      'name': 'lnx_bond',
                      'interfaces': ['eth1', 'eth2'],
-                     'bond_properties': {'mode': 'balance-rr'},
+                     'bond_properties': {
+                         'mode': 'balance-rr',
+                         'type__': 'linux'
+                     },
                      'interface_properties': {}},
                     {'action': 'add-port',
                      'bridge': 'br-mgmt',
@@ -658,13 +663,15 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         for node in cluster.nodes:
             self.move_network(node.id, 'management', 'eth0', 'eth1')
             self.move_network(node.id, 'fixed', 'eth0', 'eth1')
-            self.env.make_bond_via_api('lnx_bond',
-                                       '',
-                                       ['eth1', 'eth2'],
-                                       node.id,
-                                       bond_properties={
-                                           'mode': consts.BOND_MODES.balance_rr
-                                       })
+            self.env.make_bond_via_api(
+                'lnx_bond',
+                '',
+                ['eth1', 'eth2'],
+                node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.balance_rr,
+                    'type__': consts.BOND_TYPES.linux
+                })
         serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
@@ -697,7 +704,10 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                      'bridge': 'br-ex',
                      'name': 'lnx_bond',
                      'interfaces': ['eth1', 'eth2'],
-                     'bond_properties': {'mode': 'balance-rr'},
+                     'bond_properties': {
+                         'mode': 'balance-rr',
+                         'type__': 'linux'
+                     },
                      'interface_properties': {}},
                     {'action': 'add-port',
                      'bridge': 'br-mgmt',
@@ -938,16 +948,18 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                   nic_count=3)
         for node in cluster.nodes:
             self.move_network(node.id, 'storage', 'eth0', 'eth1')
-            self.env.make_bond_via_api('lnx_bond',
-                                       '',
-                                       ['eth1', 'eth2'],
-                                       node.id,
-                                       bond_properties={
-                                           'mode': consts.BOND_MODES.balance_rr
-                                       },
-                                       interface_properties={
-                                           'mtu': 9000
-                                       })
+            self.env.make_bond_via_api(
+                'lnx_bond',
+                '',
+                ['eth1', 'eth2'],
+                node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.balance_rr,
+                    'type__': consts.BOND_TYPES.linux
+                },
+                interface_properties={
+                    'mtu': 9000
+                })
         serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)
         for node in facts:
@@ -985,7 +997,10 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                  'name': 'lnx_bond',
                  'mtu': 9000,
                  'interfaces': ['eth1', 'eth2'],
-                 'bond_properties': {'mode': 'balance-rr'},
+                 'bond_properties': {
+                     'mode': 'balance-rr',
+                     'type__': 'linux'
+                 },
                  'interface_properties': {'mtu': 9000}},
                 {'action': 'add-port',
                  'bridge': 'br-storage',

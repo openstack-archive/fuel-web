@@ -360,6 +360,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
+                "type__": 'linux',
                 "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3
             },
             "slaves": [
@@ -378,7 +379,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
-                "mode": 'unknown'
+                "mode": 'unknown',
+                "type__": 'linux',
             },
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -629,6 +631,29 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.node_nics_put_check_error(
             "Node '{0}': interface 'ovs-bond0' belongs to admin network "
             "and doesn't contain node's pxe interface 'eth0'".format(
+                self.env.nodes[0]["id"])
+        )
+
+    def test_nics_bond_create_failed_unknow_bond_type(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": "foo"
+            },
+            "mode": BOND_MODES.balance_slb,
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}', interface 'ovs-bond0': "
+            "bond type__ allowed values: 'ovs', 'linux'. "
+            "Can not be foo".format(
                 self.env.nodes[0]["id"])
         )
 

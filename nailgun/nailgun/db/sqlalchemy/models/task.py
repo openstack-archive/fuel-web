@@ -83,6 +83,12 @@ class Task(Base):
     network_settings = deferred(Column(MutableDict.as_mutable(JSON),
                                        nullable=True))
 
+    # please don't access _custom field other way then getters and setters
+    _custom = Column(
+        MutableDict.as_mutable(JSON),
+        default={},
+        server_default='{}')
+
     deployment_history = relationship(
         "DeploymentHistory", backref="task", cascade="all,delete")
 

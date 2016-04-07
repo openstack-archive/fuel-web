@@ -53,6 +53,8 @@ from nailgun.api.v1.handlers.cluster_plugin_link \
 
 from nailgun.api.v1.handlers.deployment_history \
     import DeploymentHistoryCollectionHandler
+from nailgun.api.v1.handlers.deployment_history \
+    import DeploymentHistoryTaskHandler
 
 from nailgun.api.v1.handlers.vip import ClusterVIPCollectionHandler
 from nailgun.api.v1.handlers.vip import ClusterVIPHandler
@@ -330,6 +332,9 @@ urls = (
     TransactionHandler,
     r'/transactions/(?P<transaction_id>\d+)/deployment_history/?$',
     DeploymentHistoryCollectionHandler,
+    r'/transactions/(?P<transaction_id>\d+)/deployment_history'
+    r'/(?P<deployment_task_name>[a-zA-Z0-9-_]+)/?$',
+    DeploymentHistoryTaskHandler,
     r'/transactions/(?P<transaction_id>\d+)/deployment_info/?$',
     TransactionDeploymentInfo,
     r'/transactions/(?P<transaction_id>\d+)/network_configuration/?$',

@@ -13,8 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-
+import copy
 from datetime import datetime
 
 from nailgun.consts import HISTORY_TASK_STATUSES
@@ -26,6 +25,7 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.deployment_history \
     import DeploymentHistorySerializer
+from nailgun.objects import Transaction
 
 from nailgun.logger import logger
 
@@ -135,11 +135,58 @@ class DeploymentHistoryCollection(NailgunCollection):
         db().bulk_save_objects(entries)
 
     @classmethod
-    def get_history(cls, transaction_id, node_ids=None, statuses=None):
-        query = cls.filter_by(None, task_id=transaction_id)
-        if node_ids:
-            query = query.filter(cls.single.model.node_id.in_(node_ids))
+    def get_history(cls, transaction, nodes_ids=None, statuses=None,
+                    tasks_names=None):
+        """Get deployment tasks history.
+
+        :param transaction: transaction SQLAlchemy object
+        :type transaction: models.Transaction
+        :param nodes_ids: filter by node IDs
+        :type nodes_ids: list[int]|None
+        :param statuses: filter by statuses
+        :type statuses: list[basestring]|None
+        :param tasks_names: filter by deployment graph task names
+        :type tasks_names: list[basestring]|None
+        :returns: tasks history
+        :rtype: list[dict]
+        """
+        query = cls.filter_by(None, task_id=transaction.id)
+        if nodes_ids:
+            query = query.filter(cls.single.model.node_id.in_(nodes_ids))
         if statuses:
             query = query.filter(cls.single.model.status.in_(statuses))
+        if tasks_names:
+            query = query.filter(
+                cls.single.model.deployment_graph_task_name.in_(tasks_names))
 
-        return query
+        history = copy.deepcopy(cls.to_list(query))
+
+        # rename task id to conventional field
+        for record in history:
+            record['task_name'] = record['deployment_graph_task_name']
+            record.pop('deployment_graph_task_name', None)
+
+        tasks_snapshot = Transaction.get_tasks_snapshot(transaction)
+
+        if tasks_snapshot:
+            task_by_name = {}
+
+            for task in tasks_snapshot:
+                # remove ambiguous id field
+                task.pop('id', None)
+                task_by_name[task['task_name']] = task
+
+            for history_record in history:
+                task_name = history_record.get('task_name')
+                try:
+                    task_parameters = task_by_name[task_name]
+                    history_record.update(task_parameters)
+                except KeyError:
+                    logger.warning(
+                        'Definition of "{0}" task is not found'.format(
+                            task_name))
+        else:
+            logger.warning('No tasks snapshot is defined in given '
+                           'transaction, probably it is a legacy '
+                           '(Fuel<10.0.0) or malformed.')
+        return history

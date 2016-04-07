@@ -1295,6 +1295,16 @@ def upgrade_task_attributes():
             nullable=True
         )
     )
+    op.add_column(
+        'tasks',
+        sa.Column(
+            '_custom',
+            fields.JSON(),
+            default={},
+            server_default='{}'
+        )
+    )
+
     op.create_index(
         'cluster_name_idx',
         'tasks', ['cluster_id', 'name']
@@ -1303,6 +1313,7 @@ def upgrade_task_attributes():
 
 def downgrade_task_attributes():
     op.drop_index('cluster_name_idx', 'tasks')
+    op.drop_column('tasks', '_custom')
     op.drop_column('tasks', 'network_settings')
     op.drop_column('tasks', 'cluster_settings')
     op.drop_column('tasks', 'deployment_info')

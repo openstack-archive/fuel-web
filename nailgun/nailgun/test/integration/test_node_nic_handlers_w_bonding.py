@@ -137,6 +137,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
     def prepare_bond_w_props(self, bond_name='bond0',
                              bond_type=BOND_TYPES.linux,
+                             bond_mode=BOND_MODES.l_802_3ad,
                              iface_props=None):
         if iface_props is None:
             iface_props = {}
@@ -145,7 +146,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": bond_name,
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
-                "mode": BOND_MODES.l_802_3ad,
+                "mode": bond_mode,
                 "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3,
                 "lacp_rate": "slow",
                 "type__": bond_type
@@ -228,7 +229,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
     def test_nics_ovs_bond_create_failed_without_dpdk(self):
         bond_name = 'bond0'
         self.prepare_bond_w_props(bond_name=bond_name,
-                                  bond_type=BOND_TYPES.ovs)
+                                  bond_type=BOND_TYPES.ovs,
+                                  bond_mode=BOND_MODES.balance_tcp)
         self.node_nics_put_check_error("Bond interface '{0}': DPDK should be"
                                        " enabled for 'ovs' bond type".
                                        format(bond_name))
@@ -343,6 +345,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
+                "type__": 'linux',
                 "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3
             },
             "slaves": [
@@ -361,7 +364,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
-                "mode": 'unknown'
+                "mode": 'unknown',
+                "type__": 'linux',
             },
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -510,6 +514,23 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         )
 
     def test_nics_bond_create_failed_slave_has_no_name(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": BOND_MODES.balance_slb,
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"nic": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}', interface 'ovs-bond0': each bond slave "
+            "must have name".format(self.env.nodes[0]["id"])
+        )
+
+    def test_nics_bond_create_failed_no_type(self):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,

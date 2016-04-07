@@ -1340,6 +1340,7 @@ def upgrade_task_attributes():
             nullable=True
         )
     )
+
     op.create_index(
         'cluster_name_idx',
         'tasks', ['cluster_id', 'name']

@@ -101,3 +101,7 @@ class TaskBaseDeploymentNotAllowed(DeploymentException):
 
 class NoChanges(DeploymentException):
     message = "There is no changes to apply"
+
+
+class TaskNotFoundInHistory(DeploymentException):
+    message = "Deployment task not found in the deployment history"

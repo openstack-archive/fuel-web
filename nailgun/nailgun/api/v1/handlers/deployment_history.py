@@ -46,3 +46,37 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
                 node_ids,
                 statuses)
         )
+
+
+class DeploymentHistoryTaskHandler(base.CollectionHandler):
+
+    collection = objects.DeploymentHistoryCollection
+
+    @content
+    def GET(self, transaction_id, deployment_task_name):
+        """:returns: JSONized DeploymentHistory tasks object
+
+        :http: * 200 (OK)
+               * 404 (transaction not found in db)
+        """
+        transaction = self.get_object_or_404(
+            objects.Transaction, transaction_id)
+
+        graph_tasks = objects.Transaction.get_graph_snapshot(transaction)
+
+        task = next(
+            t for t in graph_tasks
+            if t.get('id') == deployment_task_name
+        )
+        if not task:
+            raise self.http(404, 'Definition of "{0}" task not found'
+                            .format(deployment_task_name))
+
+        history = self.collection.to_json(
+            self.collection.get_history(
+                transaction_id=transaction_id,
+                deployment_graph_task_names=[deployment_task_name]
+            )
+        )
+        task['history'] = history
+        return task

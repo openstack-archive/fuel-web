@@ -76,17 +76,17 @@ class TestDeploymentHistoryObject(base.BaseTestCase):
 
     def test_deployment_history_create(self):
         histories = deployment_history.DeploymentHistoryCollection.\
-            get_history(self.task.id).all()
+            get_history(self.task)
         self.assertEqual(len(histories), 4)
 
-        db_task_names = {h.deployment_graph_task_name for h in histories}
+        db_task_names = {h.get('task_name') for h in histories}
         input_task_names = set()
         for node in TASKS_GRAPH:
             for task in TASKS_GRAPH[node]:
                 input_task_names.add(task['id'])
 
         self.assertEqual(len(db_task_names & input_task_names), 4)
-        self.assertEqual(histories[0].status,
+        self.assertEqual(histories[0].get('status'),
                          consts.HISTORY_TASK_STATUSES.pending)
 
     def test_deployment_history_update_if_exist(self):

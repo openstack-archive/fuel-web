@@ -13,7 +13,9 @@
 #    under the License.
 
 import alembic
+import sqlalchemy as sa
 
+from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
@@ -38,3 +40,22 @@ class TestDeploymentHistoryMigration(base.BaseAlembicMigrationTest):
         tbl = self.meta.tables['deployment_history']
         self.assertIn('deployment_history_task_name_status_idx',
                       [i.name for i in tbl.indexes])
+
+
+class TestTasksSnapshotField(base.BaseAlembicMigrationTest):
+    def test_fields_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending',
+                'tasks_snapshot': '[{"id":"taskid","type":"puppet"}]'
+            }]
+        )
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'].c.tasks_snapshot,
+            ])
+        ).first()
+        self.assertIsNotNone(result['tasks_snapshot'])

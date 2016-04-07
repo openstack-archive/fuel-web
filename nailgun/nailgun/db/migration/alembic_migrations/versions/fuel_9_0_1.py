@@ -21,7 +21,9 @@ Create Date: 2016-04-28 22:23:40.895589
 """
 
 from alembic import op
+import sqlalchemy as sa
 
+from nailgun.db.sqlalchemy.models import fields
 
 # revision identifiers, used by Alembic.
 revision = '675105097a69'
@@ -30,9 +32,11 @@ down_revision = '11a9adc6d36a'
 
 def upgrade():
     upgrade_deployment_history()
+    upgrade_tasks_snapshot()
 
 
 def downgrade():
+    downgrade_tasks_snapshot()
     downgrade_deployment_history()
 
 
@@ -45,3 +49,18 @@ def upgrade_deployment_history():
 def downgrade_deployment_history():
     op.drop_index('deployment_history_task_name_status_idx',
                   'deployment_history')
+
+
+def upgrade_tasks_snapshot():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'tasks_snapshot',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+
+
+def downgrade_tasks_snapshot():
+    op.drop_column('tasks', 'tasks_snapshot')

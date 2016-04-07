@@ -135,11 +135,30 @@ class DeploymentHistoryCollection(NailgunCollection):
         db().bulk_save_objects(entries)
 
     @classmethod
-    def get_history(cls, transaction_id, node_ids=None, statuses=None):
+    def get_history(cls, transaction_id, node_ids=None, statuses=None,
+                    deployment_graph_task_names=None):
+        """Get deployment tasks history.
+
+        :param transaction_id: transaction task ID
+        :type transaction_id: int
+        :param node_ids: filter by node IDs
+        :type node_ids: list[int]
+        :param statuses: filter by statuses
+        :type statuses: list[basestring]
+        :param deployment_graph_task_names: filter by deployment graph
+                                            task names
+        :type deployment_graph_task_names: list[basestring]
+        :returns: SQLAlchemy query
+        :rtype: iterable
+        """
         query = cls.filter_by(None, task_id=transaction_id)
         if node_ids:
             query = query.filter(cls.single.model.node_id.in_(node_ids))
         if statuses:
             query = query.filter(cls.single.model.status.in_(statuses))
+        if deployment_graph_task_names:
+            query = query.filter(
+                cls.single.model.deployment_graph_task_name.in_(
+                    deployment_graph_task_names))
 
         return query

@@ -241,6 +241,10 @@ class DeploymentTask(BaseDeploymentTask):
         deployment_tasks = objects.Cluster.get_deployment_tasks(
             task.cluster, graph_type
         )
+        objects.Transaction.attach_graph_snapshot(
+            task,
+            deployment_tasks
+        )
 
         deployment_mode, message = cls.call_deployment_method(
             task, tasks=deployment_tasks, nodes=nodes,
@@ -263,6 +267,7 @@ class DeploymentTask(BaseDeploymentTask):
             task,
             objects.Cluster.get_network_attributes(task.cluster)
         )
+
         rpc_message = make_astute_message(
             task,
             deployment_mode,

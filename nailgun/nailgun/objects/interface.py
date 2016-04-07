@@ -17,6 +17,7 @@
 import six
 from sqlalchemy.sql import not_
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
@@ -75,7 +76,9 @@ class NIC(DPDKMixin, NailgunObject):
 
     @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):
-        return cls.get_dpdk_driver(instance, dpdk_drivers) is not None
+        return (cls.get_dpdk_driver(instance, dpdk_drivers) is not None and
+                instance.node.cluster.network_config.segmentation_type ==
+                consts.NEUTRON_SEGMENT_TYPES.vlan)
 
     @classmethod
     def is_sriov_enabled(cls, instance):

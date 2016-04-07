@@ -123,6 +123,9 @@ class TestTaskManagers(BaseIntegrationTest):
             objects.Cluster.get_network_attributes(cluster),
             objects.Transaction.get_network_settings(deployment_task),
         )
+        self.assertEqual(
+            len(objects.Transaction.get_tasks_snapshot(deployment_task)),
+            len(objects.Cluster.get_deployment_tasks(cluster)))
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_deployment_info_saves_in_transaction(self, _):

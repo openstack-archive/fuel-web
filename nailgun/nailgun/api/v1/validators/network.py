@@ -352,15 +352,6 @@ class NetAssignmentValidator(BasicValidator):
                             "must have name".format(node['id'], iface['name']),
                             log_message=True
                         )
-                if 'bond_properties' in iface:
-                    for k in iface['bond_properties'].keys():
-                        if k not in consts.BOND_PROPERTIES:
-                            raise errors.InvalidData(
-                                "Node '{0}', interface '{1}': unknown bond "
-                                "property '{2}'".format(
-                                    node['id'], iface['name'], k),
-                                log_message=True
-                            )
                 bond_mode = cls.get_bond_mode(iface)
                 if not bond_mode:
                     raise errors.InvalidData(
@@ -375,6 +366,34 @@ class NetAssignmentValidator(BasicValidator):
                             node['id'], iface['name'], bond_mode),
                         log_message=True
                     )
+                if 'bond_properties' in iface:
+                    for k in iface['bond_properties'].keys():
+                        if k not in consts.BOND_PROPERTIES:
+                            raise errors.InvalidData(
+                                "Node '{0}': bond interface '{1}': unknown "
+                                "bond property '{2}'".format(
+                                    node['id'], iface['name'], k),
+                                log_message=True
+                            )
+                    bond_type = iface['bond_properties'].get('type__')
+                    if bond_type not in consts.BOND_TYPES:
+                        bond_types = ', '.join(
+                            ("'{0}'".format(t) for t in consts.BOND_TYPES))
+                        raise errors.InvalidData(
+                            "Node '{0}': bond interface '{1}': Invalid bond "
+                            "type__ '{2}'. Allowed values are: {3}."
+                            "".format(node['id'], iface['name'],
+                                      bond_type, bond_types),
+                            log_message=True)
+                    if bond_mode not in consts.BOND_MODES_BY_TYPE[bond_type]:
+                        raise errors.InvalidData(
+                            "Node '{0}': bond interface '{1}': Invalid "
+                            "mode '{2}' for given type '{3}'".format(
+                                node['id'], iface['name'],
+                                bond_mode, bond_type),
+                            log_message=True
+                        )
+
             if 'assigned_networks' not in iface or \
                     not isinstance(iface['assigned_networks'], list):
                 raise errors.InvalidData(
@@ -612,7 +631,7 @@ class NetAssignmentValidator(BasicValidator):
                 nets[0]['name'] == consts.NETWORKS.private
         ):
             raise errors.InvalidData(
-                "Only private network could be assigned"
+                "Only private network tescould be assigned"
                 " to interface '{}' where DPDK is enabled".format(
                     iface['name']))
 

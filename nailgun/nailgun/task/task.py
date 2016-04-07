@@ -242,10 +242,15 @@ class DeploymentTask(BaseDeploymentTask):
         deployment_tasks = objects.Cluster.get_deployment_tasks(
             task.cluster, graph_type
         )
+        objects.Transaction.attach_tasks_snapshot(
+            task,
+            deployment_tasks
+        )
 
         # update all puppet tasks with puppet_debug value from settings
-        settings = objects.Cluster.get_editable_attributes(task.cluster)
-        puppet_debug = settings['common']['puppet_debug']['value']
+        cluster_settings = objects.Cluster.get_editable_attributes(
+            task.cluster)
+        puppet_debug = cluster_settings['common']['puppet_debug']['value']
         for deploy_task in deployment_tasks:
             if deploy_task['type'] == consts.ORCHESTRATOR_TASK_TYPES.puppet:
                 logger.debug("Update puppet task: %s with debug=%s",
@@ -273,6 +278,7 @@ class DeploymentTask(BaseDeploymentTask):
             task,
             objects.Cluster.get_network_attributes(task.cluster)
         )
+
         rpc_message = make_astute_message(
             task,
             deployment_mode,

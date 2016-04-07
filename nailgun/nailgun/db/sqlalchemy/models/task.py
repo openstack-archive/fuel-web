@@ -32,6 +32,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
+from nailgun.db.sqlalchemy.models.mutable import MutableList
 
 
 class Task(Base):
@@ -82,6 +83,9 @@ class Task(Base):
                                        nullable=True))
     network_settings = deferred(Column(MutableDict.as_mutable(JSON),
                                        nullable=True))
+
+    tasks_snapshot = deferred(Column(MutableList.as_mutable(JSON),
+                                     nullable=True))
 
     deployment_history = relationship(
         "DeploymentHistory", backref="task", cascade="all,delete")

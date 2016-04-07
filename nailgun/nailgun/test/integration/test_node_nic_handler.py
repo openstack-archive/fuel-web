@@ -300,12 +300,12 @@ class TestHandlers(BaseIntegrationTest):
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
 
-    @patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def test_update_dpdk_availability(self, drivers_mock):
+    def check_update_dpdk_availability(self, segment_type, drivers_mock,
+                                       dpdk_available):
         drivers_mock.return_value = {
             'driver_1': ['8765:4321']
         }
-        cluster = self.env.create_cluster()
+        cluster = self.env.create_cluster(net_segment_type=segment_type)
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
@@ -340,8 +340,20 @@ class TestHandlers(BaseIntegrationTest):
             resp_nic['interface_properties']['dpdk'],
             {
                 'enabled': False,
-                'available': True
+                'available': dpdk_available
             })
+
+    @patch('nailgun.objects.Release.get_supported_dpdk_drivers')
+    def test_update_dpdk_unavailable_tun(self, drivers_mock):
+        self.check_update_dpdk_availability(consts.NEUTRON_SEGMENT_TYPES.tun,
+                                            drivers_mock,
+                                            False)
+
+    @patch('nailgun.objects.Release.get_supported_dpdk_drivers')
+    def test_update_dpdk_available_vlan(self, drivers_mock):
+        self.check_update_dpdk_availability(consts.NEUTRON_SEGMENT_TYPES.vlan,
+                                            drivers_mock,
+                                            True)
 
     def test_NIC_offloading_modes(self):
         meta = self.env.default_metadata()

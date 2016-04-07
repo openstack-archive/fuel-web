@@ -28,6 +28,11 @@ NETWORK_SCHEME = {
         "roles": {
             "id": "roles",
             "type": "object"
+        },
+        "priority": {
+            "id": "priority",
+            "type": "number",
+            "optional": True
         }
     },
     "required": [

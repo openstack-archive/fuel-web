@@ -19,6 +19,10 @@ Revises: 675105097a69
 Create Date: 2016-04-08 15:20:43.989472
 
 """
+from alembic import op
+import sqlalchemy as sa
+
+from nailgun.db.sqlalchemy.models import fields
 
 from alembic import op
 import sqlalchemy as sa
@@ -30,10 +34,12 @@ down_revision = '675105097a69'
 
 
 def upgrade():
+    upgrade_tasks_snapshot()
     upgrade_plugin_links_constraints()
 
 
 def downgrade():
+    downgrade_tasks_snapshot()
     downgrade_plugin_links_constraints()
 
 
@@ -80,3 +86,18 @@ def downgrade_plugin_links_constraints():
                        'cluster_plugin_links')
 
     op.drop_constraint('plugin_links_url_uc', 'plugin_links')
+
+
+def upgrade_tasks_snapshot():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'tasks_snapshot',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+
+
+def downgrade_tasks_snapshot():
+    op.drop_column('tasks', 'tasks_snapshot')

@@ -17,6 +17,8 @@ import web
 
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
+from nailgun import errors
+from nailgun.logger import logger
 from nailgun import objects
 
 
@@ -26,23 +28,61 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
 
     @content
     def GET(self, transaction_id):
-        """:returns: Collection of JSONized DeploymentHistory objects.
+        """:returns: Collection of JSONized DeploymentHistory records.
 
         :http: * 200 (OK)
-               * 404 (cluster not found in db)
+               * 400 (Bad tasks in given transaction)
+               * 404 (transaction not found in db, task not found in snapshot)
         """
-        self.get_object_or_404(objects.Transaction, transaction_id)
+        # get transaction data
+        transaction = self.get_object_or_404(
+            objects.Transaction, transaction_id)
+
+        tasks_snapshot = objects.Transaction.get_tasks_snapshot(transaction)
+        if not tasks_snapshot:
+            logger.warning('No tasks snapshot is defined in given '
+                           'transaction, probably it is a legacy '
+                           '(Fuel<10.0.0) or malformed.')
+
+        # process input parameters
         node_ids = web.input(nodes=None).nodes
         statuses = web.input(statuses=None).statuses
+        tasks_names = web.input(tasks_names=None).tasks_names
 
         if node_ids:
             node_ids = set(node_ids.strip().split(','))
         if statuses:
             statuses = set(statuses.strip().split(','))
+        if tasks_names:
+            tasks_names = set(tasks_names.strip().split(','))
 
-        return self.collection.to_json(
+        # fetch and serialize history
+        history = self.collection.to_list(
             self.collection.get_history(
-                transaction_id,
-                node_ids,
-                statuses)
-        )
+                transaction_id=transaction_id,
+                node_ids=node_ids,
+                statuses=statuses,
+                tasks_names=tasks_names))
+
+        # rename task id to conventional field
+        for record in history:
+            record['task_name'] = record['deployment_graph_task_name']
+            record.pop('deployment_graph_task_name', None)
+
+        if tasks_snapshot:
+            try:
+                return self.collection.unwrap_tasks_definitions(
+                    history, tasks_snapshot)
+            except errors.TaskNotFoundInHistory as exc:
+                # warn and go to returning history in old format
+                logger.warning('Definition of task not found: {}'
+                               .format(exc.message))
+        return history
+
+    @content
+    def POST(self, obj_id):
+        """Update of a history is not allowed
+
+        :http: * 405 (Method not allowed)
+        """
+        raise self.http(405)

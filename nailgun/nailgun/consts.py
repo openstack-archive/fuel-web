@@ -242,6 +242,25 @@ BOND_TYPES = Enum(
     'linux'
 )
 
+BOND_MODES_BY_TYPE = {
+    BOND_TYPES.ovs: [
+        BOND_MODES.active_backup,
+        BOND_MODES.balance_slb,
+        BOND_MODES.balance_tcp,
+        BOND_MODES.lacp_balance_tcp,
+    ],
+    BOND_TYPES.linux: [
+        BOND_MODES.active_backup,
+        BOND_MODES.balance_rr,
+        BOND_MODES.balance_xor,
+        BOND_MODES.broadcast,
+        BOND_MODES.l_802_3ad,
+        BOND_MODES.balance_tlb,
+        BOND_MODES.balance_alb,
+    ]
+}
+
+
 TASK_STATUSES = Enum(
     'pending',
     'ready',

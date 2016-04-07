@@ -14,12 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+import copy
 from datetime import datetime
 
 from nailgun.consts import HISTORY_TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun import errors
 
 
 from nailgun.objects import NailgunCollection
@@ -135,11 +136,55 @@ class DeploymentHistoryCollection(NailgunCollection):
         db().bulk_save_objects(entries)
 
     @classmethod
-    def get_history(cls, transaction_id, node_ids=None, statuses=None):
+    def get_history(cls, transaction_id, node_ids=None, statuses=None,
+                    deployment_task_names=None):
+        """Get deployment tasks history.
+
+        :param transaction_id: transaction task ID
+        :type transaction_id: int
+        :param node_ids: filter by node IDs
+        :type node_ids: list[int]|None
+        :param statuses: filter by statuses
+        :type statuses: list[basestring]|None
+        :param deployment_task_names: filter by deployment graph
+                                            task names
+        :type deployment_task_names: list[basestring]|None
+        :returns: SQLAlchemy query
+        :rtype: iterable
+        """
         query = cls.filter_by(None, task_id=transaction_id)
         if node_ids:
             query = query.filter(cls.single.model.node_id.in_(node_ids))
         if statuses:
             query = query.filter(cls.single.model.status.in_(statuses))
+        if deployment_task_names:
+            query = query.filter(
+                cls.single.model.deployment_graph_task_name.in_(
+                    deployment_task_names))
 
         return query
+
+    @classmethod
+    def unwrap_tasks_definitions(cls, history, deployment_tasks):
+        """Add tasks parameters to the deployment history records.
+
+        :param history: list of serialized DeploymentHistory records
+        :type history: list[dict]
+        :param deployment_tasks: list of deployment tasks
+        :type: deployment_tasks: list[dict]
+        :returns: list of history records
+        :rtype: list[dict]
+        """
+        task_by_id = {task['id']: task for task in deployment_tasks}
+
+        history = copy.deepcopy(history)
+        for history_record in history:
+            task_id = history_record.get('deployment_graph_task_name')
+            try:
+                task_parameters = task_by_id[task_id]
+            except KeyError:
+                raise errors.TaskNotFoundInHistory(
+                    'Definition of "{0}" task is not found'.format(task_id))
+            history_record.update(task_parameters)
+            history_record.pop('deployment_graph_task_name', None)
+        return history

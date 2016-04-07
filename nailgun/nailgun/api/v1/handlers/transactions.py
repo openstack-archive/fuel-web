@@ -87,3 +87,8 @@ class TransactionClusterSettings(BaseTransactionDataHandler):
 class TransactionNetworkSettings(BaseTransactionDataHandler):
 
     get_data = objects.Transaction.get_network_settings
+
+
+class TransactionGraphSnapshot(BaseTransactionDataHandler):
+
+    get_data = objects.Transaction.get_graph_snapshot

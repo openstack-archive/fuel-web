@@ -227,6 +227,28 @@ class TestTransactionHandlers(BaseTestCase):
         self.assertEqual(200, resp.status_code)
         self.datadiff(net_attrs, resp.json_body)
 
+    def test_get_transaction_graph_snapshot(self):
+        cluster = self.cluster_db
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_graph_snapshot(transaction, [{
+            'id': 'test-task',
+            'type': 'puppet'
+        }])
+        resp = self.app.get(
+            reverse(
+                'TransactionGraphSnapshot',
+                kwargs={'transaction_id': transaction.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertItemsEqual(
+            [{'type': 'puppet', 'id': 'test-task'}],
+            resp.json_body)
+
     def test_get_network_settings_fail_not_existed_transaction(self):
         resp = self.app.get(
             reverse(

@@ -134,6 +134,7 @@ from nailgun.api.v1.handlers.tasks import TaskHandler
 from nailgun.api.v1.handlers.transactions import TransactionClusterSettings
 from nailgun.api.v1.handlers.transactions import TransactionCollectionHandler
 from nailgun.api.v1.handlers.transactions import TransactionDeploymentInfo
+from nailgun.api.v1.handlers.transactions import TransactionGraphSnapshot
 from nailgun.api.v1.handlers.transactions import TransactionHandler
 from nailgun.api.v1.handlers.transactions import TransactionNetworkSettings
 
@@ -334,6 +335,8 @@ urls = (
     TransactionDeploymentInfo,
     r'/transactions/(?P<transaction_id>\d+)/network_configuration/?$',
     TransactionNetworkSettings,
+    r'/transactions/(?P<transaction_id>\d+)/graph_snapshot/?$',
+    TransactionGraphSnapshot,
     r'/transactions/(?P<transaction_id>\d+)/settings/?$',
     TransactionClusterSettings,
 

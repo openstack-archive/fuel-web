@@ -17,6 +17,7 @@ import web
 
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
+from nailgun import consts
 from nailgun import objects
 
 
@@ -26,23 +27,44 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
 
     @content
     def GET(self, transaction_id):
-        """:returns: Collection of JSONized DeploymentHistory objects.
+        """:returns: Collection of JSONized DeploymentHistory records.
 
         :http: * 200 (OK)
-               * 404 (cluster not found in db)
+               * 400 (Bad tasks in given transaction)
+               * 404 (transaction not found in db, task not found in snapshot)
         """
-        self.get_object_or_404(objects.Transaction, transaction_id)
-        node_ids = web.input(nodes=None).nodes
-        statuses = web.input(statuses=None).statuses
+        # get transaction data
+        transaction = self.get_object_or_404(
+            objects.Transaction, transaction_id)
 
-        if node_ids:
-            node_ids = set(node_ids.strip().split(','))
+        # process input parameters
+        nodes_ids = web.input(nodes=None).nodes
+        statuses = web.input(statuses=None).statuses
+        tasks_names = web.input(tasks_names=None).tasks_names
+
+        if nodes_ids:
+            nodes_ids = set(nodes_ids.strip().split(','))
         if statuses:
             statuses = set(statuses.strip().split(','))
+            if not statuses.issubset(set(consts.HISTORY_TASK_STATUSES)):
+                raise self.http(
+                    400,
+                    "Statuses parameter could be only: {}".format(
+                        ", ".join(consts.HISTORY_TASK_STATUSES)))
 
-        return self.collection.to_json(
-            self.collection.get_history(
-                transaction_id,
-                node_ids,
-                statuses)
-        )
+        if tasks_names:
+            tasks_names = set(tasks_names.strip().split(','))
+
+        # fetch and serialize history
+        return self.collection.get_history(transaction=transaction,
+                                           nodes_ids=nodes_ids,
+                                           statuses=statuses,
+                                           tasks_names=tasks_names)
+
+    @content
+    def POST(self, obj_id):
+        """Update of a history is not allowed
+
+        :http: * 405 (Method not allowed)
+        """
+        raise self.http(405)

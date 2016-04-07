@@ -70,6 +70,17 @@ class Transaction(NailgunObject):
         if instance is not None:
             return instance.cluster_settings
 
+    # please don't access _custom field other way then getters and setters
+    @classmethod
+    def attach_graph_snapshot(cls, instance, settings):
+        if instance is not None:
+            instance._custom['tasks_snapshot'] = settings
+
+    @classmethod
+    def get_graph_snapshot(cls, instance):
+        if instance is not None:
+            return instance._custom.get('tasks_snapshot', [])
+
 
 class TransactionCollection(NailgunCollection):
 

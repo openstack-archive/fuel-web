@@ -820,6 +820,7 @@ class TestTasksMigration(base.BaseAlembicMigrationTest):
                 'deployment_info': '{}',
                 'cluster_settings': '{}',
                 'network_settings': '{}',
+                '_custom': '{}',
                 'deleted_at': datetime.datetime.utcnow()
             }]
         )
@@ -830,6 +831,7 @@ class TestTasksMigration(base.BaseAlembicMigrationTest):
                 self.meta.tables['tasks'].c.cluster_settings,
                 self.meta.tables['tasks'].c.deployment_info,
                 self.meta.tables['tasks'].c.network_settings,
+                self.meta.tables['tasks'].c._custom,
                 self.meta.tables['tasks'].c.deleted_at,
             ])
         ).first()
@@ -837,6 +839,7 @@ class TestTasksMigration(base.BaseAlembicMigrationTest):
         self.assertIsNotNone(result['cluster_settings'])
         self.assertIsNotNone(result['deployment_info'])
         self.assertIsNotNone(result['network_settings'])
+        self.assertIsNotNone(result['_custom'])
         self.assertIsNotNone(result['deleted_at'])
 
     def text_cluster_name_index_exists(self):

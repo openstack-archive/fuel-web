@@ -80,6 +80,12 @@ class Task(Base):
     cluster_settings = Column(MutableDict.as_mutable(JSON), nullable=True)
     network_settings = Column(MutableDict.as_mutable(JSON), nullable=True)
 
+    # please don't access _custom field other way then getters and setters
+    _custom = Column(
+        MutableDict.as_mutable(JSON),
+        default={},
+        server_default='{}')
+
     deployment_history = relationship(
         "DeploymentHistory", backref="task", cascade="all,delete")
 

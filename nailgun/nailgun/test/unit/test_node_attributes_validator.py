@@ -45,18 +45,18 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
                     'value': {},
                 },
                 'dpdk': {
-                    'type': 'text',
-                    'value': '0',
+                    'type': 'number',
+                    'value': 0,
                 },
             },
             'cpu_pinning': {
                 'dpdk': {
-                    'type': 'text',
-                    'value': '0',
+                    'type': 'number',
+                    'value': 0,
                 },
                 'nova': {
-                    'type': 'text',
-                    'value': '0',
+                    'type': 'number',
+                    'value': 0,
                 }
             }
         }
@@ -81,7 +81,7 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
                     },
                 },
                 'dpdk': {
-                    'value': '2',
+                    'value': 2,
                 },
             }
         }
@@ -94,8 +94,8 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
             'hugepages': {
                 'nova': {
                     'value': {
-                        '2048': '100500',
-                        '1048576': '100500',
+                        '2048': 100500,
+                        '1048576': 100500,
                     },
                 },
             },
@@ -109,7 +109,7 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
         data = {
             'hugepages': {
                 'dpdk': {
-                    'value': '2049',
+                    'value': 2049,
                 },
             }
         }
@@ -123,7 +123,7 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
     def test_valid_data(self):
         data = {
             'cpu_pinning': {
-                'nova': {'value': '1'},
+                'nova': {'value': 1},
             },
         }
 
@@ -135,7 +135,7 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
 
         data = {
             'cpu_pinning': {
-                'nova': {'value': str(pinned_count)},
+                'nova': {'value': pinned_count},
             },
         }
 
@@ -148,7 +148,7 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
 
         data = {
             'cpu_pinning': {
-                'nova': {'value': str(pinned_count)},
+                'nova': {'value': pinned_count},
             },
         }
 

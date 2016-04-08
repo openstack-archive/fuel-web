@@ -24,6 +24,7 @@ import itertools
 import yaml
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
@@ -272,6 +273,17 @@ class Release(NailgunObject):
         """
         metadata = instance.networks_metadata
         return metadata.get('dpdk_drivers', {})
+
+    @classmethod
+    def delete(cls, instance):
+        """Delete release.
+
+        :param instance: Release model instance
+        :type instance: models.Release
+        """
+        for assoc in instance.deployment_graphs_assoc:
+            db().delete(assoc.deployment_graph)
+        super(Release, cls).delete(instance)
 
 
 class ReleaseCollection(NailgunCollection):

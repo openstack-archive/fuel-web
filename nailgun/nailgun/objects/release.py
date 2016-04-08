@@ -273,6 +273,16 @@ class Release(NailgunObject):
         metadata = instance.networks_metadata
         return metadata.get('dpdk_drivers', {})
 
+    @classmethod
+    def delete(cls, instance):
+        """Delete release.
+
+        :param instance: Release model instance
+        :type instance: models.Release
+        """
+        DeploymentGraph.delete_for_parent(instance)
+        super(Release, cls).delete(instance)
+
 
 class ReleaseCollection(NailgunCollection):
     """Release collection"""

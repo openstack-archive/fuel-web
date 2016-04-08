@@ -1,0 +1,15 @@
+DEVELOPMENT: 1
+STATIC_DIR: "static"
+TEMPLATE_DIR: "static"
+DATABASE:
+  name: "openstack_citest"
+  engine: "postgresql"
+  host: "127.0.0.1"
+  port: "5432"
+  user: "openstack_citest"
+  passwd: "openstack_citest"
+API_LOG: "test_run/api.log"
+APP_LOG: "test_run/app.log"
+RPC_CONSUMER_LOG_PATH: "test_run/receiverd.log"
+ASSASSIN_LOG_PATH: "test_run/assassind.log"
+STATS_LOGS_PATH: test_run

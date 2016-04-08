@@ -44,6 +44,11 @@ class ClusterValidator(base.BasicValidator):
         d = cls.validate_json(data)
         release_id = d.get("release", d.get("release_id"))
         if release_id:
+            if not isinstance(release_id, int):
+                raise errors.InvalidData(
+                    "Invalid Release ID '{0}', "
+                    "the value must be integer".format(release_id),
+                    log_message=True)
             release = objects.Release.get_by_uid(release_id)
             if not release:
                 raise errors.InvalidData(

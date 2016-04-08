@@ -67,6 +67,15 @@ class TestClusterValidator(BaseTestCase):
         self.assertRaises(errors.InvalidData,
                           ClusterValidator.validate, self.cluster_data)
 
+    def test_invalid_release_id_validation(self):
+        cluster_data = jsonutils.dumps({
+            "name": "test",
+            "release": "absolutely invalid value",
+            "mode": consts.CLUSTER_MODES.ha_compact})
+        self.assertRaises(errors.InvalidData,
+                          ClusterValidator.validate,
+                          cluster_data)
+
     @patch('nailgun.api.v1.validators.cluster.objects.Release.get_by_uid')
     def test_release_non_exists_validation(self, release_get_by_uid):
         release_get_by_uid.return_value = None

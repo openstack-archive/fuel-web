@@ -135,6 +135,16 @@ JSON_TASKS_AFTER_DB = [
 
 ]
 
+editable = {
+    'storage': {
+        'metadata': {
+            'label': 'Storage Backends',
+            'weight': 60,
+            'group': 'storage'
+        }
+    }
+}
+
 
 def prepare():
     meta = base.reflect_db_metadata()
@@ -230,6 +240,9 @@ def prepare():
                 }
             }]),
             'is_deployable': True,
+            'attributes_metadata': jsonutils.dumps({
+                'editable': editable
+            })
         }])
     releaseid = result.inserted_primary_key[0]
 
@@ -244,6 +257,14 @@ def prepare():
             'grouping': 'roles',
             'fuel_version': '8.0',
             'deployment_tasks': jsonutils.dumps(JSON_TASKS)
+        }])
+    cluster_id = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['attributes'].insert(),
+        [{
+            'cluster_id': cluster_id,
+            'editable': jsonutils.dumps(editable)
         }])
 
     db.execute(
@@ -846,3 +867,19 @@ class TestTasksMigration(base.BaseAlembicMigrationTest):
             None
         )
         self.assertIsNotNone(cluster_name_idx)
+
+
+class TestCephAttributesMigration(base.BaseAlembicMigrationTest):
+    def test_ceph_cluster_attrs(self):
+        ceph_opts = ['fsid', 'mon_key', 'admin_key', 'bootstrap_osd_key',
+                     'radosgw_key']
+
+        clusters_attributes = self.meta.tables['attributes']
+        results = db.execute(
+            sa.select([clusters_attributes.c.editable])
+        ).fetchall()
+        for cluster_attrs_row in results:
+            cluster_attrs = jsonutils.loads(cluster_attrs_row[0])
+            for ceph_opt in ceph_opts:
+                self.assertIn(ceph_opt, cluster_attrs['storage'])
+            self.assertIn('metadata', cluster_attrs['storage'])

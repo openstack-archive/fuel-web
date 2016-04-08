@@ -134,6 +134,49 @@ history_task_statuses = (
     'skipped',
 )
 
+q_get_cluster_attrs = sa.text('''
+    SELECT cluster_id, editable FROM attributes
+''')
+
+q_update_cluster_attrs = sa.text('''
+    UPDATE attributes
+    SET editable = :editable
+    WHERE cluster_id = :cluster_id
+''')
+
+ceph_storage_attrs = {
+    'fsid': {
+        'type': 'hidden',
+        'value': {
+            'generator': 'uuid4'
+        }
+    },
+    'mon_key': {
+        'type': 'hidden',
+        'value': {
+            'generator': 'cephx_key'
+        }
+    },
+    'admin_key': {
+        'type': 'hidden',
+        'value': {
+            'generator': 'cephx_key'
+        }
+    },
+    'bootstrap_osd_key': {
+        'type': 'hidden',
+        'value': {
+            'generator': 'cephx_key'
+        }
+    },
+    'radosgw_key': {
+        'type': 'hidden',
+        'value': {
+            'generator': 'cephx_key'
+        }
+    }
+}
+
 
 def upgrade():
     add_foreign_key_ondelete()
@@ -151,9 +194,11 @@ def upgrade():
     upgrade_bond_modes()
     upgrade_task_attributes()
     upgrade_store_deployment_history()
+    upgrade_ceph_cluster_attrs()
 
 
 def downgrade():
+    downgrade_ceph_cluster_attrs()
     downgrade_store_deployment_history()
     downgrade_task_attributes()
     downgrade_bond_modes()
@@ -1353,3 +1398,30 @@ def upgrade_store_deployment_history():
 def downgrade_store_deployment_history():
     op.drop_table('deployment_history')
     drop_enum('history_task_statuses')
+
+
+def upgrade_ceph_cluster_attrs():
+    connection = op.get_bind()
+
+    for cluster_id, editable in connection.execute(q_get_cluster_attrs):
+        editable = jsonutils.loads(editable)
+        editable.get('storage', {}).update(ceph_storage_attrs)
+        connection.execute(
+            q_update_cluster_attrs,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable)
+        )
+
+
+def downgrade_ceph_cluster_attrs():
+    connection = op.get_bind()
+
+    for cluster_id, editable in connection.execute(q_get_cluster_attrs):
+        editable = jsonutils.loads(editable)
+        for ceph_attr in ceph_storage_attrs:
+            editable.get('storage', {}).pop(ceph_attr, None)
+        connection.execute(
+            q_update_cluster_attrs,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable)
+        )

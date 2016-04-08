@@ -125,6 +125,11 @@ class TestYaqlExt(BaseUnitTest):
             self.evaluate('changed($.configs.nova.value2)', variables)
         )
 
+    def test_changed_many(self):
+        expressions = '$.configs.nova.value, $.configs.nova.value2'
+        self.assertTrue(self.evaluate('changedAny({0})'.format(expressions)))
+        self.assertFalse(self.evaluate('changedAll({0})'.format(expressions)))
+
     def test_undefined(self):
         variables = self.variables.copy()
         variables['$%old'] = {}

@@ -43,7 +43,7 @@ class OpenstackConfigValidator(BasicValidator):
         deploy_task_ids = [
             six.text_type(task.id)
             for task in objects.TaskCollection.get_by_name_and_cluster(
-                cluster, (consts.TASK_NAMES.deployment,))
+                cluster, (consts.TASK_NAMES.deployment,), show_deleted=False)
             .filter(models.Task.status.in_((consts.TASK_STATUSES.pending,
                                             consts.TASK_STATUSES.running)))
             .all()]

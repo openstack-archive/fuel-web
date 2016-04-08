@@ -88,7 +88,7 @@ class TaskManager(object):
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(
-            name=task_name
+            name=task_name, deleted_at=None
         )
         for task in current_tasks:
             if task.status == "running":

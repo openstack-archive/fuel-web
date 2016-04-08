@@ -19,6 +19,7 @@ from oslo_serialization import jsonutils
 import yaml
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun import objects
 from nailgun.plugins import adapters
 from nailgun.test import base
@@ -163,8 +164,11 @@ class TestPluginsApi(BasePluginTest):
 
     def test_delete_plugin(self):
         resp = self.env.create_plugin(api=True)
+        graphs_before_deletion = self.db.query(DeploymentGraph).count()
         del_resp = self.delete_plugin(resp.json['id'])
         self.assertEqual(del_resp.status_code, 204)
+        graphs_after_deletion = self.db.query(DeploymentGraph).count()
+        self.assertEqual(1, graphs_before_deletion - graphs_after_deletion)
 
     def test_delete_unused_plugin(self):
         self.create_cluster()

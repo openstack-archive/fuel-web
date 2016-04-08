@@ -260,6 +260,7 @@ class Cluster(NailgunObject):
 
     @classmethod
     def delete(cls, instance):
+        DeploymentGraph.delete_for_parent(instance)
         node_ids = [
             _id for (_id,) in
             db().query(models.Node.id).

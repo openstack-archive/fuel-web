@@ -59,6 +59,16 @@ class Plugin(NailgunObject):
             .filter_by(name=name, version=version)\
             .first()
 
+    @classmethod
+    def delete(cls, instance):
+        """Delete plugin.
+
+        :param instance: Release model instance
+        :type instance: models.Release
+        """
+        DeploymentGraph.delete_for_model(instance)
+        super(Plugin, cls).delete(instance)
+
 
 class PluginCollection(NailgunCollection):
 

@@ -188,6 +188,20 @@ class DeploymentGraph(NailgunObject):
                 'Graph of given type already exists for this model.')
 
     @classmethod
+    def delete_for_model(cls, instance, graph_type=None):
+        """Delete graphs attached to model as well as relations.
+
+        :param instance: Cluster, Release or Plugin instance
+        :type instance: models.Cluster|models.Release|models.Plugin
+        :param graph_type: Optional graph type, delete all if type
+                           is not defined.
+        :type graph_type: basestring
+        """
+        for assoc in instance.deployment_graphs_assoc:
+            if not graph_type or assoc.type == graph_type:
+                db().delete(assoc.deployment_graph)
+
+    @classmethod
     def get_for_model(cls, instance, graph_type=None):
         """Get deployment graph related to given model.
 

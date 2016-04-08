@@ -134,6 +134,67 @@ history_task_statuses = (
     'skipped',
 )
 
+q_get_cluster_attrs = sa.text('''
+    SELECT cluster_id, editable FROM attributes
+''')
+
+q_update_cluster_attrs = sa.text('''
+    UPDATE attributes
+    SET editable = :editable
+    WHERE cluster_id = :cluster_id
+''')
+
+q_get_available_rel_attrs = sa.text('''
+    SELECT id, attributes_metadata FROM releases
+    WHERE state != 'unavailable'
+''')
+
+q_update_rel_attrs = sa.text('''
+    UPDATE releases
+    SET attributes_metadata = :attributes_metadata
+    WHERE id = :release_id
+''')
+
+ceph_attrs = {
+    'storage': {
+        'fsid': {
+            'type': 'hidden',
+            'label': 'fsid',
+            'value': {
+                'generator': 'uuid4'
+            }
+        },
+        'mon_key': {
+            'type': 'hidden',
+            'label': 'mon_key',
+            'value': {
+                'generator': 'cephx_key'
+            }
+        },
+        'admin_key': {
+            'type': 'hidden',
+            'label': 'admin_key',
+            'value': {
+                'generator': 'cephx_key'
+            }
+        },
+        'bootstrap_osd_key': {
+            'type': 'hidden',
+            'label': 'bootstrap_osd_key',
+            'value': {
+                'generator': 'cephx_key'
+            }
+        },
+        'radosgw_key': {
+            'type': 'hidden',
+            'label': 'radosgw_key',
+            'value': {
+                'generator': 'cephx_key'
+            }
+        }
+    }
+}
+
 
 def upgrade():
     add_foreign_key_ondelete()
@@ -151,9 +212,13 @@ def upgrade():
     upgrade_bond_modes()
     upgrade_task_attributes()
     upgrade_store_deployment_history()
+    upgrade_ceph_release_attrs()
+    upgrade_ceph_cluster_attrs()
 
 
 def downgrade():
+    downgrade_ceph_cluster_attrs()
+    downgrade_ceph_release_attrs()
     downgrade_store_deployment_history()
     downgrade_task_attributes()
     downgrade_bond_modes()
@@ -1353,3 +1418,57 @@ def upgrade_store_deployment_history():
 def downgrade_store_deployment_history():
     op.drop_table('deployment_history')
     drop_enum('history_task_statuses')
+
+
+def upgrade_ceph_cluster_attrs():
+    connection = op.get_bind()
+
+    for cluster_id, editable in connection.execute(q_get_cluster_attrs):
+        editable = jsonutils.loads(editable)
+        editable.update(ceph_attrs)
+        connection.execute(
+            q_update_cluster_attrs,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable)
+        )
+
+
+def downgrade_ceph_cluster_attrs():
+    connection = op.get_bind()
+
+    for cluster_id, editable in connection.execute(q_get_cluster_attrs):
+        editable = jsonutils.loads(editable)
+        for ceph_attr in ceph_attrs['storage']:
+            editable['storage'].pop(ceph_attr, None)
+        connection.execute(
+            q_update_cluster_attrs,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable)
+        )
+
+
+def upgrade_ceph_release_attrs():
+    connection = op.get_bind()
+
+    for release_id, attrs in connection.execute(q_get_available_rel_attrs):
+        attrs = jsonutils.loads(attrs)
+        attrs['editable'].update(ceph_attrs)
+        connection.execute(
+            q_update_rel_attrs,
+            release_id=release_id,
+            attributes_metadata=jsonutils.dumps(attrs)
+        )
+
+
+def downgrade_ceph_release_attrs():
+    connection = op.get_bind()
+
+    for release_id, attrs in connection.execute(q_get_available_rel_attrs):
+        attrs = jsonutils.loads(attrs)
+        for ceph_attr in ceph_attrs['storage']:
+            attrs['storage'].pop(ceph_attr, None)
+        connection.execute(
+            q_update_rel_attrs,
+            release_id=release_id,
+            attributes_metadata=jsonutils.dumps(attrs)
+        )

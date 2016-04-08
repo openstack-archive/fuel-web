@@ -50,7 +50,8 @@ class Release(Base):
         default=consts.RELEASE_STATES.unavailable
     )
     networks_metadata = Column(MutableDict.as_mutable(JSON), default={})
-    attributes_metadata = Column(MutableDict.as_mutable(JSON), default={})
+    attributes_metadata = Column(MutableDict.as_mutable(JSON), default={},
+                                 server_default='{}')
     volumes_metadata = Column(MutableDict.as_mutable(JSON), default={})
     modes_metadata = Column(MutableDict.as_mutable(JSON), default={})
     roles_metadata = Column(MutableDict.as_mutable(JSON), default={})

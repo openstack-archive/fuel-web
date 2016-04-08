@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?><testsuite errors="0" failures="1" name="pytest" skips="0" tests="1" time="10.416"><testcase classname="nailgun.test.integration.test_orchestrator_handlers.TestSelectedNodesAction" file="/Users/justaman/projects/mirantis/fuel/fuel-web/nailgun/nailgun/test/integration/test_orchestrator_handlers.py" line="346" name="test_deployment_of_node_is_forbidden" time="3.67641472816"><failure message="self = &lt;nailgun.test.integration.test_orchestrator_handlers.TestSelectedNodesAction testMethod=test_deployment_of_node_is_forbidden&gt;
+mcast = &lt;MagicMock name=&apos;cast&apos; id=&apos;4418425680&apos;&gt;
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch(&apos;nailgun.task.task.rpc.cast&apos;)
+    def test_deployment_of_node_is_forbidden(self, mcast):
+        # cluster is in ha mode so for the sanity of the check
+        # lets operate on non-controller node
+        node_to_deploy = [
+            n for n in self.cluster.nodes if
+            not
+            set([&quot;primary-controller&quot;, &quot;controller&quot;])
+            &amp;
+            set(n.roles)
+        ].pop()
+    
+        deploy_action_url = self.make_action_url(
+            &quot;DeploySelectedNodes&quot;,
+            [node_to_deploy.uid]
+        )
+    
+        resp = self.send_put(deploy_action_url)
+        self.check_resp_declined(resp)
+    
+        self.emulate_nodes_provisioning([node_to_deploy])
+    
+        self.send_put(deploy_action_url)
+    
+&gt;       self.check_deployment_call_made([node_to_deploy.uid], mcast)
+
+nailgun/test/integration/test_orchestrator_handlers.py:371: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;nailgun.test.integration.test_orchestrator_handlers.TestSelectedNodesAction testMethod=test_deployment_of_node_is_forbidden&gt;
+nodes_uids = [&apos;8&apos;], mcast = &lt;MagicMock name=&apos;cast&apos; id=&apos;4418425680&apos;&gt;
+
+    def check_deployment_call_made(self, nodes_uids, mcast):
+&gt;       args, kwargs = mcast.call_args
+E       TypeError: &apos;NoneType&apos; object is not iterable
+
+nailgun/test/integration/test_orchestrator_handlers.py:200: TypeError">self = &lt;nailgun.test.integration.test_orchestrator_handlers.TestSelectedNodesAction testMethod=test_deployment_of_node_is_forbidden&gt;
+mcast = &lt;MagicMock name=&apos;cast&apos; id=&apos;4418425680&apos;&gt;
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch(&apos;nailgun.task.task.rpc.cast&apos;)
+    def test_deployment_of_node_is_forbidden(self, mcast):
+        # cluster is in ha mode so for the sanity of the check
+        # lets operate on non-controller node
+        node_to_deploy = [
+            n for n in self.cluster.nodes if
+            not
+            set([&quot;primary-controller&quot;, &quot;controller&quot;])
+            &amp;
+            set(n.roles)
+        ].pop()
+    
+        deploy_action_url = self.make_action_url(
+            &quot;DeploySelectedNodes&quot;,
+            [node_to_deploy.uid]
+        )
+    
+        resp = self.send_put(deploy_action_url)
+        self.check_resp_declined(resp)
+    
+        self.emulate_nodes_provisioning([node_to_deploy])
+    
+        self.send_put(deploy_action_url)
+    
+&gt;       self.check_deployment_call_made([node_to_deploy.uid], mcast)
+
+nailgun/test/integration/test_orchestrator_handlers.py:371: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;nailgun.test.integration.test_orchestrator_handlers.TestSelectedNodesAction testMethod=test_deployment_of_node_is_forbidden&gt;
+nodes_uids = [&apos;8&apos;], mcast = &lt;MagicMock name=&apos;cast&apos; id=&apos;4418425680&apos;&gt;
+
+    def check_deployment_call_made(self, nodes_uids, mcast):
+&gt;       args, kwargs = mcast.call_args
+E       TypeError: &apos;NoneType&apos; object is not iterable
+
+nailgun/test/integration/test_orchestrator_handlers.py:200: TypeError</failure><system-err>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/elements.py:3871: SAWarning: Textual column expression &apos;id&apos; should be explicitly declared with text(&apos;id&apos;), or use column(&apos;id&apos;) for more specificity (this warning may be suppressed after 10 occurrences)
+  if guess_is_literal else &quot;column&quot;
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (58:5c)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;node_nic_interfaces.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (54:5f)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (08:0e)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;network_groups.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (6c:75)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (0c:47)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (7f:3d)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+</system-err></testcase></testsuite>

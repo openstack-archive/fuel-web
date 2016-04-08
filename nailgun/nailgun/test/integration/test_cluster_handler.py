@@ -18,6 +18,7 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
@@ -161,10 +162,15 @@ class TestHandlers(BaseIntegrationTest):
                 {"pending_addition": True},
                 {"status": "ready"}])
 
-        resp = self.delete(cluster.id)
+        graphs_before_deletion = self.db.query(DeploymentGraph).count()
+        cluster_id = self.env.clusters[0].id
+        resp = self.delete(cluster_id)
         self.assertEqual(resp.status_code, 202)
 
         self.assertIsNone(self.db.query(Cluster).get(cluster.id))
+
+        graphs_after_deletion = self.db.query(DeploymentGraph).count()
+        self.assertEqual(1, graphs_before_deletion - graphs_after_deletion)
 
         # Nodes should be in discover status
         self.assertEqual(self.db.query(Node).count(), 2)

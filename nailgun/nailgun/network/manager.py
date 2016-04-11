@@ -162,7 +162,6 @@ class NetworkManager(object):
                 lambda i: i.ip_addr,
                 objects.IPAddr.get_ips_except_admin(
                     node=node,
-                    network_id=network.id,
                     default_admin_net=default_admin_net
                 )
             )

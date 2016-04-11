@@ -37,15 +37,18 @@ def check_received_data(cached, received):
     """
     # Convert cached and received data from interface:vlans form
     # to vlan:interfaces form to perform analysis of interfaces within bonds.
-    cached_vlans = collections.defaultdict(list)
-    for cached_network in cached['networks']:
-        for vlan in cached_network['vlans']:
-            cached_vlans[vlan].append(cached_network['iface'])
-    received_vlans = collections.defaultdict(list)
-    for received_network in received.get('networks', []):
-        for vlan in received_network['vlans']:
-            received_vlans[vlan].append(
-                received_network['iface'])
+
+    def build_vlan_ifaces_mapping(networks):
+        vlan_ifaces_map = collections.defaultdict(list)
+
+        for net in networks:
+            for vlan in net['vlans']:
+                vlan_ifaces_map[vlan].append(net['iface'])
+
+        return vlan_ifaces_map
+
+    cached_vlans = build_vlan_ifaces_mapping(cached['networks'])
+    received_vlans = build_vlan_ifaces_mapping(received.get('networks', []))
 
     absent = collections.defaultdict(list)
     for vlan in cached_vlans:

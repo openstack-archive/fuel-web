@@ -50,6 +50,18 @@ def changed(finalizer, expression, context):
     return new_data != old_data
 
 
+@specs.parameter('expressions', yaqltypes.Lambda())
+@specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
+def changed_all(finalizer, context, *expressions):
+    return all(changed(finalizer, exp, context) for exp in expressions)
+
+
+@specs.parameter('expressions', yaqltypes.Lambda())
+@specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
+def changed_any(finalizer, context, *expressions):
+    return any(changed(finalizer, exp, context) for exp in expressions)
+
+
 def get_limited_if_need(data, engine):
     if (yaqlutils.is_iterable(data) or yaqlutils.is_sequence(data) or
             isinstance(data, (yaqlutils.MappingType, yaqlutils.SetType))):
@@ -84,6 +96,8 @@ def register(context):
     context.register_function(get_new, name='new')
     context.register_function(get_old, name='old')
     context.register_function(changed)
+    context.register_function(changed_all)
+    context.register_function(changed_any)
     context.register_function(added)
     context.register_function(deleted)
     context.register_function(is_undef)

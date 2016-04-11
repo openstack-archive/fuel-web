@@ -17,6 +17,7 @@
 import traceback
 
 import six
+import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
@@ -36,8 +37,17 @@ class SpawnVmsHandler(BaseHandler):
     task_manager = manager.SpawnVMsTaskManager
     validator = DeploySelectedNodesValidator
 
-    def get_tasks(self, cluster):
-        tasks = objects.Cluster.get_deployment_tasks(cluster)
+    def get_tasks(self, cluster, graph_type):
+        """Get deployment tasks.
+
+        :param cluster: models.Cluster instance
+        :type cluster: models.Cluster
+        :param graph_type: Deployment graph type
+        :type graph_type: basestring
+        :returns: list of tasks ids
+        :rtype: list[basestring]
+        """
+        tasks = objects.Cluster.get_deployment_tasks(cluster, graph_type)
         graph = orchestrator_graph.GraphSolver()
         graph.add_tasks(tasks)
         subgraph = graph.find_subgraph(end='generate_vms')
@@ -71,9 +81,11 @@ class SpawnVmsHandler(BaseHandler):
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
+        graph_type = web.input(graph_type=None).graph_type
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        data = self.get_tasks(cluster)
-        return self.handle_task(cluster, deployment_tasks=data)
+        data = self.get_tasks(cluster, graph_type)
+        return self.handle_task(cluster, deployment_tasks=data,
+                                graph_type=graph_type)
 
 
 class NodeVMsHandler(BaseHandler):

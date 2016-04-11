@@ -870,9 +870,9 @@ class NailgunReceiver(object):
             pass
         elif isinstance(nodes, list):
             cached_nodes = task.cache['args']['nodes']
-            node_uids = [str(n['uid']) for n in nodes]
-            cached_node_uids = [str(n['uid']) for n in cached_nodes]
-            forgotten_uids = set(cached_node_uids) - set(node_uids)
+            node_uids = set(n['uid'] for n in nodes)
+            cached_node_uids = set(n['uid'] for n in cached_nodes)
+            forgotten_uids = cached_node_uids - node_uids
 
             if forgotten_uids:
                 absent_nodes = db().query(Node).filter(

@@ -50,6 +50,60 @@ class TestSpawnVMs(BaseIntegrationTest):
 
         self.assertEqual(len(task_deploy.subtasks), 2)
 
+    def test_spawn_vms_w_custom_graph(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"status": "ready", "pending_addition": True,
+                 "roles": ["virt"]},
+            ]
+        )
+        cluster = self.env.clusters[0]
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'generate_vms',
+                    'version': '2.0.0',
+                    'type': 'puppet',
+                    'groups': ['virt'],
+                    'parameters': {
+                        'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
+                                           'modular/cluster/generate_vms.pp',
+                        'puppet_modules': '/etc/puppet/modules',
+                        'timeout': '3600'
+                    }
+                },
+                {
+                    'id': 'custom-task',
+                    'version': '2.0.0',
+                    'type': 'puppet',
+                    'requires': ['generate_vms'],
+                    'groups': ['virt'],
+                    'parameters': {
+                        'puppet_manifest': '/etc/puppet/modules/osnailyfacter/'
+                                           'modular/cluster/smth.pp',
+                        'puppet_modules': '/etc/puppet/modules',
+                    }
+                }
+            ]}, cluster.release, 'custom-graph')
+
+        cluster.nodes[0].vms_conf = [{'id': 1, 'cluster_id': cluster.id}]
+
+        resp = self.app.put(
+            reverse(
+                'SpawnVmsHandler',
+                kwargs={'cluster_id': cluster.id}
+            ) + '?graph_type=custom-graph',
+            headers=self.default_headers
+        )
+        deploy_uuid = resp.json_body['uuid']
+
+        task_deploy = objects.Task.get_by_uuid(deploy_uuid)
+        custom_task_found = False
+        for task in task_deploy.subtasks[1].deployment_history:
+            if task.deployment_graph_task_name == 'custom-task':
+                custom_task_found = True
+        self.assertTrue(custom_task_found)
+
     def test_create_vms_conf(self):
         self.env.create(
             nodes_kwargs=[

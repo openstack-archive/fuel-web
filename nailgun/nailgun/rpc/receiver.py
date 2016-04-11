@@ -940,10 +940,12 @@ class NailgunReceiver(object):
                             error_msg,
                             'Notice: some interfaces were skipped from '
                             'connectivity checking because this version of '
-                            'Fuel cannot establish LACP on Bootstrap nodes. '
-                            'Only interfaces of successfully deployed nodes '
-                            'may be checked with LACP enabled. The list of '
-                            'skipped interfaces: {0}.'.format(interfaces_list)
+                            'Fuel cannot establish following bonding modes '
+                            'on Bootstrap nodes: LACP, Round-robin '
+                            '(balance-rr). Only interfaces of '
+                            'successfully deployed nodes may be checked '
+                            'with mentioned modes enabled. The list of '
+                            'skipped interfaces: {0}.'.format(interfaces_list),
                         )
                     if task.cache['args']['offline'] > 0:
                         error_msg = connectivity_check.append_message(

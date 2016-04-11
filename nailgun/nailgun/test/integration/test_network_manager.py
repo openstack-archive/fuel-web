@@ -512,14 +512,11 @@ class TestNetworkManager(BaseIntegrationTest):
         for node in self.env.nodes:
             # if node_id is not passed to the method vips also will be
             # returned as they are assigned at the cretion of a cluster
-            ip = objects.IPAddr.get_ips_except_admin(
-                node=node, include_network_data=True
-            )[0]
+            ip = objects.IPAddr.get_ips_except_admin(node)[0]
             ips.append(ip)
 
         self.assertEqual(len(ips), 2)
         self.assertTrue(isinstance(ips[0].node_data, Node))
-        self.assertTrue(isinstance(ips[0].network_data, NetworkGroup))
 
     def test_nets_empty_list_if_node_does_not_belong_to_cluster(self):
         node = self.env.create_node(api=False)

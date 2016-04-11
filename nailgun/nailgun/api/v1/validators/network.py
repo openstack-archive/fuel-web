@@ -512,7 +512,29 @@ class NetAssignmentValidator(BasicValidator):
         return cls._find_iface(db_interfaces, default, name=name)
 
     @classmethod
-    def _verify_iface_dpdk_properties(cls, iface, db_interfaces, dpdk_drivers):
+    def _verify_interfaces_dpdk_properties(cls, interfaces, db_interfaces,
+                                           dpdk_drivers):
+        """Verify DPDK properties for every interface on node
+
+        return True if some interfaces have enabled DPDK, that may be
+        used for further validation
+        """
+        slaves = set()
+        for iface in interfaces:
+            for slave in iface.get('slaves', []):
+                slaves.add(slave['name'])
+
+        dpdk_enabled = False
+        for iface in interfaces:
+            dpdk_enabled |= cls._verify_iface_dpdk_properties(
+                iface, db_interfaces, dpdk_drivers,
+                is_slave=iface['name'] in slaves)
+
+        return dpdk_enabled
+
+    @classmethod
+    def _verify_iface_dpdk_properties(cls, iface, db_interfaces,
+                                      dpdk_drivers, is_slave=False):
         db_iface = cls._get_iface_by_id(iface.get('id'), db_interfaces)
         if db_iface is None:
             db_iface = cls._get_iface_by_name(iface['name'], db_interfaces)
@@ -568,7 +590,7 @@ class NetAssignmentValidator(BasicValidator):
 
         # check that dpdk interface have only one network == 'private'
         nets = iface['assigned_networks']
-        if enabled and not (
+        if enabled and not is_slave and not (
                 len(nets) == 1 and
                 nets[0]['name'] == consts.NETWORKS.private
         ):
@@ -711,15 +733,6 @@ class NetAssignmentValidator(BasicValidator):
                             log_message=True
                         )
 
-        dpdk_enabled = False
-
-        if db_node.cluster is not None:
-            dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
-                db_node.cluster.release)
-        else:
-            dpdk_drivers = {}
-        db_interfaces = db_node.interfaces
-
         for iface in interfaces:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
                     and iface['id'] in bonded_eth_ids \
@@ -731,9 +744,16 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
 
-            # checks dpdk settings for every interface
-            dpdk_enabled |= cls._verify_iface_dpdk_properties(
-                iface, db_interfaces, dpdk_drivers)
+        if db_node.cluster is not None:
+            dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
+                db_node.cluster.release)
+        else:
+            dpdk_drivers = {}
+        db_interfaces = db_node.interfaces
+
+        # checks dpdk settings for every interface
+        dpdk_enabled = cls._verify_interfaces_dpdk_properties(
+            interfaces, db_interfaces, dpdk_drivers)
 
         # run node validations if dpdk enabled on node
         if dpdk_enabled:

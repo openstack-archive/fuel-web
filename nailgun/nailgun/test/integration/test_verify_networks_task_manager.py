@@ -401,12 +401,14 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
                               self.env.nodes[0].name)]})
 
     @fake_tasks()
-    def test_network_verification_on_bootstrap_nodes_with_lacp_bonds(self):
+    def check_network_verification_on_bootstrap_nodes_with_bonds(self,
+                                                                 bond_mode):
         expected_task_args = []
         for node in self.env.nodes:
-            # Bond interfaces with LACP
+
             for bond in node.bond_interfaces:
-                bond.mode = consts.BOND_MODES.l_802_3ad
+                bond.mode = bond_mode
+
             expected_task_args.append({
                 u'uid': node['id'],
                 u'name': node['name'],
@@ -426,11 +428,11 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         self.assertEqual(task.cache['args']['nodes'], expected_task_args)
 
     @fake_tasks()
-    def test_network_vcerification_on_deployed_nodes_with_lacp_bonds(self):
+    def check_network_verification_on_deployed_nodes_with_bonds(self,
+                                                                bond_mode):
         for node in self.env.nodes:
-            # Bond interfaces with LACP
             for bond in node.bond_interfaces:
-                bond.mode = consts.BOND_MODES.l_802_3ad
+                bond.mode = bond_mode
 
         deployment_task = self.env.launch_deployment()
         self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
@@ -439,6 +441,26 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         self.assertEqual(
             verify_network_task.cache['args']['nodes'],
             self.expected_args_deployed
+        )
+
+    def test_verify_on_bootstrap_nodes_w_lacp_bonds(self):
+        self.check_network_verification_on_bootstrap_nodes_with_bonds(
+            consts.BOND_MODES.l_802_3ad
+        )
+
+    def test_verify_on_bootstrap_nodes_w_balance_rr_bonds(self):
+        self.check_network_verification_on_bootstrap_nodes_with_bonds(
+            consts.BOND_MODES.balance_rr
+        )
+
+    def test_verify_on_deployed_nodes_w_lacp_bonds(self):
+        self.check_network_verification_on_deployed_nodes_with_bonds(
+            consts.BOND_MODES.l_802_3ad
+        )
+
+    def test_verify_on_deployed_nodes_w_balance_rr_bonds(self):
+        self.check_network_verification_on_deployed_nodes_with_bonds(
+            consts.BOND_MODES.balance_rr
         )
 
 

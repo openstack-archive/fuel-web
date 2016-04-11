@@ -724,16 +724,9 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
-        expected_message = 'Notice: some interfaces were skipped from' \
-                           ' connectivity checking because this version' \
-                           ' of Fuel cannot establish LACP on Bootstrap' \
-                           ' nodes. Only interfaces of successfully' \
-                           ' deployed nodes may be checked with LACP' \
-                           ' enabled. The list of skipped interfaces:' \
-                           ' node {0} [eth3, eth4], node {1} [eth3, eth4].' \
-                           .format(node1.name, node2.name)
-
-        self.assertEqual(task.message, expected_message)
+        expected_message = ('Fuel cannot establish following bonding'
+                            ' modes on Bootstrap nodes: ')
+        self.assertIn(expected_message, task.message)
 
 
 class TestDhcpCheckTask(BaseReciverTestCase):

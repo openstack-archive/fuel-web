@@ -464,6 +464,7 @@ class TestAlwaysEditable(BaseIntegrationTest):
     def test_can_change_repos_on_operational_cluster(self):
         self.cluster.status = consts.CLUSTER_STATUSES.operational
         self.db.flush()
+        self.assertFalse(self.cluster.is_locked)
 
         data = {'editable': {}}
         data['editable'].update(self._reposetup)

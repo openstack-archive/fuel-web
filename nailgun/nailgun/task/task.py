@@ -386,6 +386,10 @@ class DeploymentTask(BaseDeploymentTask):
         :return:  RPC method name, the arguments for RPC message
         """
 
+        task_processor = task_based_deployment.TaskProcessor
+        for task in tasks:
+            task_processor.ensure_task_based_deploy_allowed(task)
+
         logger.info("start cluster serialization.")
         serialized_cluster = deployment_serializers.serialize(
             None, transaction.cluster, nodes

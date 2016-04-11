@@ -965,7 +965,9 @@ class NailgunReceiver(object):
 
                     cached_node = cached_nodes_filtered[0]
 
-                    # Check if we have excluded interfaces for LACP bonds
+                    # Check if we have excluded bonded interfaces
+                    # (in particular modes as LACP, Round-robin, etc.)
+                    # that cannot be checked at the moment
                     excluded_networks = cached_node.get(
                         'excluded_networks', [])
                     if excluded_networks:
@@ -996,10 +998,12 @@ class NailgunReceiver(object):
                             error_msg,
                             'Notice: some interfaces were skipped from '
                             'connectivity checking because this version of '
-                            'Fuel cannot establish LACP on Bootstrap nodes. '
-                            'Only interfaces of successfully deployed nodes '
-                            'may be checked with LACP enabled. The list of '
-                            'skipped interfaces: {0}.'.format(interfaces_list)
+                            'Fuel cannot establish following bonding modes '
+                            'on Bootstrap nodes: LACP, Round-robin '
+                            '(balance-rr). Only interfaces of '
+                            'successfully deployed nodes may be checked '
+                            'with mentioned modes enabled. The list of '
+                            'skipped interfaces: {0}.'.format(interfaces_list),
                         )
                     if task.cache['args']['offline'] > 0:
                         error_msg = connectivity_check.append_message(

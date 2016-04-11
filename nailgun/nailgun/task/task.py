@@ -1122,8 +1122,9 @@ class BaseNetworkVerification(object):
         for iface in node.nic_interfaces:
             assigned_networks = iface.assigned_networks_list
             # In case of present bond interfaces - collect assigned networks
-            # against bonds slave NICs. We should skip LACP bonds Fuel
-            # do not setup them for network_checker now.
+            # against bonds slave NICs. We should skip bonds with LACP and
+            # Round-robin (balance-rr) modes as Fuel do not setup them for
+            # network_checker now.
             if iface.bond:
                 assigned_networks = iface.bond.assigned_networks_list
 
@@ -1148,7 +1149,9 @@ class BaseNetworkVerification(object):
             if not vlans:
                 continue
 
-            if iface.bond and iface.bond.mode == consts.BOND_MODES.l_802_3ad:
+            modes_to_skip = (consts.BOND_MODES.l_802_3ad,
+                             consts.BOND_MODES.balance_rr)
+            if iface.bond and iface.bond.mode in modes_to_skip:
                 node_json['excluded_networks'].append(
                     {'iface': iface.name})
             else:

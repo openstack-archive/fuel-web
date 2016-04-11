@@ -276,12 +276,12 @@ class TestClusterAttributes(BaseIntegrationTest):
         cluster_db = objects.Cluster.get_by_uid(cluster['id'])
         orig_attrs = objects.Attributes.merged_attrs(cluster_db.attributes)
         attrs = objects.Attributes.merged_attrs_values(cluster_db.attributes)
-        for group, group_attrs in orig_attrs.iteritems():
-            for attr, orig_value in group_attrs.iteritems():
+        for group, group_attrs in six.iteritems(orig_attrs):
+            for attr, orig_value in six.iteritems(group_attrs):
                 if group == 'common':
                     value = attrs[attr]
                 elif group == 'additional_components':
-                    for c, val in group_attrs.iteritems():
+                    for c, val in six.iteritems(group_attrs):
                         self.assertIn(c, attrs)
                         if 'value' in val:
                             self.assertEqual(val["value"],

@@ -82,7 +82,7 @@ def dict_merge(a, b):
     if not isinstance(b, dict):
         return deepcopy(b)
     result = deepcopy(a)
-    for k, v in b.iteritems():
+    for k, v in six.iteritems(b):
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:

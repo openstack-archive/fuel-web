@@ -18,6 +18,7 @@
 
 from collections import defaultdict
 from netaddr import IPNetwork
+import six
 
 from nailgun import consts
 from nailgun.objects import Cluster
@@ -114,7 +115,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 interface['gateway'] = network['gateway']
                 interface['default_gateway'] = True
 
-        for if_name, if_data in interfaces.iteritems():
+        for if_name, if_data in six.iteritems(interfaces):
             if len(if_data['ipaddr']) == 0:
                 if_data['ipaddr'] = 'none'
 

@@ -24,6 +24,7 @@ from itertools import ifilter
 import operator
 
 from oslo_serialization import jsonutils
+import six
 
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload
@@ -74,7 +75,7 @@ class NailgunObject(object):
         :returns: instance of an object (model)
         """
         new_obj = cls.model()
-        for key, value in data.iteritems():
+        for key, value in six.iteritems(data):
             setattr(new_obj, key, value)
         db().add(new_obj)
         db().flush()
@@ -268,7 +269,7 @@ class NailgunCollection(object):
         elif cls._is_iterable(use_iterable):
             return ifilter(
                 lambda i: all(
-                    (getattr(i, k) == v for k, v in kwargs.iteritems())
+                    (getattr(i, k) == v for k, v in six.iteritems(kwargs))
                 ),
                 use_iterable
             )
@@ -287,7 +288,7 @@ class NailgunCollection(object):
         use_iterable = iterable or cls.all()
         if cls._is_query(use_iterable):
             conditions = []
-            for key, value in kwargs.iteritems():
+            for key, value in six.iteritems(kwargs):
                 conditions.append(
                     getattr(cls.single.model, key) == value
                 )
@@ -295,7 +296,7 @@ class NailgunCollection(object):
         elif cls._is_iterable(use_iterable):
             return ifilter(
                 lambda i: not all(
-                    (getattr(i, k) == v for k, v in kwargs.iteritems())
+                    (getattr(i, k) == v for k, v in six.iteritems(kwargs))
                 ),
                 use_iterable
             )

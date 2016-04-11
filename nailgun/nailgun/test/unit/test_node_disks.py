@@ -19,6 +19,7 @@ from mock import patch
 import string
 
 from oslo_serialization import jsonutils
+import six
 
 from nailgun import consts
 from nailgun.errors import errors
@@ -812,7 +813,7 @@ class TestVolumeManager(BaseIntegrationTest):
                     'type', volume.get('type'))
                 actual_volumes_size[name]['size'] += volume.get('size')
 
-        actual_volumes = [v for k, v in actual_volumes_size.iteritems()
+        actual_volumes = [v for k, v in six.iteritems(actual_volumes_size)
                           if k in same_size_volume_names]
 
         # All pv should have equal size
@@ -896,7 +897,7 @@ class TestVolumeManager(BaseIntegrationTest):
         volumes_metadata = self.env.get_default_volumes_metadata()
         volumes_roles_mapping = volumes_metadata['volumes_roles_mapping']
 
-        for role, space_info in volumes_roles_mapping.iteritems():
+        for role, space_info in six.iteritems(volumes_roles_mapping):
             node, min_installation_size = self.\
                 create_node_and_calculate_min_size(
                     role, space_info, volumes_metadata)
@@ -924,7 +925,7 @@ class TestVolumeManager(BaseIntegrationTest):
         volumes_metadata = self.env.get_default_volumes_metadata()
         volumes_roles_mapping = volumes_metadata['volumes_roles_mapping']
 
-        for role, space_info in volumes_roles_mapping.iteritems():
+        for role, space_info in six.iteritems(volumes_roles_mapping):
             node = self.create_node(role)
             vm = node.volume_manager
             self.assertEqual(

@@ -1005,7 +1005,7 @@ class NailgunReceiver(object):
                 msg = (u'No answer from nodes: {0}').format(
                     list(not_received_nodes))
                 errors.append(msg)
-            for node_id, received_ids in response.iteritems():
+            for node_id, received_ids in six.iteritems(response):
                 result = {}
                 not_received_ids = node_ids - set(received_ids or [])
                 result = {'node_id': node_id,

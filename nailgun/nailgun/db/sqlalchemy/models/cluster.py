@@ -86,7 +86,7 @@ class Cluster(Base):
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
     nodes = relationship(
         "Node", backref="cluster", cascade="delete", order_by='Node.id')
-    tasks = relationship("Task", backref="cluster", cascade="delete")
+    tasks = relationship("Task", backref="cluster")
     plugin_links = relationship(
         "ClusterPluginLink", backref="cluster", cascade="delete")
     attributes = relationship("Attributes", uselist=False,

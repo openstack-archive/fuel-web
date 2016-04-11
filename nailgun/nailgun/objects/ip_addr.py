@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
 from nailgun.db import db
@@ -38,9 +37,7 @@ class IPAddr(NailgunObject):
         db().execute(cls.model.__table__.insert(), data)
 
     @classmethod
-    def get_ips_except_admin(cls, node=None, network_id=None,
-                             include_network_data=False,
-                             default_admin_net=None):
+    def get_ips_except_admin(cls, node=None, default_admin_net=None):
         """Get all non-admin IP addresses for node or network.
 
         This method will not return VIPs.
@@ -48,10 +45,6 @@ class IPAddr(NailgunObject):
         :param node: nailgun.db.sqlalchemy.models.Node. If it already
          contains related data we will have performance boost.
         :type node: nailgun.db.sqlalchemy.models.Node
-        :param network_id: Network database ID.
-        :type  network_id: int
-        :param include_network_data: Include related network data.
-        :type include_network_data: bool
         :param default_admin_net: Default admin network
         :param nailgun.db.sqlalchemy.models.NetworkGroup
         :returns: List of free IP addresses as SQLAlchemy objects.
@@ -62,12 +55,8 @@ class IPAddr(NailgunObject):
             models.IPAddr.id
         )
 
-        if include_network_data:
-            ips = ips.options(joinedload('network_data'))
         if node is not None:
             ips = ips.filter_by(node=node.id)
-        if network_id:
-            ips = ips.filter_by(network=network_id)
 
         try:
             admin_net_id = NetworkGroup.get_admin_network_group(

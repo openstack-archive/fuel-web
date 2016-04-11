@@ -94,8 +94,9 @@ class TaskManager(object):
             if task.status == "running":
                 raise errors.TaskAlreadyRunning()
             elif task.status in ("ready", "error"):
-                db().delete(task)
-                db().commit()
+                objects.Task.delete(task)
+
+        db().flush()
 
     def serialize_network_cfg(self, cluster):
         serializer = {'nova_network': NovaNetworkConfigurationSerializer,
@@ -137,8 +138,12 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
     deployment_type = consts.TASK_NAMES.deploy
 
     def _remove_obsolete_tasks(self):
-        current_tasks = objects.TaskCollection.get_cluster_tasks(
-            cluster_id=self.cluster.id, names=(consts.TASK_NAMES.deploy,))
+        cluster_tasks = objects.TaskCollection.get_cluster_tasks(
+            cluster_id=self.cluster.id)
+
+        current_tasks = objects.TaskCollection.filter_by(
+            cluster_tasks,
+            name=consts.TASK_NAMES.deploy)
 
         # locking cluster
         objects.Cluster.get_by_uid(
@@ -150,17 +155,17 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         for task in current_tasks:
             if task.status in (consts.TASK_STATUSES.ready,
                                consts.TASK_STATUSES.error):
-                db().delete(task)
+                objects.Task.delete(task)
         db().flush()
 
         obsolete_tasks = objects.TaskCollection.filter_by_list(
-            current_tasks,
+            cluster_tasks,
             'name',
             (consts.TASK_NAMES.stop_deployment,
              consts.TASK_NAMES.reset_environment)
         )
         for task in obsolete_tasks:
-            db().delete(task)
+            objects.Task.delete(task)
         db().flush()
 
     def execute(self, nodes_to_provision_deploy=None, deployment_tasks=None,

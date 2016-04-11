@@ -166,7 +166,8 @@ class TestHandlers(BaseIntegrationTest):
         allowed = [consts.CLUSTER_STATUSES.new,
                    consts.CLUSTER_STATUSES.stopped,
                    consts.CLUSTER_STATUSES.operational,
-                   consts.CLUSTER_STATUSES.error]
+                   consts.CLUSTER_STATUSES.error,
+                   consts.CLUSTER_STATUSES.partially_deployed]
         for status in consts.CLUSTER_STATUSES:
             cluster.status = status
             # need commit because rollback is called when handler exits with

@@ -761,6 +761,74 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
         self.assertIn('Task types nonexistent do not exist', resp.body)
 
 
+class TestCustomTaskDeployGraph(BaseGraphTasksTests):
+
+    content_type = 'text/vnd.graphviz'
+
+    def test_with_custom_graph(self):
+        self.env.create()
+        cluster = self.env.clusters[-1]
+
+        objects.DeploymentGraph.create_for_model(
+            {
+                'tasks': [
+                    {'id': 'pre_deployment', 'type': 'stage'},
+                    {'id': 'deploy', 'type': 'stage'},
+                    {'id': 'post_deployment', 'type': 'stage'},
+                    {'id': 'pre-A', 'required_for': ['pre_deployment'],
+                     'type': 'puppet'},
+                    {'id': 'pre-B', 'required_for': ['pre_deployment'],
+                     'type': 'puppet', 'requires': ['pre-A']},
+                    {'id': 'pre-C', 'required_for': ['pre_deployment'],
+                     'type': 'puppet', 'requires': ['pre-A', 'pre-D']},
+                    {'id': 'pre-D', 'required_for': ['pre_deployment'],
+                     'type': 'puppet'},
+                ]
+            },
+            cluster,
+            'custom-graph'
+        )
+
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': cluster.id,
+                'graph_type': 'custom-graph'
+            }) + '?graph_type=custom-graph',
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content_type, self.content_type)
+        self.assertIn('"pre-A" -> pre_deployment', resp.body)
+        self.assertIn('"pre-A" -> "pre-B"', resp.body)
+        self.assertIn('"pre-A" -> "pre-C"', resp.body)
+
+    def test_with_custom_graph_validator_fail(self):
+        self.env.create()
+        cluster = self.env.clusters[-1]
+
+        objects.DeploymentGraph.create_for_model(
+            {
+                'tasks': []
+            },
+            cluster,
+            'custom-graph'
+        )
+
+        resp = self.app.get(
+            reverse('TaskDeployGraph', kwargs={
+                'cluster_id': cluster.id,
+                'graph_type': 'custom-graph'
+            }) + '?graph_type=custom-graph&parents_for=upload_nodes_info',
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(
+            'Task upload_nodes_info is not present in graph',
+            resp.body)
+
+
 class TestTaskDeployCustomGraph(BaseGraphTasksTests):
 
     content_type = 'text/vnd.graphviz'

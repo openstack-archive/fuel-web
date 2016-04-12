@@ -314,8 +314,12 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         data = self.checked_data(
             self.validator.validate_deployment,
-            cluster=cluster)
-        return self.handle_task(cluster, deployment_tasks=data)
+            cluster=cluster,
+            graph_type=self.get_graph_type())
+        return self.handle_task(
+            cluster,
+            deployment_tasks=data,
+            graph_type=self.get_graph_type())
 
 
 class TaskDeployGraph(BaseHandler):
@@ -344,7 +348,8 @@ class TaskDeployGraph(BaseHandler):
             tasks = self.checked_data(
                 self.validator.validate,
                 data=tasks,
-                cluster=cluster)
+                cluster=cluster,
+                graph_type=graph_type)
             logger.debug('Tasks used in dot graph %s', tasks)
 
         if parents_for:

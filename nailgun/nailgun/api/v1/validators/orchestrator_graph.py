@@ -34,16 +34,22 @@ class GraphSolverTasksValidator(BasicValidator):
 class TaskDeploymentValidator(BasicValidator):
 
     @classmethod
-    def validate_tasks(cls, tasks, cluster):
-        """Check that passed tasks are present in deployment graph
+    def validate_tasks(cls, tasks, cluster, graph_type):
+        """Check that passed tasks are present in deployment graph.
 
         :param tasks: list of tasks
+        :type tasks: list[dict]
         :param cluster: Cluster DB object
+        :type cluster: models.Cluster
+        :param graph_type: Deployment graph type
+        :type graph_type: basestring
         :returns: list of tasks
+        :rtype: list[dict]
         """
         cls.validate_schema(tasks, base_types.STRINGS_ARRAY)
 
-        deployment_tasks = objects.Cluster.get_deployment_tasks(cluster)
+        deployment_tasks = objects.Cluster.get_deployment_tasks(
+            cluster, graph_type)
         graph = orchestrator_graph.GraphSolver()
         graph.add_tasks(deployment_tasks)
 
@@ -73,15 +79,21 @@ class TaskDeploymentValidator(BasicValidator):
 class GraphSolverVisualizationValidator(TaskDeploymentValidator):
 
     @classmethod
-    def validate(cls, data, cluster):
+    def validate(cls, data, cluster, graph_type):
         """Check that passed tasks are present in deployment graph
 
         :param data: list of tasks in string representation.
                       Example: "hiera,controller"
+        :type data: basestring
         :param cluster: Cluster DB object
+        :type cluster: models.Cluster
+        :param graph_type: Deployment graph type
+        :type graph_type: basestring
+        :returns: list of tasks
+        :rtype: list[dict]
         """
         tasks = list(set(data.split(',')))
-        return cls.validate_tasks(tasks, cluster)
+        return cls.validate_tasks(tasks, cluster, graph_type)
 
     @classmethod
     def validate_task_presence(cls, task, graph):

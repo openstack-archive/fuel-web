@@ -243,25 +243,32 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')
-    def test_start_deployment_on_selected_nodes_with_tasks(self, mcast):
-        controller_nodes = [
-            n for n in self.cluster.nodes
-            if "controller" in n.roles
-        ]
+    def test_start_deployment_with_no_selected_nodes(self, mcast):
+        cluster_nodes_ids = [n.id for n in self.cluster.nodes]
+        self.emulate_nodes_provisioning(self.cluster.nodes)
 
-        self.emulate_nodes_provisioning(controller_nodes)
+        deploy_action_url = reverse(
+            "DeploySelectedNodes",
+            kwargs={'cluster_id': self.cluster.id})
 
-        nodes_uids = [n.uid for n in controller_nodes]
+        self.send_put(deploy_action_url)
 
-        controller_to_deploy = nodes_uids[0]
+        self.check_deployment_call_made(cluster_nodes_ids, mcast)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.task.task.rpc.cast')
+    def test_start_deployment_with_empty_selected_nodes(self, mcast):
+        cluster_nodes_ids = [n.uid for n in self.cluster.nodes]
+        self.emulate_nodes_provisioning(self.cluster.nodes)
 
         deploy_action_url = self.make_action_url(
-            "DeploySelectedNodesWithTasks",
-            [controller_to_deploy]
+            "DeploySelectedNodes",
+            []
         )
-        self.send_put(deploy_action_url, ['deploy_legacy'])
 
-        self.check_deployment_call_made([nodes_uids[0]], mcast)
+        self.send_put(deploy_action_url)
+
+        self.check_deployment_call_made(cluster_nodes_ids, mcast)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')

@@ -26,6 +26,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun import errors
 from nailgun import objects
+from nailgun.settings import settings
 from nailgun import utils
 
 
@@ -442,10 +443,17 @@ class NodeDeploymentValidator(TaskDeploymentValidator,
 class NodeAttributesValidator(base.BasicAttributesValidator):
 
     @classmethod
-    def validate(cls, data, node):
+    def validate(cls, data, node, cluster):
         data = cls.validate_json(data)
         full_data = utils.dict_merge(objects.Node.get_attributes(node), data)
-        attrs = cls.validate_attributes(full_data)
+
+        models = {
+            'settings': objects.Cluster.get_editable_attributes(cluster),
+            'cluster': cluster,
+            'version': settings.VERSION,
+            'networking_parameters': cluster.network_config,
+        }
+        attrs = cls.validate_attributes(full_data, models=models)
 
         cls._validate_cpu_pinning(node, attrs)
         cls._validate_hugepages(node, attrs)

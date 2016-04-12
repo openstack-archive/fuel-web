@@ -176,7 +176,8 @@ class RestrictionBase(object):
         :type action: string
         :param strict: disallow undefined variables in condition
         :type strict: bool
-        :returns: dict -- object with 'result' as bool and 'message' as dict
+        :returns: dict -- object with 'result' as list of satisfied
+                  restrictions and 'message' as dict
         """
         satisfied = []
 
@@ -197,9 +198,9 @@ class RestrictionBase(object):
                 filterd_by_action_restrictions)
 
         return {
-            'result': bool(satisfied),
-            'message': '. '.join([item.get('message') for item in
-                                  satisfied if item.get('message')])
+            'result': satisfied,
+            'message': '. '.join(item.get('message') for item in
+                                 satisfied if item.get('message'))
         }
 
     @staticmethod
@@ -235,6 +236,13 @@ class RestrictionBase(object):
 
 class AttributesRestriction(RestrictionBase):
 
+    action_value = {
+        'disable': lambda x: not bool(x),
+        'enable': lambda x: bool(x),
+        'hide': lambda x: True,
+        'none': lambda x: True,
+    }
+
     @classmethod
     def check_data(cls, models, data):
         """Check cluster attributes data
@@ -252,10 +260,32 @@ class AttributesRestriction(RestrictionBase):
             with regex
             """
             if isinstance(data, dict):
+                value = data.get('value')
+                label = data.get('label')
+                restrictions = data.get('restrictions', [])
+
+                group_attribute = 'metadata' in data
+                if group_attribute:
+                    metadata = data.get('metadata', {})
+                    restrictions = metadata.get('restrictions', [])
+                    value = metadata.get('enabled', False)
+                    label = metadata.get('label')
+
                 restr = cls.check_restrictions(
-                    models, data.get('restrictions', []))
+                    models, restrictions)
+
                 if restr.get('result'):
-                    # TODO(apopovych): handle restriction message
+                    for item in restr.get('result'):
+                        if not cls.action_value[item.get('action')](value):
+                            error = ("restriction '{}' failed due to"
+                                     " attribute value='{}'"
+                                     .format(item, value))
+                            if item.get('message'):
+                                error = item['message']
+
+                            yield ("Validation failed for attribute '{}':"
+                                   " {}".format(label, error))
+                elif group_attribute and not value:
                     return
                 else:
                     attr_type = data.get('type')

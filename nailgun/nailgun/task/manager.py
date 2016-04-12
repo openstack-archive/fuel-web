@@ -1296,7 +1296,7 @@ class UpdateDnsmasqTaskManager(TaskManager):
 
 class OpenstackConfigTaskManager(TaskManager):
 
-    def execute(self, filters):
+    def execute(self, filters, graph_type):
         self.check_running_task(consts.TASK_NAMES.deployment)
 
         task = Task(name=consts.TASK_NAMES.deployment,
@@ -1309,7 +1309,8 @@ class OpenstackConfigTaskManager(TaskManager):
 
         message = self._call_silently(
             task, tasks.UpdateOpenstackConfigTask,
-            self.cluster, nodes_to_update, method_name='message')
+            self.cluster, nodes_to_update, graph_type,
+            method_name='message')
 
         # locking task
         task = objects.Task.get_by_uid(

@@ -426,7 +426,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(fake_attributes, resp.json_body)
 
     def test_put_node_attributes(self):
-        node = self.env.create_node(api=False)
+        self.env.create(nodes_kwargs=[{}])
+        node = self.env.nodes[-1]
         fake_attributes = {
             'group1': {
                 'metadata': {},

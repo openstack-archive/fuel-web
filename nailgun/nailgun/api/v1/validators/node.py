@@ -442,10 +442,15 @@ class NodeDeploymentValidator(TaskDeploymentValidator,
 class NodeAttributesValidator(base.BasicAttributesValidator):
 
     @classmethod
-    def validate(cls, data, node):
+    def validate(cls, data, node, cluster=None):
         data = cls.validate_json(data)
         full_data = utils.dict_merge(objects.Node.get_attributes(node), data)
-        attrs = cls.validate_attributes(full_data)
+
+        models = None
+        if cluster:
+            models = {'settings': objects.Cluster.get_editable_attributes(
+                node.cluter)}
+        attrs = cls.validate_attributes(full_data, models=models)
 
         cls._validate_cpu_pinning(node, attrs)
         cls._validate_hugepages(node, attrs)

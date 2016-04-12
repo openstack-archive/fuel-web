@@ -180,6 +180,53 @@ class TestClusterAttributes(BaseIntegrationTest):
         )
         self.assertEqual(400, resp.status_code)
 
+    def test_failing_attributes_with_restrictions(self):
+        cluster = self.env.create_cluster(api=False)
+        objects.Cluster.patch_attributes(cluster, {
+            'editable': {
+                'test': {
+                    'comp1': {
+                        'description': 'desc',
+                        'label': 'Comp 1',
+                        'type': 'checkbox',
+                        'value': False,
+                        'weight': 10,
+                    },
+                    'comp2': {
+                        'description': 'desc',
+                        'label': 'Comp 2',
+                        'type': 'checkbox',
+                        'value': False,
+                        'weight': 20,
+                        'restrictions': ["settings:test.comp1.value == true"],
+                    },
+                },
+            },
+        })
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({
+                'editable': {
+                    'test': {
+                        'comp1': {
+                            'value': True
+                        },
+                        'comp2': {
+                            'value': True
+                        },
+                    },
+                },
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+        self.assertIn(
+            "settings:test.comp1.value == true",
+            resp.json_body['message'])
+
     def test_get_default_attributes(self):
         cluster = self.env.create_cluster(api=True)
         release = self.db.query(Release).get(
@@ -781,7 +828,9 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
                                         'label': 'label',
                                         'value': '1',
                                         'weight': 25,
-                                        'restrictions': [{'action': 'hide'}]
+                                        'restrictions': [{
+                                            'condition': 'true',
+                                            'action': 'hide'}]
                                     }
                                 }]
                             },

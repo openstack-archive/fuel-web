@@ -32,7 +32,7 @@ DATA = """
       group:
         attribute_1:
           name: attribute_1
-          value: true
+          value: True
           restrictions:
             - condition: 'settings:group.attribute_2.value == true'
               message: 'Only one of attributes 1 and 2 allowed'

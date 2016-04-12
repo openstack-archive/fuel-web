@@ -24,6 +24,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 import nailgun.orchestrator.tasks_templates as templates
+from nailgun import plugins
 from nailgun.settings import settings
 from nailgun.utils.role_resolver import RoleResolver
 
@@ -148,7 +149,10 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         # TODO(aroma): remove concatenation of tasks when unified way of
         # processing will be introduced for deployment tasks and existing
         # plugin tasks
-        tasks_to_process = plugin.tasks + plugin.deployment_tasks
+        # TODO(ikutukov): add deployment graph type support for plugins
+        plugin_deployment_tasks = \
+            plugins.adapters.wrap_plugin(plugin).get_deployment_tasks()
+        tasks_to_process = plugin.tasks + plugin_deployment_tasks
 
         roles = set()
         for task in tasks_to_process:

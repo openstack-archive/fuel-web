@@ -116,6 +116,7 @@ class OpenstackConfigExecuteHandler(BaseHandler):
                * 400 (Invalid data)
                * 404 (Object dependencies not found)
         """
+        graph_type = web.input(graph_type=None).graph_type
         filters = self.checked_data(self.validator.validate_execute)
 
         cluster = self.get_object_or_404(
@@ -124,7 +125,7 @@ class OpenstackConfigExecuteHandler(BaseHandler):
         # Execute upload task for nodes
         task_manager = self.task_manager(cluster_id=cluster.id)
         try:
-            task = task_manager.execute(filters)
+            task = task_manager.execute(filters, graph_type)
         except Exception as exc:
             logger.warn(
                 u'Cannot execute %s task nodes: %s',

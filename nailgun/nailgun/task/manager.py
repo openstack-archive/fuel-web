@@ -1318,7 +1318,7 @@ class OpenstackConfigTaskManager(TaskManager):
             return tasks.ClusterTransaction
         return tasks.UpdateOpenstackConfigTask
 
-    def execute(self, filters, force=False, **kwargs):
+    def execute(self, filters, force=False, graph_type=None, **kwargs):
         self.check_running_task(consts.TASK_NAMES.deployment)
 
         task = Task(name=consts.TASK_NAMES.deployment,
@@ -1333,6 +1333,7 @@ class OpenstackConfigTaskManager(TaskManager):
             task,
             self.get_deployment_task(),
             nodes_to_update,
+            graph_type=graph_type,
             method_name='message',
             cluster=self.cluster,
             force=force

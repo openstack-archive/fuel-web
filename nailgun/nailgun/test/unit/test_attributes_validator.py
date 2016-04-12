@@ -14,9 +14,7 @@
 #    under the License.
 
 import json
-
 import mock
-import yaml
 
 from nailgun.api.v1.validators import base
 from nailgun.api.v1.validators import cluster
@@ -90,288 +88,319 @@ class TestClusterAttributesValidator(base_test.BaseTestCase):
             '{"group": {"name": "test"}}',
             '{"name": "test"}',
         ]
-
         for attributes in valid_attibutes:
             self.assertNotRaises(
                 errors.InvalidData,
                 cluster.ClusterAttributesValidator.validate,
                 attributes)
+            attribute_dict = json.loads(attributes)
             self.assertNotRaises(
                 errors.InvalidData,
                 cluster.ClusterAttributesValidator.validate_attributes,
-                yaml.load(attributes))
+                attribute_dict)
 
 
 class TestBasicAttributesValidator(base_test.BaseTestCase):
     def test_missing_type(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                value: 'x'
-                weight: 80
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'value': 'x',
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_missing_value(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: checkbox
-                weight: 80
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'checkbox',
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_invalid_regexp(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: text
-                value: '212a'
-                regex:
-                  error: Invalid
-                  source: ^\d+$
-                weight: 80
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'text',
+                    'value': '212a',
+                    'regex': {
+                        'error': 'Invalid',
+                        'source': '^\d+$'
+                    },
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_checkbox_value(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: checkbox
-                value: true
-                weight: 80
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'checkbox',
+                    'value': True,
+                    'weight': 80
+                }
+            }
+        }
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: checkbox
-                value: 'x'
-                weight: 80
-        '''
-
+            attrs)
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'checkbox',
+                    'value': 'x',
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_custom_repo_configuration_value(self):
-        attrs = '''
-            storage:
-              repos:
-                description: desc
-                type: custom_repo_configuration
-                value:
-                - name: ubuntu
-                  priority: null
-                  section: main universe multiverse
-                  suite: trusty
-                  type: deb
-                  uri: http://archive.ubuntu.com/ubuntu/
-                - name: ubuntu-updates
-                  priority: null
-                  section: main universe multiverse
-                  suite: trusty-updates
-                  type: deb
-                  uri: http://archive.ubuntu.com/ubuntu/
-        '''
-
+        attrs = {
+            'storage': {
+                'repos': {
+                    'description': 'desc',
+                    'type': 'custom_repo_configuration',
+                    'value': [{
+                        'name': 'ubuntu',
+                        'priority': None,
+                        'section': 'main universe multiverse',
+                        'suite': 'trusty',
+                        'type': 'deb',
+                        'uri': 'http://archive.ubuntu.com/ubuntu/'
+                    }, {
+                        'name': 'ubuntu-updates',
+                        'priority': None,
+                        'section': 'main universe multiverse',
+                        'suite': 'trusty-updates',
+                        'type': 'deb',
+                        'uri': 'http://archive.ubuntu.com/ubuntu/'
+                    }]
+                }
+            }
+        }
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_password_value(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: password
-                value: '2'
-                weight: 80
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'password',
+                    'value': '2',
+                    'weight': 80
+                }
+            }
+        }
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: password
-                value: 2
-                weight: 80
-        '''
+            attrs)
 
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'password',
+                    'value': 2,
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_radio_value(self):
-        attrs = '''
-            storage:
-              syslog_transport:
-                label: Syslog transport protocol
-                type: radio
-                value: tcp
-                values:
-                - data: udp
-                  description: ''
-                  label: UDP
-                - data: tcp
-                  description: ''
-                  label: TCP
-                - data: missing-description
-                  label: Missing Description
-                weight: 3
-        '''
+        attrs = {
+            'storage': {
+                'syslog_transport': {
+                    'label': 'Syslog transport protocol',
+                    'type': 'radio',
+                    'value': 'tcp',
+                    'values': [{
+                        'data': 'udp',
+                        'description': '',
+                        'label': 'UDP'
+                    }, {
+                        'data': 'tcp',
+                        'description': '',
+                        'label': 'TCP'
+                    }, {
+                        'data': 'missing-description',
+                        'label': 'Missing Description'
+                    }],
+                    'weight': 3
+                }
+            }
+        }
 
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_select_value(self):
-        attrs = '''
-            common:
-              libvirt_type:
-                label: Hypervisor type
-                type: select
-                value: qemu
-                values:
-                  - data: kvm
-                    label: KVM
-                    description: KVM description
-                  - data: qemu
-                    label: QEMU
-                    description: QEMU description
-        '''
+        attrs = {
+            'common': {
+                'libvirt_type': {
+                    'label': 'Hypervisor type',
+                    'type': 'select',
+                    'value': 'qemu',
+                    'values': [{
+                        'data': 'kvm',
+                        'label': 'KVM',
+                        'description': 'KVM description'
+                    }, {
+                        'data': 'qemu',
+                        'label': 'QEMU',
+                        'description': 'QEMU description'
+                    }]
+                }
+            }
+        }
 
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_text_value(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: text
-                value: '2'
-                weight: 80
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'text',
+                    'value': '2',
+                    'weight': 80
+                }
+            }
+        }
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: text
-                value: 2
-                weight: 80
-        '''
+            attrs)
 
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'text',
+                    'value': 2,
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_textarea_value(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: textarea
-                value: '2'
-                weight: 80
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'textarea',
+                    'value': '2',
+                    'weight': 80
+                }
+            }
+        }
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: textarea
-                value: 2
-                weight: 80
-        '''
+            attrs)
 
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'textarea',
+                    'value': 2,
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_text_list_value(self):
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: text_list
-                value: ['2']
-                weight: 80
-        '''
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'text_list',
+                    'value': ['2'],
+                    'weight': 80
+                }
+            }
+        }
         # check that text_list value is a list
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: text_list
-                value: 2
-                weight: 80
-        '''
+            attrs)
 
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'text_list',
+                    'value': 2,
+                    'weight': 80
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_valid_attributes(self):
         valid_attibutes = [
@@ -384,74 +413,81 @@ class TestBasicAttributesValidator(base_test.BaseTestCase):
                 errors.InvalidData,
                 base.BasicAttributesValidator.validate,
                 attributes)
+            attribute_dict = json.loads(attributes)
             self.assertNotRaises(
                 errors.InvalidData,
                 base.BasicAttributesValidator.validate_attributes,
-                yaml.load(attributes))
+                attribute_dict)
 
     def test_custom_hugepages_value(self):
-        attrs = '''
-            hugepages:
-                nova:
-                    description: desc
-                    label: Label
-                    type: custom_hugepages
-                    value:
-                      '2048': 4
-                      '1048576': 2
-                    weight: 10
-        '''
-
+        attrs = {
+            'hugepages': {
+                'nova': {
+                    'description': 'desc',
+                    'label': 'Label',
+                    'type': 'custom_hugepages',
+                    'value': {
+                        '2048': 4,
+                        '1048576': 2
+                    },
+                    'weight': 10
+                }
+            }
+        }
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
-        attrs = '''
-            storage:
-              osd_pool_size:
-                description: desc
-                label: OSD Pool Size
-                type: custrom_hugepages
-                value:
-                  '2048': '1'
-                weight: 10
-        '''
-
+        attrs = {
+            'storage': {
+                'osd_pool_size': {
+                    'description': 'desc',
+                    'label': 'OSD Pool Size',
+                    'type': 'custrom_hugepages',
+                    'value': {
+                        '2048': '1'
+                    },
+                    'weight': 10
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
     def test_number_value(self):
-        attrs = '''
-            cpu_pinning:
-                nova:
-                    description: desc
-                    label: Label
-                    type: number
-                    value: 1
-                    min: 0
-                    weight: 10
-        '''
-
+        attrs = {
+            'cpu_pinning': {
+                'nova': {
+                    'description': 'desc',
+                    'label': 'Label',
+                    'type': 'number',
+                    'value': 1,
+                    'min': 0,
+                    'weight': 10
+                }
+            }
+        }
         self.assertNotRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)
 
-        attrs = '''
-           cpu_pinning:
-               nova:
-                   description: desc
-                   label: Label
-                   type: number
-                   value: -1
-                   min: 0
-                   weight: 10
-        '''
-
+        attrs = {
+            'cpu_pinning': {
+                'nova': {
+                    'description': 'desc',
+                    'label': 'Label',
+                    'type': 'number',
+                    'value': -1,
+                    'min': 0,
+                    'weight': 10
+                }
+            }
+        }
         self.assertRaises(
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
-            yaml.load(attrs))
+            attrs)

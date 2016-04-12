@@ -41,28 +41,32 @@ class TestTaskSerializerContext(BaseUnitTest):
     def test_transform_legacy_condition(self):
         cases = [
             (
-                'settings:additional_components.ceilometer.value == 1',
-                'settings:ceilometer.enabled == 1',
+                'settings:additional_components.ceilometer.value == 1 or '
+                'settings:additional_components.zabbix.value == 1',
+                'settings:ceilometer.enabled == 1 or '
+                'settings:zabbix.enabled == 1',
             ),
             (
-                'settings:common.vms_create.value == 1',
-                'settings:vms_create == 1',
+                'settings:common.vms_create.value == 1 or '
+                'settings:common.vms_create.value == 2',
+                'settings:vms_create == 1 or settings:vms_create == 2',
             ),
             (
-                'settings:my.id.value == 2',
-                'settings:my.id == 2',
+                'settings:my.id.value == 2 or settings:my.id.value == 1',
+                'settings:my.id == 2 or settings:my.id == 1',
             ),
             (
-                'settings:common.value.id == 2',
-                'settings:value.id == 2',
+                'settings:common.value.id == 2 or '
+                'settings:common.value.id == 1',
+                'settings:value.id == 2 or settings:value.id == 1',
             ),
             (
-                'cluster:id == 2',
-                'cluster:id == 2'
+                'cluster:id == 2 or cluster:id == 1',
+                'cluster:id == 2 or cluster:id == 1'
             ),
             (
-                'cluster:common.id.value == 2',
-                'cluster:common.id.value == 2',
+                'cluster:common.id.value == 2 or cluster:common.id.value == 1',
+                'cluster:common.id.value == 2 or cluster:common.id.value == 1',
             ),
         ]
         for value, expected in cases:

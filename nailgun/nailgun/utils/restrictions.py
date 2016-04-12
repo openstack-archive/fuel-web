@@ -176,7 +176,8 @@ class RestrictionBase(object):
         :type action: string
         :param strict: disallow undefined variables in condition
         :type strict: bool
-        :returns: dict -- object with 'result' as bool and 'message' as dict
+        :returns: dict -- object with 'result' as list of satisfied
+                  restrictions and 'message' as dict
         """
         satisfied = []
 
@@ -197,9 +198,9 @@ class RestrictionBase(object):
                 filterd_by_action_restrictions)
 
         return {
-            'result': bool(satisfied),
-            'message': '. '.join([item.get('message') for item in
-                                  satisfied if item.get('message')])
+            'result': satisfied,
+            'message': '. '.join(item.get('message') for item in
+                                 satisfied if item.get('message'))
         }
 
     @staticmethod
@@ -235,6 +236,28 @@ class RestrictionBase(object):
 
 class AttributesRestriction(RestrictionBase):
 
+    @staticmethod
+    def _group_attribute(data):
+        return 'metadata' in data
+
+    @classmethod
+    def _get_label(cls, data):
+        if cls._group_attribute(data):
+            return data['metadata'].get('label')
+        return data.get('label')
+
+    @classmethod
+    def _get_value(cls, data):
+        if cls._group_attribute(data):
+            return data['metadata'].get('enabled', True)
+        return data.get('value')
+
+    @classmethod
+    def _get_restrictions(cls, data):
+        if cls._group_attribute(data):
+            return data['metadata'].get('restrictions', [])
+        return data.get('restrictions', [])
+
     @classmethod
     def check_data(cls, models, data):
         """Check cluster attributes data
@@ -243,42 +266,73 @@ class AttributesRestriction(RestrictionBase):
         :type models: dict
         :param data: cluster attributes object
         :type data: list|dict
-        :retruns: func -- generator which produces errors
+        :returns: list of errors
         """
         def find_errors(data=data):
             """Generator which traverses through cluster attributes tree
 
-            Also checks restrictions for attributes and values for correctness
-            with regex
+            Checks regex for each attribute. Check restrictions for each
+            enabled attribute with type 'checkbox'. All hidden attributes
+            are skipped as well as disabled group attrbites. Similar
+            logic is used on UI
             """
-            if isinstance(data, dict):
-                restr = cls.check_restrictions(
-                    models, data.get('restrictions', []))
-                if restr.get('result'):
-                    # TODO(apopovych): handle restriction message
-                    return
-                else:
-                    attr_type = data.get('type')
-                    if (
-                        attr_type == 'text_list' or
-                        attr_type == 'textarea_list'
-                    ):
-                        err = cls.check_fields_length(data)
-                        if err is not None:
-                            yield err
-
-                    regex_error = cls.validate_regex(data)
-                    if regex_error is not None:
-                        yield regex_error
-
-                    for key, value in six.iteritems(data):
-                        if key not in ['restrictions', 'regex']:
-                            for err in find_errors(value):
-                                yield err
-            elif isinstance(data, list):
+            if isinstance(data, list):
                 for item in data:
                     for err in find_errors(item):
                         yield err
+                return
+
+            if not isinstance(data, dict):
+                return
+
+            group_attribute = cls._group_attribute(data)
+            value = cls._get_value(data)
+            label = cls._get_label(data)
+            restrictions = cls._get_restrictions(data)
+
+            # hidden attributes should be skipped
+            if cls.check_restrictions(
+                    models, restrictions, action='hide')['result']:
+                return
+
+            if group_attribute and not value:
+                # disabled group attribute should be skipped as well
+                # as all sub-attributes
+                return
+
+            attr_type = data.get('type')
+            if attr_type in ['text_list', 'textarea_list']:
+                err = cls.check_fields_length(data)
+                if err is not None:
+                    yield err
+
+            regex_error = cls.validate_regex(data)
+            if regex_error is not None:
+                yield regex_error
+
+            # restrictions with 'disable' action should be checked only for
+            # enabled attributes which type is 'checkbox' or group attributes
+            if (attr_type == 'checkbox' or group_attribute) and value:
+                restr = cls.check_restrictions(
+                    models, restrictions, action='disable')
+
+                for item in restr['result']:
+                    error = (
+                        "restriction with action='{}' and condition="
+                        "'{}' failed due to attribute value='{}'"
+                        .format(item['action'], item['condition'], value)
+                    )
+                    if item.get('message'):
+                        error = item['message']
+
+                    yield ("Validation failed for attribute '{}':"
+                           " {}".format(label, error))
+
+            for key, value in six.iteritems(data):
+                if key == 'metadata':
+                    continue
+                for err in find_errors(value):
+                    yield err
 
         return list(find_errors())
 

@@ -17,11 +17,32 @@
 import json
 import mock
 from nailgun.api.v1.validators import node as node_validator
+from nailgun import consts
 from nailgun.errors import errors
+from nailgun import objects
 from nailgun.test import base
 
 
 validator = node_validator.NodeAttributesValidator.validate
+
+
+def mock_cluster_attributes(func):
+    def wrapper(*args, **kwargs):
+        attr_mock = mock.patch.object(
+            objects.Cluster,
+            'get_editable_attributes',
+            return_value = {
+                'common': {
+                    'libvirt_type': {
+                        'value': consts.HYPERVISORS.kvm,
+                    }
+                }
+            }
+        )
+        with attr_mock:
+            func(*args, **kwargs)
+
+    return wrapper
 
 
 class BaseNodeAttributeValidatorTest(base.BaseTestCase):
@@ -61,16 +82,19 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
             }
         }
         self.node = mock.Mock(meta=meta, attributes=attributes)
+        self.cluster = mock.Mock()
 
 
 class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
 
+    @mock_cluster_attributes
     def test_defaults(self):
         data = {}
 
         self.assertNotRaises(errors.InvalidData, validator,
-                             json.dumps(data), self.node)
+                             json.dumps(data), self.node, self.cluster)
 
+    @mock_cluster_attributes
     def test_valid_hugepages(self):
         data = {
             'hugepages': {
@@ -87,8 +111,9 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
         }
 
         self.assertNotRaises(errors.InvalidData, validator,
-                             json.dumps(data), self.node)
+                             json.dumps(data), self.node, self.cluster)
 
+    @mock_cluster_attributes
     def test_too_much_hugepages(self):
         data = {
             'hugepages': {
@@ -103,8 +128,9 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
 
         self.assertRaisesWithMessageIn(
             errors.InvalidData, 'Not enough memory for components',
-            validator, json.dumps(data), self.node)
+            validator, json.dumps(data), self.node, self.cluster)
 
+    @mock_cluster_attributes
     def test_dpdk_requires_too_much(self):
         data = {
             'hugepages': {
@@ -116,10 +142,11 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
 
         self.assertRaisesWithMessageIn(
             errors.InvalidData, 'could not require more memory than node has',
-            validator, json.dumps(data), self.node)
+            validator, json.dumps(data), self.node, self.cluster)
 
 
 class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
+    @mock_cluster_attributes
     def test_valid_data(self):
         data = {
             'cpu_pinning': {
@@ -128,8 +155,9 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
         }
 
         self.assertNotRaises(errors.InvalidData, validator,
-                             json.dumps(data), self.node)
+                             json.dumps(data), self.node, self.cluster)
 
+    @mock_cluster_attributes
     def test_no_cpu_for_os(self):
         pinned_count = self.node.meta['cpu']['total']
 
@@ -141,8 +169,9 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
 
         self.assertRaisesWithMessageIn(
             errors.InvalidData, 'at least one cpu',
-            validator, json.dumps(data), self.node)
+            validator, json.dumps(data), self.node, self.cluster)
 
+    @mock_cluster_attributes
     def test_one_cpu_for_os(self):
         pinned_count = self.node.meta['cpu']['total'] - 1
 
@@ -153,4 +182,4 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
         }
 
         self.assertNotRaises(errors.InvalidData, validator,
-                             json.dumps(data), self.node)
+                             json.dumps(data), self.node, self.cluster)

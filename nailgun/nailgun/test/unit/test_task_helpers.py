@@ -17,6 +17,7 @@
 import mock
 import web
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
 from nailgun import objects
@@ -268,3 +269,40 @@ class TestTaskHelpers(BaseTestCase):
         kwargs = TaskHelper.prepare_action_log_kwargs(check_task)
         self.assertIn('actor_id', kwargs)
         self.assertEqual(actor_id, kwargs['actor_id'])
+
+    def test_nodes_to_deploy_if_lcm(self):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'status': consts.NODE_STATUSES.ready},
+                {'status': consts.NODE_STATUSES.discover},
+                {'status': consts.NODE_STATUSES.provisioning},
+                {'status': consts.NODE_STATUSES.provisioned},
+                {'status': consts.NODE_STATUSES.deploying},
+                {'status': consts.NODE_STATUSES.error,
+                 'error_type': consts.NODE_ERRORS.deploy},
+                {'status': consts.NODE_STATUSES.error,
+                 'error_type': consts.NODE_ERRORS.provision},
+                {'status': consts.NODE_STATUSES.stopped},
+                {'status': consts.NODE_STATUSES.removing},
+                {'status': consts.NODE_STATUSES.ready,
+                 'pending_deletion': True},
+            ],
+            release_kwargs={
+                'version': 'mitaka-9.0',
+                'operating_system': consts.RELEASE_OS.ubuntu
+            }
+        )
+        nodes_to_deploy = TaskHelper.nodes_to_deploy(cluster)
+        self.assertEqual(5, len(nodes_to_deploy))
+
+        expected_status = [
+            consts.NODE_STATUSES.provisioned,
+            consts.NODE_STATUSES.stopped,
+            consts.NODE_STATUSES.ready,
+            consts.NODE_STATUSES.error,
+            consts.NODE_STATUSES.deploying
+        ]
+        for node in nodes_to_deploy:
+            self.assertIn(node.status, expected_status)
+            self.assertIn(node.error_type, [None, consts.NODE_ERRORS.deploy])
+            self.assertFalse(node.pending_deletion)

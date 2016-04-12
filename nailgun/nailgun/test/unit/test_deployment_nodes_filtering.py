@@ -24,7 +24,7 @@ class TestDeploymentNodesFiltering(BaseIntegrationTest):
         super(TestDeploymentNodesFiltering, self).setUp()
         self.env.create(
             release_kwargs={
-                'version': 'liberty-9.0'
+                'version': 'liberty-8.0'
             },
             nodes_kwargs=[
                 {'roles': ['controller'], 'status': 'ready'},

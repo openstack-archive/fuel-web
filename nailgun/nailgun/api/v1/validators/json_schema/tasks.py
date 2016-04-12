@@ -41,7 +41,7 @@ TASK_STRATEGY = {
     'required': ['type'],
     'properties': {
         'type': {'enum': list(DEPLOY_STRATEGY), 'type': 'string'},
-        'amount': {'type': 'integer'}
+        'amount': {'oneOf': [{'type': 'integer'},{'type': 'string'}]}
     }
 }
 

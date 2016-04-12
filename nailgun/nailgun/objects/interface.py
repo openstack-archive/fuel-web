@@ -45,7 +45,9 @@ class DPDKMixin(object):
         if (not dpdk_properties['available'] and
                 dpdk_properties.get('enabled')):
             dpdk_properties['enabled'] = False
-        interface_properties['dpdk'] = dpdk_properties
+        # update interface_properties in DB only if something was changed
+        if interface_properties.get('dpdk', {}) != dpdk_properties:
+            interface_properties['dpdk'] = dpdk_properties
 
 
 class NIC(DPDKMixin, NailgunObject):

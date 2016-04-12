@@ -136,23 +136,6 @@ class PluginAdapterBase(object):
                 deployment_tasks.append(task)
         return deployment_tasks
 
-    # fixme(ikutukov): this getter only for default graph type, drop in future
-    @property
-    def deployment_tasks(self):
-        return self.get_deployment_tasks()
-
-    # it will better to replace to getters and setters
-    @deployment_tasks.setter
-    def deployment_tasks(self, value):
-        if value:
-            deployment_graph_instance = DeploymentGraph.get_for_model(
-                self.plugin)
-            if deployment_graph_instance:
-                DeploymentGraph.update(deployment_graph_instance,
-                                       {'tasks': value})
-            else:
-                DeploymentGraph.create_for_model({'tasks': value}, self.plugin)
-
     def get_tasks(self):
         if self._tasks is None:
             if self.plugin.tasks:
@@ -344,10 +327,17 @@ class PluginAdapterV3(PluginAdapterV2):
         self.db_cfg_mapping['roles_metadata'] = 'node_roles.yaml'
         self.db_cfg_mapping['volumes_metadata'] = 'volumes.yaml'
 
-    def get_metadata(self):
-        # FIXME (ikutukov): rework to getters and setters to be able to
-        # change deployment graph type
-        self.deployment_tasks = self._load_config('deployment_tasks.yaml')
+    def get_metadata(self, graph_type=None):
+        dg = DeploymentGraph.get_for_model(self.plugin, graph_type)
+        if dg:
+            DeploymentGraph.update(
+                dg,
+                {'tasks': self._load_config('deployment_tasks.yaml')})
+        else:
+            DeploymentGraph.create_for_model(
+                {'tasks': self._load_config('deployment_tasks.yaml')},
+                self.plugin,
+                graph_type)
 
         return super(PluginAdapterV3, self).get_metadata()
 

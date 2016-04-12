@@ -149,7 +149,6 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             return
 
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
-            db().rollback()
             raise errors.WrongNodeStatus("No changes to deploy")
 
     def get_nodes_to_deploy(self, force=False):
@@ -613,7 +612,7 @@ class DeploymentTaskManager(TaskManager):
         return tasks.DeploymentTask
 
     def execute(self, nodes_to_deployment, deployment_tasks=None,
-                graph_type=None, force=False):
+                graph_type=None, force=False, **kwargs):
         deployment_tasks = deployment_tasks or []
 
         logger.debug('Nodes to deploy: {0}'.format(

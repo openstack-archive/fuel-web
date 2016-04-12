@@ -16,10 +16,10 @@
 
 
 from nailgun.db.sqlalchemy import models
-from nailgun.objects.interface import DPDKMixin
+from nailgun.extensions.network_manager.objects.interface import DPDKMixin
+from nailgun.extensions.network_manager.objects.interface import NIC
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-from nailgun.objects import NIC
 from nailgun.objects.serializers.base import BasicSerializer
 
 

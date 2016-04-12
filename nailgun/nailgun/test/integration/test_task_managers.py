@@ -190,7 +190,7 @@ class TestTaskManagers(BaseIntegrationTest):
             ],
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': 'liberty-9.0',
+                'version': 'mitaka-9.0',
             },
         )
         cluster = self.env.clusters[-1]
@@ -1325,6 +1325,32 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertEqual(task['type'], 'puppet')
             else:
                 self.assertEqual(task['type'], 'skipped')
+
+    @mock.patch('nailgun.rpc.cast')
+    def test_deployment_task_uses_all_nodes_by_default(self, rpc_mock):
+        cluster = self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            },
+            nodes_kwargs=[{'roles': ['controller'],
+                           'status': consts.NODE_STATUSES.ready}] * 3
+        )
+        resp = self.app.put(
+            reverse(
+                'DeploySelectedNodes',
+                kwargs={'cluster_id': cluster.id}
+            ),
+            '{}',
+            headers=self.default_headers
+        )
+        self.assertIn(resp.status_code, [200, 202])
+        tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+        # check that all nodes present in message
+        self.assertItemsEqual(
+            [n.uid for n in cluster.nodes] + [consts.MASTER_NODE_UID, None],
+            tasks_graph
+        )
 
 
 class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):

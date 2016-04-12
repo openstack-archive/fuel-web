@@ -21,8 +21,14 @@ from stevedore.extension import ExtensionManager
 from nailgun.db import db
 from nailgun import errors
 from nailgun.extensions import consts
+from nailgun.logger import logger
 
 _EXTENSION_MANAGER = None
+
+
+def on_load_failure(manager, endpoint, exc):
+    logger.exception("Failed to load %s extension", endpoint.name)
+    raise
 
 
 def get_all_extensions():
@@ -37,7 +43,8 @@ def get_all_extensions():
 
     if _EXTENSION_MANAGER is None:
         _EXTENSION_MANAGER = ExtensionManager(
-            namespace=consts.EXTENSIONS_NAMESPACE
+            namespace=consts.EXTENSIONS_NAMESPACE,
+            on_load_failure_callback=on_load_failure,
         )
 
     return (ext.plugin for ext in _EXTENSION_MANAGER.extensions)

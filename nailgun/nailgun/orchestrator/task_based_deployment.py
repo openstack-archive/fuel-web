@@ -156,9 +156,7 @@ class TaskProcessor(object):
         :param task: the task instance
         :raises: errors.TaskBaseDeploymentNotAllowed
         """
-        if task.get('type') in (consts.ORCHESTRATOR_TASK_TYPES.stage,
-                                consts.ORCHESTRATOR_TASK_TYPES.group,
-                                consts.ORCHESTRATOR_TASK_TYPES.skipped):
+        if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.stage:
             return
 
         task_version = StrictVersion(task.get('version', '1.0.0'))

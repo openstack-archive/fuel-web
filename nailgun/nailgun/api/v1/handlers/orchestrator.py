@@ -88,6 +88,9 @@ class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
     def _serialize(self, cluster, nodes):
         raise NotImplementedError('Override the method')
 
+    def get_default_nodes(self, cluster):
+        return objects.Cluster.get_nodes_not_for_deletion(cluster)
+
 
 class OrchestratorInfo(BaseHandler):
     """Base class for replaced data."""
@@ -146,9 +149,6 @@ class DefaultProvisioningInfo(DefaultOrchestratorInfo):
         return provisioning_serializers.serialize(
             cluster, nodes, ignore_customized=True)
 
-    def get_default_nodes(self, cluster):
-        return TaskHelper.nodes_to_provision(cluster)
-
 
 class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
@@ -161,9 +161,6 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
         return deployment_serializers.serialize(
             graph, cluster, nodes, ignore_customized=True)
 
-    def get_default_nodes(self, cluster):
-        return TaskHelper.nodes_to_deploy(cluster)
-
 
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 
@@ -175,9 +172,6 @@ class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
         graph = orchestrator_graph.AstuteGraph(cluster)
         return pre_deployment_serialize(graph, cluster, nodes)
 
-    def get_default_nodes(self, cluster):
-        return TaskHelper.nodes_to_deploy(cluster)
-
 
 class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 
@@ -188,9 +182,6 @@ class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
             )
         graph = orchestrator_graph.AstuteGraph(cluster)
         return post_deployment_serialize(graph, cluster, nodes)
-
-    def get_default_nodes(self, cluster):
-        return TaskHelper.nodes_to_deploy(cluster)
 
 
 class ProvisioningInfo(OrchestratorInfo):

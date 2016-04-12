@@ -613,7 +613,7 @@ class DeploymentTaskManager(TaskManager):
         return tasks.DeploymentTask
 
     def execute(self, nodes_to_deployment, deployment_tasks=None,
-                graph_type=None, force=False):
+                graph_type=None, force=False, **kwargs):
         deployment_tasks = deployment_tasks or []
 
         logger.debug('Nodes to deploy: {0}'.format(

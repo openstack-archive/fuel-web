@@ -1282,6 +1282,24 @@ class Node(NailgunObject):
         for interface in instance.bond_interfaces:
             Bond.refresh_interface_dpdk_properties(interface, dpdk_drivers)
 
+    @classmethod
+    def is_provisioned(cls, instance):
+        """Checks that nodes has been provisioned already.
+
+        :param instance: the Node object
+        :return True if provisioned otherwise False
+        """
+        already_provisioned_statuses = (
+            consts.NODE_STATUSES.ready,
+            consts.NODE_STATUSES.provisioned,
+            consts.NODE_STATUSES.stopped
+        )
+        return (
+            instance.status in already_provisioned_statuses or
+            (instance.status == consts.NODE_STATUSES.error and
+             instance.error_type == consts.NODE_ERRORS.deploy)
+        )
+
 
 class NodeCollection(NailgunCollection):
     """Node collection"""

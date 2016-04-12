@@ -39,13 +39,15 @@ class DPDKMixin(object):
     @classmethod
     def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
         interface_properties = interface.interface_properties
-        dpdk_properties = interface_properties.get('dpdk', {})
+        dpdk_properties = interface_properties.get('dpdk', {}).copy()
         dpdk_properties['available'] = cls.dpdk_available(interface,
                                                           dpdk_drivers)
         if (not dpdk_properties['available'] and
                 dpdk_properties.get('enabled')):
             dpdk_properties['enabled'] = False
-        interface_properties['dpdk'] = dpdk_properties
+        # update interface_properties in DB only if something was changed
+        if interface_properties.get('dpdk', {}) != dpdk_properties:
+            interface_properties['dpdk'] = dpdk_properties
 
 
 class NIC(DPDKMixin, NailgunObject):

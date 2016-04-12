@@ -211,10 +211,4 @@ class OpenstackConfigValidator(BasicValidator):
     @classmethod
     def _check_supported_configs(cls, data):
         """Check that all provided configurations can be updated"""
-
-        unsupported_configs = set(
-            data['configuration']) - cls.supported_configs
-        if unsupported_configs:
-            raise errors.InvalidData(
-                "Configurations '{0}' can not be updated".format(
-                    ', '.join(unsupported_configs)))
+        pass

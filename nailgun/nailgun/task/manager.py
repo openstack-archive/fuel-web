@@ -597,7 +597,7 @@ class ProvisioningTaskManager(TaskManager):
 class DeploymentTaskManager(TaskManager):
 
     def execute(self, nodes_to_deployment, deployment_tasks=None,
-                graph_type=None):
+                graph_type=None, force=False):
         deployment_tasks = deployment_tasks or []
 
         logger.debug('Nodes to deploy: {0}'.format(

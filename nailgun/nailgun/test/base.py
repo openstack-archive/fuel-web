@@ -953,13 +953,13 @@ class EnvironmentManager(object):
         raise Exception(
             'Cluster with ID "{0}" was not found.'.format(cluster_id))
 
-    def launch_provisioning_selected(self, nodes_uids=None, cluster_id=None):
+    def _launch_for_selected_nodes(self, handler, nodes_uids, cluster_id):
         if self.clusters:
             cluster = self._get_cluster_by_id(cluster_id)
             if not nodes_uids:
                 nodes_uids = [n.uid for n in cluster.nodes]
             action_url = reverse(
-                'ProvisionSelectedNodes',
+                handler,
                 kwargs={'cluster_id': cluster.id}
             ) + '?nodes={0}'.format(','.join(nodes_uids))
             resp = self.app.put(

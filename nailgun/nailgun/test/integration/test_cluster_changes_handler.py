@@ -1639,8 +1639,13 @@ class TestHandlers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             params=jsonutils.dumps({
                 'editable': {
-                    'storage': {'volumes_ceph': {'value': True},
-                                'osd_pool_size': {'value': '3'}}}}),
+                    'storage': {
+                        'volumes_ceph': {'value': True},
+                        'osd_pool_size': {'value': '3'},
+                        'volumes_lvm': {'value': False},
+                     }
+                }
+            }),
             headers=self.default_headers)
 
         task = self.env.launch_deployment()
@@ -1701,8 +1706,13 @@ class TestHandlers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             params=jsonutils.dumps({
                 'editable': {
-                    'storage': {'volumes_ceph': {'value': True},
-                                'osd_pool_size': {'value': '1'}}}}),
+                    'storage': {
+                        'volumes_ceph': {'value': True},
+                        'osd_pool_size': {'value': '1'},
+                        'volumes_lvm': {'value': False},
+                    }
+                }
+            }),
             headers=self.default_headers)
 
         task = self.env.launch_deployment()

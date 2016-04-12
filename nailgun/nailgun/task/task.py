@@ -136,12 +136,8 @@ class BaseDeploymentTask(object):
         :param kwargs: the keyword arguments
         """
 
-        available_methods = iter(
-            cls.get_deployment_methods(transaction.cluster)
-        )
-
         error_messages = []
-
+        available_methods = cls.get_deployment_methods(transaction.cluster)
         for method in available_methods:
             try:
                 args = getattr(cls, method)(transaction, **kwargs)

@@ -1005,14 +1005,21 @@ class NetworkManager(object):
         interface.driver = interface_attrs.get('driver')
         interface.bus_info = interface_attrs.get('bus_info')
         interface.pxe = interface_attrs.get('pxe', False)
-        if not interface.interface_properties:
-            interface.interface_properties = \
+
+        # no need to copy/deepcopy as interface_properties is not modified
+        # partly but replaced
+        interface_properties = interface.interface_properties
+        if not interface_properties:
+            interface_properties = \
                 cls.get_default_interface_properties()
         if interface_attrs.get('interface_properties'):
-            interface.interface_properties = nailgun_utils.dict_merge(
-                interface.interface_properties,
+            interface_properties = nailgun_utils.dict_merge(
+                interface_properties,
                 interface_attrs['interface_properties']
             )
+        # update interface_properties in DB only if something was changed
+        if interface.interface_properties != interface_properties:
+            interface.interface_properties = interface_properties
 
     @classmethod
     def __delete_not_found_interfaces(cls, node, interfaces):

@@ -208,7 +208,7 @@ class TestPluginsDeploymentEnvironment(base.BaseTestCase):
             {'id': 2, 'role': 'compute'}
         ]
 
-        plugin = mock.Mock(tasks=[], deployment_tasks=[])
+        plugin = mock.Mock(tasks=[], version='4.0.0')
         self.plugins = [plugin]
 
 

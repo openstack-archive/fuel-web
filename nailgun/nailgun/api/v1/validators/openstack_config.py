@@ -27,12 +27,6 @@ class OpenstackConfigValidator(BasicValidator):
 
     exclusive_fields = frozenset(['node_id', 'node_ids', 'node_role'])
 
-    supported_configs = frozenset([
-        'nova_config', 'nova_paste_api_ini', 'neutron_config',
-        'neutron_api_config', 'neutron_plugin_ml2', 'neutron_agent_ovs',
-        'neutron_l3_agent_config', 'neutron_dhcp_agent_config',
-        'neutron_metadata_agent_config', 'keystone_config'])
-
     @staticmethod
     def _check_no_running_deploy_tasks(cluster):
         """Check that no deploy tasks are running at the moment
@@ -128,7 +122,6 @@ class OpenstackConfigValidator(BasicValidator):
         Validation fails if there are running deployment tasks in cluster.
         """
         data = cls._validate_data(data, schema.OPENSTACK_CONFIG)
-        cls._check_supported_configs(data)
         return data
 
     @classmethod
@@ -207,14 +200,3 @@ class OpenstackConfigValidator(BasicValidator):
             raise errors.InvalidData(
                 "Parameter '{0}' conflicts with '{1}' ".format(
                     keys[0], ', '.join(keys[1:])))
-
-    @classmethod
-    def _check_supported_configs(cls, data):
-        """Check that all provided configurations can be updated"""
-
-        unsupported_configs = set(
-            data['configuration']) - cls.supported_configs
-        if unsupported_configs:
-            raise errors.InvalidData(
-                "Configurations '{0}' can not be updated".format(
-                    ', '.join(unsupported_configs)))

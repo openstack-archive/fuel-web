@@ -144,11 +144,20 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         plugins = PluginManager.get_enabled_plugins(self.cluster)
         return self.deployment_tasks(plugins)
 
-    def _get_node_uids_for_plugin_tasks(self, plugin):
+    def _get_node_uids_for_plugin_tasks(self, plugin_adapter):
+        """Get node uids for plugin tasks.
+
+        :param plugin_adapter: Plugin adapter
+        :type plugin_adapter: plugins.adapters.PluginAdapterBase
+        :returns: node UIDs
+        :rtype: list[basestring]
+        """
         # TODO(aroma): remove concatenation of tasks when unified way of
         # processing will be introduced for deployment tasks and existing
         # plugin tasks
-        tasks_to_process = plugin.tasks + plugin.deployment_tasks
+        # TODO(ikutukov): add deployment graph type support for plugins
+        plugin_deployment_tasks = plugin_adapter.get_deployment_tasks()
+        tasks_to_process = plugin_adapter.tasks + plugin_deployment_tasks
 
         roles = set()
         for task in tasks_to_process:

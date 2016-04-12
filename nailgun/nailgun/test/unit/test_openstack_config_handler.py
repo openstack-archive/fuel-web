@@ -473,6 +473,21 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.check_fail_deploy_running(deploy_task_id, resp)
 
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_execute_update_open_stack_config_w_custom_graph(
+            self, mock_rpc, tasks_mock):
+        data = {'cluster_id': self.clusters[0].id}
+        resp = self.app.put(
+            reverse('OpenstackConfigExecuteHandler') +
+            '?graph_type=custom-graph',
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+        self.assertEqual(202, resp.status_code)
+        self.assertIn('custom-graph', tasks_mock.call_args[0])
+
     @classmethod
     def _make_filter_url(cls, **kwargs):
         return '{0}?{1}'.format(

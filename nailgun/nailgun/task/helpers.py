@@ -154,9 +154,7 @@ class TaskHelper(object):
     # TODO(aroma): considering moving this code to
     # nailgun Cluster object's methods
     @classmethod
-    def nodes_to_deploy(cls, cluster, force=False):
-        from nailgun import objects  # preventing cycle import error
-
+    def _nodes_to_deploy_legacy(cls, cluster, force, objects):
         nodes_to_deploy = []
         update_required = set()
         update_once = set()
@@ -186,6 +184,22 @@ class TaskHelper(object):
             return cls.nodes_to_deploy_ha(cluster, nodes_to_deploy)
 
         return nodes_to_deploy
+
+    @classmethod
+    def _nodes_to_deploy_lcm(cls, cluster, objects):
+        # we should select all nodes that have been provisioned
+        return [
+            objects.Node.is_provisioned(node)
+            for node in objects.Cluster.get_nodes_not_for_deletion(cluster)
+        ]
+
+    @classmethod
+    def nodes_to_deploy(cls, cluster, force=False):
+        from nailgun import objects  # preventing cycle import error
+
+        if objects.Release.is_lcm_supported(cluster.release):
+            return cls._nodes_to_deploy_lcm(cluster, objects)
+        return cls._nodes_to_deploy_legacy(cluster, force, objects)
 
     @classmethod
     def add_required_for_update_nodes(

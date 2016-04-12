@@ -141,7 +141,7 @@ class BasicAttributesValidator(BasicValidator):
         return attrs
 
     @classmethod
-    def validate_attributes(cls, data):
+    def validate_attributes(cls, data, models=None):
         """Validate attributes."""
         for attrs in six.itervalues(data):
             if not isinstance(attrs, dict):
@@ -149,6 +149,14 @@ class BasicAttributesValidator(BasicValidator):
             for attr_name, attr in six.iteritems(attrs):
                 cls.validate_attribute(attr_name, attr)
 
+        # If settings are present restrictions can be checked
+        if models:
+            restrict_err = restrictions.AttributesRestriction.check_data(
+                models, data)
+            if restrict_err:
+                raise errors.InvalidData(
+                    "Some restrictions are not passed verification: {}"
+                    .format(restrict_err))
         return data
 
     @classmethod

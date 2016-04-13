@@ -18,6 +18,7 @@ import mock
 from oslo_serialization import jsonutils
 import yaml
 
+from nailgun import consts
 from nailgun import objects
 from nailgun.plugins import adapters
 from nailgun.test import base
@@ -91,14 +92,18 @@ class BasePluginTest(base.BaseIntegrationTest):
             resp = self.app.get(
                 base.reverse('DefaultPrePluginsHooksInfo',
                              {'cluster_id': cluster.id}),
-                headers=self.default_headers)
+                headers=self.default_headers,
+                expect_errors=True
+            )
         return resp
 
     def get_post_hooks(self, cluster):
         resp = self.app.get(
             base.reverse('DefaultPostPluginsHooksInfo',
                          {'cluster_id': cluster.id}),
-            headers=self.default_headers)
+            headers=self.default_headers,
+            expect_errors=True
+        )
         return resp
 
     def sync_plugins(self, params=None, expect_errors=False):
@@ -360,7 +365,8 @@ class TestPrePostHooks(BasePluginTest):
             objects.Plugin.get_by_uid(resp.json['id']))
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},
-            {'roles': ['compute'], 'pending_addition': True}])
+            {'roles': ['compute'], 'pending_addition': True}]
+        )
         objects.Cluster.prepare_for_deployment(self.cluster)
 
         self.enable_plugin(
@@ -371,8 +377,10 @@ class TestPrePostHooks(BasePluginTest):
         self._requests_mock.stop()
         super(TestPrePostHooks, self).tearDown()
 
-    def test_generate_pre_hooks(self):
-        tasks = self.get_pre_hooks(self.cluster).json
+    def test_generate_pre_hooks_for_legacy_env(self):
+        resp = self.get_pre_hooks(self.cluster)
+        self.assertEqual(200, resp.status_code)
+        tasks = resp.json
         plugins_tasks = [t for t in tasks if t.get('diagnostic_name')]
         upload_file = [t for t in plugins_tasks if t['type'] == 'upload_file']
         rsync = [t for t in plugins_tasks if t['type'] == 'sync']
@@ -390,14 +398,32 @@ class TestPrePostHooks(BasePluginTest):
                       if u'apt-get update' in t['parameters']['cmd']]
         self.assertEqual(len(apt_update), 1)
 
-    def test_generate_post_hooks(self):
-        tasks = self.get_post_hooks(self.cluster).json
+    def test_generate_post_hooks_for_legacy_env(self):
+        resp = self.get_post_hooks(self.cluster)
+        self.assertEqual(200, resp.status_code)
+        tasks = resp.json
         self.assertEqual(len(tasks), 1)
         task = tasks[0]
         controller_id = [n.uid for n in self.cluster.nodes
                          if 'controller' in n.roles]
         self.assertEqual(controller_id, task['uids'])
         self.assertEqual(task['diagnostic_name'], self.plugin.full_name)
+
+    def test_generate_hooks_is_not_supported_since_90(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['cinder'], 'pending_addition': True}],
+            release_kwargs={
+                'version': 'mitaka-9.0',
+                'operating_system': consts.RELEASE_OS.ubuntu
+            }
+        )
+        resp = self.get_pre_hooks(self.env.clusters[-1])
+        self.assertEqual(405, resp.status_code)
+        resp = self.get_post_hooks(self.env.clusters[-1])
+        self.assertEqual(405, resp.status_code)
 
 
 class TestPluginValidation(BasePluginTest):

@@ -151,9 +151,11 @@ def upgrade():
     upgrade_bond_modes()
     upgrade_task_attributes()
     upgrade_store_deployment_history()
+    upgrade_clusters_replaced_info_wrong_default()
 
 
 def downgrade():
+    downgrade_clusters_replaced_info_wrong_default()
     downgrade_store_deployment_history()
     downgrade_task_attributes()
     downgrade_bond_modes()
@@ -704,6 +706,22 @@ def downgrade_ip_address():
     )
     op.drop_column('ip_addrs', 'is_user_defined')
     op.drop_column('ip_addrs', 'vip_namespace')
+
+
+def upgrade_clusters_replaced_info_wrong_default():
+    connection = op.get_bind()
+    update_query = sa.sql.text(
+        "UPDATE clusters SET replaced_deployment_info = '[]' "
+        "WHERE replaced_deployment_info = '{}'")
+    connection.execute(update_query)
+
+
+def downgrade_clusters_replaced_info_wrong_default():
+    connection = op.get_bind()
+    update_query = sa.sql.text(
+        "UPDATE clusters SET replaced_deployment_info = '{}' "
+        "WHERE replaced_deployment_info = '[]'")
+    connection.execute(update_query)
 
 
 def upgrade_node_roles_metadata():

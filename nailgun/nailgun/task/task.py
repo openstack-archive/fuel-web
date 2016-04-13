@@ -36,10 +36,10 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun.extensions.network_manager.checker import NetworkCheck
 from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import lcm
 from nailgun.logger import logger
-from nailgun.network.checker import NetworkCheck
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import orchestrator_graph

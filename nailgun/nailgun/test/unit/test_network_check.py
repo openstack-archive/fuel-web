@@ -22,7 +22,7 @@ from nailgun.db.sqlalchemy.models import network as network_db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
-from nailgun.network.checker import NetworkCheck
+from nailgun.extensions.network_manager.checker import NetworkCheck
 from nailgun.task import helpers
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.test.base import BaseIntegrationTest

@@ -999,13 +999,22 @@ class EnvironmentManager(object):
             task_ids or [],
         )
 
-    def _launch_for_cluster(self, handler, cluster_id):
+    def _launch_for_cluster(self, handler, cluster_id, get_params=None):
         if self.clusters:
             cluster_id = self._get_cluster_by_id(cluster_id).id
+
+            if get_params:
+                get_string = '?' + ('&'.join(
+                    '{}={}'.format(k, v) for k, v in six.iteritems(get_params)
+                ))
+            else:
+                get_string = ''
+
             resp = self.app.put(
                 reverse(
                     handler,
-                    kwargs={'cluster_id': cluster_id}),
+                    kwargs={'cluster_id': cluster_id}
+                ) + get_string,
                 headers=self.default_headers)
 
             return self.db.query(Task).filter_by(
@@ -1016,12 +1025,14 @@ class EnvironmentManager(object):
                 "Nothing to deploy - try creating cluster"
             )
 
-    def launch_deployment(self, cluster_id=None):
-        return self._launch_for_cluster('ClusterChangesHandler', cluster_id)
-
-    def launch_redeployment(self, cluster_id=None):
+    def launch_deployment(self, cluster_id=None, get_args=None):
         return self._launch_for_cluster(
-            'ClusterChangesForceRedeployHandler', cluster_id
+            'ClusterChangesHandler', cluster_id, get_args
+        )
+
+    def launch_redeployment(self, cluster_id=None, get_args=None):
+        return self._launch_for_cluster(
+            'ClusterChangesForceRedeployHandler', cluster_id, get_args
         )
 
     def stop_deployment(self, cluster_id=None):

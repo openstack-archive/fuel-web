@@ -1872,6 +1872,95 @@ class TestHandlers(BaseIntegrationTest):
             [node['uid'] for node in deployment_info]
         )
 
+    @patch('nailgun.task.manager.rpc.cast')
+    def test_noop_run(self, _):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            },
+        )
+        for handler in ('ClusterChangesHandler',
+                        'ClusterChangesForceRedeployHandler'):
+            resp = self.app.put(
+                reverse(
+                    handler,
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ) + '?noop=1',
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(resp.status_code, 202)
+
+    @patch('nailgun.task.manager.rpc.cast')
+    def test_dry_run(self, _):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            },
+        )
+        for handler in ('ClusterChangesHandler',
+                        'ClusterChangesForceRedeployHandler'):
+            resp = self.app.put(
+                reverse(
+                    handler,
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ) + '?dry_run=1',
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(resp.status_code, 202)
+
+    def test_noop_and_dry_run_restricted(self):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            }
+        )
+        for handler in ('ClusterChangesHandler',
+                        'ClusterChangesForceRedeployHandler'):
+            resp = self.app.put(
+                reverse(
+                    handler,
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ) + '?dry_run=1&noop=1',
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(
+                u'Error occurred when running task: Noop and '
+                u'dry run modes are not possible simultaneously',
+                resp.json_body['message'])
+
     @patch('nailgun.rpc.cast')
     def test_occurs_error_not_enough_memory_for_hugepages(self, *_):
         meta = self.env.default_metadata()

@@ -417,10 +417,7 @@ class NailgunCollection(object):
         :returns: collection of objects as a list of dicts
         """
         use_iterable = iterable or cls.all()
-        return map(
-            lambda o: cls.single.to_dict(o, fields=fields),
-            use_iterable
-        )
+        return [cls.single.to_dict(o, fields=fields) for o in use_iterable]
 
     @classmethod
     def to_json(cls, iterable=None, fields=None):

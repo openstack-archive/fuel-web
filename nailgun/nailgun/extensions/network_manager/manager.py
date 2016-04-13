@@ -1371,7 +1371,8 @@ class NetworkManager(object):
         properties = {'mode': bond.mode}
         properties.update(bond.bond_properties)
         to_drop = [k for k in properties.keys() if k.endswith('__')]
-        map(properties.pop, to_drop)
+        for prop in to_drop:
+            properties.pop(prop)
         return properties
 
     @classmethod

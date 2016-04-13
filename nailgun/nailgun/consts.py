@@ -285,6 +285,8 @@ TASK_NAMES = Enum(
     'multicast_verification',
     'check_repo_availability',
     'check_repo_availability_with_setup',
+    'dry_run_deployment',
+    'noop_deployment',
 
     # dump
     'dump',

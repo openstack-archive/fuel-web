@@ -16,7 +16,7 @@
 
 import netaddr
 
-from nailgun.network import utils
+from nailgun.extensions.network_manager import utils
 from nailgun.test.base import BaseUnitTest
 
 

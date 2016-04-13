@@ -101,3 +101,7 @@ class TaskBaseDeploymentNotAllowed(DeploymentException):
 
 class NoChanges(DeploymentException):
     message = "There is no changes to apply"
+
+
+class NoopWithDryRunNotAllowed(DeploymentException):
+    message = "Noop and dry run modes are not possible simultaneously"

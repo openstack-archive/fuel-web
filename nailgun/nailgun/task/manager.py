@@ -124,7 +124,7 @@ class DeploymentCheckMixin(object):
     def check_no_running_deployment(cls, cluster):
         tasks_q = objects.TaskCollection.get_by_name_and_cluster(
             cluster, cls.deployment_tasks).filter_by(
-                status=consts.TASK_STATUSES.running)
+            status=consts.TASK_STATUSES.running)
 
         tasks_exists = db.query(tasks_q.exists()).scalar()
         if tasks_exists:
@@ -229,7 +229,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             nodes_to_provision_deploy=nodes_ids_to_deploy,
             deployment_tasks=deployment_tasks,
             force=force,
-            graph_type=graph_type
+            graph_type=graph_type,
+            **kwargs
         )
 
         return supertask
@@ -271,7 +272,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
     def _execute_async_content(self, supertask, deployment_tasks=None,
                                nodes_to_provision_deploy=None, force=False,
-                               graph_type=None):
+                               graph_type=None, **kwargs):
         """Processes supertask async in mule
 
         :param supertask: SqlAlchemy task object
@@ -372,23 +373,38 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                              " ".join((objects.Node.get_node_fqdn(n)
                                        for n in affected_nodes)))
 
+            deployment_task_provider = self.get_deployment_task()
+
+            dry_run = kwargs.get('dry_run', False)
+            noop = kwargs.get('noop', False)
+
+            if deployment_task_provider == tasks.ClusterTransaction:
+                if dry_run:
+                    transaction_name = consts.TASK_NAMES.dry_run_deployment
+                elif noop:
+                    transaction_name = consts.TASK_NAMES.noop_deployment
+                else:
+                    transaction_name = consts.TASK_NAMES.deployment
+            else:
+                transaction_name = consts.TASK_NAMES.deployment
+
             task_deployment = supertask.create_subtask(
-                name=consts.TASK_NAMES.deployment,
+                name=transaction_name,
                 status=consts.TASK_STATUSES.pending
             )
-
             # we should have task committed for processing in other threads
             db().commit()
             deployment_message = self._call_silently(
                 task_deployment,
-                self.get_deployment_task(),
+                deployment_task_provider,
                 nodes_to_deploy,
                 affected_nodes=affected_nodes,
                 deployment_tasks=deployment_tasks,
                 method_name='message',
                 reexecutable_filter=consts.TASKS_TO_RERUN_ON_DEPLOY_CHANGES,
                 graph_type=graph_type,
-                force=force
+                force=force,
+                **kwargs
             )
 
             db().commit()

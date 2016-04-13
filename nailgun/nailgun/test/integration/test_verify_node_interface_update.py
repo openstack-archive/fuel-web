@@ -143,16 +143,6 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
         self.node.attributes['hugepages']['dpdk'] = {'value': '0'}
         self.check_fail('Hugepages for DPDK are not configured')
 
-    def test_iface_cant_be_availible(self):
-        props = self.data['interfaces'][0]['interface_properties']
-        props['pci_id'] = 'test_id:2'
-
-        dpdk = props.get('dpdk', {})
-        dpdk['available'] = True
-        props['dpdk'] = dpdk
-
-        self.check_fail("DPDK .* can't be changed manually")
-
     def test_wrong_network(self):
         self.data['interfaces'][1]['assigned_networks'] = []
         self.check_fail('Only private network could be assigned')
@@ -211,7 +201,7 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
         self.assertNotRaises(errors.InvalidData,
                              self.validator, self.data)
 
-    def test_bond_slaves_not_availible_dpdk(self):
+    def test_bond_slaves_not_available_dpdk(self):
         self._create_bond_data()
         nic_3 = self.node.nic_interfaces[2]
 
@@ -221,5 +211,5 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
 
         self.assertRaisesRegexp(
             errors.InvalidData,
-            "DPDK availability .* is hardware property",
+            "DPDK is not available .*",
             self.validator, self.data)

@@ -56,7 +56,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
         self.assertEqual(201, resp.status_code)
 
-        plugin_link = self.env.clusters[0].plugin_links[0]
+        plugin_link = self.cluster.plugin_links[0]
         self.assertEqual(self.link_data['title'], plugin_link.title)
         self.assertEqual(self.link_data['url'], plugin_link.url)
         self.assertEqual(self.link_data['hidden'], plugin_link.hidden)
@@ -79,4 +79,4 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertItemsEqual([], self.env.clusters[0].plugin_links)
+        self.assertItemsEqual([], self.cluster.plugin_links)

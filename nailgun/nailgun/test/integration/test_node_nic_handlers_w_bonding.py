@@ -83,7 +83,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                  }
              ]}])
 
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 "net_provider": "neutron",
                 "net_segment_type": "gre"
@@ -250,7 +250,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         resp = self.app.post(
             reverse(
                 'NodeUnassignmentHandler',
-                kwargs={'cluster_id': self.env.clusters[0]['id']}
+                kwargs={'cluster_id': self.cluster.id}
             ),
             jsonutils.dumps([{'id': node.id}]),
             headers=self.default_headers
@@ -271,7 +271,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         node = self.env.nodes[0]
         resp = self.app.put(
             reverse('ClusterHandler',
-                    kwargs={'obj_id': self.env.clusters[0]['id']}),
+                    kwargs={'obj_id': self.cluster.id}),
             jsonutils.dumps({'nodes': []}),
             headers=self.default_headers,
             expect_errors=True

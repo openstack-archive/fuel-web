@@ -48,7 +48,7 @@ class ExtraFunctions(base.BaseTestCase):
         return plugin_ids
 
     def _create_test_cluster(self):
-        self.env.create(
+        return self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={
                 'name': uuid.uuid4().get_hex(),
@@ -56,8 +56,6 @@ class ExtraFunctions(base.BaseTestCase):
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
                           consts.CLUSTER_MODES.ha_compact]})
-
-        return self.env.clusters[0]
 
 
 class TestPluginCollection(ExtraFunctions):

@@ -211,11 +211,10 @@ class TestPipeline(BaseExtensionCase):
                 {'roles': ['controller'], 'pending_addition': True},
             ]
 
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=nodes_kwargs)
 
-        cluster = self.env.clusters[0]
         cluster.extensions = [self.extension.name, 'volume_manager']
         self.db.flush()
 
@@ -352,11 +351,10 @@ class TestPipeline(BaseExtensionCase):
             mfire_callback.call_args[0][2], cluster.nodes[1:])
 
     def test_pipeline_change_data(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'roles': ['controller'], 'pending_addition': True}]
         )
-        cluster = self.env.clusters[0]
         cluster.extensions = [self.extension.name]
         self.db.flush()
 

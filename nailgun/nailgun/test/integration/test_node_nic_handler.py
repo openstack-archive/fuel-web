@@ -637,12 +637,12 @@ class TestHandlers(BaseIntegrationTest):
         def get_nodes():
             resp = self.app.get(
                 reverse('NodeCollectionHandler',
-                        kwargs={'cluster_id': self.env.clusters[0].id}),
+                        kwargs={'cluster_id': cluster.id}),
                 headers=self.default_headers,
             )
             return resp.json_body
 
-        self.env.create(nodes_kwargs=[{'api': True}])
+        cluster = self.env.create(nodes_kwargs=[{'api': True}])
 
         # check all possible handlers
         for handler in ('NodeAgentHandler',
@@ -708,7 +708,7 @@ class TestHandlers(BaseIntegrationTest):
         def get_nodes():
             resp = self.app.get(
                 reverse('NodeCollectionHandler',
-                        kwargs={'cluster_id': self.env.clusters[0].id}),
+                        kwargs={'cluster_id': cluster.id}),
                 headers=self.default_headers,
             )
             return resp.json_body
@@ -722,7 +722,7 @@ class TestHandlers(BaseIntegrationTest):
             {'name': 'eth3', 'mac': self.env.generate_random_mac()},
             {'name': 'eth4', 'mac': self.env.generate_random_mac()},
         ]
-        self.env.create(nodes_kwargs=[{'api': True, 'meta': meta}])
+        cluster = self.env.create(nodes_kwargs=[{'api': True, 'meta': meta}])
 
         # check all possible handlers
         for handler in ('NodeAgentHandler',
@@ -775,9 +775,8 @@ class TestHandlers(BaseIntegrationTest):
             {'name': 'eth0', 'mac': self.env.generate_random_mac(),
              'pxe': False},
         ]
-        self.env.create(nodes_kwargs=[{'api': False, 'meta': meta}])
+        cluster = self.env.create(nodes_kwargs=[{'api': False, 'meta': meta}])
 
-        cluster = self.env.clusters[0]
         node = cluster.nodes[0]
 
         # Processing data through NodeHandler
@@ -813,7 +812,7 @@ class TestSriovHandlers(BaseIntegrationTest):
 
     def setUp(self):
         super(TestSriovHandlers, self).setUp()
-        self.env.create_cluster(
+        cluster = self.env.create_cluster(
             editable_attributes={
                 'common': {
                     'libvirt_type': {
@@ -823,7 +822,7 @@ class TestSriovHandlers(BaseIntegrationTest):
             }
         )
         self.env.create_nodes_w_interfaces_count(
-            1, 3, cluster_id=self.env.clusters[0].id, api=True)
+            1, 3, cluster_id=cluster.id, api=True)
         self.nics = self.get_node_interfaces()
 
     def get_node_interfaces(self):

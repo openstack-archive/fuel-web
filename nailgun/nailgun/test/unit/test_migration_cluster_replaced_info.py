@@ -20,13 +20,12 @@ class TestReplacedDataMigration(BaseIntegrationTest):
 
     def setUp(self):
         super(TestReplacedDataMigration, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller', 'cinder'], 'pending_addition': True},
             ]
         )
-        self.cluster = self.env.clusters[0]
         self.nodes = self.env.nodes
         self.deployment_info = []
         self.provisioning_info = {'nodes': [], 'engine': {'custom': 'type'}}

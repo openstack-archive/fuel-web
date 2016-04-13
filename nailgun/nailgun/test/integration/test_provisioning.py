@@ -28,7 +28,7 @@ class TestProvisioning(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_nodes_in_cluster(self, mocked_rpc):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
@@ -36,17 +36,16 @@ class TestProvisioning(BaseIntegrationTest):
                 {"api": False, "cluster_id": None}
             ]
         )
-        cluster_db = self.env.clusters[0]
-        map(cluster_db.nodes.append, self.env.nodes[:2])
-        self.db.add(cluster_db)
+        map(cluster.nodes.append, self.env.nodes[:2])
+        self.db.add(cluster)
         self.db.commit()
 
-        self.assertEqual(len(cluster_db.nodes), 2)
+        self.assertEqual(len(cluster.nodes), 2)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_node_status_changes_to_provision(self, mocked_rpc=None):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False, "status": consts.NODE_STATUSES.ready},
@@ -66,7 +65,6 @@ class TestProvisioning(BaseIntegrationTest):
                  "error_type": "provision"}
             ]
         )
-        cluster = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster)
         self.env.network_manager.assign_ips(
             cluster, self.env.nodes, consts.NETWORKS.fuelweb_admin

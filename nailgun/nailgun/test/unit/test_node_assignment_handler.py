@@ -38,7 +38,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
 
     def test_assignment(self):
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[
                 {
@@ -47,7 +47,6 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 }
             ]
         )
-        self.cluster = self.env.clusters[0]
         node = self.env.nodes[0]
         assignment_data = [
             {
@@ -162,7 +161,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertEquals(404, resp.status_code)
 
     def test_assign_conflicting_roles(self):
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[
                 {
@@ -171,7 +170,6 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 }
             ]
         )
-        self.cluster = self.env.clusters[0]
         node = self.env.nodes[0]
         assignment_data = [
             {
@@ -197,7 +195,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         release = self.env.create_release()
         resp = self.env.create_role(release.id, ROLE)
 
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 "api": True,
                 "release_id": release.id
@@ -209,7 +207,6 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 }
             ]
         )
-        self.cluster = self.env.clusters[0]
         node = self.env.nodes[0]
         assignment_data = [
             {

@@ -2624,7 +2624,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
                 return_value=False)
     def test_serialize_workloads_collector_user_opted_out(self, _):
         oswl_user = self.serializer.get_common_attrs(
-            self.env.clusters[0]
+            self.cluster
         )['workloads_collector']
         self.assertEqual(set(oswl_user.keys()),
                          set(['username',
@@ -2643,7 +2643,7 @@ class TestDeploymentAttributesSerialization61(BaseDeploymentSerializer):
                 return_value=True)
     def test_serialize_workloads_collector_user_opted_in(self, _):
         oswl_user = self.serializer.get_common_attrs(
-            self.env.clusters[0]
+            self.cluster
         )['workloads_collector']
         self.assertEqual(set(oswl_user.keys()),
                          set(['username',

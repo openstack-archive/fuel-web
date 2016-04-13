@@ -59,7 +59,7 @@ class TestNetworkManager(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_assign_ips(self, mocked_rpc):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True, "api": True},
@@ -76,7 +76,7 @@ class TestNetworkManager(BaseIntegrationTest):
 
         management_net = self.db.query(NetworkGroup).filter(
             NetworkGroup.group_id ==
-            objects.Cluster.get_default_group(self.env.clusters[0]).id
+            objects.Cluster.get_default_group(cluster).id
         ).filter_by(
             name=consts.NETWORKS.management
         ).first()

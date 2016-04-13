@@ -278,13 +278,13 @@ class TestNodeObject(BaseIntegrationTest):
 
     def test_get_kernel_params_overwriten(self):
         """Test verifies that overwriten kernel params will be returned."""
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"role": "controller"}
             ])
         additional_kernel_params = 'intel_iommu=true'
         default_kernel_params = objects.Cluster.get_default_kernel_params(
-            self.env.clusters[0])
+            cluster)
         kernel_params = '{0} {1}'.format(default_kernel_params,
                                          additional_kernel_params)
         self.env.nodes[0].kernel_params = kernel_params
@@ -305,13 +305,12 @@ class TestNodeObject(BaseIntegrationTest):
              'pending_addition': True},
             {'roles': [], 'pending_roles': ['controller'],
              'pending_addition': True}]
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
             },
             nodes_kwargs=nodes)
 
-        cluster = self.env.clusters[0]
         cluster.release.roles_metadata['mongo']['public_ip_required'] = True
         attrs = cluster.attributes.editable
         self.assertFalse(
@@ -336,14 +335,14 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(nodes_w_public_count, len(nodes))
 
     def test_should_have_public_with_ip_with_given_metadata(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
             },
             nodes_kwargs=[{}, {}])
 
         node = self.env.nodes[0]
-        roles_metadata = objects.Cluster.get_roles(self.env.clusters[0])
+        roles_metadata = objects.Cluster.get_roles(cluster)
         with mock.patch.object(objects.Cluster, 'get_roles') as get_roles_mock:
             get_roles_mock.return_value = roles_metadata
             objects.Node.should_have_public_with_ip(node)
@@ -363,13 +362,12 @@ class TestNodeObject(BaseIntegrationTest):
              'pending_addition': True},
             {'roles': [], 'pending_roles': ['controller'],
              'pending_addition': True}]
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
             },
             nodes_kwargs=nodes)
 
-        cluster = self.env.clusters[0]
         attrs = copy.deepcopy(cluster.attributes.editable)
         attrs['neutron_advanced_configuration']['neutron_dvr']['value'] = True
         resp = self.app.patch(
@@ -693,7 +691,7 @@ class TestTaskObject(BaseIntegrationTest):
 
     def setUp(self):
         super(TestTaskObject, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['compute']},
@@ -707,10 +705,6 @@ class TestTaskObject(BaseIntegrationTest):
     def _nodes_should_not_be_error(self, nodes):
         for node in nodes:
             self.assertEquals(node.status, consts.NODE_STATUSES.discover)
-
-    @property
-    def cluster(self):
-        return self.env.clusters[0]
 
     def test_update_nodes_to_error_if_deployment_task_failed(self):
         self.cluster.nodes[0].status = consts.NODE_STATUSES.deploying
@@ -914,12 +908,11 @@ class TestTaskObject(BaseIntegrationTest):
 class TestTransactionObject(BaseIntegrationTest):
     def setUp(self):
         super(TestTransactionObject, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['compute']},
                 {'roles': ['cinder']}])
-        self.cluster = self.env.clusters[-1]
 
     def test_get_last_success_run(self):
         objects.Transaction.create({
@@ -1094,14 +1087,13 @@ class TestClusterObject(BaseTestCase):
 
     def setUp(self):
         super(TestClusterObject, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron'},
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['controller']},
                 {'roles': ['compute']},
                 {'roles': ['cinder']}])
-        self.cluster = self.env.clusters[0]
 
     def _create_cluster_with_plugins(self, plugins_kw_list):
         cluster = self.env.create_cluster(api=False)
@@ -1188,17 +1180,16 @@ class TestClusterObject(BaseTestCase):
         'nailgun.objects.cluster.'
         'fire_callback_on_node_collection_delete')
     def test_delete(self, mock_node_coll_delete_cb, mock_cluster_delete_cb):
-        cluster = self.env.clusters[0]
-        ids = [node.id for node in cluster.nodes]
-        objects.Cluster.delete(cluster)
+        ids = [node.id for node in self.cluster.nodes]
+        objects.Cluster.delete(self.cluster)
         mock_node_coll_delete_cb.assert_called_once_with(ids)
-        mock_cluster_delete_cb.assert_called_once_with(cluster)
+        mock_cluster_delete_cb.assert_called_once_with(self.cluster)
         self.assertEqual(self.db.query(objects.Node.model).count(), 0)
         self.assertEqual(self.db.query(objects.Cluster.model).count(), 0)
 
     def test_all_controllers(self):
         self.assertEqual(len(objects.Cluster.get_nodes_by_role(
-            self.env.clusters[0], 'controller')), 2)
+            self.cluster, 'controller')), 2)
 
     def test_put_delete_template_after_deployment(self):
         allowed = [consts.CLUSTER_STATUSES.new,
@@ -1206,19 +1197,19 @@ class TestClusterObject(BaseTestCase):
                    consts.CLUSTER_STATUSES.operational,
                    consts.CLUSTER_STATUSES.error]
         for status in consts.CLUSTER_STATUSES:
-            self.env.clusters[0].status = status
+            self.cluster.status = status
             self.db.flush()
             self.assertEqual(
                 objects.Cluster.is_network_modification_locked(
-                    self.env.clusters[0]),
+                    self.cluster),
                 status not in allowed
             )
 
     def test_get_controller_group_id(self):
         controllers = objects.Cluster.get_nodes_by_role(
-            self.env.clusters[0], 'controller')
+            self.cluster, 'controller')
         group_id = objects.Cluster.get_controllers_group_id(
-            self.env.clusters[0])
+            self.cluster)
         self.assertEqual(controllers[0].group_id, group_id)
 
     def test_get_node_group(self):
@@ -1283,7 +1274,7 @@ class TestClusterObject(BaseTestCase):
             for inf in node.nic_interfaces:
                 interfaces.append(inf)
         nic_interfaces = objects.Cluster.get_nic_interfaces_for_all_nodes(
-            self.env.clusters[0])
+            self.cluster)
         self.assertEqual(len(nic_interfaces), len(interfaces))
 
     def test_get_bond_interfaces_for_all_nodes(self):
@@ -1293,14 +1284,13 @@ class TestClusterObject(BaseTestCase):
                               slaves=node.nic_interfaces))
         self.db.flush()
         bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
-            self.env.clusters[0])
+            self.cluster)
         self.assertEqual(len(bond_interfaces), 1)
 
     def test_get_network_roles(self):
-        cluster = self.env.clusters[0]
         self.assertItemsEqual(
-            objects.Cluster.get_network_roles(cluster),
-            cluster.release.network_roles_metadata)
+            objects.Cluster.get_network_roles(self.cluster),
+            self.cluster.release.network_roles_metadata)
 
     def test_get_deployment_tasks(self):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()
@@ -1444,17 +1434,16 @@ class TestClusterObject(BaseTestCase):
                 plugin_volumes_metadata['volumes'])
 
             volumes_metadata = objects.Cluster.get_volumes_metadata(
-                self.env.clusters[0])
+                self.cluster)
 
             self.assertDictEqual(
                 volumes_metadata, expected_volumes_metadata)
 
     def test_cluster_is_component_enabled(self):
-        cluster = self.env.clusters[0]
-        self.assertFalse(objects.Cluster.is_component_enabled(cluster,
+        self.assertFalse(objects.Cluster.is_component_enabled(self.cluster,
                                                               'ironic'))
-        self.env._set_additional_component(cluster, 'ironic', True)
-        self.assertTrue(objects.Cluster.is_component_enabled(cluster,
+        self.env._set_additional_component(self.cluster, 'ironic', True)
+        self.assertTrue(objects.Cluster.is_component_enabled(self.cluster,
                                                              'ironic'))
 
     def test_get_cluster_attributes_by_components(self):
@@ -1620,7 +1609,7 @@ class TestClusterObjectVirtRoles(BaseTestCase):
 
     def setUp(self):
         super(TestClusterObjectVirtRoles, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['virt']},
                 {'roles': ['virt']},
@@ -1639,14 +1628,14 @@ class TestClusterObjectVirtRoles(BaseTestCase):
         ]
 
     def test_set_vms_created_state(self):
-        objects.Cluster.set_vms_created_state(self.env.clusters[0])
+        objects.Cluster.set_vms_created_state(self.cluster)
 
         for node in self.env.nodes:
             for conf in node.vms_conf:
                 self.assertTrue(conf['created'])
 
     def test_reset_vms_created_state(self):
-        objects.Cluster.set_vms_created_state(self.env.clusters[0])
+        objects.Cluster.set_vms_created_state(self.cluster)
 
         objects.Node.reset_vms_created_state(self.env.nodes[0])
 
@@ -1662,7 +1651,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
     def setUp(self):
         super(TestClusterObjectGetRoles, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={
                 'roles_metadata': {
                     'role_a': {
@@ -1671,7 +1660,6 @@ class TestClusterObjectGetRoles(BaseTestCase):
                         'name': 'Role B', 'description': 'Role B is ...', },
                 }
             })
-        self.cluster = self.env.clusters[0]
 
     def create_plugin(self, roles_metadata):
         plugin = objects.Plugin.create(self.env.get_default_plugin_metadata(
@@ -1755,7 +1743,8 @@ class TestClusterObjectGetRoles(BaseTestCase):
 class TestClusterObjectGetNetworkManager(BaseTestCase):
     def setUp(self):
         super(TestClusterObjectGetNetworkManager, self).setUp()
-        self.env.create(cluster_kwargs={'net_provider': 'neutron'})
+        self.cluster = self.env.create(
+            cluster_kwargs={'net_provider': 'neutron'})
 
     def test_get_default(self):
         nm = objects.Cluster.get_network_manager()
@@ -1763,19 +1752,17 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
 
     def check_neutron_network_manager(
             self, net_provider, version, expected_manager):
-        cluster = self.env.clusters[0]
-        cluster.net_provider = net_provider
-        cluster.release.version = version
-        nm = objects.Cluster.get_network_manager(cluster)
+        self.cluster.net_provider = net_provider
+        self.cluster.release.version = version
+        nm = objects.Cluster.get_network_manager(self.cluster)
         self.assertIs(expected_manager, nm)
 
     def test_raise_if_unknown(self):
-        cluster = self.env.clusters[0]
-        cluster.net_provider = "invalid_data"
+        self.cluster.net_provider = "invalid_data"
         self.assertRaisesWithMessage(
             Exception,
             'The network provider "invalid_data" is not supported.',
-            objects.Cluster.get_network_manager, cluster
+            objects.Cluster.get_network_manager, self.cluster
         )
 
     def test_neutron_network_managers_by_version(self):
@@ -1802,8 +1789,8 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
             )
 
     def test_get_neutron_80(self):
-        self.env.clusters[0].release.version = '2014.2.2-8.0'
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        self.cluster.release.version = '2014.2.2-8.0'
+        nm = objects.Cluster.get_network_manager(self.cluster)
         self.assertEqual(nm, neutron.NeutronManager80)
 
 
@@ -1933,14 +1920,13 @@ class TestOpenstackConfig(BaseTestCase):
     def setUp(self):
         super(TestOpenstackConfig, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'role': 'controller', 'status': 'ready'},
                 {'role': 'compute', 'status': 'ready'},
                 {'role': 'cinder', 'status': 'ready'},
             ])
 
-        self.cluster = self.env.clusters[0]
         self.nodes = self.env.nodes
 
     def test_create(self):
@@ -2006,14 +1992,13 @@ class TestOpenstackConfigCollection(BaseTestCase):
     def setUp(self):
         super(TestOpenstackConfigCollection, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'role': 'controller', 'status': 'ready'},
                 {'role': 'compute', 'status': 'ready'},
                 {'role': 'cinder', 'status': 'ready'},
             ])
 
-        self.cluster = self.env.clusters[0]
         self.nodes = self.env.nodes
 
     def test_create(self):
@@ -2092,10 +2077,9 @@ class TestNICObject(BaseTestCase):
     def setUp(self):
         super(TestNICObject, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'role': 'controller'}])
-        self.cluster = self.env.clusters[0]
 
     def test_replace_assigned_networks(self):
         node = self.env.nodes[0]
@@ -2132,10 +2116,9 @@ class TestIPAddrObject(BaseTestCase):
     def setUp(self):
         super(TestIPAddrObject, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'role': 'controller'}])
-        self.cluster = self.env.clusters[0]
 
     def test_get_ips_except_admin(self):
         node = self.env.nodes[0]

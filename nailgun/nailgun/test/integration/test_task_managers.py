@@ -102,14 +102,13 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_settings_saved_in_transaction(self, _):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_deletion": True,
                  'status': NODE_STATUSES.provisioned},
             ]
         )
-        cluster = self.env.clusters[-1]
         supertask = self.env.launch_deployment(cluster.id)
         self.assertNotEqual(TASK_STATUSES.error, supertask.status)
         deployment_task = next(
@@ -139,7 +138,7 @@ class TestTaskManagers(BaseIntegrationTest):
     def check_deployment_info_was_saved_in_transaction(
             self, release_ver, is_task_deploy, is_lcm
     ):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_deletion": True,
@@ -150,7 +149,6 @@ class TestTaskManagers(BaseIntegrationTest):
                 'version': release_ver
             },
         )
-        cluster = self.env.clusters[-1]
         if not is_task_deploy:
             self.env.disable_task_deploy(cluster)
 
@@ -183,7 +181,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 'roles': ['controller'], 'version': '2.1.0',
             }
         ]
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "pending_roles": ['controller']},
                 {"pending_addition": True, "pending_roles": ['controller']},
@@ -193,7 +191,6 @@ class TestTaskManagers(BaseIntegrationTest):
                 'version': 'liberty-9.0',
             },
         )
-        cluster = self.env.clusters[-1]
         supertask = self.env.launch_deployment(cluster.id)
         self.assertNotEqual(TASK_STATUSES.error, supertask.status)
         tasks_graph = rpc_mock.call_args[0][1][1]['args']['tasks_graph']
@@ -333,7 +330,7 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @mock.patch('nailgun.rpc.cast')
     def test_update_nodes_info_on_node_removal(self, _):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'status': consts.CLUSTER_STATUSES.operational,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
@@ -348,7 +345,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 {'status': consts.NODE_STATUSES.ready, 'roles': ['compute']},
             ])
 
-        objects.Cluster.prepare_for_deployment(self.env.clusters[0])
+        objects.Cluster.prepare_for_deployment(cluster)
         self.env.launch_deployment()
 
         args, _ = nailgun.task.manager.rpc.cast.call_args_list[1]
@@ -429,7 +426,7 @@ class TestTaskManagers(BaseIntegrationTest):
         # Do not move cluster to error state
         # in case if cluster new and before
         # validation failed
-        self.assertEqual(self.env.clusters[0].status, 'new')
+        self.assertEqual(cluster.status, 'new')
 
     @fake_tasks()
     def test_deployment_fails_if_node_to_redeploy_is_offline(self):
@@ -457,11 +454,11 @@ class TestTaskManagers(BaseIntegrationTest):
                'and try again.'.format(offline_node.full_name))
         self.assertEqual(supertask.message, msg)
 
-        self.assertEqual(self.env.clusters[0].status, 'error')
+        self.assertEqual(cluster.status, 'error')
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_redeployment_works(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_addition": True},
@@ -474,7 +471,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.refresh_nodes()
 
         self.env.create_node(
-            cluster_id=self.env.clusters[0].id,
+            cluster_id=cluster.id,
             roles=["controller"],
             pending_addition=True
         )
@@ -512,19 +509,17 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_deletion_cluster_task_manager(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "progress": 100},
                 {"roles": ["compute"], "status": "ready", "progress": 100},
                 {"roles": ["compute"], "pending_addition": True},
             ]
         )
-        cluster_id = self.env.clusters[0].id
-        cluster_name = self.env.clusters[0].name
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'obj_id': cluster_id}),
+                kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
         )
         self.assertEqual(202, resp.status_code)
@@ -532,9 +527,9 @@ class TestTaskManagers(BaseIntegrationTest):
         notification = self.db.query(models.Notification)\
             .filter(models.Notification.topic == "done")\
             .filter(models.Notification.message == "Environment '%s' and all "
-                    "its nodes are deleted" % cluster_name).first()
+                    "its nodes are deleted" % cluster.name).first()
         self.assertIsNotNone(notification)
-        self.assertIsNone(self.db.query(models.Cluster).get(cluster_id))
+        self.assertIsNone(self.db.query(models.Cluster).get(cluster.id))
 
         tasks = self.db.query(models.Task).all()
         self.assertEqual(len(tasks), 1)
@@ -543,7 +538,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(tick_interval=10, tick_count=5)
     def test_deletion_clusters_one_by_one(self):
-        self.env.create(
+        cluster1 = self.env.create(
             nodes_kwargs=[
                 {"roles": ["compute"], "status": "ready", "progress": 100},
                 {"roles": ["compute"], "status": "ready", "progress": 100},
@@ -553,15 +548,13 @@ class TestTaskManagers(BaseIntegrationTest):
                 {"roles": ["cinder"], "status": "ready", "progress": 100},
             ]
         )
-        cluster1_id = self.env.clusters[0].id
-        self.env.create_cluster(api=True)
-        cluster2_id = self.env.clusters[1].id
+        cluster2 = self.env.create_cluster(api=True)
         cluster_names = [cluster.name for cluster in self.env.clusters]
 
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'obj_id': cluster1_id}),
+                kwargs={'obj_id': cluster1.id}),
             headers=self.default_headers
         )
         self.assertEqual(202, resp.status_code)
@@ -569,7 +562,7 @@ class TestTaskManagers(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'obj_id': cluster2_id}),
+                kwargs={'obj_id': cluster2.id}),
             headers=self.default_headers
         )
         self.assertEqual(202, resp.status_code)
@@ -577,8 +570,8 @@ class TestTaskManagers(BaseIntegrationTest):
         timer = time.time()
         timeout = 15
 
-        clstr1 = self.db.query(models.Cluster).get(cluster1_id)
-        clstr2 = self.db.query(models.Cluster).get(cluster2_id)
+        clstr1 = self.db.query(models.Cluster).get(cluster1.id)
+        clstr2 = self.db.query(models.Cluster).get(cluster2.id)
         while clstr1 or clstr2:
             time.sleep(1)
             try:
@@ -603,16 +596,15 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(recover_nodes=False, fake_rpc=False)
     def test_deletion_during_deployment(self, mock_rpc):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True},
             ]
         )
-        cluster_id = self.env.clusters[0].id
         resp = self.app.put(
             reverse(
                 'ClusterChangesHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers
         )
         deploy_uuid = resp.json_body['uuid']
@@ -625,7 +617,7 @@ class TestTaskManagers(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'obj_id': cluster_id}),
+                kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
         )
         task_delete = self.db.query(models.Task).filter_by(
@@ -642,14 +634,14 @@ class TestTaskManagers(BaseIntegrationTest):
         ).first()
         self.assertIsNone(task_deploy)
         task_delete = self.db.query(models.Task).filter_by(
-            cluster_id=cluster_id,
+            cluster_id=cluster.id,
             name="cluster_deletion"
         ).first()
         self.assertIsNone(task_delete)
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deletion_cluster_ha_3x3(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 "api": True,
             },
@@ -658,22 +650,20 @@ class TestTaskManagers(BaseIntegrationTest):
                 {"roles": ["compute"], "pending_addition": True}
             ] * 3
         )
-        cluster_id = self.env.clusters[0].id
-        cluster_name = self.env.clusters[0].name
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'obj_id': cluster_id}),
+                kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
         )
         self.assertEqual(202, resp.status_code)
 
         timer = time.time()
         timeout = 15
-        clstr = self.db.query(models.Cluster).get(cluster_id)
+        clstr = self.db.query(models.Cluster).get(cluster.id)
         while clstr:
             time.sleep(1)
             try:
@@ -686,7 +676,7 @@ class TestTaskManagers(BaseIntegrationTest):
         notification = self.db.query(models.Notification)\
             .filter(models.Notification.topic == "done")\
             .filter(models.Notification.message == "Environment '%s' and all "
-                    "its nodes are deleted" % cluster_name).first()
+                    "its nodes are deleted" % cluster.name).first()
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
@@ -697,9 +687,8 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
-        cluster_id = cluster['id']
-        manager_ = manager.ApplyChangesTaskManager(cluster_id)
-        task = models.Task(name='provision', cluster_id=cluster_id,
+        manager_ = manager.ApplyChangesTaskManager(cluster.id)
+        task = models.Task(name='provision', cluster_id=cluster.id,
                            status=consts.TASK_STATUSES.ready)
         self.db.add(task)
         self.db.commit()
@@ -712,16 +701,15 @@ class TestTaskManagers(BaseIntegrationTest):
     @mock.patch.object(task.DeletionTask, 'execute')
     def test_deletion_task_called(self, mdeletion_execute):
         cluster = self.env.create_cluster()
-        cluster_id = cluster['id']
         node_db = self.env.create_node(
             api=False,
-            cluster_id=cluster['id'],
+            cluster_id=cluster.id,
             pending_addition=False,
             pending_deletion=True,
             status=NODE_STATUSES.ready,
             roles=['controller'])
 
-        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        manager_ = manager.ApplyChangesTaskManager(cluster.id)
         manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
@@ -742,16 +730,15 @@ class TestTaskManagers(BaseIntegrationTest):
     @mock.patch.object(task.DeletionTask, 'execute')
     def test_deletion_task_w_check_ceph(self, mdeletion_execute):
         cluster = self.env.create_cluster()
-        cluster_id = cluster['id']
         self.env.create_node(
             api=False,
-            cluster_id=cluster['id'],
+            cluster_id=cluster.id,
             pending_addition=False,
             pending_deletion=True,
             status=NODE_STATUSES.ready,
             roles=['controller'])
 
-        manager_ = manager.ApplyChangesTaskManager(cluster_id)
+        manager_ = manager.ApplyChangesTaskManager(cluster.id)
         manager_.execute()
 
         self.assertEqual(mdeletion_execute.call_count, 1)
@@ -760,19 +747,18 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_no_changes_no_cry(self):
-        self.env.create(
+        cluster_db = self.env.create(
             nodes_kwargs=[
                 {"status": "ready"}
             ]
         )
-        cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager_.execute)
 
     @mock.patch('nailgun.task.manager.rpc.cast')
     def test_force_deploy_changes(self, mcast):
-        self.env.create(
+        cluster_db = self.env.create(
             nodes_kwargs=[
                 {'status': NODE_STATUSES.ready},
                 {'status': NODE_STATUSES.ready},
@@ -781,7 +767,6 @@ class TestTaskManagers(BaseIntegrationTest):
                 'status': consts.CLUSTER_STATUSES.operational
             },
         )
-        cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.ApplyChangesForceTaskManager(cluster_db.id)
         supertask = manager_.execute()
@@ -798,12 +783,11 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     @mock.patch('nailgun.task.manager.tasks.DeletionTask.execute')
     def test_apply_changes_exception_caught(self, mdeletion_execute):
-        self.env.create(
+        cluster_db = self.env.create(
             nodes_kwargs=[
                 {"pending_deletion": True, "status": NODE_STATUSES.ready},
             ]
         )
-        cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
         mdeletion_execute.side_effect = Exception('exception')
@@ -812,14 +796,14 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"online": False, "pending_deletion": True},
                 {"status": "ready"}
             ]
         )
 
-        to_delete = TaskHelper.nodes_to_delete(self.env.clusters[0])
+        to_delete = TaskHelper.nodes_to_delete(cluster)
         to_delete_ids = [node.id for node in to_delete]
         self.assertEqual(len(to_delete_ids), 1)
 
@@ -894,7 +878,7 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node_when_cluster_has_only_one_node(self):
         cluster = self.env.create_cluster()
-        objects.Cluster.clear_pending_changes(self.env.clusters[0])
+        objects.Cluster.clear_pending_changes(cluster)
         self.env.create_node(
             cluster_id=cluster['id'],
             online=False,
@@ -909,12 +893,11 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(recover_nodes=False)
     def test_node_deletion_task_manager(self):
-        self.env.create(
+        cluster_db = self.env.create(
             nodes_kwargs=[
                 {"pending_deletion": True, "status": "ready"}
             ]
         )
-        cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.NodeDeletionTaskManager(cluster_id=cluster_db.id)
         task = manager_.execute(cluster_db.nodes)
@@ -925,12 +908,11 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(recover_nodes=False)
     def test_node_deletion_task_mgr_works_for_nodes_not_in_cluster(self):
-        self.env.create(
+        cluster_db = self.env.create(
             nodes_kwargs=[
                 {"pending_deletion": True, "status": "ready"}
             ]
         )
-        cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         node = cluster_db.nodes[0]
         objects.Node.update(node, {'cluster_id': None})
@@ -945,12 +927,11 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks(recover_nodes=False)
     def test_node_deletion_task_manager_invalid_cluster(self):
-        self.env.create(
+        cluster_db = self.env.create(
             nodes_kwargs=[
                 {"pending_deletion": True, "status": "ready"}
             ]
         )
-        cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.NodeDeletionTaskManager()
 
@@ -960,13 +941,12 @@ class TestTaskManagers(BaseIntegrationTest):
     @mock.patch('nailgun.task.manager.rpc.cast')
     def test_node_deletion_redeploy_started_for_proper_controllers(self,
                                                                    mcast):
-        self.env.create(nodes_kwargs=[
+        cluster_db = self.env.create(nodes_kwargs=[
             {'roles': ['controller'],
              'status': consts.NODE_STATUSES.provisioned},
             {'roles': ['controller'],
              'status': consts.NODE_STATUSES.discover},
         ])
-        cluster_db = self.env.clusters[0]
 
         node_to_delete = self.env.create_node(
             cluster_id=cluster_db.id,
@@ -988,11 +968,10 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(node_to_deploy.uid, depl_info[0]['uid'])
 
     def test_node_deletion_task_failed_with_controller_in_error(self):
-        self.env.create(nodes_kwargs=[
+        cluster_db = self.env.create(nodes_kwargs=[
             {'roles': ['controller'],
              'status': consts.NODE_STATUSES.error},
         ])
-        cluster_db = self.env.clusters[0]
 
         node_to_delete = self.env.create_node(
             cluster_id=cluster_db.id,
@@ -1006,7 +985,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_deployment_on_controller_removal_via_apply_changes(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'pending_deletion': True},
@@ -1023,7 +1002,6 @@ class TestTaskManagers(BaseIntegrationTest):
             ]
         )
 
-        cluster = self.env.clusters[0]
         expected_nodes_to_deploy = filter(lambda n: 'controller' in n.roles
                                                     and not n.pending_deletion,
                                           cluster.nodes)
@@ -1038,7 +1016,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_deployment_on_controller_removal_via_node_deletion(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': consts.NODE_STATUSES.ready},
@@ -1053,7 +1031,6 @@ class TestTaskManagers(BaseIntegrationTest):
             ]
         )
 
-        cluster = self.env.clusters[0]
         controllers = filter(lambda n: 'controller' in n.roles
                                        and not n.pending_deletion,
                              cluster.nodes)
@@ -1076,10 +1053,10 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @mock.patch('nailgun.rpc.cast')
     def test_delete_nodes_do_not_run_if_there_is_deletion_running(self, _):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[{'roles': ['controller']}] * 3)
         self.task_manager = manager.NodeDeletionTaskManager(
-            cluster_id=self.env.clusters[0].id)
+            cluster_id=cluster.id)
 
         self.task_manager.execute(self.env.nodes)
         self.assertRaisesRegexp(
@@ -1090,10 +1067,9 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @mock.patch('nailgun.rpc.cast')
     def test_delete_nodes_reelection_if_primary_for_deletion(self, _):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[{'roles': ['controller'],
                            'status': consts.NODE_STATUSES.ready}] * 3)
-        cluster = self.env.clusters[0]
         task_manager = manager.NodeDeletionTaskManager(cluster_id=cluster.id)
         objects.Cluster.set_primary_roles(cluster, self.env.nodes)
         primary_node = filter(

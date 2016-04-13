@@ -560,7 +560,8 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEqual(admin_ips, admin_ips2)
 
     def test_assign_admin_ips_only_one(self):
-        map(self.db.delete, self.db.query(IPAddrRange).all())
+        for ipaddr in self.db.query(IPAddrRange).all():
+            self.db.delete(ipaddr)
         admin_net_id = objects.NetworkGroup.get_admin_network_group().id
         mock_range = IPAddrRange(
             first='10.0.0.1',
@@ -582,7 +583,8 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEqual(admin_ips[0].ip_addr, '10.0.0.1')
 
     def test_assign_admin_ips_for_many_nodes(self):
-        map(self.db.delete, self.db.query(IPAddrRange).all())
+        for ipaddr in self.db.query(IPAddrRange).all():
+            self.db.delete(ipaddr)
         admin_net_id = objects.NetworkGroup.get_admin_network_group().id
         mock_range = IPAddrRange(
             first='10.0.0.1',
@@ -910,8 +912,8 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
 
-        map(
-            lambda (x, y): self.assertIn(
+        for x, y in itertools.product((0, 1), ('eth0',)):
+            self.assertIn(
                 IPAddress(
                     rpc_nodes_provision[x]['interfaces'][y]['ip_address']
                 ),
@@ -919,9 +921,7 @@ class TestNetworkManager(BaseIntegrationTest):
                     admin_network_range.first,
                     admin_network_range.last
                 )
-            ),
-            itertools.product((0, 1), ('eth0',))
-        )
+            )
 
     def test_restricted_networks(self):
         rel = self.env.create_release()

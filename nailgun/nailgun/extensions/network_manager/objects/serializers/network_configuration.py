@@ -42,10 +42,7 @@ class NetworkConfigurationSerializer(BasicSerializer):
         nets = cluster.network_groups + [
             objects.NetworkGroup.get_admin_network_group()]
 
-        result['networks'] = map(
-            cls.serialize_network_group,
-            nets
-        )
+        result['networks'] = [cls.serialize_network_group(net) for net in nets]
 
         if cluster.is_ha_mode:
             result.update(

@@ -89,13 +89,13 @@ def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
 
 
 def generate_log_paths_for_node(node, prefix):
-    links = map(
-        lambda i: os.path.join(prefix, i.ip_addr),
-        db().query(IPAddr.ip_addr)
-            .join(Node)
-            .join(NetworkGroup)
-            .filter(Node.id == node.id)
-            .filter(NetworkGroup.name == consts.NETWORKS.fuelweb_admin))
+    ipaddrs = db().query(IPAddr.ip_addr)\
+        .join(Node)\
+        .join(NetworkGroup)\
+        .filter(Node.id == node.id)\
+        .filter(NetworkGroup.name == consts.NETWORKS.fuelweb_admin)
+
+    links = [os.path.join(prefix, ipaddr.ip_addr) for ipaddr in ipaddrs]
 
     fqdn = objects.Node.get_node_fqdn(node)
     return {

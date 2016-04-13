@@ -18,7 +18,7 @@ import mock
 
 from unittest2.case import TestCase
 
-from nailgun.network.template import NetworkTemplate
+from nailgun.extensions.network_manager.template import NetworkTemplate
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
 

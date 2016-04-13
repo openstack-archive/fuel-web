@@ -597,10 +597,11 @@ class NailgunReceiver(object):
             message = "{0} Access Zabbix dashboard at {1}".format(
                 message, zabbix_url)
 
-        plugins_msg = cls._make_plugins_success_message(
-            ClusterPlugins.get_enabled(task.cluster.id))
-        if plugins_msg:
-            message = '{0}\n\n{1}'.format(message, plugins_msg)
+        if task_name == consts.TASK_NAMES.provision:
+            plugins_msg = cls._make_plugins_success_message(
+                ClusterPlugins.get_enabled(task.cluster.id))
+            if plugins_msg:
+                message = '{0}\n\n{1}'.format(message, plugins_msg)
 
         cls._notify(task, consts.NOTIFICATION_TOPICS.done, message)
         data = {'status': status, 'progress': progress, 'message': message}

@@ -26,7 +26,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.errors import errors
-from nailgun.network.checker import NetworkCheck
+from nailgun.extensions.network_manager.checker import NetworkCheck
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 

@@ -76,9 +76,9 @@ from nailgun.objects import Release
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.extensions.network_manager.manager import NetworkManager
+from nailgun.extensions.network_manager.template import NetworkTemplate
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
-from nailgun.network.template import NetworkTemplate
 from nailgun.utils import dict_merge
 from nailgun.utils import reverse
 

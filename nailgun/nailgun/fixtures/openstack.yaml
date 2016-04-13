@@ -954,6 +954,7 @@
             restrictions:
               - condition: "settings:additional_components.murano.value == false"
                 message: "Murano should be enabled"
+                action: "none"
           heat:
             value: true
             label: ""

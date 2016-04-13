@@ -455,4 +455,5 @@ def downgrade():
     op.drop_table('releases')
     op.drop_table('capacity_log')
     op.drop_table('red_hat_accounts')
-    map(drop_enum, ENUMS)
+    for enum in ENUMS:
+        drop_enum(enum)

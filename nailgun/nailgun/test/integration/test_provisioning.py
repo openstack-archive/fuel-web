@@ -37,7 +37,8 @@ class TestProvisioning(BaseIntegrationTest):
             ]
         )
         cluster_db = self.env.clusters[0]
-        map(cluster_db.nodes.append, self.env.nodes[:2])
+        for node in self.env.nodes[:2]:
+            cluster_db.nodes.append(node)
         self.db.add(cluster_db)
         self.db.commit()
 

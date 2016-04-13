@@ -37,10 +37,10 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun import errors
 from nailgun.extensions import fire_callback_on_before_deployment_check
+from nailgun.extensions.network_manager.checker import NetworkCheck
 from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import lcm
 from nailgun.logger import logger
-from nailgun.network.checker import NetworkCheck
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import orchestrator_graph

@@ -36,8 +36,8 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
-from nailgun.network import connectivity_check
-from nailgun.network import utils as net_utils
+from nailgun.extensions.network_manager import connectivity_check
+from nailgun.extensions.network_manager import utils as net_utils
 from nailgun.objects.plugin import ClusterPlugins
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import logs as logs_utils

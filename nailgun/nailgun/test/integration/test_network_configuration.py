@@ -255,7 +255,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNeutronNetworkConfigurationHandler, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={'version': '1111-8.0'},
             cluster_kwargs={
                 'api': True,
@@ -267,7 +267,6 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             # node group which network VIP must be allocated in)
             nodes_kwargs=[{'roles': ['controller']}]
         )
-        self.cluster = self.env.clusters[0]
 
     def test_get_request_should_return_net_provider_segment_and_networks(self):
         resp = self.env.neutron_networks_get(self.cluster.id)

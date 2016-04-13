@@ -31,7 +31,7 @@ class TestStopDeployment(BaseIntegrationTest):
 
     def setUp(self):
         super(TestStopDeployment, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {"name": "First",
                  "pending_addition": True},
@@ -40,7 +40,6 @@ class TestStopDeployment(BaseIntegrationTest):
                  "pending_addition": True}
             ]
         )
-        self.cluster = self.env.clusters[0]
         self.controller = self.env.nodes[0]
         self.compute = self.env.nodes[1]
         self.node_uids = [n.uid for n in self.cluster.nodes][:3]

@@ -613,7 +613,7 @@ class TestDeploymentSerializationForNovaNetwork70(
             self.assertEqual(roles, expected_roles)
 
     def test_network_metadata(self):
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        nm = objects.Cluster.get_network_manager(self.cluster)
         ip_by_net = {
             'fuelweb_admin': None,
             'storage': None,
@@ -746,7 +746,7 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
     def setUp(self):
         super(TestPluginDeploymentTasksInjection70, self).setUp()
         # Plugin task injection for Task based is checked in task based tests
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={
                 'deployment_tasks': self.release_deployment_tasks,
                 'version': self.env_version
@@ -761,8 +761,6 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
                  'pending_addition': True}
             ]
         )
-
-        self.cluster = self.env.clusters[0]
 
         self.plugin_data = {
             'package_version': '3.0.0',
@@ -1077,15 +1075,13 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         super(TestRolesSerializationWithPlugins, self).setUp()
 
         release = self.patch_net_roles_for_release()
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'release_id': release.id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
             })
-
-        self.cluster = self.env.clusters[0]
 
         self.plugin_data = {
             'package_version': '3.0.0',
@@ -1572,7 +1568,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
 
     def test_multiple_node_roles_network_metadata_roles(self):
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        nm = objects.Cluster.get_network_manager(self.cluster)
         ip_by_net = {}
         for node_data in self.serialized_for_astute:
             nodes = node_data['network_metadata']['nodes']
@@ -1664,7 +1660,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         # networks to interfaces mapping
         resp = self.app.get(
             reverse('NetworkGroupCollectionHandler',
-                    kwargs=self.env.clusters[0]),
+                    kwargs=self.cluster),
             headers=self.default_headers,
             expect_errors=False
         )
@@ -1688,7 +1684,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         )
         resp = self.app.get(
             reverse('NetworkGroupCollectionHandler',
-                    kwargs=self.env.clusters[0]),
+                    kwargs=self.cluster),
             headers=self.default_headers,
             expect_errors=False
         )
@@ -1756,7 +1752,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
             net_template
         )
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
-        nm = objects.Cluster.get_network_manager(self.env.clusters[0])
+        nm = objects.Cluster.get_network_manager(self.cluster)
         serializer = get_serializer_for_cluster(self.cluster)
         self.serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)

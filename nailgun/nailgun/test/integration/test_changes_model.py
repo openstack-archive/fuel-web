@@ -93,8 +93,7 @@ class TestClusterChanges(BaseIntegrationTest):
 
     def test_attributes_changing_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
-        cluster_db = self.env.clusters[0]
-        objects.Cluster.clear_pending_changes(cluster_db)
+        objects.Cluster.clear_pending_changes(cluster)
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEqual(len(all_changes), 0)
         self.app.put(
@@ -115,8 +114,7 @@ class TestClusterChanges(BaseIntegrationTest):
 
     def test_default_attributes_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
-        cluster_db = self.env.clusters[0]
-        objects.Cluster.clear_pending_changes(cluster_db)
+        objects.Cluster.clear_pending_changes(cluster)
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEqual(len(all_changes), 0)
         self.app.put(
@@ -132,7 +130,7 @@ class TestClusterChanges(BaseIntegrationTest):
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_successful_deployment_drops_all_changes(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"api": True, "pending_addition": True}
             ]
@@ -140,9 +138,7 @@ class TestClusterChanges(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
-        cluster_db = self.db.query(Cluster).get(
-            self.env.clusters[0].id
-        )
+        cluster_db = self.db.query(Cluster).get(cluster.id)
         self.assertEqual(list(cluster_db.changes), [])
 
     @fake_tasks(error="deployment", error_msg="Terrible error")
@@ -178,7 +174,7 @@ class TestClusterChanges(BaseIntegrationTest):
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_role_unassignment_drops_changes(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "api": True}
             ]
@@ -186,7 +182,7 @@ class TestClusterChanges(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
         new_node = self.env.create_node(
-            cluster_id=self.env.clusters[0].id,
+            cluster_id=cluster.id,
             pending_addition=True,
             api=True
         )
@@ -201,7 +197,7 @@ class TestClusterChanges(BaseIntegrationTest):
             headers=self.default_headers
         )
         all_changes = self.db.query(ClusterChanges).filter_by(
-            cluster_id=self.env.clusters[0].id,
+            cluster_id=cluster.id,
             node_id=new_node["id"]
         ).all()
         self.assertEqual(all_changes, [])

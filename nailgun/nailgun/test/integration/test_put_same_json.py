@@ -43,7 +43,6 @@ class TestPutSameJson(base.BaseIntegrationTest):
                 {'api': True, 'pending_addition': True, 'meta': meta_p},
             ]
         )
-        self.cluster = self.env.clusters[0]
 
     def assertHttpPut(self, name, arguments, data, expected_status):
         """Helper assert for checking HTTP PUT.

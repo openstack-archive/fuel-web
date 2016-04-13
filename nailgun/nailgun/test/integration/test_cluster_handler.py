@@ -155,17 +155,16 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_cluster_deletion(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"status": "ready"}])
 
-        cluster_id = self.env.clusters[0].id
-        resp = self.delete(cluster_id)
+        resp = self.delete(cluster.id)
         self.assertEqual(resp.status_code, 202)
 
-        self.assertIsNone(self.db.query(Cluster).get(cluster_id))
+        self.assertIsNone(self.db.query(Cluster).get(cluster.id))
 
         # Nodes should be in discover status
         self.assertEqual(self.db.query(Node).count(), 2)
@@ -179,17 +178,16 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks(recover_offline_nodes=False)
     def test_cluster_deletion_with_offline_nodes(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {'pending_addition': True},
                 {'online': False, 'status': 'ready'}])
 
-        cluster_id = self.env.clusters[0].id
-        resp = self.delete(cluster_id)
+        resp = self.delete(cluster.id)
         self.assertEqual(resp.status_code, 202)
 
-        self.assertIsNone(self.db.query(Cluster).get(cluster_id))
+        self.assertIsNone(self.db.query(Cluster).get(cluster.id))
         self.assertEqual(self.db.query(Node).count(), 1)
 
         node = self.db.query(Node).first()
@@ -208,11 +206,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(ngs, [])
 
     def test_cluster_generated_data_handler(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'pending_addition': True},
                 {'online': False, 'status': 'ready'}])
-        cluster = self.env.clusters[0]
         get_resp = self.app.get(
             reverse('ClusterGeneratedData',
                     kwargs={'cluster_id': cluster.id}),

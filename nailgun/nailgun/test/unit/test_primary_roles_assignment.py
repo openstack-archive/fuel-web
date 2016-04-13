@@ -38,7 +38,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
         pass
 
     def test_primary_controllers_assigned_for_pendings_roles(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
@@ -49,7 +49,6 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'pending_roles': [self.role_name],
                  'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True}])
-        cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         # with lowest uid is assigned as primary
@@ -59,7 +58,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
             objects.Node.all_roles(nodes[1]), [self.role_name])
 
     def test_primary_controller_assigned_for_ready_node(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
@@ -70,7 +69,6 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
-        cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         # primary assigned to node with ready status
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
@@ -84,7 +82,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
 
     def test_primary_assignment_multinode(self):
         """Primary should not be assigned in multinode env."""
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu',
@@ -97,7 +95,6 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
-        cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
             objects.Node.all_roles(cluster.nodes[0]), [self.role_name])
@@ -105,7 +102,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
             objects.Node.all_roles(cluster.nodes[1]), [self.role_name])
 
     def test_primary_not_assigned_to_pending_deletion(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
@@ -113,14 +110,13 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_deletion': True}])
-        cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
             objects.Node.all_roles(cluster.nodes[0]), [self.role_name])
 
     @contextmanager
     def assert_node_reassigned(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact},
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu'},
@@ -131,7 +127,6 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
-        cluster = self.env.clusters[0]
         objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         self.assertEqual(

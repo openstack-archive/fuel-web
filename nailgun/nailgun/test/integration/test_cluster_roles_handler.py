@@ -47,8 +47,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
     def setUp(self):
         super(TestClusterRolesHandler, self).setUp()
 
-        self.env.create_cluster(api=False)
-        self.cluster = self.env.clusters[0]
+        self.cluster = self.env.create_cluster(api=False)
         self.expected_roles_data = self.cluster.release.roles_metadata
         self.expected_volumes_data = \
             self.cluster.release.volumes_metadata['volumes_roles_mapping']

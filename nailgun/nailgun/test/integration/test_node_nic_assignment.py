@@ -21,7 +21,6 @@ from netaddr import IPNetwork
 from oslo_serialization import jsonutils
 
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
@@ -88,8 +87,7 @@ class TestClusterHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         cluster = self.env.create_cluster(api=True, nodes=[node['id']])
-        cluster_db = self.db.query(Cluster).get(cluster['id'])
-        self.db.delete(cluster_db)
+        self.db.delete(cluster)
         self.db.commit()
 
         net_assignment = self.db.query(NetworkNICAssignment).all()
@@ -466,7 +464,7 @@ class TestNodeNICsSerialization(BaseIntegrationTest):
 
     def check_nics_interface_properties(self, handler):
         for ver, present in self.versions:
-            self.env.create(
+            cluster = self.env.create(
                 release_kwargs={'version': ver},
                 nodes_kwargs=[
                     {'roles': ['controller'],
@@ -484,7 +482,7 @@ class TestNodeNICsSerialization(BaseIntegrationTest):
             self.assertEqual('interface_properties' in resp.json_body[0],
                              present)
             objects.Node.delete(node)
-            objects.Cluster.delete(self.env.clusters[0])
+            objects.Cluster.delete(cluster)
             self.env.nodes = []
             self.env.clusters = []
 
@@ -562,7 +560,7 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
 
 class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
 
-    def create_node_and_check_assignment(self):
+    def create_node_and_check_assignment(self, cluster):
         meta = self.env.default_metadata()
         admin_ip = str(IPNetwork(
             objects.NetworkGroup.get_admin_network_group().cidr)[1])
@@ -576,7 +574,7 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
         ]
         node = self.env.create_node(
             api=True, meta=meta, mac=admin_mac, ip=admin_ip,
-            cluster_id=self.env.clusters[0].id)
+            cluster_id=cluster.id)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
@@ -591,28 +589,28 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
             1)
 
     def test_nova_net_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(
+        cluster = self.env.create_cluster(
             api=True,
             net_provider=consts.CLUSTER_NET_PROVIDERS.nova_network)
-        self.create_node_and_check_assignment()
+        self.create_node_and_check_assignment(cluster)
 
     def test_neutron_gre_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(api=True,
-                                net_provider='neutron',
-                                net_segment_type='gre')
-        self.create_node_and_check_assignment()
+        cluster = self.env.create_cluster(api=True,
+                                          net_provider='neutron',
+                                          net_segment_type='gre')
+        self.create_node_and_check_assignment(cluster)
 
     def test_neutron_tun_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(api=True,
-                                net_provider='neutron',
-                                net_segment_type='tun')
-        self.create_node_and_check_assignment()
+        cluster = self.env.create_cluster(api=True,
+                                          net_provider='neutron',
+                                          net_segment_type='tun')
+        self.create_node_and_check_assignment(cluster)
 
     def test_neutron_vlan_public_network_assigned_to_second_nic_by_name(self):
-        self.env.create_cluster(api=True,
-                                net_provider='neutron',
-                                net_segment_type='vlan')
-        self.create_node_and_check_assignment()
+        cluster = self.env.create_cluster(api=True,
+                                          net_provider='neutron',
+                                          net_segment_type='vlan')
+        self.create_node_and_check_assignment(cluster)
 
 
 class TestNodeNICsHandlersValidation(BaseIntegrationTest):

@@ -247,7 +247,8 @@ def downgrade_schema():
     op.drop_column('releases', 'is_deployable')
     op.drop_table('action_logs')
     op.drop_table('master_node_settings')
-    map(drop_enum, ENUMS)
+    for enum in ENUMS:
+        drop_enum(enum)
     op.drop_table('cluster_plugins')
     op.drop_table('plugins')
     op.drop_column(u'nodes', 'group_id')

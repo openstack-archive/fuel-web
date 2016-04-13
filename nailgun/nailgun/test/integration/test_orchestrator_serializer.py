@@ -2065,10 +2065,9 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
             self.assertEqual(L2_attrs['vlan_splinters'], 'auto')
             self.assertIn('trunks', L2_attrs)
             self.assertIn(0, L2_attrs['trunks'])
-            map(
-                lambda n: vlan_set.remove(n) if n else None,
-                L2_attrs['trunks']
-            )
+            for n in L2_attrs['trunks']:
+                if n:
+                    vlan_set.remove(n)
         self.assertEqual(len(vlan_set), 0)
 
     def test_hard_vlan_splinters_in_vlan(self):
@@ -2096,10 +2095,9 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
             self.assertEqual(L2_attrs['vlan_splinters'], 'auto')
             self.assertIn('trunks', L2_attrs)
             self.assertIn(0, L2_attrs['trunks'])
-            map(
-                lambda n: vlan_set.remove(n) if n else None,
-                L2_attrs['trunks']
-            )
+            for n in L2_attrs['trunks']:
+                if n:
+                    vlan_set.remove(n)
         self.assertEqual(len(vlan_set), 0)
 
     def test_soft_vlan_splinters_in_vlan(self):

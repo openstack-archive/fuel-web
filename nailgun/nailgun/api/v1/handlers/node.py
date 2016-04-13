@@ -294,7 +294,7 @@ class NodeCollectionNICsHandler(BaseHandler):
         return [
             {
                 "id": n.id,
-                "interfaces": map(self.render, n.interfaces)
+                "interfaces": [self.render(iface) for iface in n.interfaces]
             } for n in updated_nodes
         ]
 

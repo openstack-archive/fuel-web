@@ -66,14 +66,33 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         self.assertTrue(self.cluster.is_customized)
         self.datadiff(get_info(), facts)
 
-    def test_default_deployment_handler(self):
+    def check_default_deployment_handler(self, release_version):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['cinder'], 'pending_addition': True}],
+            release_kwargs={
+                'version': release_version,
+                'operating_system': consts.RELEASE_OS.ubuntu
+            }
+        )
+        cluster = self.env.clusters[-1]
         resp = self.app.get(
             reverse('DefaultDeploymentInfo',
-                    kwargs={'cluster_id': self.cluster.id}),
+                    kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(3, len(resp.json_body))
+        # for lcm the deployment info will contain master node too
+        # and we check only that nodes are included to result
+        expected_node_uids = {n.uid for n in cluster.nodes}
+        actual_node_uids = {n['uid'] for n in resp.json_body}
+        self.assertTrue(expected_node_uids.issubset(actual_node_uids))
+
+    def test_default_deployment_handler(self):
+        for release_ver in ('newton-10.0', 'mitaka-9.0', 'liberty-8.0'):
+            self.check_default_deployment_handler(release_ver)
 
     def test_default_provisioning_handler(self):
         resp = self.app.get(

@@ -153,6 +153,10 @@ class DefaultProvisioningInfo(DefaultOrchestratorInfo):
 class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
+        if objects.Release.is_lcm_supported(cluster.release):
+            return deployment_serializers.serialize_for_lcm(
+                cluster, nodes, ignore_customized=True
+            )
         graph = orchestrator_graph.AstuteGraph(cluster)
         return deployment_serializers.serialize(
             graph, cluster, nodes, ignore_customized=True)
@@ -164,6 +168,10 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
+        if objects.Release.is_lcm_supported(cluster.release):
+            raise self.http(
+                405, msg="The plugin hooks do not supported anymore."
+            )
         graph = orchestrator_graph.AstuteGraph(cluster)
         return pre_deployment_serialize(graph, cluster, nodes)
 
@@ -174,6 +182,10 @@ class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
+        if objects.Release.is_lcm_supported(cluster.release):
+            raise self.http(
+                405, msg="The plugin hooks do not supported anymore."
+            )
         graph = orchestrator_graph.AstuteGraph(cluster)
         return post_deployment_serialize(graph, cluster, nodes)
 

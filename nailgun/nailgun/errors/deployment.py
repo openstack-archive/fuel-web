@@ -101,3 +101,17 @@ class TaskBaseDeploymentNotAllowed(DeploymentException):
 
 class NoChanges(DeploymentException):
     message = "There is no changes to apply"
+
+
+class NoopWithDryRunNotAllowed(DeploymentException):
+    message = "Noop and dry run modes are not possible simultaneously"
+
+
+class NoopNotSupportedByGranular(DeploymentException):
+    message = "Noop deployment mode is not supported by granular " \
+              "deployment"
+
+
+class DryRunNotSupportedByGranular(DeploymentException):
+    message = "Dry run deployment mode is not supported by granular " \
+              "deployment"

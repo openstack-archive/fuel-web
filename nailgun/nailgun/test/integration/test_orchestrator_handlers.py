@@ -261,6 +261,24 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')
+    def test_start_dry_run_deployment_on_selected_nodes(self, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+
+        self.emulate_nodes_provisioning(controller_nodes)
+
+        deploy_action_url = reverse(
+            "DeploySelectedNodes",
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_query(nodes=[n.uid for n in controller_nodes], dry_run='1')
+
+        self.send_put(deploy_action_url)
+        self.assertTrue(mcast.call_args[0][1]['args']['dry_run'])
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.task.task.rpc.cast')
     def test_start_deployment_on_selected_nodes_with_tasks(self, mcast):
         controller_nodes = [
             n for n in self.cluster.nodes

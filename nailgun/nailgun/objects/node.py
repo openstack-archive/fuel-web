@@ -42,9 +42,9 @@ from nailgun.extensions import fire_callback_on_node_create
 from nailgun.extensions import fire_callback_on_node_delete
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
+from nailgun.extensions.network_manager.template import NetworkTemplate
+from nailgun.extensions.network_manager import utils as network_utils
 from nailgun.logger import logger
-from nailgun.network.template import NetworkTemplate
-from nailgun.network import utils as network_utils
 from nailgun.objects import Bond
 from nailgun.objects import Cluster
 from nailgun.objects import IPAddr

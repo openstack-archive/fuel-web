@@ -883,3 +883,34 @@ class TestCephAttributesMigration(base.BaseAlembicMigrationTest):
             for ceph_opt in ceph_opts:
                 self.assertIn(ceph_opt, cluster_attrs['storage'])
             self.assertIn('metadata', cluster_attrs['storage'])
+
+
+class TestTransactionsNames(base.BaseAlembicMigrationTest):
+    def setUp(self):
+        super(TestTransactionsNames, self).setUp()
+
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'dry_run_deployment',
+                    'status': 'pending'
+                },
+                {
+                    'uuid': 'fake_task_uuid_1',
+                    'name': 'noop_deployment',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_fields_exist(self):
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'].c.name,
+            ])
+        ).fetchall()
+        self.assertItemsEqual(
+            result,
+            [('dry_run_deployment', ), ('noop_deployment', )])

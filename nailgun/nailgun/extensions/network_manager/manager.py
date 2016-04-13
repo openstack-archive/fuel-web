@@ -26,13 +26,13 @@ from netaddr import IPRange
 
 import six
 
+from . import utils
 from nailgun import consts
 
 from nailgun import errors
 from nailgun.extensions.network_manager.objects.serializers.nic import \
     NodeInterfacesSerializer
 from nailgun.logger import logger
-from nailgun.network import utils
 from nailgun import objects
 from nailgun.settings import settings
 from nailgun import utils as nailgun_utils

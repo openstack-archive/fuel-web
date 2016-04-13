@@ -300,8 +300,8 @@ class TestHandlers(BaseIntegrationTest):
         for conn in ('assigned_networks', ):
             self.assertEqual(resp_nic[conn], [])
 
-    def check_update_dpdk_availability(self, segment_type, drivers_mock,
-                                       dpdk_available):
+    def create_cluster_and_node_with_dpdk_support(self, segment_type,
+                                                  drivers_mock):
         drivers_mock.return_value = {
             'driver_1': ['8765:4321']
         }
@@ -330,6 +330,9 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps(node_data),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
+        return node
+
+    def check_update_dpdk_availability(self, node, dpdk_available):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
@@ -342,18 +345,31 @@ class TestHandlers(BaseIntegrationTest):
                 'enabled': False,
                 'available': dpdk_available
             })
+        return resp.json_body
+
+    def check_put_request_passes_without_dpdk_section(self, node, nics):
+        # remove 'dpdk' section from all interfaces
+        for nic in nics:
+            nic['interface_properties'].pop('dpdk', None)
+        resp = self.app.put(
+            reverse("NodeNICsHandler", kwargs={"node_id": node['id']}),
+            jsonutils.dumps(nics),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
 
     @patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def test_update_dpdk_unavailable_tun(self, drivers_mock):
-        self.check_update_dpdk_availability(consts.NEUTRON_SEGMENT_TYPES.tun,
-                                            drivers_mock,
-                                            False)
+        node = self.create_cluster_and_node_with_dpdk_support(
+            consts.NEUTRON_SEGMENT_TYPES.tun, drivers_mock)
+        nics = self.check_update_dpdk_availability(node, False)
+        self.check_put_request_passes_without_dpdk_section(node, nics)
 
     @patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def test_update_dpdk_available_vlan(self, drivers_mock):
-        self.check_update_dpdk_availability(consts.NEUTRON_SEGMENT_TYPES.vlan,
-                                            drivers_mock,
-                                            True)
+        node = self.create_cluster_and_node_with_dpdk_support(
+            consts.NEUTRON_SEGMENT_TYPES.vlan, drivers_mock)
+        nics = self.check_update_dpdk_availability(node, True)
+        self.check_put_request_passes_without_dpdk_section(node, nics)
 
     def test_NIC_offloading_modes(self):
         meta = self.env.default_metadata()

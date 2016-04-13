@@ -125,9 +125,6 @@ class InstallationInfo(object):
                       'murano', None),
         WhiteListRule(('additional_components', 'murano-cfapi', 'value'),
                       'murano-cfapi', None),
-        WhiteListRule(('additional_components',
-                       'murano_glance_artifacts_plugin', 'value'),
-                      'murano_glance_artifacts_plugin', None),
         WhiteListRule(('additional_components', 'heat', 'value'),
                       'heat', None),
         WhiteListRule(('additional_components', 'ceilometer', 'value'),
@@ -136,6 +133,10 @@ class InstallationInfo(object):
                       'mongo', None),
         WhiteListRule(('additional_components', 'ironic', 'value'),
                       'ironic', None),
+
+        WhiteListRule(('murano_settings',
+                       'murano_glance_artifacts_plugin', 'value'),
+                      'murano_glance_artifacts_plugin', None),
 
         WhiteListRule(('workloads_collector', 'enabled', 'value'),
                       'workloads_collector_enabled', None),

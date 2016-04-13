@@ -305,7 +305,7 @@ class NodeValidator(base.BasicValidator):
     @classmethod
     def validate_collection_delete(cls, data):
         try:
-            d = map(int, data.split(','))
+            d = [int(d) for d in data.split(',')]
         except ValueError:
             raise errors.InvalidData('Comma-separated number list expected',
                                      log_message=True)

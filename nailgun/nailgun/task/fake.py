@@ -179,10 +179,9 @@ class FakeThread(threading.Thread):
 
         step = 0.001
 
-        map(
-            lambda i: not self.stoprequest.isSet() and time.sleep(i),
-            repeat(step, int(float(timeout) / step))
-        )
+        for r in repeat(step, int(float(timeout) / step)):
+            if not self.stoprequest.isSet():
+                time.sleep(r)
 
     def refresh_nodes(self, nodes):
         nodes_map = {str(n['uid']): n for n in nodes}

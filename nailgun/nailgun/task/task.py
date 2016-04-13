@@ -212,7 +212,7 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
-                reexecutable_filter=None, graph_type=None, force=False):
+                reexecutable_filter=None, graph_type=None, force=False, **kwargs):
         """Builds RPC message for deployment task.
 
         :param task: the database task object instance
@@ -371,11 +371,13 @@ class ClusterTransaction(DeploymentTask):
         return ['task_deploy']
 
     @classmethod
-    def task_deploy(cls, transaction, tasks, nodes, force=False, **kwargs):
+    def task_deploy(cls, transaction, tasks, nodes, force=False, noop=False,
+                    dry_run=False, **kwargs):
         logger.info("The cluster transaction is initiated.")
         logger.info("cluster serialization is started.")
         # we should update information for all nodes except deleted
         # TODO(bgaifullin) pass role resolver to serializers
+
         deployment_info = deployment_serializers.serialize_for_lcm(
             transaction.cluster, nodes
         )
@@ -391,7 +393,8 @@ class ClusterTransaction(DeploymentTask):
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )
-        context = lcm.TransactionContext(expected_state, current_state)
+        context = lcm.TransactionContext(expected_state, current_state,
+                                         noop=noop)
         logger.debug("tasks serialization is started.")
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer
@@ -403,7 +406,8 @@ class ClusterTransaction(DeploymentTask):
         logger.info("tasks serialization is finished.")
         return {
             "tasks_directory": directory,
-            "tasks_graph": graph
+            "tasks_graph": graph,
+            "dry_run": dry_run,
         }
 
 

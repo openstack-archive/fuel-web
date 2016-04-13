@@ -177,6 +177,89 @@ ceph_storage_attrs = {
     }
 }
 
+transaction_names_old = (
+        'super',
+
+    # Cluster changes
+    # For deployment supertask, it contains
+    # two subtasks deployment and provision
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'spawn_vms',
+
+    'node_deletion',
+    'cluster_deletion',
+    'remove_images',
+    'check_before_deployment',
+
+    # network
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+
+    # dump
+    'dump',
+
+    'capacity_log',
+
+    # statistics
+    'create_stats_user',
+    'remove_stats_user',
+
+    # setup dhcp via dnsmasq for multi-node-groups
+    'update_dnsmasq'
+)
+
+transaction_names_new = (
+        'super',
+
+    # Cluster changes
+    # For deployment supertask, it contains
+    # two subtasks deployment and provision
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'spawn_vms',
+
+    'node_deletion',
+    'cluster_deletion',
+    'remove_images',
+    'check_before_deployment',
+
+    # network
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'dry_run_deployment',
+    'noop_deployment',
+
+    # dump
+    'dump',
+
+    'capacity_log',
+
+    # statistics
+    'create_stats_user',
+    'remove_stats_user',
+
+    # setup dhcp via dnsmasq for multi-node-groups
+    'update_dnsmasq'
+)
 
 def upgrade():
     add_foreign_key_ondelete()
@@ -195,6 +278,7 @@ def upgrade():
     upgrade_task_attributes()
     upgrade_store_deployment_history()
     upgrade_ceph_cluster_attrs()
+    upgrade_transaction_names()
 
 
 def downgrade():
@@ -213,6 +297,16 @@ def downgrade():
     downgrade_node_roles_metadata()
     remove_foreign_key_ondelete()
     downgrade_ip_address()
+
+
+def upgrade_transaction_names():
+    upgrade_enum(
+        'tasks',                    # table
+        'name',                     # column
+        'task_name',                # ENUM name
+        transaction_names_old,             # old options
+        transaction_names_new,             # new options
+    )
 
 
 def upgrade_bond_modes():

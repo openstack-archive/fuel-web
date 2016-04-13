@@ -125,6 +125,46 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
     @mock.patch('nailgun.task.task.rpc.cast')
+    def test_noop(self, _):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ]
+        )
+        cluster = self.env.clusters[-1]
+
+        supertask = self.env.launch_deployment(cluster.id, {'noop': '1'})
+        self.assertNotEqual(TASK_STATUSES.error, supertask.status)
+        self.assertEqual('noop_deployment', supertask.subtasks[0].name)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_dry_run(self, _):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ]
+        )
+        cluster = self.env.clusters[-1]
+
+        supertask = self.env.launch_deployment(cluster.id, {'dry_run': '1'})
+        self.assertNotEqual(TASK_STATUSES.error, supertask.status)
+        self.assertEqual('dry_run_deployment', supertask.subtasks[0].name)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
     def test_deployment_info_saves_in_transaction(self, _):
         self.check_deployment_info_was_saved_in_transaction(
             'mitaka-9.0', True, True

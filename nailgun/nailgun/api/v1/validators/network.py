@@ -516,8 +516,8 @@ class NetAssignmentValidator(BasicValidator):
                                            dpdk_drivers):
         """Verify DPDK properties for every interface on node
 
-        return True if some interfaces have enabled DPDK, that may be
-        used for further validation
+        return True if any interfaces have enabled DPDK, that is in use
+        for further validation
         """
         slaves = set()
         for iface in interfaces:
@@ -535,18 +535,18 @@ class NetAssignmentValidator(BasicValidator):
     @classmethod
     def _verify_iface_dpdk_properties(cls, iface, db_interfaces,
                                       dpdk_drivers, is_slave=False):
+        """Verify DPDK properties for particular interface
+
+        return True if DPDK is enabled on the interface, that is in use
+        for further validation
+        """
         db_iface = cls._get_iface_by_id(iface.get('id'), db_interfaces)
         if db_iface is None:
             db_iface = cls._get_iface_by_name(iface['name'], db_interfaces)
 
-        if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
-            iface_cls = objects.NIC
-        elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
-            iface_cls = objects.Bond
-
         if db_iface is None:
-            # looks like user create new bond
-            # lets check every slave in input data
+            # looks like user creates new bond
+            # let's check every slave in input data
             slaves = iface['slaves']
             hw_available = bool(slaves)
 
@@ -576,21 +576,18 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
         else:
+            if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
+                iface_cls = objects.NIC
+            elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
+                iface_cls = objects.Bond
             hw_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
+
             interface_properties = utils.dict_merge(
                 db_iface.interface_properties,
                 iface.get('interface_properties', {})
             )
             enabled = interface_properties.get('dpdk', {}).get(
                 'enabled', False)
-
-        # sanity checks
-        available = interface_properties.get('dpdk', {}).get('available')
-
-        if available is not None and hw_available != available:
-            raise errors.InvalidData(
-                "DPDK availability on interface '{}' is hardware property"
-                " and can't be changed manually.".format(iface['name']))
 
         if not hw_available and enabled:
             raise errors.InvalidData("DPDK is not available for '{}'".format(
@@ -600,12 +597,12 @@ class NetAssignmentValidator(BasicValidator):
             pci_id = interface_properties.get('pci_id')
             db_pci_id = db_iface.interface_properties.get('pci_id')
 
-            if pci_id is not None and pci_id != db_pci_id:
+            if pci_id != db_pci_id:
                 raise errors.InvalidData(
                     "PCI-ID of '{}' can't be changed manually".format(
                         iface['name']))
 
-        # check that dpdk interface have only one network == 'private'
+        # check that dpdk interface has only one network == 'private'
         nets = iface['assigned_networks']
         if enabled and not is_slave and not (
                 len(nets) == 1 and
@@ -627,7 +624,7 @@ class NetAssignmentValidator(BasicValidator):
         return enabled
 
     @classmethod
-    def _verify_node_dpdk_properties(cls, db_node, node):
+    def _verify_node_dpdk_properties(cls, db_node):
         if not objects.NodeAttributes.is_dpdk_hugepages_enabled(db_node):
             raise errors.InvalidData("Hugepages for DPDK are not configured"
                                      " for node '{}'".format(db_node.id))

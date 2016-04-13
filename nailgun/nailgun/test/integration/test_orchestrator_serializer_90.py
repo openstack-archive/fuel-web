@@ -602,7 +602,7 @@ class TestDeploymentHASerializer90(
 
     def test_ceph_keys(self):
         storage_attrs = self.serializer.get_common_attrs(
-            self.env.clusters[0]
+            self.cluster
         )['storage']
         expected_keys = (
             'fsid', 'mon_key', 'admin_key', 'bootstrap_osd_key', 'radosgw_key'
@@ -741,7 +741,7 @@ class TestSriovSerialization90(
 ):
     def setUp(self, *args):
         super(TestSriovSerialization90, self).setUp()
-        cluster = self.env.create(
+        self.cluster_db = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
@@ -749,15 +749,14 @@ class TestSriovSerialization90(
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
                 'status': consts.CLUSTER_STATUSES.new},
         )
-        self.cluster_db = objects.Cluster.get_by_uid(cluster['id'])
         self.env.create_nodes_w_interfaces_count(
-            nodes_count=1, if_count=3, cluster_id=self.env.clusters[0].id,
+            nodes_count=1, if_count=3, cluster_id=self.cluster_db.id,
             pending_roles=['compute'], pending_addition=True)
 
     def serialize(self):
-        objects.Cluster.prepare_for_deployment(self.env.clusters[0])
-        serializer = self.create_serializer(self.env.clusters[0])
-        return serializer.serialize(self.env.clusters[0], self.env.nodes)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serializer = self.create_serializer(self.cluster_db)
+        return serializer.serialize(self.cluster_db, self.env.nodes)
 
     def test_nic_sriov_info_is_serialized(self):
         for nic in self.env.nodes[0].nic_interfaces:

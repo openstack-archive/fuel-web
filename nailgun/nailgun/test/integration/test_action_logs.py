@@ -51,7 +51,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
     @fake_tasks()
     def test_only_utc_datetime_used(self):
         start_dt = datetime.datetime.utcnow()
-        self.env.create(
+        cluster = self.env.create(
             api=True,
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -62,7 +62,6 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         task = self.env.launch_deployment()
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
-        cluster = self.env.clusters[0]
         self.app.delete(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
@@ -80,7 +79,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
     @fake_tasks()
     def test_all_action_logs_types_saved(self):
         # Creating nailgun_tasks
-        self.env.create(
+        cluster = self.env.create(
             api=True,
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
@@ -92,7 +91,6 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         # Creating http_request
-        cluster = self.env.clusters[0]
         self.app.delete(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             headers=self.default_headers

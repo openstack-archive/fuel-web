@@ -48,7 +48,7 @@ class TestCharsetIssues(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False)
     def test_deletion_during_deployment(self, mock_rpc):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 "name": u"Вася"
             },
@@ -56,11 +56,10 @@ class TestCharsetIssues(BaseIntegrationTest):
                 {"status": "ready", "pending_addition": True},
             ]
         )
-        cluster_id = self.env.clusters[0].id
         resp = self.app.put(
             reverse(
                 'ClusterChangesHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers
         )
         deploy_uuid = resp.json_body['uuid']
@@ -73,7 +72,7 @@ class TestCharsetIssues(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'obj_id': cluster_id}),
+                kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
         )
         task_delete = self.db.query(models.Task).filter_by(
@@ -86,5 +85,5 @@ class TestCharsetIssues(BaseIntegrationTest):
         )
 
         cluster = self.db.query(models.Cluster).filter_by(
-            id=cluster_id).first()
+            id=cluster.id).first()
         self.assertIsNone(cluster)

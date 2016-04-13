@@ -52,12 +52,12 @@ class BasePluginTest(base.BaseIntegrationTest):
 
     def create_cluster(self, nodes=None):
         nodes = nodes if nodes else []
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={'version': '2014.2-6.0',
                             'operating_system': 'Ubuntu',
                             'deployment_tasks': []},
             nodes_kwargs=nodes)
-        return self.env.clusters[0]
+        return cluster
 
     def default_attributes(self, cluster):
         resp = self.app.get(

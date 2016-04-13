@@ -92,14 +92,13 @@ class TestNetworkTemplateSerializer80(
 
     def setUp(self, *args):
         super(TestNetworkTemplateSerializer80, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
         self.net_template = self.env.read_fixtures(['network_template_80'])[0]
-        self.cluster = self.env.clusters[-1]
         self.serializer = self.create_serializer(self.cluster)
 
     def test_get_net_provider_serializer(self):
@@ -211,7 +210,7 @@ class TestDeploymentTasksSerialization80(
 
     def setUp(self):
         super(TestDeploymentTasksSerialization80, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
@@ -223,7 +222,6 @@ class TestDeploymentTasksSerialization80(
                  'status': consts.NODE_STATUSES.ready}]
         )
 
-        self.cluster = self.env.clusters[-1]
         if not self.task_deploy:
             self.env.disable_task_deploy(self.cluster)
 

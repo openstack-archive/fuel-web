@@ -169,8 +169,7 @@ class TestDeploymentGraphModel(
             expected_updated_tasks, serialized['tasks'])
 
     def test_deployment_graph_delete(self):
-        self.env.create()
-        cluster = self.env.clusters[-1]
+        cluster = self.env.create()
         deployment_graph.DeploymentGraph.create_for_model(
             {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph'
         )
@@ -185,8 +184,7 @@ class TestDeploymentGraphModel(
         self.assertIsNone(dg)
 
     def test_deployment_graph_create_for_model(self):
-        self.env.create()
-        cluster = self.env.clusters[-1]
+        cluster = self.env.create()
         deployment_graph.DeploymentGraph.create_for_model(
             {'tasks': JSON_TASKS, 'name': 'test_graph'}, cluster, 'test_graph'
         )

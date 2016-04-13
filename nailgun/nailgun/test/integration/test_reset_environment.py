@@ -33,7 +33,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         ia_nodes_count=1
     )
     def test_reset_environment(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"name": "First",
@@ -43,7 +43,6 @@ class TestResetEnvironment(BaseIntegrationTest):
                  "pending_addition": True}
             ]
         )
-        cluster_db = self.env.clusters[0]
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
@@ -92,13 +91,12 @@ class TestResetEnvironment(BaseIntegrationTest):
         ia_nodes_count=1
     )
     def test_reset_node_pending_statuses(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
             ]
         )
-        cluster_db = self.env.clusters[0]
         node_db = self.env.nodes[0]
 
         # deploy environment
@@ -131,7 +129,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         ia_nodes_count=1
     )
     def test_reset_environment_tasks(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"name": "First",
@@ -141,7 +139,6 @@ class TestResetEnvironment(BaseIntegrationTest):
                  "pending_addition": True}
             ]
         )
-        cluster_db = self.env.clusters[0]
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 

@@ -249,7 +249,7 @@ class TestDeadlockDetector(BaseTestCase):
             db().query(models.Node).with_lockmode('update').get(nodes[1].id)
 
     def test_updating_already_locked_object(self):
-        self.env.create_cluster()
+        cluster = self.env.create_cluster()
         self.env.create_nodes(2)
         self.env.create_cluster()
         self.assertGreater(len(self.env.clusters), 1)
@@ -260,17 +260,15 @@ class TestDeadlockDetector(BaseTestCase):
         db().query(models.Node).order_by('id').with_lockmode('update').all()
 
         # Lock is allowed
-        cluster = self.env.clusters[0]
         cluster.status = consts.CLUSTER_STATUSES.error
 
     def test_id_traced_on_updating_object(self):
-        self.env.create_cluster()
+        cluster = self.env.create_cluster()
         self.env.create_nodes(2)
         self.env.create_cluster()
         self.assertGreater(len(self.env.clusters), 1)
 
         # Updating cluster
-        cluster = self.env.clusters[0]
         cluster.status = consts.CLUSTER_STATUSES.error
 
         # Checking locked id trace
@@ -295,13 +293,12 @@ class TestDeadlockDetector(BaseTestCase):
                 node.status = consts.NODE_STATUSES.error
 
     def test_lock_ids_in_non_last_lock_failed(self):
-        self.env.create_cluster()
+        cluster = self.env.create_cluster()
         self.env.create_nodes(2)
-        self.env.create_cluster()
+        another_cluster = self.env.create_cluster()
         self.assertGreater(len(self.env.clusters), 1)
 
         # Tracing cluster modification
-        cluster = self.env.clusters[0]
         cluster.status = consts.CLUSTER_STATUSES.error
 
         cluster_lock = dd.find_lock(models.Cluster.__tablename__)
@@ -313,7 +310,6 @@ class TestDeadlockDetector(BaseTestCase):
         # Trying to lock ids in non last lock
         last_lock = dd.context.locks[-1]
         self.assertNotEqual(cluster_lock, last_lock)
-        another_cluster = self.env.clusters[1]
 
         with self.assertRaises(dd.TablesLockingOrderViolation):
             another_cluster.status = consts.CLUSTER_STATUSES.error
@@ -432,12 +428,10 @@ class TestDeadlockDetector(BaseTestCase):
             db().delete(nodes[1])
 
     def test_deletion_with_non_last_lock_failed(self):
-        self.env.create_cluster()
+        old_cluster = self.env.create_cluster()
         self.env.create_nodes(2)
 
-        old_cluster = self.env.clusters[0]
-        self.env.create_cluster()
-        new_cluster = self.env.clusters[1]
+        new_cluster = self.env.create_cluster()
 
         # Locking clusters and nodes
         db().query(models.Cluster).with_lockmode('update').\

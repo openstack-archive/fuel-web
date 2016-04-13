@@ -30,12 +30,11 @@ class TestNailgunReceiver(base.BaseTestCase):
     def setUp(self):
         super(TestNailgunReceiver, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             status=consts.CLUSTER_STATUSES.operational,
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': consts.NODE_STATUSES.ready}])
-        self.cluster = self.env.clusters[0]
 
         for i in range(2):
             meta = self.env.get_default_plugin_metadata(

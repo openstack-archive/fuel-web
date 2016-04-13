@@ -32,7 +32,7 @@ class TestClusterDeletionTask(BaseTestCase):
 
     def create_cluster_and_execute_deletion_task(
             self, attributes=None, os=consts.RELEASE_OS.centos):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'editable_attributes': attributes,
             },
@@ -42,7 +42,7 @@ class TestClusterDeletionTask(BaseTestCase):
             },
         )
         self.fake_task = Task(name=consts.TASK_NAMES.cluster_deletion,
-                              cluster=self.env.clusters[0])
+                              cluster=cluster)
         task.ClusterDeletionTask.execute(self.fake_task)
 
     @mock.patch('nailgun.task.task.DeletionTask', autospec=True)
@@ -133,7 +133,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
     def setUp(self):
         super(TestHelperUpdateClusterStatus, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['compute', 'virt']},
@@ -147,10 +147,6 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
     def nodes_should_not_be_error(self, nodes):
         for node in nodes:
             self.assertEqual(node.status, 'discover')
-
-    @property
-    def cluster(self):
-        return self.env.clusters[0]
 
     def test_update_nodes_to_error_if_deployment_task_failed(self):
         self.cluster.nodes[0].status = 'deploying'
@@ -288,7 +284,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
     def setUp(self):
         super(TestCheckBeforeDeploymentTask, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={'version': '1111-8.0'},
             cluster_kwargs={
                 'net_provider': 'neutron',
@@ -305,8 +301,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
         self.env.create_node()
         self.node = self.env.nodes[0]
-        self.cluster = self.env.clusters[0]
-        self.task = Task(cluster_id=self.env.clusters[0].id)
+        self.task = Task(cluster_id=self.cluster.id)
         self.env.db.add(self.task)
         self.env.db.commit()
 
@@ -530,7 +525,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         )
 
     def test_check_public_networks(self):
-        cluster = self.env.clusters[0]
+        cluster = self.cluster
         self.env.create_nodes(
             2, api=True, roles=['controller'], cluster_id=cluster.id)
         self.env.create_nodes(
@@ -674,8 +669,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 class TestDeployTask(BaseTestCase):
 
     def create_deploy_tasks(self):
-        self.env.create()
-        cluster = self.env.clusters[0]
+        cluster = self.env.create()
 
         deploy_task = Task(name=consts.TASK_NAMES.deploy,
                            cluster_id=cluster.id,

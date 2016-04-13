@@ -57,14 +57,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
         return nodes_message
 
     def test_verify_networks_resp(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets = [{'iface': 'eth0', 'vlans': range(100, 105)}]
 
@@ -92,14 +91,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.message, '')
 
     def test_verify_networks_error_and_notice_are_concatenated(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False},
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets = [{'iface': 'eth0', 'vlans': range(100, 105)}]
 
@@ -132,14 +130,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
                          '\n'.join((custom_error, offline_notice)))
 
     def test_verify_networks_resp_error(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
         nets_resp = [{'iface': 'eth0', 'vlans': range(100, 104)}]
@@ -173,7 +170,7 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_error_with_removed_node(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
@@ -181,7 +178,6 @@ class TestVerifyNetworks(BaseReciverTestCase):
             ]
         )
 
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
         nets_resp = [{'iface': 'eth0', 'vlans': range(100, 104)}]
@@ -227,14 +223,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task['result'], error_nodes)
 
     def test_verify_networks_resp_empty_nodes_custom_error(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
 
@@ -263,14 +258,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.message, error_msg)
 
     def test_verify_networks_resp_extra_nodes_error(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         node3 = self.env.create_node(api=False)
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
@@ -304,14 +298,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
         Test verifies that when dhcp subtask is ready and
         verify_networks errored - verify_networks will be in error
         """
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
 
@@ -343,14 +336,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.assertEqual(task.status, "error")
 
     def test_verify_networks_with_dhcp_subtask_erred(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
 
@@ -393,7 +385,7 @@ class TestVerifyNetworks(BaseReciverTestCase):
             u'uid': node2.id}])
 
     def test_verify_networks_resp_forgotten_node_error(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False, 'name': 'node1'},
@@ -401,7 +393,6 @@ class TestVerifyNetworks(BaseReciverTestCase):
                 {"api": False, 'name': 'node3'}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2, node3 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
 
@@ -436,7 +427,7 @@ class TestVerifyNetworks(BaseReciverTestCase):
         self.env.set_interfaces_in_meta(
             meta, [{'name': 'eth0', 'mac': mac}])
 
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False, 'name': 'node1'},
@@ -444,7 +435,6 @@ class TestVerifyNetworks(BaseReciverTestCase):
                 {"api": False, 'name': 'node3'}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2, node3 = self.env.nodes
 
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)},
@@ -495,14 +485,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
 
     def test_verify_networks_resp_incomplete_network_data_on_first_node(self):
         """First node network data incompletion causes task fail"""
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False, 'name': 'node1'},
                 {"api": False, 'name': 'node2'},
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
 
@@ -543,14 +532,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
 
         Passes when only iface without vlans configured
         """
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': [0]},
                      {'iface': 'eth1', 'vlans': [0]}]
@@ -578,14 +566,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
 
     def test_verify_networks_resp_without_vlans_only_erred(self):
         """Net verification without vlans fails when not all info received"""
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': [0]}]
         nets_resp = [{'iface': 'eth0', 'vlans': []}]
@@ -624,14 +611,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
 
     def test_verify_networks_resp_partially_without_vlans(self):
         """Verify that network verification partially without vlans passes"""
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': [0]},
                      {'iface': 'eth1', 'vlans': range(100, 104)}]
@@ -659,14 +645,13 @@ class TestVerifyNetworks(BaseReciverTestCase):
 
     def test_verify_networks_with_excluded_networks(self):
         """Verify that network verification can exclude interfaces"""
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': [0]},
                      {'iface': 'eth1', 'vlans': range(100, 104)}]
@@ -733,14 +718,13 @@ class TestDhcpCheckTask(BaseReciverTestCase):
 
     def setUp(self):
         super(TestDhcpCheckTask, self).setUp()
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         self.node1, self.node2 = self.env.nodes
 
         self.task = Task(
@@ -822,7 +806,7 @@ class TestDhcpCheckTask(BaseReciverTestCase):
 class TestConsumer(BaseReciverTestCase):
 
     def test_node_deploy_resp(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
@@ -834,7 +818,7 @@ class TestConsumer(BaseReciverTestCase):
         task = Task(
             uuid=str(uuid.uuid4()),
             name="deploy",
-            cluster_id=self.env.clusters[0].id
+            cluster_id=cluster.id
         )
         self.db.add(task)
         self.db.commit()
@@ -852,7 +836,7 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(task.status, "running")
 
     def test_node_provision_resp(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
@@ -862,7 +846,7 @@ class TestConsumer(BaseReciverTestCase):
 
         task = Task(
             name='provision',
-            cluster_id=self.env.clusters[0].id)
+            cluster_id=cluster.id)
 
         self.db.add(task)
         self.db.commit()
@@ -932,7 +916,7 @@ class TestConsumer(BaseReciverTestCase):
             self.db.delete(al)
             self.db.commit()
 
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'api': False},
                 {'api': False}
@@ -953,19 +937,19 @@ class TestConsumer(BaseReciverTestCase):
         ]
 
         for kw in test_cases_kwargs:
-            kw['cluster_id'] = self.env.clusters[0].id
+            kw['cluster_id'] = cluster.id
             kw['node_ids'] = [node.id, node2.id]
 
             check_write_logs_from_receiver(**kw)
 
     def test_task_progress(self):
-        self.env.create_cluster()
+        cluster = self.env.create_cluster()
 
         task = Task(
             uuid=str(uuid.uuid4()),
             name="super",
             status="running",
-            cluster_id=self.env.clusters[0].id
+            cluster_id=cluster.id
         )
         self.db.add(task)
         self.db.commit()
@@ -1080,7 +1064,7 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(supertask.progress, calculated_progress)
 
     def _prepare_task(self, name):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
@@ -1091,7 +1075,7 @@ class TestConsumer(BaseReciverTestCase):
             uuid=str(uuid.uuid4()),
             name=name,
             status=consts.TASK_STATUSES.running,
-            cluster_id=self.env.clusters[0].id
+            cluster_id=cluster.id
         )
         self.db.add(task)
         self.db.flush()
@@ -1228,14 +1212,13 @@ class TestConsumer(BaseReciverTestCase):
             u"Provision has failed\. Check these nodes:\n'(.*)', '(.*)'")
 
     def test_remove_nodes_resp(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
 
         task = Task(
@@ -1267,14 +1250,13 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(len(nodes_db), 0)
 
     def test_remove_nodes_resp_failure(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
 
         task = Task(
@@ -1366,8 +1348,7 @@ class TestConsumer(BaseReciverTestCase):
         self.assertIsNone(cluster_db)
 
     def test_remove_images_resp(self):
-        self.env.create()
-        cluster_db = self.env.clusters[0]
+        cluster_db = self.env.create()
 
         task = Task(
             name=consts.TASK_NAMES.remove_images,
@@ -1388,8 +1369,7 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(consts.TASK_STATUSES.ready, task.status)
 
     def test_remove_images_resp_failed(self):
-        self.env.create()
-        cluster_db = self.env.clusters[0]
+        cluster_db = self.env.create()
 
         task = Task(
             name=consts.TASK_NAMES.remove_images,
@@ -1410,14 +1390,13 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(consts.TASK_STATUSES.error, task.status)
 
     def test_remove_cluster_resp_failed(self):
-        self.env.create(
+        cluster_db = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False},
                 {"api": False}
             ]
         )
-        cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         self.env.create_notification(
             cluster_id=cluster_db.id
@@ -1458,19 +1437,18 @@ class TestConsumer(BaseReciverTestCase):
         nets_db = self.db.query(NetworkGroup).\
             filter(NetworkGroup.group_id ==
                    objects.Cluster.get_default_group(
-                       self.env.clusters[0]).id).\
+                       cluster_db).id).\
             all()
         self.assertNotEqual(len(nets_db), 0)
 
     def test_provision_resp_master_uid(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False, "status": consts.NODE_STATUSES.provisioning},
                 {"api": False, "status": consts.NODE_STATUSES.provisioning},
             ]
         )
-        cluster = self.env.clusters[0]
         node1, node2 = self.env.nodes
 
         task = Task(
@@ -1501,7 +1479,7 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(node2.error_type, consts.NODE_ERRORS.provision)
 
     def test_update_config_resp(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {'api': False, 'roles': ['controller'],
@@ -1515,7 +1493,7 @@ class TestConsumer(BaseReciverTestCase):
         task = Task(
             uuid=str(uuid.uuid4()),
             name=consts.TASK_NAMES.deployment,
-            cluster_id=self.env.clusters[0].id
+            cluster_id=cluster.id
         )
         task.cache = {'nodes': [nodes[0].uid, nodes[1].uid]}
         self.db.add(task)
@@ -1536,7 +1514,7 @@ class TestConsumer(BaseReciverTestCase):
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     def _check_success_message(self, callback, task_name, c_status, n_status):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {'api': False, 'roles': ['controller'],
@@ -1544,7 +1522,6 @@ class TestConsumer(BaseReciverTestCase):
                 {'api': False, 'roles': ['compute'],
                  'status': consts.NODE_STATUSES.discover},
             ])
-        cluster = self.env.clusters[-1]
         nodes = self.env.nodes
         task_title = task_name.title()
         task = Task(
@@ -1608,13 +1585,12 @@ class TestResetEnvironment(BaseReciverTestCase):
 
     @mock.patch('nailgun.rpc.receiver.logs_utils.delete_node_logs')
     def test_delete_logs_after_reset(self, mock_delete_logs):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False, "status": consts.NODE_STATUSES.ready},
             ]
         )
-        cluster = self.env.clusters[0]
 
         node = self.env.nodes[0]
 

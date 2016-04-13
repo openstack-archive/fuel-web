@@ -14,9 +14,10 @@
 
 
 class TransactionContext(object):
-    def __init__(self, new_state, old_state=None):
+    def __init__(self, new_state, old_state=None, **kwargs):
         self.new = new_state
         self.old = old_state or {}
+        self.options = kwargs
 
     def get_new_data(self, node_id):
         return self.new[node_id]

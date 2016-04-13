@@ -88,13 +88,13 @@ class TestNotification(BaseIntegrationTest):
         self.assertEqual(len(notifications), 0)
 
     def test_notification_deploy_error_with_nodes(self):
-        self.env.create(api=False,
-                        nodes_kwargs=[
-                            {
-                                'status': consts.NODE_STATUSES.error,
-                                'error_type': consts.NODE_ERRORS.deploy
-                            }])
-        cluster = self.env.clusters[0]
+        cluster = self.env.create(
+            api=False,
+            nodes_kwargs=[
+                {
+                    'status': consts.NODE_STATUSES.error,
+                    'error_type': consts.NODE_ERRORS.deploy
+                }])
         receiver = rcvr.NailgunReceiver()
 
         task = Task(

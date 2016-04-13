@@ -84,8 +84,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
     @fake_tasks()
     def test_interface_changes_added(self):
         # Creating cluster with node
-        self.env.create_cluster()
-        cluster = self.env.clusters[0]
+        cluster = self.env.create_cluster()
         self.env.create_nodes_w_interfaces_count(
             roles=['controller'],
             pending_addition=True,

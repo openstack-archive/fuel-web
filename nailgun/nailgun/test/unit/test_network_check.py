@@ -37,14 +37,14 @@ class TestNetworkCheck(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNetworkCheck, self).setUp()
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": True,
                  "pending_addition": True},
             ]
         )
-        self.task = FakeTask(self.env.clusters[0])
+        self.task = FakeTask(cluster)
 
     @patch.object(helpers, 'db')
     def test_check_untagged_intersection_failed(self, mocked_db):
@@ -717,7 +717,7 @@ class TestCheckVIPsNames(BaseIntegrationTest):
     def setUp(self):
         super(TestCheckVIPsNames, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={'version': 'liberty-8.0'},
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
@@ -726,7 +726,6 @@ class TestCheckVIPsNames(BaseIntegrationTest):
             nodes_kwargs=[{'roles': ['controller']}]
         )
 
-        self.cluster = self.env.clusters[0]
         self.plugin = self.env.create_plugin(cluster=self.cluster)
         self.task = Task(cluster_id=self.cluster.id)
         self.db.add(self.task)

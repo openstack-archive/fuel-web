@@ -495,8 +495,7 @@ class TestNodeGroups(BaseIntegrationTest):
         self.assertRegexpMatches(message, 'Cannot assign node group')
 
     def test_default_group_created_at_cluster_creation(self):
-        self.env.create_cluster()
-        cluster = self.env.clusters[0]
+        cluster = self.env.create_cluster()
         self.assertTrue(cluster.node_groups[0].is_default)
 
     @patch('nailgun.task.task.rpc.cast')
@@ -524,7 +523,7 @@ class TestNodeGroups(BaseIntegrationTest):
 
     def test_intersecting_ip_deleted_after_nodegroup_is_created(self):
         net_roles = copy.copy(
-            self.env.clusters[0].release.network_roles_metadata)
+            self.cluster.release.network_roles_metadata)
         net_roles.append({
             'id': 'stor/vip',
             'default_mapping': consts.NETWORKS.storage,
@@ -536,7 +535,7 @@ class TestNodeGroups(BaseIntegrationTest):
                     'node_roles': ['controller'],
                 }]
             }})
-        self.env.clusters[0].release.network_roles_metadata = net_roles
+        self.cluster.release.network_roles_metadata = net_roles
         self.db.flush()
 
         # allocate VIPs

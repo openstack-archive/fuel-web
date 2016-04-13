@@ -27,8 +27,7 @@ class TestDeploymentCheckMixin(BaseTestCase):
 
     def setUp(self):
         super(TestDeploymentCheckMixin, self).setUp()
-        self.env.create()
-        self.cluster = self.env.clusters[0]
+        self.cluster = self.env.create()
 
     def test_fails_if_there_is_task(self):
         for task_name in DeploymentCheckMixin.deployment_tasks:

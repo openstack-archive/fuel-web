@@ -63,29 +63,30 @@ class TestOSWLCollector(BaseTestCase):
     @patch('nailgun.statistics.oswl.collector.helpers.'
            'get_info_from_os_resource_manager')
     def test_skip_collection_for_errorful_cluster(self, get_info_mock, *_):
-        error_cluster = self.env.create(
+        error_cluster_id = self.env.create(
             api=False,
             nodes_kwargs=[{"roles": ["controller"], "online": False}],
             cluster_kwargs={"name": "error",
                             "status": consts.CLUSTER_STATUSES.operational}
-        )
-        normal_cluster = self.env.create(
+        ).id
+
+        normal_cluster_id = self.env.create(
             api=False,
             nodes_kwargs=[{"roles": ["controller"], "online": True}],
             cluster_kwargs={"name": "normal",
                             "status": consts.CLUSTER_STATUSES.operational}
-        )
+        ).id
 
         get_info_mock.return_value = self.vms_info
 
         oswl_collect_once(consts.OSWL_RESOURCE_TYPES.vm)
 
         last_for_error_clsr = OpenStackWorkloadStats.get_last_by(
-            error_cluster["id"], consts.OSWL_RESOURCE_TYPES.vm)
+            error_cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertIsNone(last_for_error_clsr)
 
         last_for_normal_clsr = OpenStackWorkloadStats.get_last_by(
-            normal_cluster["id"], consts.OSWL_RESOURCE_TYPES.vm)
+            normal_cluster_id, consts.OSWL_RESOURCE_TYPES.vm)
         self.assertIsNotNone(last_for_normal_clsr)
 
         upd_time = last_for_normal_clsr.updated_time

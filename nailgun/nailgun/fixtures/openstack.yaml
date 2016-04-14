@@ -377,7 +377,8 @@
     networks_metadata:
       bonding:
         availability:
-          - ovs: "interface:pxe == false and interface:interface_properties.dpdk.enabled and not interface:interface_properties.sriov.enabled"
+          - ovs: "'experimental' in version:feature_groups and interface:pxe == false and
+                   interface:interface_properties.dpdk.enabled and not interface:interface_properties.sriov.enabled"
           - linux: "not interface:interface_properties.sriov.enabled"
         properties:
           linux:
@@ -2136,6 +2137,9 @@
           type: "number"
           value: 0
           min: 0
+          restrictions:
+            - condition: "not ('experimental' in version:feature_groups)"
+              action: "hide"
       hugepages:
         metadata:
           group: "nfv"
@@ -2157,6 +2161,9 @@
           type: "number"
           value: 0
           min: 0
+          restrictions:
+            - condition: "not ('experimental' in version:feature_groups)"
+              action: "hide"
     networks_metadata:
       dpdk_drivers:
         # Sources:

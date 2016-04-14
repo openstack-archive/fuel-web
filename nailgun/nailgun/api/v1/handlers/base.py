@@ -537,6 +537,10 @@ class DeferredTaskHandler(BaseHandler):
                 u"on environment '{env_id}': {error}"
     task_manager = None
 
+    @classmethod
+    def get_options(cls):
+        return {}
+
     @content
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
@@ -559,9 +563,14 @@ class DeferredTaskHandler(BaseHandler):
         logger.info(self.log_message.format(env_id=cluster_id))
 
         try:
+            options = self.get_options()
+        except ValueError as e:
+            raise self.http(400, six.text_type(e))
+
+        try:
             self.validator.validate(cluster)
             task_manager = self.task_manager(cluster_id=cluster.id)
-            task = task_manager.execute()
+            task = task_manager.execute(**options)
         except (
             errors.AlreadyExists,
             errors.StopAlreadyRunning

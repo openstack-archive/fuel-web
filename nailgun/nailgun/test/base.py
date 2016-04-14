@@ -950,13 +950,13 @@ class EnvironmentManager(object):
         raise Exception(
             'Cluster with ID "{0}" was not found.'.format(cluster_id))
 
-    def launch_provisioning_selected(self, nodes_uids=None, cluster_id=None):
+    def _launch_for_selected_nodes(self, handler, nodes_uids, cluster_id):
         if self.clusters:
             cluster = self._get_cluster_by_id(cluster_id)
             if not nodes_uids:
                 nodes_uids = [n.uid for n in cluster.nodes]
             action_url = reverse(
-                'ProvisionSelectedNodes',
+                handler,
                 kwargs={'cluster_id': cluster.id}
             ) + '?nodes={0}'.format(','.join(nodes_uids))
             resp = self.app.put(
@@ -978,12 +978,22 @@ class EnvironmentManager(object):
                 "Nothing to provision - try creating cluster"
             )
 
-    def launch_deployment(self, cluster_id=None):
+    def launch_provisioning_selected(self, nodes_uids=None, cluster_id=None):
+        return self._launch_for_selected_nodes(
+            'ProvisionSelectedNodes', nodes_uids, cluster_id
+        )
+
+    def launch_deployment_selected(self, nodes_uids=None, cluster_id=None):
+        return self._launch_for_selected_nodes(
+            'DeploySelectedNodes', nodes_uids, cluster_id
+        )
+
+    def _launch_for_cluster(self, handler, cluster_id):
         if self.clusters:
             cluster_id = self._get_cluster_by_id(cluster_id).id
             resp = self.app.put(
                 reverse(
-                    'ClusterChangesHandler',
+                    handler,
                     kwargs={'cluster_id': cluster_id}),
                 headers=self.default_headers)
 
@@ -994,6 +1004,14 @@ class EnvironmentManager(object):
             raise NotImplementedError(
                 "Nothing to deploy - try creating cluster"
             )
+
+    def launch_deployment(self, cluster_id=None):
+        return self._launch_for_cluster('ClusterChangesHandler', cluster_id)
+
+    def launch_redeployment(self, cluster_id=None):
+        return self._launch_for_cluster(
+            'ClusterChangesForceRedeployHandler', cluster_id
+        )
 
     def stop_deployment(self, cluster_id=None):
         if self.clusters:
@@ -1282,6 +1300,11 @@ class EnvironmentManager(object):
             headers=self.default_headers,
             expect_errors=False
         )
+
+    def set_task_status_recursively(self, supertask, status):
+        supertask.status = consts.TASK_STATUSES.ready
+        for sub_task in supertask.subtasks:
+            self.set_task_status_recursively(sub_task, status)
 
 
 class BaseUnitTest(TestCase):

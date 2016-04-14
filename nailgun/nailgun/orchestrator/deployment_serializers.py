@@ -17,7 +17,6 @@
 """Deployment serializers for orchestrator"""
 
 from copy import deepcopy
-import itertools
 
 import six
 
@@ -94,23 +93,27 @@ class DeploymentMultinodeSerializer(object):
 
     def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which are passed to puppet."""
-        def is_customized(node):
-            return bool(node.replaced_deployment_info)
-
         try:
             self.initialize(cluster)
             serialized_nodes = []
-            nodes = sorted(nodes, key=is_customized)
-            node_groups = itertools.groupby(nodes, is_customized)
-            for customized, node_group in node_groups:
-                if customized and not ignore_customized:
-                    serialized_nodes.extend(
-                        self.serialize_customized(cluster, node_group)
-                    )
-                else:
-                    serialized_nodes.extend(
-                        self.serialize_generated(cluster, node_group)
-                    )
+
+            origin_nodes = []
+            customized_nodes = []
+            if ignore_customized:
+                origin_nodes = nodes
+            else:
+                for node in nodes:
+                    if node.replaced_deployment_info:
+                        customized_nodes.append(node)
+                    else:
+                        origin_nodes.append(node)
+
+            serialized_nodes.extend(
+                self.serialize_generated(cluster, origin_nodes)
+            )
+            serialized_nodes.extend(
+                self.serialize_customized(cluster, customized_nodes)
+            )
 
             # NOTE(dshulyak) tasks should not be preserved from replaced
             #  deployment info, there is different mechanism to control

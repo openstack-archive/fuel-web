@@ -120,6 +120,8 @@ class BaseDeploymentTask(object):
         :returns: list of available methods
         """
         methods = []
+        if objects.Cluster.is_granular_deploy_forced(cluster):
+            return ['granular_deploy']
         if objects.Release.is_lcm_supported(cluster.release):
             methods.append('lcm_transaction')
         if objects.Cluster.is_task_deploy_enabled(cluster):

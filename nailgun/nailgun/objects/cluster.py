@@ -1450,6 +1450,16 @@ class Cluster(NailgunObject):
         ).all()
 
     @classmethod
+    def is_granular_deploy_forced(cls, instance):
+        """Tests that task based deploy is enabled.
+
+        :param instance: cluster for checking
+        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
+        """
+        attrs = cls.get_editable_attributes(instance, False)
+        return attrs['common'].get('granular_deploy', {}).get('value')
+
+    @classmethod
     def is_task_deploy_enabled(cls, instance):
         """Tests that task based deploy is enabled.
 

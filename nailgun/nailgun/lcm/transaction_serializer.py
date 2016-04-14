@@ -129,10 +129,15 @@ class TransactionSerializer(object):
         :param node_ids: the list of nodes, where this tasks should run
         """
 
-        logger.debug("applying task '%s' to nodes: %s", task['id'], node_ids)
+        logger.debug("applying task '%s' for nodes: %s", task['id'], node_ids)
         task_serializer = self.factory.create_serializer(task)
         for node_id in node_ids:
-            task = task_serializer.serialize(node_id)
+            try:
+                task = task_serializer.serialize(node_id)
+            except Exception:
+                logger.exception("Failed to serialize task %s", task['id'])
+                raise
+
             node_tasks = self.tasks_graph.setdefault(node_id, {})
             # de-duplication the tasks on node
             # since task can be added after expand group need to

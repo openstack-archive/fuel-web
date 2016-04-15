@@ -294,9 +294,17 @@ class Task(NailgunObject):
     def update(cls, instance, data):
         logger.debug("Updating task: %s", instance.uuid)
         clean_data = cls._clean_data(data)
+        status_changed = \
+            clean_data.get('status', instance.status) != instance.status
+
         super(Task, cls).update(instance, clean_data)
         db().flush()
 
+        if not status_changed:
+            return
+
+        # if task status was updated we need to update
+        # cluster and parent status too
         if instance.cluster_id:
             logger.debug("Updating cluster status: %s "
                          "cluster_id: %s status: %s",
@@ -312,6 +320,8 @@ class Task(NailgunObject):
     def delete(cls, instance):
         logger.debug("Mark task as deleted: %s", instance.uuid)
         cls.update(instance, {'deleted_at': datetime.utcnow()})
+        for t in instance.subtasks:
+            cls.delete(t)
 
     @classmethod
     def bulk_delete(cls, instance_ids):

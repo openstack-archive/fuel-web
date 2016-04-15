@@ -19,7 +19,7 @@ from sqlalchemy.sql import not_
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.extensions.network_manager.objects.serializers.ip_addr import \
     IPAddrSerializer
 from nailgun.objects import Cluster

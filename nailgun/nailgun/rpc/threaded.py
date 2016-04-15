@@ -22,7 +22,7 @@ from kombu import Connection
 from kombu.mixins import ConsumerMixin
 
 from nailgun.db import db
-from nailgun.errors import errors
+from nailgun import errors
 import nailgun.rpc as rpc
 from nailgun.rpc.receiver import NailgunReceiver
 

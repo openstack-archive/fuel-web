@@ -33,7 +33,7 @@ from sqlalchemy.orm import Query
 from nailgun.objects.serializers.base import BasicSerializer
 
 from nailgun.db import db
-from nailgun.errors import errors
+from nailgun import errors
 
 
 class NailgunObject(object):

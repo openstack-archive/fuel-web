@@ -21,7 +21,7 @@ from itertools import groupby
 import mock
 import yaml
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.orchestrator import graph_configuration
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.test import base

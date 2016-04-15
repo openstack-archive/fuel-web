@@ -21,7 +21,7 @@ from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.openstack_config import OpenstackConfigValidator
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.task.manager import OpenstackConfigTaskManager

@@ -19,7 +19,7 @@ from distutils.version import StrictVersion
 import six
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
 from nailgun.utils.role_resolver import NameMatchingPolicy

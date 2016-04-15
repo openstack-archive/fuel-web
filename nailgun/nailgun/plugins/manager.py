@@ -16,7 +16,7 @@ import copy
 import six
 from six.moves import map
 
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugins
 from nailgun.objects.plugin import Plugin

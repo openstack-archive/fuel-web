@@ -17,7 +17,7 @@
 import mock
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun import lcm
 from nailgun.utils.role_resolver import RoleResolver
 

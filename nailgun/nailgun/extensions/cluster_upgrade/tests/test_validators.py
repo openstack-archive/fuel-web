@@ -19,7 +19,7 @@ import mock
 from oslo_serialization import jsonutils
 
 from nailgun import consts
-from nailgun.errors import errors
+from nailgun import errors
 from nailgun.settings import settings
 from nailgun.test import base
 

@@ -16,6 +16,7 @@
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import BaseTestCase
+from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
 
 
@@ -131,3 +132,35 @@ class TestTaskHandlers(BaseTestCase):
         )
         self.assertEqual(resp.status_code, 404)
         self.assertTrue(self.db().query(Task).get(task.id))
+
+    @fake_tasks()
+    def test_delete_task_does_not_affect_cluster_status(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'],
+                 'status': consts.NODE_STATUSES.discover,
+                 'pending_addition': True}],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            }
+        )
+        cluster = self.env.clusters[-1]
+        supertask = self.env.launch_deployment(cluster_id=cluster.id)
+        self.db.refresh(cluster)
+        self.assertEqual(consts.CLUSTER_STATUSES.operational, cluster.status)
+        resp = self.app.delete(
+            reverse(
+                'TaskHandler',
+                kwargs={'obj_id': supertask.id}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(204, resp.status_code)
+        self.db.refresh(supertask)
+        self.assertIsNotNone(supertask.deleted_at)
+        for t in supertask.subtasks:
+            self.assertIsNotNone(t.deleted_at)
+        self.db.refresh(cluster)
+        self.assertEqual(consts.CLUSTER_STATUSES.operational, cluster.status)

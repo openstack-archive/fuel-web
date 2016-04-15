@@ -531,6 +531,14 @@ class TestHandlers(BaseIntegrationTest):
         self.check_pending_roles({'pending_roles': ['cinder', 1]},
                                  "Failed validating 'type'")
 
+    def test_roles_not_list(self):
+        self.check_pending_roles({'roles': 'cinder'},
+                                 'Failed validating')
+
+    def test_roles_not_strings(self):
+        self.check_pending_roles({'roles': ['cinder', 1]},
+                                 'Failed validating')
+
     def test_update_pending_role_no_cluster_id(self):
         self.env.create()
 

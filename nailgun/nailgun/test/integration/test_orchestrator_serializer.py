@@ -291,7 +291,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['compute']},
             {'roles': ['mongo']},
             {'roles': ['cinder']}]
-        for i in range(len(expected_list)):
+        for i in six.moves.range(len(expected_list)):
             expected_list[i]['attrs'] = {'uid': str(node_uids[i])}
 
         used_man_ip = []
@@ -1658,7 +1658,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 {'roles': ['compute', 'cinder']},
                 {'roles': ['compute']},
                 {'roles': ['cinder']}]
-            for i in range(len(expected_list)):
+            for i in six.moves.range(len(expected_list)):
                 expected_list[i]['attrs'] = {'uid': str(node_uids[i])}
                 if assign:
                     expected_list[i]['attrs']['public_address'] = pub_ip[i]
@@ -2086,7 +2086,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
             [ng.vlan_start for ng in cluster.network_groups if ng.vlan_start]
         )
         private_vlan_range = cluster.network_config["vlan_range"]
-        vlan_set.update(xrange(*private_vlan_range))
+        vlan_set.update(six.moves.range(*private_vlan_range))
         vlan_set.add(private_vlan_range[1])
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]

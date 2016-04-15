@@ -282,7 +282,7 @@ class NeutronNetworkDeploymentSerializer(
                     cluster.network_config.segmentation_type == \
                         consts.NEUTRON_SEGMENT_TYPES.vlan:
                     vlan_range = cluster.network_config.vlan_range
-                    trunks.extend(xrange(*vlan_range))
+                    trunks.extend(six.moves.range(*vlan_range))
                     trunks.append(vlan_range[1])
                 else:
                     if ng.vlan_start in (0, None):

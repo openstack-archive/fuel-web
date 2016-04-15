@@ -241,9 +241,9 @@ class DeploymentTask(BaseDeploymentTask):
                 n.progress = 0
         db().flush()
 
-        deployment_tasks = objects.Cluster.get_deployment_tasks(
-            task.cluster, graph_type
-        )
+        deployment_tasks = (deployment_tasks or
+                            objects.Cluster.get_deployment_tasks(
+                                              task.cluster, graph_type))
 
         deployment_mode, message = cls.call_deployment_method(
             task, tasks=deployment_tasks, nodes=nodes,

@@ -1324,11 +1324,7 @@ class Cluster(NailgunObject):
 
         The result depends on the current status of cluster.
         """
-        allowed = [consts.CLUSTER_STATUSES.new,
-                   consts.CLUSTER_STATUSES.stopped,
-                   consts.CLUSTER_STATUSES.operational,
-                   consts.CLUSTER_STATUSES.error]
-        return instance.status not in allowed
+        return instance.is_locked
 
     @classmethod
     def is_component_enabled(cls, instance, component):

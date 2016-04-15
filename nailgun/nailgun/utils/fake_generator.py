@@ -18,7 +18,7 @@ import copy
 from itertools import cycle
 from itertools import product
 from netaddr import EUI
-from netaddr import IPNetwork
+from netaddr import IPRange
 from netaddr import mac_unix_expanded
 import random
 import six
@@ -97,18 +97,6 @@ DISK_SAMPLES = [
         'size': 1000204886016
     },
     {
-        'model': 'Virtual Floppy0',
-        'name': 'sde',
-        'disk': 'sde',
-        'size': 0
-    },
-    {
-        'model': 'Virtual HDisk0',
-        'name': 'sdf',
-        'disk': 'sdf',
-        'size': 0
-    },
-    {
         'model': 'Silicon-Power16G',
         'name': 'sdb',
         'disk': 'sdb',
@@ -149,27 +137,29 @@ MEMORY_DEVICE_SAMPLES = [
     }
 ]
 
-NETWORK_1 = '10.20.0.0/16'
-NETWORK_2 = '172.18.67.0/24'
+NETWORK_1 = '10.20.0.0/20'
+NETWORK_2 = '10.20.16.0/20'
 
 
 class FakeNodesGenerator(object):
     """This class uses to generate fake nodes"""
 
     def __init__(self):
-        self.net1 = IPNetwork(NETWORK_1)
-        self.net1_ip_pool = cycle(self.net1.iter_hosts())
-        self.net2 = IPNetwork(NETWORK_2)
-        self.net2_ip_pool = cycle(self.net2.iter_hosts())
+        self.net1 = IPRange("10.20.0.10", "10.20.15.254")
+        self.net1_mask = "255.255.240.0"
+        self.net1_ip_pool = cycle(self.net1)
+        self.net2 = IPRange("10.20.16.0", "10.20.255.255")
+        self.net2_mask = "255.255.240.0"
+        self.net2_ip_pool = cycle(self.net2)
 
         self.mcounter = dict()
         self.mac_counter = 0
 
     def _get_network_data(self, net_name):
         if net_name == 'net1':
-            return str(next(self.net1_ip_pool)), str(self.net1.netmask)
+            return str(next(self.net1_ip_pool)), str(self.net1_mask)
         if net_name == 'net2':
-            return str(next(self.net2_ip_pool)), str(self.net2.netmask)
+            return str(next(self.net2_ip_pool)), str(self.net2_mask)
         return None, None
 
     def _generate_mac(self):
@@ -307,6 +297,18 @@ class FakeNodesGenerator(object):
             'devices': devices
         }
 
+    @staticmethod
+    def _generate_numa_meta(memory_amount, cpu_amount):
+        return {
+            "numa_nodes": [{
+                "id": 0,
+                "memory": memory_amount,
+                "cpus": [_ for _ in range(cpu_amount)]
+            }],
+            "supported_hugepages": [2048],
+            "distances": []
+        }
+
     def generate_fake_node(self, pk, is_online=True, is_error=False,
                            use_offload_iface=False, min_ifaces_num=1):
         """Generate one fake node
@@ -327,6 +329,8 @@ class FakeNodesGenerator(object):
         mac = self._generate_mac()
         net = random.choice(['net1', 'net2'])
         ip, netmask = self._get_network_data(net)
+        cpu = self._generate_cpu_meta(kind)
+        memory = self._generate_memory_meta(random.randint(1, 8))
 
         return {
             'pk': pk,
@@ -348,14 +352,16 @@ class FakeNodesGenerator(object):
                 'progress': 0,
                 'timestamp': '',
                 'meta': {
-                    'cpu': self._generate_cpu_meta(kind),
+                    'cpu': cpu,
                     'interfaces': self._generate_interfaces_meta(
                         mac, ip, netmask, use_offload_iface,
                         random.randrange(min_ifaces_num, 7)),
                     'disks': self._generate_disks_meta(random.randint(1, 7)),
                     'system': self._generate_systems_meta(
                         hostname, manufacture, platform_name),
-                    'memory': self._generate_memory_meta(random.randint(1, 8))
+                    'memory': memory,
+                    'numa_topology': self._generate_numa_meta(
+                        memory['total'], cpu['total']),
                 }
             }
         }

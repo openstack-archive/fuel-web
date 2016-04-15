@@ -497,16 +497,18 @@ class TestHandlers(BaseIntegrationTest):
 
         node_name_test(node_mac.lower())
 
-    def check_pending_roles(self, roles, msg):
+    def check_pending_roles(self, to_check, msg):
         cluster = self.env.create(nodes_kwargs=[{}])
 
         node = self.env.nodes[0]
 
+        data = {'id': node.id,
+                'cluster_id': cluster.id}
+        data.update(to_check)
+
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            jsonutils.dumps([{'id': node.id,
-                              'cluster_id': cluster.id,
-                              'pending_roles': roles}]),
+            jsonutils.dumps([data]),
             headers=self.default_headers,
             expect_errors=True)
 
@@ -514,16 +516,28 @@ class TestHandlers(BaseIntegrationTest):
         self.assertIn(msg, resp.json_body["message"])
 
     def test_pending_role_non_existing(self):
-        self.check_pending_roles(['qwe'], 'not valid roles')
+        self.check_pending_roles({'pending_roles': ['qwe']},
+                                 'not valid roles')
 
     def test_pending_role_duplicates(self):
-        self.check_pending_roles(['cinder', 'cinder'], 'contains duplicates')
+        self.check_pending_roles({'pending_roles': ['cinder', 'cinder']},
+                                 'contains duplicates')
 
     def test_pending_role_not_list(self):
-        self.check_pending_roles('cinder', 'Failed validating')
+        self.check_pending_roles({'pending_roles': 'cinder'},
+                                 'Failed validating')
 
     def test_pending_role_not_strings(self):
-        self.check_pending_roles(['cinder', 1], 'Failed validating')
+        self.check_pending_roles({'pending_roles': ['cinder', 1]},
+                                 'Failed validating')
+
+    def test_roles_not_list(self):
+        self.check_pending_roles({'roles': 'cinder'},
+                                 'Failed validating')
+
+    def test_roles_not_strings(self):
+        self.check_pending_roles({'roles': ['cinder', 1]},
+                                 'Failed validating')
 
     def test_update_pending_role_no_cluster_id(self):
         self.env.create(nodes_kwargs=[{}])

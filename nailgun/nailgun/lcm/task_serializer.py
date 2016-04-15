@@ -43,12 +43,12 @@ class Context(object):
         ),
         (
             # common section is merged to root on serialization
-            re.compile(r'settings:common\.(.+)(.value)?'),
+            re.compile(r'settings:common\.(.+?)(.value)?'),
             r'settings:\1'
         ),
         (
             # the traverse removes trailing '.value' during serialization
-            re.compile(r'settings:(.+)(.value)(?!\.)'),
+            re.compile(r'settings:(.+?)(.value)(?!\.)'),
             r'settings:\1'
         )
     ]
@@ -118,8 +118,10 @@ class Context(object):
     def transform_legacy_condition(cls, condition):
         # we need to adjust legacy condition, because current is run
         # on serialized data instead of raw data
+        logger.debug("transform legacy expression: %s", condition)
         for pattern, replacement in cls.legacy_condition_transformers:
             condition = re.sub(pattern, replacement, condition)
+        logger.debug("the transformation result: %s", condition)
         return condition
 
 

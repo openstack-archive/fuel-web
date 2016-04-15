@@ -245,6 +245,13 @@ class DeploymentTask(BaseDeploymentTask):
             task.cluster, graph_type
         )
 
+        tasks = []
+        for task in deployment_tasks:
+            if task['id'] in task_ids:
+                tasks.append(task)
+
+        deployment_tasks = tasks or deployment_tasks
+
         deployment_mode, message = cls.call_deployment_method(
             task, tasks=deployment_tasks, nodes=nodes,
             affected_nodes=affected_nodes, selected_task_ids=task_ids,

@@ -28,7 +28,6 @@ from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import object_mapper
 
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
@@ -52,6 +51,7 @@ import nailgun.rpc as rpc
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
+from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.role_resolver import RoleResolver
@@ -397,6 +397,15 @@ class ClusterTransaction(DeploymentTask):
         # need to move this code from deployment serializer
         # also role resolver should be created after serialization completed
         role_resolver = RoleResolver(nodes)
+        cluster = transaction.cluster
+
+        if objects.Cluster.is_propagate_task_deploy_enabled(cluster):
+            tasks = adapt_legacy_tasks(
+                tasks,
+                objects.Cluster.get_legacy_plugin_tasks(cluster),
+                role_resolver,
+            )
+
         directory, graph = lcm.TransactionSerializer.serialize(
             context, tasks, role_resolver
         )

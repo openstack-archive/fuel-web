@@ -192,6 +192,26 @@ class TestPluginBase(base.BaseTestCase):
     def _find_path(self, config_name):
         return '{0}.yaml'.format(config_name)
 
+    def test_plugin_adapter_get_tasks(self):
+        self.plugin.tasks = [
+            {
+                'role': '*',
+                'stage': 'stage3/100',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+                'parameters': {}
+            },
+            {
+                'role': 'controller',
+                'stage': 'stage3/100',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.shell,
+            }
+        ]
+        tasks = self.plugin_adapter.get_tasks()
+        for task in tasks:
+            self.assertEqual(task['role'], task['roles'])
+            if 'parameters' in task:
+                self.assertIn('cwd', task['parameters'])
+
 
 class TestPluginV1(TestPluginBase):
 

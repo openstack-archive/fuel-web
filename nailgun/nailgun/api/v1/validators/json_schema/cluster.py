@@ -42,7 +42,8 @@ single_schema = {
             "enum": list(consts.CLUSTER_STATUSES)
         },
         "ui_settings": base_types.UI_SETTINGS,
-        "release_id": {"type": "number"},
+        "release": {"type": "integer"},
+        "release_id": {"type": "integer"},
         "replaced_deployment_info": {"type": "object"},
         "replaced_provisioning_info": {"type": "object"},
         "is_customized": {"type": "boolean"},

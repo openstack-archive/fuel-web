@@ -2079,9 +2079,9 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
             })
 
     @classmethod
-    def message(cls, task, nodes, cluster, **kwargs):
+    def message(cls, task, nodes, **kwargs):
         configs = objects.OpenstackConfigCollection.find_configs_for_nodes(
-            cluster, nodes)
+            task.cluster, nodes)
         updated_configs = set()
         for config in configs:
             updated_configs.update(config.configuration)

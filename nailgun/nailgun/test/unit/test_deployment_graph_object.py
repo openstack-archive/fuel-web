@@ -33,6 +33,11 @@ JSON_TASKS = [
         'type': 'group'
     },
     {
+        'id': 'test-roles',
+        'role': '*',
+        'type': 'group'
+    },
+    {
         'id': 'cross-dep-test',
         'type': 'puppet',
         'cross-depended-by': ['a', 'b'],
@@ -86,6 +91,13 @@ EXPECTED_TASKS = [
         'type': 'stage',
         'version': '1.0.0',
         'requires': ['post_deployment_start'],
+    }, {
+        'task_name': 'test-roles',
+        'id': 'test-roles',
+        'role': '*',
+        'roles': '*',
+        'version': '1.0.0',
+        'type': 'group'
     }, {
         'task_name': 'primary-controller',
         'id': 'primary-controller',    # legacy

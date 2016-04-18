@@ -76,9 +76,12 @@ class Task(Base):
     weight = Column(Float, default=1.0)
     deleted_at = Column(DateTime)
 
-    deployment_info = Column(MutableDict.as_mutable(JSON), nullable=True)
-    cluster_settings = Column(MutableDict.as_mutable(JSON), nullable=True)
-    network_settings = Column(MutableDict.as_mutable(JSON), nullable=True)
+    deployment_info = deferred(Column(MutableDict.as_mutable(JSON),
+                                      nullable=True))
+    cluster_settings = deferred(Column(MutableDict.as_mutable(JSON),
+                                       nullable=True))
+    network_settings = deferred(Column(MutableDict.as_mutable(JSON),
+                                       nullable=True))
 
     deployment_history = relationship(
         "DeploymentHistory", backref="task", cascade="all,delete")

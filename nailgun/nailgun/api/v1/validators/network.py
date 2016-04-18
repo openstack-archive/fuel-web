@@ -568,12 +568,14 @@ class NetAssignmentValidator(BasicValidator):
 
             bond_type = iface.get('bond_properties', {}).get('type__')
 
-            if bond_type == consts.BOND_TYPES.ovs and not enabled:
+            if (bond_type == consts.BOND_TYPES.ovs and
+                    hw_available and not enabled):
                 raise errors.InvalidData(
                     "Bond interface '{0}': DPDK should be"
                     " enabled for 'ovs' bond type".format(iface['name']),
                     log_message=True
                 )
+
             if bond_type != consts.BOND_TYPES.ovs and enabled:
                 raise errors.InvalidData(
                     "Bond interface '{0}': DPDK can be enabled"
@@ -683,7 +685,7 @@ class NetAssignmentValidator(BasicValidator):
                 raise errors.InvalidData(
                     "Node '{0}': networks {1} cannot be assigned "
                     "as the node is not added to any cluster"
-                    .format(
+                        .format(
                         node['id'],
                         ", ".join(iface_nets)
                     )
@@ -747,7 +749,7 @@ class NetAssignmentValidator(BasicValidator):
                         )
 
                 if consts.NETWORKS.fuelweb_admin in iface_nets:
-                    prohibited_modes = net_manager.\
+                    prohibited_modes = net_manager. \
                         get_prohibited_admin_bond_modes()
                     bond_mode = cls.get_bond_mode(iface)
                     if bond_mode in prohibited_modes:

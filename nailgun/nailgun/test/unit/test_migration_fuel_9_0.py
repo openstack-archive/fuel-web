@@ -256,7 +256,8 @@ def prepare():
             'net_provider': 'neutron',
             'grouping': 'roles',
             'fuel_version': '8.0',
-            'deployment_tasks': jsonutils.dumps(JSON_TASKS)
+            'deployment_tasks': jsonutils.dumps(JSON_TASKS),
+            'replaced_deployment_info': '{}'
         }])
     cluster_id = result.inserted_primary_key[0]
 
@@ -574,6 +575,15 @@ class TestClusterStatusMigration(base.BaseAlembicMigrationTest):
         db.execute(clusters_table.update().where(
             clusters_table.c.id == cluster.id
         ).values(status='partially_deployed'))
+
+
+class TestClusterReplacedDeploymentInfo(base.BaseAlembicMigrationTest):
+
+    def test_cluster_replaced_deployment_info_corrected(self):
+        clusters_table = self.meta.tables['clusters']
+        columns = [clusters_table.c.replaced_deployment_info]
+        cluster = db.execute(sa.select(columns)).fetchone()
+        self.assertEqual(cluster.replaced_deployment_info, '[]')
 
 
 class TestRemoveWizardMetadata(base.BaseAlembicMigrationTest):

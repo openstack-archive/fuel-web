@@ -212,7 +212,8 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
-                reexecutable_filter=None, graph_type=None, force=False):
+                reexecutable_filter=None, graph_type=None, force=False,
+                **kwargs):
         """Builds RPC message for deployment task.
 
         :param task: the database task object instance

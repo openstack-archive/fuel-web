@@ -18,7 +18,7 @@ from nailgun.extensions.base import BaseExtension
 from nailgun.extensions.base import BasePipeline
 from nailgun.extensions.manager import get_extension
 from nailgun.extensions.manager import get_all_extensions
-from nailgun.extensions.manager import node_extension_call
+from nailgun.extensions.manager import fire_callback_on_before_deployment_check
 from nailgun.extensions.manager import fire_callback_on_node_delete
 from nailgun.extensions.manager import fire_callback_on_node_collection_delete
 from nailgun.extensions.manager import fire_callback_on_node_create
@@ -29,3 +29,4 @@ from nailgun.extensions.manager import \
     fire_callback_on_deployment_data_serialization
 from nailgun.extensions.manager import \
     fire_callback_on_provisioning_data_serialization
+from nailgun.extensions.manager import node_extension_call

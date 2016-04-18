@@ -1119,6 +1119,11 @@ class Cluster(NailgunObject):
         ])
 
     @classmethod
+    def get_legacy_plugin_tasks(cls, instance):
+        """Get legacy deployment tasks from tasks.yaml."""
+        return PluginManager.get_legacy_tasks_for_cluster(instance)
+
+    @classmethod
     def get_refreshable_tasks(cls, instance, filter_by_configs=None):
         """Return list of refreshable tasks
 
@@ -1496,6 +1501,18 @@ class Cluster(NailgunObject):
         """
         attrs = cls.get_editable_attributes(instance, False)
         return attrs['common'].get('task_deploy', {}).get('value')
+
+    @classmethod
+    def is_propagate_task_deploy_enabled(cls, instance):
+        """Tests that task based deployment propagation enabled.
+
+        :param instance: cluster for checking
+        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
+        """
+        attrs = cls.get_editable_attributes(instance, False)
+        return attrs['common'].get(
+            'propagate_task_deploy', {}
+        ).get('value')
 
     # FIXME(aroma): remove updating of 'deployed_before'
     # when stop action is reworked. 'deployed_before'

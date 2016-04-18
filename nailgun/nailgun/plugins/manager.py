@@ -370,3 +370,14 @@ class PluginManager(object):
             if cluster_components & plugin_components:
                 ClusterPlugins.set_attributes(
                     cluster.id, plugin.id, enabled=True)
+
+    @classmethod
+    def get_legacy_tasks_for_cluster(cls, cluster):
+        """Gets the tasks from tasks.yaml for all plugins.
+
+        :param cluster: the cluster object
+        :return: all tasks from tasks.yaml sorted by stage and priority
+        """
+        tasks = []
+        for plugin in cls.get_enabled_plugins(cluster):
+            tasks.extend(plugin.tasks)

@@ -302,6 +302,25 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         for nic in resp.json_body:
             self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
 
+    def test_nics_ovs_bond_create_success(self):
+
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": BOND_MODES.balance_slb,
+                "type__": BOND_TYPES.ovs,
+            },
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        resp = self.put_single()
+        self.assertEqual(resp.status_code, 200)
+
     def test_nics_bond_create_failed_no_type(self):
         self.data.append({
             "name": 'ovs-bond0'

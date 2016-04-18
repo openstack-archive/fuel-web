@@ -777,20 +777,21 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
 
-        if db_node.cluster is not None:
-            dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
-                db_node.cluster.release)
-        else:
-            dpdk_drivers = {}
-        db_interfaces = db_node.interfaces
+        if objects.Release.is_dpdk_supported(db_node.cluster.release):
+            if db_node.cluster is not None:
+                dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
+                    db_node.cluster.release)
+            else:
+                dpdk_drivers = {}
+            db_interfaces = db_node.interfaces
 
-        # checks dpdk settings for every interface
-        dpdk_enabled = cls._verify_interfaces_dpdk_properties(
-            interfaces, db_interfaces, dpdk_drivers)
+            # checks dpdk settings for every interface
+            dpdk_enabled = cls._verify_interfaces_dpdk_properties(
+                interfaces, db_interfaces, dpdk_drivers)
 
-        # run node validations if dpdk enabled on node
-        if dpdk_enabled:
-            cls._verify_node_dpdk_properties(db_node)
+            # run node validations if dpdk enabled on node
+            if dpdk_enabled:
+                cls._verify_node_dpdk_properties(db_node)
 
         if db_node.cluster:
             cls.check_networks_are_acceptable_for_node_to_assign(interfaces,

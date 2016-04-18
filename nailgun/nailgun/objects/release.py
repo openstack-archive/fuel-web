@@ -144,6 +144,13 @@ class Release(NailgunObject):
         )
 
     @classmethod
+    def is_dpdk_supported(cls, instance):
+        return (
+            StrictVersion(instance.environment_version) >=
+            StrictVersion(consts.FUEL_DPDK_AVAILABLE)
+        )
+
+    @classmethod
     def is_external_mongo_enabled(cls, instance):
         """Check if external mongo is available for release
 

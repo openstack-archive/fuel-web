@@ -1455,6 +1455,18 @@ class Cluster(NailgunObject):
         attrs = cls.get_editable_attributes(instance, False)
         return attrs['common'].get('task_deploy', {}).get('value')
 
+    @classmethod
+    def use_legacy_tasks_adaptation(cls, instance):
+        """Tests that legacy tasks adoption enabled.
+
+        :param instance: cluster for checking
+        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
+        """
+        attrs = cls.get_editable_attributes(instance, False)
+        return attrs['common'].get(
+            'use_legacy_tasks_adaptation', {}
+        ).get('value')
+
     # FIXME(aroma): remove updating of 'deployed_before'
     # when stop action is reworked. 'deployed_before'
     # flag identifies whether stop action is allowed for the

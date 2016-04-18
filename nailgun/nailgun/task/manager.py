@@ -1334,7 +1334,6 @@ class OpenstackConfigTaskManager(TaskManager):
             self.get_deployment_task(),
             nodes_to_update,
             method_name='message',
-            cluster=self.cluster,
             force=force
         )
 

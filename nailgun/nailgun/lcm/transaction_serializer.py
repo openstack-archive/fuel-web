@@ -22,6 +22,7 @@ from nailgun import consts
 from nailgun import errors
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
+from nailgun.settings import settings
 from nailgun.utils.role_resolver import NameMatchingPolicy
 
 
@@ -79,11 +80,14 @@ class TransactionSerializer(object):
         version = StrictVersion(task.get('version', '0.0.0'))
         if version < cls.min_supported_task_version:
             message = (
-                "Task '{0}' does not support cross-dependencies."
+                "Task '{0}' does not support cross-dependencies.\n"
+                "You can enable option 'propagate_task_deploy'"
+                "for cluster to use task adaptation mechanism."
                 .format(task['id'])
             )
             logger.warning(message)
-            raise errors.TaskBaseDeploymentNotAllowed(message)
+            if settings.LCM_CHECK_TASK_VERSION:
+                raise errors.TaskBaseDeploymentNotAllowed(message)
 
     def process_tasks(self, tasks):
         """Process all deployment tasks

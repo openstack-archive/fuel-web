@@ -568,12 +568,14 @@ class NetAssignmentValidator(BasicValidator):
 
             bond_type = iface.get('bond_properties', {}).get('type__')
 
-            if bond_type == consts.BOND_TYPES.ovs and not enabled:
+            if (bond_type == consts.BOND_TYPES.ovs and
+                    hw_available and not enabled):
                 raise errors.InvalidData(
                     "Bond interface '{0}': DPDK should be"
                     " enabled for 'ovs' bond type".format(iface['name']),
                     log_message=True
                 )
+
             if bond_type != consts.BOND_TYPES.ovs and enabled:
                 raise errors.InvalidData(
                     "Bond interface '{0}': DPDK can be enabled"
@@ -777,12 +779,13 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
 
+        db_interfaces = db_node.interfaces
+
         if db_node.cluster is not None:
             dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
                 db_node.cluster.release)
         else:
             dpdk_drivers = {}
-        db_interfaces = db_node.interfaces
 
         # checks dpdk settings for every interface
         dpdk_enabled = cls._verify_interfaces_dpdk_properties(

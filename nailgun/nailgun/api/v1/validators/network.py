@@ -513,7 +513,7 @@ class NetAssignmentValidator(BasicValidator):
 
     @classmethod
     def _verify_interfaces_dpdk_properties(cls, interfaces, db_interfaces,
-                                           dpdk_drivers):
+                                           dpdk_drivers, dpdk_supported):
         """Verify DPDK properties for every interface on node.
 
         :param interfaces: interfaces data from API request
@@ -529,14 +529,15 @@ class NetAssignmentValidator(BasicValidator):
         dpdk_enabled = False
         for iface in interfaces:
             dpdk_enabled |= cls._verify_iface_dpdk_properties(
-                iface, db_interfaces, dpdk_drivers,
+                iface, db_interfaces, dpdk_drivers, dpdk_supported,
                 is_slave=iface['name'] in slaves)
 
         return dpdk_enabled
 
     @classmethod
     def _verify_iface_dpdk_properties(cls, iface, db_interfaces,
-                                      dpdk_drivers, is_slave=False):
+                                      dpdk_drivers, dpdk_supported,
+                                      is_slave=False):
         """Verify DPDK properties for particular interface.
 
         :param iface: interface data from API request
@@ -568,18 +569,19 @@ class NetAssignmentValidator(BasicValidator):
 
             bond_type = iface.get('bond_properties', {}).get('type__')
 
-            if bond_type == consts.BOND_TYPES.ovs and not enabled:
-                raise errors.InvalidData(
-                    "Bond interface '{0}': DPDK should be"
-                    " enabled for 'ovs' bond type".format(iface['name']),
-                    log_message=True
-                )
-            if bond_type != consts.BOND_TYPES.ovs and enabled:
-                raise errors.InvalidData(
-                    "Bond interface '{0}': DPDK can be enabled"
-                    " only for 'ovs' bond type".format(iface['name']),
-                    log_message=True
-                )
+            if dpdk_supported:
+                if bond_type == consts.BOND_TYPES.ovs and not enabled:
+                    raise errors.InvalidData(
+                        "Bond interface '{0}': DPDK should be"
+                        " enabled for 'ovs' bond type".format(iface['name']),
+                        log_message=True
+                    )
+                if bond_type != consts.BOND_TYPES.ovs and enabled:
+                    raise errors.InvalidData(
+                        "Bond interface '{0}': DPDK can be enabled"
+                        " only for 'ovs' bond type".format(iface['name']),
+                        log_message=True
+                    )
         else:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 iface_cls = objects.NIC
@@ -777,16 +779,19 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
 
+        db_interfaces = db_node.interfaces
+
         if db_node.cluster is not None:
             dpdk_drivers = objects.Release.get_supported_dpdk_drivers(
                 db_node.cluster.release)
         else:
             dpdk_drivers = {}
-        db_interfaces = db_node.interfaces
 
         # checks dpdk settings for every interface
+        dpdk_supported = objects.Release.is_dpdk_supported(
+            db_node.cluster.release)
         dpdk_enabled = cls._verify_interfaces_dpdk_properties(
-            interfaces, db_interfaces, dpdk_drivers)
+            interfaces, db_interfaces, dpdk_drivers, dpdk_supported)
 
         # run node validations if dpdk enabled on node
         if dpdk_enabled:
@@ -831,12 +836,6 @@ class NetAssignmentValidator(BasicValidator):
                     log_message=True
                 )
             else:
-                if not objects.Node.should_have_public(node_db):
-                    public_id = next(
-                        (n.id for n in node_group_db.networks
-                            if n.name == consts.NETWORKS.public), None)
-                    if public_id is not None:
-                        net_group_ids.discard(public_id)
                 unassigned_net_ids = net_group_ids - net_ids
                 if unassigned_net_ids:
                     raise errors.InvalidData(

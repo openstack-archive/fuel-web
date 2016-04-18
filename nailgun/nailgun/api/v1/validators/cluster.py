@@ -335,15 +335,19 @@ class ClusterStopDeploymentValidator(base.BaseDefferedTaskValidator):
     def validate(cls, cluster):
         super(ClusterStopDeploymentValidator, cls).validate(cluster)
 
-        # FIXME(aroma): remove when stop action will be reworked for ha
-        # cluster. To get more details, please, refer to [1]
-        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
         # NOTE(aroma): the check must regard the case when stop deployment
         # is called for cluster that was created before master node upgrade
         # to versions >= 8.0 and so having 'deployed_before' flag absent
         # in their attributes.
+        # NOTE(vsharshov): task based deployment (>=9.0) implements
+        # save way to stop deployment action, so we can enable
+        # stop deployment for such cluster without restrictions.
+        # But it is still need to be disabled for old env < 9.0
+        # which was already deployed once[1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
         generated = cluster.attributes.generated
-        if generated.get('deployed_before', {}).get('value'):
+        if generated.get('deployed_before', {}).get('value') and\
+                not objects.Release.is_lcm_supported(cluster.release):
             raise errors.CannotBeStopped()
 
 

@@ -86,6 +86,22 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
         self.assertEqual(1, len(any_node))
         self.assertTrue(any_node.issubset(all_nodes))
 
+    def test_get_all_roles(self):
+        resolver = role_resolver.RoleResolver(self.nodes)
+        all_roles = {r for roles in self.roles_of_nodes for r in roles}
+        self.assertEqual(all_roles, resolver.get_all_roles())
+        self.assertEqual(all_roles, resolver.get_all_roles(
+            consts.TASK_ROLES.all
+        ))
+        self.assertEqual(
+            {'controller', 'primary-controller'},
+            resolver.get_all_roles("/.*controller/")
+        )
+        self.assertEqual(
+            {'compute', "cinder"},
+            resolver.get_all_roles(["compute", "cinder", "cinder2"])
+        )
+
 
 class TestNullResolver(BaseUnitTest):
     def test_resolve(self):

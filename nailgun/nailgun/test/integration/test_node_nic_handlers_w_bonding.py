@@ -29,10 +29,10 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
 
-class TestNodeNICsBonding(BaseIntegrationTest):
+class NodeNICsBondingMixin(object):
 
     def setUp(self):
-        super(TestNodeNICsBonding, self).setUp()
+        super(NodeNICsBondingMixin, self).setUp()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0",
@@ -100,6 +100,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             cluster_kwargs={
                 "net_provider": "neutron",
                 "net_segment_type": "gre"
+            },
+            release_kwargs={
+                'version': self.env_version,
             },
             nodes_kwargs=[
                 {"api": True,
@@ -241,23 +244,6 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
             for nic in resp.json_body:
                 self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
-
-    def test_nics_ovs_bond_create_failed_without_dpdk(self):
-        bond_name = 'bond0'
-        self.prepare_bond_w_props(bond_name=bond_name,
-                                  bond_type=BOND_TYPES.ovs)
-        self.node_nics_put_check_error("Bond interface '{0}': DPDK should be"
-                                       " enabled for 'ovs' bond type".
-                                       format(bond_name))
-
-    def test_nics_lnx_bond_create_failed_with_dpdk(self):
-        bond_name = 'bond0'
-        self.prepare_bond_w_props(bond_name=bond_name,
-                                  bond_type=BOND_TYPES.linux,
-                                  iface_props={'dpdk': {'enabled': True}})
-        self.node_nics_put_check_error("Bond interface '{0}': DPDK can be"
-                                       " enabled only for 'ovs' bond type".
-                                       format(bond_name))
 
     def test_nics_bond_removed_on_node_unassign(self):
         self.get_node_nics_info()
@@ -698,3 +684,69 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "enabled interface '{1}'".format(self.env.nodes[0]["id"],
                                              self.sriov_nic['name'])
         )
+
+
+class TestNodeNICsBonding61(NodeNICsBondingMixin, BaseIntegrationTest):
+
+    env_version = '2014.2-6.1'
+
+    def test_nics_ovs_bond_create_success(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": BOND_MODES.balance_slb,
+                "type__": BOND_TYPES.ovs,
+            },
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        resp = self.put_single()
+        self.assertEqual(resp.status_code, 200)
+
+    def test_nics_bond_create_failed_dpdk_not_supported(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": BOND_MODES.balance_slb,
+                "type__": BOND_TYPES.ovs,
+            },
+            "interface_properties": {
+                "dpdk": {'enabled': True}
+            },
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": self.other_nic["assigned_networks"]
+        })
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error("DPDK is not supported.")
+
+
+class TestNodeNICsBonding90(NodeNICsBondingMixin, BaseIntegrationTest):
+
+    env_version = 'mitaka-9.0'
+
+    def test_nics_ovs_bond_create_failed_without_dpdk(self):
+        bond_name = 'bond0'
+        self.prepare_bond_w_props(bond_name=bond_name,
+                                  bond_type=BOND_TYPES.ovs)
+        self.node_nics_put_check_error(
+            "Bond interface '{0}': DPDK should be"
+            " enabled for 'ovs' bond type".
+            format(bond_name))
+
+    def test_nics_lnx_bond_create_failed_with_dpdk(self):
+        bond_name = 'bond0'
+        self.prepare_bond_w_props(bond_name=bond_name,
+                                  bond_type=BOND_TYPES.linux,
+                                  iface_props={'dpdk': {'enabled': True}})
+        self.node_nics_put_check_error("Bond interface '{0}': DPDK can be"
+                                       " enabled only for 'ovs' bond type".
+                                       format(bond_name))

@@ -1060,6 +1060,12 @@
             description: "The new deployment engine based on cross-node dependencies for deployment tasks."
             weight: 11
             type: "hidden"
+          use_legacy_tasks_adaptation:
+            value: true
+            label: "Adopt legacy tasks for task based deploy"
+            description: "The legacy tasks will be adopt to execute with task based engine."
+            weight: 11
+            type: "hidden"
 
         public_network_assignment:
           metadata:

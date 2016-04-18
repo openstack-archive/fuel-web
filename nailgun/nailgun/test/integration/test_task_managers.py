@@ -206,6 +206,40 @@ class TestTaskManagers(BaseIntegrationTest):
             [x['id'] for x in tasks_graph[cluster.nodes[1].uid]]
         )
 
+    @fake_tasks()
+    @mock.patch('nailgun.lcm.transaction_serializer.settings',
+                LCM_CHECK_TASK_VERSION=True)
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    @mock.patch('objects.Cluster.is_propagate_task_deploy_enabled')
+    def test_adaptation_legacy_tasks(self, propagate_mock, tasks_mock, _):
+        tasks_mock.return_value = [
+            {
+                'id': 'task', 'parameters': {}, 'type': 'puppet',
+                'roles': ['controller'], 'version': '1.0.0',
+            },
+            {
+                'id': 'controller', 'type': 'group', 'roles': ['controller']
+            }
+        ]
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ['controller']},
+                {"pending_addition": True, "pending_roles": ['controller']},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'liberty-9.0',
+            }
+        )
+        cluster = self.env.clusters[-1]
+        propagate_mock.return_value = False
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertEqual(TASK_STATUSES.error, supertask.status)
+        self.assertIn("Task 'task'", supertask.message)
+        propagate_mock.return_value = True
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertEqual(TASK_STATUSES.ready, supertask.status)
+
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
         self.env.create(

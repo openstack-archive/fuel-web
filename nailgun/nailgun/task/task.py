@@ -52,6 +52,7 @@ import nailgun.rpc as rpc
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
+from nailgun.utils.legacy_tasks_adapter import adapt_legacy_tasks
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.role_resolver import RoleResolver
@@ -397,6 +398,15 @@ class ClusterTransaction(DeploymentTask):
         # need to move this code from deployment serializer
         # also role resolver should be created after serialization completed
         role_resolver = RoleResolver(nodes)
+        cluster = transaction.cluster
+
+        if objects.Cluster.use_legacy_tasks_adaptation(cluster):
+            tasks = adapt_legacy_tasks(
+                tasks,
+                objects.Cluster.get_legacy_deployment_tasks(cluster),
+                role_resolver,
+            )
+
         directory, graph = lcm.TransactionSerializer.serialize(
             context, tasks, role_resolver
         )

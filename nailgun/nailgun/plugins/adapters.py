@@ -160,6 +160,13 @@ class PluginAdapterBase(object):
             else:
                 self._tasks = self._load_tasks()
 
+            slave_path = self.slaves_scripts_path
+            for task in self._tasks:
+                task['roles'] = task['role']
+                parameters = task.get('parameters')
+                if parameters is not None:
+                    task['parameters'].setdefault('cwd', slave_path)
+
         return self._tasks
 
     @property

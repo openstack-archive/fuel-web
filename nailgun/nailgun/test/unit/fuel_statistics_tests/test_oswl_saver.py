@@ -276,8 +276,7 @@ class TestOSWLServerInfoSaving(BaseTestCase):
         self.assertEqual(False, last_changed.is_sent)
 
     def test_oswl_statistics_save_version_info(self):
-        self.env.create()
-        cluster = self.env.clusters[0]
+        cluster = self.env.create()
 
         # Without version info
         oswl_statistics_save(cluster.id, consts.OSWL_RESOURCE_TYPES.vm, [])

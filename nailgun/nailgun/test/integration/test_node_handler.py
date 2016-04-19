@@ -284,7 +284,7 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks()
     def test_interface_changes_for_new_node(self):
         # Creating cluster with node
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'name': 'test_name'
             },
@@ -292,7 +292,6 @@ class TestHandlers(BaseIntegrationTest):
                 {'roles': ['controller'], 'pending_addition': True}
             ]
         )
-        cluster = self.env.clusters[0]
 
         def filter_changes(chg_type, chg_list):
             return filter(lambda x: x.get('name') == chg_type, chg_list)

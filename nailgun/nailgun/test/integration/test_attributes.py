@@ -30,7 +30,6 @@ class TestClusterAttributes(BaseIntegrationTest):
 
     def test_attributes_creation(self):
         cluster = self.env.create_cluster(api=True)
-        cluster_db = self.env.clusters[0]
         resp = self.app.get(
             reverse(
                 'ClusterAttributesHandler',
@@ -42,13 +41,13 @@ class TestClusterAttributes(BaseIntegrationTest):
         self._compare_editable(
             release.attributes_metadata['editable'],
             resp.json_body['editable'],
-            cluster_db
+            cluster
         )
-        attrs = objects.Cluster.get_attributes(cluster_db)
+        attrs = objects.Cluster.get_attributes(cluster)
         self._compare_generated(
             release.attributes_metadata['generated'],
             attrs['generated'],
-            cluster_db
+            cluster
         )
 
     def test_500_if_no_attributes(self):
@@ -70,8 +69,8 @@ class TestClusterAttributes(BaseIntegrationTest):
         self.assertEqual(500, resp.status_code)
 
     def test_attributes_update_put(self):
-        cluster_id = self.env.create_cluster(api=True)['id']
-        cluster_db = self.env.clusters[0]
+        cluster = self.env.create_cluster(api=True)
+        cluster_id = cluster['id']
         resp = self.app.get(
             reverse(
                 'ClusterAttributesHandler',
@@ -91,7 +90,7 @@ class TestClusterAttributes(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        attrs = objects.Cluster.get_editable_attributes(cluster)
         self.assertEqual({'bar': None}, attrs["foo"])
         attrs.pop('foo')
 
@@ -123,19 +122,19 @@ class TestClusterAttributes(BaseIntegrationTest):
         self.assertEqual(400, resp.status_code)
 
     def test_attributes_update_patch(self):
-        cluster_id = self.env.create_cluster(api=True)['id']
-        cluster_db = self.env.clusters[0]
+        cluster = self.env.create_cluster(api=True)
+        cluster['id'] = cluster['id']
         resp = self.app.get(
             reverse(
                 'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
         resp = self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'cluster_id': cluster['id']}),
             params=jsonutils.dumps({
                 'editable': {
                     'foo': {'bar': None}
@@ -144,7 +143,7 @@ class TestClusterAttributes(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        attrs = objects.Cluster.get_editable_attributes(cluster)
         self.assertEqual({'bar': None}, attrs["foo"])
         attrs.pop('foo')
         self.assertNotEqual(attrs, {})
@@ -249,12 +248,11 @@ class TestClusterAttributes(BaseIntegrationTest):
         self._compare_editable(
             release.attributes_metadata['editable'],
             resp.json_body['editable'],
-            self.env.clusters[0]
+            cluster
         )
 
     def test_get_last_deployed_attributes(self):
-        self.env.create_cluster(api=True)
-        cluster = self.env.clusters[-1]
+        cluster = self.env.create_cluster(api=True)
         cluster_attrs = objects.Cluster.get_editable_attributes(
             self.env.clusters[-1]
         )
@@ -291,7 +289,6 @@ class TestClusterAttributes(BaseIntegrationTest):
 
     def test_attributes_set_defaults(self):
         cluster = self.env.create_cluster(api=True)
-        cluster_db = self.env.clusters[0]
         # Change editable attributes.
         resp = self.app.put(
             reverse(
@@ -306,7 +303,7 @@ class TestClusterAttributes(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(200, resp.status_code, resp.body)
-        attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        attrs = objects.Cluster.get_editable_attributes(cluster)
         self.assertEqual({'bar': None}, attrs['foo'])
         # Set attributes to defaults.
         resp = self.app.put(
@@ -322,7 +319,7 @@ class TestClusterAttributes(BaseIntegrationTest):
         self._compare_editable(
             release.attributes_metadata['editable'],
             resp.json_body['editable'],
-            cluster_db
+            cluster
         )
 
     def test_attributes_merged_values(self):
@@ -437,8 +434,7 @@ class TestClusterAttributes(BaseIntegrationTest):
             AssertionError, self._compare_editable, r_attrs, c_attrs)
 
     def test_editable_attributes_generators(self):
-        self.env.create_cluster(api=True)
-        cluster = self.env.clusters[0]
+        cluster = self.env.create_cluster(api=True)
         editable = objects.Cluster.get_editable_attributes(cluster)
         self.assertEqual(
             editable["external_dns"]["dns_list"]["value"],
@@ -450,8 +446,7 @@ class TestClusterAttributes(BaseIntegrationTest):
         )
 
     def test_workloads_collector_attributes(self):
-        self.env.create_cluster(api=True)
-        cluster = self.env.clusters[0]
+        cluster = self.env.create_cluster(api=True)
         editable = objects.Cluster.get_editable_attributes(cluster)
         self.assertEqual(
             editable["workloads_collector"]["enabled"]["value"],
@@ -498,11 +493,10 @@ class TestAlwaysEditable(BaseIntegrationTest):
 
     def setUp(self):
         super(TestAlwaysEditable, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={
                 'version': 'liberty-8.0',
                 'operating_system': consts.RELEASE_OS.centos})
-        self.cluster = self.env.clusters[0]
 
     def _put(self, data, expect_code=200):
         resp = self.app.put(
@@ -538,10 +532,9 @@ class TestVmwareAttributes(BaseIntegrationTest):
     def setUp(self):
         super(TestVmwareAttributes, self).setUp()
         self.cluster = self.env.create_cluster(api=True)
-        self.cluster_db = self.env.clusters[0]
 
     def test_vmware_attributes_creation(self):
-        self._set_use_vcenter(self.cluster_db)
+        self._set_use_vcenter(self.cluster)
 
         resp = self.app.get(
             reverse(
@@ -552,7 +545,7 @@ class TestVmwareAttributes(BaseIntegrationTest):
         release = objects.Release.get_by_uid(self.cluster['release_id'])
         self.assertEqual(200, resp.status_code)
 
-        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster)
         # TODO(apopovych): use dictdiffer 0.3.0 to compare atttributes
         # one-by-one
         self.assertEqual(
@@ -561,7 +554,7 @@ class TestVmwareAttributes(BaseIntegrationTest):
         )
 
     def test_vmware_attributes_update(self):
-        self._set_use_vcenter(self.cluster_db)
+        self._set_use_vcenter(self.cluster)
 
         resp = self.app.put(
             reverse(
@@ -576,13 +569,13 @@ class TestVmwareAttributes(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
 
-        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster)
         self.assertEqual('bar', attrs.editable.get('value', {}).get('foo'))
         attrs.editable.get('value', {}).pop('foo')
         self.assertEqual(attrs.editable.get('value'), {})
 
     def test_vmware_attributes_update_with_invalid_json_format(self):
-        self._set_use_vcenter(self.cluster_db)
+        self._set_use_vcenter(self.cluster)
 
         resp = self.app.put(
             reverse(
@@ -599,7 +592,7 @@ class TestVmwareAttributes(BaseIntegrationTest):
         self.assertEqual(
             "'editable' is a required property", resp.json_body["message"])
 
-        self._set_use_vcenter(self.cluster_db)
+        self._set_use_vcenter(self.cluster)
 
         resp = self.app.put(
             reverse(
@@ -673,11 +666,11 @@ class TestVmwareAttributes(BaseIntegrationTest):
 
     @patch('nailgun.db.sqlalchemy.models.Cluster.is_locked', return_value=True)
     def test_vmware_attributes_update_for_locked_cluster_403(self, locked):
-        self._set_use_vcenter(self.cluster_db)
+        self._set_use_vcenter(self.cluster)
         resp = self.app.put(
             reverse(
                 'VmwareAttributesHandler',
-                kwargs={'cluster_id': self.cluster_db.id}),
+                kwargs={'cluster_id': self.cluster.id}),
             params=jsonutils.dumps({
                 "editable": {
                     "value": {"foo": "bar"}
@@ -694,7 +687,7 @@ class TestVmwareAttributes(BaseIntegrationTest):
     @patch('nailgun.db.sqlalchemy.models.Cluster.is_locked', return_value=True)
     def test_vmware_attributes_update_for_locked_cluster_200(
             self, is_locked_mock, has_compute_mock):
-        self._set_use_vcenter(self.cluster_db)
+        self._set_use_vcenter(self.cluster)
         params = {
             "editable": {
                 "value": {"foo": "bar"}
@@ -704,12 +697,12 @@ class TestVmwareAttributes(BaseIntegrationTest):
             resp = self.app.put(
                 reverse(
                     'VmwareAttributesHandler',
-                    kwargs={'cluster_id': self.cluster_db.id}),
+                    kwargs={'cluster_id': self.cluster.id}),
                 params=jsonutils.dumps(params),
                 headers=self.default_headers
             )
         self.assertEqual(200, resp.status_code)
-        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster)
         self.assertEqual('bar', attrs.editable.get('value', {}).get('foo'))
         attrs.editable.get('value', {}).pop('foo')
         self.assertEqual(attrs.editable.get('value'), {})
@@ -725,11 +718,10 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
 
     def test_get_default_vmware_attributes(self):
         cluster = self.env.create_cluster(api=True)
-        cluster_db = self.env.clusters[0]
-        cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
         cluster_attrs['common']['use_vcenter']['value'] = True
         objects.Cluster.update_attributes(
-            cluster_db, {'editable': cluster_attrs})
+            cluster, {'editable': cluster_attrs})
         resp = self.app.get(
             reverse(
                 'VmwareAttributesDefaultsHandler',
@@ -765,7 +757,7 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
     def setUp(self):
         super(TestAttributesWithPlugins, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
                 'version': '2015.1.0-7.0',
@@ -780,8 +772,6 @@ class TestAttributesWithPlugins(BaseIntegrationTest):
                 {'roles': ['compute'], 'pending_addition': True},
             ]
         )
-
-        self.cluster = self.env.clusters[0]
 
         self.plugin_data = {
             'releases': [

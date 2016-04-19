@@ -27,13 +27,12 @@ class TestSpawnVMs(BaseIntegrationTest):
 
     @fake_tasks(recover_nodes=False)
     def test_spawn_vms(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True,
                  "roles": ["virt"]},
             ]
         )
-        cluster = self.env.clusters[0]
         cluster.nodes[0].vms_conf = [{'id': 1, 'cluster_id': cluster.id}]
 
         resp = self.app.put(
@@ -51,13 +50,12 @@ class TestSpawnVMs(BaseIntegrationTest):
         self.assertEqual(len(task_deploy.subtasks), 2)
 
     def test_create_vms_conf(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True,
                  "roles": ["virt"]},
             ]
         )
-        cluster = self.env.clusters[0]
         vms_conf = {"vms_conf": [{'id': 1, 'cluster_id': cluster.id}]}
         self.app.put(
             reverse(
@@ -75,13 +73,12 @@ class TestSpawnVMs(BaseIntegrationTest):
         self.assertEqual(spawning_nodes.json, vms_conf)
 
     def test_spawn_vms_error(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True,
                  "roles": ["compute"]},
             ]
         )
-        cluster = self.env.clusters[0]
 
         resp = self.app.put(
             reverse(

@@ -25,12 +25,11 @@ class TestTransactionHandlers(BaseTestCase):
 
     def setUp(self):
         super(TestTransactionHandlers, self).setUp()
-        self.env.create(
+        self.cluster_db = self.env.create(
             nodes_kwargs=[
                 {"roles": ["controller"]}
             ]
         )
-        self.cluster_db = self.env.clusters[0]
 
     def test_transaction_deletion(self):
         task = Task(

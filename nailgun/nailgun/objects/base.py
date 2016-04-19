@@ -56,6 +56,9 @@ class NailgunObject(object):
         """
         q = db().query(cls.model)
         if lock_for_update:
+            # todo(ikutukov): replace to the with_for_update
+            # http://docs.sqlalchemy.org/en/latest/orm/query.html#sqlalchemy.
+            # orm.query.Query.with_for_update
             q = q.with_lockmode('update')
         res = q.get(uid)
         if not res and fail_if_not_found:

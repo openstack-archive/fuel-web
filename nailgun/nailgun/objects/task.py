@@ -294,8 +294,11 @@ class Task(NailgunObject):
     def update(cls, instance, data):
         logger.debug("Updating task: %s", instance.uuid)
         clean_data = cls._clean_data(data)
+        logger.info("PF: Clean data")
         super(Task, cls).update(instance, clean_data)
+        logger.info("PF: Task update")
         db().flush()
+        logger.info("PF: Task db flush")
 
         # update cluster only if task status was updated
         if instance.cluster_id and 'status' in clean_data:
@@ -304,11 +307,13 @@ class Task(NailgunObject):
                          instance.uuid, instance.cluster_id,
                          data.get('status'))
             cls._update_cluster_data(instance)
+            logger.info("PF: Update cluster data")
 
         if instance.parent and \
                 {'status', 'message', 'progress'}.intersection(clean_data):
             logger.debug("Updating parent task: %s.", instance.parent.uuid)
             cls._update_parent_instance(instance.parent)
+            logger.info("PF: Update parent instance")
 
     @classmethod
     def delete(cls, instance):
@@ -357,3 +362,12 @@ class TaskCollection(NailgunCollection):
     @classmethod
     def all_not_deleted(cls):
         return cls.filter_by(None, deleted_at=None)
+
+    @classmethod
+    def all_in_progress(cls):
+        """Get all tasks that are executing or will be executed."""
+        return cls.all_not_deleted().filter(
+            cls.single.model.status.in_(
+                (consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending)
+            )
+        )

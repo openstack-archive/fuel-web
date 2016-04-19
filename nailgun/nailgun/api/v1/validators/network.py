@@ -853,6 +853,12 @@ class NetAssignmentValidator(BasicValidator):
 class NetworkGroupValidator(NetworkConfigurationValidator):
 
     @classmethod
+    def _check_if_network_configuration_locked(cls, cluster):
+        if objects.Cluster.is_network_modification_locked(cluster):
+            raise errors.InvalidData("Network configuration cannot be changed "
+                                     "during deployment and after upgrade.")
+
+    @classmethod
     def validate(cls, data):
         d = cls.validate_json(data)
         node_group = objects.NodeGroup.get_by_uid(d.get('group_id'))
@@ -864,6 +870,7 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
             )
 
         cls._check_duplicate_network_name(node_group, d.get('name'))
+        cls._check_if_network_configuration_locked(node_group.cluster)
 
         return d
 
@@ -882,6 +889,7 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be changed")
 
+        cls._check_if_network_configuration_locked(ng_db.nodegroup.cluster)
         # If name is being changed then we should make sure it does
         # not conflict with an existing network. Otherwise it's fine to
         # send the current name as part of the PUT request.
@@ -898,9 +906,7 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
             # It cannot be deleted.
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be deleted")
-        elif instance.nodegroup.cluster.is_locked:
-            raise errors.InvalidData(
-                "Networks cannot be deleted after deployment")
+        cls._check_if_network_configuration_locked(instance.nodegroup.cluster)
 
     @classmethod
     def _check_duplicate_network_name(cls, node_group, network_name):

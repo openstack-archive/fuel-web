@@ -1250,6 +1250,48 @@ class TestTaskManagers(BaseIntegrationTest):
             [consts.MASTER_NODE_UID, None] + nodes_uids, tasks_graph
         )
 
+    @mock.patch('nailgun.task.task.rpc.cast')
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    def test_only_certain_tasks_run_in_deploy(self, tasks_mock, rpc_mock):
+        task = {
+            'id': 'test', 'parameters': {}, 'type': 'puppet',
+            'roles': ['master'], 'version': '2.1.0',
+        }
+
+        tasks = []
+        for i in range(5):
+            task_copy = task.copy()
+            task_copy['id'] = 'test' + str(i)
+            tasks.append(task_copy)
+
+        tasks_mock.return_value = tasks
+
+        self.env.create(
+            nodes_kwargs=[
+                {'status': NODE_STATUSES.provisioned, 'roles': ['controller']},
+                {'status': NODE_STATUSES.provisioned, 'roles': ['compute']},
+                {'status': NODE_STATUSES.provisioned, 'roles': ['cinder']},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'liberty-9.0',
+            },
+        )
+        cluster = self.env.clusters[-1]
+        task_ids = ['test0', 'test3']
+        task = self.env.launch_deployment_selected_tasks(
+            [n.uid for n in cluster.nodes],
+            cluster.id, task_ids)
+
+        self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
+
+        tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+        for task in tasks_graph['master']:
+            if task['id'] in task_ids:
+                self.assertEqual(task['type'], 'puppet')
+            else:
+                self.assertEqual(task['type'], 'skipped')
+
 
 class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
 

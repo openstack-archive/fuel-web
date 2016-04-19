@@ -139,15 +139,15 @@ class TestInstallationInfo(BaseTestCase):
             {'roles': ['compute']},
             {'roles': ['controller']}
         ]
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'release_id': release[0].id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron},
             nodes_kwargs=nodes_params
         )
-        self.env.create_node({'status': consts.NODE_STATUSES.discover})
-        cluster = self.env.clusters[0]
+        self.env.create_node(
+            {'status': consts.NODE_STATUSES.discover})
         VmwareAttributes.delete(cluster.vmware_attributes)
         self.env.db.flush()
         self.assertNotRaises(AttributeError, info.get_clusters_info)
@@ -162,16 +162,16 @@ class TestInstallationInfo(BaseTestCase):
             {'roles': ['compute']},
             {'roles': ['controller']}
         ]
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'release_id': release[0].id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron},
             nodes_kwargs=nodes_params
         )
-        self.env.create_node({'status': consts.NODE_STATUSES.discover})
+        self.env.create_node(
+            {'status': consts.NODE_STATUSES.discover})
         clusters_info = info.get_clusters_info()
-        cluster = self.env.clusters[0]
         self.assertEquals(1, len(clusters_info))
         cluster_info = clusters_info[0]
 
@@ -187,7 +187,7 @@ class TestInstallationInfo(BaseTestCase):
         self.assertEquals(False,
                           cluster_info['is_customized'])
 
-        self.assertEquals(cluster.id,
+        self.assertEquals(cluster['id'],
                           cluster_info['id'])
         self.assertEquals(cluster.fuel_version,
                           cluster_info['fuel_version'])
@@ -442,10 +442,9 @@ class TestInstallationInfo(BaseTestCase):
         return filter(lambda x: x not in private_paths, leafs_paths)
 
     def test_all_cluster_attributes_in_white_list(self):
-        self.env.create(nodes_kwargs=[{'roles': ['compute']}])
+        cluster = self.env.create(nodes_kwargs=[{'roles': ['compute']}])
         self.env.create_node(status=consts.NODE_STATUSES.discover)
 
-        cluster = self.env.clusters[0]
         expected_paths = self._find_leafs_paths(cluster.attributes.editable)
 
         # Removing 'value' from expected paths
@@ -460,10 +459,9 @@ class TestInstallationInfo(BaseTestCase):
             self.assertIn(path, actual_paths)
 
     def test_all_cluster_vmware_attributes_in_white_list(self):
-        self.env.create(nodes_kwargs=[{'roles': ['compute']}])
+        cluster = self.env.create(nodes_kwargs=[{'roles': ['compute']}])
         self.env.create_node(status=consts.NODE_STATUSES.discover)
 
-        cluster = self.env.clusters[0]
         expected_paths = self._find_leafs_paths(
             cluster.vmware_attributes.editable,
             leafs_names=('vsphere_cluster', 'enable'))

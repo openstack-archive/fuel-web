@@ -29,13 +29,12 @@ class TestPluginManager(base.BaseIntegrationTest):
 
     def setUp(self):
         super(TestPluginManager, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={
                 'version': '2015.1-8.0',
                 'operating_system': 'Ubuntu'})
 
         self.release = self.env.releases[0]
-        self.cluster = self.env.clusters[0]
 
         # Create two plugins with package verion 3.0.0
         for name in ['test_plugin_1', 'test_plugin_2']:
@@ -286,8 +285,7 @@ class TestPluginManager(base.BaseIntegrationTest):
         self.assertItemsEqual([plugin], enabled_plugins)
 
     def test_get_plugins_attributes_when_cluster_is_locked(self):
-        self.env.create(api=False)
-        cluster = self.env.clusters[-1]
+        cluster = self.env.create(api=False)
         plugin_a1 = self.env.create_plugin(
             name='plugin_a', version='1.0.1',
             cluster=cluster, enabled=False
@@ -361,8 +359,7 @@ class TestPluginManager(base.BaseIntegrationTest):
         )
 
     def test_get_plugins_attributes_when_cluster_is_not_locked(self):
-        self.env.create(api=False)
-        cluster = self.env.clusters[-1]
+        cluster = self.env.create(api=False)
         plugin_a1 = self.env.create_plugin(
             name='plugin_a', version='1.0.1',
             cluster=cluster, enabled=False
@@ -459,14 +456,13 @@ class TestClusterPluginIntegration(base.BaseTestCase):
     def setUp(self):
         super(TestClusterPluginIntegration, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
                 'version': '2015.1-8.0'},
             cluster_kwargs={
                 'mode': consts.CLUSTER_MODES.ha_compact,
             })
-        self.cluster = self.env.clusters[0]
 
     def _create_plugin(self, **kwargs):
         plugin = self.env.create_plugin(name=uuid.uuid4().get_hex(), **kwargs)
@@ -484,12 +480,11 @@ class TestClusterPluginIntegration(base.BaseTestCase):
         plugin_b = self._create_plugin(**self._compat_meta)
         self._create_plugin(**self._uncompat_meta)
 
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'release_id': self.cluster.release.id,
                 'mode': consts.CLUSTER_MODES.ha_compact,
             })
-        cluster = self.env.clusters[1]
 
         compat_plugins = ClusterPlugins.get_compatible_plugins(cluster)
         self.assertItemsEqual(compat_plugins, [plugin_a, plugin_b])

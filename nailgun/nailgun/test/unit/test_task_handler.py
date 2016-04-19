@@ -24,12 +24,11 @@ class TestTaskHandlers(BaseTestCase):
 
     def setUp(self):
         super(TestTaskHandlers, self).setUp()
-        self.env.create(
+        self.cluster_db = self.env.create(
             nodes_kwargs=[
                 {"roles": ["controller"]}
             ]
         )
-        self.cluster_db = self.env.clusters[0]
 
     def test_task_deletion(self):
         task = Task(

@@ -77,12 +77,10 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_node_reassign_handler(self, mcast):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'status': consts.NODE_STATUSES.ready}])
-        self.env.create_cluster()
-        cluster = self.env.clusters[0]
-        seed_cluster = self.env.clusters[1]
+        seed_cluster = self.env.create_cluster()
         node_id = cluster.nodes[0]['id']
 
         resp = self.app.post(
@@ -144,9 +142,7 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         self.assertEqual(node.roles, ['compute'])
 
     def test_node_reassign_handler_no_node(self):
-        self.env.create_cluster()
-
-        cluster = self.env.clusters[0]
+        cluster = self.env.create_cluster()
 
         resp = self.app.post(
             reverse('NodeReassignHandler',
@@ -159,10 +155,9 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
                          resp.json_body['message'])
 
     def test_node_reassing_handler_wrong_status(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'status': 'discover'}])
-        cluster = self.env.clusters[0]
 
         resp = self.app.post(
             reverse('NodeReassignHandler',
@@ -175,11 +170,10 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
                                  "^Node should be in one of statuses:")
 
     def test_node_reassing_handler_wrong_error_type(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'status': 'error',
                            'error_type': 'provision'}])
-        cluster = self.env.clusters[0]
 
         resp = self.app.post(
             reverse('NodeReassignHandler',
@@ -192,10 +186,9 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
                                  "^Node should be in error state")
 
     def test_node_reassign_handler_to_the_same_cluster(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'status': 'ready'}])
-        cluster = self.env.clusters[0]
 
         cluster_id = cluster['id']
         node_id = cluster.nodes[0]['id']

@@ -237,7 +237,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                          self.get_vgs(modified_roles_response))
 
     def test_volumes_update_after_roles_assignment(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"cluster_id": None}
             ]
@@ -255,7 +255,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         self.app.post(
             reverse(
                 'NodeAssignmentHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
+                kwargs={'cluster_id': cluster.id}
             ),
             jsonutils.dumps(assignment_data),
             headers=self.default_headers

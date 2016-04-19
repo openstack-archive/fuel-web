@@ -35,15 +35,14 @@ class TestMongoNodes(base.BaseTestCase):
         return attr_meta
 
     def test_get_zero_mongo_nodes(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[{}]
         )
-        cluster = self.env.clusters[0]
         nodes = objects.Cluster.get_nodes_by_role(cluster, 'mongo')
         self.assertEqual(len(nodes), 0)
 
     def test_get_mongo_nodes(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'pending_roles': ['mongo'],
                  'status': 'discover',
@@ -53,12 +52,11 @@ class TestMongoNodes(base.BaseTestCase):
                  'pending_addition': True}
             ]
         )
-        cluster = self.env.clusters[0]
         nodes = objects.Cluster.get_nodes_by_role(cluster, 'mongo')
         self.assertEqual(len(nodes), 2)
 
     def test_mongo_node_with_ext_mongo(self):
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={
                 'attributes_metadata': self.get_custom_meta(True, True)},
             nodes_kwargs=[
@@ -67,36 +65,33 @@ class TestMongoNodes(base.BaseTestCase):
                  'pending_addition': True}
             ]
         )
-        cluster = self.env.clusters[0]
         task = Task(name=TASK_NAMES.deploy, cluster=cluster)
         self.assertRaises(errors.ExtMongoCheckerError,
                           CheckBeforeDeploymentTask._check_mongo_nodes,
                           task)
 
     def test_ext_mongo_without_mongo_node(self):
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={
                 'attributes_metadata': self.get_custom_meta(True, True)},
             nodes_kwargs=[]
         )
-        cluster = self.env.clusters[0]
         task = Task(name=TASK_NAMES.deploy, cluster=cluster)
         CheckBeforeDeploymentTask._check_mongo_nodes(task)
 
     def test_without_any_mongo(self):
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={
                 'attributes_metadata': self.get_custom_meta(True, False)},
             nodes_kwargs=[]
         )
-        cluster = self.env.clusters[0]
         task = Task(name=TASK_NAMES.deploy, cluster=cluster)
         self.assertRaises(errors.MongoNodesCheckError,
                           CheckBeforeDeploymentTask._check_mongo_nodes,
                           task)
 
     def test_mongo_node_without_ext_mongo(self):
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={
                 'attributes_metadata': self.get_custom_meta(True, False)},
             nodes_kwargs=[
@@ -105,6 +100,5 @@ class TestMongoNodes(base.BaseTestCase):
                  'pending_addition': True}
             ]
         )
-        cluster = self.env.clusters[0]
         task = Task(name=TASK_NAMES.deploy, cluster=cluster)
         CheckBeforeDeploymentTask._check_mongo_nodes(task)

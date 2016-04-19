@@ -48,14 +48,13 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(node['id'], notif_api['node_id'])
 
     def test_node_get_with_cluster(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[
                 {"cluster_id": None},
                 {},
             ]
         )
-        cluster = self.env.clusters[0]
 
         resp = self.app.get(
             reverse('NodeCollectionHandler'),

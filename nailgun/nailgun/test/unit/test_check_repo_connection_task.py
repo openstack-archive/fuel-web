@@ -25,7 +25,7 @@ class TestRepoAvailability(BaseTestCase):
 
     def setUp(self):
         super(TestRepoAvailability, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'
@@ -35,7 +35,6 @@ class TestRepoAvailability(BaseTestCase):
                           {'roles': ['compute']},
                           {'roles': ['compute'], 'online': False}])
 
-        self.cluster = self.env.clusters[0]
         self.public_ng = next(ng for ng in self.cluster.network_groups
                               if ng.name == 'public')
         self.free_ips = NetworkManager.get_free_ips(self.public_ng, 2)

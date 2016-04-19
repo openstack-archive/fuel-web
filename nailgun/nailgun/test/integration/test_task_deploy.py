@@ -28,7 +28,7 @@ from nailgun.utils import reverse
 class TestTaskDeploy(BaseIntegrationTest):
     def setUp(self):
         super(TestTaskDeploy, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             api=False,
             nodes_kwargs=[
                 {"name": "First",
@@ -42,7 +42,6 @@ class TestTaskDeploy(BaseIntegrationTest):
                 'version': '2015.1.0-8.0',
             },
         )
-        self.cluster = self.env.clusters[-1]
 
     def add_plugin_with_tasks(self, task_id):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks(

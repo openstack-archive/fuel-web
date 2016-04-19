@@ -33,8 +33,8 @@ class TestNodeDeletion(BaseIntegrationTest):
 
     def setUp(self):
         super(TestNodeDeletion, self).setUp()
-        self.env.create(nodes_kwargs=[{"pending_addition": True}])
-        self.cluster = self.env.clusters[0]
+        self.cluster = self.env.create(
+            nodes_kwargs=[{"pending_addition": True}])
         self.node_ids = [node.id for node in self.cluster.nodes]
 
     @fake_tasks()
@@ -127,13 +127,12 @@ class TestNodeDeletion(BaseIntegrationTest):
 class TestNodeDeletionBadRequest(BaseIntegrationTest):
 
     def test_node_handlers_deletion_bad_request(self):
-        self.env.create(nodes_kwargs=[
+        cluster = self.env.create(nodes_kwargs=[
             {'roles': ['controller'], 'status': consts.NODE_STATUSES.error}
         ])
-        cluster_db = self.env.clusters[0]
 
         node_to_delete = self.env.create_node(
-            cluster_id=cluster_db.id,
+            cluster_id=cluster.id,
             roles=['controller'],
             status=consts.NODE_STATUSES.ready
         )

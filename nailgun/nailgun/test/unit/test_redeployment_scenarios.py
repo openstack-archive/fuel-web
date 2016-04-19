@@ -32,45 +32,42 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
             nodes_kwargs=nodes_kwargs)
 
     def test_cluster_deployed_with_computes(self):
-        self.create_env(
+        cluster = self.create_env(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'status': 'discover',
                  'pending_addition': True},
                 {'roles': ['compute'],
                  'status': 'ready'}])
-        cluster = self.env.clusters[0]
         nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
         self.assertEqual(cluster.nodes, nodes)
 
     def test_cluster_deployed_with_cinder(self):
-        self.create_env(
+        cluster = self.create_env(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'status': 'discover',
                  'pending_addition': True},
                 {'roles': ['cinder'],
                  'status': 'ready'}])
-        cluster = self.env.clusters[0]
         nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
         self.assertEqual(cluster.nodes, nodes)
 
     def test_ceph_osd_is_not_affected(self):
-        self.create_env(
+        cluster = self.create_env(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'status': 'discover',
                  'pending_addition': True},
                 {'roles': ['ceph-osd'],
                  'status': 'ready'}])
-        cluster = self.env.clusters[0]
         nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
         self.assertNotEqual(cluster.nodes, nodes)
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0].pending_roles, ['controller'])
 
     def test_cinder_is_not_affected_when_add_compute(self):
-        self.create_env(
+        cluster = self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': 'ready'},
@@ -79,27 +76,25 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
                  'pending_addition': True},
                 {'roles': ['cinder'],
                  'status': 'ready'}])
-        cluster = self.env.clusters[0]
         nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
         self.assertNotEqual(cluster.nodes, nodes)
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0].pending_roles, ['compute'])
 
     def test_controllers_redeployed_if_ceph_added(self):
-        self.create_env(
+        cluster = self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': 'ready'},
                 {'pending_roles': ['ceph-osd'],
                  'status': 'discover',
                  'pending_addition': True}])
-        cluster = self.env.clusters[0]
         nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
         self.assertEqual(len(nodes), 2)
         self.assertEqual(sorted(cluster.nodes), sorted(nodes))
 
     def test_controllers_not_redeployed_if_ceph_previously_in_cluster(self):
-        self.create_env(
+        cluster = self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'],
                  'status': 'ready'},
@@ -108,7 +103,6 @@ class TestClusterRedeploymentScenario(base.BaseTestCase):
                 {'pending_roles': ['ceph-osd'],
                  'status': 'discover',
                  'pending_addition': True}])
-        cluster = self.env.clusters[0]
         nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0].pending_roles, ['ceph-osd'])

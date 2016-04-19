@@ -15,6 +15,7 @@
 #    under the License.
 
 from distutils.version import StrictVersion
+from multiprocessing import Process, JoinableQueue, cpu_count
 
 import six
 
@@ -96,6 +97,19 @@ class TransactionSerializer(object):
 
         tasks_mapping = {}
         groups = []
+        processes = []
+
+        q = JoinableQueue()
+        try:
+            workers = cpu_count()
+        except NotImplementedError:
+            logger.debug("Unable to get CPU count. Fallback to 1 worker")
+            workers = 1
+        for _ in xrange(workers):
+            p = Process(target=self.process_task, args=(q,))
+            p.start()
+            # Store processes as we need to close them later
+            processes.append(p)
 
         for task in tasks:
             if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
@@ -103,7 +117,8 @@ class TransactionSerializer(object):
             else:
                 self.ensure_task_based_deploy_allowed(task)
                 tasks_mapping[task['id']] = task
-                self.process_task(task, self.resolve_nodes(task))
+                for node_id in self.resolve_nodes(task):
+                    q.put((task, node_id))
 
         for task in groups:
             node_ids = self.role_resolver.resolve(
@@ -116,24 +131,34 @@ class TransactionSerializer(object):
                     raise errors.InvalidData(
                         'Task %s cannot be resolved', sub_task_id
                     )
-
                 # if group is not excluded, all task should be run as well
                 # otherwise check each task individually
-                self.process_task(sub_task, node_ids)
-
+                for node_id in node_ids:
+                    q.put((sub_task, node_id))
+        # Put poison pills as a last task
+        for i in xrange(workers):
+            q.put((None, None))
+        q.join()
+        # We need to close queue to consequent processes close
+        q.close()
+        # Close processes. In other way they will hang in defunct state
+        for p in processes:
+            p.join()
         # make sure that null node is present
         self.tasks_graph.setdefault(None, {})
 
-    def process_task(self, task, node_ids):
-        """Processes one task one nodes of cluster.
+    def process_task(self, queue):
+        """Processes one task for one node of cluster.
 
-        :param task: the task instance
-        :param node_ids: the list of nodes, where this tasks should run
+        :param queue: queue with tasks
         """
-
-        logger.debug("applying task '%s' for nodes: %s", task['id'], node_ids)
-        task_serializer = self.factory.create_serializer(task)
-        for node_id in node_ids:
+        while True:
+            task, node_id = queue.get()
+            if task is None:
+                queue.task_done()
+                break
+            logger.debug("applying task '%s' for node: %s", task['id'], node_id)
+            task_serializer = self.factory.create_serializer(task)
             try:
                 task = task_serializer.serialize(node_id)
             except Exception:
@@ -146,6 +171,8 @@ class TransactionSerializer(object):
             # overwrite if existed task is skipped and new is not skipped.
             if self.need_update_task(node_tasks, task):
                 node_tasks[task['id']] = task
+            queue.task_done()
+        return True
 
     def resolve_nodes(self, task):
         if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.stage:

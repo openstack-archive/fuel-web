@@ -18,9 +18,14 @@
 # in a Python script only when you run it via uwsgi. So when we run tests,
 # we do not do it via uwsgi and this code raises ImportError and later the
 # task is called synchronously -- so it should work exactly as before.
+
+from nailgun.logger import logger
+
 try:
     import uwsgidecorators
 except ImportError:
+    logger.warning("'uwsgidecorators' python package is not installed, "
+                   "mule tasks will be executed in synchronous mode.")
     uwsgidecorators = None
 
 from nailgun.logger import logger

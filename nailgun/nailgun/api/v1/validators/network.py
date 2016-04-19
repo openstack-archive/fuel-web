@@ -864,7 +864,6 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
             )
 
         cls._check_duplicate_network_name(node_group, d.get('name'))
-
         return d
 
     @classmethod
@@ -898,9 +897,6 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
             # It cannot be deleted.
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be deleted")
-        elif instance.nodegroup.cluster.is_locked:
-            raise errors.InvalidData(
-                "Networks cannot be deleted after deployment")
 
     @classmethod
     def _check_duplicate_network_name(cls, node_group, network_name):

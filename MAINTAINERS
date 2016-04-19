@@ -97,19 +97,23 @@ maintainers:
       email:  asvechnikov@mirantis.com
       IRC:    asvechnikov
 
-    - name:   Maciej Kwiek
-      email:  mkwiek@mirantis.com
-      IRC:    mkwiek
+    - name:   Ilya Kutukov
+      email:  ikutukov@mirantis.com
+      IRC:    ikutukov
 
 - nailgun/nailgun/extensions/volume_manager/:
     - name:   Evgeny Li
       email:  eli@mirantis.com
       IRC:    evgeniyl
 
-- nailgun/nailgun/network/: &network_experts
+- nailgun/nailgun/extensions/network_manager/: &network_experts
     - name:   Aleksei Kasatkin
       email:  akasatkin@mirantis.com
       IRC:    akasatkin
+
+    - name:   Artem Roma
+      email:  aroma@mirantis.com
+      IRC:    aroma
 
     - name:   Ryan Moe
       email:  rmoe@mirantis.com

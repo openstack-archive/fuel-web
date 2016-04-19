@@ -953,7 +953,11 @@ class EnvironmentManager(object):
         raise Exception(
             'Cluster with ID "{0}" was not found.'.format(cluster_id))
 
-    def _launch_for_selected_nodes(self, handler, nodes_uids, cluster_id):
+    def _launch_for_selected_nodes(self, handler, nodes_uids, cluster_id,
+                                   body=None):
+        if body is None:
+            body = {}
+
         if self.clusters:
             cluster = self._get_cluster_by_id(cluster_id)
             if not nodes_uids:
@@ -964,7 +968,7 @@ class EnvironmentManager(object):
             ) + '?nodes={0}'.format(','.join(nodes_uids))
             resp = self.app.put(
                 action_url,
-                '{}',
+                jsonutils.dumps(body),
                 headers=self.default_headers,
                 expect_errors=True
             )
@@ -989,6 +993,13 @@ class EnvironmentManager(object):
     def launch_deployment_selected(self, nodes_uids=None, cluster_id=None):
         return self._launch_for_selected_nodes(
             'DeploySelectedNodes', nodes_uids, cluster_id
+        )
+
+    def launch_deployment_selected_tasks(self,
+                                         nodes_uids, cluster_id, task_ids):
+        return self._launch_for_selected_nodes(
+            'DeploySelectedNodesWithTasks', nodes_uids, cluster_id,
+            task_ids or [],
         )
 
     def _launch_for_cluster(self, handler, cluster_id):

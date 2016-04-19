@@ -60,6 +60,10 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.DeploymentHistoryCollection.all().update(
             {'status': consts.HISTORY_TASK_STATUSES.ready})
 
+    def set_tasks_ready(self):
+        objects.TaskCollection.all().update(
+            {'status': consts.TASK_STATUSES.ready})
+
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
         cluster = self.env.create(
@@ -1422,14 +1426,14 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         node = cluster.nodes[0]
 
-        task = {
+        task_params = {
             'parameters': {}, 'type': 'puppet',
             'roles': ['primary-controller'], 'version': '2.1.0',
             'condition': {'yaql_exp': 'changed($.uid)'},
         }
 
         tasks_mock.return_value = [
-            dict(task, id='test1'), dict(task, id='test2')
+            dict(task_params, id='test1'), dict(task_params, id='test2')
         ]
         state_mock.return_value = []
 
@@ -1442,22 +1446,25 @@ class TestTaskManagers(BaseIntegrationTest):
         if provision:
             node.status = consts.NODE_STATUSES.provisioned
         state_mock.return_value = [(supertask, 'test1')]
-        task = self.env.launch_deployment_selected([node.uid], cluster.id)
-        self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
+        self.set_tasks_ready()
+        subtask = self.env.launch_deployment_selected([node.uid], cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, subtask.status)
         tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
 
-        # chek that test1 task skipped by condition and test2 was not
-        for task in tasks_graph[node.uid]:
-            if task['id'] == 'test1':
+        # check that test1 task skipped by condition and test2 was not
+        for graph_task in tasks_graph[node.uid]:
+            if graph_task['id'] == 'test1':
                 if provision:
                     self.assertNotEqual(
-                        task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
+                        graph_task['type'],
+                        consts.ORCHESTRATOR_TASK_TYPES.skipped)
                 else:
                     self.assertEqual(
-                        task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
-            elif task['id'] == 'test2':
+                        graph_task['type'],
+                        consts.ORCHESTRATOR_TASK_TYPES.skipped)
+            elif graph_task['id'] == 'test2':
                 self.assertNotEqual(
-                    task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
+                    graph_task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
             else:
                 self.fail('Unexpected task in graph')
 

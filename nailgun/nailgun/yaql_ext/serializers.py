@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from oslo_serialization import jsonutils
 import yaml
 from yaql.language import specs

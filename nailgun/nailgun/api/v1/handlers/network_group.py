@@ -14,12 +14,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from nailgun.api.v1.handlers.base import CollectionHandler
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.network import NetworkGroupValidator
 
+from nailgun import errors
 from nailgun import objects
+
+
+def check_if_network_configuration_locked(node_group):
+    if (node_group and
+       objects.Cluster.is_network_modification_locked(node_group.cluster)):
+        raise SingleHandler.http(403,
+                                 "Network configuration cannot be changed "
+                                 "during deployment and after upgrade.")
 
 
 class NetworkGroupHandler(SingleHandler):
@@ -28,9 +37,72 @@ class NetworkGroupHandler(SingleHandler):
     validator = NetworkGroupValidator
     single = objects.NetworkGroup
 
+    @content
+    def PUT(self, group_id):
+        """:returns: JSONized Network Group object.
+
+        :http:
+            * 200 (OK)
+            * 400 (error occured while processing of data)
+            * 403 (change of configuration is forbidden)
+            * 404 (Network group was not found in db)
+        """
+        ng = self.get_object_or_404(self.single, group_id)
+        check_if_network_configuration_locked(ng.nodegroup)
+
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=ng
+        )
+        self.single.update(ng, data)
+
+        return self.single.to_json(ng)
+
+    @content
+    def DELETE(self, group_id):
+        """Remove Network Group
+
+        :http:
+            * 204 (object successfully deleted)
+            * 400 (cannot delete object)
+            * 403 (change of configuration is forbidden)
+            * 404 (no such object found)
+        """
+        ng = self.get_object_or_404(self.single, group_id)
+        check_if_network_configuration_locked(ng.nodegroup)
+
+        self.checked_data(
+            self.validator.validate_delete,
+            instance=ng
+        )
+
+        self.single.delete(ng)
+        raise self.http(204)
+
 
 class NetworkGroupCollectionHandler(CollectionHandler):
     """Network group collection handler"""
 
     collection = objects.NetworkGroupCollection
     validator = NetworkGroupValidator
+
+    @content
+    def POST(self):
+        """:returns: JSONized Network Group object.
+
+        :http: * 201 (network group successfully created)
+               * 400 (invalid object data specified)
+               * 403 (change of configuration is forbidden)
+               * 409 (network group already exists)
+        """
+
+        data = self.checked_data()
+        node_group = objects.NodeGroup.get_by_uid(data.get('group_id'))
+        check_if_network_configuration_locked(node_group)
+
+        try:
+            new_ng = self.collection.create(data)
+        except errors.CannotCreate as exc:
+            raise self.http(400, exc.message)
+
+        raise self.http(201, self.collection.single.to_json(new_ng))

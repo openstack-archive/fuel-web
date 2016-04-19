@@ -60,6 +60,10 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.DeploymentHistoryCollection.all().update(
             {'status': consts.HISTORY_TASK_STATUSES.ready})
 
+    def set_tasks_ready(self):
+        objects.TaskCollection.all().update(
+            {'status': consts.TASK_STATUSES.ready})
+
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
         cluster = self.env.create(
@@ -1443,6 +1447,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
 
         self.set_history_ready()
+        self.set_tasks_ready()
 
         node.status = node_status
 

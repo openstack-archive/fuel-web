@@ -24,6 +24,7 @@ from nailgun.db import db
 from nailgun import errors
 from nailgun.expression import Expression
 from nailgun.objects import ClusterPlugins
+from nailgun.objects import DeploymentGraph
 from nailgun.objects import Plugin
 from nailgun.plugins import adapters
 from nailgun.settings import settings
@@ -163,20 +164,29 @@ class TestPluginBase(base.BaseTestCase):
                     getattr(self.plugin, key), val)
 
     def test_get_deployment_tasks(self):
-        self.plugin_adapter.deployment_tasks = \
-            self.env.get_default_plugin_deployment_tasks()
+        dg = DeploymentGraph.get_for_model(self.plugin_adapter.plugin)
+        DeploymentGraph.update(
+            dg,
+            {
+                'tasks': self.env.get_default_plugin_deployment_tasks()
+            }
+        )
 
-        depl_task = self.plugin_adapter.deployment_tasks[0]
+        depl_task = self.plugin_adapter.get_deployment_tasks()[0]
         self.assertEqual(depl_task['parameters'].get('cwd'),
                          self.plugin_adapter.slaves_scripts_path)
 
     def test_get_deployment_tasks_params_not_changed(self):
         expected = 'path/to/some/dir'
-        self.plugin_adapter.deployment_tasks = \
-            self.env.get_default_plugin_deployment_tasks(
-                parameters={'cwd': expected}
-            )
-        depl_task = self.plugin_adapter.deployment_tasks[0]
+        dg = DeploymentGraph.get_for_model(self.plugin_adapter.plugin)
+        DeploymentGraph.update(
+            dg,
+            {
+                'tasks': self.env.get_default_plugin_deployment_tasks(
+                    parameters={'cwd': expected})
+            }
+        )
+        depl_task = self.plugin_adapter.get_deployment_tasks()[0]
         self.assertEqual(depl_task['parameters'].get('cwd'), expected)
 
     def _find_path(self, config_name):
@@ -274,7 +284,9 @@ class TestPluginV3(TestPluginBase):
                     v.update({
                         'cwd': '/etc/fuel/plugins/testing_plugin-0.1/'
                     })
-                self.assertEqual(self.plugin_adapter.deployment_tasks[0][k], v)
+                self.assertEqual(
+                    self.plugin_adapter.get_deployment_tasks()[0][k],
+                    v)
 
 
 class TestPluginV4(TestPluginBase):
@@ -333,7 +345,9 @@ class TestPluginV4(TestPluginBase):
                     v.update({
                         'cwd': '/etc/fuel/plugins/testing_plugin-0.1/'
                     })
-                self.assertEqual(self.plugin_adapter.deployment_tasks[0][k], v)
+                self.assertEqual(
+                    self.plugin_adapter.get_deployment_tasks()[0][k],
+                    v)
 
     def test_empty_task_file_not_failing(self):
         with mock.patch.object(

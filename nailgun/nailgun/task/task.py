@@ -372,7 +372,20 @@ class ClusterTransaction(DeploymentTask):
         return ['task_deploy']
 
     @classmethod
-    def task_deploy(cls, transaction, tasks, nodes, force=False, **kwargs):
+    def mark_skipped(cls, tasks, task_ids):
+        task_ids = set(task_ids or [])
+
+        for task in tasks:
+            if not task_ids or task['id'] in task_ids:
+                yield task
+            else:
+                task = task.copy()
+                task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
+                yield task
+
+    @classmethod
+    def task_deploy(cls, transaction, tasks, nodes, force=False,
+                    selected_task_ids=None, **kwargs):
         logger.info("The cluster transaction is initiated.")
         logger.info("cluster serialization is started.")
         # we should update information for all nodes except deleted
@@ -399,7 +412,9 @@ class ClusterTransaction(DeploymentTask):
         # also role resolver should be created after serialization completed
         role_resolver = RoleResolver(nodes)
         directory, graph = lcm.TransactionSerializer.serialize(
-            context, tasks, role_resolver
+            context,
+            cls.mark_skipped(tasks, selected_task_ids),
+            role_resolver,
         )
         logger.info("tasks serialization is finished.")
         return {

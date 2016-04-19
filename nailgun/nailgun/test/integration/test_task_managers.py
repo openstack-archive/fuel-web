@@ -60,6 +60,10 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.DeploymentHistoryCollection.all().update(
             {'status': consts.HISTORY_TASK_STATUSES.ready})
 
+    def set_tasks_ready(self):
+        objects.TaskCollection.all().update(
+            {'status': consts.TASK_STATUSES.ready})
+
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
         cluster = self.env.create(
@@ -1455,14 +1459,18 @@ class TestTaskManagers(BaseIntegrationTest):
         state_mock.return_value = []
 
         # deploy cluster at first time and create history
-        supertask = self.env.launch_deployment_selected([node.uid], cluster.id)
-        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        task1 = self.env.launch_deployment_selected([node.uid], cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, task1.status)
+
+        # there should be no running tasks for this cluster to avoid conflict
+        # error while placing new deployment/provisioning task to execute
+        self.set_tasks_ready()
 
         self.set_history_ready()
 
         node.status = node_status
 
-        state_mock.return_value = [(supertask, node.uid, 'test1')]
+        state_mock.return_value = [(task1, node.uid, 'test1')]
         task = self.env.launch_deployment_selected([node.uid], cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
         tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']

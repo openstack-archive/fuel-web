@@ -87,6 +87,14 @@ class TaskManager(object):
         db().commit()
 
     def check_running_task(self, task_name):
+        """Fail if task with given name is running.
+
+        Otherwise clean all tasks with given name for all clusters.
+
+        :param task_name: nailgun task name
+        :type task_name: basestring
+        """
+        # fixme(ikutukov) could delete task in another cluster!
         current_tasks = db().query(Task).filter_by(
             name=task_name
         )
@@ -106,6 +114,34 @@ class TaskManager(object):
             allocate_vips=True
         )
 
+    def _lock_cluster_to_run_unique_task(self, task_name):
+        """Lock cluster for update and check for active task with given name.
+
+        This method allows to resolve concurrency problems by creating cluster-
+        level lock for active task of given type.
+
+        :param task_name: task name
+        :type task_name: basestring
+        :returns: Cluster
+        :rtype: models.Cluster
+        """
+        # lock cluster to prevent other transaction from
+        # concurrent tasks creation
+        cluster = objects.Cluster.get_by_uid(
+            self.cluster.id, lock_for_update=True)
+
+        existing_active_task = objects.TaskCollection.filter_by(
+            objects.TaskCollection.all_in_progress(),
+            cluster_id=cluster.id,
+            name=task_name,
+        ).first()
+
+        if existing_active_task:
+            raise errors.TaskAlreadyRunning(
+                "{0} task is already {1}".format(
+                    task_name, existing_active_task.status)
+            )
+
 
 class DeploymentCheckMixin(object):
 
@@ -122,6 +158,11 @@ class DeploymentCheckMixin(object):
 
     @classmethod
     def check_no_running_deployment(cls, cluster):
+        """Check for existing deployment task and fail if one is found.
+
+        :param cluster: cluster model instance
+        :type cluster: models.Cluster
+        """
         tasks_q = objects.TaskCollection.get_by_name_and_cluster(
             cluster, cls.deployment_tasks).filter_by(
                 status=consts.TASK_STATUSES.running)
@@ -556,14 +597,6 @@ class ProvisioningTaskManager(TaskManager):
 
     def execute(self, nodes_to_provision, **kwargs):
         """Run provisioning task on specified nodes."""
-        # locking nodes
-        nodes_ids = [node.id for node in nodes_to_provision]
-        nodes = objects.NodeCollection.filter_by_list(
-            None,
-            'id',
-            nodes_ids,
-            order_by='id'
-        )
 
         logger.debug('Nodes to provision: {0}'.format(
             ' '.join([objects.Node.get_node_fqdn(n)
@@ -573,28 +606,58 @@ class ProvisioningTaskManager(TaskManager):
                               status=consts.TASK_STATUSES.pending,
                               cluster=self.cluster)
         db().add(task_provision)
+        db().commit()
+        nodes_ids_to_provision = [node.id for node in nodes_to_provision]
+
+        # perform async call of _execute_async
+        mule.call_task_manager_async(
+            self.__class__,
+            '_execute_async',
+            self.cluster.id,
+            task_provision.id,
+            nodes_ids_to_provision=nodes_ids_to_provision,
+            **kwargs
+        )
+
+        return task_provision
+
+    def _execute_async(self, task_provision_id,
+                       nodes_ids_to_provision, **kwargs):
+
+        nodes = objects.NodeCollection.filter_by_list(
+            None,
+            'id',
+            nodes_ids_to_provision,
+            order_by='id'
+        )
 
         for node in nodes:
             objects.Node.reset_vms_created_state(node)
 
         db().commit()
 
+        task_provision = objects.Task.get_by_uid(
+            task_provision_id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
         provision_message = self._call_silently(
             task_provision,
             tasks.ProvisionTask,
-            nodes_to_provision,
+            nodes,
             method_name='message'
         )
 
         task_provision = objects.Task.get_by_uid(
-            task_provision.id,
+            task_provision_id,
             fail_if_not_found=True,
             lock_for_update=True
         )
         task_provision.cache = provision_message
         objects.NodeCollection.lock_for_update(nodes).all()
 
-        for node in nodes_to_provision:
+        for node in nodes:
             node.pending_addition = False
             node.status = consts.NODE_STATUSES.provisioning
             node.progress = 0
@@ -609,16 +672,47 @@ class ProvisioningTaskManager(TaskManager):
 class DeploymentTaskManager(BaseDeploymentTaskManager):
     def execute(self, nodes_to_deployment, deployment_tasks=None,
                 graph_type=None, force=False, **kwargs):
+        """Supposed to be called in main process."""
         deployment_tasks = deployment_tasks or []
+        self._lock_cluster_to_run_unique_task(consts.TASK_NAMES.deployment)
 
         logger.debug('Nodes to deploy: {0}'.format(
             ' '.join([objects.Node.get_node_fqdn(n)
                       for n in nodes_to_deployment])))
         task_deployment = Task(
             name=consts.TASK_NAMES.deployment, cluster=self.cluster,
-            status=consts.TASK_STATUSES.pending
-        )
+            status=consts.TASK_STATUSES.pending)
         db().add(task_deployment)
+
+        # perform async call
+        mule.call_task_manager_async(
+            self.__class__,
+            '_execute_async',
+            self.cluster.id,
+            task_deployment.id,
+            nodes_to_deployment=nodes_to_deployment,
+            deployment_tasks=deployment_tasks,
+            graph_type=graph_type,
+            force=force
+        )
+        db().commit()
+
+        return task_deployment
+
+    def _execute_async(self, task_deployment_id, nodes_to_deployment,
+                       deployment_tasks=None, graph_type=None, force=False):
+        """Supposed to be executed inside separate process.
+
+        :param task_deployment_id: id of task
+        :param nodes_to_deployment: node ids
+        :param graph_type: graph type
+        :param force: force
+        """
+        task_deployment = objects.Task.get_by_uid(
+            task_deployment_id,
+            fail_if_not_found=True,
+            lock_for_update=False
+        )
 
         deployment_message = self._call_silently(
             task_deployment,
@@ -633,7 +727,7 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
 
         # locking task
         task_deployment = objects.Task.get_by_uid(
-            task_deployment.id,
+            task_deployment_id,
             fail_if_not_found=True,
             lock_for_update=True
         )

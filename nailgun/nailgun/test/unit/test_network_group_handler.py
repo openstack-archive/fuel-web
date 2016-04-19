@@ -432,3 +432,27 @@ class TestHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             'Default Admin-pxe network cannot be changed'
         )
+
+    def test_cannot_update_network_group_during_deployment(self):
+        resp = self.env._create_network_group(name='test')
+        self.assertEqual(201, resp.status_code)
+
+        new_ng = resp.json_body
+        new_ng['name'] = 'test22'
+
+        with mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
+                        return_value=True):
+            resp = self.app.put(
+                reverse(
+                    'NetworkGroupHandler',
+                    kwargs={'obj_id': new_ng['id']}
+                ),
+                jsonutils.dumps(new_ng),
+                headers=self.default_headers,
+                expect_errors=True
+            )
+
+            self.assertEqual(400, resp.status_code)
+            self.assertEqual(resp.json_body['message'],
+                             'Network configuration cannot be changed during'
+                             ' deployment and after upgrade.')

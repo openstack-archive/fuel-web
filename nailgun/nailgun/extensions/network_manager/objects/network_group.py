@@ -41,16 +41,13 @@ class NetworkGroup(NailgunObject):
 
     @classmethod
     def get_from_node_group_by_name(cls, node_group_id, network_name):
-        ng = db().query(models.NetworkGroup).filter_by(group_id=node_group_id,
-                                                       name=network_name)
-        return ng.first() if ng else None
+        return db().query(models.NetworkGroup).filter_by(
+            group_id=node_group_id, name=network_name).first()
 
     @classmethod
     def get_default_admin_network(cls):
-        return db().query(models.NetworkGroup)\
-            .filter_by(name=consts.NETWORKS.fuelweb_admin)\
-            .filter_by(group_id=None)\
-            .first()
+        return db().query(models.NetworkGroup).filter_by(
+            group_id=None, name=consts.NETWORKS.fuelweb_admin).first()
 
     @classmethod
     def get_by_node_group(cls, node_group_id):

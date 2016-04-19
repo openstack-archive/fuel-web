@@ -177,7 +177,11 @@ class DeploymentTask(object):
                     n.status = consts.NODE_STATUSES.provisioned
                 n.progress = 0
                 db().add(n)
-        db().flush()
+
+        # database commit is required to release nodes lock before
+        # serialization started otherwise concurrent nailgun API queries will
+        # be locked at database level all the time it is running.
+        db().commit()
 
         deployment_mode = cls._get_deployment_method(task.cluster)
         while True:

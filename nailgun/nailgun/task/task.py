@@ -236,7 +236,7 @@ class DeploymentTask(BaseDeploymentTask):
                 if n.status in (consts.NODE_STATUSES.deploying,):
                     n.status = consts.NODE_STATUSES.provisioned
                 n.progress = 0
-        db().flush()
+        db().commit()
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(
             task.cluster, graph_type

@@ -855,6 +855,7 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
     @classmethod
     def validate(cls, data):
         d = cls.validate_json(data)
+        cls.validate_schema(d, networks.NETWORK_GROUP)
         node_group = objects.NodeGroup.get_by_uid(d.get('group_id'))
 
         if not node_group:
@@ -870,6 +871,7 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
     @classmethod
     def validate_update(cls, data, **kwargs):
         d = cls.validate_json(data)
+        cls.validate_schema(d, networks.NETWORK_GROUP)
 
         # Can't change node group of an existing network group
         d.pop('group_id', None)

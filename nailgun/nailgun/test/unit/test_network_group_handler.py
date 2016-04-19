@@ -67,10 +67,10 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertEqual(
-            resp.json_body["message"],
-            "IPAddrRange object cannot be created for network "
-            "'external' with notation='new', ip_range='None'")
+        self.assertIn(
+            "Failed validating 'enum' in "
+            "schema['properties']['meta']['properties']['notation']",
+            resp.json_body["message"])
 
         resp = self.env._create_network_group(
             meta={"notation": consts.NETWORK_NOTATION.ip_ranges},
@@ -88,10 +88,10 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertEqual(resp.json_body["message"],
-                         "IPAddrRange object cannot be created for network "
-                         "'external' with notation='ip_ranges', "
-                         "ip_range='[u'10.3.0.33']'")
+        self.assertIn(
+            "Failed validating 'minItems' in "
+            "schema['properties']['meta']['properties']['ip_range']",
+            resp.json_body["message"])
 
     def test_get_network_group(self):
         resp = self.env._create_network_group(name='test')
@@ -331,13 +331,14 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(update_resp.json_body['name'], 'test2')
 
     def test_invalid_group_id_on_creation(self):
-        resp = self.env._create_network_group(expect_errors=True, group_id=-1)
+        resp = self.env._create_network_group(expect_errors=True,
+                                              group_id=999777)
         self.assertEqual(400, resp.status_code)
         self.assertRegexpMatches(resp.json_body["message"],
-                                 'Node group with ID -1 does not exist')
+                                 'Node group with ID 999777 does not exist')
 
     def test_create_network_group_without_vlan(self):
-        resp = self.env._create_network_group(vlan=None)
+        resp = self.env._create_network_group(vlan_start=None)
         self.assertEqual(201, resp.status_code)
 
     def test_modify_network_no_ip_ranges(self):
@@ -368,7 +369,7 @@ class TestHandlers(BaseIntegrationTest):
         new_ng = resp.json_body
 
         new_ng['meta']['notation'] = consts.NETWORK_NOTATION.ip_ranges
-        new_ng['ip_ranges'] = ["10.3.0.33", "10.3.0.158"]
+        new_ng['ip_ranges'] = [["10.3.0.33", "10.3.0.158"]]
         new_ng.pop('cidr', None)
         new_ng.pop('name', None)
 

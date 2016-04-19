@@ -309,3 +309,16 @@ class TaskCollection(NailgunCollection):
     def delete_by_names(cls, cluster, names):
         cls.get_by_name_and_cluster(cluster, names).delete(
             synchronize_session=False)
+
+    @classmethod
+    def all_not_deleted(cls):
+        return cls.filter_by(None, deleted_at=None)
+
+    @classmethod
+    def all_in_progress(cls):
+        """Get all tasks that are executing or will be executed."""
+        return cls.all_not_deleted().filter(
+            cls.single.model.status.in_(
+                (consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending)
+            )
+        )

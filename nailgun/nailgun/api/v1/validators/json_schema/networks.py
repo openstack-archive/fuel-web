@@ -51,12 +51,11 @@ NETWORK_META = {
     }
 }
 
-_NETWORK_GROUP = {
+NETWORK_GROUP = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "NetworkGroup",
     "description": "Serialized NetworkGroup object",
     "type": "object",
-    "required": ["id"],
     "additionalProperties": False,
     "properties": {
         "id": {"type": "integer"},
@@ -81,7 +80,7 @@ NETWORK_GROUPS = {
     "properties": {
         "networks": {
             "type": "array",
-            "items": _NETWORK_GROUP
+            "items": NETWORK_GROUP
         }
     }
 }

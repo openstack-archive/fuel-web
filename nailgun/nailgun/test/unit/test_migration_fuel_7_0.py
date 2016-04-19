@@ -804,7 +804,7 @@ class TestTunSegmentType(base.BaseAlembicMigrationTest):
 
 class TestStringNetworkGroupName(base.BaseAlembicMigrationTest):
 
-    def test_tun_segment_type_added(self):
+    def test_network_group_name_is_string(self):
         db.execute(
             self.meta.tables['network_groups'].insert(),
             [{

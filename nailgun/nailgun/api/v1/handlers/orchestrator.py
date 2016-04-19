@@ -210,7 +210,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
             logger.warn(
                 u'Cannot execute %s task nodes: %s',
                 task_manager.__class__.__name__, traceback.format_exc())
-            raise self.http(400, message=six.text_type(exc))
+            raise self.http(400, msg=six.text_type(exc))
 
         self.raise_task(task)
 

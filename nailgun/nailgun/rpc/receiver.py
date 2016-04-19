@@ -177,7 +177,8 @@ class NailgunReceiver(object):
             ips = db().query(IPAddr).filter(
                 IPAddr.network.in_([n.id for n in cluster.network_groups])
             )
-            map(db().delete, ips)
+            for ip in ips:
+                db().delete(ip)
             db().flush()
 
             nm = objects.Cluster.get_network_manager(cluster)

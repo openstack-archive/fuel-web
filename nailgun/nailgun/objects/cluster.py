@@ -577,7 +577,8 @@ class Cluster(NailgunObject):
         )
         if node_id:
             chs = chs.filter_by(node_id=node_id)
-        map(db().delete, chs.all())
+        for ch in chs.all():
+            db().delete(ch)
         db().flush()
 
     @classmethod
@@ -621,6 +622,7 @@ class Cluster(NailgunObject):
         :param nodes_ids: list of nodes ids
         :returns: None
         """
+        from nailgun import objects
 
         # TODO(NAME): sepatate nodes
         # for deletion and addition by set().
@@ -644,41 +646,31 @@ class Cluster(NailgunObject):
 
         # we should reset hostname to default value to guarantee
         # hostnames uniqueness for nodes outside clusters
-        from nailgun.objects import Node
         for node in nodes_to_remove:
-            node.hostname = Node.default_slave_name(node)
+            node.hostname = objects.Node.default_slave_name(node)
+            instance.nodes.remove(node)
 
-        map(instance.nodes.remove, nodes_to_remove)
-        map(instance.nodes.append, nodes_to_add)
+        for node in nodes_to_add:
+            instance.nodes.append(node)
 
         net_manager = cls.get_network_manager(instance)
-        map(
-            net_manager.clear_assigned_networks,
-            nodes_to_remove
-        )
-        map(
-            net_manager.clear_bond_configuration,
-            nodes_to_remove
-        )
+        for node in nodes_to_remove:
+            net_manager.clear_assigned_networks(node)
+            net_manager.clear_bond_configuration(node)
+
         cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
         cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
-        from nailgun.objects import NodeCollection
-        NodeCollection.reset_network_template(nodes_to_remove)
-        NodeCollection.reset_attributes(nodes_to_remove)
 
-        from nailgun.objects import OpenstackConfig
-        OpenstackConfig.disable_by_nodes(nodes_to_remove)
+        objects.NodeCollection.reset_network_template(nodes_to_remove)
+        objects.NodeCollection.reset_attributes(nodes_to_remove)
 
-        map(
-            Node.assign_group,
-            nodes_to_add
-        )
-        map(
-            net_manager.assign_networks_by_default,
-            nodes_to_add
-        )
-        map(Node.set_default_attributes, nodes_to_add)
-        map(Node.refresh_dpdk_properties, nodes_to_add)
+        objects.OpenstackConfig.disable_by_nodes(nodes_to_remove)
+
+        for node in nodes_to_add:
+            objects.Node.assign_group(node)
+            net_manager.assign_networks_by_default(node)
+            objects.Node.set_default_attributes(node)
+            objects.Node.refresh_dpdk_properties(node)
         cls.update_nodes_network_template(instance, nodes_to_add)
         db().flush()
 

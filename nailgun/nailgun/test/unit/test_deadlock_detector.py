@@ -164,7 +164,8 @@ class TestDeadlockDetector(BaseTestCase):
             )
             t.start()
             threads.append(t)
-        map(Thread.join, threads)
+        for thread in threads:
+            thread.join()
         self.assertTrue(all(results))
 
     def test_find_lock(self):

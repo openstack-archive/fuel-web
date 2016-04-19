@@ -965,7 +965,8 @@ class VolumeManager(object):
         self.__logger('Generating volumes info for node')
         self.__logger('Purging volumes info for all node disks')
 
-        map(lambda d: d.reset(), self.disks)
+        for d in self.disks:
+            d.reset()
         self.volumes = [d.render() for d in self.disks]
 
         if not self.allowed_volumes:

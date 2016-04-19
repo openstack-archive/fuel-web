@@ -18,7 +18,7 @@ from .base import NailgunException
 
 
 class ValidationException(NailgunException):
-    """Base validateion exception"""
+    """Base validation exception"""
 
 
 class InvalidData(ValidationException):

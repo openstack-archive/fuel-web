@@ -116,13 +116,7 @@ class TestHandlers(BaseIntegrationTest):
 
         net_group = resp.json_body
 
-        resp = self.app.delete(
-            reverse(
-                'NetworkGroupHandler',
-                kwargs={'obj_id': net_group['id']}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env._delete_network_group(net_group['id'])
         self.assertEqual(204, resp.status_code)
 
     def test_delete_network_group_cleanup_ip_range(self):
@@ -132,13 +126,8 @@ class TestHandlers(BaseIntegrationTest):
                 "ip_range": ["10.3.0.33", "10.3.0.158"]
             }
         ).json["id"]
-        self.app.delete(
-            reverse(
-                'NetworkGroupHandler',
-                kwargs={'obj_id': ng_id}
-            ),
-            headers=self.default_headers,
-        )
+
+        self.env._delete_network_group(ng_id)
         ip_range = self.db.query(models.IPAddrRange)\
             .filter_by(network_group_id=ng_id)\
             .first()
@@ -158,13 +147,7 @@ class TestHandlers(BaseIntegrationTest):
         self.db.add_all([models.IPAddr(**ips) for ips in ip_address])
         self.db.flush()
 
-        self.app.delete(
-            reverse(
-                'NetworkGroupHandler',
-                kwargs={'obj_id': ng_id}
-            ),
-            headers=self.default_headers,
-        )
+        self.env._delete_network_group(ng_id)
         ips_db = self.db.query(models.IPAddr)\
             .filter_by(network=ng_id)\
             .all()
@@ -172,37 +155,10 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_cannot_delete_admin_network_group(self):
         admin = objects.NetworkGroup.get_admin_network_group()
-        resp = self.app.delete(
-            reverse(
-                'NetworkGroupHandler',
-                kwargs={'obj_id': admin.id}
-            ),
-            headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self.env._delete_network_group(admin.id, expect_errors=True)
         self.assertEqual(400, resp.status_code)
         self.assertEqual(resp.json_body['message'],
                          'Default Admin-pxe network cannot be deleted')
-
-    def test_cannot_delete_locked_cluster_network_group(self):
-        resp = self.env._create_network_group(name='test')
-        self.assertEqual(201, resp.status_code)
-
-        net_group = resp.json_body
-
-        with mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
-                        return_value=True):
-            resp = self.app.delete(
-                reverse(
-                    'NetworkGroupHandler',
-                    kwargs={'obj_id': net_group['id']}
-                ),
-                headers=self.default_headers,
-                expect_errors=True
-            )
-            self.assertEqual(400, resp.status_code)
-            self.assertEqual(resp.json_body['message'],
-                             'Networks cannot be deleted after deployment')
 
     def test_create_network_group_non_default_name(self):
         resp = self.env._create_network_group(name='test')
@@ -432,3 +388,23 @@ class TestHandlers(BaseIntegrationTest):
             resp.json_body['message'],
             'Default Admin-pxe network cannot be changed'
         )
+
+    def test_cannot_modify_network_groups_during_deployment(self):
+        resp = self.env._create_network_group(name='test')
+        self.assertEqual(201, resp.status_code)
+
+        ng = resp.json_body
+        ng['name'] = 'new_name'
+
+        with mock.patch('nailgun.db.sqlalchemy.models.Cluster.is_locked',
+                        return_value=True):
+            for resp in (self.env._create_network_group(expect_errors=True,
+                                                        name='new_name'),
+                         self.env._update_network_group(ng,
+                                                        expect_errors=True),
+                         self.env._delete_network_group(ng['id'],
+                                                        expect_errors=True)):
+                self.assertEqual(403, resp.status_code)
+                self.assertEqual(resp.json_body['message'],
+                                 'Network configuration cannot be changed'
+                                 ' during deployment and after upgrade.')

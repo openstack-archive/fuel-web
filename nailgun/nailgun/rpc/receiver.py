@@ -318,7 +318,6 @@ class NailgunReceiver(object):
                             node_id=node['uid'],
                             task_uuid=task_uuid
                         )
-        db().flush()
         if nodes_by_id:
             logger.warning("The following nodes is not found: %s",
                            ",".join(sorted(nodes_by_id)))
@@ -333,6 +332,7 @@ class NailgunReceiver(object):
                     node['task_status'],
                     node.get('custom')
                 )
+        db().flush()
 
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)

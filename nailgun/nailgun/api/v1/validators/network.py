@@ -882,6 +882,9 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
             raise errors.InvalidData(
                 "Default Admin-pxe network cannot be changed")
 
+        if ng_db.nodegroup.cluster.is_locked:
+            raise errors.InvalidData("Network configuration cannot be changed "
+                                     "during deployment and after upgrade.")
         # If name is being changed then we should make sure it does
         # not conflict with an existing network. Otherwise it's fine to
         # send the current name as part of the PUT request.

@@ -84,6 +84,11 @@ from nailgun.utils import dict_merge
 from nailgun.utils import reverse
 
 
+# use concurrency factor limitations to avoid launching real sub-processes
+# in lcm serializers
+settings.LCM_SERIALIZERS_CONCURRENCY_FACTOR = 1
+
+
 class TimeoutError(Exception):
     pass
 

@@ -397,3 +397,10 @@ class TestTransactionSerializer(BaseUnitTest):
             {'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
              'version': '1.0.0', 'id': 'test'}
         )
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings',
+        LCM_SERIALIZERS_CONCURRENCY_FACTOR=2
+    )
+    def test_multi_processing_serialization(self, _):
+        self.test_serialize_integration()

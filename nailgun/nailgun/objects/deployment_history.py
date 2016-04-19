@@ -77,7 +77,8 @@ class DeploymentHistory(NailgunObject):
 
     @classmethod
     def to_skipped(cls, deployment_history):
-        if deployment_history.status == HISTORY_TASK_STATUSES.pending:
+        if deployment_history.status in [HISTORY_TASK_STATUSES.running,
+                                         HISTORY_TASK_STATUSES.pending]:
             deployment_history.status = HISTORY_TASK_STATUSES.skipped
             cls._set_time_start(deployment_history)
             cls._set_time_end(deployment_history)

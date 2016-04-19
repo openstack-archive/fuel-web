@@ -15,6 +15,7 @@
 #    under the License.
 
 from distutils.version import StrictVersion
+import multiprocessing
 
 import six
 
@@ -30,10 +31,111 @@ from nailgun.utils.role_resolver import NameMatchingPolicy
 # but there is no chance to re-use TasksSerializer until bug
 # https://bugs.launchpad.net/fuel/+bug/1562292 is not fixed
 
+
+class MultiProcessingConcurrencyPolicy(object):
+    def __init__(self, workers_num=None):
+        self.workers_num = workers_num or self.get_default_workers_num()
+
+    def execute(self, context, serializers_factory, tasks):
+        """Executes task serialization in parallel.
+
+        :param context: the transaction context
+        :param serializers_factory: the serializers factory
+        :param tasks: the tasks to serialize
+        :return sequence of serialized tasks
+        """
+        # use unlimited size of queue because we already control its size
+        input_channel = multiprocessing.Queue(-1)
+        output_channel = multiprocessing.Queue(-1)
+        task_it = iter(tasks)
+        count = 0
+        workers = self._start_workers(
+            context, serializers_factory, input_channel, output_channel
+        )
+        active_workers = len(workers)
+        try:
+            while True:
+                while count < active_workers:
+                    input_channel.put_nowait(next(task_it, None))
+                    count += 1
+
+                r = output_channel.get()
+                count -= 1
+                if r is None:
+                    active_workers -= 1
+                    if active_workers == 0:
+                        break
+                elif isinstance(r, Exception):
+                    raise r
+                else:
+                    yield r
+
+            # gracefully shutdown
+            for p in workers:
+                p.join()
+        finally:
+            self._terminate_workers(workers)
+
+    def _start_workers(self, context, factory, input_channel, output_channel):
+        target = self._worker_logic
+        args = (context, factory, input_channel, output_channel)
+        workers = []
+        for _ in range(self.workers_num):
+            p = multiprocessing.Process(target=target, args=args)
+            p.start()
+            workers.append(p)
+
+        return workers
+
+    @staticmethod
+    def _terminate_workers(workers):
+        for p in workers:
+            if p.is_alive():
+                p.terminate()
+
+    @staticmethod
+    def _worker_logic(context, factory_class, input_channel, output_channel):
+        """The worker logic for processing tasks one by one.
+
+        :param context: the context object
+        :param factory_class: the serializers factory
+        :param input_channel: channel to gather input data
+        :param output_channel: channel to put result
+        """
+        factory = factory_class(context)
+        while True:
+            node_and_task = input_channel.get()
+            if node_and_task is None:
+                output_channel.put(None)
+                break
+            node_id, task = node_and_task
+
+            logger.debug(
+                "applying task '%s' for node: %s", node_id, task['id']
+            )
+            task_serializer = factory.create_serializer(task)
+            try:
+                serialized = task_serializer.serialize(node_id)
+                output_channel.put((node_id, serialized))
+            except Exception as e:
+                output_channel.put(e)
+                logger.exception("Failed to serialize task %s", task['id'])
+                break
+
+    @staticmethod
+    def get_default_workers_num():
+        try:
+            return multiprocessing.cpu_count()
+        except NotImplementedError:
+            return 1
+
+
 class TransactionSerializer(object):
     """The deploy tasks serializer."""
 
     serializer_factory_class = TasksSerializersFactory
+
+    concurrency_policy = MultiProcessingConcurrencyPolicy()
 
     min_supported_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
 
@@ -44,7 +146,7 @@ class TransactionSerializer(object):
 
     def __init__(self, context, role_resolver):
         self.role_resolver = role_resolver
-        self.factory = self.serializer_factory_class(context)
+        self.context = context
         self.tasks_graph = {}
         self.tasks_dictionary = {}
 
@@ -95,9 +197,27 @@ class TransactionSerializer(object):
         :param tasks: the deployment tasks
         :return the mapping tasks per node
         """
+        serialized = self.concurrency_policy.execute(
+            self.context,
+            self.serializer_factory_class,
+            self.expand_tasks(tasks)
+        )
 
-        tasks_mapping = {}
+        for node_and_task in serialized:
+            node_id, task = node_and_task
+            node_tasks = self.tasks_graph.setdefault(node_id, {})
+            # de-duplication the tasks on node
+            # since task can be added after expand group need to
+            # overwrite if existed task is skipped and new is not skipped.
+            if self.need_update_task(node_tasks, task):
+                node_tasks[task['id']] = task
+
+        # make sure that null node is present
+        self.tasks_graph.setdefault(None, {})
+
+    def expand_tasks(self, tasks):
         groups = []
+        tasks_mapping = {}
 
         for task in tasks:
             if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
@@ -105,7 +225,8 @@ class TransactionSerializer(object):
             else:
                 self.ensure_task_based_deploy_allowed(task)
                 tasks_mapping[task['id']] = task
-                self.process_task(task, self.resolve_nodes(task))
+                for node_id in self.resolve_nodes(task):
+                    yield node_id, task
 
         for task in groups:
             node_ids = self.role_resolver.resolve(
@@ -115,39 +236,13 @@ class TransactionSerializer(object):
                 try:
                     sub_task = tasks_mapping[sub_task_id]
                 except KeyError:
-                    raise errors.InvalidData(
-                        'Task %s cannot be resolved', sub_task_id
-                    )
-
+                    msg = 'Task {0} cannot be resolved'.format(sub_task_id)
+                    logger.error(msg)
+                    raise errors.InvalidData(msg)
                 # if group is not excluded, all task should be run as well
                 # otherwise check each task individually
-                self.process_task(sub_task, node_ids)
-
-        # make sure that null node is present
-        self.tasks_graph.setdefault(None, {})
-
-    def process_task(self, task, node_ids):
-        """Processes one task one nodes of cluster.
-
-        :param task: the task instance
-        :param node_ids: the list of nodes, where this tasks should run
-        """
-
-        logger.debug("applying task '%s' for nodes: %s", task['id'], node_ids)
-        task_serializer = self.factory.create_serializer(task)
-        for node_id in node_ids:
-            try:
-                task = task_serializer.serialize(node_id)
-            except Exception:
-                logger.exception("Failed to serialize task %s", task['id'])
-                raise
-
-            node_tasks = self.tasks_graph.setdefault(node_id, {})
-            # de-duplication the tasks on node
-            # since task can be added after expand group need to
-            # overwrite if existed task is skipped and new is not skipped.
-            if self.need_update_task(node_tasks, task):
-                node_tasks[task['id']] = task
+                for node_id in node_ids:
+                    yield node_id, sub_task
 
     def resolve_nodes(self, task):
         if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.stage:

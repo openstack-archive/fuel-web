@@ -12,17 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from oslo_serialization import jsonutils
 import yaml
 from yaql.language import specs
 from yaql.language import yaqltypes
 
 
+if yaml.__with_libyaml__:
+    YamlDumper = yaml.CSafeDumper
+else:
+    YamlDumper = yaml.SafeDumper
+
+
 @specs.method
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def to_yaml(finalizer, receiver):
-    return yaml.safe_dump(finalizer(receiver))
+    return yaml.dump_all([finalizer(receiver)], Dumper=YamlDumper)
 
 
 @specs.method

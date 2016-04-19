@@ -22,7 +22,11 @@ from yaql.language import yaqltypes
 @specs.method
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def to_yaml(finalizer, receiver):
-    return yaml.safe_dump(finalizer(receiver))
+    if yaml.__with_libyaml__:
+        Dumper = yaml.CSafeDumper
+    else:
+        Dumper = yaml.SafeDumper
+    return yaml.dump_all(finalizer(receiver), Dumper=Dumper)
 
 
 @specs.method

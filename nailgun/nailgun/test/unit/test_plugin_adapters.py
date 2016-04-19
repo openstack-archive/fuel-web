@@ -63,14 +63,13 @@ class TestPluginBase(base.BaseTestCase):
             }
         )
         self.plugin = Plugin.create(self.plugin_metadata)
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.multinode},
             release_kwargs={
                 'version': '2015.1-8.0',
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
                           consts.CLUSTER_MODES.ha_compact]})
-        self.cluster = self.env.clusters[0]
         self.plugin_adapter = adapters.wrap_plugin(self.plugin)
         self.env_config = self.env.get_default_plugin_env_config()
         self.get_config = lambda *args: mock.mock_open(

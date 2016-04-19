@@ -28,7 +28,7 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
     def setUp(self):
         super(TestOpenstackConfigTaskManager80, self).setUp()
 
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
                             'net_segment_type': 'gre'},
             release_kwargs={'version': self.env_version,
@@ -42,7 +42,6 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
         )
 
         self.release = self.env.releases[0]
-        self.cluster = self.env.clusters[0]
         self.nodes = self.env.nodes
 
         # this mock configuration is used to insert into DB

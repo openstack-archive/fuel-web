@@ -97,8 +97,7 @@ class TestProvisioningSerializer(BaseIntegrationTest):
 
     def setUp(self):
         super(TestProvisioningSerializer, self).setUp()
-        self.env.create()
-        self.cluster_db = self.env.clusters[0]
+        self.cluster_db = self.env.create()
         self.env.create_nodes_w_interfaces_count(
             1, 1,
             **{
@@ -191,7 +190,6 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             self.assertEqual(node['ks_meta']['mco_identity'], node_db.id)
 
     def test_node_serialization_w_bonded_admin_iface(self):
-        self.cluster_db = self.env.clusters[0]
         # create additional node to test bonding
         admin_mac = self.env.generate_random_mac()
         meta = {
@@ -436,10 +434,9 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
     serializer = ps.ProvisioningSerializer90
 
     def test_user_account_info(self):
-        self.env.create(
+        self.cluster_db = self.env.create(
             release_kwargs={'version': 'liberty-9.0'},
         )
-        self.cluster_db = self.env.clusters[0]
         self.env.create_nodes_w_interfaces_count(
             1, 1,
             roles=['controller'],
@@ -497,7 +494,7 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
             )
 
     def test_serialize_iommu_parameters_for_sriov(self):
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={
                 'version': 'liberty-9.0',
                 'operating_system': consts.RELEASE_OS.ubuntu},
@@ -511,7 +508,7 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
         objects.NIC.update(sriov_nic, {})
 
         serialized_node = self.serializer.serialize(
-            self.env.clusters[0], self.env.nodes)['nodes'][0]
+            cluster, self.env.nodes)['nodes'][0]
         kernel_opts = serialized_node['ks_meta']['pm_data']['kernel_params']
         self.assertIn("intel_iommu=on", kernel_opts)
         self.assertIn("amd_iommu=on", kernel_opts)

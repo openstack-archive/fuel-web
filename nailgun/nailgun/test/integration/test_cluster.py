@@ -35,7 +35,7 @@ class TestCluster(BaseIntegrationTest):
             self.assertIsNotNone(primary_node)
 
     def test_adjust_nodes_lists_on_controller_removing(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'pending_roles': ['controller']},
@@ -44,7 +44,6 @@ class TestCluster(BaseIntegrationTest):
                 {'roles': ['compute']},
             ]
         )
-        cluster = self.env.clusters[0]
         controllers = filter(lambda x: 'controller' in x.all_roles,
                              cluster.nodes)
 
@@ -77,12 +76,11 @@ class TestCluster(BaseIntegrationTest):
         self.assertItemsEqual(controllers[1:], n_deploy)
 
     def test_adjust_nodes_lists_on_controller_removing_no_cluster(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller']}
             ]
         )
-        cluster = self.env.clusters[0]
 
         for node in cluster.nodes:
             self.assertIn('controller', node.all_roles)
@@ -96,7 +94,7 @@ class TestCluster(BaseIntegrationTest):
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
     def test_get_primary_node(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'pending_roles': ['controller'],
                  'pending_addition': True},
@@ -108,7 +106,6 @@ class TestCluster(BaseIntegrationTest):
                  'pending_addition': True},
             ]
         )
-        cluster = self.env.clusters[0]
 
         # Checking no primary nodes before deployment
         self.check_no_primary_node(
@@ -124,14 +121,13 @@ class TestCluster(BaseIntegrationTest):
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
     def test_get_primary_node_pending_deletion(self):
-        self.env.create(
+        cluster = self.env.create(
             api=True,
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True}
             ]
         )
-        cluster = self.env.clusters[0]
 
         # Checking primary present
         deploy = self.env.launch_deployment()

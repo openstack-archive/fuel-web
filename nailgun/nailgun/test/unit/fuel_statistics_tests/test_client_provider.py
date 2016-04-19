@@ -91,10 +91,9 @@ class TestOpenStackClientProvider(BaseTestCase):
             get_kc_mock.assert_called_once_with(auth_kwargs)
 
     def test_fail_if_no_online_controllers(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[{"online": False, "roles": ["controller"]}]
         )
-        cluster = self.env.clusters[0]
         client_provider = helpers.ClientProvider(cluster)
 
         with self.assertRaises(errors.NoOnlineControllers):

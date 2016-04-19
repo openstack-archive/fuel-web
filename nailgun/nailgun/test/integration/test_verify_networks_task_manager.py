@@ -39,14 +39,13 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         mac1 = meta1['interfaces'][0]['mac']
         mac2 = meta2['interfaces'][0]['mac']
 
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron},
             nodes_kwargs=[
                 {"api": True, "meta": meta1, "mac": mac1},
                 {"api": True, "meta": meta2, "mac": mac2},
             ])
-        self.cluster = self.env.clusters[0]
 
     @fake_tasks()
     def test_network_verify_task_managers_dhcp_on_master(self):
@@ -151,12 +150,11 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_network_verify_when_env_not_ready(self):
-        cluster_db = self.env.clusters[0]
         blocking_statuses = (
             consts.CLUSTER_STATUSES.deployment,
         )
         for status in blocking_statuses:
-            cluster_db.status = status
+            self.cluster.status = status
             self.db.flush()
 
             resp = self.env.neutron_networks_get(self.cluster.id)
@@ -204,9 +202,9 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
     @unittest2.skip('Multicast is always disabled.')
     @fake_tasks(fake_rpc=False)
     def test_multicast_disabled_when_corosync_is_not_present(self, mocked_rpc):
-        editable = copy.deepcopy(self.env.clusters[0].attributes.editable)
+        editable = copy.deepcopy(self.cluster.attributes.editable)
         del editable['corosync']
-        self.env.clusters[0].attributes.editable = editable
+        self.cluster.attributes.editable = editable
         self.env.launch_verify_networks()
         self.assertIn('subtasks', mocked_rpc.call_args[0][1])
         subtasks = mocked_rpc.call_args[0][1]['subtasks']
@@ -235,7 +233,7 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
             "max_speed": 1000,
             "name": "eth2",
             "current_speed": None}])
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={'status': consts.CLUSTER_STATUSES.operational,
                             'net_provider': 'neutron',
                             'net_segment_type': 'vlan'},
@@ -248,7 +246,6 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
                 },
             ]
         )
-        self.cluster = self.env.clusters[0]
 
     @fake_tasks()
     def test_network_verification_neutron_with_vlan_segmentation(self):
@@ -274,7 +271,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             {"name": "eth1", "mac": "00:00:00:00:22:77", "current_speed": 100},
             {"name": "eth2", "mac": "00:00:00:00:33:88", "current_speed": 100}]
         )
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': 'gre'
@@ -380,14 +377,14 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         resp = self.app.get(
             reverse(
                 'NeutronNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
+                kwargs={'cluster_id': self.cluster.id}
             ),
             headers=self.default_headers
         )
         resp = self.app.put(
             reverse(
                 'NeutronNetworkConfigurationVerifyHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}),
+                kwargs={'cluster_id': self.cluster.id}),
             resp.body,
             headers=self.default_headers,
             expect_errors=True
@@ -789,12 +786,11 @@ class TestVerifyNovaFlatDHCP(BaseIntegrationTest):
                 }
             )
 
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network},
             nodes_kwargs=nodes_kwargs,
         )
-        self.cluster = self.env.clusters[0]
 
     @fake_tasks()
     def test_flat_dhcp_verify(self):
@@ -828,7 +824,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
             {"name": "eth0", "mac": "00:00:00:00:01:66"},
             {"name": "eth1", "mac": "00:00:00:00:01:77"},
             {"name": "eth2", "mac": "00:00:00:00:01:88"}])
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': 'vlan'
@@ -850,23 +846,22 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
     @fake_tasks()
     def test_verify_networks_after_stop(self):
-        cluster = self.env.clusters[0]
         deploy_task = self.env.launch_deployment()
         self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
 
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]
         # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-        objects.Cluster.set_deployed_before_flag(cluster, value=False)
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
 
         stop_task = self.env.stop_deployment()
         self.assertEqual(stop_task.status, consts.TASK_STATUSES.ready)
-        self.db.refresh(cluster)
-        self.assertEqual(cluster.status, consts.CLUSTER_STATUSES.stopped)
-        self.assertFalse(cluster.is_locked)
+        self.db.refresh(self.cluster)
+        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
+        self.assertFalse(self.cluster.is_locked)
         # Moving nodes online by hands. Our fake threads do this with
         # random success
-        for node in sorted(cluster.nodes, key=lambda n: n.id):
+        for node in sorted(self.cluster.nodes, key=lambda n: n.id):
             node.online = True
         self.db.commit()
         verify_task = self.env.launch_verify_networks()
@@ -876,7 +871,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
     def test_network_verification_neutron_with_vlan_segmentation(
             self, mocked_rpc):
         # get Neutron L2 VLAN ID range
-        vlan_rng_be = self.env.clusters[0].network_config.vlan_range
+        vlan_rng_be = self.cluster.network_config.vlan_range
         vlan_rng = set(range(vlan_rng_be[0], vlan_rng_be[1] + 1))
 
         # get nodes NICs for private network
@@ -902,13 +897,13 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
     @fake_tasks()
     def test_network_verification_parameters_w_one_node_having_public(self):
         # Decrease VLAN range and set public VLAN
-        resp = self.env.neutron_networks_get(self.env.clusters[0].id)
+        resp = self.env.neutron_networks_get(self.cluster.id)
         nets = resp.json_body
         nets['networking_parameters']['vlan_range'] = [1000, 1004]
         for net in nets['networks']:
             if net['name'] == consts.NETWORKS.public:
                 net['vlan_start'] = 333
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, nets)
+        resp = self.env.neutron_networks_put(self.cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 
         task = self.env.launch_verify_networks()
@@ -928,15 +923,15 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
             api=True,
             pending_addition=True,
             roles=['controller'],
-            cluster_id=self.env.clusters[0].id)
+            cluster_id=self.cluster.id)
         # Decrease VLAN range and set public VLAN
-        resp = self.env.neutron_networks_get(self.env.clusters[0].id)
+        resp = self.env.neutron_networks_get(self.cluster.id)
         nets = resp.json_body
         nets['networking_parameters']['vlan_range'] = [1000, 1004]
         for net in nets['networks']:
             if net['name'] == consts.NETWORKS.public:
                 net['vlan_start'] = 333
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, nets)
+        resp = self.env.neutron_networks_put(self.cluster.id, nets)
         self.assertEqual(resp.status_code, 200)
 
         task = self.env.launch_verify_networks()
@@ -974,7 +969,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
     @fake_tasks()
     def test_repo_availability_tasks_are_not_created(self):
-        self.env.clusters[0].release.version = '2014.1-6.0'
+        self.cluster.release.version = '2014.1-6.0'
         self.db.flush()
 
         task = self.env.launch_verify_networks()

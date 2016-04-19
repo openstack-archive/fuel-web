@@ -114,7 +114,7 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
     def test_no_tasks_for_non_operational_clusters(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
             ]
@@ -122,8 +122,6 @@ class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):
 
         deploy_task = self.env.launch_deployment()
         self.assertEqual(deploy_task.status, consts.TASK_STATUSES.ready)
-
-        cluster = self.env.clusters[0]
 
         # Tuple of tuples (task_name, must_send_stats)
         tasks_params = (

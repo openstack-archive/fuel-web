@@ -33,11 +33,10 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def setUp(self):
         super(BaseGraphTasksTests, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['test-controller'], 'pending_addition': True},
             ])
-        self.cluster = self.env.clusters[0]
 
     def get_correct_tasks(self):
         yaml_tasks = """
@@ -644,9 +643,8 @@ class TestTaskDeployGraph(BaseGraphTasksTests):
 
     def setUp(self):
         super(TestTaskDeployGraph, self).setUp()
-        self.env.create()
+        self.cluster = self.env.create()
 
-        self.cluster = self.env.clusters[0]
         self.tasks = [
             {'id': 'pre_deployment', 'type': 'stage'},
             {'id': 'deploy', 'type': 'stage'},
@@ -835,8 +833,7 @@ class TestTaskDeployCustomGraph(BaseGraphTasksTests):
 
     def setUp(self):
         super(TestTaskDeployCustomGraph, self).setUp()
-        self.env.create()
-        self.cluster = self.env.clusters[-1]
+        self.cluster = self.env.create()
 
     def test_get_custom_tasks(self):
         objects.DeploymentGraph.create_for_model(

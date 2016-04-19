@@ -38,7 +38,7 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
-        self.env.create(
+        cluster_db = self.env.create(
             release_kwargs={
                 'version': "2014.2-6.0"
             },
@@ -54,8 +54,6 @@ class TestHandlers(BaseIntegrationTest):
                 {'roles': ['cinder'], 'pending_addition': True}
             ]
         )
-
-        cluster_db = self.env.clusters[0]
 
         common_attrs = {
             'deployment_mode': consts.CLUSTER_MODES.ha_compact,
@@ -388,7 +386,7 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_neutron_deploy_cast_with_right_args_for_5_1_1(self, mocked_rpc):
-        self.env.create(
+        cluster_db = self.env.create(
             release_kwargs={
                 'version': "2014.1.3-5.1.1"
             },
@@ -408,7 +406,6 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
-        cluster_db = self.env.clusters[0]
         self.env.disable_task_deploy(cluster_db)
 
         # This is here to work around the fact that we use the same fixture
@@ -874,7 +871,7 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_neutron_deploy_cast_with_right_args_for_6_0(self, mocked_rpc):
-        self.env.create(
+        cluster_db = self.env.create(
             release_kwargs={
                 'version': "2014.2-6.0"
             },
@@ -894,7 +891,6 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
-        cluster_db = self.env.clusters[0]
         self.env.disable_task_deploy(cluster_db)
 
         # This is here to work around the fact that we use the same fixture
@@ -1410,7 +1406,7 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_deploy_multinode_neutron_gre_w_custom_public_ranges(self,
                                                                  mocked_rpc):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
                             'net_segment_type': 'gre'},
             nodes_kwargs=[{"pending_addition": True},
@@ -1420,15 +1416,13 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = self.env.neutron_networks_get(
-            self.env.clusters[0].id
-        ).json_body
+        net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.13'],
                                   ['172.16.0.20', '172.16.0.22']]})
 
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        resp = self.env.neutron_networks_put(cluster.id, net_data)
         self.assertEqual(resp.status_code, 200)
 
         self.env.launch_deployment()
@@ -1454,7 +1448,7 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_deploy_ha_neutron_gre_w_custom_public_ranges(self, mocked_rpc):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact,
                             'net_provider': 'neutron',
                             'net_segment_type': 'gre'},
@@ -1465,15 +1459,13 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = self.env.neutron_networks_get(
-            self.env.clusters[0].id
-        ).json_body
+        net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.13'],
                                   ['172.16.0.20', '172.16.0.22']]})
 
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        resp = self.env.neutron_networks_put(cluster.id, net_data)
         self.assertEqual(resp.status_code, 200)
 
         self.env.launch_deployment()
@@ -1497,16 +1489,14 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_deploy_neutron_gre_w_changed_public_cidr(self, mocked_rpc):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
                             'net_segment_type': 'gre'},
             nodes_kwargs=[{"pending_addition": True},
                           {"pending_addition": True}]
         )
 
-        net_data = self.env.neutron_networks_get(
-            self.env.clusters[0].id
-        ).json_body
+        net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.10.10', '172.16.10.122']],
@@ -1515,7 +1505,7 @@ class TestHandlers(BaseIntegrationTest):
         net_data['networking_parameters']['floating_ranges'] = \
             [['172.16.10.130', '172.16.10.254']]
 
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        resp = self.env.neutron_networks_put(cluster.id, net_data)
         self.assertEqual(resp.status_code, 200)
 
         self.env.launch_deployment()
@@ -1534,7 +1524,7 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_deploy_neutron_error_not_enough_ip_addresses(self, mocked_rpc):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
                             'net_segment_type': 'gre'},
             nodes_kwargs=[{"pending_addition": True},
@@ -1542,14 +1532,12 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = self.env.neutron_networks_get(
-            self.env.clusters[0].id
-        ).json_body
+        net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.11']]})
 
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        resp = self.env.neutron_networks_put(cluster.id, net_data)
         self.assertEqual(resp.status_code, 200)
 
         task = self.env.launch_deployment()
@@ -1561,7 +1549,7 @@ class TestHandlers(BaseIntegrationTest):
             'at least 3 IP addresses for the current environment.')
 
     def test_occurs_error_not_enough_ip_addresses(self):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
             },
@@ -1569,8 +1557,6 @@ class TestHandlers(BaseIntegrationTest):
                 {'pending_addition': True},
                 {'pending_addition': True},
                 {'pending_addition': True}])
-
-        cluster = self.env.clusters[0]
 
         public_network = self.db.query(
             NetworkGroup).filter_by(name='public').first()
@@ -1656,16 +1642,16 @@ class TestHandlers(BaseIntegrationTest):
             'or reduce Ceph replication factor in the Settings tab.')
 
     def test_occurs_error_release_is_unavailable(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True}])
 
-        self.env.clusters[0].release.state = consts.RELEASE_STATES.unavailable
+        cluster.release.state = consts.RELEASE_STATES.unavailable
 
         resp = self.app.put(
             reverse(
                 'ClusterChangesHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}),
+                kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers,
             expect_errors=True)
 
@@ -1673,7 +1659,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
     def test_occurs_error_no_deployment_tasks_for_release(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True}],
             release_kwargs={
@@ -1684,7 +1670,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse(
                 'ClusterChangesHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}),
+                kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers,
             expect_errors=True)
 
@@ -1729,7 +1715,7 @@ class TestHandlers(BaseIntegrationTest):
             "name": "eth1",
             "current_speed": None}])
 
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {
                     'api': True,
@@ -1740,24 +1726,23 @@ class TestHandlers(BaseIntegrationTest):
                 }
             ]
         )
-        cluster_id = self.env.clusters[0].id
 
-        resp = self.env.neutron_networks_get(cluster_id)
+        resp = self.env.neutron_networks_get(cluster.id)
         nets = resp.json_body
         for net in nets["networks"]:
             if net["name"] in ["management", ]:
                 net["vlan_start"] = None
-        self.env.neutron_networks_put(cluster_id, nets)
+        self.env.neutron_networks_put(cluster.id, nets)
 
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.error)
 
     def test_empty_cluster_deploy_error(self):
-        self.env.create(nodes_kwargs=[])
+        cluster = self.env.create(nodes_kwargs=[])
         resp = self.app.put(
             reverse(
                 'ClusterChangesHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
+                kwargs={'cluster_id': cluster.id}
             ),
             headers=self.default_headers,
             expect_errors=True

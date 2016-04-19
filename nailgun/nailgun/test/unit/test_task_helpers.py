@@ -207,12 +207,11 @@ class TestTaskHelpers(BaseTestCase):
         self.assertDictEqual(expected, actual)
 
     def test_prepare_action_log_kwargs_with_web_ctx(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['compute'], 'provisioning': True},
             ]
         )
-        cluster = self.env.clusters[0]
         task = Task(name='provision', cluster_id=cluster.id)
         self.db.add(task)
         self.db.flush()
@@ -230,13 +229,12 @@ class TestTaskHelpers(BaseTestCase):
             self.assertIsNone(kwargs['actor_id'])
 
     def test_prepare_action_log_kwargs_without_web_ctx(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['compute'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},
             ]
         )
-        cluster = self.env.clusters[0]
         deployment_task = Task(name='deployment', cluster_id=cluster.id)
         self.db.add(deployment_task)
         self.db.flush()

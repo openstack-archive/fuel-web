@@ -99,13 +99,12 @@ class TestUtilsFunctions(BaseTestCase):
 
     def test_get_online_controller(self):
         node_name = "test"
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[{"online": True,
                            "roles": ["controller"],
                            "name": node_name}]
         )
 
-        cluster = self.env.clusters[0]
         online_controller = utils.get_online_controller(cluster)
         self.assertIsNotNone(online_controller)
         self.assertEqual(online_controller.name, node_name)
@@ -140,8 +139,7 @@ class TestUtilsFunctions(BaseTestCase):
 
     def test_get_version_info(self):
         self.assertIsNone(utils.get_version_info(None))
-        self.env.create()
-        cluster = self.env.clusters[0]
+        cluster = self.env.create()
         version_info = utils.get_version_info(cluster)
         self.assertItemsEqual(
             ('release_os', 'release_name', 'release_version',

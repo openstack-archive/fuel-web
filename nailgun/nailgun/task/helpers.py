@@ -20,6 +20,7 @@ import web
 
 import sqlalchemy as sa
 from sqlalchemy.orm import exc
+from sqlalchemy.orm import load_only
 
 from nailgun import consts
 from nailgun.db import db
@@ -110,7 +111,8 @@ class TaskHelper(object):
 
     @classmethod
     def recalculate_deployment_task_progress(cls, task):
-        cluster_nodes = db().query(Node).filter_by(cluster_id=task.cluster_id)
+        cluster_nodes = db().query(Node).options(load_only("progress"))\
+                            .filter_by(cluster_id=task.cluster_id)
         nodes_progress = []
         nodes_progress.extend(
             cluster_nodes.filter_by(status='discover').count() * [0])

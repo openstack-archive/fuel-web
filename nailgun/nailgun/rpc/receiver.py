@@ -250,14 +250,14 @@ class NailgunReceiver(object):
             task_uuid,
             fail_if_not_found=True
         )
-
+        logger.info("Task was found")
         # lock cluster
         objects.Cluster.get_by_uid(
             task.cluster_id,
             fail_if_not_found=True,
             lock_for_update=True
         )
-
+        logger.info("Cluster was locked")
         if not status:
             status = task.status
 
@@ -280,6 +280,7 @@ class NailgunReceiver(object):
         else:
             db_nodes = []
 
+        logger.info("Nodes was locked")
         # First of all, let's update nodes in database
         for node_db in db_nodes:
             node = nodes_by_id.pop(node_db.uid)
@@ -321,6 +322,7 @@ class NailgunReceiver(object):
             logger.warning("The following nodes is not found: %s",
                            ",".join(sorted(nodes_by_id)))
 
+        logger.info("Nodes was updated")
         for node in nodes:
             if node.get('deployment_graph_task_name') \
                     and node.get('task_status'):
@@ -331,17 +333,20 @@ class NailgunReceiver(object):
                     node['task_status'],
                     node.get('custom')
                 )
+        logger.info("History was updated")
         db().flush()
-
+        logger.info("DB was updated")
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)
-
+        logger.info("Progress was updated")
         # full error will be provided in next astute message
         if master.get('status') == consts.TASK_STATUSES.error:
             status = consts.TASK_STATUSES.error
-
+        logger.info("Master status was updated")
         cls._update_task_status(task, status, progress, message, db_nodes)
+        logger.info("Task status was updated")
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
+        logger.info("Action entry was updated")
 
     @classmethod
     def provision_resp(cls, **kwargs):
@@ -473,14 +478,19 @@ class NailgunReceiver(object):
         :param message: message text
         :param nodes: the modified nodes list
         """
+        logger.info("_update task status start")
         # Let's check the whole task status
         if status == consts.TASK_STATUSES.error:
             cls._error_action(task, status, progress, message)
+            logger.info("_update task status error")
         elif status == consts.TASK_STATUSES.ready:
             cls._success_action(task, status, progress, nodes)
+            logger.info("_update task status ready")
         else:
             data = {'status': status, 'progress': progress, 'message': message}
             objects.Task.update(task, data)
+            logger.info("_update task status progress")
+        logger.info("_update task status end")
 
     @classmethod
     def _update_action_log_entry(cls, task_status, task_name, task_uuid,

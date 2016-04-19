@@ -235,7 +235,11 @@ class DeploymentTask(BaseDeploymentTask):
                 if n.status in (consts.NODE_STATUSES.deploying,):
                     n.status = consts.NODE_STATUSES.provisioned
                 n.progress = 0
-        db().flush()
+
+        # database commit is required to release nodes lock before
+        # serialization started otherwise concurrent nailgun API queries will
+        # be locked at database level all the time it is running.
+        db().commit()
 
         deployment_tasks = objects.Cluster.get_deployment_tasks(
             task.cluster, graph_type

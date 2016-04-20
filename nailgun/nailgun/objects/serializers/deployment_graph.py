@@ -64,6 +64,7 @@ class DeploymentGraphTaskSerializer(BasicSerializer):
                     # to role: '*'
                     if len(value) == 1 and value[0] in consts.TASK_ROLES:
                         result['role'] = value[0]
+                        result['roles'] = value[0]
         # unwrap custom field
         result.update(instance._custom)
         return result

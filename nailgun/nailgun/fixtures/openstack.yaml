@@ -2111,6 +2111,19 @@
               format: "ext2"
               container: "gzip"
     node_attributes:
+      bootable_disk:
+        metadata:
+          label: "Preferred bootable disk"
+          weight: 30
+        disk_name:
+          label: "Bootable disk"
+          description: "Name of bootable disk (Ex:sda or mapper/3600144)"
+          weight: 10
+          type: "text"
+          value: "Auto"
+          regex:
+            source: *non_empty_string
+            error: "Empty disk name"
       cpu_pinning:
         metadata:
           group: "nfv"

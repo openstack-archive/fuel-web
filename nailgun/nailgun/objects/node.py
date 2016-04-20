@@ -1442,6 +1442,16 @@ class NodeAttributes(object):
         return cpu_pinning
 
     @classmethod
+    def bootable_disk(cls, node, attributes=None):
+        if not attributes:
+            attributes = Node.get_attributes(node)
+        bootable_disk_attrs = attributes.get('bootable_disk', {})
+        bootable_disk = bootable_disk_attrs.get('disk_name', {}).get('value')
+        if bootable_disk is None or bootable_disk.lower() == 'auto':
+            return None
+        return bootable_disk
+
+    @classmethod
     def set_default_hugepages(cls, node):
         supported_hugepages = node.meta['numa_topology']['supported_hugepages']
         hugepages = cls._safe_get_hugepages(node)

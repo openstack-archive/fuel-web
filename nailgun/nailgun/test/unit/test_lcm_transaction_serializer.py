@@ -19,6 +19,7 @@ import mock
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun import lcm
+from nailgun.settings import settings
 from nailgun.utils.role_resolver import RoleResolver
 
 from nailgun.test.base import BaseUnitTest
@@ -376,4 +377,23 @@ class TestTransactionSerializer(BaseUnitTest):
             errors.TaskBaseDeploymentNotAllowed,
             lcm.TransactionSerializer.serialize,
             self.context, tasks, self.role_resolver
+        )
+
+    def test_ensure_task_based_deploy_allowed_raises_if_version_check(self):
+        settings.LCM_CHECK_TASK_VERSION = True
+
+        self.assertRaises(
+            errors.TaskBaseDeploymentNotAllowed,
+            lcm.TransactionSerializer.ensure_task_based_deploy_allowed,
+            {'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+             'version': '1.0.0', 'id': 'test'}
+        )
+
+    def test_ensure_task_based_deploy_allowed_if_not_version_check(self):
+        settings.LCM_CHECK_TASK_VERSION = False
+        self.assertNotRaises(
+            errors.TaskBaseDeploymentNotAllowed,
+            lcm.TransactionSerializer.ensure_task_based_deploy_allowed,
+            {'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+             'version': '1.0.0', 'id': 'test'}
         )

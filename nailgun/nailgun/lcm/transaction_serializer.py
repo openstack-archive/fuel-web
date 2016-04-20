@@ -22,6 +22,7 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
+from nailgun.settings import settings
 from nailgun.utils.role_resolver import NameMatchingPolicy
 
 
@@ -83,7 +84,8 @@ class TransactionSerializer(object):
                 .format(task['id'])
             )
             logger.warning(message)
-            raise errors.TaskBaseDeploymentNotAllowed(message)
+            if settings.LCM_CHECK_TASK_VERSION:
+                raise errors.TaskBaseDeploymentNotAllowed(message)
 
     def process_tasks(self, tasks):
         """Process all deployment tasks

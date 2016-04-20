@@ -351,7 +351,11 @@ class NodeAttributesHandler(BaseHandler):
         """
         node = self.get_object_or_404(objects.Node, node_id)
 
-        data = self.checked_data(node=node)
+        if not node.cluster:
+            raise self.http(400, "Node '{}' doesn't belong to any cluster"
+                            .format(node.id))
+
+        data = self.checked_data(node=node, cluster=node.cluster)
         objects.Node.update_attributes(node, data)
 
         return objects.Node.get_attributes(node)

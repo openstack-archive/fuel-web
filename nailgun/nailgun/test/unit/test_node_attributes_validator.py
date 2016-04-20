@@ -60,6 +60,12 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
         }
 
         attributes = {
+            'bootable_disk': {
+                'disk_name': {
+                    'type': 'text',
+                    'value': 'sda'
+                }
+            },
             'hugepages': {
                 'nova': {
                     'type': 'custom_hugepages',
@@ -183,3 +189,30 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
 
         self.assertNotRaises(errors.InvalidData, validator,
                              json.dumps(data), self.node, self.cluster)
+
+class TestNodeAttributesValidatorBootableDisk(BaseNodeAttributeValidatorTest):
+
+    @mock_cluster_attributes
+    def test_bootable_disk(self):
+
+        data = {
+            'bootable_disk': {
+                'disk_name': {'value': 'sda'},
+            },
+        }
+
+        self.assertNotRaises(errors.InvalidData, validator,
+                             json.dumps(data), self.node, self.cluster)
+
+    @mock_cluster_attributes
+    def test_invalid_bootable_disk(self):
+
+        data = {
+            'bootable_disk': {
+                'disk_name': {'value': 'not-a-disk'},
+            },
+        }
+
+        self.assertRaisesWithMessageIn(
+            errors.InvalidData, 'Disk not-a-disk not present on node',
+            validator, json.dumps(data), self.node, self.cluster)

@@ -147,3 +147,15 @@ class TestNodeAttributes(base.BaseUnitTest):
         hugepages = node.attributes['hugepages']['nova']['value']
         for size in fake_hugepages:
             self.assertEqual(0, hugepages[size])
+
+    def test_bootable_disk(self):
+        node = mock.Mock(
+            attributes={
+                'bootable_disk': {
+                    'disk_name': {
+                        'value': 'sda'
+                    }
+                }
+            })
+        bootable_disk = objects.NodeAttributes.bootable_disk(node)
+        self.assertEqual('sda', bootable_disk)

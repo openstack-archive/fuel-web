@@ -459,6 +459,7 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
 
         cls._validate_cpu_pinning(node, attrs)
         cls._validate_hugepages(node, attrs)
+        cls._validate_bootable_disk(node, attrs)
 
         return data
 
@@ -481,3 +482,13 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
             objects.NodeAttributes.distribute_hugepages(node, attrs)
         except ValueError as exc:
             raise errors.InvalidData(exc.args[0])
+
+    @classmethod
+    def _validate_bootable_disk(cls, node, attrs):
+        node_disks = [disk['name'] for disk in node.meta.get('disks')]
+        bootable_disk = not objects.NodeAttributes.bootable_disk(node, attrs)
+        if bootable_disk is not None and bootable_disk not in node_disks:
+            raise errors.InvalidData(
+                'Disk {} not present on node {}.'
+                ''.format(bootable_disk, node.name)
+            )

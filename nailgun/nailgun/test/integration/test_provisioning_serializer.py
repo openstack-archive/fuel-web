@@ -522,3 +522,20 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
         kernel_opts = serialized_node['ks_meta']['pm_data']['kernel_params']
 
         self.assertIn(" isolcpus=0,1", kernel_opts)
+
+    def test_serialize_node_bootable_disk(self):
+        self.env.create(
+            api=False,
+            release_kwargs={'operating_system': consts.RELEASE_OS.ubuntu},
+            nodes_kwargs=[
+                {'roles': ['compute']}])
+
+        node = self.env.nodes[0]
+        objects.Node.update_attributes(
+            node,
+            {'bootable_disk': {'disk_name': {'value': 'sda'}}}
+        )
+        # check serialized data
+        serialized_info = self.serializer.serialize(node.cluster, [node])
+        serialized_node = serialized_info['nodes'][0]
+        self.assertEqual('sda', serialized_node['ks_meta']['bootable_disk'])

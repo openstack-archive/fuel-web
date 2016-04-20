@@ -189,7 +189,6 @@ class ProvisioningSerializer(MellanoxMixin):
         )
 
         serialized_node.update(cls.serialize_interfaces(node))
-
         return serialized_node
 
     @classmethod
@@ -479,5 +478,9 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
         serialized_node['ks_meta']['user_accounts'] = [operator_user_dict,
                                                        service_user_dict,
                                                        root_user_dict]
+
+        bootable_disk = objects.NodeAttributes.bootable_disk(node)
+        if bootable_disk:
+            serialized_node['ks_meta']['bootable_disk'] = bootable_disk
 
         return serialized_node

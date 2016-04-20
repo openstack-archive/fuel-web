@@ -223,6 +223,22 @@ class TestProvisioningSerializer(BaseIntegrationTest):
         out_mac = serialized_node['kernel_options']['netcfg/choose_interface']
         self.assertEqual(out_mac, admin_mac)
 
+    def test_node_serialization_w_bootable_disk(self):
+        self.cluster_db = self.env.clusters[0]
+        # create additional node to test bonding
+        node = self.env.create_node(
+            pending_addition=True,
+            cluster_id=self.cluster_db.id
+        )
+        node_db = objects.Node.get_by_uid(node['id'])
+        objects.Node.update_attributes(
+            node_db,
+            {'bootable_disk': {'disk_name': {'value': 'sda'}}}
+        )
+        # check serialized data
+        serialized_node = ps.serialize(self.cluster_db, [node_db])['nodes'][0]
+        self.assertEqual('sda', serialized_node['ks_meta']['bootable_disk'])
+
 
 class TestProvisioningSerializer61(BaseIntegrationTest):
 

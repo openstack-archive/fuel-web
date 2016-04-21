@@ -278,33 +278,6 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
             ]),
             serialized_info['pre_provision']))
 
-    def test_ubuntu_prov_task_for_cobbler(self):
-        release = self.env.create_release(
-            api=False, operating_system=consts.RELEASE_OS.ubuntu)
-        self.cluster = self.env.create_cluster(
-            api=False, release_id=release.id)
-        self.cluster.attributes.editable['provision']['method'] = \
-            consts.PROVISION_METHODS.cobbler
-
-        serialized_info = self.serializer.serialize(self.cluster, [])
-
-        self.assertIn('pre_provision', serialized_info)
-        self.assertTrue(filter(
-            lambda task: all([
-                task['uids'] == ['master'],
-                task['type'] == 'shell',
-                task['parameters']['cmd'].startswith(
-                    'LOCAL_KERNEL_FILE')
-            ]),
-            serialized_info['pre_provision']))
-        self.assertFalse(filter(
-            lambda task: all([
-                task['uids'] == ['master'],
-                task['type'] == 'shell',
-                task['parameters']['cmd'].startswith('fuel-image')
-            ]),
-            serialized_info['pre_provision']))
-
     def test_centos_prov_task_for_cobbler(self):
         release = self.env.create_release(
             api=False, operating_system=consts.RELEASE_OS.centos)

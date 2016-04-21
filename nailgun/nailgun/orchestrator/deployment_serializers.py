@@ -644,9 +644,13 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             data = {}
             roles = []
             for role_data in node.replaced_deployment_info:
-                roles.append(role_data.pop('role'))
                 data = utils.dict_merge(data, role_data)
-            data['roles'] = roles
+                if 'role' in role_data:
+                    # if replaced_deployment_info consists
+                    # of old serialized info
+                    roles.append(role_data.pop('role'))
+            if roles:
+                data['roles'] = roles
             yield data
 
     def serialize_nodes(self, nodes):

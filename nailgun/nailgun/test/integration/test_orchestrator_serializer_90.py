@@ -584,6 +584,21 @@ class TestDeploymentLCMSerialization90(
             self.assertIn('plugins', node)
             self.datadiff(plugins_data, node['plugins'], compare_sorted=True)
 
+    def test_serialize_with_customized(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+
+        objects.Cluster.replace_deployment_info(self.cluster_db, serialized)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        cust_serialized = self.serializer.serialize(
+            self.cluster_db, [self.node])
+
+        for item in serialized:
+            # TODO(asvechikov): remove this condition when cluster starts save
+            #                   custom deployment info for master node
+            if item['uid'] != consts.MASTER_NODE_UID:
+                self.assertIn(item, cust_serialized)
+
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,

@@ -2413,6 +2413,14 @@ class BaseDeploymentSerializer(BaseSerializerTest):
         img_name = 'TestVM-VMDK'
         disk_format = 'vmdk'
         img_path = '/opt/vm/cirros-i386-disk.vmdk'
+        properties_data = {
+            'vmware_disktype': 'sparse',
+            'vmware_adaptertype': 'lsiLogic',
+            'hypervisor_type': 'vmware'
+        }
+        glance_properties = []
+        for k, v in six.iteritems(properties_data):
+            glance_properties.append('--property {k}={v}'.format(k=k, v=v))
 
         self.assertEqual(
             len(self.serializer.generate_test_vm_image_data(
@@ -2432,6 +2440,16 @@ class BaseDeploymentSerializer(BaseSerializerTest):
             self.serializer.generate_test_vm_image_data(
                 self.env.nodes[0])['test_vm_image'][0]['img_path'],
             img_path)
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['glance_properties'],
+            ' '.join(glance_properties))
+
+        self.assertEqual(
+            self.serializer.generate_test_vm_image_data(
+                self.env.nodes[0])['test_vm_image'][0]['properties'],
+            properties_data)
 
     def check_generate_vmware_attributes_data(self):
         cluster_db = self.db.query(Cluster).get(self.cluster['id'])

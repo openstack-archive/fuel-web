@@ -165,7 +165,7 @@ class EnvironmentManager(object):
 
         if kwargs.get('deployment_tasks') is None:
             kwargs['deployment_tasks'] = \
-                load_fake_deployment_tasks(apply_to_db=False)
+                load_fake_deployment_tasks(version, apply_to_db=False)
 
         release_data.update(kwargs)
         if api:

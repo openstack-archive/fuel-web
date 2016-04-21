@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import itertools
 import mock
 import os
 
@@ -55,19 +56,34 @@ class TestFixture(BaseIntegrationTest, DeploymentTasksTestMixin):
         check = self.db.query(Node).all()
         self.assertEqual(len(list(check)), 8)
 
-    def test_load_fake_deployment_tasks(self):
+    def check_uploaded_tasks(self, fxtr_to_check_against, release_version):
         self.env.upload_fixtures(["openstack"])
         fxtr_path = os.path.join(fixman.get_base_fixtures_path(),
-                                 'deployment_tasks.yaml')
+                                 fxtr_to_check_against)
         with open(fxtr_path) as f:
             deployment_tasks = yaml.load(f)
 
-        fixman.load_fake_deployment_tasks()
+        fixman.load_fake_deployment_tasks(release_version)
         for rel in self.db.query(Release).all():
             deployment_graph = objects.DeploymentGraph.get_for_model(rel)
             db_deployment_tasks = objects.DeploymentGraph.get_tasks(
                 deployment_graph)
             self._compare_tasks(deployment_tasks, db_deployment_tasks)
+
+    def test_load_fake_deployment_tasks_for_90_release(self):
+        self.check_uploaded_tasks('deployment_tasks_90.yaml', 'mitaka-9.0')
+
+    def test_load_fake_deployment_tasks_by_default(self):
+        # there is no deployment tasks fixture for 8.0 release so
+        # those by default will be loaded (from 'deployment_tasks.yaml' file)
+        self.check_uploaded_tasks('deployment_tasks.yaml', 'liberty-8.0')
+
+    def test_load_fake_deployment_tasks_returns_90_tasks_for_100(self):
+        # some fixtures are reusable for different releases if
+        # no incompatible changes were introduced to corresponding conponents
+        # this is controlled by mapping inside
+        # fixman.load_fake_deployment_tasks function
+        self.check_uploaded_tasks('deployment_tasks_90.yaml', 'newton-10.0')
 
     def test_json_fixture(self):
         data = '''[{
@@ -112,3 +128,29 @@ class TestFixture(BaseIntegrationTest, DeploymentTasksTestMixin):
             Release.name == u"BaseRelease"
         )
         self.assertEqual(len(list(check)), 0)
+
+    def test_get_fixture_for_release_fallback_to_default(self):
+        # such release strings will cause IndexError to be raised inside
+        # get_fixture_for_release function hence default fixtures file path
+        # should be returned by it. 'Default' means that its name does not
+        # bear version number in it
+        incorrect_releases = ('2014.3', '-6')
+
+        # if there is no fixture for given release file path
+        # for default fixture file is returned either
+        absent_releases = ('liberty-8.0', '2015.1.0-7.0')
+
+        expected_fixture_path = os.path.join(
+            fixman.get_base_fixtures_path(), 'deployment_tasks.yaml')
+
+        for rel in itertools.chain(incorrect_releases, absent_releases):
+            actual = fixman.get_fixture_for_release(
+                rel, 'deployment_tasks', 'yaml')
+            self.assertEqual(expected_fixture_path, actual)
+
+    def test_get_fixture_for_release_90(self):
+        expected = os.path.join(
+            fixman.get_base_fixtures_path(), 'deployment_tasks_90.yaml')
+        actual = fixman.get_fixture_for_release(
+            'mitaka-9.0', 'deployment_tasks', 'yaml')
+        self.assertEqual(expected, actual)

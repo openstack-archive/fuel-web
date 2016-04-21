@@ -551,6 +551,10 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             node_attrs['nova_hugepages_enabled'] = (
                 objects.NodeAttributes.is_nova_hugepages_enabled(node))
 
+        # we don't need nodes in serialized data for 9.0 environments
+        # https://bugs.launchpad.net/fuel/+bug/1531128
+        attrs.pop('nodes')
+
         return attrs
 
     @classmethod

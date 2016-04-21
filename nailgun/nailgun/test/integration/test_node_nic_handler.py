@@ -824,6 +824,41 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 200)
 
+    def test_public_network_assigment_to_wrong_node(self):
+        cluster = self.env.create(api=True)
+        node = self.env.create_node(
+                api=True,
+                cluster_id=cluster.id,
+                roles=['controller'])
+        resp = self.app.get(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": node['id']}))
+
+        networks = resp.json[1]['assigned_networks']
+        compute = self.env.create_node(
+                api=True,
+                cluster_id=cluster.id,
+                roles=['compute'])
+
+        resp = self.app.get(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": compute['id']}))
+
+        data = resp.json
+        data[1]['assigned_networks'] = networks
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": compute['id']}),
+            jsonutils.dumps(data),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 400)
+        message = jsonutils.loads(resp.body)['message']
+        self.assertEqual(message,
+                'Trying to assign public network to Node \'%d\' which should '
+                'not have public network' % compute['id'])
+
 
 class TestSriovHandlers(BaseIntegrationTest):
 

@@ -28,6 +28,7 @@ require 'ipaddr'
 require 'rethtool'
 require 'digest'
 require 'timeout'
+require 'socket'
 
 unless Process.euid == 0
   puts "You must be root"
@@ -546,6 +547,10 @@ def write_data_to_file(logger, filename, data)
   end
 end
 
+def provisioned?
+  Socket.gethostname != 'bootstrap'
+end
+
 logger = Logger.new(STDOUT)
 
 if File.exist?('/etc/nailgun_uid')
@@ -597,7 +602,9 @@ begin
   end
   new_id = JSON.parse(resp.body)['id']
   mc_config = McollectiveConfig.new(logger)
-  mc_config.replace_identity(new_id)
+  unless provisioned?
+    mc_config.replace_identity(new_id)
+  end
   write_data_to_file(logger, '/etc/nailgun_uid', new_id.to_s)
 rescue => ex
   # NOTE(mihgen): There is no need to retry - cron will do it for us

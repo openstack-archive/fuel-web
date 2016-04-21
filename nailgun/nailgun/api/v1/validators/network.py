@@ -835,6 +835,13 @@ class NetAssignmentValidator(BasicValidator):
                     public_id = next(
                         (n.id for n in node_group_db.networks
                             if n.name == consts.NETWORKS.public), None)
+                    if public_id in net_ids:
+                        raise errors.InvalidData(
+                            "Trying to assign public network to Node '{0}' "
+                            "which should not have public network".format(
+                                node_db.id),
+                            log_message=True
+                        )
                     if public_id is not None:
                         net_group_ids.discard(public_id)
                 unassigned_net_ids = net_group_ids - net_ids

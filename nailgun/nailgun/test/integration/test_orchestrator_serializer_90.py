@@ -20,15 +20,19 @@ import six
 from oslo_serialization import jsonutils
 
 from nailgun import consts
+from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.plugins import adapters
 from nailgun.utils import reverse
 
+from nailgun.orchestrator.deployment_serializers import \
+    get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer90
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer90
+from nailgun.orchestrator.orchestrator_graph import AstuteGraph
 
 from nailgun.test.integration import test_orchestrator_serializer_80
 
@@ -602,6 +606,13 @@ class TestDeploymentHASerializer90(
         for ceph_key in expected_keys:
             self.assertIn(ceph_key, storage_attrs)
 
+    def test_remove_nodes_from_common_attrs(self):
+        cluster_db = self.env.clusters[0]
+        serializer = self.create_serializer(cluster_db)
+
+        common_attrs = serializer.get_common_attrs(cluster_db)
+        self.assertNotIn('nodes', common_attrs)
+
 
 class TestDeploymentTasksSerialization90(
     TestSerializer90Mixin,
@@ -669,6 +680,78 @@ class TestNetworkTemplateSerializer90CompatibleWith80(
                 self.assertEqual(node_attrs['user_node_name'], node.name)
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
                 self.assertEqual(node_attrs['nova_cpu_pinning_enabled'], False)
+
+    # This test is replaced as 'nodes' field is no longer present in
+    # data serialized by 9.0 version serializer
+    def test_network_not_mapped_to_nics_w_template(self):
+        # delete and restore management network to break the default
+        # networks to interfaces mapping
+        resp = self.app.get(
+            reverse('NetworkGroupCollectionHandler',
+                    kwargs=self.env.clusters[0]),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+        management = None
+        for ng in jsonutils.loads(resp.body):
+            if ng['name'] == 'management':
+                management = ng
+                break
+        self.app.delete(
+            reverse(
+                'NetworkGroupHandler',
+                kwargs={'obj_id': management.pop('id')}
+            ),
+            headers=self.default_headers
+        )
+        self.app.post(
+            reverse('NetworkGroupCollectionHandler'),
+            jsonutils.dumps(management),
+            headers=self.default_headers,
+            expect_errors=False,
+        )
+        resp = self.app.get(
+            reverse('NetworkGroupCollectionHandler',
+                    kwargs=self.env.clusters[0]),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+        # management network is not mapped to any interfaces in DB now
+        cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        objects.Cluster.prepare_for_deployment(cluster_db)
+        serializer = get_serializer_for_cluster(cluster_db)
+        self.serialized_for_astute = serializer(
+            AstuteGraph(cluster_db)).serialize(cluster_db, cluster_db.nodes)
+
+        network_roles = [
+            'management',
+            'swift/api',
+            'neutron/api',
+            'sahara/api',
+            'ceilometer/api',
+            'cinder/api',
+            'keystone/api',
+            'glance/api',
+            'heat/api',
+            'nova/api',
+            'murano/api',
+            'horizon',
+            'mgmt/memcache',
+            'mgmt/database',
+            'mgmt/messaging',
+            'neutron/mesh',
+            'mgmt/vip',
+            'mgmt/corosync',
+            'mongo/db',
+            'nova/migration'
+        ]
+        for node_data in self.serialized_for_astute:
+            nodes = node_data['network_metadata']['nodes']
+            for node_name, node_attrs in nodes.items():
+                # IPs must be serialized for these roles which are tied to
+                # management network
+                for role in network_roles:
+                    self.assertIsNotNone(node_attrs['network_roles'][role])
 
 
 class TestNetworkTemplateSerializer90(

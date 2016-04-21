@@ -41,13 +41,55 @@ def capitalize_model_name(model_name):
     return ''.join(map(lambda s: s.capitalize(), model_name.split('_')))
 
 
-def load_fake_deployment_tasks(apply_to_db=True, commit=True):
+def get_fixture_for_release(release, default_fxtr_name, ext):
+    """Get path to file with fixtures appropriate for given release
+
+    Fixture files for particular release have defined name format
+    which is following: <default_fxtr_name>_<release_version>.<extension>.
+    If such file has not been found by the function, path to file with default
+    fixtures will be returned. The name of the file in such case is built in
+    following way: <default_fxtr_name>.<ext>
+
+    :param release: release string, e.g. 'mitaka-9.0'
+    :param default_fxtr_name: base name for fixture file
+    :param ext: extension for the fixture file
+    :return: path to the fixture file
+
+    """
+    fxtr_base_path = get_base_fixtures_path()
+
+    default_fxtr_path = os.path.join(fxtr_base_path,
+                                     default_fxtr_name + '.' + ext)
+
+    # trying to get meaningful version info from release string
+    version = ''
+    try:
+        # e.g. 'mitaka-9.0' -> '90'
+        version = ''.join(release.split('-')[1].split('.'))
+    except IndexError:
+        pass
+
+    if not version:
+        return default_fxtr_path
+
+    versioned_fxtr = default_fxtr_name + '_' + version + '.' + ext
+    ver_fxtr_path = os.path.join(fxtr_base_path, versioned_fxtr)
+
+    if os.path.exists(ver_fxtr_path):
+        return ver_fxtr_path
+    else:
+        return default_fxtr_path
+
+
+def load_fake_deployment_tasks(rel_version, apply_to_db=True, commit=True):
     """Load fake deployment tasks
 
     :param apply_to_db: if True applying to all releases in db
     :param commit: boolean
     """
-    fxtr_path = os.path.join(get_base_fixtures_path(), 'deployment_tasks.yaml')
+    fxtr_path = get_fixture_for_release(
+        rel_version, 'deployment_tasks', 'yaml')
+
     with open(fxtr_path) as f:
         deployment_tasks = yaml.load(f)
 

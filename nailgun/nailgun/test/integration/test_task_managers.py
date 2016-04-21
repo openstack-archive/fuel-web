@@ -1216,7 +1216,7 @@ class TestTaskManagers(BaseIntegrationTest):
             {
                 "id": "test", "roles": ['master'], "version": "2.0.1",
                 "type": "puppet", "parameters": {},
-                "condition": {"yaql_exp": "changed($.nodes)"}
+                "condition": {"yaql_exp": "changed($.plugins)"}
             }
         ]
         self.env.create(

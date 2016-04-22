@@ -185,7 +185,7 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
             },
             'bond_properties': {
                 'mode': "active-backup",
-                'type__': "ovs"
+                'type__': "dpdkovs"
             },
             'slaves': [
                 {'name': nic_2['name']},

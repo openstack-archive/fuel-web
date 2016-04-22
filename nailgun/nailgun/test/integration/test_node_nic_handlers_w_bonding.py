@@ -245,9 +245,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
     def test_nics_ovs_bond_create_failed_without_dpdk(self):
         bond_name = 'bond0'
         self.prepare_bond_w_props(bond_name=bond_name,
-                                  bond_type=BOND_TYPES.ovs)
+                                  bond_type=BOND_TYPES.dpdkovs)
         self.node_nics_put_check_error("Bond interface '{0}': DPDK should be"
-                                       " enabled for 'ovs' bond type".
+                                       " enabled for 'dpdkovs' bond type".
                                        format(bond_name))
 
     def test_nics_lnx_bond_create_failed_with_dpdk(self):
@@ -256,7 +256,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                                   bond_type=BOND_TYPES.linux,
                                   iface_props={'dpdk': {'enabled': True}})
         self.node_nics_put_check_error("Bond interface '{0}': DPDK can be"
-                                       " enabled only for 'ovs' bond type".
+                                       " enabled only for 'dpdkovs' bond type".
                                        format(bond_name))
 
     def test_nics_bond_removed_on_node_unassign(self):

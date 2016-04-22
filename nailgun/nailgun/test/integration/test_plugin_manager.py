@@ -437,6 +437,38 @@ class TestPluginManager(base.BaseIntegrationTest):
             attributes['plugin_b']['metadata']['chosen_id']
         )
 
+    def test_merge_plugin_values(self):
+        attributes = {
+            'test_plugin': {
+                'metadata': {
+                    'class': 'plugin',
+                    'chosen_id': 1,
+                    'versions': [
+                        {
+                            'metadata': {
+                                'plugin_id': 1
+                            },
+                            'attribute_a': {
+                                'value': 'test_a'
+                            },
+                            'attribute_b': {
+                                'value': 'test_b'
+                            }
+                        }
+                    ]
+                },
+                'attribute_a': {'value': ''},
+                'attribute_b': {'value': ''}
+            }
+        }
+
+        PluginManager.merge_plugin_values(attributes)
+
+        self.assertEqual(
+            'test_a', attributes['test_plugin']['attribute_a']['value'])
+        self.assertEqual(
+            'test_b', attributes['test_plugin']['attribute_b']['value'])
+
 
 class TestClusterPluginIntegration(base.BaseTestCase):
 

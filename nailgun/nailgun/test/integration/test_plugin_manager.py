@@ -437,6 +437,59 @@ class TestPluginManager(base.BaseIntegrationTest):
             attributes['plugin_b']['metadata']['chosen_id']
         )
 
+    def test_merge_plugin_values(self):
+        test_attributes = {
+            'test_plugin': {
+                'metadata': {
+                    'class': 'plugin',
+                    'chosen_id': 1,
+                    'enabled': True,
+                    'versions': [
+                        {
+                            'metadata': {
+                                'plugin_id': 1
+                            },
+                            'attribute_a': {
+                                'value': 'test_a'
+                            },
+                            'attribute_b': {
+                                'value': 'test_b'
+                            }
+                        },
+                        {
+                            'metadata': {
+                                'plugin_id': 2
+                            },
+                            'attribute_a': {
+                                'value': 'test_a'
+                            },
+                            'attribute_c': {
+                                'value': 'test_c'
+                            }
+                        }
+                    ]
+                },
+                'attribute_a': {'value': ''},
+                'attribute_b': {'value': ''}
+            }
+        }
+
+        attributes = PluginManager.merge_plugin_values(test_attributes)
+
+        self.assertEqual(
+            'test_a', attributes['test_plugin']['attribute_a']['value'])
+        self.assertEqual(
+            'test_b', attributes['test_plugin']['attribute_b']['value'])
+
+    def test_get_specific_version(self):
+        versions = [
+            {'metadata': {'plugin_id': '1'}},
+            {'metadata': {'plugin_id': '2'}}
+        ]
+
+        version = PluginManager._get_specific_version(versions, '1')
+        self.assertEqual(versions[0], version)
+
 
 class TestClusterPluginIntegration(base.BaseTestCase):
 

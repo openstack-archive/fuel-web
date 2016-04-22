@@ -250,7 +250,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                                        " enabled for 'dpdkovs' bond type".
                                        format(bond_name))
 
-    def test_nics_lnx_bond_create_failed_with_dpdk(self):
+    @mock.patch.object(objects.NIC, 'dpdk_available')
+    def test_nics_lnx_bond_create_failed_with_dpdk(self, m_dpdk_available):
+        m_dpdk_available.return_value = True
         bond_name = 'bond0'
         self.prepare_bond_w_props(bond_name=bond_name,
                                   bond_type=BOND_TYPES.linux,
@@ -258,6 +260,40 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.node_nics_put_check_error("Bond interface '{0}': DPDK can be"
                                        " enabled only for 'dpdkovs' bond type".
                                        format(bond_name))
+
+    def test_nics_ovs_bond_update_failed_without_dpdk(self):
+        bond_name = 'bond0'
+        node = self.env.nodes[0]
+        self.prepare_bond_w_props(bond_name=bond_name,
+                                  bond_type=BOND_TYPES.linux)
+        resp = self.put_single()
+        self.assertEqual(resp.status_code, 200)
+
+        self.data = self.env.node_nics_get(node.id).json_body
+        bond = [iface for iface in self.data
+                if iface['type'] == NETWORK_INTERFACE_TYPES.bond][0]
+        bond['bond_properties']['type__'] = BOND_TYPES.dpdkovs
+        self.node_nics_put_check_error(
+            "Bond interface '{0}': DPDK should be enabled for 'dpdkovs' bond"
+            " type".format(bond_name))
+
+    @mock.patch.object(objects.Bond, 'dpdk_available')
+    def test_nics_lnx_bond_update_failed_with_dpdk(self, m_dpdk_available):
+        m_dpdk_available.return_value = True
+        bond_name = 'bond0'
+        node = self.env.nodes[0]
+        self.prepare_bond_w_props(bond_name=bond_name,
+                                  bond_type=BOND_TYPES.linux)
+        resp = self.put_single()
+        self.assertEqual(resp.status_code, 200)
+
+        self.data = self.env.node_nics_get(node.id).json_body
+        bond = [iface for iface in self.data
+                if iface['type'] == NETWORK_INTERFACE_TYPES.bond][0]
+        bond['interface_properties'] = {'dpdk': {'enabled': True}}
+        self.node_nics_put_check_error(
+            "Bond interface '{0}': DPDK can be enabled only for 'dpdkovs' bond"
+            " type".format(bond_name))
 
     def test_nics_bond_removed_on_node_unassign(self):
         self.get_node_nics_info()

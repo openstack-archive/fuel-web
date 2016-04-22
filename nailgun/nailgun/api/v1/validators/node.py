@@ -177,15 +177,31 @@ class NodeValidator(base.BasicValidator):
             MetaValidator.validate_update)
 
     @classmethod
-    def validate_roles(cls, data, node):
-        if 'roles' in data:
-            if not isinstance(data['roles'], list) or \
-                    any(not isinstance(role, six.string_types)
-                        for role in data['roles']):
-                raise errors.InvalidData(
-                    "Role list must be list of strings",
-                    log_message=True
-                )
+    def validate_roles(cls, data, node, roles):
+        cluster_id = data.get('cluster_id', node.cluster_id)
+        if not cluster_id:
+            raise errors.InvalidData(
+                "Cannot assign pending_roles to node {0}. "
+                "Node doesn't belong to any cluster."
+                .format(node.id), log_message=True)
+
+        roles_set = set(roles)
+        if len(roles_set) != len(roles):
+            raise errors.InvalidData(
+                "pending_roles list for node {0} contains "
+                "duplicates.".format(node.id), log_message=True)
+
+        cluster = objects.Cluster.get_by_uid(cluster_id)
+        available_roles = objects.Cluster.get_roles(cluster)
+        invalid_roles = roles_set.difference(available_roles)
+
+        if invalid_roles:
+            raise errors.InvalidData(
+                u"Roles {0} are not valid for node {1} in environment {2}"
+                .format(u", ".join(sorted(invalid_roles)),
+                        node.id, cluster.id),
+                log_message=True
+            )
 
     @classmethod
     def validate_hostname(cls, hostname, instance):
@@ -255,8 +271,11 @@ class NodeValidator(base.BasicValidator):
         if d.get("hostname") is not None:
             cls.validate_hostname(d["hostname"], instance)
 
-        if "roles" in d:
-            cls.validate_roles(d, instance)
+        if d.get('roles'):
+            cls.validate_roles(d, instance, d['roles'])
+
+        if d.get('pending_roles'):
+            cls.validate_roles(d, instance, d['pending_roles'])
 
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])

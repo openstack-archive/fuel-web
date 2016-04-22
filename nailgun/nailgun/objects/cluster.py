@@ -360,6 +360,7 @@ class Cluster(NailgunObject):
         # Merge plugins attributes into editable ones
         plugin_attrs = PluginManager.get_plugins_attributes(
             instance, all_versions=all_plugins_versions)
+
         plugin_attrs = traverse(
             plugin_attrs,
             formatter_context={'cluster': instance, 'settings': settings},
@@ -450,10 +451,14 @@ class Cluster(NailgunObject):
         :param data: dict
         :returns: dict
         """
-        return {'editable': dict_merge(
+
+        attributes = {'editable': dict_merge(
             cls.get_editable_attributes(instance),
             data.get('editable', {})
         )}
+
+        return {'editable': PluginManager.merge_plugin_values(
+            attributes.get('editable', {}))}
 
     @classmethod
     def get_network_manager(cls, instance=None):

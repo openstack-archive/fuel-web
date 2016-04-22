@@ -115,6 +115,32 @@ class PluginManager(object):
         return plugins_attributes
 
     @classmethod
+    def merge_plugin_values(cls, attributes):
+        """Fill plugin attributes values.
+
+        :param attributes: Cluster attributes
+        :type attributes: dict
+        """
+        for k in attributes:
+            if cls.is_plugin_data(attributes[k]):
+                plugin_attributes = attributes[k]
+                metadata = plugin_attributes['metadata']
+                version_to_merge = {}
+
+                if metadata['enabled']:
+                    version_to_merge = cls._get_specific_version(
+                        metadata.get('versions', []),
+                        metadata.get('chosen_id'))
+
+                for key in plugin_attributes:
+                    if key in version_to_merge and key != 'metadata':
+                        if 'value' in version_to_merge[key]:
+                            plugin_attributes[key]['value'] = \
+                                version_to_merge[key]['value']
+
+        return attributes
+
+    @classmethod
     def is_plugin_data(cls, attributes):
         """Looking for a plugins hallmark.
 
@@ -382,3 +408,13 @@ class PluginManager(object):
         for plugin in cls.get_enabled_plugins(cluster):
             tasks.extend(plugin.tasks)
         return tasks
+
+    @classmethod
+    def _get_specific_version(cls, versions, plugin_id):
+        """Return plugin attributes for specific version.
+
+        :returns: dict -- plugin attributes
+        """
+        for version in versions:
+            if version['metadata']['plugin_id'] == plugin_id:
+                return version

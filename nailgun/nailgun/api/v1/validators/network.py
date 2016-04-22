@@ -568,16 +568,16 @@ class NetAssignmentValidator(BasicValidator):
 
             bond_type = iface.get('bond_properties', {}).get('type__')
 
-            if bond_type == consts.BOND_TYPES.ovs and not enabled:
+            if bond_type == consts.BOND_TYPES.dpdkovs and not enabled:
                 raise errors.InvalidData(
                     "Bond interface '{0}': DPDK should be"
-                    " enabled for 'ovs' bond type".format(iface['name']),
+                    " enabled for 'dpdkovs' bond type".format(iface['name']),
                     log_message=True
                 )
-            if bond_type != consts.BOND_TYPES.ovs and enabled:
+            if bond_type != consts.BOND_TYPES.dpdkovs and enabled:
                 raise errors.InvalidData(
                     "Bond interface '{0}': DPDK can be enabled"
-                    " only for 'ovs' bond type".format(iface['name']),
+                    " only for 'dpdkovs' bond type".format(iface['name']),
                     log_message=True
                 )
         else:

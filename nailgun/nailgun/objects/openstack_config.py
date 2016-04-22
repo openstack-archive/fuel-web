@@ -59,9 +59,9 @@ class OpenstackConfig(NailgunObject):
 
     @classmethod
     def _get_config_type(cls, data):
-        if 'node_id' in data:
+        if data.get('node_id'):
             return consts.OPENSTACK_CONFIG_TYPES.node
-        if 'node_role' in data:
+        if data.get('node_role'):
             return consts.OPENSTACK_CONFIG_TYPES.role
         return consts.OPENSTACK_CONFIG_TYPES.cluster
 

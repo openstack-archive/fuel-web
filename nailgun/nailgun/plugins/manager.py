@@ -115,6 +115,29 @@ class PluginManager(object):
         return plugins_attributes
 
     @classmethod
+    def merge_plugin_values(cls, attributes):
+        for k in list(attributes):
+            if cls.is_plugin_data(attributes[k]):
+                version_to_merge = {}
+                plugin_attributes = attributes[k]
+                plugin_id = plugin_attributes.get(
+                    'metadata', {}).get('plugin_id')
+
+                for version in plugin_attributes.get(
+                        'metadata', {}).get('versions'):
+                    version_plugin_id = version.get(
+                        'metadata', {}).get('plugin_id')
+                    if version_plugin_id == plugin_id:
+                        version_to_merge = version
+                        break
+
+                for key in plugin_attributes:
+                    if key in version_to_merge and key != 'metadata':
+                        value = version_to_merge[key].get('value')
+                        if value:
+                            plugin_attributes[key]['value'] = value
+
+    @classmethod
     def is_plugin_data(cls, attributes):
         """Looking for a plugins hallmark.
 

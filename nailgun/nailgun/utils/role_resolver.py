@@ -43,6 +43,14 @@ class BaseRoleResolver(object):
         :return: the unique set of nodes
         """
 
+    @abc.abstractmethod
+    def get_all_roles(self, pattern=None):
+        """Gets all roles by pattern if pattern is specified.
+
+        :param pattern: option pattern to match role
+        :return: the all roles that forth pattern
+        """
+
 
 class NullResolver(BaseRoleResolver):
     """The implementation of RoleResolver
@@ -54,6 +62,9 @@ class NullResolver(BaseRoleResolver):
 
     def resolve(self, roles, policy=None):
         return self.nodes_ids
+
+    def get_all_roles(self, pattern=None):
+        return []
 
 
 class RoleResolver(BaseRoleResolver):
@@ -118,4 +129,18 @@ class RoleResolver(BaseRoleResolver):
             "Role '%s' and policy '%s' was resolved to: %s",
             roles, policy, result
         )
+        return result
+
+    def get_all_roles(self, pattern=None):
+        if pattern is None or pattern == consts.TASK_ROLES.all:
+            return set(self.__mapping)
+
+        if isinstance(pattern, six.string_types):
+            pattern = [pattern]
+
+        result = set()
+        if isinstance(pattern, (list, tuple, set)):
+            for p in pattern:
+                p = NameMatchingPolicy.create(p)
+                result.update(r for r in self.__mapping if p.match(r))
         return result

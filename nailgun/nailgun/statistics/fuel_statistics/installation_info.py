@@ -52,6 +52,8 @@ class InstallationInfo(object):
                       'resume_guests_state_on_host_boot', None),
         WhiteListRule(('common', 'task_deploy', 'value'),
                       'task_deploy', None),
+        WhiteListRule(('common', 'propagate_task_deploy', 'value'),
+                      'propagate_task_deploy', None),
         WhiteListRule(('corosync', 'verified', 'value'),
                       'corosync_verified', None),
 

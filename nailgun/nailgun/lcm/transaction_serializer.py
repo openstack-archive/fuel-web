@@ -80,7 +80,9 @@ class TransactionSerializer(object):
         version = StrictVersion(task.get('version', '0.0.0'))
         if version < cls.min_supported_task_version:
             message = (
-                "Task '{0}' does not support cross-dependencies."
+                "Task '{0}' does not support cross-dependencies.\n"
+                "You can enable option 'propagate_task_deploy'"
+                "for cluster to use task adaptation mechanism."
                 .format(task['id'])
             )
             logger.warning(message)

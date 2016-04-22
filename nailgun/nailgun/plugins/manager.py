@@ -22,6 +22,7 @@ from nailgun.objects.plugin import ClusterPlugins
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.plugins.adapters import wrap_plugin
+from nailgun.utils import dict_update
 
 
 class PluginManager(object):
@@ -113,6 +114,25 @@ class PluginManager(object):
                 container.update(plugin.attributes)
 
         return plugins_attributes
+
+    @classmethod
+    def inject_plugin_attribute_values(cls, attributes):
+        """Inject given attributes with plugin attributes values.
+
+        :param attributes: Cluster attributes
+        :type attributes: dict
+        """
+        for k, attrs in six.iteritems(attributes):
+            if (not cls.is_plugin_data(attrs) or
+                    not attrs['metadata']['enabled']):
+                continue
+            metadata = attrs['metadata']
+            selected_plugin_attrs = cls._get_specific_version(
+                metadata.get('versions', []),
+                metadata.get('chosen_id'))
+            selected_plugin_attrs.pop('metadata', None)
+
+            dict_update(attrs, selected_plugin_attrs, 1)
 
     @classmethod
     def is_plugin_data(cls, attributes):
@@ -382,3 +402,15 @@ class PluginManager(object):
         for plugin in cls.get_enabled_plugins(cluster):
             tasks.extend(plugin.tasks)
         return tasks
+
+    @classmethod
+    def _get_specific_version(cls, versions, plugin_id):
+        """Return plugin attributes for specific version.
+
+        :returns: dict -- plugin attributes
+        """
+        for version in versions:
+            if version['metadata']['plugin_id'] == plugin_id:
+                return version
+
+        return {}

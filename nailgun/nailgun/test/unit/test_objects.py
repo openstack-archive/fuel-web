@@ -1616,6 +1616,80 @@ class TestClusterObject(BaseTestCase):
         for ip in node.ip_addrs:
             self.assertEquals(admin_ng_id, ip.network)
 
+    def test_get_updated_editable_attributes_with_plugin(self):
+        cluster = self.env.create_cluster(api=False)
+        self.env.create_plugin(
+            name='test_plugin',
+            version='1.0.0',
+            package_version='4.0.0',
+            cluster=cluster,
+            attributes_metadata=self.env.get_default_plugin_env_config()
+        )
+        self.env.create_plugin(
+            name='test_plugin',
+            version='3.0.0',
+            package_version='4.0.0',
+            cluster=cluster,
+            attributes_metadata=self.env.get_default_plugin_env_config()
+        )
+
+        attributes = objects.Cluster.get_attributes(cluster)
+        test_plugin_data = {
+            'metadata': {
+                'versions': [
+                    {
+                        'metadata': {
+                            'plugin_id': 1,
+                            'group': 'network',
+                            'hot_pluggable': False,
+                            'plugin_version': '4.0.0'
+                        },
+                        'plugin_name_text': {
+                            'value': 'test_value_a',
+                            'description': 'description',
+                            'type': 'text',
+                            'label': 'label',
+                            'weight': 25
+                        }
+                    },
+                    {
+                        'metadata': {
+                            'plugin_id': 2,
+                            'group': 'network',
+                            'hot_pluggable': False,
+                            'plugin_version': '4.0.0'
+                        },
+                        'plugin_name_text': {
+                            'value': 'test_value_b',
+                            'description': 'description',
+                            'type': 'text',
+                            'label': 'label',
+                            'weight': 25
+                        }
+                    }
+                ],
+                'default': False,
+                'enabled': True,
+                'label': 'Title for test_plugin plugin',
+                'toggleable': True,
+                'chosen_id': 2,
+                'class': 'plugin'
+            }
+        }
+
+        self.assertEqual(
+            'value',
+            attributes['editable']['test_plugin']
+                      ['plugin_name_text']['value'])
+
+        updated_attributes = objects.Cluster.get_updated_editable_attributes(
+            cluster, {'editable': {'test_plugin': test_plugin_data}})
+
+        self.assertEqual(
+            'test_value_b',
+            updated_attributes['editable']['test_plugin']
+                              ['plugin_name_text']['value'])
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 

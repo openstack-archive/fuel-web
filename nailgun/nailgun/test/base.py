@@ -1310,7 +1310,7 @@ class EnvironmentManager(object):
                 kwargs={'obj_id': ng_id}
             ),
             headers=self.default_headers,
-            expect_errors=False
+            expect_errors=expect_errors
         )
 
     def set_task_status_recursively(self, supertask, status):

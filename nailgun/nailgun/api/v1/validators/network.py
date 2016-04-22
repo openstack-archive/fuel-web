@@ -567,24 +567,13 @@ class NetAssignmentValidator(BasicValidator):
                 'enabled', False)
 
             bond_type = iface.get('bond_properties', {}).get('type__')
-
-            if bond_type == consts.BOND_TYPES.dpdkovs and not enabled:
-                raise errors.InvalidData(
-                    "Bond interface '{0}': DPDK should be"
-                    " enabled for 'dpdkovs' bond type".format(iface['name']),
-                    log_message=True
-                )
-            if bond_type != consts.BOND_TYPES.dpdkovs and enabled:
-                raise errors.InvalidData(
-                    "Bond interface '{0}': DPDK can be enabled"
-                    " only for 'dpdkovs' bond type".format(iface['name']),
-                    log_message=True
-                )
         else:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 iface_cls = objects.NIC
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 iface_cls = objects.Bond
+                bond_type = iface.get('bond_properties', {}).get(
+                    'type__', db_iface.bond_properties.get('type__'))
             hw_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
 
             interface_properties = utils.dict_merge(
@@ -598,6 +587,20 @@ class NetAssignmentValidator(BasicValidator):
         if not hw_available and enabled:
             raise errors.InvalidData("DPDK is not available for '{}'".format(
                 iface['name']))
+
+        if iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
+            if bond_type == consts.BOND_TYPES.dpdkovs and not enabled:
+                raise errors.InvalidData(
+                    "Bond interface '{0}': DPDK should be"
+                    " enabled for 'dpdkovs' bond type".format(iface['name']),
+                    log_message=True
+                )
+            if bond_type != consts.BOND_TYPES.dpdkovs and enabled:
+                raise errors.InvalidData(
+                    "Bond interface '{0}': DPDK can be enabled"
+                    " only for 'dpdkovs' bond type".format(iface['name']),
+                    log_message=True
+                )
 
         if db_iface is not None:
             pci_id = interface_properties.get('pci_id')

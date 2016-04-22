@@ -110,7 +110,7 @@ class PluginManager(object):
                 cls.create_common_metadata(plugin, container)
                 container['metadata'].update(default_attrs.get('metadata', {}))
                 cls.fill_plugin_metadata(plugin, container['metadata'])
-                container.update(plugin.attributes)
+                #container.update(plugin.attributes)
 
         return plugins_attributes
 

@@ -397,3 +397,18 @@ class TestTransactionSerializer(BaseUnitTest):
             {'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
              'version': '1.0.0', 'id': 'test'}
         )
+
+    def test_serialize_with_correct_state(self):
+        old_state = {
+            'task1': self.context.new,
+            'task4': {},
+        }
+        context = lcm.TransactionContext(self.context.new, old_state)
+        serialized = lcm.TransactionSerializer.serialize(
+            context, self.tasks, self.role_resolver
+        )[1]
+        controller_tasks = serialized['1']
+        task1 = filter(lambda t: t['id'] == 'task1', controller_tasks)[0]
+        task4 = filter(lambda t: t['id'] == 'task4', controller_tasks)[0]
+        self.assertEqual(task1['type'], 'skipped')
+        self.assertNotEqual(task4, 'skipped')

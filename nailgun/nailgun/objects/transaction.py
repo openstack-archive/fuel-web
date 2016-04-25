@@ -86,3 +86,26 @@ class TransactionCollection(NailgunCollection):
             None, cluster_id=cluster.id, name=consts.TASK_NAMES.deployment,
             status=consts.TASK_STATUSES.ready
         ).order_by('-id').limit(1).first()
+
+    @classmethod
+    def get_last_succeeded_transactions(cls, cluster, task_names=None):
+        History = models.DeploymentHistory
+        Transaction = cls.single.model
+
+        transactions = db().query(Transaction).join(History).filter(
+            Transaction.cluster_id == cluster.id,
+            Transaction.name == consts.TASK_NAMES.deployment,
+            History.status == consts.HISTORY_TASK_STATUSES.ready,
+        )
+
+        if task_names:
+            transactions = transactions.filter(
+                History.deployment_graph_task_name.in_(task_names),
+            )
+
+        transactions = transactions.order_by(
+            History.deployment_graph_task_name, History.task_id.desc(),
+        ).distinct(
+            History.deployment_graph_task_name
+        )
+        return transactions

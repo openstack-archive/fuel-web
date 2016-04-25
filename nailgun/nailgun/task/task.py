@@ -394,25 +394,39 @@ class ClusterTransaction(DeploymentTask):
             transaction.cluster, nodes
         )
         logger.info("cluster serialization is finished.")
-        if force:
-            current_state = {}
-        else:
-            current_state = objects.Transaction.get_deployment_info(
-                objects.TransactionCollection.get_last_succeed_run(
-                    transaction.cluster
-                )
+
+        if selected_task_ids:
+            tasks = list(cls.mark_skipped(tasks, selected_task_ids))
+
+        current_state = {}
+        if not force:
+            ignored_types = {
+                consts.ORCHESTRATOR_TASK_TYPES.skipped,
+                consts.ORCHESTRATOR_TASK_TYPES.group,
+                consts.ORCHESTRATOR_TASK_TYPES.stage,
+            }
+
+            tasks_names = [t['id'] for t in tasks
+                           if t['type'] not in ignored_types]
+            transaction_collection = objects.TransactionCollection
+            transactions = (
+                transaction_collection.get_succeed_transactions_per_task(
+                    transaction.cluster.id, tasks_names)
             )
+            current_state = {
+                task_id: objects.Transaction.get_deployment_info(tr)
+                for tr, task_id in transactions
+            }
+
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )
+
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("tasks serialization is started.")
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer
         # also role resolver should be created after serialization completed
-        if selected_task_ids:
-            tasks = cls.mark_skipped(tasks, selected_task_ids)
-
         role_resolver = RoleResolver(nodes)
         cluster = transaction.cluster
 

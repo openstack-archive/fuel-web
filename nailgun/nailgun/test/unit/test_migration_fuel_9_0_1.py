@@ -16,9 +16,10 @@ import alembic
 
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
+from nailgun.test import base
 
-_prepare_revision = '675105097a69'
-_test_revision = 'c6edea552f1e'
+_prepare_revision = '11a9adc6d36a'
+_test_revision = '675105097a69'
 
 
 def setup_module():
@@ -30,3 +31,10 @@ def setup_module():
 
 def prepare():
     pass
+
+
+class TestDeploymentHistoryMigration(base.BaseAlembicMigrationTest):
+    def test_history_has_task_name_status_idx_index(self):
+        tbl = self.meta.tables['deployment_history']
+        self.assertIn('deployment_history_task_name_status_idx',
+                      [i.name for i in tbl.indexes])

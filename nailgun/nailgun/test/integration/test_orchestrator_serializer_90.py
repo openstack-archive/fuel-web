@@ -584,6 +584,22 @@ class TestDeploymentLCMSerialization90(
             self.assertIn('plugins', node)
             self.datadiff(plugins_data, node['plugins'], compare_sorted=True)
 
+    def test_serialize_with_customized(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+
+        objects.Cluster.replace_deployment_info(self.cluster_db, serialized)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        cust_serialized = self.serializer.serialize(
+            self.cluster_db, [self.node])
+
+        for item in serialized:
+            if item['uid'] != consts.MASTER_NODE_UID:
+                self.assertIn(item, cust_serialized)
+            else:
+                item['cluster']['is_customized'] = True
+                self.assertIn(item, cust_serialized)
+
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,
@@ -601,6 +617,21 @@ class TestDeploymentHASerializer90(
         )
         for ceph_key in expected_keys:
             self.assertIn(ceph_key, storage_attrs)
+
+    def test_serialize_with_customized(self):
+        cluster = self.env.clusters[0]
+        serializer = self.create_serializer(cluster)
+
+        objects.Cluster.prepare_for_deployment(cluster)
+        serialized = serializer.serialize(cluster, cluster.nodes)
+
+        objects.Cluster.replace_deployment_info(cluster, serialized)
+        objects.Cluster.prepare_for_deployment(cluster)
+        cust_serialized = serializer.serialize(
+            cluster, cluster.nodes)
+
+        for item in serialized:
+            self.assertIn(item, cust_serialized)
 
 
 class TestDeploymentTasksSerialization90(

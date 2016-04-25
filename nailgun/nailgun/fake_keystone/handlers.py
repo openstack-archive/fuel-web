@@ -26,6 +26,12 @@ class TokensHandler(BaseHandler):
 
     @content
     def POST(self):
+        keystone_href = 'http://{ip_addr}:{port}/keystone/v2.0'.format(
+            ip_addr=settings.AUTH['auth_host'], port=settings.LISTEN_PORT)
+        nailgun_href = 'http://{ip_addr}:{port}/api'.format(
+            ip_addr=settings.AUTH['auth_host'], port=settings.LISTEN_PORT)
+        ostf_href = 'http://{ip_addr}:{port}/ostf'.format(
+            ip_addr=settings.AUTH['auth_host'], port=settings.LISTEN_PORT)
         data = self.checked_data()
         try:
             if 'passwordCredentials' in data['auth']:
@@ -55,7 +61,34 @@ class TokensHandler(BaseHandler):
                         "name": "admin"
                     }
                 },
-                "serviceCatalog": [],
+                "serviceCatalog": [{
+                    "endpoints": [{
+                        "adminURL": ostf_href,
+                        "id": "aeb91ada347e414db3512d6f47f3c107",
+                        "internalURL": ostf_href,
+                        "publicURL": ostf_href,
+                        "region": "RegionOne"}],
+                    "endpoints_links": [],
+                    "name": "ostf",
+                    "type": "ostf"}, {
+                    "endpoints": [{
+                        "adminURL": nailgun_href,
+                        "id": "2eb5ba91ea7f49419017021f44596166",
+                        "internalURL": nailgun_href,
+                        "publicURL": nailgun_href,
+                        "region": "RegionOne"}],
+                    "endpoints_links": [],
+                    "name": "nailgun",
+                    "type": "fuel"}, {
+                    "endpoints": [{
+                        "adminURL": keystone_href,
+                        "id": "fb2e8ded962c4ac692dfa97ad71056de",
+                        "internalURL": keystone_href,
+                        "publicURL": keystone_href,
+                        "region": "RegionOne"}],
+                    "endpoints_links": [],
+                    "name": "keystone",
+                    "type": "identity"}],
                 "user": {
                     "username": "admin",
                     "roles_links": [],

@@ -954,7 +954,7 @@ class BaseNetworkVerification(object):
         self.task = task
         self.config = config
 
-    def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
+    def get_ifaces_on_undeployed_node(self, node, node_json, networks_to_skip):
         # Save bonds info to be able to check net-probe results w/o
         # need to access nodes in DB (node can be deleted before the test is
         # completed). This info is needed for non-deployed nodes only.
@@ -979,7 +979,7 @@ class BaseNetworkVerification(object):
                 if ng.group_id is None:
                     vlans.append(0)
                     continue
-                if ng.name == consts.NETWORKS.public and not has_public:
+                if ng.name in networks_to_skip:
                     continue
 
                 data_ng = filter(lambda i: i['name'] == ng.name,
@@ -1003,7 +1003,7 @@ class BaseNetworkVerification(object):
                 node_json['networks'].append(
                     {'iface': iface.name, 'vlans': vlans})
 
-    def get_ifaces_on_deployed_node(self, node, node_json, has_public):
+    def get_ifaces_on_deployed_node(self, node, node_json, networks_to_skip):
         for iface in node.interfaces:
             # In case of present bond interfaces - collect assigned networks
             # against bonds themselves. We can check bonds as they are up on
@@ -1014,7 +1014,7 @@ class BaseNetworkVerification(object):
                 if ng.group_id is None:
                     vlans.append(0)
                     continue
-                if ng.name == consts.NETWORKS.public and not has_public:
+                if ng.name in networks_to_skip:
                     continue
                 # After deployment we can't check traffic on DPDK enabled
                 # interface since it's no longer visible in the system. So we
@@ -1041,12 +1041,19 @@ class BaseNetworkVerification(object):
         nodes = []
         nodes_w_public = []
         offline_nodes = 0
+        nodes_wo_dpdk = []
         for node in self.task.cluster.nodes:
             if node.online and objects.Node.should_have_public_with_ip(node):
                 nodes_w_public.append(node.id)
+            if node.online and not objects.Node.dpdk_enabled(node):
+                nodes_wo_dpdk.append(node.id)
         if len(nodes_w_public) < 2:
             # don't check public VLANs if there is the only node with public
             nodes_w_public = []
+        if len(nodes_wo_dpdk) < 2:
+            # We cannot check private VLANs if there is the
+            # only node without DPDK enabled
+            nodes_wo_dpdk = []
         for node in self.task.cluster.nodes:
             if node.offline:
                 offline_nodes += 1
@@ -1060,13 +1067,19 @@ class BaseNetworkVerification(object):
                 'excluded_networks': [],
             }
 
-            has_public = node.id in nodes_w_public
+            networks_to_skip = []
+            if node.id not in nodes_w_public:
+                networks_to_skip.append(consts.NETWORKS.public)
+            if node.id not in nodes_wo_dpdk:
+                networks_to_skip.append(consts.NETWORKS.private)
             # Check bonds on deployed nodes and check bonds slave NICs on
             # undeployed ones.
             if node.status == consts.NODE_STATUSES.ready:
-                self.get_ifaces_on_deployed_node(node, node_json, has_public)
+                self.get_ifaces_on_deployed_node(node, node_json,
+                                                 networks_to_skip)
             else:
-                self.get_ifaces_on_undeployed_node(node, node_json, has_public)
+                self.get_ifaces_on_undeployed_node(node, node_json,
+                                                   networks_to_skip)
 
             nodes.append(node_json)
 
@@ -1231,7 +1244,7 @@ class VerifyNetworksForTemplateMixin(object):
                 'vlans': sorted(vlans)
             })
 
-    def get_ifaces_on_undeployed_node(self, node, node_json, has_public):
+    def get_ifaces_on_undeployed_node(self, node, node_json, networks_to_skip):
         """Retrieves list of network interfaces on the undeployed node.
 
         By default list of network interfaces is based on the information
@@ -1244,16 +1257,17 @@ class VerifyNetworksForTemplateMixin(object):
             return
 
         super(VerifyNetworksForTemplateMixin, self
-              ).get_ifaces_on_undeployed_node(node, node_json, has_public)
+              ).get_ifaces_on_undeployed_node(node, node_json,
+                                              networks_to_skip)
 
-    def get_ifaces_on_deployed_node(self, node, node_json, has_public):
+    def get_ifaces_on_deployed_node(self, node, node_json, networks_to_skip):
         """Retrieves list of network interfaces on the deployed node."""
         if node.network_template:
             self.get_ifaces_from_template_on_deployed_node(node, node_json)
             return
 
         super(VerifyNetworksForTemplateMixin, self
-              ).get_ifaces_on_deployed_node(node, node_json, has_public)
+              ).get_ifaces_on_deployed_node(node, node_json, networks_to_skip)
 
 
 class VerifyNetworksTask(VerifyNetworksForTemplateMixin,

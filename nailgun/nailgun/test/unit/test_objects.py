@@ -987,6 +987,52 @@ class TestTransactionObject(BaseIntegrationTest):
         )
         self.assertIsNone(objects.Transaction.get_network_settings(None))
 
+    def test_get_successful_transactions_per_task(self):
+        history_collection = objects.DeploymentHistoryCollection
+        get_succeed = (
+            objects.TransactionCollection.get_successful_transactions_per_task
+        )
+        tasks_graph = {
+            None: [
+                {'id': 'post_deployment_start'},
+                {'id': 'post_deployment_end'}
+            ],
+            '1': [{'id': 'dns-client'}]
+        }
+
+        def make_task_with_history(task_status, graph):
+            task = self.env.create_task(
+                name=consts.TASK_NAMES.deployment,
+                status=task_status,
+                cluster_id=self.cluster.id)
+
+            history_collection.create(task, graph)
+
+            history_collection.all().update(
+                {'status': consts.HISTORY_TASK_STATUSES.ready})
+            return task
+
+        # create some tasks in history
+        task1 = make_task_with_history('ready', tasks_graph)
+        transactions = get_succeed(self.cluster.id, ['dns-client']).all()
+        self.assertEqual(transactions, [(task1, 'dns-client')])
+
+        # remove 'dns-client' and add 'test' to graph
+        tasks_graph['1'] = [{'id': 'test'}]
+        task2 = make_task_with_history('ready', tasks_graph)
+        transactions = get_succeed(self.cluster.id, ['test']).all()
+        self.assertEqual(transactions, [(task2, 'test')])
+
+        # remove 'test' and add 'dns-client' to graph
+        tasks_graph['1'] = [{'id': 'dns-client'}]
+        task3 = make_task_with_history('ready', tasks_graph)
+        transactions = get_succeed(self.cluster.id,
+                                   ['dns-client', 'test']).all()
+
+        # now we should find both `test` and `dns-client` transactions
+        self.assertEqual(transactions,
+                         [(task3, 'dns-client'), (task2, 'test')])
+
 
 class TestActionLogObject(BaseIntegrationTest):
 

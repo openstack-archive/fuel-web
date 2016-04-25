@@ -103,6 +103,19 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(3, len(resp.json_body['nodes']))
 
+    def test_400_if_node_not_assign_to_any_cluster(self):
+        node = self.env.create_node()
+        url = reverse(
+            'DefaultProvisioningInfo',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_query(nodes=[node['uid']])
+        resp = self.app.get(
+            url, headers=self.default_headers, expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("do not belong to any cluster", resp.body)
+
     def test_default_provisioning_handler_for_selected_nodes(self):
         node_ids = [node.uid for node in self.cluster.nodes][:2]
         url = reverse(

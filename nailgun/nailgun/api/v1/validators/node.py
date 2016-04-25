@@ -370,6 +370,23 @@ class NodesFilterValidator(base.BasicValidator):
                 'Nodes {} do not belong to cluster {}'.format(
                     ', '.join(wrongly_placed_uids), cluster.id))
 
+    @classmethod
+    def validate_assignment(cls, nodes):
+        """Validates that given nodes belong to some cluster.
+
+        :param nodes: list of objects.Node instances
+        """
+        not_assigned_uids = []
+        for node in nodes:
+            if node.cluster_id is None:
+                not_assigned_uids.append(node.uid)
+
+        if not_assigned_uids:
+            raise errors.InvalidData(
+                'Nodes {} do not belong to any cluster'.format(
+                    ', '.join(not_assigned_uids))
+            )
+
 
 class ProvisionSelectedNodesValidator(NodesFilterValidator):
 

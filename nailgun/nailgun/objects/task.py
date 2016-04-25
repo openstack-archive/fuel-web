@@ -294,8 +294,11 @@ class Task(NailgunObject):
     def update(cls, instance, data):
         logger.debug("Updating task: %s", instance.uuid)
         clean_data = cls._clean_data(data)
+        logger.info("PF: Clean data")
         super(Task, cls).update(instance, clean_data)
+        logger.info("PF: Task update")
         db().flush()
+        logger.info("PF: Task db flush")
 
         # update cluster only if task status was updated
         if instance.cluster_id and 'status' in clean_data:
@@ -304,11 +307,13 @@ class Task(NailgunObject):
                          instance.uuid, instance.cluster_id,
                          data.get('status'))
             cls._update_cluster_data(instance)
+            logger.info("PF: Update cluster data")
 
         if instance.parent and \
                 {'status', 'message', 'progress'}.intersection(clean_data):
             logger.debug("Updating parent task: %s.", instance.parent.uuid)
             cls._update_parent_instance(instance.parent)
+            logger.info("PF: Update parent instance")
 
     @classmethod
     def delete(cls, instance):

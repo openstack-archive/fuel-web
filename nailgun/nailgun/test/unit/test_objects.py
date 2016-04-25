@@ -43,6 +43,7 @@ from nailgun import errors
 from nailgun import consts
 from nailgun import plugins
 
+from nailgun.db.sqlalchemy.models import DeploymentHistory
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import Task
@@ -998,6 +999,51 @@ class TestTransactionObject(BaseIntegrationTest):
             info, objects.Transaction.get_network_settings(transaction)
         )
         self.assertIsNone(objects.Transaction.get_network_settings(None))
+
+    def test_get_last_succeeded_transactions(self):
+        HistoryCollection = objects.DeploymentHistoryCollection
+        TrCollection = objects.TransactionCollection
+        tasks_graph = {
+            None: [
+                {'id': 'post_deployment_start'},
+                {'id': 'post_deployment_end'}
+            ],
+            '1': [{'id': 'dns-client'}]
+        }
+
+        def mk_task_with_history(task_status, graph):
+            task = self.env.create_task(
+                name=consts.TASK_NAMES.deployment,
+                status=task_status,
+                cluster_id=self.cluster.id)
+
+            HistoryCollection.create(task, graph)
+
+            objects.DeploymentHistoryCollection.all().update(
+                {'status': consts.HISTORY_TASK_STATUSES.ready})
+            return task
+
+        # create some tasks in history
+        task1 = mk_task_with_history('ready', tasks_graph)
+        transactions = TrCollection.get_last_succeeded_transactions(
+            self.cluster, ['dns-client']).all()
+        self.assertEqual(transactions, [task1])
+
+        # remove 'dns-client' and add 'test' to graph
+        tasks_graph['1'] = [{'id': 'test'}]
+        task2 = mk_task_with_history('ready', tasks_graph)
+        transactions = TrCollection.get_last_succeeded_transactions(
+            self.cluster, ['test']).all()
+        self.assertEqual(transactions, [task2])
+
+        # remove 'test' and add 'dns-client' to graph
+        tasks_graph['1'] = [{'id': 'dns-client'}]
+        task3 = mk_task_with_history('ready', tasks_graph)
+        transactions = TrCollection.get_last_succeeded_transactions(
+            self.cluster, ['dns-client', 'test']).all()
+
+        # now we should find both `test` and `dns-client` tasks
+        self.assertEqual(transactions, [task3, task2])
 
 
 class TestActionLogObject(BaseIntegrationTest):

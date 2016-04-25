@@ -1352,6 +1352,51 @@ class TestTaskManagers(BaseIntegrationTest):
             tasks_graph
         )
 
+    @fake_tasks()
+    def test_correct_state_calculation(self):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            }
+        )
+
+        self.env.launch_deployment(cluster.id)
+
+        net_data = self.env.neutron_networks_get(cluster.id).json_body
+        pub = filter(lambda ng: ng['name'] == 'public',
+                     net_data['networks'])[0]
+        pub['ip_ranges'] = [['172.16.0.2', u'172.16.0.100'],
+                            ['172.16.0.102', '172.16.0.120']]
+
+        resp = self.env.neutron_networks_put(cluster.id, net_data)
+        self.assertEqual(resp.status_code, 200)
+
+        # launch deployment of some custom tasks
+        with mock.patch('objects.Cluster.get_deployment_tasks') as d_tasks:
+            d_tasks.return_value = [{
+                'id': 'test',
+                'parameters': {}, 'type': 'puppet',
+                'roles': ['master'], 'version': '2.1.0',
+            }]
+            self.env.launch_deployment(cluster.id)
+
+        objects.DeploymentHistoryCollection.all().update(
+            {'status': consts.HISTORY_TASK_STATUSES.ready})
+
+        with mock.patch('nailgun.task.task.rpc.cast') as rpc_mock:
+            self.env.launch_deployment(cluster.id)
+            tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
+            # assert that tasks from 1st custom deployment are in
+            # usual deployment
+            conf = filter(lambda i: i['id'] == 'netconfig', tasks_graph['1'])
+            self.assertTrue(conf)
+            self.assertNotEqual(conf[0]['type'], 'skipped')
+
 
 class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
 

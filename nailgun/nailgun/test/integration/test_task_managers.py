@@ -1285,7 +1285,7 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
     @mock.patch('nailgun.task.task.rpc.cast')
-    @mock.patch('objects.Cluster.get_deployment_tasks')
+    @mock.patch('nailgun.objects.Cluster.get_deployment_tasks')
     def test_only_certain_tasks_run_in_deploy(self, tasks_mock, rpc_mock):
         task = {
             'id': 'test', 'parameters': {}, 'type': 'puppet',
@@ -1300,7 +1300,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         tasks_mock.return_value = tasks
 
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {'status': NODE_STATUSES.provisioned, 'roles': ['controller']},
                 {'status': NODE_STATUSES.provisioned, 'roles': ['compute']},
@@ -1311,7 +1311,6 @@ class TestTaskManagers(BaseIntegrationTest):
                 'version': 'mitaka-9.0',
             },
         )
-        cluster = self.env.clusters[-1]
         task_ids = ['test0', 'test3']
         task = self.env.launch_deployment_selected_tasks(
             [n.uid for n in cluster.nodes],
@@ -1333,7 +1332,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 'operating_system': consts.RELEASE_OS.ubuntu,
                 'version': 'mitaka-9.0'
             },
-            nodes_kwargs=[{'roles': ['controller'],
+            nodes_kwargs=[{'roles': ['master'],
                            'status': consts.NODE_STATUSES.ready}] * 3
         )
         resp = self.app.put(
@@ -1351,6 +1350,55 @@ class TestTaskManagers(BaseIntegrationTest):
             [n.uid for n in cluster.nodes] + [consts.MASTER_NODE_UID, None],
             tasks_graph
         )
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    @mock.patch('nailgun.objects.Cluster.get_deployment_tasks')
+    def test_correct_state_calculation(self, tasks_mock, rpc_mock):
+        cluster = self.env.create(
+            nodes_kwargs=[{'roles': ['controller'],
+                           'status': consts.NODE_STATUSES.provisioned}],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0'
+            }
+        )
+        node = cluster.nodes[0]
+
+        task = {
+            'parameters': {}, 'type': 'puppet',
+            'roles': ['master'], 'version': '2.1.0',
+            'condition': {'yaql_exp': 'changed($)'},
+        }
+
+        tasks_mock.return_value = [
+            dict(task, id='test1'), dict(task, id='test2')
+        ]
+
+        # deploy cluster at first time and create history
+        supertask = self.env.launch_deployment_selected([node.uid], cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+
+        objects.DeploymentHistoryCollection.all().update(
+            {'status': consts.HISTORY_TASK_STATUSES.ready})
+
+        # mock get_last_succeeded_transactions in such way that it
+        # contains only information about test1 task
+        mocked = (
+            'objects.TransactionCollection.get_last_succeeded_transactions'
+        )
+        with mock.patch(mocked, return_value=[(supertask, 'test1')]):
+            task = self.env.launch_deployment_selected([node.uid], cluster.id)
+            self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
+            tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+
+            # chek that test1 task skipped by condition and test2 was not
+            for task in tasks_graph['master']:
+                if task['id'] == 'test1':
+                    self.assertEqual(
+                        task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
+                elif task['id'] == 'test2':
+                    self.assertNotEqual(
+                        task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
 
 
 class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):

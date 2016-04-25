@@ -15,11 +15,18 @@
 
 class TransactionContext(object):
     def __init__(self, new_state, old_state=None):
+        """Wrapper around current and previous state of a transaction
+
+        :param new_state: new state of cluster
+                          {node_id: <deployment info>, ...}
+        :param old_state: old state of cluster per task name or None
+                          {task_id: {node_id: <deployment info>, ...}, ...}
+        """
         self.new = new_state
         self.old = old_state or {}
 
     def get_new_data(self, node_id):
         return self.new[node_id]
 
-    def get_old_data(self, node_id):
-        return self.old.get(node_id)
+    def get_old_data(self, node_id, task_id):
+        return self.old.get(task_id, {}).get(node_id)

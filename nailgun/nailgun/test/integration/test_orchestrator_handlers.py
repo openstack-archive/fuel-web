@@ -103,6 +103,23 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(3, len(resp.json_body['nodes']))
 
+    def check_node_placement(self, fact_action_type):
+        node = self.env.create_node()
+        url = reverse(
+            fact_action_type,
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_query(nodes=[node['uid']])
+        resp = self.app.get(
+            url, headers=self.default_headers, expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertNotIn("do not belong to cluster", resp.body)
+
+    def test_400_if_node_with_wrong_placement(self):
+        for fact_type in ('DefaultProvisioningInfo', 'DefaultDeploymentInfo'):
+            self.check_node_placement(fact_type)
+
     def test_default_provisioning_handler_for_selected_nodes(self):
         node_ids = [node.uid for node in self.cluster.nodes][:2]
         url = reverse(

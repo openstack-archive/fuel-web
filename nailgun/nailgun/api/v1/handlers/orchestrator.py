@@ -59,10 +59,13 @@ class NodesFilterMixin(object):
         nodes = web.input(nodes=None).nodes
         if nodes:
             node_ids = self.checked_data(data=nodes)
-            return self.get_objects_list_or_404(
+            nodes_obj = self.get_objects_list_or_404(
                 objects.NodeCollection,
                 node_ids
             )
+            self.checked_data(self.validator.validate_placement,
+                              data=nodes_obj, cluster=cluster)
+            return nodes_obj
 
         return self.get_default_nodes(cluster) or []
 
@@ -78,6 +81,7 @@ class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
         """:returns: JSONized default data which will be passed to orchestrator
 
         :http: * 200 (OK)
+               * 400 (some nodes belong to different cluster or not assigned)
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
@@ -387,14 +391,12 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
 
         :http: * 200 (serialized tasks returned)
                * 400 (task based deployment is not allowed for cluster)
-               * 400 (some nodes belong to different cluster)
+               * 400 (some nodes belong to different cluster or not assigned)
                * 404 (cluster is not found)
                * 404 (nodes are not found)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         nodes = self.get_nodes(cluster)
-        self.checked_data(self.validator.validate_placement,
-                          data=nodes, cluster=cluster)
         tasks = web.input(tasks=None).tasks
         graph_type = web.input(graph_type=None).graph_type
         task_ids = [t.strip() for t in tasks.split(',')] if tasks else None

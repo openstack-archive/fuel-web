@@ -64,10 +64,10 @@ class Context(object):
     def get_new_data(self, node_id):
         return self._transaction.get_new_data(node_id)
 
-    def get_yaql_interpreter(self, node_id):
+    def get_yaql_interpreter(self, node_id, task_id):
         context = self._yaql_context.create_child_context()
         context['$%new'] = self._transaction.get_new_data(node_id)
-        context['$%old'] = self._transaction.get_old_data(node_id)
+        context['$%old'] = self._transaction.get_old_data(node_id, task_id)
         cache = self._yaql_expressions_cache
 
         def evaluate(expression):
@@ -187,7 +187,8 @@ class DefaultTaskSerializer(NoopTaskSerializer):
             utils.text_format_safe,
             self.context.get_formatter_context(node_id),
             {
-                'yaql_exp': self.context.get_yaql_interpreter(node_id)
+                'yaql_exp': self.context.get_yaql_interpreter(
+                    node_id, self.task_template['id'])
             }
         )
         if not self.should_execute(task, node_id):

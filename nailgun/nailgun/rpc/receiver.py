@@ -251,14 +251,12 @@ class NailgunReceiver(object):
             task_uuid,
             fail_if_not_found=True
         )
-
         # lock cluster
         objects.Cluster.get_by_uid(
             task.cluster_id,
             fail_if_not_found=True,
             lock_for_update=True
         )
-
         if not status:
             status = task.status
 
@@ -333,10 +331,8 @@ class NailgunReceiver(object):
                     node.get('custom')
                 )
         db().flush()
-
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)
-
         # full error will be provided in next astute message
         if master.get('status') == consts.TASK_STATUSES.error:
             status = consts.TASK_STATUSES.error

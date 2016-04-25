@@ -1394,6 +1394,10 @@ def upgrade_store_deployment_history():
     op.create_index('deployment_history_task_id_and_status',
                     'deployment_history', ['task_id', 'status'])
 
+    op.create_index('deployment_history_task_name_status_idx',
+                    'deployment_history',
+                    ['deployment_graph_task_name', 'status'])
+
 
 def downgrade_store_deployment_history():
     op.drop_table('deployment_history')

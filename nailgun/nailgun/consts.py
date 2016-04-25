@@ -239,7 +239,8 @@ BOND_LACP_RATES = Enum(
 
 BOND_TYPES = Enum(
     'ovs',
-    'linux'
+    'linux',
+    'dpdkovs',
 )
 
 TASK_STATUSES = Enum(

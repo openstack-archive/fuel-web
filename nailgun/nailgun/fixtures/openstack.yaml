@@ -377,7 +377,7 @@
     networks_metadata:
       bonding:
         availability:
-          - ovs: "'experimental' in version:feature_groups and interface:pxe == false and
+          - dpdkovs: "'experimental' in version:feature_groups and interface:pxe == false and
                    interface:interface_properties.dpdk.enabled and not interface:interface_properties.sriov.enabled"
           - linux: "not interface:interface_properties.sriov.enabled"
         properties:
@@ -395,7 +395,7 @@
             lacp_rate:
               - values: ["slow", "fast"]
                 for_modes: ["802.3ad"]
-          ovs:
+          dpdkovs:
             mode:
               - values: ["active-backup", "balance-slb", "balance-tcp"]
             lacp:

@@ -17,8 +17,8 @@ import alembic
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 
-_prepare_revision = '675105097a69'
-_test_revision = 'c6edea552f1e'
+_prepare_revision = '11a9adc6d36a'
+_test_revision = '675105097a69'
 
 
 def setup_module():

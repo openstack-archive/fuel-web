@@ -56,7 +56,7 @@ class TestNetworkVerification(BaseTestCase):
         dpdk_iface.interface_properties['dpdk']['enabled'] = True
 
         task = VerifyNetworksTask(None, network_config)
-        task.get_ifaces_on_deployed_node(node, node_json, True)
+        task.get_ifaces_on_deployed_node(node, node_json, [])
 
         # DPDK-enabled interface should be skipped in network verification
         self.assertNotIn({'iface': dpdk_iface.name, 'vlans': [0]},
@@ -95,7 +95,7 @@ class TestNetworkVerification(BaseTestCase):
         private_iface.assigned_networks_list = [private_ng]
 
         task = VerifyNetworksTask(None, network_config)
-        task.get_ifaces_on_deployed_node(node, node_json, True)
+        task.get_ifaces_on_deployed_node(node, node_json, [])
 
         # DPDK-enabled interface should not be skipped in network verification
         # because Private network is not assigned to it

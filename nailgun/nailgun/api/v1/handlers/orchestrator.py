@@ -78,10 +78,12 @@ class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
         """:returns: JSONized default data which will be passed to orchestrator
 
         :http: * 200 (OK)
+               * 400 (some nodes do not belong to any cluster)
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         nodes = self.get_nodes(cluster)
+        self.checked_data(self.validator.validate_assignment, data=nodes)
 
         return self._serialize(cluster, nodes)
 

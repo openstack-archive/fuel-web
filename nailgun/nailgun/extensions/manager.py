@@ -96,9 +96,29 @@ def fire_callback_on_node_delete(node):
         extension.on_node_delete(node)
 
 
+def fire_callback_on_remove_node_from_cluster(node):
+    for extension in get_all_extensions():
+        extension.on_remove_node_from_cluster(node)
+
+
 def fire_callback_on_node_collection_delete(node_ids):
     for extension in get_all_extensions():
         extension.on_node_collection_delete(node_ids)
+
+
+def fire_callback_on_nodegroup_create(nodegroup):
+    for extension in get_all_extensions():
+        extension.on_nodegroup_create(nodegroup)
+
+
+def fire_callback_on_cluster_create(cluster, data):
+    for extension in get_all_extensions():
+        extension.on_cluster_create(cluster, data)
+
+
+def fire_callback_on_cluster_patch_attributes(cluster):
+    for extension in get_all_extensions():
+        extension.on_cluster_patch_attributes(cluster)
 
 
 def fire_callback_on_cluster_delete(cluster):
@@ -109,6 +129,22 @@ def fire_callback_on_cluster_delete(cluster):
 def fire_callback_on_before_deployment_check(cluster):
     for extension in get_all_extensions():
         extension.on_before_deployment_check(cluster)
+
+
+def fire_callback_on_before_deployment_serialization(cluster, nodes,
+                                                     ignore_customized):
+    for extension in get_all_extensions():
+        extension.on_before_deployment_serialization(
+            cluster, nodes, ignore_customized
+        )
+
+
+def fire_callback_on_before_provisioning_serialization(cluster, nodes,
+                                                       ignore_customized):
+    for extension in get_all_extensions():
+        extension.on_before_provisioning_serialization(
+            cluster, nodes, ignore_customized
+        )
 
 
 def _collect_data_pipelines_for_cluster(cluster):

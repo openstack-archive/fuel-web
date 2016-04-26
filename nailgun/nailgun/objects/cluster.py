@@ -33,7 +33,9 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
+from nailgun.extensions import fire_callback_on_cluster_create
 from nailgun.extensions import fire_callback_on_cluster_delete
+from nailgun.extensions import fire_callback_on_cluster_patch_attributes
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.logger import logger
 from nailgun.objects import DeploymentGraph
@@ -177,36 +179,18 @@ class Cluster(NailgunObject):
         # default graph should be created in any case
         DeploymentGraph.create_for_model({"tasks": deployment_tasks}, cluster)
 
-        try:
-            net_manager = cls.get_network_manager(cluster)
-            net_manager.create_network_groups_and_config(cluster, data)
+        cls.add_pending_changes(
+            cluster, consts.CLUSTER_CHANGES.attributes)
+        cls.add_pending_changes(
+            cluster, consts.CLUSTER_CHANGES.vmware_attributes)
 
-            cls.add_pending_changes(
-                cluster, consts.CLUSTER_CHANGES.attributes)
-            cls.add_pending_changes(
-                cluster, consts.CLUSTER_CHANGES.networks)
-            cls.add_pending_changes(
-                cluster, consts.CLUSTER_CHANGES.vmware_attributes)
+        ClusterPlugins.add_compatible_plugins(cluster)
+        PluginManager.enable_plugins_by_components(cluster)
 
-            if assign_nodes:
-                cls.update_nodes(cluster, assign_nodes)
+        fire_callback_on_cluster_create(cluster, data)
 
-            ClusterPlugins.add_compatible_plugins(cluster)
-            PluginManager.enable_plugins_by_components(cluster)
-
-            net_manager.assign_vips_for_net_groups(cluster)
-
-        except (
-            errors.OutOfVLANs,
-            errors.OutOfIPs,
-            errors.NoSuitableCIDR,
-
-            # VIP assignment related errors
-            errors.CanNotFindCommonNodeGroup,
-            errors.CanNotFindNetworkForNodeGroup,
-            errors.DuplicatedVIPNames
-        ) as exc:
-            raise errors.CannotCreate(exc.message)
+        if assign_nodes:
+            cls.update_nodes(cluster, assign_nodes)
 
         return cluster
 
@@ -389,39 +373,6 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def _create_public_map(cls, instance, roles_metadata=None):
-        if instance.network_config.configuration_template is not None:
-            return
-        from nailgun import objects
-        public_map = {}
-        for node in instance.nodes:
-            public_map[node.id] = objects.Node.should_have_public(
-                node, roles_metadata)
-        return public_map
-
-    @classmethod
-    def _update_public_network(cls, instance, public_map, roles_metadata):
-        """Applies changes to node's public_network checked using public_map.
-
-        :param instance: Cluster object
-        :param public_map: dict of Node.id to should_have_public result.
-        :param roles_metadata: dict from objects.Cluster.get_roles
-        """
-
-        if instance.network_config.configuration_template is not None:
-            return
-        from nailgun import objects
-        for node in instance.nodes:
-            should_have_public = objects.Node.should_have_public(
-                node, roles_metadata)
-            if public_map.get(node.id) == should_have_public:
-                continue
-            if should_have_public:
-                objects.Node.assign_public_network(node)
-            else:
-                objects.Node.unassign_public_network(node)
-
-    @classmethod
     def patch_attributes(cls, instance, data):
         """Applyes changes to Cluster attributes and updates networks.
 
@@ -429,18 +380,12 @@ class Cluster(NailgunObject):
         :param data: dict
         """
 
-        roles_metadata = Cluster.get_roles(instance)
-        # Note(kszukielojc): We need to create status map of public networks
-        # to avoid updating networks if there was no change to node public
-        # network after patching attributes
-        public_map = cls._create_public_map(instance, roles_metadata)
-
         PluginManager.process_cluster_attributes(instance, data['editable'])
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
-        cls.get_network_manager(instance).update_restricted_networks(instance)
-        cls._update_public_network(instance, public_map, roles_metadata)
+
+        fire_callback_on_cluster_patch_attributes(instance)
         db().flush()
 
     @classmethod
@@ -994,26 +939,6 @@ class Cluster(NailgunObject):
         return nodegroups
 
     @classmethod
-    def get_bond_interfaces_for_all_nodes(cls, instance, networks=None):
-        bond_interfaces_query = db().query(models.NodeBondInterface).\
-            join(models.Node).filter(models.Node.cluster_id == instance.id)
-        if networks:
-            bond_interfaces_query = bond_interfaces_query.join(
-                models.NodeBondInterface.assigned_networks_list,
-                aliased=True).filter(models.NetworkGroup.id.in_(networks))
-        return bond_interfaces_query.all()
-
-    @classmethod
-    def get_nic_interfaces_for_all_nodes(cls, instance, networks=None):
-        nic_interfaces_query = db().query(models.NodeNICInterface).\
-            join(models.Node).filter(models.Node.cluster_id == instance.id)
-        if networks:
-            nic_interfaces_query = nic_interfaces_query.join(
-                models.NodeNICInterface.assigned_networks_list, aliased=True).\
-                filter(models.NetworkGroup.id.in_(networks))
-        return nic_interfaces_query.all()
-
-    @classmethod
     def get_default_group(cls, instance):
         return next(g for g in instance.node_groups if g.is_default)
 
@@ -1393,43 +1318,6 @@ class Cluster(NailgunObject):
                     get((component), {}).get('value'))
 
     @classmethod
-    def get_networks_to_interfaces_mapping_on_all_nodes(cls, instance):
-        """Query networks to interfaces mapping on all nodes in cluster.
-
-        Returns combined results for NICs and bonds for every node.
-        Names are returned for node and interface (NIC or bond),
-        IDs are returned for networks. Results are sorted by node name then
-        interface name.
-        """
-        nodes_nics_networks = db().query(
-            models.Node.hostname,
-            models.NodeNICInterface.name,
-            models.NetworkGroup.id,
-        ).join(
-            models.Node.nic_interfaces,
-            models.NodeNICInterface.assigned_networks_list
-        ).filter(
-            models.Node.cluster_id == instance.id,
-        )
-        nodes_bonds_networks = db().query(
-            models.Node.hostname,
-            models.NodeBondInterface.name,
-            models.NetworkGroup.id,
-        ).join(
-            models.Node.bond_interfaces,
-            models.NodeBondInterface.assigned_networks_list
-        ).filter(
-            models.Node.cluster_id == instance.id,
-        )
-        return nodes_nics_networks.union(
-            nodes_bonds_networks
-        ).order_by(
-            # column 1 then 2 from the result. cannot call them by name as
-            # names for column 2 are different in this union
-            '1', '2'
-        )
-
-    @classmethod
     def get_nodes_to_update_config(cls, cluster, node_ids=None, node_role=None,
                                    only_ready_nodes=True):
         """Get nodes for specified cluster that should be updated.
@@ -1462,17 +1350,6 @@ class Cluster(NailgunObject):
         """
         cls.get_network_manager(instance).prepare_for_deployment(
             instance, instance.nodes if nodes is None else nodes
-        )
-
-    @classmethod
-    def prepare_for_provisioning(cls, instance, nodes=None):
-        """Shortcut for NetworkManager.prepare_for_provisioning.
-
-        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
-        :param nodes: the list of Nodes, None means for all nodes
-        """
-        cls.get_network_manager(instance).prepare_for_provisioning(
-            instance.nodes if nodes is None else nodes
         )
 
     @classmethod
@@ -1559,29 +1436,6 @@ class Cluster(NailgunObject):
 
         q = db().query(models.Node).filter_by(cluster_id=instance.id)
         return q.filter(models.Node.status != status).count()
-
-    @classmethod
-    def get_network_groups_and_node_ids(cls, instance_id):
-        """Get network group information for the given cluster
-
-        The admin network group will not be included.
-
-        :param instance: Cluster instance
-        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
-        :returns: tuple of Node ID, and NetworkGroup ID, name, meta
-        """
-        query = (db().query(
-            models.Node.id,
-            models.NetworkGroup.id,
-            models.NetworkGroup.name,
-            models.NetworkGroup.meta)
-            .join(models.NodeGroup.nodes)
-            .join(models.NodeGroup.networks)
-            .filter(models.NodeGroup.cluster_id == instance_id,
-                    models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
-        )
-
-        return query
 
     @classmethod
     def get_network_attributes(cls, instance):

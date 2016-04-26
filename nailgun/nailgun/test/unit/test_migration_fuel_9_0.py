@@ -869,17 +869,22 @@ class TestTasksMigration(base.BaseAlembicMigrationTest):
         self.assertIsNotNone(cluster_name_idx)
 
 
-class TestCephAttributesMigration(base.BaseAlembicMigrationTest):
+class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
+
+    def _get_clusters_attrs(self):
+        clusters_editable_attrs = self.meta.tables['attributes'].c.editable
+        for row in db.execute(sa.select([clusters_editable_attrs])).fetchall():
+            yield jsonutils.loads(row[0])
+
     def test_ceph_cluster_attrs(self):
         ceph_opts = ['fsid', 'mon_key', 'admin_key', 'bootstrap_osd_key',
                      'radosgw_key']
 
-        clusters_attributes = self.meta.tables['attributes']
-        results = db.execute(
-            sa.select([clusters_attributes.c.editable])
-        ).fetchall()
-        for cluster_attrs_row in results:
-            cluster_attrs = jsonutils.loads(cluster_attrs_row[0])
+        for cluster_attrs in self._get_clusters_attrs():
             for ceph_opt in ceph_opts:
                 self.assertIn(ceph_opt, cluster_attrs['storage'])
             self.assertIn('metadata', cluster_attrs['storage'])
+
+    def test_cgroups_cluster_attrs(self):
+        for cluster_attrs in self._get_clusters_attrs():
+            self.assertIn('cgroups', cluster_attrs)

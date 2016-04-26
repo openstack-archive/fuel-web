@@ -122,8 +122,28 @@ class BaseExtension(object):
         """Callback which gets executed when node is deleted"""
 
     @classmethod
+    def on_remove_node_from_cluster(cls, node):
+        """Callback which gets executed when node is removed from a cluster"""
+
+    @classmethod
     def on_node_collection_delete(cls, node_ids):
         """Callback which gets executed when node collection is deleted"""
+
+    @classmethod
+    def on_nodegroup_create(cls, nodegroup):
+        """Callback which gets executed when node group is created"""
+
+    @classmethod
+    def on_cluster_create(cls, cluster, data):
+        """Callback which gets executed when cluster is initially created.
+
+        This is called after the cluster object is created, attributes have
+        been created and the default extensions list has been set.
+        """
+
+    @classmethod
+    def on_cluster_patch_attributes(cls, cluster):
+        """Callback which gets executed when cluster attributes are updated"""
 
     @classmethod
     def on_cluster_delete(cls, cluster):
@@ -132,3 +152,13 @@ class BaseExtension(object):
     @classmethod
     def on_before_deployment_check(cls, cluster):
         """Callback which gets executed when "before deployment check" runs"""
+
+    @classmethod
+    def on_before_deployment_serialization(cls, cluster, nodes,
+                                           ignore_customized):
+        """Callback which gets executed before deployment serialization"""
+
+    @classmethod
+    def on_before_provisioning_serialization(cls, cluster, nodes,
+                                             ignore_customized):
+        """Callback which gets executed before provisioning serialization"""

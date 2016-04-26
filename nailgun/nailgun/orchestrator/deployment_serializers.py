@@ -22,6 +22,7 @@ from distutils.version import StrictVersion
 import six
 
 from nailgun import consts
+from nailgun.extensions import fire_callback_on_before_deployment_serialization
 from nailgun.extensions import fire_callback_on_deployment_data_serialization
 from nailgun.logger import logger
 from nailgun import objects
@@ -832,9 +833,11 @@ def _execute_pipeline(data, cluster, nodes, ignore_customized):
 
 
 def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
+    fire_callback_on_before_deployment_serialization(
+        cluster, cluster.nodes, ignore_customized
+    )
+
     objects.Cluster.set_primary_roles(cluster, nodes)
-    # TODO(apply only for specified subset of nodes)
-    objects.Cluster.prepare_for_deployment(cluster, cluster.nodes)
     data = serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized
     )

@@ -145,6 +145,61 @@ class IPAddr(NailgunObject):
             models.IPAddr.network == network
         ).delete(synchronize_session='fetch')
 
+    @classmethod
+    def get_networks_ips(cls, node):
+        """Get IPs assigned to node grouped by network group.
+
+        :param node: Node instance
+        :returns: query
+        """
+        return db().query(
+            models.NetworkGroup, models.IPAddr.ip_addr
+        ).filter(
+            models.NetworkGroup.group_id == node.group_id,
+            models.IPAddr.network == models.NetworkGroup.id,
+            models.IPAddr.node == node.id
+        )
+
+    @classmethod
+    def get_networks_ips_dict(cls, node):
+        """Get IPs assigned to node grouped by network group.
+
+        :param node: Node instance
+        :returns: dict mapping network group name to IP addresses
+        """
+        return {ng.name: ip for ng, ip in cls.get_networks_ips(node)}
+
+    @classmethod
+    def get_network_ips_count(cls, node_id, network_id):
+        """Get number of IPs from specified network assigned to node.
+
+        :param node_id: Node ID
+        :param network_id: NetworkGroup ID
+        :returns: count of IP addresses
+        """
+        return db().query(models.IPAddr).filter_by(
+            node=node_id, network=network_id).count()
+
+    @classmethod
+    def set_networks_ips(cls, node, ips_by_network_name):
+        """Set IPs by provided network-to-IP mapping.
+
+        :param instance: Node instance
+        :param ips_by_network_name: dict
+        :returns: None
+        """
+        ngs = db().query(
+            models.NetworkGroup.name, models.IPAddr
+        ).filter(
+            models.NetworkGroup.group_id == node.group_id,
+            models.IPAddr.network == models.NetworkGroup.id,
+            models.IPAddr.node == node.id,
+            models.NetworkGroup.name.in_(ips_by_network_name)
+        )
+        for ng_name, ip_addr in ngs:
+            ip_addr.ip_addr = ips_by_network_name[ng_name]
+        db().flush()
+
 
 class IPAddrRange(NailgunObject):
     model = models.IPAddrRange

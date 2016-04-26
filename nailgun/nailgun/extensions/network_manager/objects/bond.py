@@ -15,6 +15,7 @@
 #    under the License.
 
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.extensions.network_manager.objects.interface import DPDKMixin
 from nailgun.extensions.network_manager.objects.interface import NIC
@@ -56,6 +57,21 @@ class Bond(DPDKMixin, NailgunObject):
     def dpdk_available(cls, instance, dpdk_drivers):
         return all(NIC.get_dpdk_driver(iface, dpdk_drivers)
                    for iface in instance.slaves)
+
+    @classmethod
+    def get_bond_interfaces_for_all_nodes(cls, cluster, networks=None):
+        bond_interfaces_query = db().query(
+            models.NodeBondInterface
+        ).join(
+            models.Node
+        ).filter(
+            models.Node.cluster_id == cluster.id
+        )
+        if networks:
+            bond_interfaces_query = bond_interfaces_query.join(
+                models.NodeBondInterface.assigned_networks_list,
+                aliased=True).filter(models.NetworkGroup.id.in_(networks))
+        return bond_interfaces_query.all()
 
 
 class BondCollection(NailgunCollection):

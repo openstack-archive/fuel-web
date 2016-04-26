@@ -103,11 +103,11 @@ class NetworkCheck(object):
                 "checking intersection between them...")
 
             bond_interfaces = (
-                objects.Cluster.get_bond_interfaces_for_all_nodes(
+                objects.Bond.get_bond_interfaces_for_all_nodes(
                     self.cluster,
                     untagged_nets.keys()))
             nic_interfaces = (
-                objects.Cluster.get_nic_interfaces_for_all_nodes(
+                objects.NIC.get_nic_interfaces_for_all_nodes(
                     self.cluster,
                     untagged_nets.keys()))
             found_intersection = []
@@ -706,7 +706,7 @@ class NetworkCheck(object):
             return
 
         nodes_networks = \
-            objects.Cluster.get_networks_to_interfaces_mapping_on_all_nodes(
+            objects.NIC.get_networks_to_interfaces_mapping_on_all_nodes(
                 self.cluster)
 
         # first, group by hostname

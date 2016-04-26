@@ -20,6 +20,7 @@ from nailgun.objects.serializers.node_group import NodeGroupSerializer
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
+from nailgun.extensions import fire_callback_on_nodegroup_create
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -33,25 +34,11 @@ class NodeGroup(NailgunObject):
     @classmethod
     def create(cls, data):
         new_group = super(NodeGroup, cls).create(data)
+        cluster = Cluster.get_by_uid(new_group.cluster_id)
         try:
-            cluster = Cluster.get_by_uid(new_group.cluster_id)
-            nm = Cluster.get_network_manager(cluster)
-            nst = cluster.network_config.segmentation_type
-            # We have two node groups here when user adds the first custom
-            # node group.
-            if NodeGroupCollection.get_by_cluster_id(cluster.id).count() == 2:
-                nm.ensure_gateways_present_in_default_node_group(cluster)
-            nm.create_network_groups(
-                cluster, neutron_segment_type=nst, node_group_id=new_group.id,
-                set_all_gateways=True)
-            nm.create_admin_network_group(new_group.cluster_id, new_group.id)
-        except (
-            errors.OutOfVLANs,
-            errors.OutOfIPs,
-            errors.NoSuitableCIDR
-        ) as exc:
+            fire_callback_on_nodegroup_create(new_group)
+        except errors.CannotCreate:
             db().delete(new_group)
-            raise errors.CannotCreate(exc.message)
 
         db().flush()
         db().refresh(cluster)

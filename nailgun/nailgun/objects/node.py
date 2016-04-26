@@ -42,16 +42,15 @@ from nailgun.extensions import fire_callback_on_node_create
 from nailgun.extensions import fire_callback_on_node_delete
 from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
+from nailgun.extensions import fire_callback_on_remove_node_from_cluster
 from nailgun.extensions.network_manager.template import NetworkTemplate
 from nailgun.extensions.network_manager import utils as network_utils
 from nailgun.logger import logger
 from nailgun.objects import Bond
 from nailgun.objects import Cluster
-from nailgun.objects import IPAddr
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import NetworkGroup
-from nailgun.objects import NetworkGroupCollection
 from nailgun.objects import NIC
 from nailgun.objects import Notification
 from nailgun.objects import Release
@@ -75,61 +74,6 @@ class Node(NailgunObject):
     def delete(cls, instance):
         fire_callback_on_node_delete(instance)
         super(Node, cls).delete(instance)
-
-    @classmethod
-    def get_network_ips_count(cls, node_id, network_id):
-        """Get number of IPs from specified network assigned to node.
-
-        :param node_id: Node ID
-        :param network_id: NetworkGroup ID
-        :returns: count of IP addresses
-        """
-        return db().query(models.IPAddr).filter_by(
-            node=node_id, network=network_id).count()
-
-    @classmethod
-    def get_networks_ips(cls, instance):
-        """Get IPs assigned to node grouped by network group.
-
-        :param node: Node instance
-        :returns: query
-        """
-        return db().query(
-            models.NetworkGroup, models.IPAddr.ip_addr
-        ).filter(
-            models.NetworkGroup.group_id == instance.group_id,
-            models.IPAddr.network == models.NetworkGroup.id,
-            models.IPAddr.node == instance.id
-        )
-
-    @classmethod
-    def get_networks_ips_dict(cls, instance):
-        """Get IPs assigned to node grouped by network group.
-
-        :param node: Node instance
-        :returns: dict mapping network group name to IP addresses
-        """
-        return {ng.name: ip for ng, ip in cls.get_networks_ips(instance)}
-
-    @classmethod
-    def set_networks_ips(cls, instance, ips_by_network_name):
-        """Set IPs by provided network-to-IP mapping.
-
-        :param instance: Node instance
-        :param ips_by_network_name: dict
-        :returns: None
-        """
-        ngs = db().query(
-            models.NetworkGroup.name, models.IPAddr
-        ).filter(
-            models.NetworkGroup.group_id == instance.group_id,
-            models.IPAddr.network == models.NetworkGroup.id,
-            models.IPAddr.node == instance.id,
-            models.NetworkGroup.name.in_(ips_by_network_name)
-        )
-        for ng_name, ip_addr in ngs:
-            ip_addr.ip_addr = ips_by_network_name[ng_name]
-        db().flush()
 
     @classmethod
     def set_netgroups_ids(cls, instance, netgroups_id_mapping):
@@ -179,38 +123,6 @@ class Node(NailgunObject):
                 netgroups_id_mapping[bond_assignment.network_id]
 
     @classmethod
-    def get_interface_by_net_name(cls, instance_id, netname):
-        """Get interface with specified network assigned to it.
-
-        This method first checks for a NodeNICInterface with the specified
-        network assigned. If that fails it will look for a NodeBondInterface
-        with that network assigned.
-
-        :param instance_id: Node ID
-        :param netname: NetworkGroup name
-        :returns: either NodeNICInterface or NodeBondInterface
-        """
-        iface = db().query(models.NodeNICInterface).join(
-            (models.NetworkGroup,
-             models.NodeNICInterface.assigned_networks_list)
-        ).filter(
-            models.NetworkGroup.name == netname
-        ).filter(
-            models.NodeNICInterface.node_id == instance_id
-        ).first()
-        if iface:
-            return iface
-
-        return db().query(models.NodeBondInterface).join(
-            (models.NetworkGroup,
-             models.NodeBondInterface.assigned_networks_list)
-        ).filter(
-            models.NetworkGroup.name == netname
-        ).filter(
-            models.NodeBondInterface.node_id == instance_id
-        ).first()
-
-    @classmethod
     def get_interface_by_mac_or_name(cls, instance, mac=None, name=None):
         # try to get interface by mac address
         interface = next((
@@ -222,33 +134,6 @@ class Node(NailgunObject):
         interface = interface or next((
             n for n in instance.nic_interfaces if n.name == name), None)
         return interface
-
-    @classmethod
-    def get_admin_ip(cls, node, admin_net_id=None):
-        """Get admin IP for specified node.
-
-        When admin_net_id is None the admin network group for the node's
-        nodegroup will be used.
-
-        If all_ips is True it will return all IPs from the admin network
-        assigned to that node. Otherwise it just returns a single IP.
-
-        :param node: return admin IP of this node
-        :type node: nailgun.db.sqlalchemy.models.Node
-        :param admin_net_id: Admin NetworkGroup ID
-        :type admin_net_id: int
-        :param all_ips:
-        :type all_ips: boolean
-        :returns: IPAddr instance
-        """
-        if not admin_net_id:
-            admin_net = NetworkGroup.get_admin_network_group(node)
-            admin_net_id = admin_net.id
-
-        admin_ip = next((ip for ip in node.ip_addrs
-                         if ip.network == admin_net_id), None)
-
-        return getattr(admin_ip, 'ip_addr', None)
 
     @classmethod
     def get_all_node_ips(cls):
@@ -375,68 +260,12 @@ class Node(NailgunObject):
 
         return False
 
-    @classmethod
-    def assign_public_network(cls, node):
-        public_net = next(NetworkGroupCollection.filter_by(
-            node.nodegroup.networks,
-            name=consts.NETWORKS.public), None)
-        cls.assign_network_to_interface(node, public_net)
-
     @staticmethod
     def get_interfaces_without_bonds_slaves(node):
         ifaces = set(node.interfaces)
         for bond in node.bond_interfaces:
             ifaces ^= set(bond.slaves)
         return sorted(ifaces, key=operator.attrgetter('name'))
-
-    @classmethod
-    def assign_network_to_interface(cls, node, network):
-        """Assign network to interface by default for single node
-
-        Assign given network to first available interface.
-        Checks interface type, if network is already assigned
-        and already assigned networks.
-        """
-        if network is None:
-            return
-        untagged = NetworkGroup.is_untagged(network)
-        dedicated = network.meta.get('dedicated_nic')
-        ifaces = cls.get_interfaces_without_bonds_slaves(node)
-        for iface in ifaces:
-            if dedicated and iface.assigned_networks_list:
-                continue
-            for net in iface.assigned_networks_list:
-                if net.meta.get('dedicated_nic'):
-                    break
-                if net == network:
-                    return
-                if untagged and NetworkGroup.is_untagged(net):
-                    break
-            else:
-                assigned_nets = iface.assigned_networks_list + [network]
-                NIC.assign_networks(iface, assigned_nets)
-                break
-        else:
-            logger.warning(
-                "Cannot assign network %r appropriately for "
-                "node %r. Set unassigned network to the "
-                "interface %r",
-                network.name, node.name, ifaces[0].name
-            )
-            assigned_nets = ifaces[0].assigned_networks_list + [network]
-            NIC.assign_networks(ifaces[0], assigned_nets)
-
-    @classmethod
-    def unassign_public_network(cls, node):
-        public_net = next(NetworkGroupCollection.filter_by(
-            node.nodegroup.networks,
-            name=consts.NETWORKS.public), None)
-        ifaces = cls.get_interfaces_without_bonds_slaves(node)
-        for iface in ifaces:
-            network_list = iface.assigned_networks_list
-            if public_net in network_list:
-                network_list.remove(public_net)
-                NIC.assign_networks(iface, network_list)
 
     @classmethod
     def create(cls, data):
@@ -841,7 +670,6 @@ class Node(NailgunObject):
         # - mac to ip mapping from dnsmasq.conf is deleted
         # imho we need to revert node to original state, as it was
         # added to cluster (without any additonal state in database)
-        IPAddr.delete_by_node(instance.id)
         fire_callback_on_node_reset(instance)
         db().flush()
 
@@ -1117,16 +945,13 @@ class Node(NailgunObject):
         :param instance: Node instance
         :returns: None
         """
+        fire_callback_on_remove_node_from_cluster(instance)
+
         if instance.cluster:
             Cluster.clear_pending_changes(
                 instance.cluster,
                 node_id=instance.id
             )
-            netmanager = Cluster.get_network_manager(
-                instance.cluster
-            )
-            netmanager.clear_assigned_networks(instance)
-            netmanager.clear_bond_configuration(instance)
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, [])
         cls.remove_replaced_params(instance)
@@ -1279,16 +1104,6 @@ class Node(NailgunObject):
         if cls.get_by_hostname(hostname, cluster_id):
             hostname = 'node-{0}'.format(node.uuid)
         return hostname
-
-    @classmethod
-    def get_nic_by_name(cls, instance, iface_name):
-        nic = db().query(models.NodeNICInterface).filter_by(
-            name=iface_name
-        ).filter_by(
-            node_id=instance.id
-        ).first()
-
-        return nic
 
     @classmethod
     def reset_vms_created_state(cls, node):

@@ -19,6 +19,7 @@ import mock
 from netaddr import IPNetwork
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun import objects
 from nailgun.test.base import BaseTestCase
 
@@ -106,6 +107,16 @@ class TestBondObject(BaseTestCase):
         objects.Bond.update(bond, data)
         self.assertEqual(data['offloading_modes'], bond.offloading_modes)
 
+    def test_get_bond_interfaces_for_all_nodes(self):
+        node = self.env.nodes[0]
+        node.bond_interfaces.append(
+            NodeBondInterface(name='ovs-bond0',
+                              slaves=node.nic_interfaces))
+        self.db.flush()
+        bond_interfaces = objects.Bond.get_bond_interfaces_for_all_nodes(
+            self.env.clusters[0])
+        self.assertEqual(len(bond_interfaces), 1)
+
 
 class TestNICObject(BaseTestCase):
 
@@ -145,6 +156,16 @@ class TestNICObject(BaseTestCase):
         mac_list = [iface.mac for iface in interfaces]
         self.assertEqual(len(mac_list), 1)
         self.assertEqual(mac_list[0], expected_mac)
+
+    def test_get_nic_interfaces_for_all_nodes(self):
+        nodes = self.env.nodes
+        interfaces = []
+        for node in nodes:
+            for inf in node.nic_interfaces:
+                interfaces.append(inf)
+        nic_interfaces = objects.NIC.get_nic_interfaces_for_all_nodes(
+            self.env.clusters[0])
+        self.assertEqual(len(nic_interfaces), len(interfaces))
 
 
 class TestIPAddrObject(BaseTestCase):

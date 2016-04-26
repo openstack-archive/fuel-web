@@ -617,7 +617,7 @@ class TestNetworkManager(BaseIntegrationTest):
             (ip.network_data.name, ip.ip_addr) for ip in node.ip_addrs
         )
         self.assertEquals(node_net_ips,
-                          objects.Node.get_networks_ips_dict(node))
+                          objects.IPAddr.get_networks_ips_dict(node))
 
     def test_get_admin_ip_for_node(self):
         cluster = self.env.create(api=False)
@@ -651,7 +651,7 @@ class TestNetworkManager(BaseIntegrationTest):
                  for net in node.networks)
         objects.Node.set_networks_ips(node, node_net_ips)
         self.assertEquals(node_net_ips,
-                          objects.Node.get_networks_ips_dict(node))
+                          objects.IPAddr.get_networks_ips_dict(node))
 
     def test_set_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)

@@ -24,7 +24,15 @@ from nailgun.extensions.manager import fire_callback_on_node_collection_delete
 from nailgun.extensions.manager import fire_callback_on_node_create
 from nailgun.extensions.manager import fire_callback_on_node_update
 from nailgun.extensions.manager import fire_callback_on_node_reset
+from nailgun.extensions.manager import fire_callback_on_nodegroup_create
+from nailgun.extensions.manager import fire_callback_on_cluster_create
 from nailgun.extensions.manager import fire_callback_on_cluster_delete
+from nailgun.extensions.manager import \
+    fire_callback_on_before_deployment_serialization
+from nailgun.extensions.manager import \
+    fire_callback_on_before_provisioning_serialization
+from nailgun.extensions.manager import \
+    fire_callback_on_cluster_patch_attributes
 from nailgun.extensions.manager import \
     fire_callback_on_deployment_data_serialization
 from nailgun.extensions.manager import \

@@ -117,6 +117,58 @@ class NIC(DPDKMixin, NailgunObject):
                     mode["state"] = old_modes_states[mode["name"]]
         instance.offloading_modes = new_modes
 
+    @classmethod
+    def get_nic_interfaces_for_all_nodes(cls, cluster, networks=None):
+        nic_interfaces_query = db().query(
+            models.NodeNICInterface
+        ).join(
+            models.Node
+        ).filter(
+            models.Node.cluster_id == cluster.id
+        )
+        if networks:
+            nic_interfaces_query = nic_interfaces_query.join(
+                models.NodeNICInterface.assigned_networks_list, aliased=True).\
+                filter(models.NetworkGroup.id.in_(networks))
+        return nic_interfaces_query.all()
+
+    @classmethod
+    def get_networks_to_interfaces_mapping_on_all_nodes(cls, cluster):
+        """Query networks to interfaces mapping on all nodes in cluster.
+
+        Returns combined results for NICs and bonds for every node.
+        Names are returned for node and interface (NIC or bond),
+        IDs are returned for networks. Results are sorted by node name then
+        interface name.
+        """
+        nodes_nics_networks = db().query(
+            models.Node.hostname,
+            models.NodeNICInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.nic_interfaces,
+            models.NodeNICInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == cluster.id,
+        )
+        nodes_bonds_networks = db().query(
+            models.Node.hostname,
+            models.NodeBondInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.bond_interfaces,
+            models.NodeBondInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == cluster.id,
+        )
+        return nodes_nics_networks.union(
+            nodes_bonds_networks
+        ).order_by(
+            # column 1 then 2 from the result. cannot call them by name as
+            # names for column 2 are different in this union
+            '1', '2'
+        )
+
 
 class NICCollection(NailgunCollection):
 

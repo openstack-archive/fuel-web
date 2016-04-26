@@ -33,7 +33,9 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
+from nailgun.extensions import fire_callback_on_cluster_create
 from nailgun.extensions import fire_callback_on_cluster_delete
+from nailgun.extensions import fire_callback_on_cluster_patch_attributes
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.logger import logger
 from nailgun.objects import DeploymentGraph
@@ -177,36 +179,18 @@ class Cluster(NailgunObject):
         # default graph should be created in any case
         DeploymentGraph.create_for_model({"tasks": deployment_tasks}, cluster)
 
-        try:
-            net_manager = cls.get_network_manager(cluster)
-            net_manager.create_network_groups_and_config(cluster, data)
+        cls.add_pending_changes(
+            cluster, consts.CLUSTER_CHANGES.attributes)
+        cls.add_pending_changes(
+            cluster, consts.CLUSTER_CHANGES.vmware_attributes)
 
-            cls.add_pending_changes(
-                cluster, consts.CLUSTER_CHANGES.attributes)
-            cls.add_pending_changes(
-                cluster, consts.CLUSTER_CHANGES.networks)
-            cls.add_pending_changes(
-                cluster, consts.CLUSTER_CHANGES.vmware_attributes)
+        ClusterPlugins.add_compatible_plugins(cluster)
+        PluginManager.enable_plugins_by_components(cluster)
 
-            if assign_nodes:
-                cls.update_nodes(cluster, assign_nodes)
+        fire_callback_on_cluster_create(cluster, data)
 
-            ClusterPlugins.add_compatible_plugins(cluster)
-            PluginManager.enable_plugins_by_components(cluster)
-
-            net_manager.assign_vips_for_net_groups(cluster)
-
-        except (
-            errors.OutOfVLANs,
-            errors.OutOfIPs,
-            errors.NoSuitableCIDR,
-
-            # VIP assignment related errors
-            errors.CanNotFindCommonNodeGroup,
-            errors.CanNotFindNetworkForNodeGroup,
-            errors.DuplicatedVIPNames
-        ) as exc:
-            raise errors.CannotCreate(exc.message)
+        if assign_nodes:
+            cls.update_nodes(cluster, assign_nodes)
 
         return cluster
 
@@ -438,8 +422,9 @@ class Cluster(NailgunObject):
         instance.attributes.editable = dict_merge(
             instance.attributes.editable, data['editable'])
         cls.add_pending_changes(instance, "attributes")
-        cls.get_network_manager(instance).update_restricted_networks(instance)
         cls._update_public_network(instance, public_map, roles_metadata)
+
+        fire_callback_on_cluster_patch_attributes(instance)
         db().flush()
 
     @classmethod
@@ -1454,17 +1439,6 @@ class Cluster(NailgunObject):
         """
         cls.get_network_manager(instance).prepare_for_deployment(
             instance, instance.nodes if nodes is None else nodes
-        )
-
-    @classmethod
-    def prepare_for_provisioning(cls, instance, nodes=None):
-        """Shortcut for NetworkManager.prepare_for_provisioning.
-
-        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
-        :param nodes: the list of Nodes, None means for all nodes
-        """
-        cls.get_network_manager(instance).prepare_for_provisioning(
-            instance.nodes if nodes is None else nodes
         )
 
     @classmethod

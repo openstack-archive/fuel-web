@@ -22,6 +22,8 @@ import netaddr
 import six
 
 from nailgun import consts
+from nailgun.extensions import \
+    fire_callback_on_before_provisioning_serialization
 from nailgun.extensions import fire_callback_on_provisioning_data_serialization
 from nailgun.logger import logger
 from nailgun import objects
@@ -381,7 +383,9 @@ def _execute_pipeline(data, cluster, nodes, ignore_customized):
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""
 
-    objects.Cluster.prepare_for_provisioning(cluster, nodes)
+    fire_callback_on_before_provisioning_serialization(
+        cluster, nodes, ignore_customized
+    )
     serializer = get_serializer_for_cluster(cluster)
 
     data = serializer.serialize(

@@ -1,3 +1,5 @@
+from nailgun import consts
+from nailgun import errors
 from nailgun.extensions import BaseExtension
 from nailgun.extensions.network_manager.handlers.network_configuration import\
     NetworkAttributesDeployedHandler
@@ -28,6 +30,8 @@ from nailgun.extensions.network_manager.handlers.nic import \
     NodeNICsDefaultHandler
 from nailgun.extensions.network_manager.handlers.nic import \
     NodeNICsHandler
+
+from nailgun import objects
 
 
 class NetworkManagerExtension(BaseExtension):
@@ -74,3 +78,97 @@ class NetworkManagerExtension(BaseExtension):
                 r'deployed?$',
          'handler': NetworkAttributesDeployedHandler}
     ]
+
+    @classmethod
+    def _create_public_map(cls, cluster, roles_metadata=None):
+        if cluster.network_config.configuration_template is not None:
+            return
+        from nailgun import objects
+        public_map = {}
+        for node in cluster.nodes:
+            public_map[node.id] = objects.Node.should_have_public(
+                node, roles_metadata)
+        return public_map
+
+    @classmethod
+    def on_cluster_create(cls, cluster, data):
+        try:
+            net_manager = objects.Cluster.get_network_manager(cluster)
+            net_manager.create_network_groups_and_config(cluster, data)
+            objects.Cluster.add_pending_changes(
+                cluster, consts.CLUSTER_CHANGES.networks)
+            net_manager.assign_vips_for_net_groups(cluster)
+        except (
+            errors.OutOfVLANs,
+            errors.OutOfIPs,
+            errors.NoSuitableCIDR,
+
+            # VIP assignment related errors
+            errors.CanNotFindCommonNodeGroup,
+            errors.CanNotFindNetworkForNodeGroup,
+            errors.DuplicatedVIPNames
+        ) as exc:
+            raise errors.CannotCreate(exc.message)
+
+    @classmethod
+    def on_cluster_patch_attributes(cls, cluster):
+        nm = objects.Cluster.get_network_manager(cluster)
+        nm.update_restricted_networks(cluster)
+
+        roles_metadata = objects.Cluster.get_roles(cluster)
+        # Note(kszukielojc): We need to create status map of public networks
+        # to avoid updating networks if there was no change to node public
+        # network after patching attributes
+        public_map = cls._create_public_map(cluster, roles_metadata)
+        objects.NetworkGroup._update_public_network(
+            cluster, public_map, roles_metadata
+        )
+
+    @classmethod
+    def on_nodegroup_create(cls, ng):
+        try:
+            cluster = objects.Cluster.get_by_uid(ng.cluster_id)
+            nm = objects.Cluster.get_network_manager(cluster)
+            nst = cluster.network_config.segmentation_type
+            # We have two node groups here when user adds the first custom
+            # node group.
+            if (objects.NodeGroupCollection.get_by_cluster_id(cluster.id)
+                    .count() == 2):
+                nm.ensure_gateways_present_in_default_node_group(cluster)
+            nm.create_network_groups(
+                cluster, neutron_segment_type=nst, node_group_id=ng.id,
+                set_all_gateways=True)
+            nm.create_admin_network_group(ng.cluster_id, ng.id)
+        except (
+            errors.OutOfVLANs,
+            errors.OutOfIPs,
+            errors.NoSuitableCIDR
+        ) as exc:
+            raise errors.CannotCreate(exc.message)
+
+    @classmethod
+    def on_before_deployment_serialization(cls, cluster, nodes,
+                                           ignore_customized):
+        # TODO(apply only for specified subset of nodes)
+        nm = objects.Cluster.get_network_manager(cluster)
+        nm.prepare_for_deployment(
+            cluster, cluster.nodes if nodes is None else nodes
+        )
+
+    @classmethod
+    def on_before_provisioning_serialization(cls, cluster, nodes,
+                                             ignore_customized):
+        nm = objects.Cluster.get_network_manager(cluster)
+        nm.prepare_for_provisioning(
+            cluster.nodes if nodes is None else nodes
+        )
+
+    @classmethod
+    def on_node_reset(cls, node):
+        objects.IPAddr.delete_by_node(node.id)
+
+    @classmethod
+    def on_remove_node_from_cluster(cls, node):
+        netmanager = objects.Cluster.get_network_manager(node.cluster)
+        netmanager.clear_assigned_networks(node)
+        netmanager.clear_bond_configuration(node)

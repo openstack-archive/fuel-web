@@ -150,7 +150,7 @@ class NeutronManager70(
         if not node.group_id:
             return {}
 
-        ngs = objects.Node.get_networks_ips(node)
+        ngs = objects.IPAddr.get_networks_ips(node)
         if not ngs:
             return {}
 
@@ -433,7 +433,7 @@ class NeutronManager70(
             # not an ethernet interface so no NIC will be found.
             if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
                     and not is_sub_iface:
-                nic = objects.Node.get_nic_by_name(node, iface)
+                nic = objects.NIC.get_nic_by_name(node, iface)
 
                 # NIC names in the template, that networks should be
                 # assigned to, might not be consistent with names of actually

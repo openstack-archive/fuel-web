@@ -345,6 +345,108 @@ class NetworkGroup(NailgunObject):
 
         return network
 
+    @classmethod
+    def get_network_groups_and_node_ids(cls, cluster_id):
+        """Get network group information for the given cluster
+
+        The admin network group will not be included.
+
+        :param instance: Cluster instance
+        :type instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :returns: tuple of Node ID, and NetworkGroup ID, name, meta
+        """
+        query = (db().query(
+            models.Node.id,
+            models.NetworkGroup.id,
+            models.NetworkGroup.name,
+            models.NetworkGroup.meta)
+            .join(models.NodeGroup.nodes)
+            .join(models.NodeGroup.networks)
+            .filter(models.NodeGroup.cluster_id == cluster_id,
+                    models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
+        )
+
+        return query
+
+    @classmethod
+    def _update_public_network(cls, cluster, public_map, roles_metadata):
+        """Applies changes to node's public_network checked using public_map.
+
+        :param instance: Cluster object
+        :param public_map: dict of Node.id to should_have_public result.
+        :param roles_metadata: dict from objects.Cluster.get_roles
+        """
+
+        if cluster.network_config.configuration_template is not None:
+            return
+        from nailgun.objects import Node
+        for node in cluster.nodes:
+            should_have_public = Node.should_have_public(
+                node, roles_metadata)
+            if public_map.get(node.id) == should_have_public:
+                continue
+            if should_have_public:
+                cls.assign_public_network(node)
+            else:
+                cls.unassign_public_network(node)
+
+    @classmethod
+    def assign_public_network(cls, node):
+        public_net = next(NetworkGroupCollection.filter_by(
+            node.nodegroup.networks,
+            name=consts.NETWORKS.public), None)
+        cls.assign_network_to_interface(public_net, node)
+
+    @classmethod
+    def unassign_public_network(cls, node):
+        public_net = next(NetworkGroupCollection.filter_by(
+            node.nodegroup.networks,
+            name=consts.NETWORKS.public), None)
+        ifaces = cls.get_interfaces_without_bonds_slaves(node)
+        for iface in ifaces:
+            network_list = iface.assigned_networks_list
+            if public_net in network_list:
+                network_list.remove(public_net)
+                NIC.assign_networks(iface, network_list)
+
+    @classmethod
+    def assign_network_to_interface(cls, node, instance):
+        """Assign network to interface by default for single node
+
+        Assign given network to first available interface.
+        Checks interface type, if network is already assigned
+        and already assigned networks.
+        """
+        if instance is None:
+            return
+        from nailgun import objects
+        untagged = cls.is_untagged(instance)
+        dedicated = instance.meta.get('dedicated_nic')
+        ifaces = objects.Node.get_interfaces_without_bonds_slaves(node)
+        for iface in ifaces:
+            if dedicated and iface.assigned_networks_list:
+                continue
+            for net in iface.assigned_networks_list:
+                if net.meta.get('dedicated_nic'):
+                    break
+                if net == instance:
+                    return
+                if untagged and cls.is_untagged(net):
+                    break
+            else:
+                assigned_nets = iface.assigned_networks_list + [instance]
+                objects.NIC.assign_networks(iface, assigned_nets)
+                break
+        else:
+            logger.warning(
+                "Cannot assign network %r appropriately for "
+                "node %r. Set unassigned network to the "
+                "interface %r",
+                instance.name, node.name, ifaces[0].name
+            )
+            assigned_nets = ifaces[0].assigned_networks_list + [instance]
+            objects.NIC.assign_networks(ifaces[0], assigned_nets)
+
 
 class NetworkGroupCollection(NailgunCollection):
 

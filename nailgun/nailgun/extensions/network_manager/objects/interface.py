@@ -117,6 +117,125 @@ class NIC(DPDKMixin, NailgunObject):
                     mode["state"] = old_modes_states[mode["name"]]
         instance.offloading_modes = new_modes
 
+    @classmethod
+    def get_nic_interfaces_for_all_nodes(cls, cluster, networks=None):
+        nic_interfaces_query = db().query(
+            models.NodeNICInterface
+        ).join(
+            models.Node
+        ).filter(
+            models.Node.cluster_id == cluster.id
+        )
+        if networks:
+            nic_interfaces_query = nic_interfaces_query.join(
+                models.NodeNICInterface.assigned_networks_list, aliased=True).\
+                filter(models.NetworkGroup.id.in_(networks))
+        return nic_interfaces_query.all()
+
+    @classmethod
+    def get_networks_to_interfaces_mapping_on_all_nodes(cls, cluster):
+        """Query networks to interfaces mapping on all nodes in cluster.
+
+        Returns combined results for NICs and bonds for every node.
+        Names are returned for node and interface (NIC or bond),
+        IDs are returned for networks. Results are sorted by node name then
+        interface name.
+        """
+        nodes_nics_networks = db().query(
+            models.Node.hostname,
+            models.NodeNICInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.nic_interfaces,
+            models.NodeNICInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == cluster.id,
+        )
+        nodes_bonds_networks = db().query(
+            models.Node.hostname,
+            models.NodeBondInterface.name,
+            models.NetworkGroup.id,
+        ).join(
+            models.Node.bond_interfaces,
+            models.NodeBondInterface.assigned_networks_list
+        ).filter(
+            models.Node.cluster_id == cluster.id,
+        )
+        return nodes_nics_networks.union(
+            nodes_bonds_networks
+        ).order_by(
+            # column 1 then 2 from the result. cannot call them by name as
+            # names for column 2 are different in this union
+            '1', '2'
+        )
+
+    @classmethod
+    def get_interface_by_net_name(cls, node_id, netname):
+        """Get interface with specified network assigned to it.
+
+        This method first checks for a NodeNICInterface with the specified
+        network assigned. If that fails it will look for a NodeBondInterface
+        with that network assigned.
+
+        :param instance_id: Node ID
+        :param netname: NetworkGroup name
+        :returns: either NodeNICInterface or NodeBondInterface
+        """
+        iface = db().query(models.NodeNICInterface).join(
+            (models.NetworkGroup,
+             models.NodeNICInterface.assigned_networks_list)
+        ).filter(
+            models.NetworkGroup.name == netname
+        ).filter(
+            models.NodeNICInterface.node_id == node_id
+        ).first()
+        if iface:
+            return iface
+
+        return db().query(models.NodeBondInterface).join(
+            (models.NetworkGroup,
+             models.NodeBondInterface.assigned_networks_list)
+        ).filter(
+            models.NetworkGroup.name == netname
+        ).filter(
+            models.NodeBondInterface.node_id == node_id
+        ).first()
+
+    @classmethod
+    def get_nic_by_name(cls, node, iface_name):
+        nic = db().query(models.NodeNICInterface).filter_by(
+            name=iface_name
+        ).filter_by(
+            node_id=node.id
+        ).first()
+
+        return nic
+
+    @classmethod
+    def get_ifaces_for_network_in_cluster(cls, cluster, net):
+        """Method for receiving node_id:iface pairs for all nodes in cluster
+
+        :param instance: Cluster instance
+        :param net: Nailgun specific network name
+        :type net: str
+        :returns: List of node_id, iface pairs for all nodes in cluster.
+        """
+        nics_db = db().query(
+            models.NodeNICInterface.node_id,
+            models.NodeNICInterface.name
+        ).filter(
+            models.NodeNICInterface.node.has(cluster_id=cluster.id),
+            models.NodeNICInterface.assigned_networks_list.any(name=net)
+        )
+        bonds_db = db().query(
+            models.NodeBondInterface.node_id,
+            models.NodeBondInterface.name
+        ).filter(
+            models.NodeBondInterface.node.has(cluster_id=cluster.id),
+            models.NodeBondInterface.assigned_networks_list.any(name=net)
+        )
+        return nics_db.union(bonds_db)
+
 
 class NICCollection(NailgunCollection):
 

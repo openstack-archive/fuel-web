@@ -197,7 +197,7 @@ class TestDeploymentAttributesSerialization90(
         }
         bond_properties = {
             'mode': consts.BOND_MODES.balance_slb,
-            'type__': consts.BOND_TYPES.ovs,
+            'type__': consts.BOND_TYPES.dpdkovs,
         }
 
         self._check_dpdk_bond_serializing(bond_properties)
@@ -212,7 +212,7 @@ class TestDeploymentAttributesSerialization90(
             'lacp': 'active',
             'lacp_rate': 'fast',
             'xmit_hash_policy': 'layer2',
-            'type__': consts.BOND_TYPES.ovs}
+            'type__': consts.BOND_TYPES.dpdkovs}
         self._check_dpdk_bond_serializing(bond_properties)
 
     def test_attributes_cpu_pinning(self):

@@ -36,17 +36,6 @@ class TestSnapshotConf(base.TestCase):
         # real localhost and there's only one host
         self.assertFalse(len(conf['dump']['local']['hosts']))
 
-    @mock.patch('nailgun.task.task.socket')
-    def test_master_injection(self, mock_socket):
-        hostname = 'test-hostname-test'
-        mock_socket.gethostname.return_value = hostname
-        conf = task.DumpTask.conf()
-        self.assertEqual(conf['dump']['master']['hosts'][0], {
-            'hostname': hostname,
-            'address': settings.MASTER_IP,
-            'ssh-key': settings.SHOTGUN_SSH_KEY,
-        })
-
     def test_postgres_injection(self):
         conf = task.DumpTask.conf()
 

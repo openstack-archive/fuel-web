@@ -760,7 +760,7 @@ MAX_ITEMS_PER_PAGE: 500
 SHOTGUN_SSH_KEY: "/root/.ssh/id_rsa"
 
 DUMP:
-  target: "/var/dump/fuel-snapshot"
+  target: "/var/log/dump/fuel-snapshot"
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
   compression_level: 3
@@ -858,8 +858,8 @@ DUMP:
       - type: dir
         path: /var/log
         exclude:
-          - atop/
-          - dump/
+          - atop
+          - dump
       - type: file
         path: /var/log/atop/atop_current
       - type: command

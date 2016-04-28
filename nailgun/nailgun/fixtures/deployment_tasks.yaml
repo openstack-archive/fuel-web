@@ -156,7 +156,7 @@
   parameters:
     path: /etc/hiera/nodes.yaml
     data:
-      yaql_exp: '$.nodes.toYaml()'
+      yaql_exp: '$.network_metadata.nodes.values().toYaml()'
 
 - id: update_hosts
   version: 2.0.0

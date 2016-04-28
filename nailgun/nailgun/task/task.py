@@ -1229,16 +1229,26 @@ class VerifyNetworksForTemplateMixin(object):
 
         List is retrieved from the network template.
         """
+        ifaces_w_private = set()
         ifaces = collections.defaultdict(set)
         for transformation, vlan_ids in cls._get_transformations(node):
+            if transformation['action'] not in ['add-port', 'add-bond']:
+                continue
+            if (transformation.get('bridge', '') ==
+                    consts.DEFAULT_BRIDGES_NAMES.br_prv):
+                ifaces_w_private.add(transformation['name'])
             if transformation['action'] == 'add-port':
                 cls._add_interface(ifaces, transformation['name'], vlan_ids)
-            elif transformation['action'] == 'add-bond':
+            else:
                 bond_name = transformation['name']
                 for ifname in transformation['interfaces']:
                     cls._add_interface(ifaces, ifname, vlan_ids, bond_name)
 
         for if_name, vlans in six.iteritems(ifaces):
+            if len(ifaces_w_private) == 1 and if_name in ifaces_w_private:
+                # We cannot check private VLANs if there is the
+                # only node without DPDK
+                continue
             node_json['networks'].append({
                 'iface': if_name,
                 'vlans': sorted(vlans)

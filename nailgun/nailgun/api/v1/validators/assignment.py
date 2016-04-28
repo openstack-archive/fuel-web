@@ -45,8 +45,10 @@ class AssignmentValidator(BasicValidator):
 
     @classmethod
     def check_if_already_done(cls, nodes):
-        already_done_nodes = filter(cls.predicate, nodes)
-        if any(already_done_nodes):
+        already_done_nodes = sorted(
+            [n.id for n in filter(cls.predicate, nodes)]
+        )
+        if already_done_nodes:
             raise errors.InvalidData(
                 cls.done_error_msg_template
                 .format(",".join(map(str, already_done_nodes))),

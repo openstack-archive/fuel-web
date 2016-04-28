@@ -688,6 +688,50 @@ class TestNodeObject(BaseIntegrationTest):
         }
         self.assertEqual(expected_attributes, node.attributes)
 
+    def test_dpdk_enabled_template(self):
+        template = {
+            "templates": {
+                "storage": {
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-storage"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-storage",
+                            "name": "<% if3 %>"
+                        }
+                    ]
+                },
+                "private": {
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-prv",
+                            "provider": "ovs",
+                            "vendor_specific": {
+                                "datapath_type": "netdev"
+                            }
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-prv",
+                            "name": "<% if4 %>.101",
+                            "provider": "dpdkovs"
+                        }
+                    ]
+                },
+            }
+        }
+        node = mock.Mock(network_template=template)
+
+        self.assertTrue(objects.Node.dpdk_enabled(node))
+
+        template['templates'].pop('private')
+
+        self.assertFalse(objects.Node.dpdk_enabled(node))
+
 
 class TestTaskObject(BaseIntegrationTest):
 

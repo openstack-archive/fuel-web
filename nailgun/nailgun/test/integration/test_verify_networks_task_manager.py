@@ -657,7 +657,8 @@ class TestNetworkVerificationWithTemplates90(BaseIntegrationTest):
             {"name": "eth3", "mac": "00:00:00:00:22:99"}]
         )
         self.cluster = self.env.create(
-            release_kwargs={'version': 'liberty-9.0'},
+            release_kwargs={'version': 'mitaka-9.0',
+                            'operating_system': consts.RELEASE_OS.ubuntu},
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': net_type,
@@ -680,9 +681,23 @@ class TestNetworkVerificationWithTemplates90(BaseIntegrationTest):
             }]
         )
 
+        cluster_attrs = objects.Cluster.get_editable_attributes(self.cluster)
+        cluster_attrs['common']['libvirt_type']['value'] = \
+            consts.HYPERVISORS.kvm
+        objects.Cluster.update_attributes(
+            self.cluster, {'editable': cluster_attrs})
+
         template = self.env.read_fixtures(['network_template_90'])[0]
         template.pop('pk')
         self.upload_template(self.cluster['id'], template)
+
+        for node in self.cluster.nodes:
+            objects.Node.update_attributes(
+                node,
+                {'hugepages':
+                    {'dpdk': {'value': 128},
+                     'nova': {'value': {'2048': 128}}}}
+            )
 
         if net_type == consts.NEUTRON_SEGMENT_TYPES.vlan:
             self.private_vlan_ids = list(range(1000, 1031))

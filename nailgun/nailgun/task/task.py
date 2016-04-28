@@ -955,6 +955,13 @@ class BaseNetworkVerification(object):
         self.config = config
 
     def get_ifaces_on_undeployed_node(self, node, node_json, networks_to_skip):
+        """Get list of interfaces and their VLANs to be checked for the node
+
+        :param node: Node object
+        :param node_json: dictionary for saving result
+        :param networks_to_skip: list of networks, which should be skipped
+        :return:
+        """
         # Save bonds info to be able to check net-probe results w/o
         # need to access nodes in DB (node can be deleted before the test is
         # completed). This info is needed for non-deployed nodes only.
@@ -1004,6 +1011,13 @@ class BaseNetworkVerification(object):
                     {'iface': iface.name, 'vlans': vlans})
 
     def get_ifaces_on_deployed_node(self, node, node_json, networks_to_skip):
+        """Get list of interfaces and their VLANs to be checked for the node
+
+        :param node: Node object
+        :param node_json: dictionary for saving result
+        :param networks_to_skip: list of networks, which should be skipped
+        :return:
+        """
         for iface in node.interfaces:
             # In case of present bond interfaces - collect assigned networks
             # against bonds themselves. We can check bonds as they are up on
@@ -1224,13 +1238,17 @@ class VerifyNetworksForTemplateMixin(object):
             node_json['bonds'] = bonds
 
     @classmethod
-    def get_ifaces_from_template_on_deployed_node(cls, node, node_json):
+    def get_ifaces_from_template_on_deployed_node(cls, node, node_json,
+                                                  skip_private):
         """Retrieves list of network interfaces on the deployed node
 
         List is retrieved from the network template.
         """
         ifaces = collections.defaultdict(set)
         for transformation, vlan_ids in cls._get_transformations(node):
+            if (skip_private and transformation.get('bridge', '') ==
+                    consts.DEFAULT_BRIDGES_NAMES.br_prv):
+                continue
             if transformation['action'] == 'add-port':
                 cls._add_interface(ifaces, transformation['name'], vlan_ids)
             elif transformation['action'] == 'add-bond':
@@ -1263,7 +1281,9 @@ class VerifyNetworksForTemplateMixin(object):
     def get_ifaces_on_deployed_node(self, node, node_json, networks_to_skip):
         """Retrieves list of network interfaces on the deployed node."""
         if node.network_template:
-            self.get_ifaces_from_template_on_deployed_node(node, node_json)
+            self.get_ifaces_from_template_on_deployed_node(
+                node, node_json,
+                consts.NETWORKS.private in networks_to_skip)
             return
 
         super(VerifyNetworksForTemplateMixin, self

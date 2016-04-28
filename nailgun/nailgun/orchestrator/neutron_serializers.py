@@ -1463,7 +1463,8 @@ class DPDKSerializerMixin90(object):
     def network_provider_node_attrs(cls, cluster, node):
         attrs = super(DPDKSerializerMixin90, cls).network_provider_node_attrs(
             cluster, node)
-        if objects.Node.dpdk_enabled(node):
+        net_manager = objects.Cluster.get_network_manager(cluster)
+        if net_manager.dpdk_enabled_for_node(node):
             attrs['dpdk'] = {'enabled': True}
         return attrs
 
@@ -1510,7 +1511,7 @@ class NeutronNetworkDeploymentSerializer90(
     def configure_private_network(cls, node, nm, transformations, prv_base_ep,
                                   nets_by_ifaces):
 
-        if not objects.Node.dpdk_enabled(node):
+        if not nm.dpdk_enabled_for_node(node):
             super(NeutronNetworkDeploymentSerializer90,
                   cls).configure_private_network(
                 node, nm, transformations, prv_base_ep, nets_by_ifaces)

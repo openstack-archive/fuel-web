@@ -1314,12 +1314,23 @@ class Node(NailgunObject):
 
     @classmethod
     def dpdk_enabled(cls, instance):
-        for iface in instance.nic_interfaces:
-            if NIC.dpdk_enabled(iface):
-                return True
-        for iface in instance.bond_interfaces:
-            if Bond.dpdk_enabled(iface):
-                return True
+        if instance.network_template:
+            templates = instance.network_template['templates']
+            for tmpl_name in templates:
+                transformations = templates[tmpl_name]['transformations']
+                for t in transformations:
+                    if (t['action'] in ['add-port', 'add-bond'] and
+                        t.get('provider', '') == 'dpdkovs' and
+                        t.get('bridge', '') ==
+                            consts.DEFAULT_BRIDGES_NAMES.br_prv):
+                        return True
+        else:
+            for iface in instance.nic_interfaces:
+                if NIC.dpdk_enabled(iface):
+                    return True
+            for iface in instance.bond_interfaces:
+                if Bond.dpdk_enabled(iface):
+                    return True
         return False
 
     @classmethod

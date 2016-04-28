@@ -1224,13 +1224,17 @@ class VerifyNetworksForTemplateMixin(object):
             node_json['bonds'] = bonds
 
     @classmethod
-    def get_ifaces_from_template_on_deployed_node(cls, node, node_json):
+    def get_ifaces_from_template_on_deployed_node(cls, node, node_json,
+                                                  skip_private):
         """Retrieves list of network interfaces on the deployed node
 
         List is retrieved from the network template.
         """
         ifaces = collections.defaultdict(set)
         for transformation, vlan_ids in cls._get_transformations(node):
+            if (skip_private and transformation.get('bridge', '') ==
+                    consts.DEFAULT_BRIDGES_NAMES.br_prv):
+                continue
             if transformation['action'] == 'add-port':
                 cls._add_interface(ifaces, transformation['name'], vlan_ids)
             elif transformation['action'] == 'add-bond':
@@ -1263,7 +1267,9 @@ class VerifyNetworksForTemplateMixin(object):
     def get_ifaces_on_deployed_node(self, node, node_json, networks_to_skip):
         """Retrieves list of network interfaces on the deployed node."""
         if node.network_template:
-            self.get_ifaces_from_template_on_deployed_node(node, node_json)
+            self.get_ifaces_from_template_on_deployed_node(
+                node, node_json,
+                consts.NETWORKS.private in networks_to_skip)
             return
 
         super(VerifyNetworksForTemplateMixin, self

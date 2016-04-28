@@ -39,17 +39,19 @@ class AssignmentValidator(BasicValidator):
             raise errors.InvalidData(
                 u"Nodes with ids {0} were not found."
                 .format(
-                    ",".join(map(str, not_found_node_ids))
+                    ", ".join(map(str, not_found_node_ids))
                 ), log_message=True
             )
 
     @classmethod
     def check_if_already_done(cls, nodes):
-        already_done_nodes = filter(cls.predicate, nodes)
-        if any(already_done_nodes):
+        already_done_nodes = sorted(
+            [n.id for n in filter(cls.predicate, nodes)]
+        )
+        if already_done_nodes:
             raise errors.InvalidData(
                 cls.done_error_msg_template
-                .format(",".join(map(str, already_done_nodes))),
+                .format(", ".join(map(str, already_done_nodes))),
                 log_message=True
             )
 
@@ -68,7 +70,7 @@ class AssignmentValidator(BasicValidator):
         if conflicting_hostnames:
             raise errors.AlreadyExists(
                 "Nodes with hostnames [{0}] already exist in cluster {1}."
-                .format(",".join(conflicting_hostnames), cluster_id)
+                .format(", ".join(conflicting_hostnames), cluster_id)
             )
 
 

@@ -1313,16 +1313,6 @@ class Node(NailgunObject):
         NodeAttributes.set_default_hugepages(instance)
 
     @classmethod
-    def dpdk_enabled(cls, instance):
-        for iface in instance.nic_interfaces:
-            if NIC.dpdk_enabled(iface):
-                return True
-        for iface in instance.bond_interfaces:
-            if Bond.dpdk_enabled(iface):
-                return True
-        return False
-
-    @classmethod
     def sriov_enabled(cls, instance):
         for iface in instance.nic_interfaces:
             if NIC.is_sriov_enabled(iface):

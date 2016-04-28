@@ -192,6 +192,20 @@ class NeutronManager70(
         return endpoints
 
     @classmethod
+    def get_node_endpoint_by_network_role(cls, node, network_role):
+        """Get endpoint name for a given role name for node"""
+        template = node.network_template
+
+        for role in node.all_roles:
+            role_templates = template['templates_for_node_role'][role]
+            for role_template in role_templates:
+                role_mapping = template['templates'][role_template]['roles']
+                for net_role, endpoint in six.iteritems(role_mapping):
+                    if net_role == network_role:
+                        return endpoint
+        return None
+
+    @classmethod
     def get_node_network_mapping(cls, node):
         """Get (network, endpoint) mappings for node with loaded template
 
@@ -454,6 +468,32 @@ class NeutronManager70(
             'interfaces': node_ifaces.values()
         }
         cls._update_attrs(node_data)
+
+    @classmethod
+    def dpdk_enabled_for_node(cls, node):
+        if node.network_template:
+            endpoint_name = cls.get_node_endpoint_by_network_role(
+                node, 'neutron/private')
+            template_names = set()
+            for role in node.all_roles:
+                template_names.update(
+                    node.network_template['templates_for_node_role'][role])
+            templates = node.network_template['templates']
+            for tmpl_name in template_names:
+                transformations = templates[tmpl_name]['transformations']
+                for t in transformations:
+                    if (t['action'] in ['add-port', 'add-bond'] and
+                            t.get('provider') == 'dpdkovs' and
+                            t.get('bridge') == endpoint_name):
+                        return True
+        else:
+            for iface in node.nic_interfaces:
+                if objects.NIC.dpdk_enabled(iface):
+                    return True
+            for iface in node.bond_interfaces:
+                if objects.Bond.dpdk_enabled(iface):
+                    return True
+        return False
 
 
 class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):

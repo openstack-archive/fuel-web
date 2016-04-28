@@ -746,7 +746,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         serialized_node['fail_if_error'] = bool(
             self.critical_roles.intersection(roles)
         )
-        self.inject_configs(node, roles, serialized_node)
+        self.inject_configs(node, serialized_node)
         return serialized_node
 
     @classmethod
@@ -790,13 +790,16 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         result['repositories'] = [repo]
         return result
 
-    def inject_configs(self, node, roles, output):
+    def inject_configs(self, node, output):
         node_config = output.setdefault('configuration', {})
         for config in self._configs:
             if config.config_type == consts.OPENSTACK_CONFIG_TYPES.cluster:
                 utils.dict_update(node_config, config.configuration, 1)
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.role:
-                for role in roles:
+                # (asaprykin): objects.Node.all_roles() has a side effect,
+                # it replaces "<rolename>" with "primary-<rolename>"
+                # in case of primary role.
+                for role in node.all_roles:
                     if NameMatchingPolicy.create(config.node_role).match(role):
                         utils.dict_update(node_config, config.configuration, 1)
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:

@@ -359,7 +359,8 @@ class UploadConfiguration(GenericRolesHook):
 
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.role:
                 for node in self.nodes:
-                    if config.node_role in node.roles:
+                    all_roles = set(node.roles + node.pending_roles)
+                    if config.node_role in all_roles:
                         utils.dict_update(
                             node_configs[node.id]['role'],
                             config.configuration,

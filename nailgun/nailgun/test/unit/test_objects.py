@@ -1604,6 +1604,34 @@ class TestClusterObject(BaseTestCase):
         for ip in node.ip_addrs:
             self.assertEquals(admin_ng_id, ip.network)
 
+    def test_get_updated_editable_attributes_with_plugin(self):
+        cluster = self.env.create_cluster(api=False)
+        self.env.create_plugin(
+            name='test_plugin',
+            version='1.0.0',
+            package_version='4.0.0',
+            cluster=cluster,
+            attributes_metadata=self.env.get_default_plugin_env_config()
+        )
+        self.env.create_plugin(
+            name='test_plugin',
+            version='3.0.0',
+            package_version='4.0.0',
+            cluster=cluster,
+            attributes_metadata=self.env.get_default_plugin_env_config()
+        )
+
+        attributes = objects.Cluster.get_editable_attributes(cluster, True)
+        plugin_attrs = attributes['test_plugin']['metadata']['versions'][1]
+        plugin_attrs['plugin_name_text']['value'] = 'test_value_a'
+        updated_attributes = objects.Cluster.get_updated_editable_attributes(
+            cluster, {'editable': attributes})
+
+        self.assertEqual(
+            'test_value_a',
+            updated_attributes['editable']['test_plugin']
+                              ['plugin_name_text']['value'])
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 

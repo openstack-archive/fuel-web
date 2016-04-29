@@ -199,7 +199,7 @@ class TaskHelper(object):
     def nodes_to_deploy(cls, cluster, force=False):
         from nailgun import objects  # preventing cycle import error
 
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             return cls._nodes_to_deploy_lcm(cluster, objects)
         return cls._nodes_to_deploy_legacy(cluster, force, objects)
 

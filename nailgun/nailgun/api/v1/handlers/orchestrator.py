@@ -153,7 +153,7 @@ class DefaultProvisioningInfo(DefaultOrchestratorInfo):
 class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             return deployment_serializers.serialize_for_lcm(
                 cluster, nodes, ignore_customized=True
             )
@@ -165,7 +165,7 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             raise self.http(
                 405, msg="The plugin hooks are not supported anymore."
             )
@@ -176,7 +176,7 @@ class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             raise self.http(
                 405, msg="The plugin hooks are not supported anymore."
             )

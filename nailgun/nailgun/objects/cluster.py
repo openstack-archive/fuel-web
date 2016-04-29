@@ -1520,6 +1520,19 @@ class Cluster(NailgunObject):
         attrs = cls.get_editable_attributes(instance)
         return attrs['common'].get('propagate_task_deploy', {}).get('value')
 
+    @classmethod
+    def is_lcm_ready(cls, instance):
+        """Tests that cluster is LCM ready.
+
+        :param instance: cluster for checking
+        :returns: True if lcm is supported by release or
+                  task deploy is propagated
+        """
+        return (
+            Release.is_lcm_supported(instance.release) or
+            cls.is_propagate_task_deploy_enabled(instance)
+        )
+
     # FIXME(aroma): remove updating of 'deployed_before'
     # when stop action is reworked. 'deployed_before'
     # flag identifies whether stop action is allowed for the

@@ -17,13 +17,15 @@ import netaddr
 
 from oslo_serialization import jsonutils
 
-from nailgun.api.v1.validators.network import NetworkConfigurationValidator
-from nailgun.api.v1.validators.network import \
-    NeutronNetworkConfigurationValidator
-from nailgun.api.v1.validators.network import NovaNetworkConfigurationValidator
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun import errors
+from nailgun.extensions.network_manager.validators.network import \
+    NetworkConfigurationValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NeutronNetworkConfigurationValidator
+from nailgun.extensions.network_manager.validators.network import \
+    NovaNetworkConfigurationValidator
 from nailgun import objects
 from nailgun.test import base
 

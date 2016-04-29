@@ -21,18 +21,32 @@ Create Date: 2016-04-28 22:23:40.895589
 """
 
 from alembic import op
+import sqlalchemy as sa
 
+from oslo_serialization import jsonutils
 
 # revision identifiers, used by Alembic.
 revision = '675105097a69'
 down_revision = '11a9adc6d36a'
 
+cgroups_attrs = {
+    'metadata': {
+        'label': 'Cgroups configuration for services',
+        'weight': 90,
+        'group': 'general',
+        'always_editable': True,
+        'restrictions': [{'condition': 'true', 'action': 'hide'}]
+    }
+}
+
 
 def upgrade():
     upgrade_deployment_history()
+    upgrade_cgroups_cluster_attrs()
 
 
 def downgrade():
+    downgrade_cgroups_cluster_attrs()
     downgrade_deployment_history()
 
 
@@ -45,3 +59,34 @@ def upgrade_deployment_history():
 def downgrade_deployment_history():
     op.drop_index('deployment_history_task_name_status_idx',
                   'deployment_history')
+
+
+def _update_cluster_editable_attrs(update_method):
+    connection = op.get_bind()
+
+    q_get_cluster_attrs = sa.text(
+        "SELECT cluster_id, editable FROM attributes")
+    q_update_cluster_attrs = sa.text(
+        "UPDATE attributes "
+        "SET editable = :editable "
+        "WHERE cluster_id = :cluster_id")
+    for cluster_id, editable in connection.execute(q_get_cluster_attrs):
+        editable = jsonutils.loads(editable)
+        update_method(editable)
+        connection.execute(
+            q_update_cluster_attrs,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable)
+        )
+
+
+def upgrade_cgroups_cluster_attrs():
+    def _update(editable):
+        editable['cgroups'] = cgroups_attrs
+    _update_cluster_editable_attrs(_update)
+
+
+def downgrade_cgroups_cluster_attrs():
+    def _update(editable):
+        editable.pop('cgroups', None)
+    _update_cluster_editable_attrs(_update)

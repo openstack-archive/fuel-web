@@ -424,16 +424,18 @@ class NodeDeploymentValidator(TaskDeploymentValidator,
                               DeploySelectedNodesValidator):
 
     @classmethod
-    def validate_deployment(cls, data, cluster):
+    def validate_deployment(cls, data, cluster, graph_type):
         """Used to validate attributes used for validate_deployment_attributes
 
         :param data: raw json data, usually web.data()
+        :param cluster: cluster instance
+        :param graph_type: deployment graph type
         :returns: loaded json or empty array
         """
         data = cls.validate_json(data)
 
         if data:
-            cls.validate_tasks(data, cluster)
+            cls.validate_tasks(data, cluster, graph_type)
         else:
             raise errors.InvalidData('Tasks list must be specified.')
 

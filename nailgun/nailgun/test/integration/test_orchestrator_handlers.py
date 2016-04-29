@@ -282,6 +282,68 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.check_deployment_call_made([nodes_uids[0]], mcast)
 
+    @patch('nailgun.task.task.rpc.cast')
+    def test_start_sel_nodes_deployment_w_custom_graph(self, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'custom-task',
+                    'type': 'puppet',
+                    'roles': '*',
+                    'version': '2.0.0',
+                    'requires': ['pre_deployment_start']
+                }
+            ]}, self.cluster, 'custom-graph')
+
+        self.emulate_nodes_provisioning(controller_nodes)
+        nodes_uids = [n.uid for n in controller_nodes]
+        controller_to_deploy = nodes_uids[0]
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodesWithTasks",
+            [controller_to_deploy]
+        ) + '&graph_type=custom-graph'
+        self.send_put(deploy_action_url, ['custom-task'])
+
+        executed_task_ids = [
+            t['id'] for t in
+            mcast.call_args[0][1]['args']['tasks_graph'][controller_to_deploy]
+        ]
+        self.check_deployment_call_made([controller_to_deploy], mcast)
+        self.assertItemsEqual(['custom-task'], executed_task_ids)
+
+    @patch('nailgun.task.task.rpc.cast')
+    def test_validator_fail_on_deployment_w_custom_graph(self, mcast):
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'custom-task',
+                    'type': 'puppet',
+                }
+            ]}, self.cluster, 'custom-graph')
+
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodesWithTasks",
+            []
+        ) + '&graph_type=custom-graph'
+
+        response = self.send_put(
+            deploy_action_url,
+            ['upload_nodes_info']   # this task exists in default graph
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json_body,
+            {
+                "message": "Tasks upload_nodes_info are not present "
+                           "in deployment graph",
+                "errors": []
+            }
+        )
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.task.task.rpc.cast')
     def test_deployment_of_node_is_forbidden(self, mcast):

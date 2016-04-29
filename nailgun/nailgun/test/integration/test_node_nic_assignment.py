@@ -769,7 +769,7 @@ class TestPublicNetworkAssigment(BaseIntegrationTest):
             value
         )
 
-    def check_nic_assigments(self, node, networks_by_mac):
+    def check_network_assigments(self, node, networks_by, key='mac'):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
@@ -778,7 +778,8 @@ class TestPublicNetworkAssigment(BaseIntegrationTest):
 
         for resp_nic in resp.json_body:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
-            self.assertListEqual(networks_by_mac[resp_nic['mac']], net_names)
+            nets = networks_by.get(resp_nic[key], [])
+            self.assertListEqual(nets, net_names)
 
     def check_node_public_ip_assigment(self, cluster, node, public_ip):
         node_db = objects.Node.get_by_uid(node['id'])
@@ -787,13 +788,18 @@ class TestPublicNetworkAssigment(BaseIntegrationTest):
         ng = nm.get_network_by_netname(consts.NETWORKS.public, nets)
         self.assertEqual(public_ip, ng.get('ip'))
 
-    def create_node_with_preset_macs(self, cluster, roles=None):
-        macs = [self.env.generate_random_mac(), self.env.generate_random_mac()]
+    def create_node_with_preset_macs(self, cluster, roles=None, iface_count=2):
+        macs = []
         meta = self.env.default_metadata()
+        interfaces = []
+        for i in range(iface_count):
+            mac = self.env.generate_random_mac()
+            macs.append(mac)
+            interfaces.append({'name': 'eth%d' % i, 'mac': mac})
+
         self.env.set_interfaces_in_meta(
             meta,
-            [{'name': 'eth0', 'mac': macs[0]},
-             {'name': 'eth1', 'mac': macs[1]}])
+            interfaces)
 
         node = self.env.create_node(api=True, meta=meta, mac=macs[0],
                                     roles=roles, cluster_id=cluster.id)
@@ -805,22 +811,22 @@ class TestPublicNetworkAssigment(BaseIntegrationTest):
 
         node1, macs1 = self.create_node_with_preset_macs(cluster,
                                                          ['controller'])
-        self.check_nic_assigments(node1, {
+        self.check_network_assigments(node1, {
             macs1[0]: self.default_networks,
             macs1[1]: self.public_networks})
 
         node2, macs2 = self.create_node_with_preset_macs(cluster,
                                                          roles=['cinder'])
-        self.check_nic_assigments(node2, {
+        self.check_network_assigments(node2, {
             macs2[0]: self.default_networks,
             macs2[1]: []})
 
         self.set_assign_public_to_all_nodes(cluster, True)
 
-        self.check_nic_assigments(node1, {
+        self.check_network_assigments(node1, {
             macs1[0]: self.default_networks,
             macs1[1]: self.public_networks})
-        self.check_nic_assigments(node2, {
+        self.check_network_assigments(node2, {
             macs2[0]: self.default_networks,
             macs2[1]: self.public_networks})
 
@@ -838,22 +844,22 @@ class TestPublicNetworkAssigment(BaseIntegrationTest):
 
         node1, macs1 = self.create_node_with_preset_macs(cluster,
                                                          ['controller'])
-        self.check_nic_assigments(node1, {
+        self.check_network_assigments(node1, {
             macs1[0]: self.default_networks,
             macs1[1]: self.public_networks})
 
         node2, macs2 = self.create_node_with_preset_macs(cluster,
                                                          ['cinder'])
-        self.check_nic_assigments(node2, {
+        self.check_network_assigments(node2, {
             macs2[0]: self.default_networks,
             macs2[1]: self.public_networks})
 
         self.set_assign_public_to_all_nodes(cluster, False)
 
-        self.check_nic_assigments(node1, {
+        self.check_network_assigments(node1, {
             macs1[0]: self.default_networks,
             macs1[1]: self.public_networks})
-        self.check_nic_assigments(node2, {
+        self.check_network_assigments(node2, {
             macs2[0]: self.default_networks,
             macs2[1]: []})
 
@@ -861,3 +867,61 @@ class TestPublicNetworkAssigment(BaseIntegrationTest):
         self.check_node_public_ip_assigment(cluster, node1, '172.16.0.2/24')
         with self.assertRaises(IndexError):
             self.check_node_public_ip_assigment(cluster, node2, None)
+
+    def test_assign_and_deassign_to_bonds(self):
+        self.env.create_cluster(
+            api=True,
+            editable_attributes={'public_network_assignment': {
+                'assign_to_all_nodes': {'value': True}}})
+        cluster = self.env.clusters[0]
+
+        node1, macs1 = self.create_node_with_preset_macs(cluster,
+                                                         ['controller'],
+                                                         3)
+        self.env.make_bond_via_api('ovsbond0',
+                                   consts.BOND_MODES.balance_tcp,
+                                   ['eth1', 'eth2'],
+                                   node1['id'])
+
+        node2, macs2 = self.create_node_with_preset_macs(cluster,
+                                                         ['cinder'],
+                                                         3)
+        self.env.make_bond_via_api('ovsbond0',
+                                   consts.BOND_MODES.balance_tcp,
+                                   ['eth1', 'eth2'],
+                                   node2['id'])
+
+        self.check_network_assigments(node1, {
+            'eth0': self.default_networks,
+            'ovsbond0': self.public_networks},
+            key='name')
+        self.check_network_assigments(node2, {
+            'eth0': self.default_networks,
+            'ovsbond0': self.public_networks},
+            key='name')
+
+        self.set_assign_public_to_all_nodes(cluster, False)
+
+        self.check_network_assigments(node1, {
+            'eth0': self.default_networks,
+            'ovsbond0': self.public_networks},
+            key='name')
+        self.check_network_assigments(node2, {
+            'eth0': self.default_networks,
+            'ovsbond0': []},
+            key='name')
+
+        self.set_assign_public_to_all_nodes(cluster, True)
+
+        self.check_network_assigments(node1, {
+            'eth0': self.default_networks,
+            'ovsbond0': self.public_networks},
+            key='name')
+        self.check_network_assigments(node2, {
+            'eth0': self.default_networks,
+            'ovsbond0': self.public_networks},
+            key='name')
+
+        objects.Cluster.prepare_for_deployment(cluster)
+        self.check_node_public_ip_assigment(cluster, node1, '172.16.0.2/24')
+        self.check_node_public_ip_assigment(cluster, node2, '172.16.0.3/24')

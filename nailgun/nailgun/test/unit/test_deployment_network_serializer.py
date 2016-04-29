@@ -26,11 +26,10 @@ class BaseTestNeutronDeploymentSerializer(base.BaseTestCase):
 
     def setUp(self):
         super(BaseTestNeutronDeploymentSerializer, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron'},
             release_kwargs={'version': self.env_version}
         )
-        self.cluster = self.env.clusters[0]
 
     def check_shared_attrs_of_external_network(self, external_net):
         self.assertEqual(

@@ -171,7 +171,7 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
 
     def setUp(self):
         super(BaseSelectedNodesTest, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},
@@ -182,7 +182,6 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
                 {'roles': ['mongo'], 'pending_addition': True},
                 {'roles': ['cinder'], 'pending_addition': True}])
 
-        self.cluster = self.env.clusters[0]
         self.nodes = [n for n in self.cluster.nodes][:3]
         self.node_uids = [n.uid for n in self.nodes]
 
@@ -610,11 +609,10 @@ class TestSerializedTasksHandler(BaseIntegrationTest):
 
     def setUp(self):
         super(TestSerializedTasksHandler, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True}])
-        self.cluster = self.env.clusters[-1]
         self.nodes = self.cluster.nodes
         objects.Cluster.prepare_for_deployment(
             self.cluster, self.cluster.nodes)

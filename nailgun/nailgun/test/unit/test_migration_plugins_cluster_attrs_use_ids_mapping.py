@@ -24,8 +24,7 @@ class TestMigrationPluginsClusterAttrs(BaseTestCase):
 
     def setUp(self):
         super(TestMigrationPluginsClusterAttrs, self).setUp()
-        self.env.create()
-        self.cluster = self.env.clusters[0]
+        self.cluster = self.env.create()
         self.plugins = [
             Plugin.create(self.env.get_default_plugin_metadata(
                 name='plugin_name_1')),

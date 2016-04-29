@@ -53,7 +53,7 @@ class TestNetworkModels(BaseIntegrationTest):
     }
 
     def create_env_using_statuses(self, cluster_status, node_status):
-        self.env.create(
+        cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.gre,
@@ -63,27 +63,28 @@ class TestNetworkModels(BaseIntegrationTest):
                 {'pending_addition': False, 'status': node_status},
                 {'pending_addition': False, 'status': node_status},
                 {'pending_deletion': False, 'status': node_status}])
+        return cluster
 
     def test_cluster_locking_during_deployment(self):
-        self.create_env_using_statuses(consts.CLUSTER_STATUSES.deployment,
-                                       consts.NODE_STATUSES.deploying)
+        cluster = self.create_env_using_statuses(
+            consts.CLUSTER_STATUSES.deployment,
+            consts.NODE_STATUSES.deploying)
 
-        test_nets = self.env.neutron_networks_get(
-            self.env.clusters[0].id).json_body
+        test_nets = self.env.neutron_networks_get(cluster.id).json_body
 
         resp_nova_net = self.env.nova_networks_put(
-            self.env.clusters[0].id,
+            cluster.id,
             test_nets,
             expect_errors=True)
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id,
+            cluster.id,
             test_nets,
             expect_errors=True)
 
         resp_cluster = self.app.put(
             reverse('ClusterAttributesHandler',
-                    kwargs={'cluster_id': self.env.clusters[0].id}),
+                    kwargs={'cluster_id': cluster.id}),
             jsonutils.dumps({
                 'editable': {
                     "foo": {"bar": None}
@@ -94,7 +95,7 @@ class TestNetworkModels(BaseIntegrationTest):
 
         resp_cluster_get = self.app.get(
             reverse('ClusterHandler',
-                    kwargs={'obj_id': self.env.clusters[0].id}),
+                    kwargs={'obj_id': cluster.id}),
             headers=self.default_headers)
 
         self.assertTrue(resp_cluster_get.json_body['is_locked'])
@@ -105,11 +106,11 @@ class TestNetworkModels(BaseIntegrationTest):
         self.assertEqual(resp_cluster.status_code, 403)
 
     def test_networks_update_after_deployment(self):
-        self.create_env_using_statuses(consts.CLUSTER_STATUSES.operational,
-                                       consts.NODE_STATUSES.ready)
+        cluster = self.create_env_using_statuses(
+            consts.CLUSTER_STATUSES.operational,
+            consts.NODE_STATUSES.ready)
 
-        test_nets = self.env.neutron_networks_get(
-            self.env.clusters[0].id).json_body
+        test_nets = self.env.neutron_networks_get(cluster.id).json_body
 
         # change something from 'networking_parameters'
         test_nets['networking_parameters']['dns_nameservers'] = \
@@ -123,7 +124,7 @@ class TestNetworkModels(BaseIntegrationTest):
         mgmt_net['cidr'] = u'1.1.1.0/24'
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id, test_nets, expect_errors=True)
+            cluster.id, test_nets, expect_errors=True)
 
         self.assertEqual(400, resp_neutron_net.status_code)
         self.assertEqual(
@@ -133,13 +134,11 @@ class TestNetworkModels(BaseIntegrationTest):
 
         mgmt_net['cidr'] = u'192.168.0.0/30'
 
-        resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id, test_nets)
+        resp_neutron_net = self.env.neutron_networks_put(cluster.id, test_nets)
 
         self.assertEqual(200, resp_neutron_net.status_code)
 
-        new_nets = self.env.neutron_networks_get(
-            self.env.clusters[0].id).json_body
+        new_nets = self.env.neutron_networks_get(cluster.id).json_body
 
         # test that network was changed
         modified_net = filter(lambda x: x['name'] == test_network_name,
@@ -151,11 +150,11 @@ class TestNetworkModels(BaseIntegrationTest):
                              new_nets['networking_parameters'])
 
     def test_admin_network_update_after_deployment(self):
-        self.create_env_using_statuses(consts.CLUSTER_STATUSES.operational,
-                                       consts.NODE_STATUSES.ready)
+        cluster = self.create_env_using_statuses(
+            consts.CLUSTER_STATUSES.operational,
+            consts.NODE_STATUSES.ready)
 
-        test_nets = self.env.neutron_networks_get(
-            self.env.clusters[0].id).json_body
+        test_nets = self.env.neutron_networks_get(cluster.id).json_body
 
         admin_net = filter(
             lambda x: x['name'] == consts.NETWORKS.fuelweb_admin,
@@ -165,7 +164,7 @@ class TestNetworkModels(BaseIntegrationTest):
         admin_net['ip_ranges'] = [[u'191.111.0.5', u'191.111.0.62']]
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id, test_nets, expect_errors=True)
+            cluster.id, test_nets, expect_errors=True)
         self.assertEqual(400, resp_neutron_net.status_code)
         self.assertEqual(
             "New IP ranges for network '{0}'({1}) do not cover already "
@@ -177,7 +176,7 @@ class TestNetworkModels(BaseIntegrationTest):
         self.db.commit()
         with patch('task.task.rpc.cast'):
             resp_neutron_net = self.env.neutron_networks_put(
-                self.env.clusters[0].id, test_nets)
+                cluster.id, test_nets)
         self.assertEqual(200, resp_neutron_net.status_code)
 
     def test_nova_net_networking_parameters(self):

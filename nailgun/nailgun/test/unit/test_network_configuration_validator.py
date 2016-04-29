@@ -341,7 +341,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
                                str(netaddr.IPAddress(node_ip) + 10)]]
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id,
+            self.cluster.id,
             self.config,
             expect_errors=True)
         self.assertEqual(400, resp_neutron_net.status_code)
@@ -355,7 +355,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
                                str(netaddr.IPAddress(node_ip) + 10)]]
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id,
+            self.cluster.id,
             self.config)
         self.assertEqual(200, resp_neutron_net.status_code)
 
@@ -365,7 +365,7 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
                                str(netaddr.IPAddress(node_ip) + 9)]]
 
         resp_neutron_net = self.env.neutron_networks_put(
-            self.env.clusters[0].id,
+            self.cluster.id,
             self.config,
             expect_errors=True)
         self.assertEqual(400, resp_neutron_net.status_code)
@@ -551,7 +551,7 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
         )
         self.nc['networking_parameters'].pop('segmentation_type')
         serialized_data = self.serialize(self.nc)
-        self.validator(serialized_data, self.env.clusters[0])
+        self.validator(serialized_data, self.cluster)
 
     # networking parameters
     def test_networking_parameters_additional_property(self):

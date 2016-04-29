@@ -98,7 +98,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"}])
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network,
             },
@@ -108,7 +108,6 @@ class TestNovaHandlers(TestNetworkChecking):
                  "pending_addition": True},
             ]
         )
-        self.cluster = self.env.clusters[0]
         resp = self.env.nova_networks_get(self.cluster.id)
         self.nets = resp.json_body
 
@@ -410,7 +409,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"}])
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'
@@ -421,7 +420,6 @@ class TestNeutronHandlersGre(TestNetworkChecking):
                  'meta': meta}
             ]
         )
-        self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.nets = resp.json_body
 
@@ -803,7 +801,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"}])
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'vlan'
@@ -814,7 +812,6 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
                  'meta': meta}
             ]
         )
-        self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.nets = resp.json_body
 
@@ -846,7 +843,7 @@ class TestNeutronHandlersTun(TestNetworkChecking):
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"}])
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'tun'
@@ -857,7 +854,6 @@ class TestNeutronHandlersTun(TestNetworkChecking):
                  'meta': meta}
             ]
         )
-        self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.nets = resp.json_body
 
@@ -877,7 +873,7 @@ class TestNetworkConfigurationVerifyHandler(TestNetworkChecking):
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"}])
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'
@@ -888,7 +884,6 @@ class TestNetworkConfigurationVerifyHandler(TestNetworkChecking):
                  'meta': meta}
             ]
         )
-        self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.nets = resp.json_body
 
@@ -914,7 +909,7 @@ class TestNeutronHandlers90(TestNetworkChecking):
                     net_meta['neutron']['networks'])[0]
         bm.update(baremetal_parameters)
 
-        self.env.create(
+        cluster = self.env.create(
             release_kwargs={
                 'networks_metadata': net_meta,
                 'version': 'mitaka-9.0',
@@ -925,7 +920,6 @@ class TestNeutronHandlers90(TestNetworkChecking):
                 'net_segment_type': 'vlan',
             }
         )
-        cluster = self.env.clusters[0]
 
         self.env._set_additional_component(cluster, 'ironic', True)
 

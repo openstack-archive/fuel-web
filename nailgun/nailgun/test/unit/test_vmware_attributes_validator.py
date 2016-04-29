@@ -26,7 +26,7 @@ from nailgun.test.base import BaseTestCase
 class TestAttributesValidator(BaseTestCase):
     def setUp(self):
         super(TestAttributesValidator, self).setUp()
-        self.env.create(
+        self.cluster = self.env.create(
             cluster_kwargs={
                 "api": False,
                 "vmware_attributes": {
@@ -38,7 +38,6 @@ class TestAttributesValidator(BaseTestCase):
                 "status": consts.NODE_STATUSES.ready
             }]
         )
-        self.cluster = self.env.clusters[0]
         self.ready_compute_node = self.env.create_node(
             hostname="node-1",
             name="Node 1",

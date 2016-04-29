@@ -146,7 +146,7 @@ class TestTasksLogging(BaseIntegrationTest):
     @fake_tasks(god_mode=True, recover_nodes=False)
     @patch.object(TaskHelper, 'update_action_log')
     def test_stop_task_logging(self, logger):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "pending_roles": ["controller"]},
                 {"pending_addition": True, "pending_roles": ["cinder"]},
@@ -161,7 +161,6 @@ class TestTasksLogging(BaseIntegrationTest):
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]
         # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-        cluster = self.env.clusters[0]
         objects.Cluster.set_deployed_before_flag(cluster, value=False)
 
         self.env.stop_deployment()
@@ -258,7 +257,7 @@ class TestTasksLogging(BaseIntegrationTest):
 
     @fake_tasks()
     def test_update_task_logging_on_deployment(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "pending_roles": ["controller"]}
             ]
@@ -274,7 +273,6 @@ class TestTasksLogging(BaseIntegrationTest):
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]
         # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-        cluster = self.env.clusters[0]
         objects.Cluster.set_deployed_before_flag(cluster, value=False)
 
         # Stopping deployment

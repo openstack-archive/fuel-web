@@ -19,8 +19,7 @@ from sqlalchemy.inspection import inspect
 from nailgun.test.base import BaseTestCase
 
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import cluster as cluster_model
-from nailgun.db.sqlalchemy.models import plugins
+from nailgun.db.sqlalchemy import models
 from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
 from nailgun.objects import VmwareAttributes
@@ -340,6 +339,15 @@ class TestInstallationInfo(BaseTestCase):
         self.assertTrue('contact_info_provided' in info['user_information'])
         self.assertDictEqual(settings.VERSION, info['fuel_release'])
 
+    def get_model_schema(self, model, with_relationships=True):
+        schema = {}
+        for column in inspect(model).columns:
+            schema[six.text_type(column.name)] = None
+        if with_relationships:
+            for rel in inspect(model).relationships:
+                schema[six.text_type(rel.table.name)] = None
+        return schema
+
     def test_all_cluster_data_collected(self):
         self.env.create(nodes_kwargs=[{'roles': ['compute']}])
         self.env.create_node(status=consts.NODE_STATUSES.discover)
@@ -349,12 +357,7 @@ class TestInstallationInfo(BaseTestCase):
         info = info.get_installation_info()
         actual_cluster = info['clusters'][0]
 
-        # Creating cluster schema
-        cluster_schema = {}
-        for column in inspect(cluster_model.Cluster).columns:
-            cluster_schema[six.text_type(column.name)] = None
-        for rel in inspect(cluster_model.Cluster).relationships:
-            cluster_schema[six.text_type(rel.table.name)] = None
+        cluster_schema = self.get_model_schema(models.Cluster)
 
         # Removing of not required fields
         remove_fields = (
@@ -485,10 +488,8 @@ class TestInstallationInfo(BaseTestCase):
         info = InstallationInfo().get_cluster_plugins_info(cluster)
         actual_plugin = info[0]
 
-        # Creating plugin data schema
-        plugin_schema = {}
-        for column in inspect(plugins.Plugin).columns:
-            plugin_schema[six.text_type(column.name)] = None
+        plugin_schema = self.get_model_schema(models.Plugin,
+                                              with_relationships=False)
 
         # Removing of not required fields
         remove_fields = ('description', 'title', 'authors', 'homepage')
@@ -501,16 +502,52 @@ class TestInstallationInfo(BaseTestCase):
         for key in six.iterkeys(plugin_schema):
             self.assertIn(key, actual_plugin)
 
-    def test_wite_list_unique_names(self):
-        names = set(rule.map_to_name for rule in
-                    InstallationInfo.attributes_white_list)
-        self.assertEqual(len(InstallationInfo.attributes_white_list),
-                         len(names))
-        names = set(rule.map_to_name for rule in
-                    InstallationInfo.vmware_attributes_white_list)
-        self.assertEqual(len(InstallationInfo.vmware_attributes_white_list),
-                         len(names))
-        names = set(rule.map_to_name for rule in
-                    InstallationInfo.plugin_info_white_list)
-        self.assertEqual(len(InstallationInfo.plugin_info_white_list),
-                         len(names))
+    def test_all_node_data_collected(self):
+        cluster = self.env.create_cluster(api=False)
+        self.env.create_node(cluster_id=cluster.id)
+
+        # Fetching nodes info
+        info = InstallationInfo().get_nodes_info(cluster.nodes)
+        actual_node = info[0]
+
+        node_schema = self.get_model_schema(models.Node)
+
+        # Removing of not required fields
+        remove_fields = (
+            'ip', 'uuid', 'agent_checksum', 'hostname', 'timestamp',
+            'replaced_provisioning_info', 'replaced_deployment_info',
+            'mac',
+            # Related tables
+            'clusters', 'cluster_changes',
+            'nodegroups', 'ip_addrs', 'node_nic_interfaces',
+            'node_bond_interfaces', 'network_groups'
+        )
+        for field in remove_fields:
+            node_schema.pop(field)
+
+        # Renaming fields for matching
+        rename_fields = (
+            ('os_platform', 'os'),
+        )
+
+        for name_from, name_to in rename_fields:
+            node_schema.pop(name_from)
+            node_schema[name_to] = None
+
+        # If test failed here it means, that you have added properties
+        # to node and they are not exported into statistics.
+        # If you don't know what to do, contact fuel-stats team please.
+        for key in six.iterkeys(node_schema):
+            self.assertIn(key, actual_node)
+
+    def test_white_list_unique_names(self):
+        white_list_attrs = (
+            'attributes_white_list',
+            'vmware_attributes_white_list',
+            'plugin_info_white_list',
+            'node_info_white_list'
+        )
+        for white_list_attr in white_list_attrs:
+            white_list = getattr(InstallationInfo, white_list_attr)
+            names = set(rule.map_to_name for rule in white_list)
+            self.assertEqual(len(white_list), len(names))

@@ -182,6 +182,38 @@ class InstallationInfo(object):
         WhiteListRule(('tasks',), 'tasks', None),
     )
 
+    node_info_white_list = (
+        # ((path, to, property), 'map_to_name', transform_function)
+        WhiteListRule(('id',), 'id', None),
+        WhiteListRule(('group_id',), 'group_id', None),
+        WhiteListRule(('cluster_id',), 'cluster_id', None),
+
+        WhiteListRule(('name',), 'name', None),
+        WhiteListRule(('labels',), 'labels', None),
+        WhiteListRule(('roles',), 'roles', None),
+        WhiteListRule(('primary_roles',), 'primary_roles', None),
+        WhiteListRule(('os_platform',), 'os', None),
+        WhiteListRule(('manufacturer',), 'manufacturer', None),
+        WhiteListRule(('platform_name',), 'platform_name', None),
+        WhiteListRule(('kernel_params',), 'kernel_params', None),
+        WhiteListRule(('extensions',), 'extensions', None),
+        WhiteListRule(('attributes',), 'attributes', None),
+
+        WhiteListRule(('status',), 'status', None),
+        WhiteListRule(('online',), 'online', None),
+        WhiteListRule(('error_type',), 'error_type', None),
+        WhiteListRule(('error_msg',), 'error_msg', None),
+        WhiteListRule(('progress',), 'progress', None),
+
+        WhiteListRule(('pending_addition',), 'pending_addition', None),
+        WhiteListRule(('pending_deletion',), 'pending_deletion', None),
+        WhiteListRule(('pending_roles',), 'pending_roles', None),
+
+        WhiteListRule(('meta',), 'meta', None),
+        WhiteListRule(('network_template',), 'network_template', None),
+        WhiteListRule(('vms_conf',), 'vms_conf', None),
+    )
+
     def fuel_release_info(self):
         return settings.VERSION
 
@@ -304,29 +336,13 @@ class InstallationInfo(object):
     def get_nodes_info(self, nodes):
         nodes_info = []
         for node in nodes:
-            node_info = {
-                'id': node.id,
-                'group_id': node.group_id,
-                'roles': node.roles,
-                'os': node.os_platform,
+            node_info = self.get_attributes(node, self.node_info_white_list)
 
-                'status': node.status,
-                'error_type': node.error_type,
-                'online': node.online,
-
-                'manufacturer': node.manufacturer,
-                'platform_name': node.platform_name,
-                'meta': self.get_node_meta(node),
-
-                'pending_addition': node.pending_addition,
-                'pending_deletion': node.pending_deletion,
-                'pending_roles': node.pending_roles,
-
-                'nic_interfaces':
-                self.get_node_intefaces_info(node.nic_interfaces, bond=False),
-                'bond_interfaces':
-                self.get_node_intefaces_info(node.bond_interfaces, bond=True),
-            }
+            node_info['meta'] = self.get_node_meta(node)
+            node_info['nic_interfaces'] = self.get_node_intefaces_info(
+                node.nic_interfaces, bond=False)
+            node_info['bond_interfaces'] = self.get_node_intefaces_info(
+                node.bond_interfaces, bond=True)
             nodes_info.append(node_info)
         return nodes_info
 

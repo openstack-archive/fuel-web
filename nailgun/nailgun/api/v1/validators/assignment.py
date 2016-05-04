@@ -135,8 +135,8 @@ class NodeAssignmentValidator(AssignmentValidator):
                     conflicting_roles = set(conflicting_roles)
                 conflicting_roles &= other_roles
                 if conflicting_roles:
-                    raise errors.InvalidData(
-                        u'Role "{0}" in conflict with role {1}'
+                    raise errors.InvalidNodeRole(
+                        "Role '{0}' in conflict with role '{1}'."
                         .format(role, ", ".join(conflicting_roles)),
                         log_message=True
                     )
@@ -144,13 +144,16 @@ class NodeAssignmentValidator(AssignmentValidator):
     @classmethod
     def check_roles_requirement(cls, roles, roles_metadata, models):
         for role in roles:
-            if "depends" in roles_metadata[role]:
-                depends = roles_metadata[role]['depends']
+            if "restrictions" in roles_metadata[role]:
+                depends = roles_metadata[role]['restrictions']
                 for condition in depends:
                     expression = condition['condition']
 
-                    if not Expression(expression, models).evaluate():
-                        raise errors.InvalidData(condition['warning'])
+                    if Expression(expression, models).evaluate():
+                        message = condition.get('message', expression)
+                        raise errors.InvalidNodeRole(
+                            "Role '{}' restrictions mismatch: {}"
+                            .format(role, message))
 
 
 class NodeUnassignmentValidator(AssignmentValidator):

@@ -1793,12 +1793,24 @@ class TestHandlers(BaseIntegrationTest):
                 {'roles': ['mongo'], 'pending_addition': True},
             ])
 
+        objects.Cluster.patch_attributes(
+            cluster,
+            {
+                'editable': {
+                    'additional_components': {
+                        'ceilometer': {'value': True}
+                    }
+                }
+            }
+        )
+
         self.app.put(
             reverse(
                 'ClusterChangesHandler',
                 kwargs={'cluster_id': cluster['id']}
             ),
-            headers=self.default_headers)
+            headers=self.default_headers
+        )
 
         self.assertEqual(check_mongo.call_count, 1)
 

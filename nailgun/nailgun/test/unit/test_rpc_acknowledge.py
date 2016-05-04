@@ -16,6 +16,8 @@
 
 import mock
 
+from psycopg2.extensions import TransactionRollbackError
+
 from nailgun.errors import errors
 from nailgun.rpc import receiverd
 from nailgun.test import base
@@ -48,6 +50,12 @@ class TestRpcAcknowledge(base.BaseTestCase):
         self.consumer.consume_msg(self.body, self.msg)
         self.assertEqual(self.receiver.test.call_count, 1)
         self.assertEqual(self.msg.ack.call_count, 1)
+
+    def test_message_requeued_if_deadlock(self):
+        self.receiver.test.side_effect = TransactionRollbackError
+        self.consumer.consume_msg(self.body, self.msg)
+        self.assertFalse(self.msg.ack.called)
+        self.assertEqual(self.msg.requeue.call_count, 1)
 
     def test_message_requeued_in_case_of_interrupt(self):
         self.receiver.test.side_effect = KeyboardInterrupt

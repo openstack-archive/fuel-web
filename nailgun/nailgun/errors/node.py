@@ -25,6 +25,10 @@ class NodeDiscoveringException(NailgunException):
     """Base node discovering exception"""
 
 
+class InvalidNodeRole(NailgunException):
+    message = "Node has incompatible role"
+
+
 class InvalidInterfacesInfo(NodeDiscoveringException):
     message = "Invalid interfaces info"
 

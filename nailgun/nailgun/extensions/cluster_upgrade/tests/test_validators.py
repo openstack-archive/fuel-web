@@ -187,7 +187,7 @@ class TestNodeReassignNoReinstallValidator(tests_base.BaseCloneClusterTest):
             "reprovision": False,
             "roles": ['controller', 'compute'],
         })
-        msg = '^Role "controller" in conflict with role compute$'
+        msg = "^Role 'controller' in conflict with role 'compute'"
         with self.assertRaisesRegexp(errors.InvalidData, msg):
             self.validator.validate(data, self.dst_cluster)
 

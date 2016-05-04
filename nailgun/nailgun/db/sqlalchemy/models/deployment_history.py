@@ -29,6 +29,8 @@ class DeploymentHistory(Base):
     __table_args__ = (
         sa.Index('deployment_history_task_id_and_status',
                  'task_id', 'status'),
+        sa.Index('deployment_history_task_name_status_idx',
+                 'deployment_graph_task_name', 'status'),
         sa.UniqueConstraint(
             'task_id',
             'node_id',

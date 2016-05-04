@@ -12,22 +12,36 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Fuel 10.0
+"""Fuel 9.0.1
 
-Revision ID: c6edea552f1e
-Revises: 675105097a69
-Create Date: 2016-04-08 15:20:43.989472
+Revision ID: 675105097a69
+Revises: 11a9adc6d36a
+Create Date: 2016-04-28 22:23:40.895589
 
 """
 
+from alembic import op
+
+
 # revision identifiers, used by Alembic.
-revision = 'c6edea552f1e'
-down_revision = '675105097a69'
+revision = '675105097a69'
+down_revision = '11a9adc6d36a'
 
 
 def upgrade():
-    pass
+    upgrade_deployment_history()
 
 
 def downgrade():
-    pass
+    downgrade_deployment_history()
+
+
+def upgrade_deployment_history():
+    op.create_index('deployment_history_task_name_status_idx',
+                    'deployment_history',
+                    ['deployment_graph_task_name', 'status'])
+
+
+def downgrade_deployment_history():
+    op.drop_index('deployment_history_task_name_status_idx',
+                  'deployment_history')

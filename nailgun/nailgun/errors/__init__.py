@@ -58,6 +58,7 @@ default_messages = {
                                "to proceeding further"),
     "SerializerNotSupported": ("Serialization of the task is not supported "
                                "because of unknown type"),
+    "InvalidNodeRole": "Node has incompatible role",
 
     # mongo errors
     "ExtMongoCheckerError": "Mongo nodes shouldn`t be used with external mongo",

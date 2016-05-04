@@ -37,6 +37,7 @@ class BaseGraphTasksTests(BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['test-controller'], 'pending_addition': True},
             ])
+        self.cluster.release.roles_metadata.setdefault('test-controller', {})
 
     def get_correct_tasks(self):
         yaml_tasks = """

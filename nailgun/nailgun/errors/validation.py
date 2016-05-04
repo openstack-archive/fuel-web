@@ -35,3 +35,7 @@ class JsonDecodeError(InvalidData):
 
 class JsonValidationError(InvalidData):
     message = "JSON data is not valid"
+
+
+class InvalidNodeRole(InvalidData):
+    message = "Node has incompatible role"

@@ -22,12 +22,11 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 import traceback
 
-import six
-
+import amqp.exceptions as amqp_exceptions
 from kombu import Connection
 from kombu.mixins import ConsumerMixin
-
-import amqp.exceptions as amqp_exceptions
+from psycopg2.extensions import TransactionRollbackError
+import six
 
 from nailgun.db import db
 from nailgun.errors import errors
@@ -58,6 +57,9 @@ class RPCConsumer(ConsumerMixin):
         except errors.CannotFindTask as e:
             logger.warn(str(e))
             msg.ack()
+        except TransactionRollbackError:
+            logger.error("Deadlock on message processing")
+            msg.requeue()
         except Exception:
             logger.error(traceback.format_exc())
             msg.ack()

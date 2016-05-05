@@ -14,13 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
 from distutils.version import StrictVersion
 import itertools
 
 from nailgun import consts
 from nailgun.logger import logger
 from nailgun.orchestrator.orchestrator_graph import GraphSolver
+
 
 TASK_START_TEMPLATE = '{0}_start'
 TASK_END_TEMPLATE = '{0}_end'
@@ -86,12 +86,10 @@ def _get_group_end(group):
     }
 
 
-def _join_task_to_group(task, groups):
+def _join_task_to_group(task, depends):
     task['version'] = consts.TASK_CROSS_DEPENDENCY
     # add only depends to start, because depends to end already added
-    task['cross_depends'] = [
-        {'name': TASK_START_TEMPLATE.format(g), 'role': 'self'} for g in groups
-    ]
+    task['cross_depends'] = depends
     return task
 
 
@@ -105,8 +103,23 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, role_resolver):
     min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
 
     groups = {}
-    sync_points = GraphSolver()
     legacy_tasks = []
+    #  Sync points generated as a separate graph
+    sync_points = GraphSolver()
+    #  Full role-based graph to detect whether a task should be in a deployment
+    #  group or in pre/post stage.
+    role_based_graph = GraphSolver(tasks=deployment_tasks)
+    pre_deployment_graph = post_deployment_graph = GraphSolver()
+
+    role_based_graph.check()
+    if 'pre_deployment_end' in role_based_graph.node:
+        pre_deployment_graph = role_based_graph.find_subgraph(
+            start='pre_deployment_start', end='pre_deployment_end'
+        )
+    if 'post_deployment_start' in role_based_graph.node:
+        post_deployment_graph = role_based_graph.find_subgraph(
+            start='post_deployment_start', end='post_deployment_end'
+        )
     for task in deployment_tasks:
         task_type = task.get('type')
         task_version = StrictVersion(task.get('version', '0.0.0'))
@@ -116,12 +129,15 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, role_resolver):
             sync_points.add_task(task)
         else:
             task = task.copy()
-            required_for = copy.copy(task.get('required_for', []))
-            required_for.extend(
-                TASK_END_TEMPLATE.format(x)
-                for x in role_resolver.get_all_roles(_get_role(task))
-            )
-            task['required_for'] = required_for
+            required_for = set(task.get('required_for', []))
+            if task['id'] in pre_deployment_graph.node:
+                required_for.add(TASK_END_TEMPLATE.format('pre_deployment'))
+            elif task['id'] in post_deployment_graph.node:
+                required_for.add(TASK_END_TEMPLATE.format('post_deployment'))
+            else:
+                for role in role_resolver.get_all_roles(_get_role(task)):
+                    required_for.add(TASK_END_TEMPLATE.format(role))
+            task['required_for'] = list(required_for)
             if task_version < min_task_version:
                 legacy_tasks.append(task)
                 continue
@@ -139,10 +155,23 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, role_resolver):
 
     # put legacy tasks into bubble
     for task in legacy_tasks:
-        logger.warning("Added cross_depends for legacy task: %s", task['id'])
-        yield _join_task_to_group(
-            task, role_resolver.get_all_roles(_get_role(task))
-        )
+        if task['id'] in pre_deployment_graph.node:
+            logger.info(
+                "Binding legacy task to pre_deployment stage: %s", task['id']
+            )
+            task_depends = [{'name': 'pre_deployment_start', 'role': None}]
+        elif task['id'] in post_deployment_graph.node:
+            logger.info(
+                "Binding legacy task to post_deployment stage: %s", task['id'])
+            task_depends = [{'name': 'post_deployment_start', 'role': None}]
+        else:
+            logger.info("Added cross_depends for legacy task: %s", task['id'])
+            task_depends = [
+                {'name': TASK_START_TEMPLATE.format(g), 'role': 'self'}
+                for g in role_resolver.get_all_roles(_get_role(task))
+            ]
+
+        yield _join_task_to_group(task, task_depends)
 
     if not legacy_plugin_tasks:
         return

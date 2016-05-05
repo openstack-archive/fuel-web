@@ -34,6 +34,7 @@ from nailgun.statistics.fuel_statistics.tasks_params_white_lists \
 tasks_names_actions_groups_mapping = {
     consts.TASK_NAMES.deploy: "cluster_changes",
     consts.TASK_NAMES.deployment: "cluster_changes",
+    consts.TASK_NAMES.dry_run_deployment: "cluster_changes",
     consts.TASK_NAMES.provision: "cluster_changes",
     consts.TASK_NAMES.node_deletion: "cluster_changes",
     consts.TASK_NAMES.update: "cluster_changes",

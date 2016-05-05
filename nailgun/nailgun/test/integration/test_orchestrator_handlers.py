@@ -213,8 +213,7 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
 
 class TestSelectedNodesAction(BaseSelectedNodesTest):
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_start_provisioning_on_selected_nodes(self, mcast):
         action_url = self.make_action_url(
             "ProvisionSelectedNodes",
@@ -242,8 +241,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_start_deployment_on_selected_nodes(self, mcast):
         controller_nodes = [
             n for n in self.cluster.nodes
@@ -260,9 +258,28 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.check_deployment_call_made(self.node_uids, mcast)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @mock_rpc(pass_mock=True)
+    @patch("objects.Release.is_lcm_supported")
     @patch('nailgun.task.task.rpc.cast')
-    def test_start_deployment_on_selected_nodes_with_tasks(self, mcast):
+    def test_start_dry_run_deployment_on_selected_nodes(self, _, mcast, __):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+
+        self.emulate_nodes_provisioning(controller_nodes)
+
+        deploy_action_url = reverse(
+            "DeploySelectedNodes",
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_query(nodes=[n.uid for n in controller_nodes], dry_run='1')
+
+        self.send_put(deploy_action_url)
+        self.assertTrue(mcast.call_args[0][1]['args']['dry_run'])
+
+    @mock_rpc(pass_mock=True)
+    @patch('nailgun.task.task.rpc.cast')
+    def test_start_deployment_on_selected_nodes_with_tasks(self, _, mcast):
         controller_nodes = [
             n for n in self.cluster.nodes
             if "controller" in n.roles
@@ -345,8 +362,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             }
         )
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deployment_of_node_is_forbidden(self, mcast):
         # cluster is in ha mode so for the sanity of the check
         # lets operate on non-controller node
@@ -392,8 +408,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             "[{0}] marked for deletion".format(marked_for_deletion.id),
             resp.body)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deployment_of_node_no_deployment_tasks(self, mcast):
         controller_nodes = [
             n for n in self.cluster.nodes

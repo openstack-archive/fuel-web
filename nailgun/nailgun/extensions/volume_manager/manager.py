@@ -188,6 +188,7 @@ class DisksFormatConvertor(object):
                 "type": "disk",
                 "id": "sda",
                 "size": 953869,
+                "bootable": True,
                 "volumes": [
                     {
                         "mount": "/boot",
@@ -210,6 +211,7 @@ class DisksFormatConvertor(object):
             {
                 "id": "sda",
                 "size": 953869,
+                "bootable": True,
                 "volumes": [
                     {
                         "name": "os",
@@ -225,6 +227,7 @@ class DisksFormatConvertor(object):
     def format_disks_to_full(cls, node, disks):
         """Convert disks from simple format to full format."""
         volume_manager = VolumeManager(node)
+        volume_manager.update_bootable_flags(disks)
         for disk in disks:
             for volume in disk['volumes']:
                 volume_manager.set_volume_size(disk['id'],
@@ -258,6 +261,7 @@ class DisksFormatConvertor(object):
                 'size': size,
                 'volumes': cls.serialize_volumes(disk['volumes']),
                 'extra': disk['extra'],
+                'bootable': disk['bootable']
             }
 
             disks_in_simple_format.append(disk_simple)
@@ -342,7 +346,7 @@ class Disk(object):
 
     def __init__(self, volumes, generator_method, disk_id, name,
                  size, boot_is_raid=True, possible_pvs_count=0,
-                 disk_extra=None):
+                 disk_extra=None, bootable=False):
         """Create disk.
 
         :param volumes: volumes which need to allocate on disk
@@ -354,6 +358,7 @@ class Disk(object):
             equal to 'raid' else 'partition'
         :param possible_pvs_count: used for lvm pool calculation
             size of lvm pool = possible_pvs_count * lvm meta size
+        :param bootable: if True system will boot from this disk
         """
         self.call_generator = generator_method
         self.id = disk_id
@@ -363,6 +368,7 @@ class Disk(object):
         self.lvm_meta_size = self.call_generator('calc_lvm_meta_size')
         self.max_lvm_meta_pool_size = self.lvm_meta_size * possible_pvs_count
         self.free_space = self.size
+        self.bootable = bootable
         self.set_volumes(volumes)
 
         # For determination type of boot
@@ -567,7 +573,8 @@ class Disk(object):
             'type': 'disk',
             'size': self.size,
             'volumes': self.volumes,
-            'free_space': self.free_space
+            'free_space': self.free_space,
+            'bootable': self.bootable
         }
 
     def __repr__(self):
@@ -610,7 +617,8 @@ class VolumeManager(object):
             disk_id = existing_disk[0]['id'] if existing_disk else d["disk"]
             disk_volumes = existing_disk[0].get(
                 'volumes', []) if existing_disk else []
-
+            bootable_flag = existing_disk[0].get(
+                'bootable', False) if existing_disk else False
             disk = Disk(
                 disk_volumes,
                 self.call_generator,
@@ -620,7 +628,8 @@ class VolumeManager(object):
                 boot_is_raid=boot_is_raid,
                 # Count of possible PVs equal to count of allowed VGs
                 possible_pvs_count=len(only_vg(self.allowed_volumes)),
-                disk_extra=d.get("extra", []))
+                disk_extra=d.get("extra", []),
+                bootable=bootable_flag)
 
             self.disks.append(disk)
 
@@ -779,6 +788,21 @@ class VolumeManager(object):
 
         self.__logger('Updated volume flags %s' % self.volumes)
         return self.volumes
+
+    def update_bootable_flags(self, disks):
+        """Update value of bootable flag for specified disk"""
+        for disk in disks:
+            disk_to_update = next(d for d in self.disks if d.id == disk['id'])
+            if disk_to_update.bootable == disk.get('bootable', False):
+                continue
+            self.__logger('Update bootable flag for disk=%s on value %s' %
+                          (disk['id'], disk.get('bootable', False)))
+            # Update disk object in self.disks
+            disk_to_update.bootable = disk.get('bootable', False)
+            # Update disk record in self.volumes
+            disk_dict = next(v for v in self.volumes
+                             if v.get('id') == disk['id'])
+            disk_dict['bootable'] = disk_to_update.bootable
 
     def get_space_type(self, volume_name):
         """Get type of space represente on disk as volume."""

@@ -213,6 +213,31 @@ class TestTaskManagers(BaseIntegrationTest):
     @mock.patch('objects.Cluster.get_deployment_tasks')
     @mock.patch('objects.Cluster.is_propagate_task_deploy_enabled')
     def test_adaptation_legacy_tasks(self, propagate_mock, tasks_mock, _):
+        stages_yaml = """
+        - id: deploy_start
+          type: stage
+          requires: [pre_deployment_end]
+
+        - id: deploy_end
+          type: stage
+          requires: [deploy_start]
+
+        - id: pre_deployment_start
+          type: stage
+
+        - id: pre_deployment_end
+          type: stage
+          requires: [pre_deployment_start]
+
+        - id: post_deployment_start
+          type: stage
+          requires: [deploy_end]
+
+        - id: post_deployment_end
+          type: stage
+          requires: [post_deployment_start]
+        """
+        stages = yaml.load(stages_yaml)
         tasks_mock.return_value = [
             {
                 'id': 'task', 'parameters': {}, 'type': 'puppet',
@@ -222,6 +247,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 'id': 'controller', 'type': 'group', 'roles': ['controller']
             }
         ]
+        tasks_mock.return_value.extend(stages)
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "pending_roles": ['controller']},

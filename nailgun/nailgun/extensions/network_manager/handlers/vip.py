@@ -30,6 +30,12 @@ class ClusterVIPHandler(base.SingleHandler):
 
     def _get_vip_from_cluster_or_http_error(self, cluster_id, ip_addr_id):
         obj = self.get_object_or_404(self.single, ip_addr_id)
+        if obj.network_data.group_id is None:
+            raise self.http(
+                400,
+                "IP address with (ID={0}) belongs to admin network and "
+                "cannot be a VIP".format(ip_addr_id)
+            )
         if cluster_id != obj.network_data.nodegroup.cluster_id:
             raise self.http(
                 404,
@@ -45,6 +51,7 @@ class ClusterVIPHandler(base.SingleHandler):
         else:
             return obj
 
+    @content
     def GET(self, cluster_id, ip_addr_id):
         """Get VIP record.
 

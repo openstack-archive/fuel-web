@@ -13,7 +13,9 @@
 #    under the License.
 
 import alembic
+import sqlalchemy as sa
 
+from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
@@ -38,3 +40,34 @@ class TestDeploymentHistoryMigration(base.BaseAlembicMigrationTest):
         tbl = self.meta.tables['deployment_history']
         self.assertIn('deployment_history_task_name_status_idx',
                       [i.name for i in tbl.indexes])
+
+
+class TestTransactionsNames(base.BaseAlembicMigrationTest):
+    def setUp(self):
+        super(TestTransactionsNames, self).setUp()
+
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'dry_run_deployment',
+                    'status': 'pending'
+                },
+                {
+                    'uuid': 'fake_task_uuid_1',
+                    'name': 'noop_deployment',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_fields_exist(self):
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'].c.name,
+            ])
+        ).fetchall()
+        self.assertItemsEqual(
+            result,
+            [('dry_run_deployment', ), ('noop_deployment', )])

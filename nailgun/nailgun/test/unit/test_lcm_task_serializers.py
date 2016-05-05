@@ -175,7 +175,8 @@ class TestDefaultTaskSerializer(BaseUnitTest):
                 'data': {
                     'yaql_exp': '$.cluster',
                 },
-                'path': '/etc/{CLUSTER_ID}/astute.yaml'
+                'path': '/etc/{CLUSTER_ID}/astute.yaml',
+                'noop': False
             },
             'requires': ['deploy_start'],
             'required_for': ['deploy_end'],
@@ -199,7 +200,8 @@ class TestDefaultTaskSerializer(BaseUnitTest):
             'type': 'upload_file',
             'parameters': {
                 'cmd': "cat /etc/astute.yaml | awk '{ print $1 }'",
-                'cwd': '/tmp/'
+                'cwd': '/tmp/',
+                'noop': False
             },
             'fail_on_error': False,
             'required_for': None,

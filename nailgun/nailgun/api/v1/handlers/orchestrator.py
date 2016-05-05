@@ -32,6 +32,7 @@ from nailgun.logger import logger
 
 from nailgun import errors
 from nailgun import objects
+from nailgun import utils
 
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import graph_visualization
@@ -203,6 +204,16 @@ class DeploymentInfo(OrchestratorInfo):
         return objects.Cluster.replace_deployment_info(cluster, data)
 
 
+class DryRunNoopMixin(object):
+    """Provides dry_run and noop parameters."""
+
+    def get_dry_run(self):
+        return utils.parse_bool(web.input(dry_run='0').dry_run)
+
+    def get_noop(self):
+        return utils.parse_bool(web.input(noop='0').noop)
+
+
 class SelectedNodesBase(NodesFilterMixin, BaseHandler):
     """Base class for running task manager on selected nodes."""
 
@@ -211,7 +222,8 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
         nodes = self.get_nodes(cluster)
 
         try:
-            task_manager = self.task_manager(cluster_id=cluster.id)
+            task_manager = self.task_manager(
+                cluster_id=cluster.id)
             task = task_manager.execute(nodes, **kwargs)
         except Exception as exc:
             logger.warn(
@@ -286,7 +298,7 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
                           graph_type=graph_type)
 
 
-class DeploySelectedNodes(BaseDeploySelectedNodes):
+class DeploySelectedNodes(BaseDeploySelectedNodes, DryRunNoopMixin):
     """Handler for deployment selected nodes."""
 
     @content
@@ -299,10 +311,15 @@ class DeploySelectedNodes(BaseDeploySelectedNodes):
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        return self.handle_task(cluster, graph_type=self.get_graph_type())
+        return self.handle_task(
+            cluster=cluster,
+            graph_type=self.get_graph_type(),
+            dry_run=self.get_dry_run(),
+            noop=self.get_noop()
+        )
 
 
-class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
+class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, DryRunNoopMixin):
 
     validator = NodeDeploymentValidator
 
@@ -326,7 +343,10 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
             cluster,
             deployment_tasks=data,
             graph_type=self.get_graph_type(),
-            force=force)
+            force=force,
+            dry_run=self.get_dry_run(),
+            noop=self.get_noop()
+        )
 
 
 class TaskDeployGraph(BaseHandler):

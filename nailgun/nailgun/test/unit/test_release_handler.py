@@ -18,6 +18,7 @@ import mock
 from nailgun import consts
 from oslo_serialization import jsonutils
 
+from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
@@ -66,6 +67,18 @@ class TestHandlers(BaseIntegrationTest):
             "Can't delete release with "
             "clusters assigned"
         )
+
+    def test_release_deployment_graph_is_deleting(self):
+        release = self.env.create_release()
+        graphs_before_deletion = self.db.query(DeploymentGraph).count()
+        resp = self.app.delete(
+            reverse('ReleaseHandler',
+                    kwargs={'obj_id': release.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 204)
+        graphs_after_deletion = self.db.query(DeploymentGraph).count()
+        self.assertEqual(1, graphs_before_deletion - graphs_after_deletion)
 
     @mock.patch.dict(settings.VERSION, {'feature_groups': []})
     def test_release_put_deployable(self):

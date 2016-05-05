@@ -39,10 +39,10 @@ class BaseIPAddrTest(BaseIntegrationTest):
             nodes_kwargs=[{'roles': ['controller']}]
         )
 
-        net_manager = objects.Cluster.get_network_manager(self.cluster)
-        net_manager.assign_vips_for_net_groups(self.cluster)
+        self.net_manager = objects.Cluster.get_network_manager(self.cluster)
+        self.net_manager.assign_vips_for_net_groups(self.cluster)
 
-        self.management_net = net_manager.get_network_by_netname(
+        self.management_net = self.net_manager.get_network_by_netname(
             consts.NETWORKS.management, self.cluster.network_groups
         )
 
@@ -589,6 +589,34 @@ class TestIPAddrHandler(BaseIPAddrTest):
 
     handler_name = 'ClusterVIPHandler'
 
+    def test_get_vip_fail_if_ip_from_generic_admin_net(self):
+        generic_admin_id = next(
+            net for net in
+            self.net_manager.get_admin_networks(cluster_nodegroup_info=True)
+            if net['node_group_name'] is None
+        )['id']
+
+        ip_addr_db = IPAddr(ip_addr='127.0.0.1',
+                            network=generic_admin_id)
+        self.db.add(ip_addr_db)
+        self.db.flush()
+
+        resp = self.app.get(
+            reverse(
+                self.handler_name,
+                kwargs={
+                    'cluster_id': self.cluster['id'],
+                    'ip_addr_id': ip_addr_db.id
+                }
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('belongs to admin network and cannot be a VIP',
+                      resp.json_body['message'])
+
     def test_get_ip_addr(self):
         resp = self.app.get(
             reverse(
@@ -645,6 +673,8 @@ class TestIPAddrHandler(BaseIPAddrTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
+        self.assertIn("has no VIP metadata attached",
+                      resp.json_body['message'])
 
     def test_update_ip_addr(self):
         update_data = {

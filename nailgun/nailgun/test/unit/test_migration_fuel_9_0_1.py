@@ -83,3 +83,34 @@ class TestClusterReplacedDeploymentInfo(base.BaseAlembicMigrationTest):
         columns = [clusters_table.c.replaced_deployment_info]
         cluster = db.execute(sa.select(columns)).fetchone()
         self.assertEqual(cluster.replaced_deployment_info, '[]')
+
+
+class TestTransactionsNames(base.BaseAlembicMigrationTest):
+    def setUp(self):
+        super(TestTransactionsNames, self).setUp()
+
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'dry_run_deployment',
+                    'status': 'pending'
+                },
+                {
+                    'uuid': 'fake_task_uuid_1',
+                    'name': 'noop_deployment',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_fields_exist(self):
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'].c.name,
+            ])
+        ).fetchall()
+        self.assertItemsEqual(
+            result,
+            [('dry_run_deployment', ), ('noop_deployment', )])

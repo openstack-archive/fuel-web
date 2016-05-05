@@ -59,6 +59,7 @@ class TestTaskManagers(BaseIntegrationTest):
     def set_history_ready(self):
         objects.DeploymentHistoryCollection.all().update(
             {'status': consts.HISTORY_TASK_STATUSES.ready})
+        nailgun.db.db().commit()
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_deployment_task_managers(self):
@@ -1441,6 +1442,8 @@ class TestTaskManagers(BaseIntegrationTest):
 
         if provision:
             node.status = consts.NODE_STATUSES.provisioned
+        else:
+            node.status = consts.NODE_STATUSES.ready
         state_mock.return_value = [(supertask, 'test1')]
         task = self.env.launch_deployment_selected([node.uid], cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)

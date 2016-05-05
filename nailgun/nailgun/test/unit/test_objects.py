@@ -1453,6 +1453,20 @@ class TestClusterObject(BaseTestCase):
         self.db().refresh(config)
         self.assertFalse(config.is_active)
 
+    def test_get_attributes_with_plugin(self):
+        cluster = self.env.create_cluster(api=False)
+        self.env.create_plugin(
+            name='test_plugin',
+            version='1.0.0',
+            package_version='4.0.0',
+            cluster=cluster,
+            attributes_metadata=self.env.get_default_plugin_env_config(
+                value='{}')
+        )
+        attr = objects.Cluster.get_attributes(cluster, True)
+        plugin_attrs = attr.editable['test_plugin']['metadata']['versions'][0]
+        self.assertEqual('{}', plugin_attrs['plugin_name_text']['value'])
+
 
 class TestClusterObjectVirtRoles(BaseTestCase):
 

@@ -113,6 +113,8 @@ class DeploymentCheckMixin(object):
     deployment_tasks = (
         consts.TASK_NAMES.deploy,
         consts.TASK_NAMES.deployment,
+        consts.TASK_NAMES.dry_run_deployment,
+        consts.TASK_NAMES.noop_deployment,
         consts.TASK_NAMES.provision,
         consts.TASK_NAMES.stop_deployment,
         consts.TASK_NAMES.reset_environment,
@@ -124,7 +126,7 @@ class DeploymentCheckMixin(object):
     def check_no_running_deployment(cls, cluster):
         tasks_q = objects.TaskCollection.get_by_name_and_cluster(
             cluster, cls.deployment_tasks).filter_by(
-                status=consts.TASK_STATUSES.running)
+            status=consts.TASK_STATUSES.running)
 
         tasks_exists = db.query(tasks_q.exists()).scalar()
         if tasks_exists:
@@ -160,7 +162,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
     def _remove_obsolete_tasks(self):
         cluster_tasks = objects.TaskCollection.get_cluster_tasks(
-            cluster_id=self.cluster.id)
+            cluster_id=self.cluster.id).all()
 
         current_tasks = objects.TaskCollection.filter_by(
             cluster_tasks,
@@ -228,7 +230,8 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
             nodes_to_provision_deploy=nodes_ids_to_deploy,
             deployment_tasks=deployment_tasks,
             force=force,
-            graph_type=graph_type
+            graph_type=graph_type,
+            **kwargs
         )
 
         return supertask
@@ -270,7 +273,7 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
     def _execute_async_content(self, supertask, deployment_tasks=None,
                                nodes_to_provision_deploy=None, force=False,
-                               graph_type=None):
+                               graph_type=None, **kwargs):
         """Processes supertask async in mule
 
         :param supertask: SqlAlchemy task object
@@ -371,23 +374,35 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                              " ".join((objects.Node.get_node_fqdn(n)
                                        for n in affected_nodes)))
 
+            deployment_task_provider = self.get_deployment_task()
+
+            dry_run = kwargs.get('dry_run', False)
+            noop = kwargs.get('noop', False)
+
+            if dry_run:
+                transaction_name = consts.TASK_NAMES.dry_run_deployment
+            elif noop:
+                transaction_name = consts.TASK_NAMES.noop_deployment
+            else:
+                transaction_name = consts.TASK_NAMES.deployment
+
             task_deployment = supertask.create_subtask(
-                name=consts.TASK_NAMES.deployment,
+                name=transaction_name,
                 status=consts.TASK_STATUSES.pending
             )
-
             # we should have task committed for processing in other threads
             db().commit()
             deployment_message = self._call_silently(
                 task_deployment,
-                self.get_deployment_task(),
+                deployment_task_provider,
                 nodes_to_deploy,
                 affected_nodes=affected_nodes,
                 deployment_tasks=deployment_tasks,
                 method_name='message',
                 reexecutable_filter=consts.TASKS_TO_RERUN_ON_DEPLOY_CHANGES,
                 graph_type=graph_type,
-                force=force
+                force=force,
+                **kwargs
             )
 
             db().commit()
@@ -612,14 +627,17 @@ class DeploymentTaskManager(TaskManager):
         return tasks.DeploymentTask
 
     def execute(self, nodes_to_deployment, deployment_tasks=None,
-                graph_type=None, force=False, **kwargs):
+                graph_type=None, force=False, noop=False, dry_run=False,
+                **kwargs):
         deployment_tasks = deployment_tasks or []
 
         logger.debug('Nodes to deploy: {0}'.format(
             ' '.join([objects.Node.get_node_fqdn(n)
                       for n in nodes_to_deployment])))
+
         task_deployment = Task(
-            name=consts.TASK_NAMES.deployment, cluster=self.cluster,
+            name=consts.TASK_NAMES.deployment,
+            cluster=self.cluster,
             status=consts.TASK_STATUSES.pending
         )
         db().add(task_deployment)
@@ -631,7 +649,9 @@ class DeploymentTaskManager(TaskManager):
             deployment_tasks=deployment_tasks,
             method_name='message',
             graph_type=graph_type,
-            force=force)
+            force=force,
+            noop=noop,
+            dry_run=dry_run)
 
         db().refresh(task_deployment)
 
@@ -681,11 +701,9 @@ class StopDeploymentTaskManager(TaskManager):
                 db().delete(stop_running)
                 db().commit()
 
-        deployment_task = objects.TaskCollection.filter_by(
-            None,
-            cluster_id=self.cluster.id,
-            name=consts.TASK_NAMES.deployment,
-        )
+        deployment_task = objects.TaskCollection.get_cluster_tasks(
+            self.cluster.id, names=(consts.TASK_NAMES.noop_deployment,
+                                    consts.TASK_NAMES.deployment))
         deployment_task = deployment_task.filter(
             Task.status != consts.TASK_STATUSES.pending
         )
@@ -771,6 +789,8 @@ class ResetEnvironmentTaskManager(TaskManager):
             Task.name.in_([
                 consts.TASK_NAMES.deploy,
                 consts.TASK_NAMES.deployment,
+                consts.TASK_NAMES.dry_run_deployment,
+                consts.TASK_NAMES.noop_deployment,
                 consts.TASK_NAMES.stop_deployment
             ])
         )
@@ -1016,7 +1036,7 @@ class ClusterDeletionManager(TaskManager):
     def execute(self, **kwargs):
         current_tasks = objects.TaskCollection.get_cluster_tasks(
             self.cluster.id, names=(consts.TASK_NAMES.cluster_deletion,)
-        )
+        ).all()
 
         # locking cluster
         objects.Cluster.get_by_uid(
@@ -1319,6 +1339,8 @@ class OpenstackConfigTaskManager(TaskManager):
 
     def execute(self, filters, force=False, graph_type=None, **kwargs):
         self.check_running_task(consts.TASK_NAMES.deployment)
+        self.check_running_task(consts.TASK_NAMES.dry_run_deployment)
+        self.check_running_task(consts.TASK_NAMES.noop_deployment)
 
         task = Task(name=consts.TASK_NAMES.deployment,
                     cluster=self.cluster,

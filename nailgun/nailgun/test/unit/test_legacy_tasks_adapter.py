@@ -15,11 +15,15 @@
 #    under the License.
 
 import mock
+import yaml
 
 from nailgun import consts
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 
 from nailgun.test.base import BaseUnitTest
+
+with open('../../fixtures/deployment_tasks.yaml') as f:
+    base_deployment_tasks = yaml.load(f)
 
 
 class TestLegacyTasksAdapter(BaseUnitTest):
@@ -47,6 +51,18 @@ class TestLegacyTasksAdapter(BaseUnitTest):
 
     def test_legacy_deployment_task_adaptation(self):
         tasks = [
+            {'id': 'task_pre', 'roles': 'group1',
+             'requires': ['pre_deployment_start'],
+             'required_for': ['pre_deployment_end'],
+             },
+            {'id': 'task_pre2', 'roles': 'group1',
+             'requires': ['task_pre'],
+             'required_for': ['pre_deployment_end'],
+             },
+            {'id': 'task_post', 'roles': 'group1',
+             'requires': ['post_deployment_start'],
+             'required_for': ['post_deployment_end'],
+             },
             {'id': 'task1', 'version': '2.0.0', 'roles': 'group1',
              'type': consts.ORCHESTRATOR_TASK_TYPES.puppet},
             {'id': 'task2', 'roles': ['group2'],
@@ -61,6 +77,7 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             {'id': 'stage1', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage},
             {'id': 'stage2', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
         ]
+        tasks.extend(base_deployment_tasks)
         self.role_resolver.get_all_roles.side_effect = lambda x: set(x)
         new_tasks = list(adapt_legacy_tasks(tasks, [], self.role_resolver))
 
@@ -138,6 +155,46 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             next(x for x in new_tasks if x['id'] == 'task2')
         )
 
+        self.assertEqual(
+            {
+                'roles': 'group1',
+                'id': 'task_pre2',
+                'version': '2.0.0',
+                'required_for': ['pre_deployment_end'],
+                'requires': ['task_pre'],
+                'cross_depends': [
+                    {'role': 'self', 'name': 'pre_deployment_start'}
+                ]
+            },
+            next(x for x in new_tasks if x['id'] == 'task_pre2')
+        )
+        self.assertEqual(
+            {
+                'roles': 'group1',
+                'id': 'task_pre',
+                'version': '2.0.0',
+                'required_for': ['pre_deployment_end'],
+                'requires': ['pre_deployment_start'],
+                'cross_depends': [
+                    {'role': 'self', 'name': 'pre_deployment_start'}
+                ]
+            },
+            next(x for x in new_tasks if x['id'] == 'task_pre')
+        )
+        self.assertEqual(
+            {
+                'roles': 'group1',
+                'id': 'task_post',
+                'version': '2.0.0',
+                'required_for': ['post_deployment_end'],
+                'requires': ['post_deployment_start'],
+                'cross_depends': [
+                    {'role': 'self', 'name': 'post_deployment_start'}
+                ]
+            },
+            next(x for x in new_tasks if x['id'] == 'task_post')
+        )
+
     def test_legacy_plugin_tasks_adaptation(self):
         tasks = [
             {'id': 'task1', 'version': '2.0.0', 'roles': 'group1',
@@ -158,15 +215,17 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             {'id': 'stage3_end', 'requires': ['stage3_start'],
              'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
         ]
+        tasks.extend(base_deployment_tasks)
 
         legacy_plugin_tasks = [
             {
                 'roles': '*',
                 'stage': 'stage1',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
-                'parameters': {'number': 0}
+                'parameters': {'number': 1}
             },
             {
+
                 'roles': '*',
                 'stage': 'stage1/100',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
@@ -174,9 +233,9 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             },
             {
                 'roles': '*',
-                'stage': 'stage1/10',
+                'stage': 'stage1/-100',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
-                'parameters': {'number': 1}
+                'parameters': {'number': 0}
             },
             {
                 'roles': '*',

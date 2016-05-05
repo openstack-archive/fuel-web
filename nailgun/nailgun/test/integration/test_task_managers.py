@@ -43,6 +43,9 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
 
+with open('../../fixtures/deployment_tasks.yaml') as f:
+    base_deployment_tasks = yaml.load(f)
+
 
 class TestTaskManagers(BaseIntegrationTest):
 
@@ -222,6 +225,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 'id': 'controller', 'type': 'group', 'roles': ['controller']
             }
         ]
+        tasks_mock.return_value.extend(base_deployment_tasks)
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "pending_roles": ['controller']},

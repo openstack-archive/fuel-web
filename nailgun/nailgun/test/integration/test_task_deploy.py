@@ -79,7 +79,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         self.assertEqual("task_deploy", message["method"])
         self.assertItemsEqual(
             ["task_uuid", "deployment_info",
-             "tasks_directory", "tasks_graph"],
+             "tasks_directory", "tasks_graph", "dry_run"],
             message["args"]
         )
 

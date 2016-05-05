@@ -188,6 +188,7 @@ class DisksFormatConvertor(object):
                 "type": "disk",
                 "id": "sda",
                 "size": 953869,
+                "bootable": True,
                 "volumes": [
                     {
                         "mount": "/boot",
@@ -210,6 +211,7 @@ class DisksFormatConvertor(object):
             {
                 "id": "sda",
                 "size": 953869,
+                "bootable": True,
                 "volumes": [
                     {
                         "name": "os",
@@ -225,6 +227,7 @@ class DisksFormatConvertor(object):
     def format_disks_to_full(cls, node, disks):
         """Convert disks from simple format to full format."""
         volume_manager = VolumeManager(node)
+        volume_manager.update_bootable_flags(disks)
         for disk in disks:
             for volume in disk['volumes']:
                 volume_manager.set_volume_size(disk['id'],
@@ -258,6 +261,7 @@ class DisksFormatConvertor(object):
                 'size': size,
                 'volumes': cls.serialize_volumes(disk['volumes']),
                 'extra': disk['extra'],
+                'bootable': disk['bootable']
             }
 
             disks_in_simple_format.append(disk_simple)
@@ -265,10 +269,10 @@ class DisksFormatConvertor(object):
         return disks_in_simple_format
 
     @classmethod
-    def calculate_service_partitions_size(self, volumes):
+    def calculate_service_partitions_size(cls, volumes):
         service_partitions = filter(is_service, volumes)
-        return sum(
-            [partition.get('size', 0) for partition in service_partitions])
+        return sum([partition.get('size', 0)
+                      for partition in service_partitions])
 
     @classmethod
     def serialize_volumes(cls, all_partitions):
@@ -342,7 +346,7 @@ class Disk(object):
 
     def __init__(self, volumes, generator_method, disk_id, name,
                  size, boot_is_raid=True, possible_pvs_count=0,
-                 disk_extra=None):
+                 disk_extra=None, bootable=False):
         """Create disk.
 
         :param volumes: volumes which need to allocate on disk
@@ -354,6 +358,7 @@ class Disk(object):
             equal to 'raid' else 'partition'
         :param possible_pvs_count: used for lvm pool calculation
             size of lvm pool = possible_pvs_count * lvm meta size
+        :param bootable: if True system will boot from this disk
         """
         self.call_generator = generator_method
         self.id = disk_id
@@ -363,6 +368,7 @@ class Disk(object):
         self.lvm_meta_size = self.call_generator('calc_lvm_meta_size')
         self.max_lvm_meta_pool_size = self.lvm_meta_size * possible_pvs_count
         self.free_space = self.size
+        self.bootable = bootable
         self.set_volumes(volumes)
 
         # For determination type of boot
@@ -380,27 +386,42 @@ class Disk(object):
 
     def create_service_partitions(self):
         """Reserve space for service partitions."""
-        self.create_boot_records()
-        self.create_boot_partition()
+        self.create_boot()
         self.create_lvm_meta_pool(self.max_lvm_meta_pool_size)
 
-    def create_boot_partition(self):
+    def create_boot(self):
         """Reserve space for boot partition."""
-        boot_size = self.call_generator('calc_boot_size')
-        partition_type = 'partition'
-        if self.boot_is_raid:
-            partition_type = 'raid'
-
-        existing_boot = filter(
-            lambda volume: volume.get('mount') == '/boot', self.volumes)
-
-        if not existing_boot:
-            self.volumes.append({
-                'type': partition_type,
-                'file_system': 'ext2',
-                'mount': '/boot',
-                'name': 'Boot',
-                'size': self.get_size(boot_size)})
+        boot_partition_size = self.call_generator('calc_boot_size')
+        existing_boot_partition = next(iter(filter(
+            lambda volume: volume.get('mount') == '/boot', self.volumes)),
+            None)
+        boot_records_size = self.call_generator('calc_boot_records_size')
+        existing_boot_record = next(iter(filter(
+            lambda volume: volume.get('type') == 'boot', self.volumes)), None)
+        if existing_boot_record:
+            self.free_space += existing_boot_record['size']
+            self.volumes.remove(existing_boot_record)
+        if self.bootable:
+            partition_type = 'partition'
+            if self.boot_is_raid:
+                partition_type = 'raid'
+            if not existing_boot_partition:
+                self.volumes.append({
+                    'type': partition_type,
+                    'file_system': 'ext2',
+                    'mount': '/boot',
+                    'name': 'Boot',
+                    'size': self.get_size(boot_partition_size)})
+            self.volumes.append(
+                {'type': 'boot', 'size': self.get_size(boot_records_size)})
+        else:
+            if existing_boot_partition:
+                self.free_space += existing_boot_partition['size']
+                self.volumes.remove(existing_boot_partition)
+            self.volumes.append(
+                {'type': 'boot',
+                 'size': self.get_size(boot_records_size + boot_partition_size)}
+            )
 
     def create_boot_records(self):
         """Reserve space for efi, gpt, bios."""
@@ -567,7 +588,8 @@ class Disk(object):
             'type': 'disk',
             'size': self.size,
             'volumes': self.volumes,
-            'free_space': self.free_space
+            'free_space': self.free_space,
+            'bootable': self.bootable,
         }
 
     def __repr__(self):
@@ -602,25 +624,24 @@ class VolumeManager(object):
         self.allowed_volumes = node.get_node_spaces()
 
         self.disks = []
-        disks_count = len(node.disks)
         for d in sorted(node.disks, key=lambda i: i['name']):
-            boot_is_raid = True if disks_count > 1 else False
-
             existing_disk = self.find_existing_disk(d, self.volumes)
             disk_id = existing_disk[0]['id'] if existing_disk else d["disk"]
             disk_volumes = existing_disk[0].get(
                 'volumes', []) if existing_disk else []
-
+            bootable_flag = existing_disk[0].get(
+                'bootable', False) if existing_disk else False
             disk = Disk(
                 disk_volumes,
                 self.call_generator,
                 disk_id,
                 d["name"],
                 byte_to_megabyte(d["size"]),
-                boot_is_raid=boot_is_raid,
+                boot_is_raid=False,
                 # Count of possible PVs equal to count of allowed VGs
                 possible_pvs_count=len(only_vg(self.allowed_volumes)),
-                disk_extra=d.get("extra", []))
+                disk_extra=d.get("extra", []),
+                bootable=bootable_flag)
 
             self.disks.append(disk)
 
@@ -779,6 +800,22 @@ class VolumeManager(object):
 
         self.__logger('Updated volume flags %s' % self.volumes)
         return self.volumes
+
+    def update_bootable_flags(self, disks):
+        """Update value of bootable flag for specified disk"""
+        for disk in disks:
+            disk_to_update = next(d for d in self.disks if d.id == disk['id'])
+            if disk_to_update.bootable != disk.get('bootable', False):
+                self.__logger('Update bootable flag for disk=%s on value %s'
+                              '' % (disk['id'], disk.get('bootable', False)))
+                # Update Disk object
+                disk_to_update.bootable = disk.get('bootable', False)
+                # Update Disk.volumes
+                disk_to_update.create_service_partitions()
+                # Update VolumeManager.volumes
+                for idx, volume in enumerate(self.volumes):
+                    if volume.get('id') == disk_to_update.id:
+                        self.volumes[idx] = disk_to_update.render()
 
     def get_space_type(self, volume_name):
         """Get type of space represente on disk as volume."""
@@ -965,6 +1002,7 @@ class VolumeManager(object):
         self.__logger('Generating volumes info for node')
         self.__logger('Purging volumes info for all node disks')
 
+        self.pick_default_bootable_disk()
         for d in self.disks:
             d.reset()
         self.volumes = [d.render() for d in self.disks]
@@ -1006,6 +1044,33 @@ class VolumeManager(object):
 
         self.__logger('Generated volumes: %s' % self.volumes)
         return self.volumes
+
+    def pick_default_bootable_disk(self):
+
+        self.disks[0].bootable = True
+        # for disk in self.disks:
+        #     # FIXME(agordeev): NVMe drives should be skipped as
+        #     # accessing such drives during the boot typically
+        #     # requires using UEFI which is still not supported
+        #     # by fuel-agent (it always installs BIOS variant of
+        #     # grub)
+        #     # * grub bug (http://savannah.gnu.org/bugs/?41883)
+        #     if 'nvme' in disk['name'] and self._is_boot_disk(disk))
+        #     # NOTE(agordeev) sometimes, there's no separate /boot fs image.
+        #     # Therefore bootloader should be installed into
+        #     # the disk where rootfs image lands. Ironic's case.
+        #     if not suitable_disks and not self._have_boot_partition(disks):
+        #         return [d for d in disks
+        #                 if self._is_root_disk(d) and 'nvme' not in d['name']]
+        #     # FIXME(agordeev): if we have rootfs on fake raid, then /boot
+        # should
+        #     # land on it too. We can't proceed with grub-install otherwise.
+        #     md_boot_disks = [
+        #         disk for disk in self.md_os_disks if disk in suitable_disks]
+        #     if md_boot_disks:
+        #         return md_boot_disks
+        #     else:
+        #         return suitable_disks
 
     @property
     def _all_disks_free_space(self):

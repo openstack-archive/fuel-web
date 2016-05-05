@@ -27,6 +27,7 @@ from nailgun import objects
 from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.extensions.network_manager.manager import NetworkManager
+from nailgun.objects import Task
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -236,6 +237,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
         deployment_msg['args']['tasks_directory'] = {}
         deployment_msg['args']['tasks_graph'] = {}
+        deployment_msg['args']['dry_run'] = False
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -1868,6 +1870,108 @@ class TestHandlers(BaseIntegrationTest):
             [node.uid for node in self.env.nodes],
             [node['uid'] for node in deployment_info]
         )
+
+    @patch('nailgun.task.manager.rpc.cast')
+    def test_noop_run(self, mcast):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            },
+        )
+        for handler in ('ClusterChangesHandler',
+                        'ClusterChangesForceRedeployHandler'):
+            resp = self.app.put(
+                reverse(
+                    handler,
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ) + '?noop=1',
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(
+                mcast.call_args[0][1][0]['args']['dry_run'], False)
+            self.assertEqual(resp.status_code, 202)
+
+            task_uuid = mcast.call_args[0][1][0]['args']['task_uuid']
+            task = Task.get_by_uuid(uuid=task_uuid, fail_if_not_found=True)
+            self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
+            self.assertEqual('noop_deployment', task.name)
+
+    @patch('nailgun.task.manager.rpc.cast')
+    def test_dry_run(self, mcast):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            },
+        )
+        for handler in ('ClusterChangesHandler',
+                        'ClusterChangesForceRedeployHandler'):
+            resp = self.app.put(
+                reverse(
+                    handler,
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ) + '?dry_run=1',
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(resp.status_code, 202)
+            self.assertEqual(
+                mcast.call_args[0][1][0]['args']['dry_run'], True)
+
+            task_uuid = mcast.call_args[0][1][0]['args']['task_uuid']
+            task = Task.get_by_uuid(uuid=task_uuid, fail_if_not_found=True)
+            self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
+            self.assertEqual('dry_run_deployment', task.name)
+
+    def test_noop_and_dry_run_restricted(self):
+        self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {
+                    'roles': ['controller'],
+                    'status': consts.NODE_STATUSES.provisioned
+                }
+            ],
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational
+            }
+        )
+        for handler in ('ClusterChangesHandler',
+                        'ClusterChangesForceRedeployHandler'):
+            resp = self.app.put(
+                reverse(
+                    handler,
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ) + '?dry_run=1&noop=1',
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertIn(
+                u'Noop and dry run modes are not possible simultaneously',
+                resp.json_body['message'])
 
     @patch('nailgun.rpc.cast')
     def test_occurs_error_not_enough_memory_for_hugepages(self, *_):

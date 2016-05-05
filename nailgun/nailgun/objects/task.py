@@ -230,7 +230,7 @@ class Task(NailgunObject):
 
                 Cluster.clear_pending_changes(cluster)
 
-            elif instance.status == consts.CLUSTER_STATUSES.error:
+            elif instance.status == consts.TASK_STATUSES.error:
                 cls.__update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.error, None
                 )
@@ -282,6 +282,18 @@ class Task(NailgunObject):
                 cls.__update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.stopped, None
                 )
+        elif instance.name in (consts.TASK_NAMES.dry_run_deployment,
+                               consts.TASK_NAMES.noop_deployment):
+            for n in cluster.nodes:
+                if n.status == consts.NODE_STATUSES.deploying:
+                    n.status = consts.NODE_STATUSES.ready
+                    n.progress = 100
+
+            cls.__update_cluster_status(
+                cluster,
+                consts.CLUSTER_STATUSES.operational,
+                consts.NODE_STATUSES.ready
+            )
 
     @classmethod
     def _clean_data(cls, data):

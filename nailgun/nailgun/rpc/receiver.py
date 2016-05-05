@@ -281,46 +281,51 @@ class NailgunReceiver(object):
         else:
             db_nodes = []
 
-        # First of all, let's update nodes in database
-        for node_db in db_nodes:
-            node = nodes_by_id.pop(node_db.uid)
-            update_fields = (
-                'error_msg',
-                'error_type',
-                'status',
-                'progress',
-                'online'
-            )
-            for param in update_fields:
-                if param in node:
-                    logger.debug("Updating node %s - set %s to %s",
-                                 node['uid'], param, node[param])
-                    setattr(node_db, param, node[param])
+        task = objects.Task.get_by_uuid(task_uuid)
+        # Dry run deployments should not actually lead to update of
+        # nodes' statuses
+        if task.name != consts.TASK_NAMES.dry_run_deployment:
 
-                    if param == 'progress' and node.get('status') == 'error' \
-                            or node.get('online') is False:
-                        # If failure occurred with node
-                        # it's progress should be 100
-                        node_db.progress = 100
-                        # Setting node error_msg for offline nodes
-                        if node.get('online') is False \
-                                and not node_db.error_msg:
-                            node_db.error_msg = u"Node is offline"
-                        # Notification on particular node failure
-                        notifier.notify(
-                            consts.NOTIFICATION_TOPICS.error,
-                            u"Failed to {0} node '{1}': {2}".format(
-                                consts.TASK_NAMES.deploy,
-                                node_db.name,
-                                node_db.error_msg or "Unknown error"
-                            ),
-                            cluster_id=task.cluster_id,
-                            node_id=node['uid'],
-                            task_uuid=task_uuid
-                        )
-        if nodes_by_id:
-            logger.warning("The following nodes is not found: %s",
-                           ",".join(sorted(nodes_by_id)))
+            # First of all, let's update nodes in database
+            for node_db in db_nodes:
+                node = nodes_by_id.pop(node_db.uid)
+                update_fields = (
+                    'error_msg',
+                    'error_type',
+                    'status',
+                    'progress',
+                    'online'
+                )
+                for param in update_fields:
+                    if param in node:
+                        logger.debug("Updating node %s - set %s to %s",
+                                     node['uid'], param, node[param])
+                        setattr(node_db, param, node[param])
+
+                        if param == 'progress' and node.get('status') == \
+                                'error' or node.get('online') is False:
+                            # If failure occurred with node
+                            # it's progress should be 100
+                            node_db.progress = 100
+                            # Setting node error_msg for offline nodes
+                            if node.get('online') is False \
+                                    and not node_db.error_msg:
+                                node_db.error_msg = u"Node is offline"
+                            # Notification on particular node failure
+                            notifier.notify(
+                                consts.NOTIFICATION_TOPICS.error,
+                                u"Failed to {0} node '{1}': {2}".format(
+                                    consts.TASK_NAMES.deploy,
+                                    node_db.name,
+                                    node_db.error_msg or "Unknown error"
+                                ),
+                                cluster_id=task.cluster_id,
+                                node_id=node['uid'],
+                                task_uuid=task_uuid
+                            )
+            if nodes_by_id:
+                logger.warning("The following nodes are not found: %s",
+                               ",".join(sorted(nodes_by_id)))
 
         for node in nodes:
             if node.get('deployment_graph_task_name') \

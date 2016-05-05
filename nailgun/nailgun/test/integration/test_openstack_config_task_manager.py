@@ -16,8 +16,10 @@ from mock import patch
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import DeploymentGraphTask
+from nailgun import errors
 from nailgun import objects
 from nailgun.orchestrator.tasks_templates import make_generic_task
+from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.task.manager import OpenstackConfigTaskManager
 from nailgun.test import base
 
@@ -154,6 +156,26 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
 
         all_node_ids = [self.nodes[0].id]
         self.assertEqual(task.cache['nodes'], all_node_ids)
+
+    @patch('nailgun.rpc.cast')
+    def test_config_execute_fails_if_deployment_running(self, mocked_rpc):
+        task_manager = OpenstackConfigTaskManager(self.cluster.id)
+        task = task_manager.execute({'cluster_id': self.cluster.id})
+
+        self.assertEqual(task.status, consts.TASK_STATUSES.pending)
+
+        NailgunReceiver.deploy_resp(
+            task_uuid=task.uuid,
+            status=consts.TASK_STATUSES.running,
+            progress=50,
+            nodes=[{'uid': n.uid, 'status': consts.NODE_STATUSES.ready}
+                   for n in self.env.nodes],
+        )
+
+        self.assertEqual(task.status, consts.TASK_STATUSES.running)
+        task2 = OpenstackConfigTaskManager(self.cluster.id)
+        self.assertRaises(errors.TaskAlreadyRunning,
+                          task2.execute, {'cluster_id': self.cluster.id})
 
 
 class TestOpenstackConfigTaskManager90(TestOpenstackConfigTaskManager80):

@@ -47,6 +47,7 @@ from nailgun.policy.merge import NetworkRoleMergePolicy
 from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
+from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
 
 
@@ -363,6 +364,7 @@ class Cluster(NailgunObject):
 
         plugin_attrs = traverse(
             plugin_attrs,
+            formatter=text_format_safe,
             formatter_context={'cluster': instance, 'settings': settings},
             keywords={'generator': AttributesGenerator.evaluate}
         )

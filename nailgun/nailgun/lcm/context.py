@@ -14,7 +14,7 @@
 
 
 class TransactionContext(object):
-    def __init__(self, new_state, old_state=None):
+    def __init__(self, new_state, old_state=None, **kwargs):
         """Wrapper around current and previous state of a transaction
 
         :param new_state: new state of cluster
@@ -24,6 +24,7 @@ class TransactionContext(object):
         """
         self.new = new_state
         self.old = old_state or {}
+        self.options = kwargs
 
     def get_new_data(self, node_id):
         return self.new[node_id]

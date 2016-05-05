@@ -44,6 +44,7 @@ from nailgun.policy.merge import NetworkRoleMergePolicy
 from nailgun.settings import settings
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
+from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
 
 
@@ -343,10 +344,13 @@ class Cluster(NailgunObject):
         # Merge plugins attributes into editable ones
         plugin_attrs = PluginManager.get_plugins_attributes(
             instance, all_versions=all_plugins_versions)
-        plugin_attrs = traverse(plugin_attrs, AttributesGenerator, {
-            'cluster': instance,
-            'settings': settings,
-        })
+
+        plugin_attrs = traverse(
+            plugin_attrs,
+            formatter=text_format_safe,
+            formatter_context={'cluster': instance, 'settings': settings},
+            keywords={'generator': AttributesGenerator}
+        )
         attrs['editable'].update(plugin_attrs)
 
         return attrs

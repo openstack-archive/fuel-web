@@ -15,19 +15,53 @@
 #    under the License.
 
 import mock
+import six
 
 from nailgun import consts
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 
-from nailgun.test.base import BaseUnitTest
+from nailgun.test.base import BaseTestCase
+
+stages = [
+    {
+        "id": "deploy_start",
+        "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+        "requires": ["pre_deployment_end"],
+    },
+    {
+        "id": "deploy_end",
+        "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+        "requires": ["deploy_start"],
+    },
+    {
+        "id": "pre_deployment_start",
+        "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+    },
+    {
+        "id": "pre_deployment_end",
+        "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+        "requires": ["pre_deployment_start"],
+    },
+    {
+        "id": "post_deployment_start",
+        "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+        "requires": ["deploy_end"],
+    },
+    {
+        "id": "post_deployment_end",
+        "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+        "requires": ["post_deployment_start"],
+    },
+]
 
 
-class TestLegacyTasksAdapter(BaseUnitTest):
+class TestLegacyTasksAdapter(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestLegacyTasksAdapter, cls).setUpClass()
         cls.role_resolver = mock.MagicMock()
-        cls.role_resolver.get_all_roles.side_effect = lambda x: set(x)
+        cls.role_resolver.get_all_roles.side_effect = \
+            cls.role_resolver_side_effect
 
     def test_returns_same_task_if_no_legacy(self):
         tasks = [
@@ -37,16 +71,37 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             {'id': 'group1', 'type': consts.ORCHESTRATOR_TASK_TYPES.group},
             {'id': 'stage1', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
         ]
-
         new_tasks = list(adapt_legacy_tasks(tasks, None, self.role_resolver))
         self.datadiff(tasks, new_tasks, ignore_keys='required_for')
-        self.assertEqual([], tasks[0]['required_for'])
+        self.assertEqual([], tasks[0].get('required_for', []))
         self.assertEqual(
             ['group1_end'], new_tasks[0]['required_for']
         )
 
+    @staticmethod
+    def role_resolver_side_effect(roles):
+        if isinstance(roles, six.string_types):
+            roles = [roles]
+        return set(roles)
+
     def test_legacy_deployment_task_adaptation(self):
         tasks = [
+            {'id': 'task_pre', 'roles': 'group1',
+             'requires': ['pre_deployment_start'],
+             'required_for': ['pre_deployment_end'],
+             },
+            {'id': 'task_pre2', 'roles': 'group1',
+             'requires': ['task_pre'],
+             'required_for': ['pre_deployment_end'],
+             },
+            {'id': 'task_pre3', 'roles': 'group1',
+             'requires': ['task_pre'],
+             'required_for': ['task_pre2'],
+             },
+            {'id': 'task_post', 'roles': 'group1',
+             'requires': ['post_deployment_start'],
+             'required_for': ['post_deployment_end'],
+             },
             {'id': 'task1', 'version': '2.0.0', 'roles': 'group1',
              'type': consts.ORCHESTRATOR_TASK_TYPES.puppet},
             {'id': 'task2', 'roles': ['group2'],
@@ -61,7 +116,8 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             {'id': 'stage1', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage},
             {'id': 'stage2', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
         ]
-        self.role_resolver.get_all_roles.side_effect = lambda x: set(x)
+
+        tasks.extend(stages)
         new_tasks = list(adapt_legacy_tasks(tasks, [], self.role_resolver))
 
         self.assertEqual(
@@ -138,6 +194,53 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             next(x for x in new_tasks if x['id'] == 'task2')
         )
 
+        self.assertEqual(
+            {
+                'roles': 'group1',
+                'id': 'task_pre2',
+                'version': '2.0.0',
+                'required_for': ['pre_deployment_end'],
+                'requires': ['task_pre'],
+                'cross_depends': [
+                    {'role': None, 'name': 'pre_deployment_start'}
+                ]
+            },
+            next(x for x in new_tasks if x['id'] == 'task_pre2')
+        )
+        self.assertEqual(
+            {
+                'roles': 'group1',
+                'id': 'task_pre',
+                'version': '2.0.0',
+                'required_for': ['pre_deployment_end'],
+                'requires': ['pre_deployment_start'],
+                'cross_depends': [
+                    {'role': None, 'name': 'pre_deployment_start'}
+                ]
+            },
+            next(x for x in new_tasks if x['id'] == 'task_pre')
+        )
+        task_pre3 = next(x for x in new_tasks if x['id'] == 'task_pre3')
+        self.assertEqual(task_pre3['requires'], ['task_pre'])
+        self.assertItemsEqual(task_pre3['required_for'],
+                              ['pre_deployment_end', 'task_pre2'])
+        self.assertEqual(task_pre3['cross_depends'],
+                         [{'role': None, 'name': 'pre_deployment_start'}])
+        self.assertEqual(task_pre3['version'], '2.0.0')
+        self.assertEqual(
+            {
+                'roles': 'group1',
+                'id': 'task_post',
+                'version': '2.0.0',
+                'required_for': ['post_deployment_end'],
+                'requires': ['post_deployment_start'],
+                'cross_depends': [
+                    {'role': None, 'name': 'post_deployment_start'}
+                ]
+            },
+            next(x for x in new_tasks if x['id'] == 'task_post')
+        )
+
     def test_legacy_plugin_tasks_adaptation(self):
         tasks = [
             {'id': 'task1', 'version': '2.0.0', 'roles': 'group1',
@@ -158,15 +261,17 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             {'id': 'stage3_end', 'requires': ['stage3_start'],
              'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
         ]
+        tasks.extend(stages)
 
         legacy_plugin_tasks = [
             {
                 'roles': '*',
                 'stage': 'stage1',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
-                'parameters': {'number': 0}
+                'parameters': {'number': 1}
             },
             {
+
                 'roles': '*',
                 'stage': 'stage1/100',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
@@ -174,9 +279,9 @@ class TestLegacyTasksAdapter(BaseUnitTest):
             },
             {
                 'roles': '*',
-                'stage': 'stage1/10',
+                'stage': 'stage1/-100',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
-                'parameters': {'number': 1}
+                'parameters': {'number': 0}
             },
             {
                 'roles': '*',

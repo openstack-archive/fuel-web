@@ -101,3 +101,7 @@ class TaskBaseDeploymentNotAllowed(DeploymentException):
 
 class NoChanges(DeploymentException):
     message = "There is no changes to apply"
+
+
+class DryRunSupportedOnlyByLCM(DeploymentException):
+    message = "Dry run deployment mode is supported only by LCM serializer"

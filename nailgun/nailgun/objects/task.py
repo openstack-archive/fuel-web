@@ -230,7 +230,7 @@ class Task(NailgunObject):
 
                 Cluster.clear_pending_changes(cluster)
 
-            elif instance.status == consts.CLUSTER_STATUSES.error:
+            elif instance.status == consts.TASK_STATUSES.error:
                 cls.__update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.error, None
                 )
@@ -337,11 +337,19 @@ class TaskCollection(NailgunCollection):
 
     @classmethod
     def get_cluster_tasks(cls, cluster_id, names=None):
+        """Get unordered cluster tasks query.
+
+        :param cluster_id: cluster ID
+        :type cluster_id: int
+        :param names: tasks names
+        :type names: iterable[dict]
+        :returns: sqlalchemy query
+        :rtype: sqlalchemy.Query[models.Task]
+        """
         query = cls.get_by_cluster_id(cluster_id)
         if isinstance(names, (list, tuple)):
             query = cls.filter_by_list(query, 'name', names)
-        query = cls.order_by(query, 'id')
-        return query.all()
+        return query
 
     @classmethod
     def get_by_name_and_cluster(cls, cluster, names):

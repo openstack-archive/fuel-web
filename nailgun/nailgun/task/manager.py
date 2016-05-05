@@ -401,6 +401,28 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                 deployment_message['args']['deployment_info'].extend(
                     resetup_message['args']['deployment_info']
                 )
+
+                # both pre- and post- deployment sections are plain and
+                # contect tasks with an array of node uids. we need to
+                # populate those uids if some task is already exist in
+                # deployment_message output.
+                for stage in ('pre_deployment', 'post_deployment'):
+                    deployment_tasks = list(filter(
+                        lambda task: 'id' in task,
+                        deployment_message['args'][stage]
+                    ))
+                    resetup_tasks = resetup_message['args'][stage]
+
+                    while resetup_tasks:
+                        r_task = resetup_tasks.pop()
+                        task = next((
+                            t for t in deployment_tasks
+                            if t['id'] == r_task.get('id')), None)
+
+                        if task is not None:
+                            task['uids'].extend(r_task['uids'])
+                        else:
+                            deployment_message['args'][stage].append(r_task)
             else:
                 deployment_message = resetup_message
             task_deployment.cache = deployment_message

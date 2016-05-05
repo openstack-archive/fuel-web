@@ -101,3 +101,15 @@ class TaskBaseDeploymentNotAllowed(DeploymentException):
 
 class NoChanges(DeploymentException):
     message = "There is no changes to apply"
+
+
+class NoopWithDryRunNotAllowed(DeploymentException):
+    message = "Noop and dry run modes are not possible simultaneously"
+
+
+class NoopSupportedOnlyByLCM(DeploymentException):
+    message = "Noop deployment mode is supported only by LCM serializer"
+
+
+class DryRunSupportedOnlyByLCM(DeploymentException):
+    message = "Dry run deployment mode is supported only by LCM serializer"

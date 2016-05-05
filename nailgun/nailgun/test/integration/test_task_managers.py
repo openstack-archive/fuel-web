@@ -1192,3 +1192,171 @@ class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):
                          errors.UpdateDnsmasqTaskIsRunning.message)
         # no more calls were made
         self.assertEqual(mocked_rpc.call_count, 1)
+
+
+class TestReexecuteOnDeployment(BaseIntegrationTest):
+
+    release_deployment_tasks = [
+        # stages
+        {'id': 'pre_deployment_start',
+         'type': 'stage'},
+        {'id': 'pre_deployment_end',
+         'type': 'stage',
+         'requires': ['pre_deployment_start']},
+        {'id': 'deploy_start',
+         'type': 'stage',
+         'requires': ['pre_deployment_end']},
+        {'id': 'deploy_end',
+         'requires': ['deploy_start'],
+         'type': 'stage'},
+        {'id': 'post_deployment_start',
+         'type': 'stage',
+         'requires': ['deploy_end']},
+        {'id': 'post_deployment_end',
+         'type': 'stage',
+         'requires': ['post_deployment_start']},
+
+        # groups
+        {'id': 'primary-controller',
+         'parameters': {'strategy': {'type': 'one_by_one'}},
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'role': ['primary-controller'],
+         'type': 'group'},
+        {'id': 'compute',
+         'parameters': {'strategy': {'type': 'parallel'}},
+         'required_for': ['deploy_end'],
+         'requires': ['primary-controller'],
+         'role': ['compute'],
+         'type': 'group'},
+
+        # deployment
+        {'id': 'deployment-1',
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'groups': ['primary-controller']},
+        {'id': 'deployment-2',
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'type': 'puppet',
+         'reexecute_on': ['deploy_changes'],
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'groups': ['primary-controller']},
+
+        # pre-deployment
+        {'id': 'pre-deployment-1',
+         'required_for': ['pre_deployment_end'],
+         'requires': ['pre_deployment_start'],
+         'type': 'puppet',
+         'reexecute_on': ['deploy_changes'],
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': ['compute']},
+        {'id': 'pre-deployment-2',
+         'required_for': ['pre_deployment_end'],
+         'requires': ['pre_deployment_start'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': ['compute']},
+
+        # post-deployment
+        {'id': 'post-deployment-1',
+         'required_for': ['post_deployment_end'],
+         'requires': ['post_deployment_start'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': ['compute']},
+        {'id': 'post-deployment-2',
+         'required_for': ['post_deployment_end'],
+         'requires': ['post_deployment_start'],
+         'type': 'puppet',
+         'reexecute_on': ['deploy_changes'],
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': ['compute']},
+    ]
+
+    def _prepare_cluster(self):
+        self.env.create(
+            release_kwargs={
+                'deployment_tasks': self.release_deployment_tasks,
+                'version': 'liberty-8.0',
+            },
+            cluster_kwargs={
+                'status': consts.CLUSTER_STATUSES.operational,
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'primary_roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['compute'], 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['compute'], 'pending_addition': True},
+            ]
+        )
+        self.env.launch_deployment()
+        return self.env.clusters[0]
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_reexecute_on_main_graph(self, mocked_rpc):
+        cluster = self._prepare_cluster()
+
+        deploy_msg = mocked_rpc.call_args[0][1][1]
+        deployment_infos = deploy_msg['args']['deployment_info']
+
+        # there's a main deployment task that must be reexecuted on
+        # controllers all the time, so we need to find deployment
+        # info of controller and check its tasks
+        controller = next(n for n in cluster.nodes if 'controller' in n.roles)
+        controller_info = next(
+            entry for entry in deployment_infos
+            if entry['uid'] == controller.uid)
+
+        tasks = set((task['id'] for task in controller_info['tasks']))
+        ensure_tasks = set(['deployment-2'])
+
+        self.assertEqual(tasks, ensure_tasks)
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_reexecute_on_pre_deployment(self, mocked_rpc):
+        cluster = self._prepare_cluster()
+
+        deploy_msg = mocked_rpc.call_args[0][1][1]
+        tasks = deploy_msg['args']['pre_deployment']
+        self.assertTrue(tasks)
+
+        # there's a pre-deployment task that must be reexecuted on
+        # compute nodes. so we need to look over pre-deployment tasks
+        # and ensure that task is going to be executed on computes.
+        computes = set([n.uid for n in cluster.nodes if 'compute' in n.roles])
+
+        task = next((t for t in tasks if t['id'] == 'pre-deployment-1'), None)
+        self.assertTrue(computes.issubset(task['uids']))
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_reexecute_on_post_deployment(self, mocked_rpc):
+        cluster = self._prepare_cluster()
+
+        deploy_msg = mocked_rpc.call_args[0][1][1]
+        tasks = deploy_msg['args']['post_deployment']
+        self.assertTrue(tasks)
+
+        # there's a pre-deployment task that must be reexecuted on
+        # compute nodes. so we need to look over pre-deployment tasks
+        # and ensure that task is going to be executed on computes.
+        computes = set([n.uid for n in cluster.nodes if 'compute' in n.roles])
+
+        ensure_tasks = set(['post-deployment-2'])
+
+        task = next((t for t in tasks if t['id'] == 'post-deployment-2'), None)
+        self.assertTrue(computes.issubset(task['uids']))

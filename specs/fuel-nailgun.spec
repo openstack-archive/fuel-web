@@ -46,6 +46,7 @@ Requires:    python-six >= 1.5.2
 Requires:    python-sqlalchemy >= 0.7.9
 Requires:    python-stevedore >= 0.14
 Requires:    python-urllib3 >= 1.7
+Requires:    python-uwsgidecorators >= 2.0.12
 Requires:    python-webpy >= 0.37
 Requires:    python-wsgilog >= 0.3
 Requires:    python-wsgiref >= 0.1.2
@@ -147,4 +148,3 @@ Fuel fencing agent
 /opt/nailgun/bin/fencing-agent.rb
 /etc/cron.d/fencing-agent
 %defattr(-,root,root)
-

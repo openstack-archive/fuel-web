@@ -142,7 +142,7 @@ class BaseDeploymentTask(object):
             try:
                 args = getattr(cls, method)(transaction, **kwargs)
                 # save tasks history
-                if 'tasks_graph' in args:
+                if 'tasks_graph' in args and not args.get('dry_run', False):
                     logger.info("tasks history saving is started.")
                     objects.DeploymentHistoryCollection.create(
                         transaction, args['tasks_graph']
@@ -209,7 +209,8 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def message(cls, task, nodes, affected_nodes=None, deployment_tasks=None,
-                reexecutable_filter=None, graph_type=None, force=False):
+                reexecutable_filter=None, graph_type=None,
+                force=False, noop=False, dry_run=False, **kwargs):
         """Builds RPC message for deployment task.
 
         :param task: the database task object instance
@@ -218,9 +219,16 @@ class DeploymentTask(BaseDeploymentTask):
         :param deployment_tasks: the list of tasks_ids to execute,
                                  if None, all tasks will be executed
         :param reexecutable_filter: the list of events to find subscribed tasks
+        :param force: force
+        :param dry_run: dry run
+        :param noop: noop run
         :param graph_type: deployment graph type
         """
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
+
+        if dry_run and noop:
+            raise errors.NoopWithDryRunNotAllowed()
+
         task_ids = deployment_tasks or []
 
         objects.NodeCollection.lock_nodes(nodes)
@@ -245,7 +253,8 @@ class DeploymentTask(BaseDeploymentTask):
         deployment_mode, message = cls.call_deployment_method(
             task, tasks=deployment_tasks, nodes=nodes,
             affected_nodes=affected_nodes, selected_task_ids=task_ids,
-            events=reexecutable_filter, force=force
+            events=reexecutable_filter, force=force, noop=noop,
+            dry_run=dry_run, **kwargs
         )
 
         # After serialization set pending_addition to False
@@ -274,7 +283,8 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def granular_deploy(cls, transaction, tasks, nodes,
-                        affected_nodes, selected_task_ids, events, **kwargs):
+                        affected_nodes, selected_task_ids, events,
+                        **kwargs):
         """Builds parameters for granular deployment.
 
         :param transaction: the transaction object
@@ -286,6 +296,11 @@ class DeploymentTask(BaseDeploymentTask):
         :param events: the list of events to find subscribed tasks
         :return: the arguments for RPC message
         """
+        if transaction.name == consts.TASK_NAMES.dry_run_deployment:
+            raise errors.DryRunNotSupportedByGranular()
+        if transaction.name == consts.TASK_NAMES.noop_deployment:
+            raise errors.NoopNotSupportedByGranular()
+
         graph = orchestrator_graph.AstuteGraph(transaction.cluster, tasks)
         graph.check()
         graph.only_tasks(selected_task_ids)
@@ -322,7 +337,7 @@ class DeploymentTask(BaseDeploymentTask):
 
     @classmethod
     def task_deploy(cls, transaction, tasks, nodes, affected_nodes,
-                    selected_task_ids, events, **kwargs):
+                    selected_task_ids, events, dry_run, **kwargs):
         """Builds parameters for task based deployment.
 
         :param transaction: the transaction object
@@ -332,6 +347,7 @@ class DeploymentTask(BaseDeploymentTask):
         :param selected_task_ids: the list of tasks_ids to execute,
                                   if None, all tasks will be executed
         :param events: the list of events to find subscribed tasks
+        :param dry_run: dry run
         :return:  RPC method name, the arguments for RPC message
         """
 
@@ -358,7 +374,8 @@ class DeploymentTask(BaseDeploymentTask):
         return {
             "deployment_info": serialized_cluster,
             "tasks_directory": directory,
-            "tasks_graph": graph
+            "tasks_graph": graph,
+            "dry_run": dry_run
         }
 
 
@@ -385,11 +402,13 @@ class ClusterTransaction(DeploymentTask):
 
     @classmethod
     def task_deploy(cls, transaction, tasks, nodes, force=False,
-                    selected_task_ids=None, **kwargs):
+                    selected_task_ids=None, noop=False,
+                    dry_run=False, **kwargs):
         logger.info("The cluster transaction is initiated.")
         logger.info("cluster serialization is started.")
         # we should update information for all nodes except deleted
         # TODO(bgaifullin) pass role resolver to serializers
+
         deployment_info = deployment_serializers.serialize_for_lcm(
             transaction.cluster, nodes
         )
@@ -422,7 +441,8 @@ class ClusterTransaction(DeploymentTask):
             transaction, deployment_info
         )
 
-        context = lcm.TransactionContext(expected_state, current_state)
+        context = lcm.TransactionContext(expected_state, current_state,
+                                         noop=noop)
         logger.debug("tasks serialization is started.")
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer
@@ -446,7 +466,8 @@ class ClusterTransaction(DeploymentTask):
         logger.info("tasks serialization is finished.")
         return {
             "tasks_directory": directory,
-            "tasks_graph": graph
+            "tasks_graph": graph,
+            "dry_run": dry_run,
         }
 
 
@@ -1655,9 +1676,11 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_dpdk_network_scheme(cls, network_scheme, node_group):
-        """Check that endpoint with dpdk provider mapped only to neutron/private
+        """DPDK endpoint provider check
 
+        Check that endpoint with dpdk provider mapped only to neutron/private
         """
+
         for net_template in network_scheme.values():
             roles = net_template['roles']
 

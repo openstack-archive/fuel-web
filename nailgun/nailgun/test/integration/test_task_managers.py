@@ -222,6 +222,8 @@ class TestTaskManagers(BaseIntegrationTest):
                 'id': 'controller', 'type': 'group', 'roles': ['controller']
             }
         ]
+        tasks_mock.return_value.extend(
+            self.env.read_fixtures(['deployment_tasks']))
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True, "pending_roles": ['controller']},

@@ -418,6 +418,12 @@ class ClusterTransaction(DeploymentTask):
                 for tr, task_id in transactions
             }
 
+            for n in nodes:
+                if n.status == consts.NODE_STATUSES.provisioned:
+                    for task_deployment_info in current_state.values():
+                        if task_deployment_info.get(n.uid):
+                            task_deployment_info[n.uid] = {}
+
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )

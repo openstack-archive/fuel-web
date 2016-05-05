@@ -77,12 +77,23 @@ class TestTaskDeploy80(BaseIntegrationTest):
         return args[1][1]
 
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
-    def test_task_deploy_used_by_default(self, _):
+    @mock.patch.object(objects.Release, "is_lcm_supported", return_value=False)
+    def test_task_deploy_used_by_default(self, _, lcm_mock):
         message = self.get_deploy_message()
         self.assertEqual("task_deploy", message["method"])
         self.assertItemsEqual(
             ["task_uuid", "deployment_info",
              "tasks_directory", "tasks_graph"],
+            message["args"]
+        )
+
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
+    @mock.patch.object(objects.Release, "is_lcm_supported", return_value=True)
+    def test_task_deploy_dry_run(self, _, lcm_mock):
+        message = self.get_deploy_message()
+        self.assertEqual("task_deploy", message["method"])
+        self.assertItemsEqual(
+            ["task_uuid", "tasks_directory", "tasks_graph", "dry_run"],
             message["args"]
         )
 

@@ -17,6 +17,7 @@
 from mock import patch
 
 import nailgun
+
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.task import Task
@@ -27,10 +28,10 @@ from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
-class TestStopDeployment(BaseIntegrationTest):
+class TestStopDeploymentPre90(BaseIntegrationTest):
 
     def setUp(self):
-        super(TestStopDeployment, self).setUp()
+        super(TestStopDeploymentPre90, self).setUp()
         self.env.create(
             nodes_kwargs=[
                 {"name": "First",
@@ -38,57 +39,15 @@ class TestStopDeployment(BaseIntegrationTest):
                 {"name": "Second",
                  "roles": ["compute"],
                  "pending_addition": True}
-            ]
+            ],
+            release_kwargs={
+                'version': "liberty-8.0"
+            }
         )
         self.cluster = self.env.clusters[0]
         self.controller = self.env.nodes[0]
         self.compute = self.env.nodes[1]
         self.node_uids = [n.uid for n in self.cluster.nodes][:3]
-
-    @fake_tasks(fake_rpc=False)
-    def test_stop_deployment(self, _):
-        supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.status, consts.TASK_STATUSES.pending)
-
-        deploy_task = [t for t in supertask.subtasks
-                       if t.name == consts.TASK_NAMES.deployment][0]
-
-        NailgunReceiver.deploy_resp(
-            task_uuid=deploy_task.uuid,
-            status=consts.TASK_STATUSES.running,
-            progress=50,
-        )
-
-        stop_task = self.env.stop_deployment()
-        NailgunReceiver.stop_deployment_resp(
-            task_uuid=stop_task.uuid,
-            status=consts.TASK_STATUSES.ready,
-            progress=100,
-            nodes=[{'uid': n.uid} for n in self.env.nodes],
-        )
-        self.assertEqual(stop_task.status, consts.TASK_STATUSES.ready)
-
-        self.assertTrue(self.db().query(Task).filter_by(
-            uuid=deploy_task.uuid
-        ).first())
-        self.assertIsNone(objects.Task.get_by_uuid(deploy_task.uuid))
-
-        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.stopped)
-        self.assertEqual(stop_task.progress, 100)
-        self.assertFalse(self.cluster.is_locked)
-
-        for n in self.cluster.nodes:
-            self.assertEqual(n.roles, [])
-            self.assertNotEqual(n.pending_roles, [])
-
-        notification = self.db.query(Notification).filter_by(
-            cluster_id=stop_task.cluster_id
-        ).order_by(
-            Notification.datetime.desc()
-        ).first()
-        self.assertRegexpMatches(
-            notification.message,
-            'was successfully stopped')
 
     # FIXME(aroma): remove when stop action will be reworked for ha
     # cluster. To get more details, please, refer to [1]
@@ -150,6 +109,73 @@ class TestStopDeployment(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.json_body['message'],
                          'Stop action is forbidden for the cluster')
+
+
+class TestStopDeployment(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestStopDeployment, self).setUp()
+        self.cluster = self.env.create(
+            nodes_kwargs=[
+                {"name": "First",
+                 "pending_addition": True},
+                {"name": "Second",
+                 "roles": ["compute"],
+                 "pending_addition": True}
+            ],
+            release_kwargs={
+                'version': "mitaka-9.0"
+            }
+        )
+        self.controller = self.env.nodes[0]
+        self.compute = self.env.nodes[1]
+        self.node_uids = [n.uid for n in self.cluster.nodes][:3]
+
+    @fake_tasks(fake_rpc=False)
+    def test_stop_deployment(self, _):
+        supertask = self.env.launch_deployment()
+        self.assertEqual(supertask.status, consts.TASK_STATUSES.pending)
+
+        deploy_task = [t for t in supertask.subtasks
+                       if t.name in (consts.TASK_NAMES.deployment)][0]
+
+        NailgunReceiver.deploy_resp(
+            task_uuid=deploy_task.uuid,
+            status=consts.TASK_STATUSES.running,
+            progress=50,
+        )
+
+        stop_task = self.env.stop_deployment()
+        NailgunReceiver.stop_deployment_resp(
+            task_uuid=stop_task.uuid,
+            status=consts.TASK_STATUSES.ready,
+            progress=100,
+            nodes=[{'uid': n.uid} for n in self.env.nodes],
+        )
+        self.assertEqual(stop_task.status, consts.TASK_STATUSES.ready)
+
+        self.assertTrue(self.db().query(Task).filter_by(
+            uuid=deploy_task.uuid
+        ).first())
+        self.assertIsNone(objects.Task.get_by_uuid(deploy_task.uuid))
+
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.stopped)
+        self.assertEqual(stop_task.progress, 100)
+        self.assertFalse(self.cluster.is_locked)
+
+        for n in self.cluster.nodes:
+            self.assertEqual(n.roles, [])
+            self.assertNotEqual(n.pending_roles, [])
+
+        notification = self.db.query(Notification).filter_by(
+            cluster_id=stop_task.cluster_id
+        ).order_by(
+            Notification.datetime.desc()
+        ).first()
+        self.assertRegexpMatches(
+            notification.message,
+            'was successfully stopped')
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

@@ -61,6 +61,9 @@ class Context(object):
         self._yaql_engine = yaql_ext.create_engine()
         self._yaql_expressions_cache = {}
 
+    def get_transaction_option(self, name, default=None):
+        return self._transaction.options.get(name, default)
+
     def get_new_data(self, node_id):
         return self._transaction.get_new_data(node_id)
 
@@ -168,6 +171,7 @@ class NoopTaskSerializer(DeploymentTaskSerializer):
 
 
 class DefaultTaskSerializer(NoopTaskSerializer):
+
     def should_execute(self, task, node_id):
         condition = task.get('condition', True)
         if isinstance(condition, six.string_types):

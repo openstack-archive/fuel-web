@@ -858,6 +858,43 @@ class TestConsumer(BaseReciverTestCase):
         # if there are error nodes
         self.assertEqual(task.status, "running")
 
+    def test_node_deploy_resp_dry_run(self):
+        cluster = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}]
+        )
+
+        node, node2 = self.env.nodes
+        node.status = consts.NODE_STATUSES.ready
+        node2.status = consts.NODE_STATUSES.ready
+        cluster.status = consts.CLUSTER_STATUSES.operational
+
+        task = Task(
+            uuid=str(uuid.uuid4()),
+            name="dry_run_deployment",
+            cluster_id=cluster.id
+        )
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {'task_uuid': task.uuid,
+                  'status': consts.TASK_STATUSES.ready,
+                  'progress': 100,
+                  'nodes': []
+                  }
+        self.receiver.deploy_resp(**kwargs)
+        self.db.refresh(node)
+        self.db.refresh(node2)
+        self.db.refresh(task)
+        self.assertEqual(
+            (node.status, node2.status),
+            (consts.NODE_STATUSES.ready, consts.NODE_STATUSES.ready)
+        )
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(cluster.status, consts.CLUSTER_STATUSES.operational)
+
     def test_node_provision_resp(self):
         self.env.create(
             cluster_kwargs={},

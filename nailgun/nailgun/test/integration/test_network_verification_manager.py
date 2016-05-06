@@ -56,7 +56,7 @@ class TestMulticastNetworkManager(base.BaseIntegrationTest):
         multicast = self.execute()
         self.assertEqual(multicast.status, consts.TASK_STATUSES.error)
 
-        node_ids = [node['node_id'] for node in multicast.result]
-        not_received = [node['not_received'] for node in multicast.result]
+        node_ids = sorted([node['node_id'] for node in multicast.result])
+        not_received = [sorted(node['not_received']) for node in multicast.result]
         self.assertTrue(any(node_ids == node for node in not_received))
         self.assertFalse(all(node_ids == node for node in not_received))

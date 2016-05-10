@@ -22,7 +22,7 @@ from StringIO import StringIO
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
@@ -46,7 +46,6 @@ class TestHandlers(BaseIntegrationTest):
         )
         return resp.json_body
 
-    @fake_tasks()
     def test_capacity_log_handler(self):
         self.env.create_node(api=False)
 
@@ -93,7 +92,7 @@ class TestHandlers(BaseIntegrationTest):
         for row in csvreader:
             self.assertTrue(row in rows)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_capacity_nodes_allocation(self):
         self.env.create(
             cluster_kwargs={
@@ -109,7 +108,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
         deployment_task = self.env.launch_deployment()
-        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(deployment_task.status, consts.TASK_STATUSES.error)
 
         self._create_capacity_log()
         capacity_log = self._get_capacity_log_json()
@@ -129,8 +128,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(test_env['cluster'], 'test_name')
         self.assertEqual(test_env['nodes'], 6)
 
-    @fake_tasks(override_state={"progress": 100,
-                                "status": consts.TASK_STATUSES.ready})
+    @mock_rpc()
     def test_capacity_csv_log_with_unicode(self):
         self.env.create(
             cluster_kwargs={
@@ -141,7 +139,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
         deployment_task = self.env.launch_deployment()
-        self.assertEqual(deployment_task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(deployment_task.status, consts.TASK_STATUSES.error)
 
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))

@@ -24,6 +24,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         node_query = self.db.query(Node).filter_by(cluster_id=self.cluster.id)
         self.assertEquals(node_query.count(), 0)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    @mock_rpc(pass_mock=True)
     def test_mclient_remove_is_false_on_node_deletion(self, mrpc):
         url = reverse(
             'NodeHandler',
@@ -106,7 +107,7 @@ class TestNodeDeletion(BaseIntegrationTest):
                  for node in msg['args']['nodes']])
         )
 
-    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    @mock_rpc(pass_mock=True)
     def test_mclient_remove_is_false_on_node_collection_deletion(self, mrpc):
         url = reverse('NodeCollectionHandler')
         query_str = 'ids={0}'.format(','.join(map(str, self.node_ids)))

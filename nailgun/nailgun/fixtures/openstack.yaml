@@ -1709,6 +1709,7 @@
         compatible:
           - name: network:neutron:core:ml2
           - name: hypervisor:qemu
+          - name: hypervisor:vmware
         requires:
           - name: network:neutron:core:ml2
       - name: network:neutron:ml2:tun

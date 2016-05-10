@@ -14,20 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
-
 from nailgun import consts
 from nailgun import objects
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 
 
 class TestProvisioning(BaseIntegrationTest):
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_nodes_in_cluster(self, mocked_rpc):
+    @mock_rpc()
+    def test_nodes_in_cluster(self):
         cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -43,9 +41,8 @@ class TestProvisioning(BaseIntegrationTest):
 
         self.assertEqual(len(cluster.nodes), 2)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_node_status_changes_to_provision(self, mocked_rpc=None):
+    @mock_rpc()
+    def test_node_status_changes_to_provision(self):
         cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -103,7 +100,7 @@ class TestProvisioning(BaseIntegrationTest):
         )
 
     @fake_tasks()
-    def test_node_has_proper_status_after_provisioning(self, *_):
+    def test_node_has_proper_status_after_provisioning(self):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -128,14 +125,13 @@ class TestProvisioning(BaseIntegrationTest):
         )
 
         task = self.env.launch_provisioning_selected(cluster_id=cluster_db.id)
-        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
 
         for n in cluster_db.nodes:
             self.assertEqual(consts.NODE_STATUSES.provisioned, n.status)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_vms_reset_on_provisioning(self, mocked_rpc=None):
+    @mock_rpc()
+    def test_vms_reset_on_provisioning(self):
         self.env.create(
             nodes_kwargs=[
                 {

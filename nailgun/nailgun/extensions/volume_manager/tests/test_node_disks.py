@@ -32,7 +32,7 @@ from nailgun.extensions.volume_manager.manager import only_vg
 from nailgun.extensions.volume_manager.manager import VolumeManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
@@ -79,7 +79,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         vgs = [vg['name'] for disk_vgs in disks_vgs for vg in disk_vgs]
         return set(vgs)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_clean_volumes_after_reset(self):
         disks = [
             {
@@ -103,9 +103,9 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             }]
         )
         task = self.env.launch_deployment()
-        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.ready)
         task = self.env.reset_environment()
-        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.ready)
 
         node_db = self.env.nodes[0]
 

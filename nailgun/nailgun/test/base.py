@@ -29,7 +29,7 @@ from six.moves import range
 import uuid
 
 from datetime import datetime
-from functools import partial
+import functools
 from itertools import izip
 from netaddr import IPNetwork
 from random import randint
@@ -971,7 +971,7 @@ class EnvironmentManager(object):
                 expect_errors=True
             )
             # If @fake_tasks runs synchoronously, then API
-            # returns 200 (executed). If fake_rpc=False, then
+            # returns 200 (executed). If mock_rpc=False, then
             # API returns 202 (scheduled)
             self.tester.assertIn(resp.status_code, [200, 202])
             response = resp.json_body
@@ -1019,6 +1019,11 @@ class EnvironmentManager(object):
 
     def launch_deployment(self, cluster_id=None):
         return self._launch_for_cluster('ClusterChangesHandler', cluster_id)
+
+    def launch_successful_deployment(self, cluster_id=None):
+        task = self.launch_deployment(cluster_id)
+        self.tester.assertNotEqual(task.status, consts.TASK_STATUSES.error)
+        return task
 
     def launch_redeployment(self, cluster_id=None):
         return self._launch_for_cluster(
@@ -1490,7 +1495,7 @@ def fake_tasks(fake_rpc=True,
         if fake_rpc:
             func = mock.patch(
                 'nailgun.task.task.rpc.cast',
-                partial(
+                functools.partial(
                     nailgun.task.task.fake_cast,
                     **kwargs
                 )
@@ -1519,6 +1524,20 @@ def fake_tasks(fake_rpc=True,
                 **kwargs
             )(func)
         return func
+    return wrapper
+
+
+def mock_rpc(pass_mock=False, **rpc_mock_kwargs):
+    def wrapper(f):
+        @functools.wraps(f)
+        def inner(*args, **kwargs):
+            with mock.patch('nailgun.rpc.cast', **rpc_mock_kwargs) as rpc_mock:
+                if pass_mock:
+                    return f(*(args + (rpc_mock,)), **kwargs)
+                else:
+                    return f(*args, **kwargs)
+
+        return inner
     return wrapper
 
 

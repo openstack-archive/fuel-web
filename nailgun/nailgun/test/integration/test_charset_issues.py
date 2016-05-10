@@ -18,13 +18,13 @@ from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
 class TestCharsetIssues(BaseIntegrationTest):
 
-    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    @mock_rpc()
     # (mihgen): Can't we do unit tests instead.. ?
     def test_deployment_cyrillic_names(self):
         self.env.create(
@@ -38,7 +38,7 @@ class TestCharsetIssues(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
 
         self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
-        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(supertask.status, consts.TASK_STATUSES.error)
         # we have three subtasks here
         # repo connectivity check
         # deletion
@@ -46,7 +46,7 @@ class TestCharsetIssues(BaseIntegrationTest):
         # deployment
         self.assertEqual(len(supertask.subtasks), 3)
 
-    @fake_tasks(fake_rpc=False)
+    @mock_rpc()
     def test_deletion_during_deployment(self, mock_rpc):
         cluster = self.env.create(
             cluster_kwargs={

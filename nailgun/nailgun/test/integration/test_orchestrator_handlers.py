@@ -26,7 +26,7 @@ from nailgun.orchestrator.task_based_deployment import TaskProcessor
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
@@ -212,8 +212,7 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
 
 class TestSelectedNodesAction(BaseSelectedNodesTest):
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_start_provisioning_on_selected_nodes(self, mcast):
         action_url = self.make_action_url(
             "ProvisionSelectedNodes",
@@ -241,8 +240,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(resp.body, 'Release .* is unavailable')
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_start_deployment_on_selected_nodes(self, mcast):
         controller_nodes = [
             n for n in self.cluster.nodes
@@ -259,8 +257,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.check_deployment_call_made(self.node_uids, mcast)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_start_deployment_on_selected_nodes_with_tasks(self, mcast):
         controller_nodes = [
             n for n in self.cluster.nodes
@@ -343,8 +340,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             }
         )
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deployment_of_node_is_forbidden(self, mcast):
         # cluster is in ha mode so for the sanity of the check
         # lets operate on non-controller node
@@ -390,8 +386,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             "[{0}] marked for deletion".format(marked_for_deletion.id),
             resp.body)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.task.task.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deployment_of_node_no_deployment_tasks(self, mcast):
         controller_nodes = [
             n for n in self.cluster.nodes

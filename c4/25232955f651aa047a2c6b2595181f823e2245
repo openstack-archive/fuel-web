@@ -1,0 +1,12 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Krzysztof Szukiełojć <kszukielojc@mirantis.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Code-Review+2: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Workflow+1: Igor Kalnitsky <ikalnitsky@mirantis.com>
+Code-Review+1: Andriy Popovych <apopovych@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 10 May 2016 10:02:07 +0000
+Reviewed-on: https://review.openstack.org/311516
+Project: openstack/fuel-web
+Branch: refs/heads/stable/mitaka

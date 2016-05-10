@@ -18,6 +18,7 @@ from mock import patch
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 from nailgun import consts
@@ -111,7 +112,7 @@ class TestTasksLogging(BaseIntegrationTest):
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.deploy, one_parameter=True)
 
-    @fake_tasks(god_mode=True)
+    @mock_rpc()
     @patch.object(TaskHelper, 'update_action_log')
     def test_delete_task_logging(self, logger):
         self.env.create(
@@ -127,7 +128,7 @@ class TestTasksLogging(BaseIntegrationTest):
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.cluster_deletion)
 
-    @fake_tasks(god_mode=True)
+    @mock_rpc()
     @patch.object(TaskHelper, 'update_action_log')
     def test_reset_task_logging(self, logger):
         self.env.create(
@@ -169,21 +170,19 @@ class TestTasksLogging(BaseIntegrationTest):
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.stop_deployment)
 
-    @fake_tasks(god_mode=True)
+    @mock_rpc()
     @patch.object(TaskHelper, 'update_action_log')
     def test_dump_task_logging(self, logger):
         resp = self.app.put(
             reverse('LogPackageHandler'), headers=self.default_headers
         )
-        # After switch to synchronous run, this task is ready when API
-        # returns exit code. That's why it's 200, not 202.
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 202)
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.dump)
 
-    @fake_tasks(god_mode=True)
+    @mock_rpc()
     @patch.object(TaskHelper, 'update_action_log')
     def test_verify_task_logging(self, logger):
         self.env.create(
@@ -284,7 +283,7 @@ class TestTasksLogging(BaseIntegrationTest):
         self.assertEqual(consts.TASK_NAMES.deploy, action_log.action_name)
         self.assertIsNotNone(action_log.end_timestamp)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_update_task_logging_on_env_deletion(self):
         self.env.create(
             nodes_kwargs=[
@@ -292,7 +291,7 @@ class TestTasksLogging(BaseIntegrationTest):
             ]
         )
         deploy = self.env.launch_deployment()
-        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(deploy.status, consts.TASK_STATUSES.error)
 
         # Dereferencing uuid value due to deploy task deletion
         # after environment deletion

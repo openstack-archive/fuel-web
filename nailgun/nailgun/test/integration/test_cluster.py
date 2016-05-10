@@ -16,7 +16,7 @@
 from nailgun import consts
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 
 
 class TestCluster(BaseIntegrationTest):
@@ -91,8 +91,7 @@ class TestCluster(BaseIntegrationTest):
             objects.Cluster.adjust_nodes_lists_on_controller_removing,
             cluster, cluster.nodes, [])
 
-    @fake_tasks(override_state={'progress': 100,
-                                'status': consts.TASK_STATUSES.ready})
+    @mock_rpc()
     def test_get_primary_node(self):
         cluster = self.env.create(
             nodes_kwargs=[
@@ -113,13 +112,12 @@ class TestCluster(BaseIntegrationTest):
 
         # Checking primary nodes after deployment
         deploy = self.env.launch_deployment()
-        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(deploy.status, consts.TASK_STATUSES.error)
 
         self.check_has_primary_node(cluster, ('controller',))
         self.check_no_primary_node(cluster, ('compute', 'fake_role'))
 
-    @fake_tasks(override_state={'progress': 100,
-                                'status': consts.TASK_STATUSES.ready})
+    @mock_rpc()
     def test_get_primary_node_pending_deletion(self):
         cluster = self.env.create(
             api=True,
@@ -131,7 +129,7 @@ class TestCluster(BaseIntegrationTest):
 
         # Checking primary present
         deploy = self.env.launch_deployment()
-        self.assertEqual(deploy.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(deploy.status, consts.TASK_STATUSES.error)
 
         self.check_has_primary_node(cluster, ('controller',))
         self.check_no_primary_node(cluster, ('compute', 'fake_role'))

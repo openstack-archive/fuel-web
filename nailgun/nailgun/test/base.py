@@ -29,7 +29,7 @@ from six.moves import range
 import uuid
 
 from datetime import datetime
-from functools import partial
+import functools
 from itertools import izip
 from netaddr import IPNetwork
 from random import randint
@@ -1490,7 +1490,7 @@ def fake_tasks(fake_rpc=True,
         if fake_rpc:
             func = mock.patch(
                 'nailgun.task.task.rpc.cast',
-                partial(
+                functools.partial(
                     nailgun.task.task.fake_cast,
                     **kwargs
                 )
@@ -1519,6 +1519,26 @@ def fake_tasks(fake_rpc=True,
                 **kwargs
             )(func)
         return func
+    return wrapper
+
+
+def mock_rpc(pass_mock=False, **rpc_mock_kwargs):
+    """Decorator that mocks rpc.cast
+
+    :param pass_mock: should decorator pass mocked object to decorated
+    function arguments
+    :param rpc_mock_kwargs: additional arguments to mock.patch function
+    """
+    def wrapper(f):
+        @functools.wraps(f)
+        def inner(*args, **kwargs):
+            with mock.patch('nailgun.rpc.cast', **rpc_mock_kwargs) as rpc_mock:
+                if pass_mock:
+                    return f(*(args + (rpc_mock,)), **kwargs)
+                else:
+                    return f(*args, **kwargs)
+
+        return inner
     return wrapper
 
 

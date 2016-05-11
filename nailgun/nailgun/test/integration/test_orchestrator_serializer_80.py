@@ -27,10 +27,6 @@ from nailgun import rpc
 
 from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer80
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkTemplateSerializer80
 from nailgun.orchestrator.orchestrator_graph import AstuteGraph
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
@@ -40,6 +36,11 @@ from nailgun.test.integration.test_orchestrator_serializer_70 import \
     TestDeploymentHASerializer70
 from nailgun.test.integration.test_orchestrator_serializer_70 import \
     TestNetworkTemplateSerializer70
+
+from nailgun.extensions.network_manager.serializers.neutron_serializers \
+    import NeutronNetworkDeploymentSerializer80
+from nailgun.extensions.network_manager.serializers.neutron_serializers \
+    import NeutronNetworkTemplateSerializer80
 
 
 class TestSerializer80Mixin(object):

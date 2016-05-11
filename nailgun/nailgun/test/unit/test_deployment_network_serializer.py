@@ -14,8 +14,9 @@
 
 from mock import patch
 
-from nailgun.orchestrator import deployment_serializers as ds
 from nailgun.test import base
+
+from nailgun.extensions.network_manager.serializers import neutron_serializers
 
 CREDS = {'tenant': {'value': 'NONDEFAULT'}}
 
@@ -69,12 +70,12 @@ class NetworkTenantNameMixin(object):
 class TestNeutronDeploymentSerializer(BaseTestNeutronDeploymentSerializer,
                                       NetworkTenantNameMixin):
     env_version = '1111-5.1'
-    serializer = ds.NeutronNetworkDeploymentSerializer
+    serializer = neutron_serializers.NeutronNetworkDeploymentSerializer
 
 
 class TestNeutronDeploymentSerializer70(BaseTestNeutronDeploymentSerializer,
                                         NetworkTenantNameMixin):
-    serializer = ds.NeutronNetworkDeploymentSerializer70
+    serializer = neutron_serializers.NeutronNetworkDeploymentSerializer70
     env_version = '1111-7.0'
 
     def test_external_network(self):
@@ -97,7 +98,7 @@ class TestNeutronDeploymentSerializer70(BaseTestNeutronDeploymentSerializer,
 
 class TestNeutronDeploymentSerializer80(BaseTestNeutronDeploymentSerializer,
                                         NetworkTenantNameMixin):
-    serializer = ds.NeutronNetworkDeploymentSerializer80
+    serializer = neutron_serializers.NeutronNetworkDeploymentSerializer80
     env_version = '1111-8.0'
 
     def test_external_network(self):

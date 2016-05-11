@@ -19,8 +19,9 @@ import yaml
 
 from nailgun import consts
 from nailgun import errors
+from nailgun.extensions.network_manager.serializers.base \
+    import NetworkDeploymentSerializer
 from nailgun import objects
-from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import tasks_serializer
 from nailgun.test import base

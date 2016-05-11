@@ -1424,22 +1424,6 @@ class RemoveStatsUserTaskManager(BaseStatsUserTaskManager):
     task_cls = tasks.RemoveStatsUserTask
 
 
-class UpdateDnsmasqTaskManager(TaskManager):
-
-    def execute(self, **kwargs):
-        logger.info("Starting update_dnsmasq task")
-        self.check_running_task(consts.TASK_NAMES.update_dnsmasq)
-
-        task = Task(name=consts.TASK_NAMES.update_dnsmasq)
-        db().add(task)
-        db().commit()
-        self._call_silently(
-            task,
-            tasks.UpdateDnsmasqTask
-        )
-        return task
-
-
 class OpenstackConfigTaskManager(TaskManager):
 
     def get_deployment_task(self):

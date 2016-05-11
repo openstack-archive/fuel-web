@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import inspect
 from itertools import chain
 
 from stevedore.extension import ExtensionManager
@@ -63,6 +64,34 @@ def get_extension(name):
 
     raise errors.CannotFindExtension(
         "Cannot find extension with name '{0}'".format(name))
+
+
+def callback_wrapper(name, pass_args=None):
+    pass_args = pass_args or []
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            arg_map = inspect.getcallargs(func, *args)
+            filtered_args = [arg_map[arg] for arg in pass_args]
+            before_func_name = 'before_{}'.format(name)
+            after_func_name = 'after_{}'.format(name)
+
+            # Called when a before or after callback doesn't exist for an ext
+            def noop(*args, **kwargs):
+                pass
+
+            for extension in get_all_extensions():
+                before_func = getattr(extension, before_func_name, noop)
+                before_func(*filtered_args, **kwargs)
+
+            func(*args, **kwargs)
+
+            for extension in get_all_extensions():
+                after_func = getattr(extension, after_func_name, noop)
+                after_func(*filtered_args, **kwargs)
+
+        return wrapper
+    return decorator
 
 
 def _get_extension_by_node(call_name, node):
@@ -116,6 +145,11 @@ def fire_callback_on_node_collection_delete(node_ids):
 def fire_callback_on_nodegroup_create(nodegroup):
     for extension in get_all_extensions():
         extension.on_nodegroup_create(nodegroup)
+
+
+def fire_callback_on_nodegroup_delete(nodegroup):
+    for extension in get_all_extensions():
+        extension.on_nodegroup_delete(nodegroup)
 
 
 def fire_callback_on_cluster_create(cluster, data):

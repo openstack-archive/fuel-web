@@ -26,12 +26,8 @@ from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.node_group import NodeGroupValidator
 
-from nailgun import consts
-from nailgun.db import db
-
 from nailgun import errors
 from nailgun import objects
-from nailgun.task.manager import UpdateDnsmasqTaskManager
 
 
 class NodeGroupHandler(SingleHandler):
@@ -55,14 +51,13 @@ class NodeGroupHandler(SingleHandler):
             instance=node_group
         )
 
-        db().delete(node_group)
-        db().flush()
         try:
-            task = UpdateDnsmasqTaskManager().execute()
-        except errors.TaskAlreadyRunning:
-            raise self.http(409, errors.UpdateDnsmasqTaskIsRunning.message)
-        if task.status == consts.TASK_STATUSES.error:
-            raise self.http(400, task.message)
+            self.single.delete(node_group)
+        except errors.TaskAlreadyRunning as exc:
+            raise self.http(409, exc.message)
+        except Exception as exc:
+            raise self.http(400, exc.message)
+
         raise self.http(204)
 
 

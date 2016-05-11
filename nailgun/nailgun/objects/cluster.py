@@ -1477,6 +1477,21 @@ class Cluster(NailgunObject):
                 network_configuration.NeutronNetworkConfigurationSerializer
         return serializer.serialize_for_cluster(instance)
 
+    @classmethod
+    def get_restrictions_models(cls, instance, attrs=None):
+        """Return models which are used in restrictions mechanism
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :param attrs: models' settings will be overwritten with this value
+        :return: dict with models
+        """
+        return {
+            'settings': attrs or cls.get_editable_attributes(instance),
+            'cluster': instance,
+            'version': settings.VERSION,
+            'networking_parameters': instance.network_config,
+        }
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

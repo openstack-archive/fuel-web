@@ -34,37 +34,15 @@ from nailgun.utils.role_resolver import RoleResolver
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
     VmwareDeploymentSerializerMixin
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer51
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer60
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer61
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer70
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer80
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer90
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkTemplateSerializer70
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkTemplateSerializer80
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkTemplateSerializer90
-from nailgun.orchestrator.nova_serializers import \
-    NovaNetworkDeploymentSerializer
-from nailgun.orchestrator.nova_serializers import \
-    NovaNetworkDeploymentSerializer61
-from nailgun.orchestrator.nova_serializers import \
-    NovaNetworkDeploymentSerializer70
+
+from nailgun.extensions.network_manager.serializers import neutron_serializers
+from nailgun.extensions.network_manager.serializers import nova_serializers
 
 
 class DeploymentMultinodeSerializer(object):
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer
+    nova_network_serializer = nova_serializers.NovaNetworkDeploymentSerializer
+    neutron_network_serializer = \
+        neutron_serializers.NeutronNetworkDeploymentSerializer
 
     critical_roles = frozenset(('controller', 'ceph-osd', 'primary-mongo'))
 
@@ -395,33 +373,39 @@ class DeploymentHASerializer50(MuranoMetadataSerializerMixin,
 
 class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer50):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer51
+    nova_network_serializer = nova_serializers.NovaNetworkDeploymentSerializer
+    neutron_network_serializer = \
+        neutron_serializers.NeutronNetworkDeploymentSerializer51
 
 
 class DeploymentHASerializer51(DeploymentHASerializer50):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer51
+    nova_network_serializer = nova_serializers.NovaNetworkDeploymentSerializer
+    neutron_network_serializer = \
+        neutron_serializers.NeutronNetworkDeploymentSerializer51
 
 
 class DeploymentMultinodeSerializer60(DeploymentMultinodeSerializer50):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    nova_network_serializer = nova_serializers.NovaNetworkDeploymentSerializer
+    neutron_network_serializer = \
+        neutron_serializers.NeutronNetworkDeploymentSerializer60
 
 
 class DeploymentHASerializer60(DeploymentHASerializer50):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer60
+    nova_network_serializer = nova_serializers.NovaNetworkDeploymentSerializer
+    neutron_network_serializer = \
+        neutron_serializers.NeutronNetworkDeploymentSerializer60
 
 
 class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
                                       VmwareDeploymentSerializerMixin):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer61
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
+    nova_network_serializer = \
+        nova_serializers.NovaNetworkDeploymentSerializer61
+    neutron_network_serializer = \
+        neutron_serializers.NeutronNetworkDeploymentSerializer61
 
     def serialize_node(self, node, role):
         serialized_node = super(
@@ -443,8 +427,10 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
 class DeploymentHASerializer61(DeploymentHASerializer,
                                VmwareDeploymentSerializerMixin):
 
-    nova_network_serializer = NovaNetworkDeploymentSerializer61
-    neutron_network_serializer = NeutronNetworkDeploymentSerializer61
+    nova_network_serializer = \
+        nova_serializers.NovaNetworkDeploymentSerializer61
+    neutron_network_serializer = \
+        neutron_serializers.NeutronNetworkDeploymentSerializer61
 
     def serialize_node(self, node, role):
         serialized_node = super(
@@ -509,16 +495,17 @@ class DeploymentHASerializer61(DeploymentHASerializer,
 class DeploymentHASerializer70(DeploymentHASerializer61):
     # nova_network_serializer is just for compatibility with current BVTs
     # and other tests. It can be removed when tests are fixed.
-    nova_network_serializer = NovaNetworkDeploymentSerializer70
+    nova_network_serializer = \
+        nova_serializers.NovaNetworkDeploymentSerializer70
 
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:
             return cls.nova_network_serializer
         elif cluster.network_config.configuration_template:
-            return NeutronNetworkTemplateSerializer70
+            return neutron_serializers.NeutronNetworkTemplateSerializer70
         else:
-            return NeutronNetworkDeploymentSerializer70
+            return neutron_serializers.NeutronNetworkDeploymentSerializer70
 
     def get_assigned_vips(self, cluster):
         return {}
@@ -529,9 +516,9 @@ class DeploymentHASerializer80(DeploymentHASerializer70):
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
-            return NeutronNetworkTemplateSerializer80
+            return neutron_serializers.NeutronNetworkTemplateSerializer80
         else:
-            return NeutronNetworkDeploymentSerializer80
+            return neutron_serializers.NeutronNetworkDeploymentSerializer80
 
 
 class DeploymentHASerializer90(DeploymentHASerializer80):
@@ -560,9 +547,9 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.network_config.configuration_template:
-            return NeutronNetworkTemplateSerializer90
+            return neutron_serializers.NeutronNetworkTemplateSerializer90
         else:
-            return NeutronNetworkDeploymentSerializer90
+            return neutron_serializers.NeutronNetworkDeploymentSerializer90
 
     def serialize_node(self, node, role):
         serialized_node = super(

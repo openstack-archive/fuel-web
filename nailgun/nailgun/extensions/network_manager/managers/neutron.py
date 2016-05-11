@@ -33,8 +33,8 @@ from nailgun.extensions.network_manager.manager import AssignIPsLegacyMixin
 from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
 
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkTemplateSerializer70
+from nailgun.extensions.network_manager.serializers.neutron_serializers \
+    import NeutronNetworkTemplateSerializer70
 
 
 class NeutronManager(NetworkManager):

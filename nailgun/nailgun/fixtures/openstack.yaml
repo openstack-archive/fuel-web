@@ -719,6 +719,14 @@
           min_size: { generator: "calc_min_cinder_size" }
           mount: "none"
           volumes: []
+      rule_to_pick_boot_disk:
+        - type: "exclude_disks_by_name"
+          regex: "^nvme"
+          description: "NVMe drives should be skipped as accessing such drives during the boot typically requires using UEFI which is still not supported by fuel-agent (it always installs BIOS variant of  grub). grub bug (http://savannah.gnu.org/bugs/?41883)"
+        - type: "pick_root_disk_if_disk_name_match"
+          regex: "^md"
+          root_mount: "/"
+          description: "If we have /root on fake raid, then /boot partition should land on to it too. We can't proceed with grub-install otherwise."
     attributes_metadata:
       editable:
         access:

@@ -16,6 +16,7 @@
 
 from nailgun.extensions.base import BaseExtension
 from nailgun.extensions.base import BasePipeline
+from nailgun.extensions.manager import callback_wrapper
 from nailgun.extensions.manager import get_extension
 from nailgun.extensions.manager import get_all_extensions
 from nailgun.extensions.manager import fire_callback_on_before_deployment_check
@@ -25,6 +26,7 @@ from nailgun.extensions.manager import fire_callback_on_node_create
 from nailgun.extensions.manager import fire_callback_on_node_update
 from nailgun.extensions.manager import fire_callback_on_node_reset
 from nailgun.extensions.manager import fire_callback_on_nodegroup_create
+from nailgun.extensions.manager import fire_callback_on_nodegroup_delete
 from nailgun.extensions.manager import fire_callback_on_cluster_create
 from nailgun.extensions.manager import fire_callback_on_cluster_delete
 from nailgun.extensions.manager import fire_callback_on_remove_node_from_cluster

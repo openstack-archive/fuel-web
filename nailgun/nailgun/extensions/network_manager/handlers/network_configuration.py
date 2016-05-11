@@ -17,7 +17,7 @@
 """
 Handlers dealing with network configurations
 """
-
+from ..task.manager import UpdateDnsmasqTaskManager
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 
@@ -41,7 +41,6 @@ from nailgun import objects
 from nailgun import errors
 from nailgun.logger import logger
 from nailgun.task.manager import CheckNetworksTaskManager
-from nailgun.task.manager import UpdateDnsmasqTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 

@@ -85,7 +85,8 @@ class TestPluginManager(base.BaseIntegrationTest):
         )
         volumes_metadata = PluginManager.get_volumes_metadata(cluster)
         expected_volumes_metadata = {
-            'volumes_roles_mapping': {}, 'volumes': []}
+            'volumes_roles_mapping': {}, 'volumes': [],
+            'rule_to_pick_boot_disk': []}
 
         self.assertEqual(
             volumes_metadata, expected_volumes_metadata)

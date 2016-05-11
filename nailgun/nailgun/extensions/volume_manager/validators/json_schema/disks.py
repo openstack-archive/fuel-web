@@ -32,6 +32,10 @@ disks_simple_format_schema = {
                 'description': 'Disk size in megabytes',
                 'type': 'integer'
             },
+            'bootable': {
+                'description': 'Flag to use this disk as bootable',
+                'type': 'boolean'
+            },
             'volumes': {
                 'description': 'Volumes for disk',
                 'type': 'array',

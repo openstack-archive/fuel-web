@@ -344,7 +344,7 @@ class DisksFormatConvertor(object):
 class Disk(object):
 
     def __init__(self, volumes, generator_method, disk_id, name,
-                 size, boot_is_raid=True, possible_pvs_count=0,
+                 size, possible_pvs_count=0,
                  disk_extra=None, bootable=False):
         """Create disk.
 
@@ -353,8 +353,6 @@ class Disk(object):
         :param disk_id: uniq id for disk
         :param name: name, used for UI only
         :param size: size of disk
-        :param boot_is_raid: if True partition_type
-            equal to 'raid' else 'partition'
         :param possible_pvs_count: used for lvm pool calculation
             size of lvm pool = possible_pvs_count * lvm meta size
         :param bootable: if True system will boot from this disk
@@ -370,9 +368,6 @@ class Disk(object):
         self.bootable = bootable
         self.set_volumes(volumes)
 
-        # For determination type of boot
-        self.boot_is_raid = boot_is_raid
-
         # For each disk we need to create
         # service partitions and reserve space
         self.create_service_partitions()
@@ -385,37 +380,17 @@ class Disk(object):
 
     def create_service_partitions(self):
         """Reserve space for service partitions."""
-        self.create_boot_records()
-        self.create_boot_partition()
+        self.create_boot()
         self.create_lvm_meta_pool(self.max_lvm_meta_pool_size)
 
-    def create_boot_partition(self):
-        """Reserve space for boot partition."""
+    def create_boot(self):
+        """Reserve space for boot partitions."""
         boot_size = self.call_generator('calc_boot_size')
-        partition_type = 'partition'
-        if self.boot_is_raid:
-            partition_type = 'raid'
-
-        existing_boot = filter(
-            lambda volume: volume.get('mount') == '/boot', self.volumes)
-
-        if not existing_boot:
-            self.volumes.append({
-                'type': partition_type,
-                'file_system': 'ext2',
-                'mount': '/boot',
-                'name': 'Boot',
-                'size': self.get_size(boot_size)})
-
-    def create_boot_records(self):
-        """Reserve space for efi, gpt, bios."""
-        boot_records_size = self.call_generator('calc_boot_records_size')
         existing_boot = filter(
             lambda volume: volume.get('type') == 'boot', self.volumes)
-
         if not existing_boot:
             self.volumes.append(
-                {'type': 'boot', 'size': self.get_size(boot_records_size)})
+                {'type': 'boot', 'size': self.get_size(boot_size)})
 
     def get_size(self, size):
         """Get size and reduce free space.
@@ -608,10 +583,7 @@ class VolumeManager(object):
         self.allowed_volumes = node.get_node_spaces()
 
         self.disks = []
-        disks_count = len(node.disks)
         for d in sorted(node.disks, key=lambda i: i['name']):
-            boot_is_raid = True if disks_count > 1 else False
-
             existing_disk = self.find_existing_disk(d, self.volumes)
             disk_id = existing_disk[0]['id'] if existing_disk else d["disk"]
             disk_volumes = existing_disk[0].get(
@@ -624,7 +596,6 @@ class VolumeManager(object):
                 disk_id,
                 d["name"],
                 byte_to_megabyte(d["size"]),
-                boot_is_raid=boot_is_raid,
                 # Count of possible PVs equal to count of allowed VGs
                 possible_pvs_count=len(only_vg(self.allowed_volumes)),
                 disk_extra=d.get("extra", []),
@@ -841,10 +812,8 @@ class VolumeManager(object):
             'calc_swap_size': self._calc_swap_size,
             # 15G <= root <= 50G
             'calc_root_size': self._calc_root_size,
-            # boot = 200MB
-            'calc_boot_size': lambda: 200,
-            # boot records size = 300MB
-            'calc_boot_records_size': lambda: 300,
+            # boot = 500MB
+            'calc_boot_size': lambda: 500,
             # let's think that size of mbr is 10MB
             'calc_mbr_size': lambda: 10,
             # lvm meta = 64MB for one volume group
@@ -871,7 +840,7 @@ class VolumeManager(object):
         generators['calc_min_os_size'] = generators['calc_os_size']
 
         if generator not in generators:
-            raise errors.CannotFindGenerator(
+            raise Exception(
                 u'Cannot find generator %s' % generator)
 
         result = generators[generator](*args)
@@ -1152,8 +1121,7 @@ class VolumeManager(object):
     def __calc_minimal_installation_size(self):
         """Calc minimal installation size depend on node role."""
         disks_count = len(filter(lambda disk: disk.size > 0, self.disks))
-        boot_size = self.call_generator('calc_boot_size') + \
-            self.call_generator('calc_boot_records_size')
+        boot_size = self.call_generator('calc_boot_size')
 
         min_installation_size = disks_count * boot_size
         for volume in self.allowed_volumes:

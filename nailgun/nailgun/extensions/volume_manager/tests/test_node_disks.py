@@ -783,8 +783,7 @@ class TestVolumeManager(BaseIntegrationTest):
         spaces = volume_manager.volumes
         reserved_size = self.reserved_size(spaces)
         disk_sum_size = sum([disk['size'] for disk in only_disks(spaces)])
-        boot_data_size = volume_manager.call_generator('calc_boot_size') + \
-            volume_manager.call_generator('calc_boot_records_size')
+        boot_data_size = volume_manager.call_generator('calc_boot_size')
         vg_size = 0
         sum_lvm_meta = 0
 
@@ -1038,8 +1037,7 @@ class TestVolumeManager(BaseIntegrationTest):
     def __calc_minimal_installation_size(self, volume_manager):
         disks_count = len(filter(lambda disk: disk.size > 0,
                                  volume_manager.disks))
-        boot_size = volume_manager.call_generator('calc_boot_size') + \
-            volume_manager.call_generator('calc_boot_records_size')
+        boot_size = volume_manager.call_generator('calc_boot_size')
 
         min_installation_size = disks_count * boot_size
         for volume in volume_manager.allowed_volumes:
@@ -1151,25 +1149,10 @@ class TestVolumeManager(BaseIntegrationTest):
 
 class TestDisks(BaseIntegrationTest):
 
-    def get_boot(self, volumes):
-        return filter(
-            lambda volume: volume.get('mount') == '/boot',
-            volumes)[0]
-
-    def create_disk(self, boot_is_raid=False, possible_pvs_count=0):
+    def create_disk(self, possible_pvs_count=0):
         return Disk(
             [], lambda name: 100, 'sda', 'sda', 10000,
-            boot_is_raid=boot_is_raid, possible_pvs_count=possible_pvs_count)
-
-    def test_create_mbr_as_raid_if_disks_count_greater_than_zero(self):
-        disk = self.create_disk(boot_is_raid=True)
-        boot_partition = self.get_boot(disk.volumes)
-        self.assertEqual(boot_partition['type'], 'raid')
-
-    def test_create_mbr_as_partition_if_disks_count_less_than_zero(self):
-        disk = self.create_disk()
-        boot_partition = self.get_boot(disk.volumes)
-        self.assertEqual(boot_partition['type'], 'partition')
+            possible_pvs_count=possible_pvs_count)
 
     def test_remove_pv(self):
         disk = self.create_disk(possible_pvs_count=1)
@@ -1178,12 +1161,6 @@ class TestDisks(BaseIntegrationTest):
         disk.remove_pv('pv_name')
 
         self.assertEqual(disk_without_pv.render(), disk.render())
-
-    def test_boot_partition_has_file_system(self):
-        disk = self.create_disk(possible_pvs_count=1)
-        boot_record = filter(
-            lambda volume: volume.get('mount') == '/boot', disk.volumes)[0]
-        self.assertEqual(boot_record['file_system'], 'ext2')
 
 
 class TestFixtures(BaseIntegrationTest):

@@ -103,14 +103,7 @@ class TestDeploymentAttributesSerialization80(
                 u'volumes': [
                     {
                         u'type': u'boot',
-                        u'size': 300
-                    },
-                    {
-                        u'mount': u'/boot',
-                        u'type': u'partition',
-                        u'file_system': u'ext2',
-                        u'name': u'Boot',
-                        u'size': 200
+                        u'size': 500
                     },
                     {
                         u'type': u'lvm_meta_pool',

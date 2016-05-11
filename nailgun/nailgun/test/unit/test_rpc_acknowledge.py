@@ -17,6 +17,7 @@
 import mock
 
 from psycopg2.extensions import TransactionRollbackError
+from sqlalchemy.exc import OperationalError
 
 from nailgun import errors
 from nailgun.rpc import receiverd
@@ -51,11 +52,33 @@ class TestRpcAcknowledge(base.BaseTestCase):
         self.assertEqual(self.receiver.test.call_count, 1)
         self.assertEqual(self.msg.ack.call_count, 1)
 
-    def test_message_requeued_if_deadlock(self):
-        self.receiver.test.side_effect = TransactionRollbackError
+    def test_message_requeued_on_deadlock(self):
+        self.receiver.test.side_effect = [
+            OperationalError("SELECT 1", [],
+                             TransactionRollbackError("deadlock detected")),
+            OperationalError("SELECT 1", [],
+                             TransactionRollbackError),
+        ]
         self.consumer.consume_msg(self.body, self.msg)
         self.assertFalse(self.msg.ack.called)
         self.assertEqual(self.msg.requeue.call_count, 1)
+
+        self.consumer.consume_msg(self.body, self.msg)
+        self.assertFalse(self.msg.ack.called)
+        self.assertEqual(self.msg.requeue.call_count, 2)
+
+    def test_message_not_requeued_on_non_deadlock_operational_error(self):
+        self.receiver.test.side_effect = [
+            OperationalError("SELECT 1", [], Exception("Any message")),
+            OperationalError
+        ]
+        self.consumer.consume_msg(self.body, self.msg)
+        self.assertEqual(self.msg.ack.call_count, 1)
+        self.assertFalse(self.msg.requeue.called)
+
+        self.consumer.consume_msg(self.body, self.msg)
+        self.assertEqual(self.msg.ack.call_count, 2)
+        self.assertFalse(self.msg.requeue.called)
 
     def test_message_requeued_in_case_of_interrupt(self):
         self.receiver.test.side_effect = KeyboardInterrupt

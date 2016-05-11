@@ -145,8 +145,8 @@ class NodeAssignmentValidator(AssignmentValidator):
     def check_roles_requirement(cls, roles, roles_metadata, models):
         for role in roles:
             if "restrictions" in roles_metadata[role]:
-                depends = roles_metadata[role]['restrictions']
-                for condition in depends:
+                restrictions = roles_metadata[role]['restrictions']
+                for condition in restrictions:
                     expression = condition['condition']
 
                     if Expression(expression, models).evaluate():

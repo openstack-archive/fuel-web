@@ -1407,14 +1407,8 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def _check_nodes_roles(cls, task):
         cluster = task.cluster
-        # TODO(asvechnikov): move out this and others models initialization
-        #                    to single place
-        models = {
-            'settings': objects.Cluster.get_editable_attributes(cluster),
-            'cluster': cluster,
-            'version': settings.VERSION,
-            'networking_parameters': cluster.network_config,
-        }
+
+        models = objects.Cluster.get_restrictions_models(cluster)
 
         nodes = TaskHelper.nodes_to_deploy(cluster)
         roles_metadata = objects.Cluster.get_roles(cluster)

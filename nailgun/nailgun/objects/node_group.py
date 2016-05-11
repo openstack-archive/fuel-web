@@ -21,6 +21,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
 from nailgun.extensions import fire_callback_on_nodegroup_create
+from nailgun.extensions import fire_callback_on_nodegroup_delete
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -43,6 +44,11 @@ class NodeGroup(NailgunObject):
         db().flush()
         db().refresh(cluster)
         return new_group
+
+    @classmethod
+    def delete(cls, instance):
+        fire_callback_on_nodegroup_delete(instance)
+        super(NodeGroup, cls).delete(instance)
 
 
 class NodeGroupCollection(NailgunCollection):

@@ -131,6 +131,7 @@ class TestDeploymentAttributesSerialization80(
                 ],
                 u'type': u'disk',
                 u'id': u'sda',
+                u'bootable': True,
                 u'size': 958
             },
             {

@@ -373,7 +373,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster.network_config.fixed_networks_vlan_start = None
         self.db.commit()
         node_db = sorted(self.cluster.nodes, key=lambda n: n.id)[0]
-        from nailgun.orchestrator.deployment_serializers \
+        from nailgun.extensions.network_manager.serializers.nova_serializers \
             import NovaNetworkDeploymentSerializer
         interfaces = NovaNetworkDeploymentSerializer.\
             configure_interfaces(node_db)

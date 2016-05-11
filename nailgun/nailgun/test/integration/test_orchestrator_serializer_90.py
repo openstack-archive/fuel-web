@@ -26,10 +26,10 @@ from nailgun.orchestrator import deployment_serializers
 from nailgun.plugins import adapters
 from nailgun.utils import reverse
 
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer90
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkTemplateSerializer90
+from nailgun.extensions.network_manager.serializers.neutron_serializers \
+    import NeutronNetworkDeploymentSerializer90
+from nailgun.extensions.network_manager.serializers.neutron_serializers \
+    import NeutronNetworkTemplateSerializer90
 
 from nailgun.test.integration import test_orchestrator_serializer_80
 

@@ -20,13 +20,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-import traceback
+
 
 import amqp.exceptions as amqp_exceptions
 from kombu import Connection
 from kombu.mixins import ConsumerMixin
-from psycopg2.extensions import TransactionRollbackError
 import six
+from sqlalchemy.exc import OperationalError
 
 from nailgun.db import db
 from nailgun import errors
@@ -57,11 +57,18 @@ class RPCConsumer(ConsumerMixin):
         except errors.CannotFindTask as e:
             logger.warn(str(e))
             msg.ack()
-        except TransactionRollbackError:
-            logger.error("Deadlock on message processing")
-            msg.requeue()
+        except OperationalError as e:
+            if (
+                'TransactionRollbackError' in e.message or
+                'deadlock' in e.message
+            ):
+                logger.exception("Deadlock on message: %s", msg)
+                msg.requeue()
+            else:
+                logger.exception("Operational error on message: %s", msg)
+                msg.ack()
         except Exception:
-            logger.error(traceback.format_exc())
+            logger.exception("Message consume failed: %s", msg)
             msg.ack()
         except KeyboardInterrupt:
             logger.error("Receiverd interrupted.")

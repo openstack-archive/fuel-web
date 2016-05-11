@@ -23,13 +23,14 @@ import re
 import six
 from six.moves import range
 
+from .base import NetworkDeploymentSerializer
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import MellanoxMixin
-from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 from nailgun.settings import settings
 from nailgun import utils
 

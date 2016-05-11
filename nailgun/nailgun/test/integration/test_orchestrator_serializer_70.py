@@ -35,10 +35,6 @@ from nailgun.utils import reverse
 
 from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkDeploymentSerializer70
-from nailgun.orchestrator.neutron_serializers import \
-    NeutronNetworkTemplateSerializer70
 from nailgun.orchestrator.orchestrator_graph import AstuteGraph
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
@@ -48,6 +44,11 @@ from nailgun.test.integration.test_orchestrator_serializer import \
     TestNovaOrchestratorSerializer
 from nailgun.test.integration.test_orchestrator_serializer import \
     TestSerializeInterfaceDriversData
+
+from nailgun.extensions.network_manager.serializers.neutron_serializers \
+    import NeutronNetworkDeploymentSerializer70
+from nailgun.extensions.network_manager.serializers.neutron_serializers \
+    import NeutronNetworkTemplateSerializer70
 
 
 class PrepareDataMixin(object):

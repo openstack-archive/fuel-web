@@ -41,6 +41,12 @@ class NailgunNodeAdapter(object):
             return get_node_spaces(self.node)
         return []
 
+    def get_rule_to_pick_boot(self):
+        from ..manager import get_rule_to_pick_boot
+        if self.node.cluster:
+            return get_rule_to_pick_boot(self.node)
+        return []
+
     @property
     def disks(self):
         return self.node.meta['disks']

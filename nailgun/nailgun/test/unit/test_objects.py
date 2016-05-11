@@ -1467,7 +1467,8 @@ class TestClusterObject(BaseTestCase):
             'volumes': [
                 {'id': 'test_plugin_1', 'type': 'vg'},
                 {'id': 'test_plugin_2', 'type': 'vg'}
-            ]
+            ],
+            'rule_to_pick_boot_disk': []
         }
         with mock.patch.object(
                 PluginManager, 'get_volumes_metadata') as plugin_volumes:

@@ -33,6 +33,7 @@ class NodeDisksValidator(BasicValidator):
         # https://bugs.launchpad.net/fuel/+bug/1308592
         if NailgunNodeAdapter(node).is_ubuntu:
             cls.os_vg_single_disk(dict_data)
+        cls.check_single_disk_bootable(dict_data)
         return dict_data
 
     @classmethod
@@ -80,3 +81,13 @@ class NodeDisksValidator(BasicValidator):
             raise errors.InvalidData(u'All volumes with the same name should'
                                      u' have the same value for `keep_data` '
                                      u'flag, incorrect volumes: {0}'.format(s))
+
+    @classmethod
+    def check_single_disk_bootable(cls, data):
+        bootable_disks = [disk['id'] for disk in data
+                          if disk.get('bootable', False)]
+        if len(bootable_disks) > 1:
+            raise errors.InvalidData(
+                u'Disks {} can not be selected as bootable at the same time. '
+                u'Only one disk should be selected as bootable.'
+                u''.format(', '.join(bootable_disks)))

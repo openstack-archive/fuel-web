@@ -1477,6 +1477,15 @@ class Cluster(NailgunObject):
                 network_configuration.NeutronNetworkConfigurationSerializer
         return serializer.serialize_for_cluster(instance)
 
+    @classmethod
+    def get_restrictions_models(cls, instance, attrs=None):
+        return {
+            'settings': attrs or cls.get_editable_attributes(instance),
+            'cluster': instance,
+            'version': settings.VERSION,
+            'networking_parameters': instance.network_config,
+        }
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

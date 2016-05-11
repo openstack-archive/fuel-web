@@ -58,6 +58,52 @@ def get_extension(name):
         "Cannot find extension with name '{0}'".format(name))
 
 
+def callback_wrapper(name, pass_args=None):
+    pass_args = pass_args or []
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            arg_map = _build_arg_map(func, pass_args)
+            filtered_args = [args[idx] for idx in arg_map]
+            before_func_name = 'before_{}'.format(name)
+            after_func_name = 'after_{}'.format(name)
+
+            # Called when a before or after callback doesn't exist for an ext
+            def noop(*args, **kwargs):
+                pass
+
+            for extension in get_all_extensions():
+                before_func = getattr(extension, before_func_name, noop)
+                before_func(*filtered_args, **kwargs)
+
+            func(*args, **kwargs)
+
+            for extension in get_all_extensions():
+                after_func = getattr(extension, after_func_name, noop)
+                after_func(*filtered_args, **kwargs)
+
+        return wrapper
+    return decorator
+
+
+def _build_arg_map(func, arg_list):
+    """Maps argument name to index in *args passed to func
+
+    Given a list of variable names it will return their corresponding
+    index in *args.
+
+    Example:
+        def f(x, y, z):
+            pass
+
+    _build_arg_map(f, ['x', 'z') will return [0, 2]
+    """
+    num_args = func.__code__.co_argcount
+    arg_names = func.__code__.co_varnames[:num_args]
+
+    return (arg_names.index(arg) for arg in arg_list)
+
+
 def _get_extension_by_node(call_name, node):
     all_extensions = {ext.name: ext for ext in get_all_extensions()}
     for extension in chain(node.extensions,
@@ -109,6 +155,11 @@ def fire_callback_on_node_collection_delete(node_ids):
 def fire_callback_on_nodegroup_create(nodegroup):
     for extension in get_all_extensions():
         extension.on_nodegroup_create(nodegroup)
+
+
+def fire_callback_on_nodegroup_delete(nodegroup):
+    for extension in get_all_extensions():
+        extension.on_nodegroup_delete(nodegroup)
 
 
 def fire_callback_on_cluster_create(cluster, data):

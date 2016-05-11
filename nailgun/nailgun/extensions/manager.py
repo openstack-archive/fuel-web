@@ -111,6 +111,11 @@ def fire_callback_on_nodegroup_create(nodegroup):
         extension.on_nodegroup_create(nodegroup)
 
 
+def fire_callback_on_nodegroup_delete(nodegroup):
+    for extension in get_all_extensions():
+        extension.on_nodegroup_delete(nodegroup)
+
+
 def fire_callback_on_cluster_create(cluster, data):
     for extension in get_all_extensions():
         extension.on_cluster_create(cluster, data)

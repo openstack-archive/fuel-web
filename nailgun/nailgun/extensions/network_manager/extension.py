@@ -1,3 +1,5 @@
+
+from .task.manager import UpdateDnsmasqTaskManager
 from nailgun import consts
 from nailgun import errors
 from nailgun.extensions import BaseExtension
@@ -110,6 +112,12 @@ class NetworkManagerExtension(BaseExtension):
         )
 
     @classmethod
+    def on_cluster_delete(cls, cluster):
+        if len(cluster.node_groups) > 1:
+            # import it here due to cyclic dependencies problem
+            UpdateDnsmasqTaskManager().execute()
+
+    @classmethod
     def on_nodegroup_create(cls, ng):
         try:
             cluster = objects.Cluster.get_by_uid(ng.cluster_id)
@@ -157,3 +165,14 @@ class NetworkManagerExtension(BaseExtension):
         netmanager = objects.Cluster.get_network_manager(node.cluster)
         netmanager.clear_assigned_networks(node)
         netmanager.clear_bond_configuration(node)
+
+    @classmethod
+    def on_nodegroup_delete(cls, ng):
+        try:
+            task = UpdateDnsmasqTaskManager().execute()
+        except errors.TaskAlreadyRunning:
+            raise errors.TaskAlreadyRunning(
+                errors.UpdateDnsmasqTaskIsRunning.message
+            )
+        if task.status == consts.TASK_STATUSES.error:
+            raise ValueError(task.message)

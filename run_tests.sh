@@ -271,7 +271,7 @@ function run_ui_func_tests {
 
   if [ $no_ui_compression -ne 1 ]; then
     echo "Compressing UI... "
-    ${GULP} build --no-sourcemaps --static-dir=$COMPRESSED_STATIC_DIR
+    ${GULP} build --no-sourcemaps  --static-dir=$COMPRESSED_STATIC_DIR
     if [ $? -ne 0 ]; then
       popd >> /dev/null
       return 1
@@ -520,8 +520,68 @@ DATABASE:
   port: "5432"
   user: "nailgun"
   passwd: "nailgun"
-API_LOG: ${artifacts_path}/api.log
-APP_LOG: ${artifacts_path}/app.log
+API_LOG: &api_log ${artifacts_path}/api.log
+APP_LOG: &nailgun_log ${artifacts_path}/app.log
+LOG_FORMATS:
+  - &python_log_format
+    log_format_id: python
+    regexp: '^(?P<date>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})(?P<msecs>\.\d{3})?\s(?P<level>[A-Z]+)\s(?P<text>.*)$'
+    date_format: '%Y-%m-%d %H:%M:%S'
+    levels:
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
+      - CRITICAL
+  - &remote_openstack_log_format
+    log_format_id: remote_openstack
+    regexp: '^(?P<date>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?P<secfrac>\.\d{1,})?(?P<timezone>(Z|[+-]\d{2}:\d{2}))?\s(?P<level>[a-z]{3,8}):\s+(?P<date_local>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}((.|,)\d{3})?)?(?P<pid>\s+\d+\s+)?(?P<app_level>[A-Z]{3,8})?\s*(?P<text>.*)$'
+    date_format: '%Y-%m-%dT%H:%M:%S'
+    levels:
+      - DEBUG
+      - INFO
+      - NOTICE
+      - WARNING
+      - ERR
+      - CRIT
+      - ALERT
+      - EMERG
+LOG_TYPES:
+  - &local_log_type
+    remote: False
+    multiline: True
+LOGS:
+# Master node logs.
+  - id: app
+    name: "Web backend"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: *nailgun_log
+  - id: api
+    name: "REST API"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: *api_log
+  - id: receiverd
+    name: "RPC consumer"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: '${artifacts_path}/receiverd.log'
+  - id: astute
+    name: "Astute"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: '${artifacts_path}/astute.log'
+  - id: assassin
+    name: "Assassin"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: '${artifacts_path}/assassind.log'
+  - id: ostf
+    name: "HealthCheck"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: "${artifacts_path}/ostf.log"
 EOL
 }
 

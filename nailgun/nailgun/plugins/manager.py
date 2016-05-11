@@ -286,7 +286,8 @@ class PluginManager(object):
         """
         volumes_metadata = {
             'volumes': [],
-            'volumes_roles_mapping': {}
+            'volumes_roles_mapping': {},
+            'rule_to_pick_boot_disk': [],
         }
         release_volumes = cluster.release.volumes_metadata.get('volumes', [])
         release_volumes_ids = [v['id'] for v in release_volumes]
@@ -317,6 +318,8 @@ class PluginManager(object):
                 metadata.get('volumes_roles_mapping', {}))
             volumes_metadata.get('volumes', []).extend(
                 metadata.get('volumes', []))
+            volumes_metadata.get('rule_to_pick_boot_disk', []).extend(
+                metadata.get('rule_to_pick_boot_disk', []))
 
         return volumes_metadata
 

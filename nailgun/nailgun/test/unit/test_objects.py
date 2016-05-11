@@ -32,7 +32,6 @@ import six
 from six.moves import range
 
 from nailgun.api.v1.validators.json_schema import action_log
-
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import BaseTestCase
 from nailgun.utils import reverse
@@ -52,6 +51,7 @@ from nailgun.extensions.network_manager.managers import nova_network
 
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
+from nailgun.settings import settings
 from nailgun.test import base
 from nailgun.utils import dict_merge
 
@@ -1677,6 +1677,25 @@ class TestClusterObject(BaseTestCase):
             'test_value_a',
             updated_attributes['editable']['test_plugin']
                               ['plugin_name_text']['value'])
+
+    @mock.patch.object(objects.Cluster, 'get_editable_attributes')
+    def test_cluster_get_restrictions_models(self, m_get_attrs):
+        attrs = {'some': {'fake': 'attributes'}}
+        m_get_attrs.return_value = attrs
+
+        cluster = mock.Mock()
+
+        models = objects.Cluster.get_restrictions_models(cluster)
+
+        self.assertEqual(
+            {
+                'settings': attrs,
+                'cluster': cluster,
+                'version': settings.VERSION,
+                'networking_parameters': cluster.network_config
+            },
+            models
+        )
 
 
 class TestClusterObjectVirtRoles(BaseTestCase):

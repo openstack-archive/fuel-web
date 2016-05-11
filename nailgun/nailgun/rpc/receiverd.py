@@ -25,8 +25,8 @@ import traceback
 import amqp.exceptions as amqp_exceptions
 from kombu import Connection
 from kombu.mixins import ConsumerMixin
-from psycopg2.extensions import TransactionRollbackError
 import six
+from sqlalchemy.exc import OperationalError
 
 from nailgun.db import db
 from nailgun import errors
@@ -57,9 +57,14 @@ class RPCConsumer(ConsumerMixin):
         except errors.CannotFindTask as e:
             logger.warn(str(e))
             msg.ack()
-        except TransactionRollbackError:
-            logger.error("Deadlock on message processing")
-            msg.requeue()
+        except OperationalError as e:
+            if any(msg in e.message for msg in ('TransactionRollbackError',
+                                                'deadlock')):
+                logger.exception("Deadlock on message processing: %s", msg)
+                msg.requeue()
+            else:
+                logger.error(traceback.format_exc())
+                msg.ack()
         except Exception:
             logger.error(traceback.format_exc())
             msg.ack()

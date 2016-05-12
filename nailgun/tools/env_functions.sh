@@ -61,11 +61,15 @@ APP_LOG: "${NAILGUN_LOGS}/app.log"
 RPC_CONSUMER_LOG_PATH: "${NAILGUN_LOGS}/receiverd.log"
 ASSASSIN_LOG_PATH: "${NAILGUN_LOGS}/assassind.log"
 STATS_LOGS_PATH: ${NAILGUN_LOGS}
+AUTH:
+  AUTHENTICATION_METHOD: "none"
 EOL
 }
 
 prepare_server() {
+    echo "Sycning database scheme"
     python ${NAILGUN_ROOT}/manage.py syncdb > /dev/null
+    echo "Loading default data"
     python ${NAILGUN_ROOT}/manage.py loaddefault > /dev/null
     if test -n "$NAILGUN_FIXTURE_FILES"; then
         for nailgun_fixture_file in $NAILGUN_FIXTURE_FILES; do

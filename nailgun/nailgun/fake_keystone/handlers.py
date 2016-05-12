@@ -60,7 +60,7 @@ class TokensHandler(BaseHandler):
                     "username": "admin",
                     "roles_links": [],
                     "id": "9876",
-                    "roles": [{"name": "admin"}],
+                    "roles": [{"name": settings.FAKE_KEYSTONE_ROLE}],
                     "name": "admin"
                 },
                 "metadata": {

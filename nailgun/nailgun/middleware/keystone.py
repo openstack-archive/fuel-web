@@ -99,6 +99,7 @@ class FakeAuthProtocol(CookieTokenMixin):
 
     def __call__(self, env, start_response):
         if validate_token(self.get_auth_token(env)):
+            env['HTTP_X_ROLES'] = settings.FAKE_KEYSTONE_ROLE
             return self.app(env, start_response)
         else:
             start_response('401 Unauthorized', [])

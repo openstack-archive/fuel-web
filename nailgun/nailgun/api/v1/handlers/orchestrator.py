@@ -42,6 +42,7 @@ from nailgun.orchestrator.stages import pre_deployment_serialize
 from nailgun.orchestrator import task_based_deployment
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
+from nailgun import utils
 
 
 class NodesFilterMixin(object):
@@ -315,6 +316,8 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        force = utils.parse_bool(web.input(force='0').force)
+
         data = self.checked_data(
             self.validator.validate_deployment,
             cluster=cluster,
@@ -322,7 +325,8 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes):
         return self.handle_task(
             cluster,
             deployment_tasks=data,
-            graph_type=self.get_graph_type())
+            graph_type=self.get_graph_type(),
+            force=force)
 
 
 class TaskDeployGraph(BaseHandler):

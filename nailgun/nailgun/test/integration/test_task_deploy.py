@@ -17,9 +17,11 @@
 import mock
 
 from nailgun import consts
+from nailgun.db.sqlalchemy import models
 from nailgun import errors
-from nailgun.objects import Task
+from nailgun import objects
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
+from nailgun import rpc
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -150,7 +152,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         )
         self.assertNotEqual(
             consts.TASK_STATUSES.error,
-            Task.get_by_uuid(
+            objects.Task.get_by_uuid(
                 uuid=resp.json_body['uuid'], fail_if_not_found=True
             ).status
         )
@@ -212,3 +214,108 @@ class TestTaskDeploy(BaseIntegrationTest):
             pending_addition=True
         )
         self.check_reexecute_task_on_cluster_update()
+
+
+class TestTaskDeployAfterDeployment(BaseIntegrationTest):
+    def setUp(self):
+        super(TestTaskDeployAfterDeployment, self).setUp()
+        self.cluster = self.env.create(
+            api=False,
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2015.1.0-9.0',
+            },
+        )
+
+        # well, we can't change deployment_tasks.yaml fixture since it
+        # must be compatible with granular deployment (and it doesn't support
+        # yaql based condition). so the only choice - patch netconfig task
+        # on fly.
+        # graph = objects.DeploymentGraph.get_for_model(self.cluster.release)
+        self.db.query(models.DeploymentGraphTask)\
+            .filter_by(task_name='netconfig')\
+            .update({
+                'condition': {
+                    'yaql_exp': 'changedAny($.network_scheme, $.dpdk)',
+                }
+            })
+
+        with mock.patch('nailgun.task.task.rpc.cast'):
+            task = self.env.launch_deployment()
+            self.db.commit()
+
+            rpc.receiver.NailgunReceiver().deploy_resp(
+                task_uuid=next((
+                    t.uuid for t in task.subtasks
+                    if t.name == consts.TASK_NAMES.deployment), None),
+                status=consts.TASK_STATUSES.ready,
+                progress=100,
+                nodes=[
+                    {'uid': n.uid, 'status': consts.NODE_STATUSES.ready}
+                    for n in self.cluster.nodes
+                ]
+            )
+
+            # in order to do not implement iterative responses for each
+            # particular deployment task, let's mark them all as 'ready'
+            self.db.query(objects.DeploymentHistory.model).update({
+                'status': consts.HISTORY_TASK_STATUSES.ready,
+            })
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_task_deploy_specified_tasks(self, rpc_cast):
+        compute = next(
+            (x for x in self.env.nodes if 'compute' in x.roles), None
+        )
+        resp = self.app.put(
+            reverse(
+                'DeploySelectedNodesWithTasks',
+                kwargs={'cluster_id': self.cluster.id}
+            ) + '?nodes={0}'.format(compute.uid),
+            params='["netconfig"]',
+            headers=self.default_headers)
+        self.assertNotEqual(
+            consts.TASK_STATUSES.error,
+            objects.Task.get_by_uuid(
+                uuid=resp.json_body['uuid'], fail_if_not_found=True
+            ).status)
+
+        graph = rpc_cast.call_args[0][1]['args']['tasks_graph']
+
+        # LCM: no changes - no tasks
+        self.assertItemsEqual(
+            [],
+            (task['id'] for task in graph[compute.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
+        )
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_task_deploy_specified_tasks_force(self, rpc_cast):
+        compute = next(
+            (x for x in self.env.nodes if 'compute' in x.roles), None
+        )
+        resp = self.app.put(
+            reverse(
+                'DeploySelectedNodesWithTasks',
+                kwargs={'cluster_id': self.cluster.id}
+            ) + '?nodes={0}&force=1'.format(compute.uid),
+            params='["netconfig"]',
+            headers=self.default_headers)
+        self.assertNotEqual(
+            consts.TASK_STATUSES.error,
+            objects.Task.get_by_uuid(
+                uuid=resp.json_body['uuid'], fail_if_not_found=True
+            ).status)
+
+        graph = rpc_cast.call_args[0][1]['args']['tasks_graph']
+
+        # due to 'force', task must be run anyway
+        self.assertItemsEqual(
+            ['netconfig'],
+            (task['id'] for task in graph[compute.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
+        )

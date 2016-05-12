@@ -95,7 +95,7 @@ class NetworkManager(object):
             node_id = node.id
             admin_net = objects.NetworkGroup.get_admin_network_group(
                 node, default_admin_net)
-            node_admin_ips_count = objects.Node.get_network_ips_count(
+            node_admin_ips_count = objects.IPAddr.get_network_ips_count(
                 node_id, admin_net.id)
             logger.debug(u"Trying to assign admin ip: node=%s", node_id)
             if not node_admin_ips_count:
@@ -579,7 +579,7 @@ class NetworkManager(object):
         """
         node_group = objects.NodeGroup.get_by_uid(ng.group_id)
         for node in node_group.nodes:
-            objects.Node.assign_network_to_interface(node, ng)
+            objects.NetworkGroup.assign_network_to_interface(ng, node)
 
     @classmethod
     def get_default_interfaces_configuration(cls, node):
@@ -1029,9 +1029,26 @@ class NetworkManager(object):
 
     @classmethod
     def get_admin_ip_for_node(cls, node=None, admin_net=None):
-        """Returns first admin IP address for node."""
+        """Returns first admin IP address for node.
+
+        When admin_net_id is None the admin network group for the node's
+        nodegroup will be used.
+
+        :param node: return admin IP of this node
+        :type node: nailgun.db.sqlalchemy.models.Node
+        :param admin_net_id: Admin NetworkGroup ID
+        :type admin_net_id: int
+        :returns: IPAddr instance
+        """
         admin_net_id = admin_net.id if admin_net else None
-        return objects.Node.get_admin_ip(node, admin_net_id)
+        if not admin_net_id:
+            admin_net = objects.NetworkGroup.get_admin_network_group(node)
+            admin_net_id = admin_net.id
+
+        admin_ip = next((ip for ip in node.ip_addrs
+                         if ip.network == admin_net_id), None)
+
+        return getattr(admin_ip, 'ip_addr', None)
 
     @classmethod
     def get_admin_interface(cls, node):
@@ -1888,7 +1905,9 @@ class AssignIPs70Mixin(object):
 
         nodes_by_id = dict((n.id, n) for n in nodes)
 
-        query = objects.Cluster.get_network_groups_and_node_ids(cluster.id)
+        query = objects.NetworkGroup.get_network_groups_and_node_ids(
+            cluster.id
+        )
 
         # Group by NetworkGroup.id
         for key, items in groupby(query, lambda x: x[1]):

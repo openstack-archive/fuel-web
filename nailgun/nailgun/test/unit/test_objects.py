@@ -42,7 +42,6 @@ from nailgun import errors
 from nailgun import consts
 from nailgun import plugins
 
-from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.db.sqlalchemy.models import Task
 
@@ -1312,26 +1311,6 @@ class TestClusterObject(BaseTestCase):
             objects.Cluster.get_common_node_group,
             self.cluster,
             ['controller', 'cinder'])
-
-    def test_get_nic_interfaces_for_all_nodes(self):
-        nodes = self.env.nodes
-        interfaces = []
-        for node in nodes:
-            for inf in node.nic_interfaces:
-                interfaces.append(inf)
-        nic_interfaces = objects.Cluster.get_nic_interfaces_for_all_nodes(
-            self.cluster)
-        self.assertEqual(len(nic_interfaces), len(interfaces))
-
-    def test_get_bond_interfaces_for_all_nodes(self):
-        node = self.env.nodes[0]
-        node.bond_interfaces.append(
-            NodeBondInterface(name='ovs-bond0',
-                              slaves=node.nic_interfaces))
-        self.db.flush()
-        bond_interfaces = objects.Cluster.get_bond_interfaces_for_all_nodes(
-            self.cluster)
-        self.assertEqual(len(bond_interfaces), 1)
 
     def test_get_network_roles(self):
         self.assertItemsEqual(

@@ -16,6 +16,7 @@ from mock import patch
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import DeploymentGraphTask
+from nailgun import objects
 from nailgun.orchestrator.tasks_templates import make_generic_task
 from nailgun.task.manager import OpenstackConfigTaskManager
 from nailgun.test import base
@@ -118,6 +119,28 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
         self.assertItemsEqual([self.nodes[0].uid], node_uids)
         self.assertItemsEqual(deployment_tasks, [
             make_generic_task([self.nodes[0].uid], self.refreshable_task)])
+
+    @patch('nailgun.rpc.cast')
+    def test_configuration_execute_w_custom_graph(self, mocked_rpc):
+        custom_tasks = [
+            {
+                'id': 'custom-task',
+                'type': 'puppet',
+                'roles': '*'
+            }
+        ]
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': custom_tasks}, self.cluster, 'custom-graph')
+        task_manager = OpenstackConfigTaskManager(self.cluster.id)
+        task = task_manager.execute(
+            {'cluster_id': self.cluster.id}, graph_type='custom-graph')
+
+        self.assertEqual(task.status, consts.TASK_STATUSES.pending)
+
+        self.assertEqual(
+            mocked_rpc.call_args[0][1]['args']['tasks'][0]['task_name'],
+            'custom-task'
+        )
 
     @patch('nailgun.rpc.cast')
     def test_configuration_execute_by_node_id(self, mocked_rpc):

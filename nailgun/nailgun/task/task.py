@@ -2114,7 +2114,7 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
             })
 
     @classmethod
-    def message(cls, task, nodes, **kwargs):
+    def message(cls, task, nodes, graph_type, **kwargs):
         configs = objects.OpenstackConfigCollection.find_configs_for_nodes(
             task.cluster, nodes)
         updated_configs = set()
@@ -2127,10 +2127,11 @@ class UpdateOpenstackConfigTask(BaseDeploymentTask):
             raise errors.NoChanges()
 
         refreshable_tasks = objects.Cluster.get_refreshable_tasks(
-            task.cluster, updated_configs
+            task.cluster, updated_configs, graph_type
         )
         task_ids = {t['id'] for t in refreshable_tasks}
-        deployment_tasks = objects.Cluster.get_deployment_tasks(task.cluster)
+        deployment_tasks = objects.Cluster.get_deployment_tasks(
+            task.cluster, graph_type)
         return cls.call_deployment_method(
             task, tasks=deployment_tasks, nodes=nodes, task_ids=task_ids
         )[1]

@@ -1413,6 +1413,26 @@ class TestClusterObject(BaseTestCase):
         self.assertIn(deployment_tasks[1]['id'], tasks_ids)
         self.assertNotIn(deployment_tasks[0]['id'], tasks_ids)
 
+    def test_get_refreshable_tasks_w_custom_graph(self):
+        deployment_tasks = [
+            self.env.get_default_plugin_deployment_tasks(**{
+                'id': 'refreshable_task_on_keystone',
+                consts.TASK_REFRESH_FIELD: ['keystone_config']
+            })[0]
+        ]
+        cluster = self.cluster
+        release_graph = objects.DeploymentGraph.get_for_model(cluster.release)
+        release_tasks = objects.DeploymentGraph.get_tasks(release_graph)
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': release_tasks}, cluster.release, 'custom-graph')
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': deployment_tasks}, cluster, 'custom-graph')
+
+        refreshable_tasks = objects.Cluster.get_refreshable_tasks(
+            cluster, None, 'custom-graph')
+        tasks_ids = [t['id'] for t in refreshable_tasks]
+        self.assertIn(deployment_tasks[0]['id'], tasks_ids)
+
     def test_get_plugin_network_roles(self):
         network_roles = [self._get_network_role_metadata()]
         plugin_data = self.env.get_default_plugin_metadata(

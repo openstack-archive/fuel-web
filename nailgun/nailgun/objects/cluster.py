@@ -1138,7 +1138,8 @@ class Cluster(NailgunObject):
         return PluginManager.get_legacy_tasks_for_cluster(instance)
 
     @classmethod
-    def get_refreshable_tasks(cls, instance, filter_by_configs=None):
+    def get_refreshable_tasks(cls, instance, filter_by_configs=None,
+                              graph_type=None):
         """Return list of refreshable tasks
 
         If 'filter_by_configs' specified then only tasks needed to update
@@ -1147,12 +1148,13 @@ class Cluster(NailgunObject):
 
         :param instance: a Cluster instance
         :param filter_by_configs: a list with configs resources
+        :param graph_type: deployment graph type
         :return: list of tasks
         """
         if filter_by_configs:
             filter_by_configs = set(filter_by_configs)
         tasks = []
-        for task in cls.get_deployment_tasks(instance):
+        for task in cls.get_deployment_tasks(instance, graph_type):
             refresh_on = task.get(consts.TASK_REFRESH_FIELD)
             if (refresh_on
                 and (filter_by_configs is None

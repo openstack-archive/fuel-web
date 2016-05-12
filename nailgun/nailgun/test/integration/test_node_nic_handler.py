@@ -18,7 +18,6 @@ from mock import patch
 
 from copy import deepcopy
 from oslo_serialization import jsonutils
-import six
 
 from nailgun import consts
 from nailgun import objects
@@ -503,14 +502,19 @@ class TestHandlers(BaseIntegrationTest):
             new_nic['offloading_modes'])
 
     def test_NIC_locking_on_update_by_agent(self):
-        lock_vs_status = {
-            consts.NODE_STATUSES.discover: False,
-            consts.NODE_STATUSES.error: False,
-            consts.NODE_STATUSES.provisioning: True,
-            consts.NODE_STATUSES.provisioned: True,
-            consts.NODE_STATUSES.deploying: True,
-            consts.NODE_STATUSES.ready: True,
-            consts.NODE_STATUSES.removing: True}
+        lock_vs_status = (
+            (consts.NODE_STATUSES.discover, False),
+            (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.deletion),
+            (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.deploy),
+            (consts.NODE_STATUSES.error, False, consts.NODE_ERRORS.discover),
+            (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.provision),
+            (consts.NODE_STATUSES.error, True,
+             consts.NODE_ERRORS.stop_deployment),
+            (consts.NODE_STATUSES.provisioning, True),
+            (consts.NODE_STATUSES.provisioned, True),
+            (consts.NODE_STATUSES.deploying, True),
+            (consts.NODE_STATUSES.ready, True),
+            (consts.NODE_STATUSES.removing, True))
 
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
@@ -520,9 +524,12 @@ class TestHandlers(BaseIntegrationTest):
         new_meta = deepcopy(meta)
         node = self.env.nodes[0]
 
-        for status, lock in six.iteritems(lock_vs_status):
-            node.status = status
+        for case in lock_vs_status:
+            node.status = case[0]
+            if node.status == consts.NODE_STATUSES.error:
+                node.error_type = case[2]
             self.db.flush()
+            lock = case[1]
 
             new_meta['interfaces'][0]['current_speed'] += 1
             node_data = {'mac': node['mac'], 'meta': new_meta}

@@ -28,6 +28,7 @@ case $1 in
         prepare_pgpass
         prepare_database_role
         prepare_database
+        prepare_data
         ;;
     cleanup_nailgun_database)
         prepare_pgpass

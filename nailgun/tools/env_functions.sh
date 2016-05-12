@@ -57,22 +57,26 @@ DATABASE:
   user: "${NAILGUN_DB_USER}"
   passwd: "${NAILGUN_DB_USERPW}"
 API_LOG: "${NAILGUN_LOGS}/api.log"
-APP_LOG: "${NAILGUN_LOGS}/app.log"
+APP_LOGLEVEL: "DEBUG"
 RPC_CONSUMER_LOG_PATH: "${NAILGUN_LOGS}/receiverd.log"
 ASSASSIN_LOG_PATH: "${NAILGUN_LOGS}/assassind.log"
 STATS_LOGS_PATH: ${NAILGUN_LOGS}
+AUTH:
+  AUTHENTICATION_METHOD: "none"
 EOL
 }
 
-prepare_server() {
-    python ${NAILGUN_ROOT}/manage.py syncdb > /dev/null
-    python ${NAILGUN_ROOT}/manage.py loaddefault > /dev/null
+prepare_data() {
+    python ${NAILGUN_ROOT}/manage.py syncdb
+    python ${NAILGUN_ROOT}/manage.py loaddefault
     if test -n "$NAILGUN_FIXTURE_FILES"; then
         for nailgun_fixture_file in $NAILGUN_FIXTURE_FILES; do
-            python ${NAILGUN_ROOT}/manage.py loaddata $nailgun_fixture_file > /dev/null
+            python ${NAILGUN_ROOT}/manage.py loaddata $nailgun_fixture_file
         done
     fi
+}
 
+prepare_server() {
     python ${NAILGUN_ROOT}/manage.py run \
         --port=$NAILGUN_PORT \
         --config="$NAILGUN_CONFIG" \

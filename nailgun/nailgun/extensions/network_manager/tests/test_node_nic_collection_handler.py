@@ -126,7 +126,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
     def test_interface_changes_locking(self):
         lock_vs_status = {
             consts.NODE_STATUSES.discover: False,
-            consts.NODE_STATUSES.error: False,
+            consts.NODE_STATUSES.error: True,
             consts.NODE_STATUSES.provisioning: True,
             consts.NODE_STATUSES.provisioned: True,
             consts.NODE_STATUSES.deploying: True,
@@ -139,6 +139,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             nodes_kwargs=[{'roles': ['controller'], 'meta': meta}]
         )
         node = self.env.nodes[0]
+        node.error_type = consts.NODE_ERRORS.deploy
         for status, lock in six.iteritems(lock_vs_status):
             node.status = status
             self.db.flush()

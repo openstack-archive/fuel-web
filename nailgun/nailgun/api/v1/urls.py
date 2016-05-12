@@ -420,3 +420,9 @@ def public_urls():
         r'/version/?$': ['GET'],
         r'/clusters/(?P<cluster_id>\d+)/plugin_links/?$': ['POST']
     }
+
+
+def permitted_urls():
+    return {
+        '/api/settings'
+    }

@@ -45,6 +45,19 @@ def merge_attributes(a, b):
     return attrs
 
 
+def change_value_for_updated_release(cluster_dict, release_dict):
+    if release_dict['type'] != "text_list":
+        return
+    if cluster_dict['type'] != "text":
+        return
+    for key, value in six.iteritems(release_dict):
+        if key == "value":
+            cluster_dict["value"] = [
+                i.strip() for i in cluster_dict["value"].split(",")]
+        else:
+            cluster_dict[key] = value
+
+
 def merge_nets(a, b):
     new_settings = copy.deepcopy(b)
     source_networks = dict((n["name"], n) for n in a["networks"])
@@ -108,6 +121,16 @@ class UpgradeHelper(object):
         new_cluster.editable_attrs = merge_attributes(
             orig_cluster.editable_attrs,
             new_cluster.editable_attrs)
+        change_value_for_updated_release(
+            new_cluster.editable_attrs["external_dns"]["dns_list"],
+            new_cluster.release.attributes_metadata[
+                'editable']['external_dns']['dns_list']
+        )
+        change_value_for_updated_release(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"],
+            new_cluster.release.attributes_metadata[
+                'editable']["external_ntp"]["ntp_list"]
+        )
 
     @classmethod
     def transform_vips_for_net_groups_70(cls, vips):

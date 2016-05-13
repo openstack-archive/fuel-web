@@ -108,6 +108,10 @@ class NailgunReleaseAdapter(object):
     def roles_metadata(self):
         return self.release.roles_metadata
 
+    @property
+    def attributes_metadata(self):
+        return self.release.attributes_metadata
+
     def __cmp__(self, other):
         if isinstance(other, NailgunReleaseAdapter):
             other = other.release

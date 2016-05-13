@@ -17,6 +17,8 @@
 import copy
 import six
 
+import pytest
+
 from nailgun import consts
 from nailgun.extensions.network_manager.objects.serializers import \
     network_configuration
@@ -141,3 +143,42 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
             self.src_cluster.id)
         self.assertEqual(relation.orig_cluster_id, self.src_cluster.id)
         self.assertEqual(relation.seed_cluster_id, new_cluster.id)
+
+    @pytest.mark.parametrize(
+        "dns_value,dns_type,expected_dns,ntp_value,ntp_type,expected_ntp",
+        [
+            (
+                "1,2,3", "text", ["1", "2", "3"],
+                "4,5,6", "text", ["4", "5", "6"],
+            ),
+            (
+                ["1", "2", "3"], "text_list", ["1", "2", "3"],
+                ["4", "5", "6"], "text_list", ["4", "5", "6"],
+            )
+        ]
+    )
+    def test_cluster_with_new_format_dns_list_ntp_list(
+            self,
+            dns_value, dns_type, expected_ntp,
+            ntp_value, ntp_type, expected_dns):
+        attrs = copy.deepcopy(self.src_cluster.editable_attrs)
+        attrs["external_ntp"]["ntp_list"]["type"] = ntp_type
+        attrs["external_ntp"]["ntp_list"]["value"] = ntp_value
+        attrs["external_dns"]["dns_list"]["type"] = dns_type
+        attrs["external_dns"]["dns_list"]["value"] = dns_value
+        self.src_cluster.editable_attrs = attrs
+        new_cluster = self.helper.create_cluster_clone(
+            self.src_cluster, self.data)
+        self.helper.copy_attributes(self.src_cluster, new_cluster)
+        self.assertEqual(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"]["value"],
+            expected_ntp)
+        self.assertEqual(
+            new_cluster.editable_attrs["external_dns"]["dns_list"]["value"],
+            expected_dns)
+        self.assertEqual(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"]["type"],
+            "text_list")
+        self.assertEqual(
+            new_cluster.editable_attrs["external_dns"]["dns_list"]["type"],
+            "text_list")

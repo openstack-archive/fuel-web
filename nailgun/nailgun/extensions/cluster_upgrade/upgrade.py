@@ -42,6 +42,13 @@ def merge_attributes(a, b):
         for key, values in six.iteritems(pairs):
             if key != "metadata" and key in a_values:
                 values["value"] = a_values[key]["value"]
+                # in mitaka-9.0 type of value dns_list and ntp_list
+                # changed from text (string of values splitted by comma)
+                # to text_list (list of text values)
+                # bug: 1572179
+                if a_values[key]['type'] == 'text' and \
+                        values['type']== 'text_list':
+                    values["value"] = values['value'].split(',')
     return attrs
 
 

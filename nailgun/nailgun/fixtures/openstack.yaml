@@ -1891,6 +1891,9 @@
         incompatible:
           - name: network:neutron:ml2:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+        requires:
+          - name: storage:object:ceph
+            message: "Ironic requires RadosGW for Glance images."
     modes: ['ha_compact']
     extensions: ['volume_manager']
 - pk: 1

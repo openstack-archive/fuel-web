@@ -1141,6 +1141,47 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.assertNotEqual(primary_node.id, new_primary.id)
 
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    @mock.patch('nailgun.rpc.cast')
+    def test_controller_deletion(self, rpc_mock, tasks_mock):
+        """When we delete controller node deployment is successfull"""
+        ready = consts.NODE_STATUSES.ready
+
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'pending_roles': ['controller'], 'status': ready},
+                {'pending_roles': ['controller'], 'status': ready},
+                {'pending_roles': ['controller'], 'status': ready},
+                {'pending_roles': ['compute'], 'status': ready},
+            ],
+            release_kwargs={
+                'version': 'mitaka-9.0',
+                'operating_system': consts.RELEASE_OS.ubuntu
+            }
+        )
+
+        # task with yaql
+        tasks_mock.return_value = [
+            {
+                'id': 'test', 'parameters': {}, 'type': 'puppet',
+                'roles': ['controller'], 'version': '2.1.0',
+                'condition': {'yaql_exp': 'changed($)'},
+            },
+        ]
+
+        task_manager = manager.NodeDeletionTaskManager(cluster_id=cluster.id)
+        task = task_manager.execute([cluster.nodes[0]], mclient_remove=False)
+
+        # two call one for deployment, one for node deleteion
+        self.assertEqual(rpc_mock.call_count, 2)
+
+        deploy_call, delete_node_call = rpc_mock.call_args_list
+
+        self.assertEqual(deploy_call[0][1][0]['method'], 'task_deploy')
+        self.assertEqual(delete_node_call[0][1]['method'],'remove_nodes')
+
+        self.assertEqual(task.name, consts.TASK_NAMES.node_deletion)
+
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_node_group_deletion_failed_while_previous_in_progress(
             self, mocked_rpc

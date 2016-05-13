@@ -45,6 +45,26 @@ def merge_attributes(a, b):
     return attrs
 
 
+def attr_mutation(cluster_dict, release_dict):
+    """Change value in cluster dict to valid type
+
+    The values of attributes may change from old cluster release to
+    new release.
+    This function should fix that problem.
+    """
+    attrs = copy.deepcopy(cluster_dict)
+    if release_dict['type'] != "text_list":
+        return attrs
+    if cluster_dict['type'] != "text":
+        return attrs
+    for key, value in six.iteritems(release_dict):
+        if key == "value":
+            attrs["value"] = [i.strip() for i in attrs["value"].split(",")]
+        else:
+            attrs[key] = value
+    return attrs
+
+
 def merge_nets(a, b):
     new_settings = copy.deepcopy(b)
     source_networks = dict((n["name"], n) for n in a["networks"])
@@ -108,6 +128,13 @@ class UpgradeHelper(object):
         new_cluster.editable_attrs = merge_attributes(
             orig_cluster.editable_attrs,
             new_cluster.editable_attrs)
+        release_editable = new_cluster.release.attributes_metadata['editable']
+        new_cluster.editable_attrs["external_dns"]["dns_list"] = attr_mutation(
+            new_cluster.editable_attrs["external_dns"]["dns_list"],
+            release_editable['external_dns']['dns_list'])
+        new_cluster.editable_attrs["external_ntp"]["ntp_list"] = attr_mutation(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"],
+            release_editable["external_ntp"]["ntp_list"])
 
     @classmethod
     def transform_vips_for_net_groups_70(cls, vips):

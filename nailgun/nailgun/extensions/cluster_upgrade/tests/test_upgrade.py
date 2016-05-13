@@ -17,6 +17,8 @@
 import copy
 import six
 
+import pytest
+
 from nailgun import consts
 from nailgun.extensions.network_manager.objects.serializers import \
     network_configuration
@@ -141,3 +143,44 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
             self.src_cluster.id)
         self.assertEqual(relation.orig_cluster_id, self.src_cluster.id)
         self.assertEqual(relation.seed_cluster_id, new_cluster.id)
+
+    def _check_dns_and_ntp_list_values(self, new_cluster, dns_list, ntp_list):
+        self.assertEqual(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"]["value"],
+            ntp_list)
+        self.assertEqual(
+            new_cluster.editable_attrs["external_dns"]["dns_list"]["value"],
+            dns_list)
+        self.assertEqual(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"]["type"],
+            "text_list")
+        self.assertEqual(
+            new_cluster.editable_attrs["external_dns"]["dns_list"]["type"],
+            "text_list")
+
+
+    def test_cluster_copy_attrs_with_different_types_dns_and_ntp_lists(self):
+        attrs = copy.deepcopy(self.src_cluster.editable_attrs)
+        attrs["external_ntp"]["ntp_list"]["type"] = "text"
+        attrs["external_ntp"]["ntp_list"]["value"] = "1,2,3"
+        attrs["external_dns"]["dns_list"]["type"] = "text"
+        attrs["external_dns"]["dns_list"]["value"] = "4,5,6"
+        self.src_cluster.editable_attrs = attrs
+        new_cluster = self.helper.create_cluster_clone(
+            self.src_cluster, self.data)
+        self.helper.copy_attributes(self.src_cluster, new_cluster)
+        self._check_dns_and_ntp_list_values(
+            new_cluster, ["4", "5", "6"], ["1", "2", "3"])
+
+    def test_cluster_copy_attrs_with_same_types_dns_and_ntp_lists(self):
+        attrs = copy.deepcopy(self.src_cluster.editable_attrs)
+        attrs["external_ntp"]["ntp_list"]["type"] = "text_list"
+        attrs["external_ntp"]["ntp_list"]["value"] = ["1", "2", "3"]
+        attrs["external_dns"]["dns_list"]["type"] = "text_list"
+        attrs["external_dns"]["dns_list"]["value"] = ["4", "5", "6"]
+        self.src_cluster.editable_attrs = attrs
+        new_cluster = self.helper.create_cluster_clone(
+            self.src_cluster, self.data)
+        self.helper.copy_attributes(self.src_cluster, new_cluster)
+        self._check_dns_and_ntp_list_values(
+            new_cluster, ["4", "5", "6"], ["1", "2", "3"])

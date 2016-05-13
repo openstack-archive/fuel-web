@@ -141,3 +141,35 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
             self.src_cluster.id)
         self.assertEqual(relation.orig_cluster_id, self.src_cluster.id)
         self.assertEqual(relation.seed_cluster_id, new_cluster.id)
+
+    def test_cluster_with_new_format_dns_list_ntp_list(self):
+        new_cluster = self.helper.create_cluster_clone(
+            self.src_cluster, self.data)
+        attrs = copy.deepcopy(new_cluster.editable_attrs)
+        attrs["external_ntp"]["ntp_list"]["type"] = "text"
+        attrs["external_dns"]["dns_list"]["type"] = "text"
+        new_cluster.editable_attrs = attrs
+        attrs = copy.deepcopy(self.src_cluster.editable_attrs)
+        attrs["external_ntp"]["ntp_list"]["value"] = "1,2,3"
+        attrs["external_dns"]["dns_list"]["value"] = "1,2,3"
+        attrs["external_ntp"]["ntp_list"]["type"] = "text"
+        attrs["external_dns"]["dns_list"]["type"] = "text"
+        self.src_cluster.editable_attrs = attrs
+        new_cluster.editable_attrs = attrs
+        # Do some unordinary changes
+        new_cluster.release.attributes_metadata[
+            'editable']['external_dns']['dns_list']['type'] = 'text_list'
+
+        self.helper.copy_attributes(self.src_cluster, new_cluster)
+        self.assertEqual(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"]["value"],
+            ["1", "2", "3"])
+        self.assertEqual(
+            new_cluster.editable_attrs["external_dns"]["dns_list"]["value"],
+            ["1", "2", "3"])
+        self.assertEqual(
+            new_cluster.editable_attrs["external_ntp"]["ntp_list"]["type"],
+            "text_list")
+        self.assertEqual(
+            new_cluster.editable_attrs["external_dns"]["dns_list"]["type"],
+            "text_list")

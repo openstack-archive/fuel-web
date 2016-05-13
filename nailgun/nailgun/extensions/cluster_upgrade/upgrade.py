@@ -40,8 +40,14 @@ def merge_attributes(a, b):
             continue
         a_values = a[section]
         for key, values in six.iteritems(pairs):
-            if key != "metadata" and key in a_values:
-                values["value"] = a_values[key]["value"]
+            if key == "metadata":
+                continue
+            if key not in a_values:
+                continue
+            values["value"] = a_values[key]["value"]
+            if values['key']['type'] == 'text' and \
+                    values['type'] == 'text_list':
+                values["value"] = values['value'].split()
     return attrs
 
 
@@ -108,6 +114,7 @@ class UpgradeHelper(object):
         new_cluster.editable_attrs = merge_attributes(
             orig_cluster.editable_attrs,
             new_cluster.editable_attrs)
+        release_editable = new_cluster.release.attributes_metadata['editable']
 
     @classmethod
     def transform_vips_for_net_groups_70(cls, vips):

@@ -711,6 +711,52 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaises(errors.NetworkCheckError,
                           checker.check_network_template)
 
+    @patch.object(helpers, 'db')
+    def test_check_ironic_intersect_with_baremetal(self, mocked_db):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+            ],
+            cluster_kwargs={'editable_attributes':{
+                'additional_components': {'ironic': {'value': True}}}}
+        )
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+
+        checker = NetworkCheck(FakeTask(cluster_db), {})
+        checker.network_config['baremetal_range'] = ['192.168.3.52',
+                                                     '192.168.3.254']
+        checker.network_config['baremetal_gateway'] = '192.168.3.51'
+        checker.networks = [
+            {'id': 1,
+            'cidr': '192.168.0.0/24',
+            'name': 'public',
+            'gateway': '192.168.0.1',
+            'ip_ranges': ['192.168.0.1', '192.168.0.100'],
+            'meta': {'notation': 'cidr'}},
+            {'cidr': '192.168.3.0/24',
+            'gateway': None,
+            'group_id': 2,
+            'id': 11,
+            'ip_ranges': [['192.168.3.1', '192.168.3.254']],
+            'meta': {
+                'cidr': '192.168.3.0/24',
+                'configurable': True,
+                'ip_range': ['192.168.3.2', '192.168.3.50'],
+                'map_priority': 2,
+                'name': 'baremetal',
+                'notation': 'ip_ranges',
+                'render_type': None,
+                'restrictions': [{'condition': 'settings:additional_components.ironic.value == false'}],
+                'use_gateway': False,
+                'vlan_start': 104},
+            'name': 'baremetal',
+            'vlan_start': 105}
+        ]
+        self.assertRaises(
+            errors.NetworkCheckError,
+            checker.neutron_check_l3_addresses_not_match_subnet_and_broadcast)
+
 
 class TestCheckVIPsNames(BaseIntegrationTest):
 

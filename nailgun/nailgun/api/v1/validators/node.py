@@ -500,3 +500,7 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
             objects.NodeAttributes.distribute_hugepages(node, attrs)
         except ValueError as exc:
             raise errors.InvalidData(exc.args[0])
+
+
+class NodeVMsValidator(base.BasicValidator):
+    single_schema = node_schema.NODE_VM_SCHEMA

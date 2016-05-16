@@ -1066,20 +1066,29 @@ class NailgunReceiver(object):
         logger.debug('Mac addr on master node %s', master_network_mac)
 
         for node in nodes:
-            if node['status'] == 'ready':
+            node_db = nodes_map.get(node['uid'])
+            if not node_db:
+                logger.warning("Received message from nonexistent node. "
+                               "Node's data %s", node.get('data', []))
+                continue
+
+            if node['status'] == 'error':
+                messages.append(
+                    "DHCP discover check failed on node with ID={0}. "
+                    "Check logs for details."
+                    .format(node['uid'])
+                )
+                result[node['uid']] = node.get('data')
+
+            elif node['status'] == 'ready':
                 for row in node.get('data', []):
                     if not net_utils.is_same_mac(row['mac'],
                                                  master_network_mac):
-                        node_db = nodes_map.get(node['uid'])
-                        if node_db:
-                            row['node_name'] = node_db.name
-                            message = message_template.format(**row)
-                            messages.append(message)
-                            result[node['uid']].append(row)
-                        else:
-                            logger.warning(
-                                'Received message from nonexistent node. '
-                                'Message %s', row)
+                        row['node_name'] = node_db.name
+                        message = message_template.format(**row)
+                        messages.append(message)
+                        result[node['uid']].append(row)
+
         status = status if not messages else "error"
         error_msg = '\n'.join(messages) if messages else error_msg
         logger.debug('Check dhcp message %s', error_msg)

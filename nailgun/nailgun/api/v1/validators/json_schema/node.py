@@ -195,3 +195,29 @@ single_schema = {
         "agent_checksum": {"type": "string"}
     },
 }
+
+_VMS_CONF_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": base_types.POSITIVE_INTEGER,
+        "mem": base_types.POSITIVE_INTEGER,
+        "cpu": base_types.POSITIVE_INTEGER,
+        "vda_size": {"type": "string"}
+    },
+    "required": ["id"],
+}
+
+NODE_VM_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Node VM",
+    "description": "Node VM object",
+    "type": "object",
+    "properties": {
+        "vms_conf": {
+            "type": "array",
+            "items": _VMS_CONF_SCHEMA,
+        },
+    },
+    "required": ["vms_conf"],
+    "additionalProperties": False,
+}

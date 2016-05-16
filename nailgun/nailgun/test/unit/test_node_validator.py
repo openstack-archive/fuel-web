@@ -144,3 +144,39 @@ class TestNodeJsonSchemaValidation(base.BaseValidatorTest):
                 test['data'],
                 node_schema.single_schema
             )
+
+
+class TestNodeVmsValidation(base.BaseUnitTest):
+
+    def assertInvalidData(self, data):
+        self.assertRaises(
+            errors.InvalidData,
+            node.NodeVMsValidator.validate_schema,
+            data,
+            node_schema.NODE_VM_SCHEMA
+        )
+
+    def test_schema_success(self):
+        data = {'vms_conf': [{'id': 1, 'cpu': 2, 'mem': 4}]}
+        self.assertNotRaises(
+            errors.InvalidData,
+            node.NodeVMsValidator.validate_schema,
+            data,
+            node_schema.NODE_VM_SCHEMA
+        )
+
+    def test_schema_fail_invalid_type(self):
+        data = {'vms_conf': [[{'id': 1, 'cpu': 2, 'mem': 4}]]}
+        self.assertInvalidData(data)
+
+    def test_schema_fail_invalid_value(self):
+        data = {'vms_conf': [{'id': 1, 'cpu': -2, 'mem': 4}]}
+        self.assertInvalidData(data)
+
+    def test_schema_fail_missing_value(self):
+        data = {'vms_conf': [{'cpu': 1, 'mem': 4}]}
+        self.assertInvalidData(data)
+
+    def test_schema_fail_additional_value(self):
+        data = {'vms_conf': [{'id': 1, 'cpu': -2, 'mem': 4, 'unexpected': 1}]}
+        self.assertInvalidData(data)

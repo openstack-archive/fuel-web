@@ -301,14 +301,6 @@ class AttributesRestriction(RestrictionBase):
                 return
 
             attr_type = data.get('type')
-            if attr_type in ['text_list', 'textarea_list']:
-                err = cls.check_fields_length(data)
-                if err is not None:
-                    yield err
-
-            regex_error = cls.validate_regex(data)
-            if regex_error is not None:
-                yield regex_error
 
             # restrictions with 'disable' action should be checked only for
             # enabled attributes which type is 'checkbox' or group attributes
@@ -327,6 +319,19 @@ class AttributesRestriction(RestrictionBase):
 
                     yield ("Validation failed for attribute '{}':"
                            " {}".format(label, error))
+            else:
+                if cls.check_restrictions(
+                        models, restrictions, action='disable')['result']:
+                    return
+
+            if attr_type in ['text_list', 'textarea_list']:
+                err = cls.check_fields_length(data)
+                if err is not None:
+                    yield err
+
+            regex_error = cls.validate_regex(data)
+            if regex_error is not None:
+                yield regex_error
 
             for key, value in six.iteritems(data):
                 if key == 'metadata':

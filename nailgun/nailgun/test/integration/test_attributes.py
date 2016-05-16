@@ -28,6 +28,45 @@ from nailgun.utils import reverse
 
 class TestClusterAttributes(BaseIntegrationTest):
 
+    ATTRIBUTES_WITH_RESTRICTIONS = {
+        'editable': {
+            'test': {
+                'comp1': {
+                    'description': 'desc',
+                    'label': 'Comp 1',
+                    'type': 'checkbox',
+                    'value': False,
+                    'weight': 10,
+                },
+                'comp2': {
+                    'description': 'desc',
+                    'label': 'Comp 2',
+                    'type': 'checkbox',
+                    'value': False,
+                    'weight': 20,
+                    'restrictions': ["settings:test.comp1.value == true"],
+                },
+                'comp3': {
+                    'description': 'desc',
+                    'label': 'Comp 3',
+                    'type': 'text',
+                    'value': '',
+                    'weight': 30,
+                    'restrictions': [
+                        {
+                            'condition': "settings:test.comp1.value == true",
+                            'action': "disable"
+                        }
+                    ],
+                    'regex': {
+                        'source': '^[a-zA-Z\d][a-zA-Z\d_\-.]+(:[0-9]+)?$',
+                        'error': "Regexp error"
+                    }
+                }
+            }
+        }
+    }
+
     def test_attributes_creation(self):
         cluster = self.env.create_cluster(api=True)
         resp = self.app.get(
@@ -180,27 +219,9 @@ class TestClusterAttributes(BaseIntegrationTest):
 
     def test_failing_attributes_with_restrictions(self):
         cluster = self.env.create_cluster(api=False)
-        objects.Cluster.patch_attributes(cluster, {
-            'editable': {
-                'test': {
-                    'comp1': {
-                        'description': 'desc',
-                        'label': 'Comp 1',
-                        'type': 'checkbox',
-                        'value': False,
-                        'weight': 10,
-                    },
-                    'comp2': {
-                        'description': 'desc',
-                        'label': 'Comp 2',
-                        'type': 'checkbox',
-                        'value': False,
-                        'weight': 20,
-                        'restrictions': ["settings:test.comp1.value == true"],
-                    },
-                },
-            },
-        })
+        objects.Cluster.patch_attributes(
+            cluster, self.ATTRIBUTES_WITH_RESTRICTIONS)
+
         resp = self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
@@ -213,9 +234,9 @@ class TestClusterAttributes(BaseIntegrationTest):
                         },
                         'comp2': {
                             'value': True
-                        },
-                    },
-                },
+                        }
+                    }
+                }
             }),
             headers=self.default_headers,
             expect_errors=True
@@ -231,6 +252,62 @@ class TestClusterAttributes(BaseIntegrationTest):
             "='{}' and condition='{}' failed due to attribute value='True'"
             .format(extended_restr['action'], extended_restr['condition']),
             resp.json_body['message'])
+
+    def test_disabled_attributes_with_restrictions_not_fail(self):
+        cluster = self.env.create_cluster(api=False)
+        objects.Cluster.patch_attributes(
+            cluster, self.ATTRIBUTES_WITH_RESTRICTIONS)
+
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({
+                'editable': {
+                    'test': {
+                        'comp1': {
+                            'value': True
+                        },
+                        'comp3': {
+                            'value': ''
+                        }
+                    }
+                }
+            }),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(200, resp.status_code)
+
+    def test_enabled_attributes_raise_regex_exception(self):
+        cluster = self.env.create_cluster(api=False)
+        objects.Cluster.patch_attributes(
+            cluster, self.ATTRIBUTES_WITH_RESTRICTIONS)
+
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({
+                'editable': {
+                    'test': {
+                        'comp1': {
+                            'value': False
+                        },
+                        'comp3': {
+                            'value': ''
+                        }
+                    }
+                }
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            "Some restrictions didn't pass verification: ['Regexp error']",
+            resp.json_body['message']
+        )
 
     def test_get_default_attributes(self):
         cluster = self.env.create_cluster(api=True)

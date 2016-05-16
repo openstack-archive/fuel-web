@@ -1080,6 +1080,13 @@ class NailgunReceiver(object):
                             logger.warning(
                                 'Received message from nonexistent node. '
                                 'Message %s', row)
+            elif node['status'] == 'error':
+                messages.append(
+                    "DHCP discover check failed on node with ID={0}. "
+                    "Check logs for details."
+                    .format(node['uid'])
+                )
+
         status = status if not messages else "error"
         error_msg = '\n'.join(messages) if messages else error_msg
         logger.debug('Check dhcp message %s', error_msg)

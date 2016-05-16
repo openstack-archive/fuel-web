@@ -802,6 +802,35 @@ class TestDhcpCheckTask(BaseReciverTestCase):
         self.assertEqual(self.task.status, 'error')
         self.assertEqual(self.task.result, {})
 
+    def test_check_dhcp_resp_error_nodes(self):
+        orig_msg = 'Error in dhcp checker.'
+        kwargs = {
+            'task_uuid': self.task.uuid,
+            'status': consts.TASK_STATUSES.error,
+            'nodes': [
+                {'uid': str(self.node1.id),
+                 'status': 'error',
+                 'error_msg': orig_msg},
+                {'uid': str(self.node2.id),
+                 'status': 'ready',
+                 'data': [{'mac': settings.ADMIN_NETWORK['mac'],
+                           'server_id': '10.20.0.20',
+                           'yiaddr': '10.20.0.131',
+                           'iface': 'eth0'}]}
+            ]
+        }
+
+        self.receiver.check_dhcp_resp(**kwargs)
+        self.db.flush()
+        self.db.refresh(self.task)
+        self.assertEqual(self.task.status, 'error')
+
+        err_msg = (
+            "DHCP discover check failed on node with ID={0}"
+            .format(self.node1.id)
+        )
+        self.assertIn(err_msg, self.task.message)
+
 
 class TestConsumer(BaseReciverTestCase):
 

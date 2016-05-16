@@ -1085,21 +1085,33 @@ class NailgunReceiver(object):
         logger.debug('Mac addr on master node %s', master_network_mac)
 
         for node in nodes:
-            if node['status'] == 'ready':
+            node_db = nodes_map.get(node['uid'])
+            if not node_db:
+                logger.warning(
+                    "Received message from nonexistent node. "
+                    "Node's UID {0}. Node's data {1}"
+                    .format(node['uid'], node.get('data', []))
+                )
+                continue
+
+            if node['status'] == consts.NODE_STATUSES.error:
+                messages.append(
+                    "DHCP discover check failed on node with ID={}. "
+                    "Check logs for details."
+                    .format(node['uid'])
+                )
+                result[node['uid']] = node.get('data')
+
+            elif node['status'] == consts.NODE_STATUSES.ready:
                 for row in node.get('data', []):
                     if not net_utils.is_same_mac(row['mac'],
                                                  master_network_mac):
-                        node_db = nodes_map.get(node['uid'])
-                        if node_db:
-                            row['node_name'] = node_db.name
-                            message = message_template.format(**row)
-                            messages.append(message)
-                            result[node['uid']].append(row)
-                        else:
-                            logger.warning(
-                                'Received message from nonexistent node. '
-                                'Message %s', row)
-        status = status if not messages else "error"
+                        row['node_name'] = node_db.name
+                        message = message_template.format(**row)
+                        messages.append(message)
+                        result[node['uid']].append(row)
+
+        status = status if not messages else consts.TASK_STATUSES.error
         error_msg = '\n'.join(messages) if messages else error_msg
         logger.debug('Check dhcp message %s', error_msg)
 

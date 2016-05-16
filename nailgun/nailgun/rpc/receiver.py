@@ -132,9 +132,9 @@ class NailgunReceiver(object):
 
         success_msg = u"No nodes were removed"
         err_msg = u"No errors occurred"
-        if nodes:
+        if nodes_to_delete_ids:
             success_msg = u"Successfully removed {0} node(s)".format(
-                len(nodes)
+                len(nodes_to_delete_ids)
             )
             notifier.notify("done", success_msg)
         if error_nodes:

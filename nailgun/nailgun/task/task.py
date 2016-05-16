@@ -28,6 +28,7 @@ from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import object_mapper
 
+from nailgun.api.v1.validators import assignment
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
@@ -1369,6 +1370,7 @@ class CheckBeforeDeploymentTask(object):
         fire_callback_on_before_deployment_check(task.cluster)
 
         cls._check_nodes_are_online(task)
+        cls._check_nodes_roles(task)
         cls._check_ceph(task)
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
@@ -1401,6 +1403,29 @@ class CheckBeforeDeploymentTask(object):
                 u'Nodes "{0}" are offline.'
                 ' Remove them from environment '
                 'and try again.'.format(node_names))
+
+    @classmethod
+    def _check_nodes_roles(cls, task):
+        cluster = task.cluster
+        # TODO(asvechnikov): move out this and others models initialization
+        #                    to single place
+        models = {
+            'settings': objects.Cluster.get_editable_attributes(cluster),
+            'cluster': cluster,
+            'version': settings.VERSION,
+            'networking_parameters': cluster.network_config,
+        }
+
+        nodes = TaskHelper.nodes_to_deploy(cluster)
+        roles_metadata = objects.Cluster.get_roles(cluster)
+
+        for node in nodes:
+            roles = node.all_roles
+            # TODO(asvechnikov): move these methods out from validator
+            assignment.NodeAssignmentValidator.check_roles_for_conflicts(
+                roles, roles_metadata)
+            assignment.NodeAssignmentValidator.check_roles_requirement(
+                roles, roles_metadata, models)
 
     @classmethod
     def _check_ceph(cls, task):

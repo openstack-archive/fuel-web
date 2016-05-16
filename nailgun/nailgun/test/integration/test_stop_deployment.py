@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import patch
-
 import nailgun
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.notification import Notification
@@ -23,7 +21,7 @@ from nailgun.db.sqlalchemy.models.task import Task
 from nailgun import objects
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.test.base import reverse
 
 
@@ -44,8 +42,8 @@ class TestStopDeployment(BaseIntegrationTest):
         self.compute = self.env.nodes[1]
         self.node_uids = [n.uid for n in self.cluster.nodes][:3]
 
-    @fake_tasks(fake_rpc=False)
-    def test_stop_deployment(self, _):
+    @mock_rpc()
+    def test_stop_deployment(self):
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.pending)
 
@@ -92,8 +90,8 @@ class TestStopDeployment(BaseIntegrationTest):
     # FIXME(aroma): remove when stop action will be reworked for ha
     # cluster. To get more details, please, refer to [1]
     # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-    @fake_tasks(fake_rpc=False)
-    def test_stop_deployment_fail_if_deployed_before(self, _):
+    @mock_rpc()
+    def test_stop_deployment_fail_if_deployed_before(self):
         task = self.env.launch_deployment()
 
         deploy_task = [t for t in task.subtasks
@@ -150,9 +148,8 @@ class TestStopDeployment(BaseIntegrationTest):
         self.assertEqual(resp.json_body['message'],
                          'Stop action is forbidden for the cluster')
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_admin_ip_in_args(self, mocked_rpc):
+    @mock_rpc()
+    def test_admin_ip_in_args(self):
         deploy_task = self.env.launch_deployment()
         provision_task = objects.TaskCollection.filter_by(
             None, name=consts.TASK_NAMES.provision,
@@ -171,8 +168,8 @@ class TestStopDeployment(BaseIntegrationTest):
                 ).get_admin_ip_for_node(n_db)
             )
 
-    @fake_tasks(fake_rpc=False)
-    def test_stop_provisioning(self, _):
+    @mock_rpc()
+    def test_stop_provisioning(self):
         provision_task = self.env.launch_provisioning_selected(
             self.node_uids
         )
@@ -200,8 +197,8 @@ class TestStopDeployment(BaseIntegrationTest):
         self.assertEqual(stop_task.progress, 100)
         self.assertFalse(self.cluster.is_locked)
 
-    @patch('nailgun.rpc.cast')
-    def test_latest_task_is_sent(self, mocked_rpc):
+    @mock_rpc()
+    def test_latest_task_is_sent(self):
         for uuid, status in [(1, consts.TASK_STATUSES.ready),
                              (2, consts.TASK_STATUSES.running)]:
 

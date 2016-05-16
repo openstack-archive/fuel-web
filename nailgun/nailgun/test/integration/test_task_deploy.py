@@ -25,6 +25,7 @@ from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun import rpc
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
@@ -67,7 +68,7 @@ class TestTaskDeploy(BaseIntegrationTest):
         )
         self.db.flush()
 
-    @fake_tasks(mock_rpc=True, fake_rpc=False)
+    @mock_rpc(pass_mock=True)
     def get_deploy_message(self, rpc_cast):
         task = self.env.launch_deployment(self.cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)

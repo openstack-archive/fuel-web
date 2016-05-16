@@ -19,13 +19,13 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.test.base import reverse
 
 
 class TestSpawnVMs(BaseIntegrationTest):
 
-    @fake_tasks(recover_nodes=False)
+    @mock_rpc()
     def test_spawn_vms(self):
         cluster = self.env.create(
             nodes_kwargs=[
@@ -45,7 +45,7 @@ class TestSpawnVMs(BaseIntegrationTest):
 
         task_deploy = objects.Task.get_by_uuid(deploy_uuid)
         self.assertEqual(task_deploy.name, consts.TASK_NAMES.spawn_vms)
-        self.assertEqual(task_deploy.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task_deploy.status, consts.TASK_STATUSES.error)
 
         self.assertEqual(len(task_deploy.subtasks), 2)
 

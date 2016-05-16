@@ -12,10 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 
 
 class TestClusterScaling(BaseIntegrationTest):
@@ -31,18 +32,17 @@ class TestClusterScaling(BaseIntegrationTest):
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node.all_roles, nodes)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_deploy_single_controller(self):
         self.create_env(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True}])
 
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.name, 'deploy')
+        self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
+        self.assertNotEqual(supertask.status, consts.TASK_STATUSES.error)
 
-        self.assertEqual(supertask.status, 'ready')
-
-    @fake_tasks()
+    @mock_rpc()
     def test_deploy_grow_controllers(self):
         cluster = self.create_env(
             nodes_kwargs=[
@@ -59,14 +59,13 @@ class TestClusterScaling(BaseIntegrationTest):
         self.assertEqual(len(r_nodes), 3)
 
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.name, 'deploy')
-
-        self.assertEqual(supertask.status, 'ready')
+        self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
+        self.assertNotEqual(supertask.status, consts.TASK_STATUSES.error)
 
         controllers = self.filter_by_role(cluster.nodes, 'controller')
         self.assertEqual(len(controllers), 3)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_deploy_shrink_controllers(self):
         cluster = self.create_env(
             nodes_kwargs=[
@@ -79,9 +78,8 @@ class TestClusterScaling(BaseIntegrationTest):
         self.assertEqual(len(d_nodes), 2)
 
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.name, 'deploy')
-
-        self.assertEqual(supertask.status, 'ready')
+        self.assertEqual(supertask.name, consts.TASK_NAMES.deploy)
+        self.assertNotEqual(supertask.status, consts.TASK_STATUSES.error)
 
         controllers = self.filter_by_role(cluster.nodes, 'controller')
         self.assertEqual(len(controllers), 1)

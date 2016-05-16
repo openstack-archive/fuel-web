@@ -22,6 +22,7 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import ClusterChanges
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
@@ -172,7 +173,7 @@ class TestClusterChanges(BaseIntegrationTest):
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEqual(len(all_changes), 5)
 
-    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    @mock_rpc()
     def test_role_unassignment_drops_changes(self):
         cluster = self.env.create(
             nodes_kwargs=[
@@ -180,7 +181,7 @@ class TestClusterChanges(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(supertask.status, consts.TASK_STATUSES.error)
         new_node = self.env.create_node(
             cluster_id=cluster.id,
             pending_addition=True,

@@ -20,7 +20,6 @@ import netaddr
 
 from oslo_serialization import jsonutils
 
-import nailgun
 from nailgun import consts
 from nailgun import objects
 
@@ -29,14 +28,13 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
 class TestHandlers(BaseIntegrationTest):
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
         cluster_db = self.env.create(
             release_kwargs={
@@ -351,7 +349,7 @@ class TestHandlers(BaseIntegrationTest):
                     'fault_tolerance': [],
                     'nodes': provision_nodes}}}
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = mocked_rpc.call_args
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
@@ -387,8 +385,7 @@ class TestHandlers(BaseIntegrationTest):
                          'storage',
                          'glance'])
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_neutron_deploy_cast_with_right_args_for_5_1_1(self, mocked_rpc):
         cluster_db = self.env.create(
             release_kwargs={
@@ -818,7 +815,7 @@ class TestHandlers(BaseIntegrationTest):
                     'fault_tolerance': [],
                     'nodes': provision_nodes}}}
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = mocked_rpc.call_args
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
@@ -876,8 +873,7 @@ class TestHandlers(BaseIntegrationTest):
                     self.assertIsInstance(per_pg[pool], int)
                     self.assertGreaterEqual(per_pg[pool], def_count)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_neutron_deploy_cast_with_right_args_for_6_0(self, mocked_rpc):
         cluster_db = self.env.create(
             release_kwargs={
@@ -1325,7 +1321,7 @@ class TestHandlers(BaseIntegrationTest):
                     'fault_tolerance': [],
                     'nodes': provision_nodes}}}
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = mocked_rpc.call_args
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
@@ -1359,8 +1355,7 @@ class TestHandlers(BaseIntegrationTest):
                          'storage',
                          'glance'])
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deploy_and_remove_correct_nodes_and_statuses(self, mocked_rpc):
         self.env.create(
             cluster_kwargs={},
@@ -1388,14 +1383,13 @@ class TestHandlers(BaseIntegrationTest):
         # the second one is for provisioning and deployment.
 
         # remove_nodes method call [0][0][1]
-        n_rpc_remove = nailgun.task.task.rpc.cast. \
-            call_args_list[0][0][1]['args']['nodes']
+        n_rpc_remove = mocked_rpc.call_args_list[0][0][1]['args']['nodes']
         self.assertEqual(len(n_rpc_remove), 1)
         self.assertEqual(n_rpc_remove[0]['uid'], self.env.nodes[1].id)
 
         # provision method call [1][0][1][0]
-        n_rpc_provision = nailgun.task.manager.rpc.cast. \
-            call_args_list[1][0][1][0]['args']['provisioning_info']['nodes']
+        n_rpc_provision = mocked_rpc.call_args_list[1][0][1][0][
+            'args']['provisioning_info']['nodes']
         # Nodes will be appended in provision list if
         # they 'pending_deletion' = False and
         # 'status' in ('discover', 'provisioning') or
@@ -1409,13 +1403,12 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         # deploy method call [1][0][1][1]
-        n_rpc_deploy = nailgun.task.manager.rpc.cast.call_args_list[
+        n_rpc_deploy = mocked_rpc.call_args_list[
             1][0][1][1]['args']['deployment_info']
         self.assertEqual(len(n_rpc_deploy), 1)
         self.assertEqual(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deploy_multinode_neutron_gre_w_custom_public_ranges(self,
                                                                  mocked_rpc):
         cluster = self.env.create(
@@ -1439,7 +1432,7 @@ class TestHandlers(BaseIntegrationTest):
 
         self.env.launch_deployment()
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = mocked_rpc.call_args
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
@@ -1457,8 +1450,7 @@ class TestHandlers(BaseIntegrationTest):
                 used_ips.append(n_common_args['public_address'])
                 self.assertIn('management_vrouter_vip', n)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deploy_ha_neutron_gre_w_custom_public_ranges(self, mocked_rpc):
         cluster = self.env.create(
             cluster_kwargs={'mode': consts.CLUSTER_MODES.ha_compact,
@@ -1482,7 +1474,7 @@ class TestHandlers(BaseIntegrationTest):
 
         self.env.launch_deployment()
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = mocked_rpc.call_args
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
@@ -1498,8 +1490,7 @@ class TestHandlers(BaseIntegrationTest):
                 self.assertNotIn(n_common_args['public_address'], used_ips)
                 used_ips.append(n_common_args['public_address'])
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deploy_neutron_gre_w_changed_public_cidr(self, mocked_rpc):
         cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
@@ -1522,7 +1513,7 @@ class TestHandlers(BaseIntegrationTest):
 
         self.env.launch_deployment()
 
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        args, kwargs = mocked_rpc.call_args
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
 
@@ -1533,8 +1524,7 @@ class TestHandlers(BaseIntegrationTest):
             for n_common_args in n['nodes']:
                 self.assertIn(n_common_args['public_address'], pub_ips)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
+    @mock_rpc(pass_mock=True)
     def test_deploy_neutron_error_not_enough_ip_addresses(self, mocked_rpc):
         cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron',
@@ -1689,7 +1679,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
         self.assertIn("Deployment tasks not found", resp.body)
 
-    @fake_tasks(override_state={"progress": 100, "status": "ready"})
+    @mock_rpc()
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(
             nodes_kwargs=[
@@ -1711,9 +1701,9 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         task = self.env.launch_deployment()
-        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_admin_untagged_intersection(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [{
@@ -1814,16 +1804,15 @@ class TestHandlers(BaseIntegrationTest):
 
         self.assertEqual(check_mongo.call_count, 1)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_deploy_task_status(self, _):
+    @mock_rpc()
+    def test_deploy_task_status(self):
         self.env.create(
             nodes_kwargs=[{'name': '', 'pending_addition': True}]
         )
         deploy_task = self.env.launch_deployment()
         self.assertEqual(consts.TASK_STATUSES.pending, deploy_task.status)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_deploymend_possible_without_controllers(self):
         cluster = self.env.create_cluster(api=True)
         self.env.create_node(
@@ -1833,7 +1822,7 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(supertask.status, consts.TASK_STATUSES.error)
 
     @patch('nailgun.task.manager.rpc.cast')
     def test_force_redeploy_changes(self, mcast):

@@ -19,6 +19,7 @@ from nailgun import consts
 from nailgun import objects
 from nailgun.test.base import BaseMasterNodeSettignsTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
@@ -76,7 +77,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
             self.assertGreaterEqual(end_dt, action_log.start_timestamp)
             self.assertGreaterEqual(end_dt, action_log.end_timestamp)
 
-    @fake_tasks()
+    @mock_rpc()
     def test_all_action_logs_types_saved(self):
         # Creating nailgun_tasks
         cluster = self.env.create(
@@ -88,7 +89,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         )
 
         task = self.env.launch_deployment()
-        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
 
         # Creating http_request
         self.app.delete(
@@ -109,7 +110,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         )
 
         task = self.env.launch_deployment()
-        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
 
         # Checking sending stats is not enabled yet by saving user choice
         resp = self.app.get(

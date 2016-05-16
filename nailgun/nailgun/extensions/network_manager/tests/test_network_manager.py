@@ -50,14 +50,13 @@ from nailgun.extensions.network_manager.managers.nova_network import \
     NovaNetworkManager70
 from nailgun.logger import logger
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import fake_tasks
+from nailgun.test.base import mock_rpc
 
 
 class TestNetworkManager(BaseIntegrationTest):
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_assign_ips(self, mocked_rpc):
+    @mock_rpc()
+    def test_assign_ips(self):
         cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -133,9 +132,8 @@ class TestNetworkManager(BaseIntegrationTest):
              "192.168.33.9", "192.168.33.10", "192.168.33.11"],
             ips)
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_assign_ips_idempotent(self, mocked_rpc):
+    @mock_rpc()
+    def test_assign_ips_idempotent(self):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -864,9 +862,8 @@ class TestNetworkManager(BaseIntegrationTest):
         # Lower value of range is changed from "192.168.0.1" to "192.168.0.2".
         self.assertEqual(mgmt_ng_updated['ip_ranges'][0][0], "192.168.0.2")
 
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_admin_ip_cobbler(self, mocked_rpc):
+    @mock_rpc()
+    def test_admin_ip_cobbler(self):
         node_1_meta = {}
         self.env.set_interfaces_in_meta(node_1_meta, [{
             "name": "eth0",

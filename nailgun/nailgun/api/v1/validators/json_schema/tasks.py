@@ -34,6 +34,14 @@ RELATION_SCHEMA = {
     }
 }
 
+YAQL_EXP = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'type': 'object',
+    'required': ['yaql_exp'],
+    'properties': {
+        'yaql_exp': {'type': 'string'},
+    }
+}
 
 TASK_STRATEGY = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
@@ -41,7 +49,11 @@ TASK_STRATEGY = {
     'required': ['type'],
     'properties': {
         'type': {'enum': list(DEPLOY_STRATEGY), 'type': 'string'},
-        'amount': {'type': 'integer'}
+        'amount': {'oneOf': [
+            {'type': 'integer'},
+            YAQL_EXP
+        ]
+        }
     }
 }
 

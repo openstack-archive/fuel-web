@@ -17,7 +17,6 @@
 import collections
 from copy import deepcopy
 import os
-import socket
 
 import netaddr
 import six
@@ -1807,13 +1806,6 @@ class DumpTask(object):
             ],
             'to_file': 'cobbler.txt',
         })
-
-        # inject master host
-        dump_conf['dump']['master']['hosts'] = [{
-            'hostname': socket.gethostname(),
-            'address': settings.MASTER_IP,
-            'ssh-key': settings.SHOTGUN_SSH_KEY,
-        }]
 
         logger.debug("Dump conf: %s", str(dump_conf))
         return dump_conf

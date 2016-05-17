@@ -88,22 +88,33 @@ class TransactionCollection(NailgunCollection):
         ).order_by('-id').limit(1).first()
 
     @classmethod
-    def get_successful_transactions_per_task(cls, cluster_id, task_names=None):
+    def get_successful_transactions_per_task(cls, cluster_id,
+                                             task_names=None,
+                                             nodes_uids=None):
         """Get last successful transaction for every task name.
 
         :param cluster_id: db id of cluster object
         :param task_names: list with task names
-        :returns: [(Transaction, task_name), ...]
+        :param nodes_uids: db Node uids, which state you need
+        :returns: [(Transaction, node_id, task_name), ...]
         """
         history = models.DeploymentHistory
         model = cls.single.model
 
         transactions = db().query(
-            model, history.deployment_graph_task_name).join(history).filter(
+            model,
+            history.node_id,
+            history.deployment_graph_task_name,
+        ).join(history).filter(
             model.cluster_id == cluster_id,
             model.name == consts.TASK_NAMES.deployment,
             history.status == consts.HISTORY_TASK_STATUSES.ready,
         )
+
+        if nodes_uids is not None:
+            transactions = transactions.filter(
+                history.node_id.in_(nodes_uids),
+            )
 
         if task_names is not None:
             transactions = transactions.filter(
@@ -111,8 +122,10 @@ class TransactionCollection(NailgunCollection):
             )
 
         transactions = transactions.order_by(
-            history.deployment_graph_task_name, history.task_id.desc(),
+            history.deployment_graph_task_name,
+            history.node_id,
+            history.task_id.desc(),
         ).distinct(
-            history.deployment_graph_task_name
+            history.deployment_graph_task_name, history.node_id
         )
         return transactions

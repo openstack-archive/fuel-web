@@ -552,10 +552,6 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             node_attrs['nova_hugepages_enabled'] = (
                 objects.NodeAttributes.is_nova_hugepages_enabled(node))
 
-        # we don't need nodes in serialized data for 9.0 environments
-        # https://bugs.launchpad.net/fuel/+bug/1531128
-        attrs.pop('nodes')
-
         return attrs
 
     @classmethod
@@ -636,6 +632,18 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         if hugepages and not skip:
             serialized_node.setdefault('hugepages', []).extend(
                 hugepages)
+
+
+class DeploymentHASerializer10(DeploymentHASerializer90):
+
+    def get_common_attrs(self, cluster):
+        attrs = super(DeploymentHASerializer10, self).get_common_attrs(cluster)
+
+        # we don't need nodes in serialized data for 10.0 environments
+        # https://bugs.launchpad.net/fuel/+bug/1531128
+        attrs.pop('nodes')
+
+        return attrs
 
 
 class DeploymentLCMSerializer(DeploymentHASerializer90):
@@ -799,7 +807,10 @@ def get_serializer_for_cluster(cluster):
         },
         '9.0': {
             'ha': DeploymentHASerializer90,
-        }
+        },
+        '10.0': {
+            'ha': DeploymentHASerializer10,
+        },
     }
 
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'

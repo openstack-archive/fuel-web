@@ -16,6 +16,7 @@
 
 import collections
 from copy import deepcopy
+from itertools import groupby
 import os
 
 import netaddr
@@ -392,6 +393,51 @@ class ClusterTransaction(DeploymentTask):
             yield task
 
     @classmethod
+    def is_node_for_redeploy(cls, node):
+        """Should node's previous state be cleared
+
+        :param node: db Node object or None
+        :returns: Bool
+        """
+        if node is None:
+            return False
+
+        return node.status in (consts.NODE_STATUSES.provisioned,
+                               consts.NODE_STATUSES.error)
+
+    @classmethod
+    def get_current_state(cls, cluster, nodes, tasks):
+        nodes = {n.uid: n for n in nodes}
+        nodes[consts.MASTER_NODE_UID] = None
+        tasks_names = [t['id'] for t in tasks
+                       if t['type'] not in cls.ignored_types]
+
+        transactions = list(
+            objects.TransactionCollection.get_successful_transactions_per_task(
+                cluster.id, tasks_names, nodes)
+        )
+
+        # sort by transaction.id
+        transactions.sort(key=lambda x: x[0].id)
+
+        state = {}
+        for transaction, data in groupby(transactions, lambda x: x[0]):
+            deployment_info = objects.Transaction.get_deployment_info(
+                transaction)
+
+            for _, node_uid, task_name in data:
+                task_state = state.setdefault(task_name, {})
+                task_state.setdefault(node_uid, {})
+
+                if cls.is_node_for_redeploy(nodes.get(node_uid)):
+                    # FIXME: https://bugs.launchpad.net/fuel/+bug/1582269
+                    task_state[node_uid] = {}
+                else:
+                    task_state[node_uid] = deployment_info.get(node_uid, {})
+
+        return state
+
+    @classmethod
     def task_deploy(cls, transaction, tasks, nodes, force=False,
                     selected_task_ids=None, **kwargs):
         logger.info("The cluster transaction is initiated.")
@@ -406,27 +452,11 @@ class ClusterTransaction(DeploymentTask):
         if selected_task_ids:
             tasks = list(cls.mark_skipped(tasks, selected_task_ids))
 
-        current_state = {}
-        if not force:
-
-            tasks_names = [t['id'] for t in tasks
-                           if t['type'] not in cls.ignored_types]
-            transaction_collection = objects.TransactionCollection
-            transactions = (
-                transaction_collection.get_successful_transactions_per_task(
-                    transaction.cluster.id, tasks_names)
-            )
-            current_state = {
-                task_id: objects.Transaction.get_deployment_info(tr)
-                for tr, task_id in transactions
-            }
-
-            # FIXME: https://bugs.launchpad.net/fuel/+bug/1582269
-            for n in nodes:
-                if n.status == consts.NODE_STATUSES.provisioned:
-                    for task_deployment_info in current_state.values():
-                        if task_deployment_info.get(n.uid):
-                            task_deployment_info[n.uid] = {}
+        if force:
+            current_state = {}
+        else:
+            current_state = cls.get_current_state(
+                transaction.cluster, nodes, tasks)
 
         expected_state = cls._save_deployment_info(
             transaction, deployment_info

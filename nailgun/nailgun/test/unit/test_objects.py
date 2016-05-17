@@ -995,12 +995,15 @@ class TestTransactionObject(BaseIntegrationTest):
         get_succeed = (
             objects.TransactionCollection.get_successful_transactions_per_task
         )
+        uid1 = '1'
+        uid2 = '2'
+
         tasks_graph = {
             None: [
                 {'id': 'post_deployment_start'},
                 {'id': 'post_deployment_end'}
             ],
-            '1': [{'id': 'dns-client'}]
+            uid1: [{'id': 'dns-client'}]
         }
 
         def make_task_with_history(task_status, graph):
@@ -1018,23 +1021,29 @@ class TestTransactionObject(BaseIntegrationTest):
         # create some tasks in history
         task1 = make_task_with_history('ready', tasks_graph)
         transactions = get_succeed(self.cluster.id, ['dns-client']).all()
-        self.assertEqual(transactions, [(task1, 'dns-client')])
+        self.assertEqual(transactions, [(task1, uid1, 'dns-client')])
 
-        # remove 'dns-client' and add 'test' to graph
-        tasks_graph['1'] = [{'id': 'test'}]
+        # remove 'dns-client' and add 'test' to graph for two nodes
+        tasks_graph[uid1] = tasks_graph[uid2] = [{'id': 'test'}]
         task2 = make_task_with_history('ready', tasks_graph)
         transactions = get_succeed(self.cluster.id, ['test']).all()
-        self.assertEqual(transactions, [(task2, 'test')])
+        self.assertEqual(transactions, [(task2, uid1, 'test'),
+                                        (task2, uid2, 'test')])
 
-        # remove 'test' and add 'dns-client' to graph
-        tasks_graph['1'] = [{'id': 'dns-client'}]
+        # remove 'test' and add 'dns-client' to graph, leave node2 as previous
+        tasks_graph[uid1] = [{'id': 'dns-client'}]
         task3 = make_task_with_history('ready', tasks_graph)
         transactions = get_succeed(self.cluster.id,
                                    ['dns-client', 'test']).all()
 
         # now we should find both `test` and `dns-client` transactions
-        self.assertEqual(transactions,
-                         [(task3, 'dns-client'), (task2, 'test')])
+        # on node 1 and onle `test` on node 2
+        self.assertEqual(
+            transactions,
+            [(task3, uid1, 'dns-client'),
+             (task2, uid1, 'test'),
+             (task3, uid2, 'test')]
+        )
 
 
 class TestActionLogObject(BaseIntegrationTest):

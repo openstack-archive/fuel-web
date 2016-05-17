@@ -1441,12 +1441,11 @@ class TestTaskManagers(BaseIntegrationTest):
 
         if provision:
             node.status = consts.NODE_STATUSES.provisioned
-        state_mock.return_value = [(supertask, 'test1')]
+        state_mock.return_value = [(supertask, node.uid, 'test1')]
         task = self.env.launch_deployment_selected([node.uid], cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
         tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
 
-        # chek that test1 task skipped by condition and test2 was not
         for task in tasks_graph[node.uid]:
             if task['id'] == 'test1':
                 if provision:

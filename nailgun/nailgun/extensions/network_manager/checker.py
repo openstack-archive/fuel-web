@@ -413,7 +413,6 @@ class NetworkCheck(object):
         # Public network
         for public in publics:
             public_cidr = netaddr.IPNetwork(public['cidr']).cidr
-            public_gw = netaddr.IPAddress(public['gateway'])
 
             ranges = [netaddr.IPRange(start, end)
                       for start, end in public['ip_ranges']]
@@ -435,14 +434,6 @@ class NetworkCheck(object):
                     self.result.append({"ids": [int(public["id"])],
                                         "errors": ["ip_ranges"]})
             for net in ranges:
-                # Check intersection of public GW and public IP ranges
-                if public_gw in net:
-                    self.err_msgs.append(
-                        u"Address intersection between public gateway "
-                        u"and IP range of public network."
-                    )
-                    self.result.append({"ids": [int(public["id"])],
-                                        "errors": ["gateway", "ip_ranges"]})
                 # Check that public IP ranges are in public CIDR
                 if net not in public_cidr:
                     self.err_msgs.append(
@@ -557,29 +548,7 @@ class NetworkCheck(object):
             if net['meta']['notation'] in (
                     consts.NETWORK_NOTATION.cidr,
                     consts.NETWORK_NOTATION.ip_ranges):
-                cidr = netaddr.IPNetwork(net['cidr'])
-                if net['gateway'] is not None:
-                    gw = netaddr.IPAddress(net['gateway'])
-                    # broadcast and net address intersection is checked by
-                    # check_network_addresses_not_match_subnet_and_broadcast
-                    if gw in cidr:
-                        ip_range = self._get_net_range_for_ip(gw, net)
-                        if ip_range is not None:
-                            self.err_msgs.append(
-                                u"Gateway address belongs to the network's "
-                                u"IP range [{0}].".format(ip_range)
-                            )
-                            self.result.append(
-                                {"ids": [net['id']], "errors": ["gateway"]}
-                            )
-                    else:
-                        self.err_msgs.append(
-                            u"Gateway address does not belong to the network."
-                        )
-                        self.result.append(
-                            {"ids": [net['id']], "errors": ["gateway"]}
-                        )
-                else:
+                if net['gateway'] is None:
                     self.err_msgs.append(
                         u"Gateway is not set for network."
                     )

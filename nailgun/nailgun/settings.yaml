@@ -75,6 +75,7 @@ API_LOG: &api_log "/var/log/nailgun/api.log"
 SYSLOG_DIR: &remote_syslog_dir "/var/log/remote/"
 
 RPC_CONSUMER_LOG_PATH: "/var/log/nailgun/receiverd.log"
+RPC_HEARTBEAT_INTERVAL: 30
 
 ASSASSIN_LOG_PATH: "/var/log/nailgun/assassind.log"
 

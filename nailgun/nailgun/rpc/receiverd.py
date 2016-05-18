@@ -95,7 +95,8 @@ def run():
     logger = logs.prepare_submodule_logger('receiverd',
                                            settings.RPC_CONSUMER_LOG_PATH)
     logger.info("Starting standalone RPC consumer...")
-    with Connection(rpc.conn_str) as conn:
+    with Connection(rpc.conn_str,
+                    heartbeat=settings.RPC_HEARTBEAT_INTERVAL) as conn:
         try:
             RPCConsumer(conn, NailgunReceiver).run()
         except (KeyboardInterrupt, SystemExit):

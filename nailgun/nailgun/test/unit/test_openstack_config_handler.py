@@ -190,26 +190,6 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
             "Nodes '{0}' are not assigned to cluster '{1}'".format(
                 self.nodes[1].id, self.clusters[1].id))
 
-    def test_openstack_config_upload_fail_not_supported_config(self):
-        """Test for uploading an update for not supported OpenStack config"""
-        data = {
-            'cluster_id': self.clusters[0].id,
-            'node_id': self.nodes[0].id,
-            'configuration': {
-                'not_supported_config': {}
-            }
-        }
-
-        resp = self.app.post(
-            reverse('OpenstackConfigCollectionHandler'),
-            jsonutils.dumps(data),
-            headers=self.default_headers,
-            expect_errors=True)
-        self.assertEqual(resp.status_code, 400)
-        self.assertRegexpMatches(
-            resp.json_body['message'],
-            r"Configurations '\w+' can not be updated")
-
     def test_openstack_config_upload_fail_deploy_running(self):
         deploy_task_id = self.create_running_deployment_task()
         data = {

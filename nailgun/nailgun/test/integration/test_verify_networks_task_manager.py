@@ -78,15 +78,10 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             if net['name'] != consts.NETWORKS.fuelweb_admin),
             None)
         network['cidr'] = admin_ng.cidr
-
-        task = self.env.launch_verify_networks(nets)
-        self.assertEqual(task.status, consts.TASK_STATUSES.error)
-        self.assertIn(
-            "Address space intersection between networks:\n",
-            task.message)
-        self.assertIn("admin (PXE)", task.message)
-        self.assertIn(network['name'], task.message)
-        self.assertEqual(mocked_rpc.called, False)
+        task = self.env.launch_verify_networks(nets, expect_errors=True)
+        self.assertEqual(task.status_code, 400)
+        self.assertIn("Gateway address does not belong to the network public.",
+                      task.json_body['message'])
 
     @mock_rpc(pass_mock=True)
     def test_network_verify_fails_if_untagged_intersection(self, mocked_rpc):

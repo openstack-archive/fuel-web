@@ -220,26 +220,33 @@ class MutableList(MutableCollection, list):
 # class name from the object MRO and search it in the registered
 # representers list. Thus we are adding representers for Mutable
 # objects into yaml.
+if yaml.__with_libyaml__:
+    safe_dumper = yaml.CSafeDumper
+    dumper = yaml.CDumper
+else:
+    safe_dumper = yaml.SafeDumper
+    dumper = yaml.Dumper
+
 yaml.add_representer(
     MutableDict,
     yaml.representer.SafeRepresenter.represent_dict,
-    yaml.SafeDumper
+    safe_dumper
 )
 
 yaml.add_representer(
     MutableDict,
     yaml.representer.SafeRepresenter.represent_dict,
-    yaml.Dumper
+    dumper
 )
 
 yaml.add_representer(
     MutableList,
     yaml.representer.SafeRepresenter.represent_list,
-    yaml.SafeDumper
+    safe_dumper
 )
 
 yaml.add_representer(
     MutableList,
     yaml.representer.SafeRepresenter.represent_list,
-    yaml.Dumper
+    dumper
 )

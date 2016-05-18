@@ -19,6 +19,12 @@ from yaql.language import specs
 from yaql.language import yaqltypes
 
 
+if yaml.__with_libyaml__:
+    YamlDumper = yaml.CSafeDumper
+else:
+    YamlDumper = yaml.SafeDumper
+
+
 @specs.method
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def to_yaml(finalizer, receiver):

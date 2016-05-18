@@ -418,6 +418,13 @@ class ClusterTransaction(DeploymentTask):
                 for tr, task_id in transactions
             }
 
+            # FIXME: https://bugs.launchpad.net/fuel/+bug/1582269
+            for n in nodes:
+                if n.status == consts.NODE_STATUSES.provisioned:
+                    for task_deployment_info in current_state.values():
+                        if task_deployment_info.get(n.uid):
+                            task_deployment_info[n.uid] = {}
+
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )

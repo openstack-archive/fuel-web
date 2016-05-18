@@ -953,7 +953,7 @@ class TestNeutronHandlers90(TestNetworkChecking):
             'notation': 'ip_ranges'
         }, False)
         self.assertIn(
-            u"Gateway address belongs to the network's IP range "
-            u"[192.168.3.1-192.168.3.50].",
+            u"Address intersection between baremetal gateway and IP range of"
+            u" baremetal network.",
             resp['message']
         )

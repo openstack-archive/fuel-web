@@ -36,10 +36,10 @@ class TestNodeAssignmentValidator(BaseUnitTest):
         roles = ['test']
         roles_metadata = {
             'test': {
-                'depends': [
+                'restrictions': [
                     {
-                        'condition': 'settings:parent.child.value == 1',
-                        'warning': 'error'
+                        'condition': 'settings:parent.child.value != 1',
+                        'message': 'error'
                     }
                 ]
             }
@@ -52,10 +52,10 @@ class TestNodeAssignmentValidator(BaseUnitTest):
         roles = ['test']
         roles_metadata = {
             'test': {
-                'depends': [
+                'restrictions': [
                     {
-                        'condition': "settings:parent.child.value != 'x'",
-                        'warning': 'error'
+                        'condition': "settings:parent.child.value == 'x'",
+                        'message': 'error'
                     }
                 ]
             }
@@ -71,10 +71,10 @@ class TestNodeAssignmentValidator(BaseUnitTest):
         with self.assertRaises(errors.InvalidData):
             roles_metadata = {
                 'test': {
-                    'depends': [
+                    'restrictions': [
                         {
-                            'condition': 'settings:parent.child.value == 0',
-                            'warning': 'error'
+                            'condition': 'settings:parent.child.value != 0',
+                            'message': 'error'
                         }
                     ]
                 }

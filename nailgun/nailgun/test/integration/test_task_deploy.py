@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
@@ -215,6 +216,43 @@ class TestTaskDeploy(BaseIntegrationTest):
             pending_addition=True
         )
         self.check_reexecute_task_on_cluster_update()
+
+    def test_deploy_check_failed_with_conflict_role(self):
+        node = self.env.nodes[0]
+
+        self.app.put(
+            reverse(
+                'NodeHandler',
+                kwargs={'obj_id': node.id}
+            ),
+            jsonutils.dumps({'pending_roles': ['controller', 'compute']}),
+            headers=self.default_headers
+        )
+        task = self.env.launch_deployment(self.cluster.id)
+
+        self.assertEqual(consts.TASK_STATUSES.error, task.status)
+        self.assertEqual(
+            "Role 'controller' in conflict with role 'compute'.",
+            task.message)
+
+    def test_deploy_check_failed_with_incompatible_role(self):
+        node = self.env.nodes[0]
+
+        self.app.put(
+            reverse(
+                'NodeHandler',
+                kwargs={'obj_id': node.id}
+            ),
+            jsonutils.dumps({'pending_roles': ['ceph-osd']}),
+            headers=self.default_headers
+        )
+        task = self.env.launch_deployment(self.cluster.id)
+
+        self.assertEqual(consts.TASK_STATUSES.error, task.status)
+        self.assertEqual(
+            "Role 'ceph-osd' restrictions mismatch: Ceph should"
+            " be enabled in the environment settings.",
+            task.message)
 
 
 class TestTaskDeployAfterDeployment(BaseIntegrationTest):

@@ -28,6 +28,7 @@ from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import object_mapper
 
+from nailgun.api.v1.validators import assignment
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
@@ -1359,6 +1360,7 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def execute(cls, task):
         cls._check_nodes_are_online(task)
+        cls._check_nodes_roles(task)
         cls._check_disks(task)
         cls._check_ceph(task)
         cls._check_volumes(task)
@@ -1417,6 +1419,29 @@ class CheckBeforeDeploymentTask(object):
             raise errors.NotEnoughFreeSpace(
                 u"Node '%s' has insufficient disk space\n%s" % (
                     node.human_readable_name, e.message))
+
+    @classmethod
+    def _check_nodes_roles(cls, task):
+        cluster = task.cluster
+        # TODO(asvechnikov): move out this and others models initialization
+        #                    to single place
+        models = {
+            'settings': objects.Cluster.get_editable_attributes(cluster),
+            'cluster': cluster,
+            'version': settings.VERSION,
+            'networking_parameters': cluster.network_config,
+        }
+
+        nodes = TaskHelper.nodes_to_deploy(cluster)
+        roles_metadata = objects.Cluster.get_roles(cluster)
+
+        for node in nodes:
+            roles = node.all_roles
+            # TODO(asvechnikov): move these methods out from validator
+            assignment.NodeAssignmentValidator.check_roles_for_conflicts(
+                roles, roles_metadata)
+            assignment.NodeAssignmentValidator.check_roles_requirement(
+                roles, roles_metadata, models)
 
     @classmethod
     def _check_ceph(cls, task):

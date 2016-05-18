@@ -789,8 +789,8 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
                                           expect_errors=True)
         self.assertEqual(resp.status_code, 400)
         task = resp.json_body
-        self.assertIn("Address space intersection between networks:\n"
-                      "admin (PXE), management.",
+        self.assertIn("Gateway address does not belong to the network"
+                      " 'fuelweb_admin'.",
                       task['message'])
 
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):

@@ -117,6 +117,21 @@ class NetworkConfigurationValidator(BasicValidator):
                 "already allocated IPs.".format(
                     ng_data['name'], ng_data['id']))
 
+        if is_admin_network:
+            if not use_gateway:
+                return ng_data
+
+            if gateway not in IPNetwork(cidr):
+                raise errors.InvalidData(
+                    "Gateway address does not belong to "
+                    "the network '{0}'.".format(ng_db['name']))
+
+            if nm.check_ips_belong_to_ranges([gateway], ranges):
+                raise errors.InvalidData(
+                    "Address intersection between gateway and IP range "
+                    "of {0} network. (Network IDs: '{1}')".format(
+                        ng_db['name'], ng_db['id']))
+
         return ng_data
 
     @classmethod
@@ -885,13 +900,18 @@ class NetworkGroupValidator(NetworkConfigurationValidator):
         # Can't change node group of an existing network group
         d.pop('group_id', None)
 
-        net_id = d.get('id') or kwargs['instance'].id
+        # Can't change id of an existing network group
+        net_id = d.pop('id', None) or kwargs['instance'].id
         ng_db = db().query(NetworkGroup).get(net_id)
+        # Only default Admin-pxe network doesn't have group_id.
         if not ng_db.group_id:
-            # Only default Admin-pxe network doesn't have group_id.
-            # It cannot be changed.
-            raise errors.InvalidData(
-                "Default Admin-pxe network cannot be changed")
+            allowed_fields = ["gateway", "ip_ranges"]
+            for field in d:
+                if field not in allowed_fields:
+                    raise errors.InvalidData(
+                        "For Default Admin-pxe network you can change "
+                        "only gateway and ip_ranges. Not {0}".format(field))
+            return cls.validate_network_group(d, ng_db, None)
 
         # If name is being changed then we should make sure it does
         # not conflict with an existing network. Otherwise it's fine to

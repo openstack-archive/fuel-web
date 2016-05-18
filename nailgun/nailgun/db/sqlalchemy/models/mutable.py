@@ -243,3 +243,28 @@ yaml.add_representer(
     yaml.representer.SafeRepresenter.represent_list,
     yaml.Dumper
 )
+
+if yaml.__with_libyaml__:
+    yaml.add_representer(
+        MutableDict,
+        yaml.representer.SafeRepresenter.represent_dict,
+        yaml.CSafeDumper
+    )
+
+    yaml.add_representer(
+        MutableDict,
+        yaml.representer.SafeRepresenter.represent_dict,
+        yaml.CDumper
+    )
+
+    yaml.add_representer(
+        MutableList,
+        yaml.representer.SafeRepresenter.represent_list,
+        yaml.CSafeDumper
+    )
+
+    yaml.add_representer(
+        MutableList,
+        yaml.representer.SafeRepresenter.represent_list,
+        yaml.CDumper
+    )

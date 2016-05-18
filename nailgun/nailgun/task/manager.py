@@ -133,14 +133,16 @@ class DeploymentCheckMixin(object):
                 'running tasks {0}'.format(tasks_q.all()))
 
 
-class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
-
-    deployment_type = consts.TASK_NAMES.deploy
-
+class BaseDeploymentTaskManager(TaskManager):
     def get_deployment_task(self):
         if objects.Release.is_lcm_supported(self.cluster.release):
             return tasks.ClusterTransaction
         return tasks.DeploymentTask
+
+
+class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
+
+    deployment_type = consts.TASK_NAMES.deploy
 
     def ensure_nodes_changed(
             self, nodes_to_provision, nodes_to_deploy, nodes_to_delete
@@ -604,13 +606,7 @@ class ProvisioningTaskManager(TaskManager):
         return task_provision
 
 
-class DeploymentTaskManager(TaskManager):
-
-    def get_deployment_task(self):
-        if objects.Release.is_lcm_supported(self.cluster.release):
-            return tasks.ClusterTransaction
-        return tasks.DeploymentTask
-
+class DeploymentTaskManager(BaseDeploymentTaskManager):
     def execute(self, nodes_to_deployment, deployment_tasks=None,
                 graph_type=None, force=False, **kwargs):
         deployment_tasks = deployment_tasks or []
@@ -1117,8 +1113,7 @@ class GenerateCapacityLogTaskManager(TaskManager):
         return task
 
 
-class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
-
+class NodeDeletionTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
     def verify_nodes_with_cluster(self, nodes):
         """Make sure that task.cluster is the same as all nodes' cluster
 
@@ -1207,7 +1202,7 @@ class NodeDeletionTaskManager(TaskManager, DeploymentCheckMixin):
 
             deployment_message = self._call_silently(
                 task_deployment,
-                tasks.DeploymentTask,
+                self.get_deployment_task(),
                 controllers_with_ready_status,
                 method_name='message'
             )

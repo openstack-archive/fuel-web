@@ -20,10 +20,12 @@ from collections import defaultdict
 from netaddr import IPNetwork
 import six
 
+from nailgun.extensions.network_manager.serializers.base \
+    import NetworkDeploymentSerializer
+
 from nailgun import consts
 from nailgun.objects import Cluster
 from nailgun.objects import Node
-from nailgun.orchestrator.base_serializers import NetworkDeploymentSerializer
 
 
 class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):

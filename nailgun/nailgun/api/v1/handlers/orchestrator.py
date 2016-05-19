@@ -30,6 +30,7 @@ from nailgun.api.v1.validators.orchestrator_graph import \
 
 from nailgun.logger import logger
 
+from nailgun import consts
 from nailgun import errors
 from nailgun import objects
 
@@ -42,6 +43,7 @@ from nailgun.orchestrator.stages import pre_deployment_serialize
 from nailgun.orchestrator import task_based_deployment
 from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
+from nailgun.task import task
 from nailgun import utils
 
 
@@ -387,6 +389,8 @@ class TaskDeployGraph(BaseHandler):
 class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
 
     def get_default_nodes(self, cluster):
+        if objects.Release.is_lcm_supported(cluster.release):
+            return objects.Cluster.get_nodes_not_for_deletion(cluster).all()
         return TaskHelper.nodes_to_deploy(cluster)
 
     @content
@@ -404,7 +408,23 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
         tasks = web.input(tasks=None).tasks
         graph_type = web.input(graph_type=None).graph_type
         task_ids = [t.strip() for t in tasks.split(',')] if tasks else None
+
         try:
+            if objects.Release.is_lcm_supported(cluster.release):
+                # in order to do not repeat quite complex logic, we create
+                # a temporary task (transaction) instance and pass it to
+                # task_deploy serializer.
+                return task.ClusterTransaction.task_deploy(
+                    objects.Task.model(
+                        name=consts.TASK_NAMES.deployment,
+                        cluster=cluster,
+                    ),
+                    objects.Cluster.get_deployment_tasks(cluster, graph_type),
+                    nodes,
+                    selected_task_ids=task_ids,
+                )
+
+            # for old clusters we have to fallback to old serializers
             serialized_tasks = task_based_deployment.TasksSerializer.serialize(
                 cluster,
                 nodes,
@@ -413,5 +433,6 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
             )
             return {'tasks_directory': serialized_tasks[0],
                     'tasks_graph': serialized_tasks[1]}
+
         except errors.TaskBaseDeploymentNotAllowed as exc:
             raise self.http(400, msg=six.text_type(exc))

@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from nailgun.api.v1.validators.json_schema import node_schema
 from nailgun.api.v1.validators import node
 from nailgun import errors
@@ -144,3 +146,53 @@ class TestNodeJsonSchemaValidation(base.BaseValidatorTest):
                 test['data'],
                 node_schema.single_schema
             )
+
+
+class TestNodeVmsValidation(base.BaseUnitTest):
+
+    def assertValidData(self, data):
+        self.assertNotRaises(
+            errors.InvalidData,
+            node.NodeVMsValidator.validate_schema,
+            data,
+            node_schema.NODE_VM_SCHEMA
+        )
+
+    def assertInvalidData(self, data, regexp):
+        self.assertRaisesRegexp(
+            errors.InvalidData,
+            regexp,
+            node.NodeVMsValidator.validate_schema,
+            data,
+            node_schema.NODE_VM_SCHEMA
+        )
+
+    def test_schema_success(self):
+        data = {'vms_conf': [{'id': 1, 'cpu': 2, 'mem': 4}]}
+        self.assertValidData(data)
+
+        data = {'vms_conf': [
+            {'id': 1, 'vda_size': '100500'},
+            {'id': 2, 'vda_size': '42G'},
+        ]}
+        self.assertValidData(data)
+
+    def test_schema_fail_invalid_type(self):
+        data = {'vms_conf': [[{}]]}
+        self.assertInvalidData(data, r"\[{}\] is not of type 'object'")
+
+    def test_schema_fail_invalid_value(self):
+        data = {'vms_conf': [{'id': 1, 'cpu': -2}]}
+        self.assertInvalidData(data, '-2 is less than the minimum of 1')
+        data = {'vms_conf': [{'id': 1, 'mem': -4}]}
+        self.assertInvalidData(data, '-4 is less than the minimum of 1')
+        data = {'vms_conf': [{'id': 1, 'vda_size': '-4G'}]}
+        self.assertInvalidData(data, r"'-4G' does not match '{0}'".format(
+            re.escape(node_schema._VDA_SIZE_RE)))
+        data = {'vms_conf': [{'id': 1, 'vda_size': 'G'}]}
+        self.assertInvalidData(data, r"'G' does not match '{0}".format(
+            re.escape(node_schema._VDA_SIZE_RE)))
+
+    def test_schema_fail_missing_value(self):
+        data = {'vms_conf': [{'cpu': 1, 'mem': 4}]}
+        self.assertInvalidData(data, "'id' is a required property")

@@ -242,6 +242,15 @@ class DeploymentTask(BaseDeploymentTask):
             task.cluster, graph_type
         )
 
+        # update all puppet tasks with puppet_debug value from settings
+        common_settings = task.cluster.attributes['editable']['common']
+        puppet_debug = common_settings['puppet_debug']['value']
+        for deploy_task in deployment_tasks:
+            if deploy_task['type'] == consts.ORCHESTRATOR_TASK_TYPES.puppet:
+                logger.debug("Update puppet task: %s with debug=%s",
+                             deploy_task['task_name'], puppet_debug)
+                deploy_task['parameters']['debug'] = puppet_debug
+
         deployment_mode, message = cls.call_deployment_method(
             task, tasks=deployment_tasks, nodes=nodes,
             affected_nodes=affected_nodes, selected_task_ids=task_ids,

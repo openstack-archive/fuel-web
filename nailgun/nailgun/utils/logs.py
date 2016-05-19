@@ -59,31 +59,36 @@ def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
             shutil.rmtree(bak)
         os.rename(new, bak)
 
-    # rename bootstrap directory into fqdn
-    if os.path.islink(old):
-        logger.debug("Old %s exists and it is link. "
-                     "Trying to unlink", old)
-        os.unlink(old)
-    if os.path.isdir(old):
-        logger.debug("Old %s exists and it is directory. "
-                     "Trying to rename into %s", old, new)
-        os.rename(old, new)
-    else:
-        logger.debug("Creating %s", new)
-        os.makedirs(new)
+    try:
+        # rename bootstrap directory into fqdn
+        if os.path.islink(old):
+            logger.debug("Old %s exists and it is link. "
+                         "Trying to unlink", old)
+            os.unlink(old)
+        if os.path.isdir(old):
+            os.system("/usr/bin/pkill -STOP rsyslog")
 
-    # creating symlinks
-    for l in links:
-        if os.path.islink(l) or os.path.isfile(l):
-            logger.debug("%s already exists. "
-                         "Trying to unlink", l)
-            os.unlink(l)
-        if os.path.isdir(l):
-            logger.debug("%s already exists and it directory. "
-                         "Trying to remove", l)
-            shutil.rmtree(l)
-        logger.debug("Creating symlink %s -> %s", l, new)
-        os.symlink(objects.Node.get_node_fqdn(node), l)
+            logger.debug("Old %s exists and it is directory. "
+                         "Trying to rename into %s", old, new)
+            os.rename(old, new)
+        else:
+            logger.debug("Creating %s", new)
+            os.makedirs(new)
+
+        # creating symlinks
+        for l in links:
+            if os.path.islink(l) or os.path.isfile(l):
+                logger.debug("%s already exists. "
+                             "Trying to unlink", l)
+                os.unlink(l)
+            if os.path.isdir(l):
+                logger.debug("%s already exists and it directory. "
+                             "Trying to remove", l)
+                shutil.rmtree(l)
+            logger.debug("Creating symlink %s -> %s", l, new)
+            os.symlink(objects.Node.get_node_fqdn(node), l)
+    finally:
+        os.system("/usr/bin/pkill -CONT rsyslog")
 
     os.system("/usr/bin/pkill -HUP rsyslog")
 

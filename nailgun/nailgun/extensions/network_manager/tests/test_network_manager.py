@@ -1846,3 +1846,62 @@ class TestNeutronManager80(BaseIntegrationTest):
         )
 
         self._check_nic_mapping(node, expected_mapping)
+
+    def test_node_dpdk_enabled_w_template(self):
+        template = {
+            "templates_for_node_role": {
+                "cinder": [],
+                "controller": [],
+                "test_role": [
+                    "storage",
+                    "private"
+                ]
+            },
+            "templates": {
+                "storage": {
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-storage"
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-storage",
+                            "name": "<% if3 %>"
+                        }
+                    ],
+                    "roles": {
+                        "storage": "br-storage"
+                    }
+                },
+                "private": {
+                    "transformations": [
+                        {
+                            "action": "add-br",
+                            "name": "br-prv",
+                            "provider": "ovs",
+                            "vendor_specific": {
+                                "datapath_type": "netdev"
+                            }
+                        },
+                        {
+                            "action": "add-port",
+                            "bridge": "br-prv",
+                            "name": "<% if4 %>.101",
+                            "provider": "dpdkovs"
+                        }
+                    ],
+                    "roles": {
+                        "neutron/private": "br-prv"
+                    }
+                },
+            }
+        }
+        node = mock.Mock(network_template=template,
+                         all_roles=['test_role'])
+
+        self.assertTrue(self.net_manager.dpdk_enabled_for_node(node))
+
+        template['templates_for_node_role']['test_role'].remove('private')
+
+        self.assertFalse(self.net_manager.dpdk_enabled_for_node(node))

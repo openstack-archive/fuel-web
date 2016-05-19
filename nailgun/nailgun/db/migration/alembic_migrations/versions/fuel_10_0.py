@@ -20,14 +20,63 @@ Create Date: 2016-04-08 15:20:43.989472
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
+
 # revision identifiers, used by Alembic.
 revision = 'c6edea552f1e'
 down_revision = '675105097a69'
 
 
 def upgrade():
-    pass
+    upgrade_plugin_links_constraints()
 
 
 def downgrade():
-    pass
+    downgrade_plugin_links_constraints()
+
+
+def upgrade_plugin_links_constraints():
+    connection = op.get_bind()
+
+    # plugin links
+    plugin_links_remove_duplicates_query = sa.text("""
+        DELETE FROM plugin_links
+        WHERE id
+        NOT IN (
+          SELECT MIN(id)
+          FROM plugin_links
+          GROUP BY url
+        )
+    """)
+    connection.execute(plugin_links_remove_duplicates_query)
+
+    op.create_unique_constraint(
+        'plugin_links_url_uc',
+        'plugin_links',
+        ['url'])
+
+    # cluster plugin links
+    cluster_plugin_links_remove_duplicates_query = sa.text("""
+        DELETE FROM cluster_plugin_links
+        WHERE id
+        NOT IN (
+          SELECT MIN(id)
+          FROM cluster_plugin_links
+          GROUP BY cluster_id,url
+        )
+    """)
+    connection.execute(cluster_plugin_links_remove_duplicates_query)
+
+    op.create_unique_constraint(
+        'cluster_plugin_links_cluster_id_url_uc',
+        'cluster_plugin_links',
+        ['cluster_id', 'url'])
+
+
+def downgrade_plugin_links_constraints():
+    op.drop_constraint('cluster_plugin_links_cluster_id_url_uc',
+                       'cluster_plugin_links')
+
+    op.drop_constraint('plugin_links_url_uc', 'plugin_links')

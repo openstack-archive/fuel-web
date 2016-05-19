@@ -445,6 +445,13 @@ class ClusterTransaction(DeploymentTask):
                 role_resolver,
             )
 
+        # update all puppet tasks with puppet_debug value from settings
+        common_settings = cluster.attributes['editable']['common']
+        puppet_debug = common_settings['puppet_debug']['value']
+        for task in tasks:
+            if task['type'] == consts.ORCHESTRATOR_TASK_TYPES.puppet:
+                task['parameters']['debug'] = puppet_debug
+
         directory, graph = lcm.TransactionSerializer.serialize(
             context,
             tasks,

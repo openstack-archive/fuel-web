@@ -364,6 +364,106 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         for partition_after in partitions_after_update:
             self.assertEqual(partition_after['size'], new_volume_size)
 
+    def test_boot_flag(self):
+        disks = [{"name": "sda", "disk": "sda", "size": 2 ** 40},
+                 {"name": "sdb", "disk": "sdb", "size": 2 ** 40}]
+        self.env.create(
+            nodes_kwargs=[{
+                "roles": ['controller'],
+                "pending_roles": [],
+                "meta": {"disks": disks}
+            }]
+        )
+        node_db = self.env.nodes[0]
+        # By default first disk (sda) should be picked as bootable
+        disks = self.get(node_db.id)
+        sda = next(disk for disk in disks if disk['id'] == 'sda')
+        sdb = next(disk for disk in disks if disk['id'] == 'sdb')
+        self.assertTrue(sda['bootable'])
+        self.assertFalse(sdb['bootable'])
+        # Pick sdb as a bootable disk
+        sda['bootable'] = False
+        sdb['bootable'] = True
+        self.put(node_db.id, disks)
+        disks = self.get(node_db.id)
+        sda = next(disk for disk in disks if disk['id'] == 'sda')
+        sdb = next(disk for disk in disks if disk['id'] == 'sdb')
+        self.assertFalse(sda['bootable'])
+        self.assertTrue(sdb['bootable'])
+        # Pick default bootable disk
+        sda['bootable'] = False
+        sdb['bootable'] = False
+        self.put(node_db.id, disks)
+        disks = self.get(node_db.id)
+        sda = next(disk for disk in disks if disk['id'] == 'sda')
+        sdb = next(disk for disk in disks if disk['id'] == 'sdb')
+        self.assertTrue(sda['bootable'])
+        self.assertFalse(sdb['bootable'])
+
+        # Two disks can not be picked as bootable at the same time
+        sda['bootable'] = True
+        sdb['bootable'] = True
+        response = self.put(node_db.id, disks, expect_errors=True)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            'Disks sda, sdb can not be selected as bootable at the same time. '
+            'Only one disk should be selected as bootable.',
+            response.json_body["message"])
+
+    def test_boot_flag_default_pick_nvme(self):
+        # NVMe disks should not be picked as bootable by default
+        disks = [{"name": "nvme0", "disk": "nvme0", "size": 2 ** 40},
+                 {"name": "sda", "disk": "sda", "size": 2 ** 40}]
+        self.env.create(
+            nodes_kwargs=[{
+                "roles": ['controller'],
+                "pending_roles": [],
+                "meta": {"disks": disks}
+            }]
+        )
+        node_db = self.env.nodes[0]
+        # By default first disk (sda) should be picked as bootable
+        disks = self.get(node_db.id)
+        sda = next(disk for disk in disks if disk['id'] == 'sda')
+        nvme0 = next(disk for disk in disks if disk['id'] == 'nvme0')
+        self.assertTrue(sda['bootable'])
+        self.assertFalse(nvme0['bootable'])
+
+    def test_boot_flag_default_pick_md(self):
+        # If 'Base OS' installed on fake raid, it should picked as bootable
+        disks = [{"name": "md0", "disk": "md0", "size": 2 ** 40},
+                 {"name": "hda", "disk": "hda", "size": 2 ** 40}]
+        self.env.create(
+            nodes_kwargs=[{
+                "roles": ['controller'],
+                "pending_roles": [],
+                "meta": {"disks": disks}
+            }]
+        )
+        node_db = self.env.nodes[0]
+        disks = self.get(node_db.id)
+        hda = next(disk for disk in disks if disk['id'] == 'hda')
+        md0 = next(disk for disk in disks if disk['id'] == 'md0')
+        self.assertTrue(hda['bootable'])
+        self.assertFalse(md0['bootable'])
+        # Move 'Base OS' to the fake raid
+        md0_os = next(v for v in md0['volumes'] if v['name'] == 'os')
+        if md0_os['size'] == 0:
+            md0_image = next(v for v in md0['volumes'] if v['name'] == 'image')
+            md0_image['size'] -= 50000
+            md0_os['size'] += 50000
+            hda_os = next(v for v in hda['volumes'] if v['name'] == 'os')
+            hda_os['size'] = 0
+        for disk in disks:
+            disk['bootable'] = False
+        self.put(node_db.id, disks)
+        # Now default pick should be md0
+        disks = self.get(node_db.id)
+        hda = next(disk for disk in disks if disk['id'] == 'hda')
+        md0 = next(disk for disk in disks if disk['id'] == 'md0')
+        self.assertFalse(hda['bootable'])
+        self.assertTrue(md0['bootable'])
+
     def test_validator_at_least_one_disk_exists(self):
         node = self.create_node()
         response = self.put(node.id, [], True)
@@ -410,6 +510,30 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         self.assertRegexpMatches(response.json_body["message"],
                                  "^All volumes with the same name should"
                                  " have the same value for `keep_data` flag")
+
+    def test_validator_single_boot_disk(self):
+        disks = [{"name": "sda", "disk": "sda", "size": 2 ** 40},
+                 {"name": "sdb", "disk": "sdb", "size": 2 ** 40}]
+        self.env.create(
+            nodes_kwargs=[{
+                "roles": ['controller'],
+                "pending_roles": [],
+                "meta": {"disks": disks}
+            }]
+        )
+        node_db = self.env.nodes[0]
+        disks = self.get(node_db.id)
+        sda = next(disk for disk in disks if disk['id'] == 'sda')
+        sdb = next(disk for disk in disks if disk['id'] == 'sdb')
+        # Two disks can not be picked as bootable at the same time
+        sda['bootable'] = True
+        sdb['bootable'] = True
+        response = self.put(node_db.id, disks, expect_errors=True)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            'Disks sda, sdb can not be selected as bootable at the same time. '
+            'Only one disk should be selected as bootable.',
+            response.json_body["message"])
 
 
 class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
@@ -1035,6 +1159,10 @@ class TestVolumeManager(BaseIntegrationTest):
                 {'id': 'os', 'type': 'vg'},
                 {'id': 'image', 'type': 'vg'},
                 {'id': 'vm', 'type': 'vg'}
+            ],
+            'rule_to_pick_boot_disk':
+            [
+                {'type': 'exclude_disks_by_name', 'regex': '^nvme'}
             ]
         }
         release = self.env.create_release(

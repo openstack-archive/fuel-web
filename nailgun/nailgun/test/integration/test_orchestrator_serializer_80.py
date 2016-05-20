@@ -369,6 +369,7 @@ class TestDeploymentAttributesSerialization80(
         expected_node_volumes_hash = [
             {
                 u'name': u'sda',
+                u'bootable': True,
                 u'extra': [],
                 u'free_space': 330,
                 u'volumes': [

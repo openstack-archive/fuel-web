@@ -533,12 +533,14 @@ class Node(NailgunObject):
     def is_interfaces_configuration_locked(cls, instance):
         """Returns true if update of network configuration is not allowed.
 
-        It is not allowed during provision/deployment, after
-        successful deployment and during node removal.
+        Update of network configuration is allowed for bootstrap nodes only.
         """
         return instance.status not in (
             consts.NODE_STATUSES.discover,
             consts.NODE_STATUSES.error,
+        ) or (
+            instance.status == consts.NODE_STATUSES.error and
+            instance.error_type != consts.NODE_ERRORS.discover
         )
 
     @classmethod

@@ -21,7 +21,7 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
+from nailgun.api.v1.validators import node as validators
 
 from nailgun.logger import logger
 
@@ -35,7 +35,7 @@ class SpawnVmsHandler(BaseHandler):
     """Handler for provision and spawn vms on virt nodes."""
 
     task_manager = manager.SpawnVMsTaskManager
-    validator = DeploySelectedNodesValidator
+    validator = validators.DeploySelectedNodesValidator
 
     def get_tasks(self, cluster, graph_type):
         """Get deployment tasks for VMs spawning.
@@ -90,6 +90,8 @@ class SpawnVmsHandler(BaseHandler):
 
 class NodeVMsHandler(BaseHandler):
     """Node vms handler"""
+
+    validator = validators.NodeVMsValidator
 
     @content
     def GET(self, node_id):

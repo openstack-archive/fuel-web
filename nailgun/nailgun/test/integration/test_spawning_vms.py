@@ -110,14 +110,15 @@ class TestSpawnVMs(BaseIntegrationTest):
         self.assertTrue(custom_task_found)
 
     def test_create_vms_conf(self):
-        self.env.create(
+        cluster = self.env.create(
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True,
                  "roles": ["virt"]},
             ]
         )
-        cluster = self.env.clusters[0]
-        vms_conf = {"vms_conf": [{'id': 1, 'cluster_id': cluster.id}]}
+        vms_conf = {"vms_conf": [
+            {'id': 1, 'cpu': 1, 'mem': 1}]
+        }
         self.app.put(
             reverse(
                 'NodeVMsHandler',
@@ -132,6 +133,27 @@ class TestSpawnVMs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(spawning_nodes.json, vms_conf)
+
+    def test_create_vms_conf_failure(self):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {"status": "ready", "pending_addition": True,
+                 "roles": ["virt"]},
+            ]
+        )
+        vms_conf = {"vms_conf": [
+            {'cpu': 1}
+        ]}
+        resp = self.app.put(
+            reverse(
+                'NodeVMsHandler',
+                kwargs={'node_id': cluster.nodes[0].id}),
+            jsonutils.dumps(vms_conf),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("'id' is a required property", resp.json_body['message'])
 
     def test_spawn_vms_error(self):
         self.env.create(

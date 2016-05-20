@@ -306,6 +306,7 @@ def content_json(func, cls, *args, **kwargs):
             )
         )
         http_error.data = json_resp(http_error.data)
+        web.header('Content-Type', 'text/plain')
         raise http_error
 
     if all([

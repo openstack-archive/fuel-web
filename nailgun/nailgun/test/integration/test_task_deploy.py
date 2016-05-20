@@ -29,9 +29,10 @@ from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
-class TestTaskDeploy(BaseIntegrationTest):
+class TestTaskDeploy80(BaseIntegrationTest):
+
     def setUp(self):
-        super(TestTaskDeploy, self).setUp()
+        super(TestTaskDeploy80, self).setUp()
         self.cluster = self.env.create(
             api=False,
             nodes_kwargs=[
@@ -254,10 +255,146 @@ class TestTaskDeploy(BaseIntegrationTest):
             " be enabled in the environment settings.",
             task.message)
 
+    def test_serialized_tasks(self):
+        patcher = mock.patch('objects.Cluster.get_deployment_tasks')
+        self.addCleanup(patcher.stop)
 
-class TestTaskDeployAfterDeployment(BaseIntegrationTest):
+        self.mock_tasks = patcher.start()
+        self.mock_tasks.return_value = [
+            {
+                'id': 'deploy_start',
+                'type': 'stage',
+            },
+            {
+                'id': 'deploy_end',
+                'type': 'stage',
+                'requires': ['deploy_start'],
+            },
+            {
+                'id': 'compute', 'type': 'group', 'role': ['compute'],
+            },
+            {
+                'id': 'task-a',
+                'version': '2.0.0',
+                'type': 'puppet',
+                'groups': ['compute'],
+                'condition': 'settings:public_ssl.horizon.value == false',
+                'parameters': {},
+            },
+            {
+                'id': 'task-b',
+                'version': '2.0.0',
+                'type': 'puppet',
+                'groups': ['compute'],
+                'parameters': {},
+            }]
+
+        compute = next(
+            (x for x in self.env.nodes if 'compute' in x.roles), None
+        )
+
+        resp = self.app.get(
+            reverse(
+                'SerializedTasksHandler',
+                kwargs={'cluster_id': self.cluster.id},
+            ))
+
+        self.assertEqual(resp.status_code, 200)
+
+        graph = resp.json_body['tasks_graph']
+        self.assertItemsEqual(
+            ['task-a', 'task-b'],
+            (task['id'] for task in graph[compute.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
+        )
+
+
+class TestTaskDeploy90(BaseIntegrationTest):
+
     def setUp(self):
-        super(TestTaskDeployAfterDeployment, self).setUp()
+        super(TestTaskDeploy90, self).setUp()
+        self.cluster = self.env.create(
+            api=False,
+            nodes_kwargs=[
+                {"name": "First",
+                 "pending_addition": True},
+                {"name": "Second",
+                 "roles": ["compute"],
+                 "pending_addition": True}
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2015.1.0-9.0',
+            },
+        )
+        self.compute = next(
+            (x for x in self.env.nodes if 'compute' in x.roles), None)
+
+        patcher = mock.patch('objects.Cluster.get_deployment_tasks')
+        self.addCleanup(patcher.stop)
+
+        self.mock_tasks = patcher.start()
+        self.mock_tasks.return_value = [
+            {
+                'id': 'compute', 'type': 'group', 'roles': ['compute']
+            },
+            {
+                'id': 'task-a',
+                'version': '2.1.0',
+                'type': 'puppet',
+                'roles': ['compute'],
+                'condition': {
+                    'yaql_exp': 'changedAny($.network_scheme, $.dpdk)',
+                },
+                'parameters': {},
+            },
+            {
+                'id': 'task-b',
+                'version': '2.1.0',
+                'type': 'puppet',
+                'roles': ['compute'],
+                'condition': {
+                    'yaql_exp': 'changedAny($.network_scheme, $.dpdk)',
+                },
+                'parameters': {},
+            }]
+
+    def test_serialized_tasks(self):
+        resp = self.app.get(
+            reverse(
+                'SerializedTasksHandler',
+                kwargs={'cluster_id': self.cluster.id},
+            ))
+        self.assertEqual(resp.status_code, 200)
+
+        # all tasks must be in graph
+        graph = resp.json_body['tasks_graph']
+        self.assertItemsEqual(
+            ['task-a', 'task-b'],
+            (task['id'] for task in graph[self.compute.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
+        )
+
+    def test_serialized_tasks_w_tasks(self):
+        resp = self.app.get(
+            reverse(
+                'SerializedTasksHandler',
+                kwargs={'cluster_id': self.cluster.id},
+            ) + '?tasks=task-a')
+        self.assertEqual(resp.status_code, 200)
+
+        # only task-a must be in graph
+        graph = resp.json_body['tasks_graph']
+        self.assertItemsEqual(
+            ['task-a'],
+            (task['id'] for task in graph[self.compute.uid]
+             if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
+        )
+
+
+class TestTaskDeploy90AfterDeployment(BaseIntegrationTest):
+    def setUp(self):
+        super(TestTaskDeploy90AfterDeployment, self).setUp()
         self.cluster = self.env.create(
             api=False,
             nodes_kwargs=[
@@ -274,7 +411,6 @@ class TestTaskDeployAfterDeployment(BaseIntegrationTest):
         # must be compatible with granular deployment (and it doesn't support
         # yaql based condition). so the only choice - patch netconfig task
         # on fly.
-        # graph = objects.DeploymentGraph.get_for_model(self.cluster.release)
         self.db.query(models.DeploymentGraphTask)\
             .filter_by(task_name='netconfig')\
             .update({
@@ -285,7 +421,6 @@ class TestTaskDeployAfterDeployment(BaseIntegrationTest):
 
         with mock.patch('nailgun.task.task.rpc.cast'):
             task = self.env.launch_deployment()
-            self.db.commit()
 
             rpc.receiver.NailgunReceiver().deploy_resp(
                 task_uuid=next((

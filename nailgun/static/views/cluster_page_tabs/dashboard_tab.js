@@ -158,8 +158,9 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
             description: React.PropTypes.node
         },
         processRelativeURL(url) {
-            var sslSettings = this.props.cluster.get('settings').get('public_ssl');
-            if (sslSettings.horizon.value) return 'https://' + sslSettings.hostname.value + url;
+            var settings = this.props.cluster.get('settings');
+            if (settings.get('public_ssl.horizon.value'))
+                return 'https://' + settings.get('public_ssl.hostname.value') + url;
             return this.getHTTPLink(url);
         },
         getHTTPLink(url) {
@@ -354,14 +355,14 @@ function(_, i18n, $, React, utils, models, dispatcher, dialogs, componentMixins,
         validations: [
             // check if TLS settings are not configured
             function(cluster) {
-                var sslSettings = cluster.get('settings').get('public_ssl');
-                if (!sslSettings.horizon.value && !sslSettings.services.value) {
+                var settings = cluster.get('settings');
+                if (!settings.get('public_ssl.horizon.value') && !settings.get('public_ssl.services.value')) {
                     return {warning: [i18n(this.ns + 'tls_not_enabled')]};
                 }
-                if (!sslSettings.horizon.value) {
+                if (!settings.get('public_ssl.horizon.value')) {
                     return {warning: [i18n(this.ns + 'tls_for_horizon_not_enabled')]};
                 }
-                if (!sslSettings.services.value) {
+                if (!settings.get('public_ssl.services.value')) {
                     return {warning: [i18n(this.ns + 'tls_for_services_not_enabled')]};
                 }
             },

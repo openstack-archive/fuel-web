@@ -294,7 +294,7 @@ def content_json(func, cls, *args, **kwargs):
                 "errors": http_error.err_list
             })
         else:
-            http_error.data = json_resp(http_error.data)
+            http_error.data = json_resp({'message': http_error.data})
         raise
     # intercepting all errors to avoid huge HTML output
     except Exception as exc:
@@ -307,7 +307,8 @@ def content_json(func, cls, *args, **kwargs):
                 else six.text_type(exc)
             )
         )
-        http_error.data = json_resp(http_error.data)
+        http_error.data = json_resp({'message': http_error.data})
+        web.header('Content-Type', 'application/json')
         raise http_error
 
     if all([

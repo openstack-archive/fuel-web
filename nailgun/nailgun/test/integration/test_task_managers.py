@@ -223,7 +223,36 @@ class TestTaskManagers(BaseIntegrationTest):
             },
             {
                 'id': 'controller', 'type': 'group', 'roles': ['controller']
-            }
+            },
+            {
+                "id": "deploy_start",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+                "requires": ["pre_deployment_end"],
+            },
+            {
+                "id": "deploy_end",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+                "requires": ["deploy_start"],
+            },
+            {
+                "id": "pre_deployment_start",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+            },
+            {
+                "id": "pre_deployment_end",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+                "requires": ["pre_deployment_start"],
+            },
+            {
+                "id": "post_deployment_start",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+                "requires": ["deploy_end"],
+            },
+            {
+                "id": "post_deployment_end",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+                "requires": ["post_deployment_start"],
+            },
         ]
         self.env.create(
             nodes_kwargs=[

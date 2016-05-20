@@ -363,6 +363,13 @@ class DeploymentTask(BaseDeploymentTask):
 
 
 class ClusterTransaction(DeploymentTask):
+
+    ignored_types = {
+        consts.ORCHESTRATOR_TASK_TYPES.skipped,
+        consts.ORCHESTRATOR_TASK_TYPES.group,
+        consts.ORCHESTRATOR_TASK_TYPES.stage,
+    }
+
     @classmethod
     def get_deployment_methods(cls, cluster):
         return ['task_deploy']
@@ -377,7 +384,8 @@ class ClusterTransaction(DeploymentTask):
         task_ids = set(ids_not_to_skip)
 
         for task in tasks:
-            if task['id'] not in task_ids:
+            if (task['id'] not in task_ids and
+                    task['type'] not in cls.ignored_types):
                 task = task.copy()
                 task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
 
@@ -400,14 +408,9 @@ class ClusterTransaction(DeploymentTask):
 
         current_state = {}
         if not force:
-            ignored_types = {
-                consts.ORCHESTRATOR_TASK_TYPES.skipped,
-                consts.ORCHESTRATOR_TASK_TYPES.group,
-                consts.ORCHESTRATOR_TASK_TYPES.stage,
-            }
 
             tasks_names = [t['id'] for t in tasks
-                           if t['type'] not in ignored_types]
+                           if t['type'] not in cls.ignored_types]
             transaction_collection = objects.TransactionCollection
             transactions = (
                 transaction_collection.get_successful_transactions_per_task(

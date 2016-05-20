@@ -281,6 +281,16 @@ class GraphSolver(nx.DiGraph):
                 wgraph.remove_node(task)
         return wgraph
 
+    def check(self):
+        if not self.is_acyclic():
+            err = "Graph cannot be processed because it contains cycles in it:"
+            # FIXME(mattymo): GraphSolver cannot be used to call this method
+            err += ', '.join(
+                six.moves.map(str, nx.simple_cycles(nx.DiGraph(self)))
+            )
+            err += '\n'
+            raise errors.InvalidData(err)
+
 
 class AstuteGraph(object):
     """This object stores logic that required for working with astute"""
@@ -480,15 +490,7 @@ class AstuteGraph(object):
         return serialized
 
     def check(self):
-        if not self.graph.is_acyclic():
-            err = "Graph cannot be processed because it contains cycles in it:"
-            # FIXME(mattymo): GraphSolver cannot be used to call this method
-            err += ', '.join(six.moves.map(str,
-                                           nx.simple_cycles(
-                                               nx.DiGraph(self.graph))))
-            err += '\n'
-            raise errors.InvalidData(err)
-
+        self.graph.check()
         non_existing_tasks = []
         invalid_tasks = []
 

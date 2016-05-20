@@ -295,7 +295,8 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
                     'type': 'puppet',
                     'roles': '*',
                     'version': '2.0.0',
-                    'requires': ['pre_deployment_start']
+                    'requires': ['pre_deployment_start'],
+                    'parameters': {'debug': True}
                 }
             ]}, self.cluster, 'custom-graph')
 

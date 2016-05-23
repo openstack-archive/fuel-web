@@ -29,4 +29,14 @@ class TransactionContext(object):
         return self.new[node_id]
 
     def get_old_data(self, node_id, task_id):
-        return self.old.get(task_id, {}).get(node_id)
+        try:
+            task_data = self.old[task_id]
+        except KeyError:
+            return {}
+
+        try:
+            return task_data[node_id]
+        except KeyError:
+            # only if info for node does not present
+            # use the default state
+            return task_data.get(None) or {}

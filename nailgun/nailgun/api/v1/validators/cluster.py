@@ -28,7 +28,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun import errors
 from nailgun import objects
 from nailgun.plugins.manager import PluginManager
-from nailgun.settings import settings
 
 
 class ClusterValidator(base.BasicValidator):
@@ -240,12 +239,8 @@ class ClusterAttributesValidator(base.BasicAttributesValidator):
             cls.validate_provision(cluster, attrs)
             cls.validate_allowed_attributes(cluster, d, force)
 
-            models = {
-                'settings': attrs.get('editable', {}),
-                'cluster': cluster,
-                'version': settings.VERSION,
-                'networking_parameters': cluster.network_config,
-            }
+            models = objects.Cluster.get_restrictions_models(
+                cluster, attrs=attrs.get('editable', {}))
 
         cls.validate_attributes(attrs.get('editable', {}), models, force=force)
 

@@ -28,4 +28,3 @@ from .parses import *
 from .plugins import *
 from .rpc import *
 from .validation import *
-from .zabbix import *

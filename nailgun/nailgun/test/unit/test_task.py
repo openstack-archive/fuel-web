@@ -537,6 +537,13 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
     def test_dpdk_hugepages_are_not_configured(self):
         net_template = self.env.read_fixtures(['network_template_90'])[0]
+        del self.cluster.nodes[0]
+        self.env.create_nodes_w_interfaces_count(
+            1, 6,
+            roles=['compute'],
+            cluster_id=self.cluster.id
+        )
+        self.node = self.cluster.nodes[0]
 
         objects.Cluster.set_network_template(
             self.cluster,
@@ -560,6 +567,13 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
     def test_nova_hugepages_are_not_configured_with_dpdk_enabled(self):
         net_template = self.env.read_fixtures(['network_template_90'])[0]
+        del self.cluster.nodes[0]
+        self.env.create_nodes_w_interfaces_count(
+            1, 6,
+            roles=['compute'],
+            cluster_id=self.cluster.id
+        )
+        self.node = self.cluster.nodes[0]
 
         objects.Cluster.set_network_template(
             self.cluster,

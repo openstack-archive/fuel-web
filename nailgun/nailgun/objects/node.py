@@ -1248,13 +1248,10 @@ class Node(NailgunObject):
 
     @classmethod
     def dpdk_enabled(cls, instance):
-        for iface in instance.nic_interfaces:
-            if NIC.dpdk_enabled(iface):
-                return True
-        for iface in instance.bond_interfaces:
-            if Bond.dpdk_enabled(iface):
-                return True
-        return False
+        network_manager = Cluster.get_network_manager(instance.cluster)
+        if not hasattr(network_manager, 'dpdk_enabled_for_node'):
+            return False
+        return network_manager.dpdk_enabled_for_node(instance)
 
     @classmethod
     def sriov_enabled(cls, instance):

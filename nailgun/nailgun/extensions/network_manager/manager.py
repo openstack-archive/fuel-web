@@ -37,7 +37,6 @@ from nailgun import objects
 from nailgun.settings import settings
 from nailgun import utils as nailgun_utils
 from nailgun.utils.restrictions import RestrictionBase
-from nailgun.utils.zabbix import ZabbixManager
 
 
 class NetworkManager(object):
@@ -1092,16 +1091,6 @@ class NetworkManager(object):
             if ng.name == network_name and ng.group_id == node.group_id:
                 return ip
         return None
-
-    @classmethod
-    def get_zabbix_url(cls, cluster):
-        zabbix_node = ZabbixManager.get_zabbix_node(cluster)
-        if zabbix_node is None:
-            return None
-        ip_cidr = cls.get_network_by_netname(
-            'public', cls.get_node_networks(zabbix_node))['ip']
-        ip = ip_cidr.split('/')[0]
-        return 'http://{0}/zabbix'.format(ip)
 
     @classmethod
     def is_same_network(cls, ipaddress, ipnetwork):

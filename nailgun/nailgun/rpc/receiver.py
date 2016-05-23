@@ -644,7 +644,8 @@ class NailgunReceiver(object):
         )
         q_stop_tasks = objects.TaskCollection.filter_by(
             q_stop_tasks,
-            cluster_id=task.cluster_id
+            cluster_id=task.cluster_id,
+            deleted_at=None
         )
         stop_tasks = objects.TaskCollection.order_by(
             q_stop_tasks,
@@ -691,10 +692,8 @@ class NailgunReceiver(object):
                     u"deployment stopping"
                 )
 
-            message = (
-                u"Deployment of environment '{0}' was successfully stopped. "
-                .format(task.cluster.name or task.cluster_id)
-            )
+            message = cls._make_stop_deployment_message(
+                task, status, stop_tasks, update_nodes, message)
 
             notifier.notify(
                 "done",
@@ -727,11 +726,8 @@ class NailgunReceiver(object):
                 node_db.error_type = consts.NODE_ERRORS.stop_deployment
 
             db().flush()
-            message = (
-                u"Deployment of environment '{0}' was failed to stop: {1}. "
-                u"Please check logs for details."
-                .format(task.cluster.name or task.cluster_id, message)
-            )
+            message = cls._make_stop_deployment_message(
+                task, status, stop_tasks, update_nodes, message)
 
             notifier.notify(
                 "error",
@@ -743,6 +739,33 @@ class NailgunReceiver(object):
         objects.Task.update(task, data)
 
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
+
+    @classmethod
+    def _make_stop_deployment_message(cls, task, status, stop_tasks, nodes,
+                                      message):
+        messages_by_status = {
+            consts.TASK_STATUSES.ready: [
+                u"Deployment of environment '{0}' was successfully stopped.",
+                u"{0} of {1} environment '{2}' node(s) "
+                u"was successfully stopped."
+            ],
+            consts.TASK_STATUSES.error: [
+                u"Deployment of environment '{0}' was failed to stop: {1}. "
+                u"Please check logs for details.",
+                u"{0} of {1} environment '{2}' node(s) was failed to stop: "
+                u"{3}. Please check logs for details."
+            ]
+        }
+        stop_task_names = set(t.name for t in stop_tasks)
+
+        if consts.TASK_NAMES.deploy in stop_task_names:
+            return messages_by_status[status][0].format(
+                task.cluster.name or task.cluster_id, message)
+        process = u"Deployment"
+        if consts.TASK_NAMES.deployment not in stop_task_names:
+            process = u"Provisioning"
+        return messages_by_status[status][1].format(
+            process, len(nodes), task.cluster.name or task.cluster_id, message)
 
     @classmethod
     def reset_environment_resp(cls, **kwargs):

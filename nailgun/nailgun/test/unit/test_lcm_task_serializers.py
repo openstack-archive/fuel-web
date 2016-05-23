@@ -41,10 +41,8 @@ class TestTaskSerializerContext(BaseUnitTest):
     def test_transform_legacy_condition(self):
         cases = [
             (
-                'settings:additional_components.ceilometer.value == 1 or '
-                'settings:additional_components.zabbix.value == 1',
-                'settings:ceilometer.enabled == 1 or '
-                'settings:zabbix.enabled == 1',
+                'settings:additional_components.ceilometer.value == 1 or ',
+                'settings:ceilometer.enabled == 1 or ',
             ),
             (
                 'settings:common.vms_create.value == 1 or '

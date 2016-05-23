@@ -103,8 +103,7 @@ class TestDataMigration(BaseTestCase):
                                "database for storage of metering data "
                                "from OpenStack Telemetry (Ceilometer)",
                 'conflicts': ['compute',
-                              'ceph-osd',
-                              'zabbix-server'],
+                              'ceph-osd'],
                 'depends': [ceilometer_depends]
             }
         }
@@ -221,8 +220,7 @@ class TestDataMigration(BaseTestCase):
                                "database for storage of metering data "
                                "from OpenStack Telemetry (Ceilometer)",
                 'conflicts': ['compute',
-                              'ceph-osd',
-                              'zabbix-server'],
+                              'ceph-osd'],
                 'depends': [
                     operational_restriction,
                     ceilometer_restriction

@@ -46,10 +46,3 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(201, resp.status_code)
-
-    def test_version_api(self):
-        resp = self.app.get(
-            reverse('VersionHandler'),
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)

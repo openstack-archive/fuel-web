@@ -22,6 +22,7 @@ define([
     'expression',
     'expression/objects',
     'jsx!views/custom_controls',
+    'js-cookie',
     'deepModel'
 ], function($, _, i18n, Backbone, utils, Expression, expressionObjects, customControls) {
     'use strict';
@@ -83,6 +84,7 @@ define([
             if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {
                 return $.Deferred().resolve();
             }
+            if (options) delete options.cache;
             return this._super('fetch', arguments);
         },
         sync: function() {
@@ -998,10 +1000,10 @@ define([
         urlRoot: '/api/ostf'
     });
 
-    models.FuelVersion = BaseModel.extend({
+    models.FuelVersion = BaseModel.extend(cacheMixin).extend({
+        cacheFor: 60 * 1000,
         constructorName: 'FuelVersion',
-        urlRoot: '/api/version',
-        authExempt: true
+        urlRoot: '/api/version'
     });
 
     models.User = BaseModel.extend({
@@ -1020,6 +1022,14 @@ define([
                         localStorage.setItem(attribute, value);
                     }
                 });
+            }, this);
+            this.on('change:token', function() {
+                var token = this.get('token');
+                if (_.isUndefined(token)) {
+                    Cookies.remove('token');
+                } else {
+                    Cookies.set('token', token);
+                }
             }, this);
         }
     });

@@ -40,12 +40,6 @@ function($, _, i18n, React, dispatcher, utils) {
                             <LoginForm />
                         </div>
                     </div>
-                    <div className='login-footer col-xs-12'>
-                        {_.contains(app.version.get('feature_groups'), 'mirantis') &&
-                            <p className='text-center'>{i18n('common.copyright')}</p>
-                        }
-                        <p className='text-center'>{i18n('common.version')}: {app.version.get('release')}</p>
-                    </div>
                 </div>
             );
         }

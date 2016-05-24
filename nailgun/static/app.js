@@ -162,17 +162,20 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
             // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
             $.ajaxSetup({cache: false});
 
+            this.patchBackboneSync();
+
             this.router = new Router();
-            this.keystoneClient = new KeystoneClient('/keystone', {
-                cacheTokenFor: 10 * 60 * 1000,
-                tenant: 'admin'
-            });
             this.version = new models.FuelVersion();
             this.fuelSettings = new models.FuelSettings();
             this.user = new models.User();
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
             this.releases = new models.Releases();
+            this.keystoneClient = new KeystoneClient('/keystone', {
+                cacheTokenFor: 10 * 60 * 1000,
+                tenant: 'admin',
+                token: this.user.get('token')
+            });
         }
 
         initialize() {
@@ -182,11 +185,16 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
             document.title = i18n('common.title');
 
             return this.version.fetch()
+                .then(null, (response) => {
+                    if (response.status == 401) {
+                        this.version.set({auth_required: true});
+                        return $.Deffered().resolve();
+                    }
+                })
                 .then(() => {
                     this.user.set({authenticated: !this.version.get('auth_required')});
-                    this.patchBackboneSync();
                     if (this.version.get('auth_required')) {
-                        _.extend(this.keystoneClient, this.user.pick('token'));
+                        this.keystoneClient.token = this.user.get('token');
                         return this.keystoneClient.authenticate()
                             .done(() => this.user.set({authenticated: true}));
                     }
@@ -252,10 +260,11 @@ function($, _, i18n, Backbone, React, utils, models, KeystoneClient, RootCompone
                     method = 'update';
                 }
                 // add auth token to header if auth is enabled
-                if (app.version.get('auth_required') && !this.authExempt) {
+                if (app.version && app.version.get('auth_required')) {
                     return app.keystoneClient.authenticate()
                         .fail(() => app.logout())
                         .then(() => {
+                            app.user.set('token', app.keystoneClient.token);
                             options.headers = options.headers || {};
                             options.headers['X-Auth-Token'] = app.keystoneClient.token;
                             return originalSync.call(this, method, model, options);

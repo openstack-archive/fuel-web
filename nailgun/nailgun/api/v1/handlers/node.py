@@ -218,7 +218,7 @@ class NodeAgentHandler(BaseHandler):
             node.agent_checksum == nd['agent_checksum']
         ):
             return {'id': node.id, 'cached': True}
-
+        nd.setdefault('is_agent', True)
         self.collection.single.update_by_agent(node, nd)
         return {"id": node.id}
 

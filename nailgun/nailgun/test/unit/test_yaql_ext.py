@@ -138,7 +138,9 @@ class TestYaqlExt(BaseUnitTest):
         )
 
     def test_to_yaml(self):
-        expected = yaml.safe_dump(self.variables['$%new']['configs'])
+        expected = yaml.safe_dump(
+            self.variables['$%new']['configs'], default_flow_style=False
+        )
         actual = self.evaluate('$.configs.toYaml()')
         self.assertEqual(expected, actual)
 

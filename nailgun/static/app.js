@@ -153,30 +153,36 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
         this.mountNode = $('#main-container');
 
         this.router = new Router();
-        this.keystoneClient = new KeystoneClient('/keystone', {
-            cacheTokenFor: 10 * 60 * 1000,
-            tenant: 'admin'
-        });
         this.version = new models.FuelVersion();
         this.settings = new models.FuelSettings();
         this.user = new models.User();
         this.statistics = new models.NodesStatistics();
         this.notifications = new models.Notifications();
-
+        this.keystoneClient = new KeystoneClient('/keystone', {
+            cacheTokenFor: 10 * 60 * 1000,
+            tenant: 'admin',
+            token: this.user.get('token')
+        });
         this.fetchData();
     }
 
     _.extend(App.prototype, {
         fetchData: function() {
-            this.version.fetch().then(_.bind(function() {
+            this.version.fetch().then(null, _.bind(function(response) {
+                if (response.status == 401) {
+                    this.version.set({auth_required: true});
+                    return $.Deferred().resolve();
+                }
+            }, this)).then(_.bind(function() {
                 this.user.set({authenticated: !this.version.get('auth_required')});
                 this.patchBackboneSync();
                 if (this.version.get('auth_required')) {
                     _.extend(this.keystoneClient, this.user.pick('token'));
                     return this.keystoneClient.authenticate()
-                        .done(_.bind(function() {
+                        .then(function() {
                             this.user.set({authenticated: true});
-                        }, this));
+                            return this.version.fetch({cache: true});
+                        });
                 }
                 return $.Deferred().resolve();
             }, this)).then(_.bind(function() {
@@ -233,7 +239,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 if (method == 'patch') {
                     method = 'update';
                 }
-                if (app.version.get('auth_required') && !this.authExempt) {
+                if (app.version && app.version.get('auth_required')) {
                     // FIXME(vkramskikh): manually moving success/error callbacks
                     // to deferred-style callbacks. Everywhere in the code we use
                     // deferreds, but backbone uses success/error callbacks. It

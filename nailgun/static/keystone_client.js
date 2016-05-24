@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
+define(['jquery', 'underscore'], function($, _) {
     'use strict';
 
     function KeystoneClient(url, options) {
@@ -57,9 +57,6 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                     this.userId = result.access.user.id;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
-
-                    Cookies.set('token', result.access.token.id);
-
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
@@ -88,9 +85,6 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
                 try {
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
-
-                    Cookies.set('token', result.access.token.id);
-
                     return deferred;
                 } catch(e) {
                     return $.Deferred().reject();
@@ -110,8 +104,6 @@ define(['jquery', 'underscore', 'js-cookie'], function($, _, Cookies) {
             delete this.userId;
             delete this.token;
             delete this.tokenUpdateTime;
-
-            Cookies.remove('token');
 
             this.tokenRemoveRequest = $.ajax(this.url + '/v2.0/tokens/' + token, {
                 type: 'DELETE',

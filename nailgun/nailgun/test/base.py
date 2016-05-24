@@ -42,6 +42,7 @@ import nailgun
 from nailgun.api.v1.urls import urls
 
 from nailgun import consts
+from nailgun.settings import settings
 
 from nailgun.db import db
 from nailgun.db import flush
@@ -1050,6 +1051,22 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
         cls.app = app.TestApp(build_app(db_driver=test_db_driver).wsgifunc(
             ConnectionMonitorMiddleware, NailgunFakeKeystoneAuthMiddleware))
         syncdb()
+
+    def get_auth_token(self):
+        resp = self.app.post(
+            '/keystone/v2.0/tokens',
+            jsonutils.dumps({
+                'auth': {
+                    'tenantName': 'admin',
+                    'passwordCredentials': {
+                        'username': settings.FAKE_KEYSTONE_USERNAME,
+                        'password': settings.FAKE_KEYSTONE_PASSWORD,
+                    },
+                },
+            })
+        )
+
+        return resp.json['access']['token']['id'].encode('utf-8')
 
 
 class BaseUnitTest(TestCase):

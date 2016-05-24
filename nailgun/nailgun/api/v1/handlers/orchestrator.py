@@ -150,16 +150,10 @@ class OrchestratorInfo(BaseHandler):
         raise self.http(202, '{}')
 
 
-class DefaultProvisioningInfo(DefaultOrchestratorInfo):
+class DeploymentSerializerSelectMixin(object):
 
-    def _serialize(self, cluster, nodes):
-        return provisioning_serializers.serialize(
-            cluster, nodes, ignore_customized=True)
-
-
-class DefaultDeploymentInfo(DefaultOrchestratorInfo):
-
-    def _serialize(self, cluster, nodes):
+    @classmethod
+    def get_serializer(cls, cluster, nodes):
         if objects.Release.is_lcm_supported(cluster.release):
             return deployment_serializers.serialize_for_lcm(
                 cluster, nodes, ignore_customized=True
@@ -167,6 +161,20 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
         graph = orchestrator_graph.AstuteGraph(cluster)
         return deployment_serializers.serialize(
             graph, cluster, nodes, ignore_customized=True)
+
+
+class DefaultProvisioningInfo(DefaultOrchestratorInfo):
+
+    def _serialize(self, cluster, nodes):
+        return provisioning_serializers.serialize(
+            cluster, nodes, ignore_customized=True)
+
+
+class DefaultDeploymentInfo(DefaultOrchestratorInfo,
+                            DeploymentSerializerSelectMixin):
+
+    def _serialize(self, cluster, nodes):
+        return DeploymentSerializerSelectMixin.get_serializer(cluster, nodes)
 
 
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
@@ -194,16 +202,22 @@ class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 class ProvisioningInfo(OrchestratorInfo):
 
     def get_orchestrator_info(self, cluster):
-        return objects.Cluster.get_provisioning_info(cluster)
+        return objects.Cluster.get_provisioning_info(
+            cluster
+        ) or provisioning_serializers.serialize(cluster, cluster.nodes,
+                                                ignore_customized=True)
 
     def update_orchestrator_info(self, cluster, data):
         return objects.Cluster.replace_provisioning_info(cluster, data)
 
 
-class DeploymentInfo(OrchestratorInfo):
+class DeploymentInfo(OrchestratorInfo, DeploymentSerializerSelectMixin):
 
     def get_orchestrator_info(self, cluster):
-        return objects.Cluster.get_deployment_info(cluster)
+        return objects.Cluster.get_deployment_info(
+            cluster
+        ) or DeploymentSerializerSelectMixin.get_serializer(cluster,
+                                                            cluster.nodes)
 
     def update_orchestrator_info(self, cluster, data):
         return objects.Cluster.replace_deployment_info(cluster, data)

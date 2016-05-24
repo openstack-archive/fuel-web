@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
+from nailgun.extensions.network_manager.models.network import NodeNICInterface
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -250,6 +251,71 @@ class TestHandlers(BaseIntegrationTest):
         node_db = self.db.query(Node).get(node_db.id)
         self.assertEqual('new', node_db.manufacturer)
         self.assertEqual('provisioning', node_db.status)
+
+    def test_stopped_node_network_update_restricted_for_agent(self):
+        node = self.env.create_node(
+            api=False,
+            status='stopped',
+            meta=self.env.default_metadata()
+        )
+        node_db = self.env.nodes[0]
+        interfaces = node.meta['interfaces']
+        new_interfaces = copy.deepcopy(interfaces)
+        new_interfaces[1]['mac'] = '2a:00:0d:0d:00:2a'
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps(
+                {
+                    'mac': node_db.mac,
+                    'meta': {
+                        'interfaces': new_interfaces
+                    }
+                }
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        node_db = self.db.query(Node).get(node_db.id)
+        interface_db = self.db.query(NodeNICInterface).filter_by(
+            node_id=node_db.id,
+            name=new_interfaces[1]['name']
+        ).first()
+
+        self.assertNotEqual(
+            interface_db.mac,
+            '2a:00:0d:0d:00:2a')
+
+    def test_stopped_node_network_update_allowed_for_ui(self):
+        node = self.env.create_node(
+            api=False,
+            status='stopped',
+            meta=self.env.default_metadata()
+        )
+        node_db = self.env.nodes[0]
+        interfaces = node.meta['interfaces']
+        new_interfaces = copy.deepcopy(interfaces)
+        new_interfaces[1]['mac'] = '2a:00:0d:0d:00:2a'
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps([
+                {
+                    'mac': node_db.mac,
+                    'meta': {
+                        'interfaces': new_interfaces
+                    }
+                }
+            ]),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        interface_db = self.db.query(NodeNICInterface).filter_by(
+            node_id=node_db.id,
+            name=new_interfaces[1]['name']
+        ).first()
+
+        self.assertEqual(
+            interface_db.mac,
+            '2a:00:0d:0d:00:2a')
 
     def test_node_timestamp_updated_only_by_agent(self):
         node = self.env.create_node(api=False)

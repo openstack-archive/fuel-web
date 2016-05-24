@@ -233,7 +233,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 if (method == 'patch') {
                     method = 'update';
                 }
-                if (app.version.get('auth_required') && !this.authExempt) {
+                if (app.version && app.version.get('auth_required')) {
                     // FIXME(vkramskikh): manually moving success/error callbacks
                     // to deferred-style callbacks. Everywhere in the code we use
                     // deferreds, but backbone uses success/error callbacks. It

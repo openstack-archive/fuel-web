@@ -1431,11 +1431,11 @@ class TestTaskManagers(BaseIntegrationTest):
     @mock.patch('nailgun.objects.Cluster.get_deployment_tasks')
     @mock.patch('nailgun.objects.TransactionCollection'
                 '.get_successful_transactions_per_task')
-    def check_correct_state_calculation(self, provision, state_mock,
-                                        tasks_mock, rpc_mock):
+    def check_correct_state_calculation(self, node_status, is_skip_expected,
+                                        state_mock, tasks_mock, rpc_mock):
         cluster = self.env.create(
             nodes_kwargs=[{'roles': ['controller'],
-                           'status': consts.NODE_STATUSES.provisioned}],
+                           'status': consts.NODE_STATUSES.ready}],
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
                 'version': 'mitaka-9.0'
@@ -1460,21 +1460,20 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.set_history_ready()
 
-        if provision:
-            node.status = consts.NODE_STATUSES.provisioned
-        state_mock.return_value = [(supertask, 'test1')]
+        node.status = node_status
+
+        state_mock.return_value = [(supertask, node.uid, 'test1')]
         task = self.env.launch_deployment_selected([node.uid], cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
         tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
 
-        # chek that test1 task skipped by condition and test2 was not
         for task in tasks_graph[node.uid]:
             if task['id'] == 'test1':
-                if provision:
-                    self.assertNotEqual(
+                if is_skip_expected:
+                    self.assertEqual(
                         task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
                 else:
-                    self.assertEqual(
+                    self.assertNotEqual(
                         task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
             elif task['id'] == 'test2':
                 self.assertNotEqual(
@@ -1483,10 +1482,20 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.fail('Unexpected task in graph')
 
     def test_correct_state_calculation(self):
-        self.check_correct_state_calculation(False)
+        self.check_correct_state_calculation(
+            consts.NODE_STATUSES.ready, True)
 
     def test_state_calculation_after_provision(self):
-        self.check_correct_state_calculation(True)
+        self.check_correct_state_calculation(
+            consts.NODE_STATUSES.provisioned, False)
+
+    def test_state_calculation_after_stop(self):
+        self.check_correct_state_calculation(
+            consts.NODE_STATUSES.stopped, False)
+
+    def test_state_calculation_after_rediscover(self):
+        self.check_correct_state_calculation(
+            consts.NODE_STATUSES.discover, False)
 
 
 class TestUpdateDnsmasqTaskManagers(BaseIntegrationTest):

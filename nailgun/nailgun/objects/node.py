@@ -427,9 +427,25 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def is_interfaces_configuration_locked(cls, instance):
-        """Returns true if update of network configuration is not allowed.
+    def is_interfaces_config_locked_for_ui(cls, instance):
+        """Returns true if update of network configuration is not allowed for
 
+        UI API.
+        """
+        return instance.status not in (
+            consts.NODE_STATUSES.discover,
+            consts.NODE_STATUSES.error,
+            consts.NODE_STATUSES.stopped
+        ) or (
+            instance.status == consts.NODE_STATUSES.error and
+            instance.error_type != consts.NODE_ERRORS.discover
+        )
+
+    @classmethod
+    def is_interfaces_config_locked_for_agent(cls, instance):
+        """Returns true if update of network configuration
+
+        is not allowed for Fuel Agent.
         Update of network configuration is allowed for bootstrap nodes only.
         """
         return instance.status not in (
@@ -565,7 +581,14 @@ class Node(NailgunObject):
             # the current instance. This appears to overwrite the object in the
             # current session and we lose the meta changes.
             db().flush()
-            if cls.is_interfaces_configuration_locked(instance):
+            is_agent = bool(data.pop('is_agent', None))
+            if (
+                not is_agent and
+                cls.is_interfaces_config_locked_for_ui(instance)
+            ) or (
+                is_agent and
+                cls.is_interfaces_config_locked_for_agent(instance)
+            ):
                 logger.debug("Interfaces are locked for update on node %s",
                              instance.human_readable_name)
             else:
@@ -575,7 +598,7 @@ class Node(NailgunObject):
                 cls.update_interfaces(instance)
                 cls.update_interfaces_offloading_modes(
                     instance,
-                    bool(data.pop('is_agent', None)))
+                    is_agent)
 
         cluster_changed = False
         add_to_cluster = False
@@ -742,7 +765,7 @@ class Node(NailgunObject):
                          instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
-        if not cls.is_interfaces_configuration_locked(instance) \
+        if not cls.is_interfaces_config_locked_for_agent(instance) \
                 and data.get('ip'):
             if instance.cluster_id:
                 update_status = cls.check_ip_belongs_to_own_admin_network(

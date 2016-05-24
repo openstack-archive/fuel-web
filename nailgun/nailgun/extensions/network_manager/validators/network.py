@@ -657,7 +657,11 @@ class NetAssignmentValidator(BasicValidator):
                 "There is no node with ID '{0}' in DB".format(node['id']),
                 log_message=True
             )
-        if objects.Node.is_interfaces_configuration_locked(db_node):
+        # (ikutukov) Validation for UI could be considered as default,
+        # because it wider that validation for agent. If agent will update
+        # stopped node request will fail on validation inside update_by_agent
+        # method.
+        if objects.Node.is_interfaces_config_locked_for_ui(db_node):
             raise errors.InvalidData(
                 "Node '{0}': Interfaces configuration can't be changed after "
                 "or during deployment.".format(db_node.id))

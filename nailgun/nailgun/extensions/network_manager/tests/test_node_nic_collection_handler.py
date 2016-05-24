@@ -130,7 +130,8 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             consts.NODE_STATUSES.provisioning: True,
             consts.NODE_STATUSES.provisioned: True,
             consts.NODE_STATUSES.deploying: True,
-            consts.NODE_STATUSES.ready: True,
+            consts.NODE_STATUSES.ready: False,
+            consts.NODE_STATUSES.stopped: False,
             consts.NODE_STATUSES.removing: True}
         meta = self.env.default_metadata()
         meta['interfaces'] = [{'name': 'eth0', 'pxe': True},

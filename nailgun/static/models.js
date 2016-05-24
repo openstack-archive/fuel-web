@@ -1000,8 +1000,7 @@ define([
 
     models.FuelVersion = BaseModel.extend({
         constructorName: 'FuelVersion',
-        urlRoot: '/api/version',
-        authExempt: true
+        urlRoot: '/api/version'
     });
 
     models.User = BaseModel.extend({

@@ -539,7 +539,7 @@ function run_server() {
 
       local http_code=$(curl -s -w %{http_code} -o /dev/null $check_url)
 
-      if [[ "$http_code" = "200" ]]; then return 0; fi
+      if [[ "$http_code" != "000" ]]; then return 0; fi
 
       sleep 0.1
       i=$((i + 1))

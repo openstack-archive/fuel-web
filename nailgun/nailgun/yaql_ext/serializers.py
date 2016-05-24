@@ -28,7 +28,9 @@ else:
 @specs.method
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def to_yaml(finalizer, receiver):
-    return yaml.dump_all([finalizer(receiver)], Dumper=YamlDumper)
+    return yaml.dump_all(
+        [finalizer(receiver)], Dumper=YamlDumper, default_flow_style=False
+    )
 
 
 @specs.method

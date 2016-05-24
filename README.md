@@ -1,13 +1,29 @@
-FUEL
-====
+fuel-web
+========
 
-This is the main repository with ISO build scripts.
-It has links to two submodules:
-- Astute, which is deployment orchestrator
-- Fuel Library, which is set of Puppet modules
+fuel-web (nailgun) implements REST API and deployment data
+management. It manages disk volumes configuration data, networks
+configuration data and any other environment specific data which
+are necessary for successful deployment. It has required
+orchestration logic to build instructions for provisioning
+and deployment in a right order. Nailgun uses SQL database
+to store its data and AMQP service to interact with workers.
 
-ISO, other materials: http://fuel.mirantis.com/
+-----------------
+Project resources
+-----------------
 
-User guide: http://docs.mirantis.com/
+Project status, bugs, and blueprints are tracked on Launchpad:
+  https://launchpad.net/fuel
 
-Development documentation: http://docs.mirantis.com/fuel-dev/
+Development documentation is hosted here:
+  https://docs.fuel-infra.org/fuel-dev
+
+Any additional information can be found on the Fuel's project wiki
+  https://wiki.openstack.org/wiki/Fuel
+
+Anyone wishing to contribute to fuel-web should follow the general
+OpenStack process. A good reference for it can be found here:
+  https://wiki.openstack.org/wiki/How_To_Contribute
+
+  http://docs.openstack.org/infra/manual/developers.html

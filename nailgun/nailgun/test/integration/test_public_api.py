@@ -48,13 +48,6 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
 
         self.assertEqual(201, resp.status_code)
 
-    def test_version_api(self):
-        resp = self.app.get(
-            reverse('VersionHandler'),
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)
-
     @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
     def test_500_no_html_dev(self, handler_get):
         exc_text = "Here goes an exception"

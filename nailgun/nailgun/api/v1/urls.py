@@ -276,5 +276,4 @@ def app():
 def public_urls():
     return {r'/nodes/?$': ['POST'],
             r'/nodes/agent/?$': ['PUT'],
-            r'/version/?$': ['GET'],
             }

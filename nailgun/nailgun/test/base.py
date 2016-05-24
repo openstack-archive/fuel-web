@@ -1051,6 +1051,22 @@ class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
             ConnectionMonitorMiddleware, NailgunFakeKeystoneAuthMiddleware))
         syncdb()
 
+    def get_auth_token(self):
+        resp = self.app.post(
+            '/keystone/v2.0/tokens',
+            jsonutils.dumps({
+                'auth': {
+                    'tenantName': 'admin',
+                    'passwordCredentials': {
+                        'username': settings.FAKE_KEYSTONE_USERNAME,
+                        'password': settings.FAKE_KEYSTONE_PASSWORD,
+                    },
+                },
+            })
+        )
+
+        return resp.json['access']['token']['id'].encode('utf-8')
+
 
 class BaseUnitTest(TestCase):
     pass

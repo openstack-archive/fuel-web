@@ -622,8 +622,14 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         tasks = self.single.get_deployment_tasks(obj, graph_type=graph_type)
         if end or start:
             graph = orchestrator_graph.GraphSolver(tasks)
-            return graph.filter_subgraph(
-                end=end, start=start, include=include).node.values()
+
+            try:
+                return graph.filter_subgraph(
+                    end=end, start=start, include=include).node.values()
+            except errors.TaskNotFound as e:
+                raise self.http(400, 'Cannot find task {0} by its '
+                                     'name.'.format(e.task_name))
+
         return tasks
 
     @content

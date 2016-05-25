@@ -21,7 +21,6 @@
         public_for_dvr_required: true
         group: "base"
         limits:
-          min: 1
           recommended: 3
           overrides:
             - condition: "settings:neutron_advanced_configuration.neutron_l3_ha.value == true"

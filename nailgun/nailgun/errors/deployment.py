@@ -101,3 +101,11 @@ class TaskBaseDeploymentNotAllowed(DeploymentException):
 
 class NoChanges(DeploymentException):
     message = "There is no changes to apply"
+
+
+class TaskNotFound(DeploymentException):
+    message = "Cannot find specified task in the graph"
+
+    def __init__(self, task_name=""):
+        self.task_name = task_name
+        super(TaskNotFound, self).__init__()

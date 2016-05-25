@@ -275,10 +275,14 @@ class GraphSolver(nx.DiGraph):
 
         :param include: container with task names
         """
-        wgraph = self.find_subgraph(start=start, end=end)
-        for task in wgraph:
-            if self.should_exclude_task(task) and task not in include:
-                wgraph.remove_node(task)
+        try:
+            wgraph = self.find_subgraph(start=start, end=end)
+            for task in wgraph:
+                if self.should_exclude_task(task) and task not in include:
+                    wgraph.remove_node(task)
+        except KeyError as e:
+            raise errors.TaskNotFound(e.message)
+
         return wgraph
 
     def check(self):

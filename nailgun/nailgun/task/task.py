@@ -479,6 +479,8 @@ class ClusterTransaction(DeploymentTask):
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )
+        # Added cluster state
+        expected_state[None] = cls.get_cluster_state(expected_state)
 
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("tasks serialization is started.")

@@ -317,6 +317,20 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
         self.assertEqual(resp.json, cluster_tasks)
 
+    def test_get_deployment_tasks_wrong_task_name(self):
+        bad_task_name = 'task_that_does_not_exist'
+
+        resp = self.app.get(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}) +
+            '?start={0}'.format(bad_task_name),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(404, resp.status_int)
+        self.assertIn(bad_task_name, resp.body)
+
     def test_deployment_tasks_equals_to_release(self):
         resp = self.app.get(
             reverse('ClusterDeploymentTasksHandler',

@@ -199,6 +199,8 @@ class TransactionSerializer(object):
         # need to search dependencies on node and in sync points
         node_ids = [node_id, None]
         for name in dependencies:
+            if not name:
+                continue
             for rel in self.resolve_relation(name, node_ids):
                 yield rel
 
@@ -213,6 +215,8 @@ class TransactionSerializer(object):
             return
 
         for dep in dependencies:
+            if not dep:
+                continue
             roles = dep.get('role', consts.TASK_ROLES.all)
 
             if roles == consts.TASK_ROLES.self:

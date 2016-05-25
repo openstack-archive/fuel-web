@@ -18,7 +18,6 @@ from nailgun import consts
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
-from nailgun.db.sqlalchemy.models.mutable import MutableList
 
 
 class DeploymentGraph(Base):
@@ -110,12 +109,12 @@ class DeploymentGraphTask(Base):
         nullable=False)
     # cross-depended-by with hypen is deprecated notation
     cross_depended_by = sa.Column(
-        MutableList.as_mutable(JSON),
+        JSON,
         default=[],
         server_default='[]')
     # cross-depends with hypen is deprecated notation
     cross_depends = sa.Column(
-        MutableList.as_mutable(JSON),
+        JSON,
         default=[],
         server_default='[]')
     parameters = sa.Column(

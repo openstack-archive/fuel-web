@@ -134,23 +134,46 @@ class DeploymentTaskSerializer(object):
     ))
 
     @abc.abstractmethod
+    def finalize(self, task, node_id):
+        """Finish task serialization.
+
+        :param task: the serialized task
+        :param node_id: the target node_id
+        :return: the result
+        """
+
     def serialize(self, node_id):
         """Serialize task in expected by orchestrator format.
-
-        This interface should return generator, because in some cases one
-        external task - should serialize several tasks internally.
 
         :param node_id: the target node_id
         """
 
-    @classmethod
-    def get_required_fields(cls, task, fields=None):
-        """Gets only specified fields from task.
+        logger.debug(
+            "serialize task %s for node %s",
+            self.task_template['id'], node_id
+        )
+        task = utils.traverse(
+            self.task_template,
+            utils.text_format_safe,
+            self.context.get_formatter_context(node_id),
+            {
+                'yaql_exp': self.context.get_yaql_interpreter(
+                    node_id, self.task_template['id'])
+            }
+        )
+        return self.normalize(self.finalize(task, node_id))
+
+    def normalize(self, task):
+        """Removes unnecessary fields.
 
         :param task: the serialized task
-        :param fields: the list of fields for including
+        :return: the task instance
         """
-        return {k: task.get(k) for k in (fields or cls.fields)}
+        fields = self.fields
+        for k in list(task):
+            if k not in fields:
+                del task[k]
+        return task
 
 
 class NoopTaskSerializer(DeploymentTaskSerializer):
@@ -158,10 +181,8 @@ class NoopTaskSerializer(DeploymentTaskSerializer):
         self.task_template = task_template
         self.context = context
 
-    def serialize(self, node_id):
-        task = self.get_required_fields(
-            self.task_template, self.fields - {'parameters'}
-        )
+    def finalize(self, task, node_id):
+        task.pop('parameters', None)
         task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
         task['fail_on_error'] = False
         return task
@@ -177,29 +198,16 @@ class DefaultTaskSerializer(NoopTaskSerializer):
             return interpreter(condition)
         return condition
 
-    def serialize(self, node_id):
-        logger.debug(
-            "serialize task %s for node %s",
-            self.task_template['id'], node_id
-        )
-        task = utils.traverse(
-            self.task_template,
-            utils.text_format_safe,
-            self.context.get_formatter_context(node_id),
-            {
-                'yaql_exp': self.context.get_yaql_interpreter(
-                    node_id, self.task_template['id'])
-            }
-        )
+    def finalize(self, task, node_id):
         if not self.should_execute(task, node_id):
             logger.debug(
-                "Task %s is skipped by condition.", self.task_template['id']
+                "Task %s is skipped by condition.", task['id']
             )
-            return super(DefaultTaskSerializer, self).serialize(node_id)
+            return super(DefaultTaskSerializer, self).finalize(task, node_id)
 
         task.setdefault('parameters', {}).setdefault('cwd', '/')
         task.setdefault('fail_on_error', True)
-        return self.get_required_fields(task)
+        return task
 
 
 def handle_unsupported(_, task_template):

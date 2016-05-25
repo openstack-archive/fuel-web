@@ -18,22 +18,6 @@ from nailgun.consts import NODE_RESOLVE_POLICY
 from nailgun.consts import ORCHESTRATOR_TASK_TYPES
 
 
-RELATION_SCHEMA = {
-    '$schema': 'http://json-schema.org/draft-04/schema#',
-    'type': 'object',
-    'required': ['name'],
-    'properties': {
-        'name': {'type': 'string'},
-        'role': {
-            'oneOf': [
-                {'type': 'string'},
-                {'type': 'array'},
-            ]
-        },
-        'policy': {'type': 'string', 'enum': list(NODE_RESOLVE_POLICY)},
-    }
-}
-
 YAQL_EXP = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
     'type': 'object',
@@ -42,6 +26,25 @@ YAQL_EXP = {
         'yaql_exp': {'type': 'string'},
     }
 }
+
+
+RELATION_SCHEMA = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'type': 'object',
+    'required': ['name'],
+    'properties': {
+        'name': {
+            'oneOf': [
+                {'type': 'string'}, YAQL_EXP],
+        },
+        'role': {
+            'oneOf': [
+                {'type': 'string'}, {'type': 'array'}, YAQL_EXP]
+        },
+        'policy': {'type': 'string', 'enum': list(NODE_RESOLVE_POLICY)},
+    }
+}
+
 
 TASK_STRATEGY = {
     '$schema': 'http://json-schema.org/draft-04/schema#',
@@ -77,10 +80,22 @@ TASK_SCHEMA = {
                  'type': 'string'},
         'version': {'type': 'string', "pattern": "^\d+.\d+.\d+$"},
         'parameters': TASK_PARAMETERS,
-        'required_for': {'type': 'array'},
-        'requires': {'type': 'array'},
-        'cross-depends': {'type': 'array', 'items': RELATION_SCHEMA},
-        'cross-depended-by': {'type': 'array', 'items': RELATION_SCHEMA}
+        'required_for': {
+            'oneOf': [
+                {'type': 'array'}, YAQL_EXP]
+        },
+        'requires': {
+            'oneOf': [
+                {'type': 'array'}, YAQL_EXP]
+        },
+        'cross-depends': {
+            'oneOf': [
+                {'type': 'array', 'items': RELATION_SCHEMA}, YAQL_EXP]
+        },
+        'cross-depended-by': {
+            'oneOf': [
+                {'type': 'array', 'items': RELATION_SCHEMA}, YAQL_EXP]
+        },
     }
 }
 

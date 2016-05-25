@@ -99,10 +99,9 @@ class TestTaskSerializerContext(BaseUnitTest):
         )
 
 
-class TestDefaultTaskSerializer(BaseUnitTest):
+class TestTaskSerializer(BaseUnitTest):
     @classmethod
     def setUpClass(cls):
-        cls.serializer_class = task_serializer.DefaultTaskSerializer
         cls.context = task_serializer.Context(TransactionContext({
             '1': {
                 'cluster': {'id': 1},
@@ -125,6 +124,13 @@ class TestDefaultTaskSerializer(BaseUnitTest):
                 }
             }
         }))
+
+
+class TestDefaultTaskSerializer(TestTaskSerializer):
+    @classmethod
+    def setUpClass(cls):
+        super(TestDefaultTaskSerializer, cls).setUpClass()
+        cls.serializer_class = task_serializer.DefaultTaskSerializer
 
     def check_condition(self, condition, expected):
         task_template = {
@@ -237,6 +243,32 @@ class TestDefaultTaskSerializer(BaseUnitTest):
                 'required_for': ['deploy_end'],
                 'cross_depends': [{'roles': '*', 'name': 'task1'}],
                 'cross_depended_by': [{'roles': '*', 'name': 'task1'}],
+            },
+            serialized
+        )
+
+
+class TestNoopTaskSerialzer(TestTaskSerializer):
+    @classmethod
+    def setUpClass(cls):
+        super(TestNoopTaskSerialzer, cls).setUpClass()
+        cls.serializer_class = task_serializer.NoopTaskSerializer
+
+    def test_serialize(self):
+        task_template = {
+            'id': 'test',
+            'type': 'skipped',
+            'parameters': {},
+            'fail_on_error': True,
+            'requires': {'yaql_exp': '["deploy_start"]'},
+            'required_for': ['deploy_end'],
+        }
+        serializer = self.serializer_class(self.context, task_template)
+        serialized = serializer.serialize('1')
+        self.assertEqual(
+            {
+                'id': 'test', 'type': 'skipped', 'fail_on_error': False,
+                'requires': ['deploy_start'], 'required_for': ['deploy_end']
             },
             serialized
         )

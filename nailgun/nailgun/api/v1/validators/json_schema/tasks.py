@@ -77,10 +77,22 @@ TASK_SCHEMA = {
                  'type': 'string'},
         'version': {'type': 'string', "pattern": "^\d+.\d+.\d+$"},
         'parameters': TASK_PARAMETERS,
-        'required_for': {'type': 'array'},
-        'requires': {'type': 'array'},
-        'cross-depends': {'type': 'array', 'items': RELATION_SCHEMA},
-        'cross-depended-by': {'type': 'array', 'items': RELATION_SCHEMA}
+        'required_for': {
+            'oneOf': [
+                {'type': 'array'}, YAQL_EXP]
+        },
+        'requires': {
+            'oneOf': [
+                {'type': 'array'}, YAQL_EXP]
+        },
+        'cross-depends': {
+            'oneOf': [
+                {'type': 'array', 'items': RELATION_SCHEMA}, YAQL_EXP]
+        },
+        'cross-depended-by': {
+            'oneOf': [
+                {'type': 'array', 'items': RELATION_SCHEMA}, YAQL_EXP]
+        },
     }
 }
 

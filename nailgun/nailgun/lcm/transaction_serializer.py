@@ -212,7 +212,7 @@ class TransactionSerializer(object):
         if not dependencies:
             return
 
-        for dep in dependencies:
+        for dep in six.moves.filter(None, dependencies):
             roles = dep.get('role', consts.TASK_ROLES.all)
 
             if roles == consts.TASK_ROLES.self:

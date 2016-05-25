@@ -105,3 +105,11 @@ class NoChanges(DeploymentException):
 
 class DryRunSupportedOnlyByLCM(DeploymentException):
     message = "Dry run deployment mode is supported only by LCM serializer"
+
+
+class TaskNotFound(DeploymentException):
+    message = "Cannot find specified task in the graph"
+
+    def __init__(self, task_name=""):
+        self.task_name = task_name
+        super(TaskNotFound, self).__init__()

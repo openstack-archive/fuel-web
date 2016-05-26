@@ -15,7 +15,9 @@
 #    under the License.
 
 import contextlib
+import logging
 
+import sys
 from sqlalchemy import create_engine
 from sqlalchemy import schema
 
@@ -29,11 +31,19 @@ from sqlalchemy import sql
 
 from nailgun.db import deadlock_detector as dd
 from nailgun.db.sqlalchemy import utils
+from nailgun.logger import set_logger
 from nailgun.settings import settings
 
 
 db_str = utils.make_dsn(**settings.DATABASE)
-engine = create_engine(db_str, client_encoding='utf8')
+engine = create_engine(db_str, client_encoding='utf8', echo=True)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('sqlalchemy.engine')
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(formatter)
+set_logger(logger, handler, 'INFO')
+logger.propagate = 0
 
 
 class DeadlocksSafeQueryMixin(object):

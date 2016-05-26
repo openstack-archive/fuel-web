@@ -15,7 +15,9 @@
 #    under the License.
 
 import contextlib
+import logging
 
+import sys
 from sqlalchemy import create_engine
 from sqlalchemy import schema
 
@@ -33,7 +35,10 @@ from nailgun.settings import settings
 
 
 db_str = utils.make_dsn(**settings.DATABASE)
-engine = create_engine(db_str, client_encoding='utf8')
+engine = create_engine(db_str, client_encoding='utf8', echo=True)
+logger = logging.getLogger('sqlalchemy.engine')
+logger.setLevel('INFO')
+logger.propagate = 0
 
 
 class DeadlocksSafeQueryMixin(object):

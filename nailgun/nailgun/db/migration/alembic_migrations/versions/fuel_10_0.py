@@ -31,13 +31,11 @@ down_revision = '675105097a69'
 
 
 def upgrade():
-    upgrade_tasks_snapshot()
     upgrade_plugin_links_constraints()
 
 
 def downgrade():
     downgrade_plugin_links_constraints()
-    downgrade_tasks_snapshot()
 
 
 def upgrade_plugin_links_constraints():
@@ -83,18 +81,3 @@ def downgrade_plugin_links_constraints():
                        'cluster_plugin_links')
 
     op.drop_constraint('plugin_links_url_uc', 'plugin_links')
-
-
-def upgrade_tasks_snapshot():
-    op.add_column(
-        'tasks',
-        sa.Column(
-            'tasks_snapshot',
-            fields.JSON(),
-            nullable=True
-        )
-    )
-
-
-def downgrade_tasks_snapshot():
-    op.drop_column('tasks', 'tasks_snapshot')

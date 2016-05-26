@@ -235,22 +235,3 @@ class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):
                 [sa.func.count(self.meta.tables['cluster_plugin_links'].c.id)]
             )).fetchone()[0]
         self.assertEqual(links_count, 2)
-
-
-class TestTasksSnapshotField(base.BaseAlembicMigrationTest):
-    def test_fields_exist(self):
-        db.execute(
-            self.meta.tables['tasks'].insert(),
-            [{
-                'uuid': 'fake_task_uuid_0',
-                'name': 'dump',
-                'status': 'pending',
-                'tasks_snapshot': '[{"id":"taskid","type":"puppet"}]'
-            }]
-        )
-        result = db.execute(
-            sa.select([
-                self.meta.tables['tasks'].c.tasks_snapshot,
-            ])
-        ).first()
-        self.assertIsNotNone(result['tasks_snapshot'])

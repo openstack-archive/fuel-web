@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #    Copyright 2013 Mirantis, Inc.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+# #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
 #    a copy of the License at
 #
@@ -84,13 +83,49 @@ class NeutronManager(NetworkManager):
 
     @classmethod
     def dpdk_enabled_for_node(cls, node):
+        return bool(next(cls.dpdk_nics(node), None))
+
+    @classmethod
+    def dpdk_nics_names(cls, transformations, bridge=None):
+        """Returns generator with all NICs names based on transformations
+
+        :param transformations: Fuel network transformations
+        :type transformations: dict
+        :param bridge: filter by bridge
+        :type bridge: str
+        :return: generator list[str] - names of DPDK NICs
+        """
+        for t in transformations:
+            action = t.get('action')
+            name = t.get('name', '')
+            provider = t.get('provider')
+            if bridge and t.get('bridge') != bridge:
+                continue
+
+            if (action == 'add-port'
+                    and provider == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
+                yield name
+            if (action == 'add-bond'
+                    and provider == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
+                for slave in t['interfaces']:
+                    yield slave
+
+    @classmethod
+    def dpdk_nics(cls, node):
+        """Returns generator with dpdk interfaces
+
+        :param node: Node SQLAlchemy model
+        :type node: models.Node
+        :return: generator list[models.NodeNICInterface] - DPDK NICs
+        """
         for iface in node.nic_interfaces:
             if objects.NIC.dpdk_enabled(iface):
-                return True
-        for iface in node.bond_interfaces:
-            if objects.Bond.dpdk_enabled(iface):
-                return True
-        return False
+                yield iface
+
+        for bond in node.bond_interfaces:
+            if objects.Bond.dpdk_enabled(bond):
+                for slave in bond.slaves:
+                    yield slave
 
 
 class NeutronManagerLegacy(AssignIPsLegacyMixin, NeutronManager):
@@ -479,27 +514,46 @@ class NeutronManager70(
         cls._update_attrs(node_data)
 
     @classmethod
+    def _node_template_transformations(cls, node):
+        """Returns generator of node transformations by network template
+
+        :param node: Node SQLAlchemy object
+        :type node: models.Node
+        :return: generator list[dict] - list transformations
+        """
+        template_names = set()
+        for role in node.all_roles:
+            template_names.update(
+                node.network_template['templates_for_node_role'][role])
+        templates = node.network_template['templates']
+        for tmpl_name in template_names:
+            yield template[tmpl_name]['transformations']
+
+
+    @classmethod
     def dpdk_enabled_for_node(cls, node):
         if node.network_template:
             endpoint_name = cls.get_node_endpoint_by_network_role(
                 node, 'neutron/private')
             if not endpoint_name:
                 return False
-            template_names = set()
-            for role in node.all_roles:
-                template_names.update(
-                    node.network_template['templates_for_node_role'][role])
-            templates = node.network_template['templates']
-            for tmpl_name in template_names:
-                transformations = templates[tmpl_name]['transformations']
-                for t in transformations:
-                    if (t['action'] in ['add-port', 'add-bond'] and
-                            t.get('provider') == 'dpdkovs' and
-                            t.get('bridge') == endpoint_name):
-                        return True
+
+            for transformation in cls._node_template_transformations(node):
+                if next(cls.dpdk_nics_names(
+                        transformations, bridge=endpoint_name), None):
+                    return True
             return False
         else:
             return super(NeutronManager70, cls).dpdk_enabled_for_node(node)
+
+    @classmethod
+    def dpdk_nics(cls, node):
+        if node.network_template:
+            transformations = cls._node_template_transformations(node)
+            return [objects.NIC.get_nic_by_name(node, name)
+                    for name in cls.dpdk_nics_names(transformations)]
+        else:
+            return super(NeutronManager70, cls).dpdk_nics(node)
 
 
 class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):

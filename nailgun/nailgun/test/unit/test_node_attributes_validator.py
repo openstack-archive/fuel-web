@@ -58,6 +58,7 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
                 {"id": 1, "cpus": [2, 3], 'memory': 2 * 1024 ** 3},
             ]
         }
+        meta['cpu']['total'] = 4
 
         attributes = {
             'hugepages': {
@@ -85,17 +86,18 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
         self.cluster = mock.Mock()
 
 
+@mock.patch.object(objects.Node, 'dpdk_nics', return_value=[])
 class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
 
     @mock_cluster_attributes
-    def test_defaults(self):
+    def test_defaults(self, m_dpdk_nics):
         data = {}
 
         self.assertNotRaises(errors.InvalidData, validator,
                              json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes
-    def test_valid_hugepages(self):
+    def test_valid_hugepages(self, m_dpdk_nics):
         data = {
             'hugepages': {
                 'nova': {
@@ -114,7 +116,7 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
                              json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes
-    def test_too_much_hugepages(self):
+    def test_too_much_hugepages(self, m_dpdk_nics):
         data = {
             'hugepages': {
                 'nova': {
@@ -131,7 +133,7 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
             validator, json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes
-    def test_dpdk_requires_too_much(self):
+    def test_dpdk_requires_too_much(self, m_dpdk_nics):
         data = {
             'hugepages': {
                 'dpdk': {
@@ -145,9 +147,10 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
             validator, json.dumps(data), self.node, self.cluster)
 
 
+@mock.patch.object(objects.Node, 'dpdk_nics', return_value=[])
 class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
     @mock_cluster_attributes
-    def test_valid_data(self):
+    def test_valid_data(self, m_dpdk_nics):
         data = {
             'cpu_pinning': {
                 'nova': {'value': 1},
@@ -158,7 +161,7 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
                              json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes
-    def test_no_cpu_for_os(self):
+    def test_no_cpu_for_os(self, m_dpdk_nics):
         pinned_count = self.node.meta['cpu']['total']
 
         data = {
@@ -172,7 +175,7 @@ class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):
             validator, json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes
-    def test_one_cpu_for_os(self):
+    def test_one_cpu_for_os(self, m_dpdk_nics):
         pinned_count = self.node.meta['cpu']['total'] - 1
 
         data = {

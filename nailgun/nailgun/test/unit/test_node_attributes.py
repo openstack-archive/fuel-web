@@ -22,26 +22,35 @@ from nailgun.test import base
 
 class TestNodeAttributes(base.BaseUnitTest):
 
+    @mock.patch.object(objects.Node, 'dpdk_nics')
     @mock.patch.object(objects.NodeAttributes, 'node_cpu_pinning_info')
     @mock.patch('nailgun.policy.cpu_distribution.distribute_node_cpus')
-    def test_distribute_node_cpus(self, m_distribute, m_info):
+    def test_distribute_node_cpus(self, m_distribute, m_info, m_dpdk_nics):
         fake_numa_nodes = [{'id': 0}]
         comp_entity = {
-            'cpu_required': [0],
-            'name': 'comp1'
-        }
-        m_info.return_value = {
-            'components': {
-                'comp1': comp_entity
+            'comp1': {
+                'cpu_required': [0],
+                'name': 'comp1'
             }
         }
+        m_info.return_value = {
+            'components': comp_entity
+        }
+        m_dpdk_nics.return_value = [
+            mock.Mock(interface_properties={'numa_node': None}),
+            mock.Mock(interface_properties={'numa_node': 1}),
+        ]
+
         node = mock.Mock(
             meta={'numa_topology': {
                 'numa_nodes': fake_numa_nodes}},
             attributes={'cpu_pinning': {}})
+
         objects.NodeAttributes.distribute_node_cpus(node)
+
+        m_dpdk_nics.assert_called_once_with(node)
         m_distribute.assert_called_once_with(
-            fake_numa_nodes, [comp_entity])
+            fake_numa_nodes, comp_entity, [0, 1])
 
     def test_node_cpu_pinning_info(self):
         node = mock.Mock(attributes={
@@ -98,33 +107,58 @@ class TestNodeAttributes(base.BaseUnitTest):
             expected,
             objects.NodeAttributes.hugepages_kernel_opts(node))
 
-    def test_hugepages_distribution(self):
-        node = mock.Mock(
+    def _make_hugepages_node(self):
+        return mock.Mock(
             attributes={
                 'hugepages': {
                     'comp1': {
                         'type': 'custom_hugepages',
                         'value': {
-                            '2048': 512,
+                            '2048': 1024,
                             '1048576': 1,
                         }
                     },
                     'comp2': {
                         'type': 'number',
-                        'value': 512}}},
+                        'value': 512
+                    }
+                }
+            },
             meta={'numa_topology': {'numa_nodes': [
-                {'id': 0, 'memory': 2 ** 31},
-                {'id': 1, 'memory': 2 ** 31},
+                {'id': 0, 'memory': 3 * (2 ** 30), 'cpus': [0, 1]},
+                {'id': 1, 'memory': 3 * (2 ** 30), 'cpus': [2, 3]},
             ]}}
         )
 
+    @mock.patch.object(objects.NodeAttributes, 'distribute_node_cpus')
+    def test_hugepages_distribution(self, m_distribute):
+        m_distribute.return_value = {'components': {}}
+        node = self._make_hugepages_node()
         expected = [
+            {'numa_id': 0, 'size': 1048576, 'count': 1},
             {'numa_id': 0, 'size': 2048, 'count': 512},
-            {'numa_id': 1, 'size': 2048, 'count': 512},
-            {'numa_id': 1, 'size': 1048576, 'count': 1},
+            {'numa_id': 1, 'size': 2048, 'count': 1024},
         ]
 
-        self.assertEqual(
+        self.assertItemsEqual(
+            objects.NodeAttributes.distribute_hugepages(node), expected)
+
+    @mock.patch.object(objects.NodeAttributes, 'distribute_node_cpus')
+    def test_hugepages_distribution_with_numa_sort(self, m_distribute):
+        m_distribute.return_value = {
+            'components': {
+                'nova': [2, 3],
+            }
+        }
+        node = self._make_hugepages_node()
+
+        expected = [
+            {'numa_id': 1, 'size': 1048576, 'count': 1},
+            {'numa_id': 1, 'size': 2048, 'count': 1024},
+            {'numa_id': 0, 'size': 2048, 'count': 512},
+        ]
+
+        self.assertItemsEqual(
             objects.NodeAttributes.distribute_hugepages(node), expected)
 
     def test_set_default_hugepages(self):

@@ -225,4 +225,5 @@ class TestHugePagesAllocations(base.BaseTestCase):
         ]
 
         self.assertEqual(
-            hpd.distribute_hugepages(topology, components), expected)
+            hpd.distribute_hugepages(topology, components, lambda _id: 0),
+            expected)

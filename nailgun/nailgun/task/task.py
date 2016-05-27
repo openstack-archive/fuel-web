@@ -1842,6 +1842,11 @@ class CheckBeforeDeploymentTask(object):
     def _check_dpdk_properties(self, task):
         dpdk_enabled = False
         for node in task.cluster.nodes:
+            try:
+                objects.NodeAttributes.distribute_node_cpus(node)
+            except ValueError as e:
+                raise errors.InvalidData(e.message)
+
             if not objects.Node.dpdk_enabled(node):
                 continue
 

@@ -92,9 +92,7 @@ class TestNodeAssignmentValidator(BaseUnitTest):
             'test': {
                 'restrictions': [
                     {
-                        'condition': "not "
-                                     "('advanced' in version:feature_groups)",
-                        'message': 'error'
+                        "not ('advanced' in version:feature_groups)": "error",
                     }
                 ]
             }
@@ -114,11 +112,7 @@ class TestNodeAssignmentValidator(BaseUnitTest):
             roles_metadata = {
                 'test': {
                     'restrictions': [
-                        {
-                            'condition': "not ('advanced' in "
-                                         "version:feature_groups)",
-                            'message': 'error'
-                        }
+                        "not ('advanced' in version:feature_groups)",
                     ]
                 }
             }

@@ -23,9 +23,9 @@ from nailgun.api.v1.validators.json_schema.assignment \
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun import errors
-from nailgun.expression import Expression
 from nailgun import objects
 from nailgun.settings import settings
+from nailgun.utils.restrictions import RestrictionBase
 
 
 class AssignmentValidator(BasicValidator):
@@ -148,15 +148,14 @@ class NodeAssignmentValidator(AssignmentValidator):
     def check_roles_requirement(cls, roles, roles_metadata, models):
         for role in roles:
             if "restrictions" in roles_metadata[role]:
-                restrictions = roles_metadata[role]['restrictions']
-                for condition in restrictions:
-                    expression = condition['condition']
-
-                    if Expression(expression, models).evaluate():
-                        message = condition.get('message', expression)
-                        raise errors.InvalidNodeRole(
-                            "Role '{}' restrictions mismatch: {}"
-                            .format(role, message))
+                result = RestrictionBase.check_restrictions(
+                    models, roles_metadata[role]['restrictions']
+                )
+                if result['result']:
+                    raise errors.InvalidNodeRole(
+                        "Role '{}' restrictions mismatch: {}"
+                        .format(role, result['message'])
+                    )
 
 
 class NodeUnassignmentValidator(AssignmentValidator):

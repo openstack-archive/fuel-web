@@ -149,11 +149,24 @@ class NodeAssignmentValidator(AssignmentValidator):
         for role in roles:
             if "restrictions" in roles_metadata[role]:
                 restrictions = roles_metadata[role]['restrictions']
+                # Restrictions could be long or short formatted
+                # restrictions:
+                #   - condition: "settings:other_plugin == null"
+                #     strict: false
+                #     message: "Other plugin must be installed and enabled"
+                #   - "settings:common.value != 'kvm'": "KVM only is supported"
+                #   - "settings:storage.volumes_ceph.value == true"
                 for condition in restrictions:
-                    expression = condition['condition']
+                    if isinstance(condition, dict):
+                        if 'condition' in condition:
+                            expression = condition['condition']
+                            message = condition.get('message', expression)
+                        else:
+                            expression, message = condition.copy().popitem()
+                    else:
+                        expression = message = condition
 
                     if Expression(expression, models).evaluate():
-                        message = condition.get('message', expression)
                         raise errors.InvalidNodeRole(
                             "Role '{}' restrictions mismatch: {}"
                             .format(role, message))

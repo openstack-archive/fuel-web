@@ -84,13 +84,35 @@ class NeutronManager(NetworkManager):
 
     @classmethod
     def dpdk_enabled_for_node(cls, node):
-        for iface in node.nic_interfaces:
-            if objects.NIC.dpdk_enabled(iface):
-                return True
-        for iface in node.bond_interfaces:
-            if objects.Bond.dpdk_enabled(iface):
-                return True
-        return False
+        return bool(cls.dpdk_nics(node))
+
+    @classmethod
+    def dpdk_nics_names(cls, transformations, bridge=None):
+        """Returns list of NICs names based on transformations
+
+        :param transformations: Fuel network transformations
+        :type transformations: list[dict]
+        :param bridge: filter by bridge
+        :type bridge: str
+        :return: list[str] - names of DPDK NICs
+        """
+        nics_names = []
+        for t in transformations:
+            action = t.get('action')
+            name = t.get('name', '')
+            provider = t.get('provider')
+            if bridge and t.get('bridge') != bridge:
+                continue
+
+            if (action == 'add-port'
+                    and provider == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
+                nics_names.append(name.split('.', 1)[0])
+            if (action == 'add-bond'
+                    and provider == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
+                for slave in t['interfaces']:
+                    nics_names.append(slave.split('.', 1)[0])
+
+        return nics_names
 
 
 class NeutronManagerLegacy(AssignIPsLegacyMixin, NeutronManager):
@@ -479,27 +501,54 @@ class NeutronManager70(
         cls._update_attrs(node_data)
 
     @classmethod
+    def _node_template_transformations(cls, node):
+        """Returns list of node transformations by network template
+
+        :param node: Node SQLAlchemy object
+        :type node: models.Node
+        :return: list[list] - list of transformations
+        """
+        transformations = []
+        template_names = set()
+        for role in node.all_roles:
+            template_names.update(
+                node.network_template['templates_for_node_role'][role])
+        templates = node.network_template['templates']
+        for tmpl_name in template_names:
+            transformations.append(templates[tmpl_name]['transformations'])
+
+        return transformations
+
+    @classmethod
     def dpdk_enabled_for_node(cls, node):
         if node.network_template:
             endpoint_name = cls.get_node_endpoint_by_network_role(
                 node, 'neutron/private')
             if not endpoint_name:
                 return False
-            template_names = set()
-            for role in node.all_roles:
-                template_names.update(
-                    node.network_template['templates_for_node_role'][role])
-            templates = node.network_template['templates']
-            for tmpl_name in template_names:
-                transformations = templates[tmpl_name]['transformations']
-                for t in transformations:
-                    if (t['action'] in ['add-port', 'add-bond'] and
-                            t.get('provider') == 'dpdkovs' and
-                            t.get('bridge') == endpoint_name):
-                        return True
+
+            for transformations in cls._node_template_transformations(node):
+                if cls.dpdk_nics_names(transformations, bridge=endpoint_name):
+                    return True
             return False
         else:
             return super(NeutronManager70, cls).dpdk_enabled_for_node(node)
+
+    @classmethod
+    def dpdk_nics(cls, node):
+        if node.network_template:
+            transformations_list = cls._node_template_transformations(node)
+
+            dpdk_nics_names = [
+                name
+                for transformations in transformations_list
+                for name in cls.dpdk_nics_names(transformations)
+            ]
+
+            return objects.NICCollection.filter_by_list(
+                node.interfaces, 'name', dpdk_nics_names)
+        else:
+            return super(NeutronManager70, cls).dpdk_nics(node)
 
 
 class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):

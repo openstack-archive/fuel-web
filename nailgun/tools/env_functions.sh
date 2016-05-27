@@ -93,7 +93,7 @@ prepare_server() {
     for i in $(seq 1 $NAILGUN_START_MAX_WAIT_TIME); do
         echo "Trying to send a request: curl -s -w %{http_code} -o /dev/null ${check_url}"
         local http_code=$(curl -s -w %{http_code} -o /dev/null ${check_url})
-        if [[ "$http_code" = "200" ]]; then
+        if [[ "$http_code" != "000" ]]; then
             echo "OK: Nailgun server seems working and ready to use."
             nailgun_status=0
             break

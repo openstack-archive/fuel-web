@@ -1942,7 +1942,6 @@
             description: |
               To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-package-updates --help" on the Fuel master node.
               Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
-              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-10.0/reference-architecture.html#fuel-rep-mirror).
             value:
               - type: "rpm"
                 name: "mos"
@@ -2001,7 +2000,6 @@
               Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
               To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
               Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
-              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-10.0/operations.html#external-ubuntu-ops).
             value:
               - type: "deb"
                 name: "ubuntu"
@@ -2226,7 +2224,6 @@
               Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
               To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
               Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
-              For more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-10.0/operations.html#external-ubuntu-ops).
             value:
               - type: "deb"
                 name: "ubuntu"

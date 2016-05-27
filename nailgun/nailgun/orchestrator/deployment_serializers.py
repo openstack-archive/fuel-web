@@ -564,12 +564,14 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
 
         self._generate_nova_cpu_pinning(
             serialized_node,
-            cpu_pinning.get('nova')
+            cpu_pinning.pop('nova', [])
         )
         self._generate_dpdk_cpu_pinning(
             serialized_node,
-            cpu_pinning.get('dpdk')
+            cpu_pinning.pop('ovs_core_mask', []),
+            cpu_pinning.pop('ovs_pmd_core_mask', [])
         )
+        serialized_node['cpu_pinning'] = cpu_pinning
 
     def generate_node_hugepages(self, node, serialized_node):
         self._generate_nova_hugepages(node, serialized_node)
@@ -584,19 +586,24 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         serialized_node.setdefault('nova', {})['cpu_pinning'] = cpus
 
     @staticmethod
-    def _generate_dpdk_cpu_pinning(serialized_node, cpus):
-        if not cpus:
+    def _generate_dpdk_cpu_pinning(serialized_node, ovs_core_cpus,
+                                   ovs_pmd_core_cpus):
+        if not (ovs_core_cpus + ovs_pmd_core_cpus):
             return
 
-        ovs_core_mask = 1 << cpus[0]
+        ovs_core_mask = 0
         ovs_pmd_core_mask = 0
-        for cpu in cpus[1:]:
-            ovs_pmd_core_mask |= 1 << cpu
 
-        core_masks = {'ovs_core_mask': hex(ovs_core_mask)}
-        if ovs_pmd_core_mask > 0:
-            core_masks['ovs_pmd_core_mask'] = hex(ovs_pmd_core_mask)
-        serialized_node.setdefault('dpdk', {}).update(core_masks)
+        for cpu in ovs_core_cpus:
+            ovs_core_mask |= (1 << cpu)
+
+        for cpu in ovs_pmd_core_cpus:
+            ovs_pmd_core_mask |= (1 << cpu)
+
+        serialized_node.setdefault('dpdk', {}).update({
+            'ovs_core_mask': hex(ovs_core_mask),
+            'ovs_pmd_core_mask': hex(ovs_pmd_core_mask),
+        })
 
     @staticmethod
     def _generate_nova_hugepages(node, serialized_node):

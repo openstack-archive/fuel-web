@@ -1182,6 +1182,16 @@ class Node(NailgunObject):
              instance.error_type == consts.NODE_ERRORS.deploy)
         )
 
+    @classmethod
+    def dpdk_nics(cls, instance):
+        if not instance.cluster:
+            return []
+        nm = Cluster.get_network_manager(instance.cluster)
+        # legacy network manager may not have that method
+        if hasattr(nm, 'dpdk_nics'):
+            return nm.dpdk_nics(instance)
+        return []
+
 
 class NodeCollection(NailgunCollection):
     """Node collection"""
@@ -1289,10 +1299,18 @@ class NodeAttributes(object):
 
     @classmethod
     def distribute_node_cpus(cls, node):
+        numa_nodes = node.meta['numa_topology']['numa_nodes']
+        components = cls.node_cpu_pinning_info(node)['components']
+        dpdk_nics = Node.dpdk_nics(node)
+
+        nics_numas = []
+        for nic in dpdk_nics:
+            # NIC may have numa_node equal to null, in that case
+            # we assume that it belongs to first NUMA
+            nics_numas.append(nic.interface_properties.get('numa_node') or 0)
+
         return cpu_distribution.distribute_node_cpus(
-            node.meta['numa_topology']['numa_nodes'],
-            list(six.itervalues(cls.node_cpu_pinning_info(node)['components']))
-        )
+            numa_nodes, components, nics_numas)
 
     @classmethod
     def node_cpu_pinning_info(cls, node, attributes=None):

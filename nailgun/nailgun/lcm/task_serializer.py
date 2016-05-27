@@ -61,23 +61,44 @@ class Context(object):
         self._yaql_engine = yaql_ext.create_engine()
         self._yaql_expressions_cache = {}
 
+        self._new_context_cache = {}
+        self._context_cache = {}
+        self._yaql_results_cache = {}
+
     def get_new_data(self, node_id):
         return self._transaction.get_new_data(node_id)
 
     def get_yaql_interpreter(self, node_id, task_id):
-        context = self._yaql_context.create_child_context()
-        context['$%new'] = self._transaction.get_new_data(node_id)
-        context['$%old'] = self._transaction.get_old_data(node_id, task_id)
+        all_context_key = '{}-{}'.format(node_id, task_id)
+        if all_context_key in self._context_cache:
+            context = self._context_cache[all_context_key]
+        else:
+            context = self._yaql_context.create_child_context()
+            if node_id not in self._new_context_cache:
+                self._new_context_cache[node_id] = self._transaction.get_new_data(node_id)
+            context['$%new'] = self._new_context_cache[node_id]
+
+            context['$%old'] = self._transaction.get_old_data(node_id, task_id)
+            self._context_cache[all_context_key] = context
+
+        # context = self._yaql_context.create_child_context()
+        # context['$%new'] = self._transaction.get_new_data(node_id)
+        # context['$%old'] = self._transaction.get_old_data(node_id, task_id)
         cache = self._yaql_expressions_cache
 
         def evaluate(expression):
             logger.debug("evaluate yaql expression: %s", expression)
+            result_cache_key = '{}-{}-{}'.format(expression, node_id, task_id)
+            if result_cache_key in self._yaql_results_cache:
+                return self._yaql_results_cache[result_cache_key]
             try:
                 parsed_exp = cache[expression]
             except KeyError:
                 parsed_exp = self._yaql_engine(expression)
                 cache[expression] = parsed_exp
-            return parsed_exp.evaluate(data=context['$%new'], context=context)
+            result = parsed_exp.evaluate(data=context['$%new'], context=context)
+            self._yaql_results_cache[result_cache_key] = result
+            return result
         return evaluate
 
     def get_legacy_interpreter(self, node_id):

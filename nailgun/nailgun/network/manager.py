@@ -1489,6 +1489,25 @@ class NetworkManager(object):
             result.append(net_info)
         return result
 
+    @classmethod
+    def dpdk_nics(cls, node):
+        """Returns list of dpdk interfaces
+
+        :param node: Node SQLAlchemy model
+        :type node: models.Node
+        :return: list[models.NodeNICInterface] - DPDK NICs
+        """
+        nics = set()
+        for iface in node.nic_interfaces:
+            if objects.NIC.dpdk_enabled(iface):
+                nics.add(iface)
+
+        for bond in node.bond_interfaces:
+            if objects.Bond.dpdk_enabled(bond):
+                nics.update(bond.slaves)
+
+        return list(nics)
+
 
 class AllocateVIPs70Mixin(object):
 

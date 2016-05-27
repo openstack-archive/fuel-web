@@ -56,6 +56,27 @@ class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
     test_orchestrator_serializer_80.TestDeploymentAttributesSerialization80
 ):
+
+    def _assign_dpdk_to_nic(self, node, dpdk_nic, other_nic):
+        node.attributes['cpu_pinning']['dpdk']['value'] = 2
+        other_nets = other_nic.assigned_networks_list
+        dpdk_nets = dpdk_nic.assigned_networks_list
+
+        for i, net in enumerate(other_nets):
+            if net['name'] == 'private':
+                dpdk_nets.append(other_nets.pop(i))
+                break
+        objects.NIC.assign_networks(other_nic, other_nets)
+        objects.NIC.assign_networks(dpdk_nic, dpdk_nets)
+
+        objects.NIC.update(dpdk_nic,
+                           {'interface_properties':
+                               {
+                                   'dpdk': {'enabled': True,
+                                            'available': True},
+                                   'pci_id': 'test_id:2'
+                               }})
+
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def test_serialization_with_dpdk(self, drivers_mock):
         drivers_mock.return_value = {
@@ -66,27 +87,12 @@ class TestDeploymentAttributesSerialization90(
             cluster_id=self.cluster_db.id,
             roles=['compute'])[0]
 
-        nic_1 = node.interfaces[0]
-        nic_2 = node.interfaces[2]
-        nets_1 = nic_1.assigned_networks_list
-        nets_2 = nic_2.assigned_networks_list
+        other_nic = node.interfaces[0]
+        dpdk_nic = node.interfaces[2]
 
-        dpdk_interface_name = nic_2.name
+        self._assign_dpdk_to_nic(node, dpdk_nic, other_nic)
+        dpdk_interface_name = dpdk_nic.name
 
-        for i, net in enumerate(nets_1):
-            if net['name'] == 'private':
-                nets_2.append(nets_1.pop(i))
-                break
-        objects.NIC.assign_networks(nic_1, nets_1)
-        objects.NIC.assign_networks(nic_2, nets_2)
-
-        objects.NIC.update(nic_2,
-                           {'interface_properties':
-                               {
-                                   'dpdk': {'enabled': True,
-                                            'available': True},
-                                   'pci_id': 'test_id:2'
-                               }})
         objects.Cluster.prepare_for_deployment(self.cluster_db)
 
         serialised_for_astute = self.serializer.serialize(
@@ -109,7 +115,8 @@ class TestDeploymentAttributesSerialization90(
                            transformations)
         self.assertEqual(private_br.get('vendor_specific'),
                          {'datapath_type': 'netdev'})
-        self.assertEqual(len(all_ports) - len(dpdk_ports), len(nets_1))
+        self.assertEqual(len(all_ports) - len(dpdk_ports),
+                         len(other_nic.assigned_networks_list))
         self.assertEqual(len(dpdk_ports), 1)
         self.assertEqual(dpdk_ports[0]['bridge'],
                          consts.DEFAULT_BRIDGES_NAMES.br_prv)
@@ -121,7 +128,11 @@ class TestDeploymentAttributesSerialization90(
         vendor_specific = dpdk_interface.get('vendor_specific', {})
         self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
 
-    def _check_dpdk_bond_serializing(self, bond_properties):
+    @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
+    def _check_dpdk_bond_serializing(self, bond_properties, drivers_mock):
+        drivers_mock.return_value = {
+            'driver_1': ['test_id:1', 'test_id:2']
+        }
         node = self.env.create_nodes_w_interfaces_count(
             1, 4,
             cluster_id=self.cluster_db.id,
@@ -131,6 +142,8 @@ class TestDeploymentAttributesSerialization90(
             'dpdk': {'type': 'number', 'value': 1024},
             'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}}
         }
+        node.attributes['cpu_pinning']['dpdk']['value'] = 3
+
         cluster_attrs = objects.Cluster.get_editable_attributes(node.cluster)
         cluster_attrs['common']['libvirt_type'].update(
             {'value': consts.HYPERVISORS.kvm})
@@ -190,11 +203,7 @@ class TestDeploymentAttributesSerialization90(
             vendor_specific = dpdk_interface.get('vendor_specific', {})
             self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
 
-    @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def test_serialization_with_dpdk_on_bond(self, drivers_mock):
-        drivers_mock.return_value = {
-            'driver_1': ['test_id:1', 'test_id:2']
-        }
+    def test_serialization_with_dpdk_on_bond(self):
         bond_properties = {
             'mode': consts.BOND_MODES.balance_slb,
             'type__': consts.BOND_TYPES.dpdkovs,
@@ -202,11 +211,7 @@ class TestDeploymentAttributesSerialization90(
 
         self._check_dpdk_bond_serializing(bond_properties)
 
-    @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def test_serialization_with_dpdk_on_lacp_bond(self, drivers_mock):
-        drivers_mock.return_value = {
-            'driver_1': ['test_id:1', 'test_id:2']
-        }
+    def test_serialization_with_dpdk_on_lacp_bond(self):
         bond_properties = {
             'mode': consts.BOND_MODES.balance_tcp,
             'lacp': 'active',
@@ -220,8 +225,15 @@ class TestDeploymentAttributesSerialization90(
             {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
             {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}
         ]
-        node = self.env.create_node(cluster_id=self.cluster_db.id,
-                                    roles=['compute'])
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 3,
+            cluster_id=self.cluster_db.id,
+            roles=['compute'])[0]
+
+        other_nic = node.interfaces[0]
+        dpdk_nic = node.interfaces[2]
+
+        self._assign_dpdk_to_nic(node, dpdk_nic, other_nic)
 
         node.meta['numa_topology']['numa_nodes'] = numa_nodes
         node.attributes.update({
@@ -238,24 +250,31 @@ class TestDeploymentAttributesSerialization90(
 
         self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
         self.assertEqual(serialized_node['dpdk']['ovs_pmd_core_mask'], '0x4')
-        self.assertEqual(serialized_node['nova']['cpu_pinning'], [3, 4])
+        self.assertEqual(serialized_node['nova']['cpu_pinning'], [5, 6])
         node_name = objects.Node.get_slave_name(node)
         node_common_attrs = \
             serialized_node['network_metadata']['nodes'][node_name]
         self.assertTrue(node_common_attrs['nova_cpu_pinning_enabled'])
 
-    def test_pinning_one_cpu_for_dpdk(self):
+    def test_pinning_cpu_for_dpdk(self):
         numa_nodes = [
             {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
             {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}
         ]
-        node = self.env.create_node(cluster_id=self.cluster_db.id,
-                                    roles=['compute'])
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 3,
+            cluster_id=self.cluster_db.id,
+            roles=['compute'])[0]
+
+        other_nic = node.interfaces[0]
+        dpdk_nic = node.interfaces[2]
+
+        self._assign_dpdk_to_nic(node, dpdk_nic, other_nic)
 
         node.meta['numa_topology']['numa_nodes'] = numa_nodes
         node.attributes.update({
             'cpu_pinning': {
-                'dpdk': {'value': 1},
+                'dpdk': {'value': 2},
             }
         })
         objects.Cluster.prepare_for_deployment(self.cluster_db)
@@ -265,8 +284,9 @@ class TestDeploymentAttributesSerialization90(
         serialized_node = serialized_for_astute[0]
 
         self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
-        self.assertNotIn('ovs_pmd_core_mask', serialized_node['dpdk'])
+        self.assertEqual(serialized_node['dpdk']['ovs_pmd_core_mask'], '0x4')
         self.assertNotIn('cpu_pinning', serialized_node['nova'])
+
         node_name = objects.Node.get_slave_name(node)
         node_common_attrs = \
             serialized_node['network_metadata']['nodes'][node_name]

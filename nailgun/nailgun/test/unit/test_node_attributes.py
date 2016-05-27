@@ -22,26 +22,36 @@ from nailgun.test import base
 
 class TestNodeAttributes(base.BaseUnitTest):
 
+    @mock.patch.object(objects.Node, 'dpdk_nics')
     @mock.patch.object(objects.NodeAttributes, 'node_cpu_pinning_info')
     @mock.patch('nailgun.policy.cpu_distribution.distribute_node_cpus')
-    def test_distribute_node_cpus(self, m_distribute, m_info):
+    def test_distribute_node_cpus(self, m_distribute, m_info, m_dpdk_nics):
         fake_numa_nodes = [{'id': 0}]
         comp_entity = {
-            'cpu_required': [0],
-            'name': 'comp1'
-        }
-        m_info.return_value = {
-            'components': {
-                'comp1': comp_entity
+            'comp1': {
+                'cpu_required': [0],
+                'name': 'comp1'
             }
         }
+        m_info.return_value = {
+            'components': comp_entity
+        }
+        m_dpdk_nics.return_value = [
+            mock.Mock(interface_properties={'numa_node': None}),
+            mock.Mock(interface_properties={'numa_node': 1}),
+        ]
+
         node = mock.Mock(
             meta={'numa_topology': {
                 'numa_nodes': fake_numa_nodes}},
             attributes={'cpu_pinning': {}})
+
         objects.NodeAttributes.distribute_node_cpus(node)
+
+        m_dpdk_nics.assert_called_once_with(node)
         m_distribute.assert_called_once_with(
-            fake_numa_nodes, [comp_entity])
+            fake_numa_nodes, comp_entity, [0, 1])
+
 
     def test_node_cpu_pinning_info(self):
         node = mock.Mock(attributes={

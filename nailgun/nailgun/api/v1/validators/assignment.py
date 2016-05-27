@@ -148,11 +148,17 @@ class NodeAssignmentValidator(AssignmentValidator):
             if "restrictions" in roles_metadata[role]:
                 restrictions = roles_metadata[role]['restrictions']
                 for condition in restrictions:
-                    expression = condition['condition']
+                    if isinstance(condition, dict):
+                        if 'condition' in condition:
+                            expression = condition['condition']
+                            message = condition.get('message', expression)
+                        else:
+                            expression, message = condition.items()[0]
+                    else:
+                        expression = message = condition
 
                     if Expression(expression, models).evaluate():
-                        message = condition.get('message', expression)
-                        raise errors.InvalidNodeRole(
+                        raise errors.InvalidData(
                             "Role '{}' restrictions mismatch: {}"
                             .format(role, message))
 

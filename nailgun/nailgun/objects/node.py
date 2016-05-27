@@ -1204,6 +1204,13 @@ class Node(NailgunObject):
              instance.error_type == consts.NODE_ERRORS.deploy)
         )
 
+    @classmethod
+    def dpdk_nics(cls, instance):
+        if not instance.cluster:
+            return []
+        nm = Cluster.get_network_manager(instance.cluster)
+        return nm.dpdk_nics(instance)
+
 
 class NodeCollection(NailgunCollection):
     """Node collection"""
@@ -1310,11 +1317,19 @@ class NodeAttributes(object):
         Node.update_attributes(node, {'hugepages': hugepages})
 
     @classmethod
-    def distribute_node_cpus(cls, node):
+    def distribute_node_cpus(cls, node, attributes=None):
+        numa_nodes = node.meta['numa_topology']['numa_nodes']
+        components = cls.node_cpu_pinning_info(node, attributes)['components']
+        dpdk_nics = cls.single.dpdk_nics(node)
+
+        nics_numas = []
+        for nic in dpdk_nics:
+            # NIC may have numa_node equal to null, in that case
+            # we assume that it belongs to first NUMA
+            nics_numas.append(nic.interface_properties.get('numa_node') or 0)
+
         return cpu_distribution.distribute_node_cpus(
-            node.meta['numa_topology']['numa_nodes'],
-            list(six.itervalues(cls.node_cpu_pinning_info(node)['components']))
-        )
+            numa_nodes, components, nics_numas)
 
     @classmethod
     def node_cpu_pinning_info(cls, node, attributes=None):
@@ -1453,5 +1468,22 @@ class NodeAttributes(object):
             elif attrs.get('type') == 'custom_hugepages':
                 components['any'].append(attrs['value'])
 
+        def numa_sort_func():
+            # Huge Pages distributor uses greedy algorithm and
+            # it knows nothing about CPU distribution. Thus
+            # this function will sort NUMA nodes according to
+            # distribution. Hence Huge Pages distribution will
+            # allocate more Huge Pages on NUMAs with more CPUs
+            cpu_distribution = cls.distribute_node_cpus(node, attributes)
+
+            nova_cpus = set(cpu_distribution['components'].get('nova', []))
+            numa_values = collections.defaultdict(int)
+            for numa_node in topology['numa_nodes']:
+                for cpu in numa_node['cpus']:
+                    if cpu in nova_cpus:
+                        numa_values[numa_node['id']] += 1
+
+            return lambda numa_id: -numa_values[numa_id]
+
         return hugepages_distribution.distribute_hugepages(
-            topology, components)
+            topology, components, numa_sort_func())

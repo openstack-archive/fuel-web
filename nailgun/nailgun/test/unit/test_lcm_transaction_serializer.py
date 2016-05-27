@@ -370,6 +370,7 @@ class TestTransactionSerializer(BaseUnitTest):
         ))
 
     def test_serialize_fail_if_not_all_tasks_have_version2(self):
+        settings.LCM_CHECK_TASK_VERSION = True
         tasks = list(self.tasks)
         tasks[-1] = self.tasks[-1].copy()
         del tasks[-1]['version']

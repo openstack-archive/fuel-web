@@ -25,6 +25,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun import errors
 from nailgun.expression import Expression
 from nailgun import objects
+from nailgun.settings import settings
 
 
 class AssignmentValidator(BasicValidator):
@@ -121,6 +122,7 @@ class NodeAssignmentValidator(AssignmentValidator):
             {
                 'settings': cluster.attributes.editable,
                 'cluster': cluster,
+                'version': settings.VERSION,
             })
 
     @classmethod

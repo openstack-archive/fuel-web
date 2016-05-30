@@ -63,7 +63,7 @@ class TestTransactionSerializer(BaseUnitTest):
                 'type': 'puppet', 'version': '2.0.0',
                 'parameters': {},
                 'cross_depended_by': [{'name': 'task3'}]
-            },
+            }
         ]
 
         cls.nodes = [
@@ -271,12 +271,23 @@ class TestTransactionSerializer(BaseUnitTest):
             'cross_depends': [{'name': 'task2', 'role': 'self'}],
         })
         tasks.append({
-            'type': 'group', 'roles': 'custom',
+            'id': 'custom', 'type': 'group', 'roles': 'custom',
+            'fault_tolerance': '100%',
+            'tasks': ['task4', 'task2']
+        })
+        tasks.append({
+            'id': 'controller', 'type': 'group', 'roles': 'controller',
+            'fault_tolerance': '0%',
+            'tasks': ['task4', 'task2']
+        })
+        tasks.append({
+            'id': 'compute', 'type': 'group', 'roles': 'compute',
             'tasks': ['task4', 'task2']
         })
         serialized = lcm.TransactionSerializer.serialize(
             self.context, tasks, self.role_resolver
-        )[1]
+        )
+        tasks_per_node = serialized[1]
         self.datadiff(
             [
                 {
@@ -291,8 +302,33 @@ class TestTransactionSerializer(BaseUnitTest):
 
                 },
             ],
-            serialized['4'],
+            tasks_per_node['4'],
             ignore_keys=['parameters', 'fail_on_error'],
+            compare_sorted=True
+        )
+
+        tasks_metadata = serialized[2]
+        self.datadiff(
+            {
+                'fault_tolerance_groups': [
+                    {
+                        'name': 'custom',
+                        'node_ids': ['4'],
+                        'fault_tolerance': 1
+                    },
+                    {
+                        'name': 'controller',
+                        'node_ids': ['1'],
+                        'fault_tolerance': 0
+                    },
+                    {
+                        'name': 'compute',
+                        'node_ids': ['2'],
+                        'fault_tolerance': 2
+                    }
+                ]
+            },
+            tasks_metadata,
             compare_sorted=True
         )
 
@@ -404,3 +440,25 @@ class TestTransactionSerializer(BaseUnitTest):
     )
     def test_multi_processing_serialization(self):
         self.test_serialize_integration()
+
+    def test_get_fault_tolerance(self):
+        self.assertEqual(
+            11,
+            lcm.TransactionSerializer.get_fault_tolerance(-1, 10)
+        )
+        self.assertEqual(
+            10,
+            lcm.TransactionSerializer.get_fault_tolerance('10', 10)
+        )
+        self.assertEqual(
+            10,
+            lcm.TransactionSerializer.get_fault_tolerance(10, 10)
+        )
+        self.assertEqual(
+            1,
+            lcm.TransactionSerializer.get_fault_tolerance('10%', 10)
+        )
+        self.assertEqual(
+            11,
+            lcm.TransactionSerializer.get_fault_tolerance('a%', 10)
+        )

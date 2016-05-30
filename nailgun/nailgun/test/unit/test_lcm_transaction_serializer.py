@@ -19,7 +19,6 @@ import mock
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun import lcm
-from nailgun.settings import settings
 from nailgun.utils.role_resolver import RoleResolver
 
 from nailgun.test.base import BaseUnitTest
@@ -369,19 +368,11 @@ class TestTransactionSerializer(BaseUnitTest):
             {"task1": {"type": "puppet"}}, {"id": "task1", "type": "skipped"}
         ))
 
-    def test_serialize_fail_if_not_all_tasks_have_version2(self):
-        tasks = list(self.tasks)
-        tasks[-1] = self.tasks[-1].copy()
-        del tasks[-1]['version']
-        self.assertRaises(
-            errors.TaskBaseDeploymentNotAllowed,
-            lcm.TransactionSerializer.serialize,
-            self.context, tasks, self.role_resolver
-        )
-
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings.LCM_CHECK_TASK_VERSION',
+        new=True
+    )
     def test_ensure_task_based_deploy_allowed_raises_if_version_check(self):
-        settings.LCM_CHECK_TASK_VERSION = True
-
         self.assertRaises(
             errors.TaskBaseDeploymentNotAllowed,
             lcm.TransactionSerializer.ensure_task_based_deploy_allowed,
@@ -389,8 +380,11 @@ class TestTransactionSerializer(BaseUnitTest):
              'version': '1.0.0', 'id': 'test'}
         )
 
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings.LCM_CHECK_TASK_VERSION',
+        new=False
+    )
     def test_ensure_task_based_deploy_allowed_if_not_version_check(self):
-        settings.LCM_CHECK_TASK_VERSION = False
         self.assertNotRaises(
             errors.TaskBaseDeploymentNotAllowed,
             lcm.TransactionSerializer.ensure_task_based_deploy_allowed,

@@ -135,6 +135,7 @@ class TransactionSerializer(object):
         self.context = context
         self.tasks_graph = {}
         self.tasks_dictionary = {}
+        self.node_groups = []
         self.concurrency_policy = get_concurrency_policy()
 
     @classmethod
@@ -154,7 +155,12 @@ class TransactionSerializer(object):
             tasks_graph[node_id] = list(
                 six.itervalues(tasks_graph[node_id])
             )
-        return serializer.tasks_dictionary, tasks_graph
+
+        return (
+            serializer.tasks_dictionary,
+            tasks_graph,
+            {'fault_tolerance_groups': serializer.node_groups}
+        )
 
     @classmethod
     def ensure_task_based_deploy_allowed(cls, task):
@@ -230,6 +236,14 @@ class TransactionSerializer(object):
                 # otherwise check each task individually
                 for node_id in node_ids:
                     yield node_id, sub_task
+
+            self.node_groups.append({
+                'name': task['id'],
+                'node_ids': list(node_ids),
+                'fault_tolerance': self.get_fault_tolerance(
+                    task.get('fault_tolerance', -1), len(node_ids)
+                )
+            })
 
     def resolve_nodes(self, task):
         if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.stage:
@@ -345,3 +359,20 @@ class TransactionSerializer(object):
             return False
 
         return task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
+
+    @classmethod
+    def get_fault_tolerance(cls, percentage_or_value, total):
+        try:
+            if (isinstance(percentage_or_value, six.string_types) and
+                    percentage_or_value[-1] == '%'):
+                return (int(percentage_or_value[:-1]) * total) // 100
+            percentage_or_value = int(percentage_or_value)
+            if percentage_or_value != -1:
+                return percentage_or_value
+        except ValueError as e:
+            logger.error(
+                "Failed to handle fault_tolerance: '%s': %s. it is ignored.",
+                percentage_or_value, e
+            )
+        # unattainable number
+        return total + 1

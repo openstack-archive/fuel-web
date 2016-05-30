@@ -102,9 +102,9 @@ maintainers:
       IRC:    ikutukov
 
 - nailgun/nailgun/extensions/volume_manager/:
-    - name:   Evgeny Li
-      email:  eli@mirantis.com
-      IRC:    evgeniyl
+    - name:   Aleksandr Gordeev
+      email:  agordeev@mirantis.com
+      IRC:    agordeev
 
 - nailgun/nailgun/extensions/network_manager/: &network_experts
     - name:   Aleksei Kasatkin

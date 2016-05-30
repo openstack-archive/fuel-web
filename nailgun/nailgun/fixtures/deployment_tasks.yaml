@@ -23,6 +23,7 @@
 
 - id: primary-controller
   type: group
+  fault_tolerance: 0
   roles: [primary-controller]
   required_for: [deploy_end]
   requires: [deploy_start]
@@ -31,6 +32,7 @@
       type: one_by_one
 - id: controller
   type: group
+  fault_tolerance: 0
   roles: [controller]
   requires: [primary-controller]
   required_for: [deploy_end]
@@ -56,6 +58,7 @@
       type: parallel
 - id: compute
   type: group
+  fault_tolerance: "2%"
   roles: [compute]
   requires: [controller]
   required_for: [deploy_end]

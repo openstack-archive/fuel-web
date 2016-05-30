@@ -51,14 +51,16 @@ class TestPluginBase(base.BaseTestCase):
                 'role_y': {
                     'name': 'Role Y',
                     'description': 'Role Y is ...',
-                    'restrictions': []
+                    'restrictions': [],
+                    'fault_tolerance': '5%'
                 },
                 'role_z': {
                     'name': 'Role Z',
                     'description': 'Role Z is ...',
                     'restrictions': [
                         'settings:some.stuff.value == false'
-                    ]
+                    ],
+                    'fault_tolerance': '10%'
                 }
             }
         )
@@ -174,6 +176,38 @@ class TestPluginBase(base.BaseTestCase):
         depl_task = self.plugin_adapter.get_deployment_tasks()[0]
         self.assertEqual(depl_task['parameters'].get('cwd'),
                          self.plugin_adapter.slaves_scripts_path)
+
+    @mock.patch('nailgun.plugins.adapters.DeploymentGraph')
+    def test_fault_tolerance_set_for_task_groups(self, deployment_graph_mock):
+        deployment_graph_mock.get_for_model.return_value = True
+        deployment_graph_mock.get_tasks.return_value = [
+            {
+                'id': 'role_x',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.group,
+                'roles': ['role_x'],
+                'fault_tolerance': '0'
+            },
+            {
+                'id': 'role_y',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.group,
+                'roles': ['role_y'],
+            },
+            {
+                'id': 'role_z',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.group,
+                'roles': ['role_z'],
+                'fault_tolerance': '50%'
+            },
+        ]
+        depl_task = self.plugin_adapter.get_deployment_tasks()
+        fault_tolerance_groups = {
+            task['id']: task.get('fault_tolerance')
+            for task in depl_task
+        }
+        self.assertEqual(
+            {'role_x': '0', 'role_y': '5%', 'role_z': '50%'},
+            fault_tolerance_groups
+        )
 
     def test_get_deployment_tasks_params_not_changed(self):
         expected = 'path/to/some/dir'

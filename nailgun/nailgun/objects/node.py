@@ -427,15 +427,36 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def is_interfaces_configuration_locked(cls, instance):
+    def is_interfaces_configuration_locked(cls, instance, is_agent=False):
         """Returns true if update of network configuration is not allowed.
 
-        Update of network configuration is allowed for bootstrap nodes only.
+        Configuration update is allowed in 'discover', 'stopped',
+        'ready' and discovery 'error'.
+
+        We are allowing configuration of the 'stopped' and 'ready' node to be
+        updated by API but not nailgun-agent.
+
+        :param instance: node instance
+        :type instance: models.Node
+        :param is_agent: is nailgun-agent
+        :type is_agent: bool
+        :return: is locked
+        :rtype: bool
         """
-        return instance.status not in (
-            consts.NODE_STATUSES.discover,
-            consts.NODE_STATUSES.error,
-        ) or (
+        if is_agent:
+            unlocked_cluster_statuses = (
+                consts.NODE_STATUSES.discover,
+                consts.NODE_STATUSES.error,
+            )
+        else:
+            unlocked_cluster_statuses = (
+                consts.NODE_STATUSES.discover,
+                consts.NODE_STATUSES.error,
+                consts.NODE_STATUSES.stopped,
+                consts.NODE_STATUSES.ready
+            )
+
+        return instance.status not in unlocked_cluster_statuses or (
             instance.status == consts.NODE_STATUSES.error and
             instance.error_type != consts.NODE_ERRORS.discover
         )
@@ -565,7 +586,8 @@ class Node(NailgunObject):
             # the current instance. This appears to overwrite the object in the
             # current session and we lose the meta changes.
             db().flush()
-            if cls.is_interfaces_configuration_locked(instance):
+            is_agent = bool(data.pop('is_agent', None))
+            if cls.is_interfaces_configuration_locked(instance, is_agent):
                 logger.debug("Interfaces are locked for update on node %s",
                              instance.human_readable_name)
             else:
@@ -575,7 +597,7 @@ class Node(NailgunObject):
                 cls.update_interfaces(instance)
                 cls.update_interfaces_offloading_modes(
                     instance,
-                    bool(data.pop('is_agent', None)))
+                    is_agent)
 
         cluster_changed = False
         add_to_cluster = False
@@ -742,7 +764,7 @@ class Node(NailgunObject):
                          instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
-        if not cls.is_interfaces_configuration_locked(instance) \
+        if not cls.is_interfaces_configuration_locked(instance, is_agent=True) \
                 and data.get('ip'):
             if instance.cluster_id:
                 update_status = cls.check_ip_belongs_to_own_admin_network(

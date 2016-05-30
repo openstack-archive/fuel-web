@@ -128,11 +128,22 @@ class PluginAdapterBase(object):
             graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         deployment_tasks = []
         graph_instance = DeploymentGraph.get_for_model(self.plugin, graph_type)
+        roles_metadata = self.plugin.roles_metadata
         if graph_instance:
             for task in DeploymentGraph.get_tasks(graph_instance):
                 if task.get('parameters'):
                     task['parameters'].setdefault(
                         'cwd', self.slaves_scripts_path)
+
+                if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
+                    try:
+                        task.setdefault(
+                            'fault_tolerance',
+                            roles_metadata[task['id']]['fault_tolerance']
+                        )
+                    except KeyError:
+                        pass
+
                 deployment_tasks.append(task)
         return deployment_tasks
 

@@ -135,6 +135,10 @@ class TransactionSerializer(object):
         self.context = context
         self.tasks_graph = {}
         self.tasks_dictionary = {}
+        # the list of groups, that contains information about
+        # ids of nodes in this group and how many nodes in this group can fail
+        # and deployment will not be interrupted
+        self.fault_tolerance_groups = []
         self.concurrency_policy = get_concurrency_policy()
 
     @classmethod
@@ -154,7 +158,12 @@ class TransactionSerializer(object):
             tasks_graph[node_id] = list(
                 six.itervalues(tasks_graph[node_id])
             )
-        return serializer.tasks_dictionary, tasks_graph
+
+        return (
+            serializer.tasks_dictionary,
+            tasks_graph,
+            {'fault_tolerance_groups': serializer.fault_tolerance_groups}
+        )
 
     @classmethod
     def ensure_task_based_deploy_allowed(cls, task):
@@ -219,6 +228,9 @@ class TransactionSerializer(object):
             node_ids = self.role_resolver.resolve(
                 task.get('roles', task.get('groups'))
             )
+            if not node_ids:
+                continue
+
             for sub_task_id in task.get('tasks', ()):
                 try:
                     sub_task = tasks_mapping[sub_task_id]
@@ -230,6 +242,14 @@ class TransactionSerializer(object):
                 # otherwise check each task individually
                 for node_id in node_ids:
                     yield node_id, sub_task
+
+            self.fault_tolerance_groups.append({
+                'name': task['id'],
+                'node_ids': list(node_ids),
+                'fault_tolerance': self.calculate_fault_tolerance(
+                    task.get('fault_tolerance'), len(node_ids)
+                )
+            })
 
     def resolve_nodes(self, task):
         if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.stage:
@@ -345,3 +365,37 @@ class TransactionSerializer(object):
             return False
 
         return task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped
+
+    @classmethod
+    def calculate_fault_tolerance(cls, percentage_or_value, total):
+        """Calculates actual fault tolerance value.
+
+        :param percentage_or_value: the fault tolerance as percent of nodes
+                                that can fail or actual number of nodes
+        :param total: the total number of nodes in group
+        :return: the actual number of nodes that can fail
+        """
+        if percentage_or_value is None:
+            # unattainable number
+            return total + 1
+
+        try:
+            if (isinstance(percentage_or_value, six.string_types) and
+                    percentage_or_value[-1] == '%'):
+                result = (int(percentage_or_value[:-1]) * total) // 100
+            else:
+                result = int(percentage_or_value)
+
+            if result >= 0:
+                return result
+            else:
+                # the negative number means the number of nodes
+                # those have to deploy successfully
+                return max(0, total + result)
+        except ValueError as e:
+            logger.error(
+                "Failed to handle fault_tolerance: '%s': %s. it is ignored",
+                percentage_or_value, e
+            )
+            # unattainable number
+            return total + 1

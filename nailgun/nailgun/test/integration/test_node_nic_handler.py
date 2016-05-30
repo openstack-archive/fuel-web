@@ -512,6 +512,7 @@ class TestHandlers(BaseIntegrationTest):
              consts.NODE_ERRORS.stop_deployment),
             (consts.NODE_STATUSES.provisioning, True),
             (consts.NODE_STATUSES.provisioned, True),
+            (consts.NODE_STATUSES.stopped, True),
             (consts.NODE_STATUSES.deploying, True),
             (consts.NODE_STATUSES.ready, True),
             (consts.NODE_STATUSES.removing, True))

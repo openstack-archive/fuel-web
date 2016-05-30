@@ -542,7 +542,7 @@ class ClusterTransaction(DeploymentTask):
                 role_resolver,
             )
 
-        directory, graph = lcm.TransactionSerializer.serialize(
+        directory, graph, metadata = lcm.TransactionSerializer.serialize(
             context,
             tasks,
             role_resolver,
@@ -550,7 +550,8 @@ class ClusterTransaction(DeploymentTask):
         logger.info("tasks serialization is finished.")
         return {
             "tasks_directory": directory,
-            "tasks_graph": graph
+            "tasks_metadata": metadata,
+            "tasks_graph": graph,
         }
 
 

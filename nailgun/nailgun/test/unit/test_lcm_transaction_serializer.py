@@ -64,6 +64,9 @@ class TestTransactionSerializer(BaseUnitTest):
                 'parameters': {},
                 'cross_depended_by': [{'name': 'task3'}]
             },
+            {
+                'id': 'group1', 'type': 'group', 'roles': ['controller']
+            }
         ]
 
         cls.nodes = [
@@ -123,7 +126,8 @@ class TestTransactionSerializer(BaseUnitTest):
     def test_serialize_integration(self):
         serialized = lcm.TransactionSerializer.serialize(
             self.context, self.tasks, self.role_resolver
-        )[1]
+        )
+        tasks_per_node = serialized[1]
         # controller
         self.datadiff(
             [
@@ -164,7 +168,7 @@ class TestTransactionSerializer(BaseUnitTest):
                 }
 
             ],
-            serialized['1'],
+            tasks_per_node['1'],
             ignore_keys=['parameters', 'fail_on_error'],
             compare_sorted=True,
         )
@@ -178,7 +182,7 @@ class TestTransactionSerializer(BaseUnitTest):
                     ],
                 }
             ],
-            serialized['2'],
+            tasks_per_node['2'],
             ignore_keys=['parameters', 'fail_on_error'],
             compare_sorted=True,
         )
@@ -192,9 +196,22 @@ class TestTransactionSerializer(BaseUnitTest):
                     ]
                 }
             ],
-            serialized['3'],
+            tasks_per_node['3'],
             ignore_keys=['parameters', 'fail_on_error'],
             compare_sorted=True,
+        )
+        tasks_metadata = serialized[2]
+        self.datadiff(
+            {
+                'fault_tolerance_groups': [
+                    {
+                        'name': 'group1',
+                        'node_ids': ['1'],
+                        'fault_tolerance': 2
+                    }
+                ]
+            },
+            tasks_metadata
         )
 
     def test_resolve_nodes(self):
@@ -271,7 +288,7 @@ class TestTransactionSerializer(BaseUnitTest):
             'cross_depends': [{'name': 'task2', 'role': 'self'}],
         })
         tasks.append({
-            'type': 'group', 'roles': 'custom',
+            'id': 'custom', 'type': 'group', 'roles': 'custom',
             'tasks': ['task4', 'task2']
         })
         serialized = lcm.TransactionSerializer.serialize(

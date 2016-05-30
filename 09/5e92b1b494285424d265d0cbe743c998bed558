@@ -1,0 +1,9 @@
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Workflow+1: Bulat Gaifullin <bgaifullin@mirantis.com>
+Code-Review+1: Alexey Shtokolov <ashtokolov@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 30 May 2016 16:56:51 +0000
+Reviewed-on: https://review.openstack.org/322887
+Project: openstack/fuel-web
+Branch: refs/heads/stable/mitaka

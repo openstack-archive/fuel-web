@@ -148,7 +148,10 @@ class NodeAssignmentValidator(AssignmentValidator):
             if "restrictions" in roles_metadata[role]:
                 restrictions = roles_metadata[role]['restrictions']
                 for condition in restrictions:
-                    expression = condition['condition']
+                    if isinstance(condition, dict):
+                        expression = condition['condition']
+                    else:
+                        expression = condition
 
                     if Expression(expression, models).evaluate():
                         message = condition.get('message', expression)

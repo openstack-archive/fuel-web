@@ -214,11 +214,13 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
     @fake_tasks()
-    @mock.patch('nailgun.lcm.transaction_serializer.settings',
-                LCM_CHECK_TASK_VERSION=True)
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings.LCM_CHECK_TASK_VERSION',
+        new=True
+    )
     @mock.patch('objects.Cluster.get_deployment_tasks')
     @mock.patch('objects.Cluster.is_propagate_task_deploy_enabled')
-    def test_adaptation_legacy_tasks(self, propagate_mock, tasks_mock, _):
+    def test_adaptation_legacy_tasks(self, propagate_mock, tasks_mock):
         tasks_mock.return_value = [
             {
                 'id': 'task', 'parameters': {}, 'type': 'puppet',

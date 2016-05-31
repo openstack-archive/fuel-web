@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 import yaml
 
 from nailgun import consts
+from nailgun import errors
 from nailgun import objects
 from nailgun.orchestrator.orchestrator_graph import GraphSolver
 from nailgun.test.base import BaseIntegrationTest
@@ -317,6 +318,37 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
         self.assertEqual(resp.json, cluster_tasks)
 
+    @mock.patch('nailgun.lcm.transaction_serializer.TransactionSerializer.'
+                'ensure_task_based_deploy_allowed')
+    def test_get_deployment_tasks_task_based(self, _):
+        resp = self.app.get(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            params={'start': 'task'},
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Both "start" and "end" parameters are not allowed for task-based '
+            'deployment.')
+
+        resp = self.app.get(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            params={'end': 'task'},
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Both "start" and "end" parameters are not allowed for task-based '
+            'deployment.')
+
     def test_deployment_tasks_equals_to_release(self):
         resp = self.app.get(
             reverse('ClusterDeploymentTasksHandler',
@@ -592,13 +624,19 @@ class TestReleasePluginsGraphHandler(BaseGraphTasksTests,
 class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
 
     def assert_passed_correctly(self, url, **kwargs):
-        with mock.patch.object(GraphSolver,
-                               'find_subgraph') as mfind_subgraph:
+        task_based_allowed = mock.patch(
+            'nailgun.lcm.transaction_serializer.TransactionSerializer.'
+            'ensure_task_based_deploy_allowed',
+            side_effect=errors.TaskBaseDeploymentNotAllowed)
+        find_subgraph = mock.patch.object(GraphSolver, 'find_subgraph')
+
+        with find_subgraph as mfind_subgraph, task_based_allowed:
             resp = self.app.get(
                 url,
                 params=kwargs,
                 headers=self.default_headers,
             )
+
         self.assertEqual(resp.status_code, 200)
         defaults = {'start': None, 'end': None}
         defaults.update(kwargs)

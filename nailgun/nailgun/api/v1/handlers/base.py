@@ -30,6 +30,7 @@ from nailgun.api.v1.validators.orchestrator_graph import \
 from nailgun import consts
 from nailgun.db import db
 from nailgun import errors
+from nailgun.lcm.transaction_serializer import TransactionSerializer
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
@@ -621,9 +622,20 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         # but the own release tasks is returned for release
         tasks = self.single.get_deployment_tasks(obj, graph_type=graph_type)
         if end or start:
-            graph = orchestrator_graph.GraphSolver(tasks)
-            return graph.filter_subgraph(
-                end=end, start=start, include=include).node.values()
+            try:
+                for t in tasks:
+                    TransactionSerializer.ensure_task_based_deploy_allowed(t)
+            except errors.TaskBaseDeploymentNotAllowed:
+                # if task based is not allowed, we can proceed with start/end
+                # parameters
+                graph = orchestrator_graph.GraphSolver(tasks)
+                return graph.filter_subgraph(
+                    end=end, start=start, include=include).node.values()
+            else:
+                raise self.http(400, (
+                    'Both "start" and "end" parameters are not allowed for '
+                    'task-based deployment.'))
+
         return tasks
 
     @content

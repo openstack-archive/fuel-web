@@ -262,6 +262,94 @@ class TestTransactionSerializer(BaseUnitTest):
             compare_sorted=True
         )
 
+    def test_resolve_node_ids(self):
+
+        tasks = list()
+        tasks.append({
+            'id': 'task3', 'roles': ['custom'],
+            'node_ids': ['1'],
+            'tasks': ['task7'],
+            'type': 'group',
+            'parameters': {},
+        })
+        tasks.append({
+            'id': 'task4', 'roles': ['controller', 'compute'],
+            'node_ids': ['1', '2'],
+            'type': 'puppet',
+            'parameters': {},
+        })
+        tasks.append({
+            'type': 'puppet', 'roles': 'compute',
+            'id': 'task5'
+        })
+        tasks.append({
+            'type': 'puppet', 'roles': 'compute', 'node_ids': ['4'],
+            'id': 'task6'
+        })
+        tasks.append({
+            'type': 'puppet',
+            'id': 'task7'
+        })
+        serialized = lcm.TransactionSerializer.serialize(
+            self.context, tasks, self.role_resolver
+        )[1]
+        self.datadiff(
+            [
+                {
+                    'id': 'task4', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {}
+
+                },
+                {
+                    'id': 'task7', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {}
+
+                }
+            ],
+            serialized['1'],
+            ignore_keys=['parameters', 'fail_on_error', 'type', 'requires'],
+            compare_sorted=True
+        )
+        self.datadiff(
+            [
+                {
+                    'id': 'task4', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {}
+
+                },
+                {
+                    'id': 'task5', 'type': 'skipped', 'fail_on_error': True,
+                    'parameters': {}
+
+                },
+                {
+                    'id': 'task6', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {}
+
+                },
+            ],
+            serialized['2'],
+            ignore_keys=['parameters', 'fail_on_error', 'type', 'requires'],
+            compare_sorted=True
+        )
+        self.datadiff(
+            [
+                {
+                    'id': 'task6', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {}
+
+                },
+                {
+                    'id': 'task7', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {}
+
+                }
+            ],
+            serialized['4'],
+            ignore_keys=['parameters', 'fail_on_error', 'type', 'requires'],
+            compare_sorted=True
+        )
+
     def test_tasks_expand_groups(self):
         tasks = list(self.tasks)
         tasks.append({

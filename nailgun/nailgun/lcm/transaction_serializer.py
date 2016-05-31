@@ -216,9 +216,12 @@ class TransactionSerializer(object):
                     yield node_id, task
 
         for task in groups:
-            node_ids = self.role_resolver.resolve(
-                task.get('roles', task.get('groups'))
-            )
+            node_ids = set(task.get('node_ids', []))
+            node_ids.union(self.role_resolver.resolve(
+                task.get('roles', task.get('groups'))))
+            # node_ids.extend(self.role_resolver.resolve(
+            #     task.get('roles', task.get('groups'))
+            # ))
             for sub_task_id in task.get('tasks', ()):
                 try:
                     sub_task = tasks_mapping[sub_task_id]
@@ -236,9 +239,14 @@ class TransactionSerializer(object):
             # all synchronisation tasks will run on sync node
             return [None]
         # TODO(bgaifullin) remove deprecated groups
-        return self.role_resolver.resolve(
-            task.get('roles', task.get('groups'))
+        selected_node_ids = set(task.get('node_ids', []))
+        role_based_node_ids = set(
+            self.role_resolver.resolve(
+                task.get('roles', task.get('groups')
+                         )
+            )
         )
+        return selected_node_ids.union(role_based_node_ids)
 
     def resolve_dependencies(self):
         """Resolves tasks dependencies."""

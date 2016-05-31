@@ -317,6 +317,35 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
         self.assertEqual(resp.json, cluster_tasks)
 
+    @mock.patch('nailgun.lcm.transaction_serializer.TransactionSerializer.'
+                'ensure_task_based_deploy_allowed', return_value=True)
+    def test_get_deployment_tasks_task_based(self, _):
+        resp = self.app.get(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}) + '?start=x',
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Both "start" and "end" parameters are not allowed for task-based '
+            'deployment.')
+
+        resp = self.app.get(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}) + '?end=x',
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Both "start" and "end" parameters are not allowed for task-based '
+            'deployment.')
+
     def test_deployment_tasks_equals_to_release(self):
         resp = self.app.get(
             reverse('ClusterDeploymentTasksHandler',

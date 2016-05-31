@@ -363,6 +363,22 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertItemsEqual(
             files, serialized['parameters']['files'])
 
+    def test_copy_keys_no_nodes(self):
+        task_config = {
+            'id': 'copy_keys',
+            'type': 'copy_files',
+            'role': '*',
+            'parameters': {
+                'files': [{
+                    'src': '/var/www/nailgun/keys/{CLUSTER_ID}/nova.key',
+                    'dst': '/var/lib/astute/nova.key'}],
+                'permissions': '0600',
+                'dir_permissions': '0700'}}
+        task = tasks_serializer.CopyKeys(
+            task_config, self.cluster, [])
+        with self.assertRaises(StopIteration):
+            next(task.serialize())
+
     def test_generate_keys(self):
         task_config = {
             'id': 'generate_keys',

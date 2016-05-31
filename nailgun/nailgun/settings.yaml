@@ -887,32 +887,43 @@ DUMP:
       - type: command
         command: pcs status
         to_file: pcs_status.txt
+        sudo: True
       - type: file
         path: /var/log/pacemaker.log
+        sudo: True
       - type: command
         command: rabbitmqctl report
+        sudo: True
         to_file: rabbitmqctl_report.txt
       - type: file
         path: /var/log/neutron/neutron-ns-metadata-proxy*.log
+        sudo: True
       - type: command
         command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} ip a; done"
         to_file: ip_a_ns.txt
+        sudo: False
       - type: command
         command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} ip r; done"
         to_file: ip_r_ns.txt
+        sudo: False
       - type: command
         command: "for ns in $(ip netns list); do echo Namespace: ${ns}; ip netns exec ${ns} netstat -anp; done"
         to_file: netstat_ns.txt
+        sudo: False
       - type: dir
         path: /etc/mysql
+        sudo: True
       - type: dir
         path: /var/log/mysql
+        sudo: True
       - type: command
         command: "ls -la /var/lib/mysql/ /var/run/mysqld/"
         to_file: mysql_resources.txt
+        sudo: True
       - type: command
         command: "/usr/bin/haproxy-status.sh"
         to_file: haproxy_status.txt
+        sudo: True
 
     slave:
       hosts: []
@@ -920,174 +931,242 @@ DUMP:
       objects:
       - type: file
         path: /etc/astute.yaml
+        sudo: True
       - type: dir
         path: /etc/hiera
+        sudo: True
       - type: file
         path: /var/log/puppet.log
+        sudo: True
       - type: file
         path: /root/ceph*
+        sudo: True
       - type: file
         path: /root/anaconda*
+        sudo: True
       - type: file
         path: /root/*.log
+        sudo: True
       - type: file
         path: /root/*.ks
+        sudo: True
       - type: file
         path: /etc/apache2*
+        sudo: True
       - type: file
         path: /etc/httpd*
+        sudo: True
       - type: file
         path: /etc/ceph*
+        sudo: True
       - type: file
         path: /etc/keystone*
+        sudo: True
       - type: file
         path: /etc/nova*
+        sudo: True
       - type: file
         path: /etc/neutron*
+        sudo: True
       - type: file
         path: /etc/horizon*
+        sudo: True
       - type: file
         path: /etc/cinder*
+        sudo: True
       - type: file
         path: /etc/glance*
+        sudo: True
       - type: file
         path: /etc/swift*
+        sudo: True
       - type: file
         path: /etc/haproxy*
+        sudo: True
       - type: file
         path: /var/log/ceph
+        sudo: True
       - type: file
         path: /var/lib/puppet/state/last_run_summary.yaml
+        sudo: True
       - type: file
         path: /etc/resolv.conf
+        sudo: True
       - type: file
         path: /etc/mcollective/server.cfg
+        sudo: True
       - type: dir
         path: /var/run/pcap_dir
+        sudo: True
       - type: file
         path: /var/log/atop/atop_current
+        sudo: True
       - type: file
         path: /var/log/cron.log
+        sudo: True
       - type: command
         command: df -h
         to_file: df.txt
+        sudo: True
       - type: command
         command: mount
         to_file: mount.txt
+        sudo: True
       - type: command
         command: iptables -t nat -S
         to_file: iptables_nat.txt
+        sudo: True
       - type: command
         command: iptables -t filter -S
         to_file: iptables_filter.txt
+        sudo: True
       - type: command
         command: dmidecode
         to_file: dmidecode.txt
+        sudo: True
       - type: command
         command: uptime
         to_file: uptime.txt
+        sudo: False
       - type: command
         command: ps auxwwf
         to_file: ps.txt
+        sudo: True
       - type: command
         command: pvdisplay
         to_file: lvm_pvdisplay.txt
+        sudo: True
       - type: command
         command: vgdisplay
         to_file: lvm_vgdisplay.txt
+        sudo: True
       - type: command
         command: lvdisplay
         to_file: lvm_lvdisplay.txt
+        sudo: True
       - type: command
         command: ip a
         to_file: ip_a.txt
+        sudo: False
       - type: command
         command: ip r
         to_file: ip_r.txt
+        sudo: False
       - type: command
         command: arp -an
         to_file: arp.txt
+        sudo: True
       - type: command
         command: netstat -anp
         to_file: netstat.txt
+        sudo: True
       - type: command
         command: brctl show
         to_file: brctl_show.txt
+        sudo: True
       - type: command
         command: rpm -qa
         to_file: centos_installed_rpms.txt
+        sudo: True
       - type: command
         command: yum repolist
         to_file: centos_repo_list.txt
+        sudo: True
       - type: command
         command: env COLUMNS=500 dpkg -l|cat
         to_file: ubuntu_installed_debs.txt
+        sudo: True
       - type: command
         command: apt-cache policy
         to_file: ubuntu_repo_list.txt
+        sudo: True
       - type: command
         command: sysctl -a
         to_file: sysctl.txt
+        sudo: True
       - type: command
         command: dmsetup info -c --nameprefixes --noheadings -o blkdevname,subsystem,blkdevs_used,name,uuid
         to_file: dmsetup_info.txt
+        sudo: True
 
       - type: dir
         path: /var/lib/cloud
+        sudo: True
       - type: file
         path: /var/log/cloud-init*.log
+        sudo: True
 
       - type: dir
         path: /etc/sysconfig/network-scripts
+        sudo: True
       - type: dir
         path: /etc/network/interfaces.d
+        sudo: True
       - type: file
         path: /etc/network/interfaces
+        sudo: True
       - type: file
         path: /root/post-partition.log
+        sudo: True
       - type: command
         command: blkid -o list
         to_file: blkid_o_list.txt
+        sudo: True
       - type: command
         command: ceph health
         to_file: ceph_health.txt
+        sudo: True
       - type: command
         command: ceph -s
         to_file: ceph_s.txt
+        sudo: True
       - type: command
         command: ceph osd tree
         to_file: ceph_osd_tree.txt
+        sudo: True
       - type: command
         command: cat /proc/interrupts
         to_file: proc_interrupts.txt
+        sudo: True
       - type: command
         command: uname -a
         to_file: uname_a.txt
+        sudo: True
       - type: command
         command: lsmod
         to_file: lsmod.txt
+        sudo: True
       - type: file
         path: /etc/*-release
       - type: command
+        sudo: True
         command: dmesg
         to_file: dmesg.txt
+        sudo: True
 
       - path: /var/log/libvirt/qemu/instance*.log
         type: file
+        sudo: True
       - path: /var/log/libvirt/libvirtd.log
         type: file
+        sudo: True
       - path: /var/log/neutron
         type: dir
+        sudo: True
       - path: /var/log/nova
         type: dir
+        sudo: True
       - path: /var/log/*-all.log
         type: file
+        sudo: True
       - path: /var/log/syslog
         type: file
+        sudo: True
       - exclude:
         - '/disk*'
         path: /var/lib/nova/instances/*-*
         type: dir
+        sudo: True
 
 # performance tests settings
 PERFORMANCE_TESTS_RUN_NUMBER: 10

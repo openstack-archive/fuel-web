@@ -1428,8 +1428,8 @@ class NodeAttributes(object):
         numa_nodes_len = len(node.meta['numa_topology']['numa_nodes'])
 
         return {
-            'ovs_socket_mem': ",".join(
-                itertools.repeat(str(dpdk_memory), numa_nodes_len))}
+            'ovs_socket_mem':
+                list(itertools.repeat(dpdk_memory, numa_nodes_len))}
 
     @classmethod
     def distribute_hugepages(cls, node, attributes=None):

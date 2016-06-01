@@ -144,10 +144,18 @@ class TestPluginBase(base.BaseTestCase):
 
     def test_sync_metadata_to_db(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        tasks = self.env.get_default_plugin_tasks()
+
+        mocked_metadata = {
+            self._find_path('metadata'): plugin_metadata,
+            self._find_path('environment_config'): attributes_metadata,
+            self._find_path('tasks'): tasks,
+        }
 
         with mock.patch.object(
                 self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.return_value = plugin_metadata
+            load_conf.side_effect = lambda key: mocked_metadata[key]
             self.plugin_adapter.sync_metadata_to_db()
 
             for key, val in six.iteritems(plugin_metadata):

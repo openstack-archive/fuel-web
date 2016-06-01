@@ -277,6 +277,10 @@ class TestPluginsApi(BasePluginTest):
                     "label": "label"
                 }
             }, **self.sample_plugin)
+
+        self.mocked_metadata['environment_config.yaml'] = {
+            'attributes': sample['attributes_metadata']
+        }
         self.create_plugin(sample=sample).json_body
         cluster = self.create_cluster()
         editable = self.default_attributes(cluster).json_body['editable']

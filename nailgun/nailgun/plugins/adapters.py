@@ -63,6 +63,13 @@ class PluginAdapterBase(object):
         metadata = self._load_config(metadata_file_path) or {}
         Plugin.update(self.plugin, metadata)
 
+        db_config_metadata_mapping = {
+            'attributes_metadata': self.environment_config_name,
+            'tasks': self.task_config_name
+        }
+
+        self._update_plugin(db_config_metadata_mapping)
+
     def _load_config(self, config):
         if os.access(config, os.R_OK):
             with open(config, "r") as conf:
@@ -74,6 +81,21 @@ class PluginAdapterBase(object):
                         'Problem with loading YAML file {0}'.format(config))
         else:
             logger.warning("Config {0} is not readable.".format(config))
+
+    def _update_plugin(self, mapping):
+        data_to_update = {}
+
+        for attribute, config in six.iteritems(mapping):
+            config_file_path = os.path.join(self.plugin_path, config)
+            attribute_data = self._load_config(config_file_path)
+            # Plugin columns have constraints for nullable data, so
+            # we need to check it
+            if attribute_data:
+                if attribute == 'attributes_metadata':
+                    attribute_data = attribute_data['attributes']
+                data_to_update[attribute] = attribute_data
+
+        Plugin.update(self.plugin, data_to_update)
 
     def _load_tasks(self, config):
         data = self._load_config(config)
@@ -259,30 +281,13 @@ class PluginAdapterV3(PluginAdapterV2):
         super(PluginAdapterV3, self).sync_metadata_to_db()
 
         db_config_metadata_mapping = {
-            'attributes_metadata': self.environment_config_name,
             'roles_metadata': self.node_roles_config_name,
             'volumes_metadata': self.volumes_config_name,
             'network_roles_metadata': self.network_roles_config_name,
             'deployment_tasks': self.deployment_tasks_config_name,
-            'tasks': self.task_config_name
         }
 
         self._update_plugin(db_config_metadata_mapping)
-
-    def _update_plugin(self, mapping):
-        data_to_update = {}
-
-        for attribute, config in six.iteritems(mapping):
-            config_file_path = os.path.join(self.plugin_path, config)
-            attribute_data = self._load_config(config_file_path)
-            # Plugin columns have constraints for nullable data, so
-            # we need to check it
-            if attribute_data:
-                if attribute == 'attributes_metadata':
-                    attribute_data = attribute_data['attributes']
-                data_to_update[attribute] = attribute_data
-
-        Plugin.update(self.plugin, data_to_update)
 
 
 class PluginAdapterV4(PluginAdapterV3):

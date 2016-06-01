@@ -299,7 +299,7 @@ class TestDeploymentAttributesSerialization90(
         serialized_node = serialized_for_astute[0]
 
         self.assertEquals(
-            "128,128,128",
+            [128, 128, 128],
             serialized_node['dpdk']['ovs_socket_mem'])
         self.assertTrue(serialized_node['nova']['enable_hugepages'])
 

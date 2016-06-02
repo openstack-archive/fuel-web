@@ -373,6 +373,13 @@ class Cluster(NailgunObject):
         return cls.get_attributes(instance, all_plugins_versions)['editable']
 
     @classmethod
+    def get_deployment_metadata(cls, instance):
+        """Gets the deployment metadata."""
+
+        # TODO(bgaifullin) Allow plugins to extend this data
+        return instance.attributes.editable.get('deployment', {})
+
+    @classmethod
     def update_attributes(cls, instance, data):
         PluginManager.process_cluster_attributes(instance, data['editable'])
         for key, value in six.iteritems(data):

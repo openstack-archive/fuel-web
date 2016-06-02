@@ -92,12 +92,6 @@ class Nailgun(BaseDataDriver):
         return filter(disk_filter, self.partition_data())
 
     @property
-    def small_ks_disks(self):
-        """Get those disks which are smaller than 2T
-        """
-        return [d for d in self.ks_disks if d['size'] <= 2097152]
-
-    @property
     def ks_vgs(self):
         vg_filter = lambda x: x['type'] == 'vg'
         return filter(vg_filter, self.partition_data())
@@ -240,13 +234,7 @@ class Nailgun(BaseDataDriver):
                         LOG.debug('Partition name: %s' % prt.name)
 
                     elif volume.get('mount') == '/boot' \
-                            and not self._boot_partition_done \
-                            and (disk in self.small_ks_disks or
-                                 not self.small_ks_disks):
-                        # NOTE(kozhukalov): On some hardware GRUB is not able
-                        # to see disks larger than 2T due to firmware bugs,
-                        # so we'd better avoid placing /boot on such
-                        # huge disks if it is possible.
+                            and not self._boot_partition_done:
                         LOG.debug('Adding /boot partition on disk %s: '
                                   'size=%s', disk['name'], volume['size'])
                         prt = parted.add_partition(size=volume['size'])

@@ -453,9 +453,33 @@ class ClusterTransaction(DeploymentTask):
             return {}
 
         master_state = deployment_info[consts.MASTER_NODE_UID]
-        cluster_state = master_state.copy()
-        cluster_state.pop('roles')
-        cluster_state.pop('uid')
+        # because there is no difference between cluster state and
+        # node state, return only properties, that can be included to cluster
+        # state, if additional properties will be need, those shall be
+        # added to this tuple. Do not return whole master node state, because
+        # it breaks the changes evaluation
+
+        keys_for_cluster = (
+            'deployment_mode',
+            'deployment_id',
+            'openstack_version',
+            'fuel_version',
+            'nodes',
+            ('network_metadata', 'nodes')
+        )
+        cluster_state = {
+            'master': master_state
+        }
+        for key in keys_for_cluster:
+            if isinstance(key, tuple):
+                dst = cluster_state
+                src = master_state
+                for sub_key in key[:-1]:
+                    dst = dst.setdefault(sub_key, {})
+                    src = src[sub_key]
+                dst[key[-1]] = src[key[-1]]
+            else:
+                cluster_state[key] = master_state[key]
         return cluster_state
 
     @classmethod

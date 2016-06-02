@@ -324,3 +324,25 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+
+def dict_shrink(origin, keys):
+    """Makes new list that contains only specified keys.
+
+    :param origin: the original dict
+    :param keys: the list of keys, if key is list,
+                 the recursive filtering will be used.
+    :return: new dict
+    :raises: KeyError
+    """
+    result = {}
+    for key in keys:
+        if isinstance(key, list):
+            dst = result
+            src = origin
+            for sub_key in key[:-1]:
+                dst = dst.setdefault(sub_key, {})
+                src = src[sub_key]
+            dst[key[-1]] = src[key[-1]]
+        else:
+            result[key] = origin[key]
+    return result

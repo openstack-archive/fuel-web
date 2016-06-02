@@ -22,6 +22,7 @@ from nailgun.test import base
 from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import dict_merge
+from nailgun.utils import dict_shrink
 from nailgun.utils import dict_update
 from nailgun.utils import flatten
 from nailgun.utils import get_lines
@@ -150,6 +151,17 @@ class TestUtils(base.BaseIntegrationTest):
 
         self.assertRaises(ValueError, parse_bool, 'tru')
         self.assertRaises(ValueError, parse_bool, 'fals')
+
+    def test_dict_shrink(self):
+        self.assertEqual({}, dict_shrink({'a': 1}, []))
+        self.assertEqual(
+            {'a': 1, 'b': {'c': 2}},
+            dict_shrink(
+                {'a': 1, 'b': {'c': 2, 'e': 3}, 'd': 3},
+                ['a', ['b', 'c']]
+            )
+        )
+        self.assertRaises(KeyError, dict_shrink, {}, ['a'])
 
 
 class TestTraverse(base.BaseUnitTest):

@@ -54,6 +54,7 @@ from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
+from nailgun import utils
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.role_resolver import RoleResolver
@@ -453,10 +454,23 @@ class ClusterTransaction(DeploymentTask):
             return {}
 
         master_state = deployment_info[consts.MASTER_NODE_UID]
-        cluster_state = master_state.copy()
-        cluster_state.pop('roles')
-        cluster_state.pop('uid')
-        return cluster_state
+
+        # We do not have clear boundary between node and cluster attributes,
+        # so the best way is adding to cluster state only those attributes
+        # that are actually needed. for example it is list of nodes and
+        # product version. If other attributes will be need, it can be added
+        # to this list as well.
+
+        keys_for_cluster = [
+            'deployment_mode',
+            'deployment_id',
+            'openstack_version',
+            'fuel_version',
+            'nodes',
+            ['network_metadata', 'nodes']
+        ]
+
+        return utils.dict_shrink(master_state, keys_for_cluster)
 
     @classmethod
     def get_current_state(cls, cluster, nodes, tasks):
@@ -539,8 +553,8 @@ class ClusterTransaction(DeploymentTask):
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )
-        # Added cluster state
-        expected_state[None] = cls.get_cluster_state(expected_state)
+        # Added empty state for sync-points
+        expected_state[None] = {}
 
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("tasks serialization is started.")

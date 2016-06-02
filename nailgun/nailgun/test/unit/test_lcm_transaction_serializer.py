@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+import multiprocessing.dummy
 
 from nailgun import consts
 from nailgun.errors import errors
@@ -391,3 +392,15 @@ class TestTransactionSerializer(BaseUnitTest):
             {'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
              'version': '1.0.0', 'id': 'test'}
         )
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings'
+        '.LCM_SERIALIZERS_CONCURRENCY_FACTOR',
+        new=2
+    )
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing',
+        new=multiprocessing.dummy
+    )
+    def test_multi_processing_serialization(self):
+        self.test_serialize_integration()

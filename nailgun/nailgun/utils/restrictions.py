@@ -194,7 +194,9 @@ class RestrictionBase(object):
             # Filter which restriction satisfied condition
             satisfied = filter(
                 lambda item: Expression(
-                    item.get('condition'), models, strict=strict).evaluate(),
+                    item.get('condition'),
+                    models,
+                    strict=item.get('strict', strict)).evaluate(),
                 filterd_by_action_restrictions)
 
         return {

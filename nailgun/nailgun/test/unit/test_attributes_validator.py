@@ -455,3 +455,29 @@ class TestBasicAttributesValidator(base_test.BaseTestCase):
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
             yaml.load(attrs))
+
+    def test_restriction_strict(self):
+        context = {'context': {'existing': {'value': 13}}}
+
+        for strict in (False, True):
+            attrs = {
+                'section': {
+                    'subsection': {
+                        'restrictions': [{
+                            'condition': 'context:nonexisting.value == 42',
+                            'strict': strict,
+                        }],
+                    },
+                },
+            }
+
+            if strict:
+                assert_fn = self.assertRaises
+            else:
+                assert_fn = self.assertNotRaises
+
+            assert_fn(
+                TypeError,
+                base.BasicAttributesValidator.validate_attributes,
+                attrs,
+                models=context)

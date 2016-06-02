@@ -530,7 +530,7 @@ class TestTaskManagers(BaseIntegrationTest):
                'and try again.'.format(offline_node.full_name))
         self.assertEqual(supertask.message, msg)
 
-        self.assertEqual(cluster.status, 'error')
+        self.assertNotEqual(cluster.status, consts.CLUSTER_STATUSES.error)
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_redeployment_works(self):

@@ -632,8 +632,15 @@ class DeploymentHASerializer10(DeploymentHASerializer90):
 
         return attrs
 
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return neutron_serializers.NeutronNetworkTemplateSerializer90
+        else:
+            return neutron_serializers.NeutronNetworkDeploymentSerializer10
 
-class DeploymentLCMSerializer(DeploymentHASerializer90):
+
+class DeploymentLCMSerializer(DeploymentHASerializer10):
     _configs = None
     _priorities = {
         consts.OPENSTACK_CONFIG_TYPES.cluster: 0,

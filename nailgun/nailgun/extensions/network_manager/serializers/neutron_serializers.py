@@ -36,6 +36,18 @@ from nailgun.settings import settings
 from nailgun import utils
 
 
+def _is_ironic_multitenancy_enabled(cluster):
+    """Check if ironic multitenancy is neabled."""
+    ironic_settings = cluster.attributes.editable.get('ironic_settings')
+    if ironic_settings:
+        ironic_prov_network = ironic_settings.get('ironic_provision_network')
+        if ironic_prov_network:
+           return ironic_prov_network['value']
+
+    return False
+    
+
+
 class NeutronNetworkDeploymentSerializer(
     NetworkDeploymentSerializer,
     MellanoxMixin
@@ -1574,3 +1586,57 @@ class NeutronNetworkTemplateSerializer90(
     NeutronNetworkTemplateSerializer80
 ):
     pass
+
+class GenerateL23Mixin10(
+    GenerateL23Mixin80):
+    
+    @classmethod
+    def _generate_baremetal_network(cls, cluster):
+        ng = objects.NetworkGroup.get_from_node_group_by_name(
+            objects.Cluster.get_default_group(cluster).id, 'baremetal')
+
+        network_type = 'flat'
+        segment_id = None
+        shared = True
+        if _is_ironic_multitenancy_enabled(cluster):
+            network_type='vlan'
+            segment_id = ng.vlan_start
+            shared = False
+            network_type = 'vlan'
+        return {
+            "L3": {
+                "subnet": ng.cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": cluster.network_config.baremetal_gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_range),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": network_type,
+                "segment_id": segment_id,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": objects.Cluster.get_creds(
+                cluster)['tenant']['value'],
+            "shared": shared
+        }
+
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = super(GenerateL23Mixin10, cls).generate_predefined_networks(
+            cluster
+        )
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets
+
+class NeutronNetworkDeploymentSerializer10(
+    GenerateL23Mixin10,
+    NeutronNetworkDeploymentSerializer90
+):
+    pass
+    
+

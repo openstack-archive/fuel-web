@@ -1205,6 +1205,17 @@
           method:
             type: "hidden"
             value: "image"
+        deployment:
+          metadata:
+            label: "Deployment"
+            weight: 80
+            group: "general"
+            restrictions:
+              - condition: "true"
+                action: "hide"
+          cluster_attributes:
+            - 'nodes'
+            - ['network_metadata', 'nodes']
         cgroups:
           metadata:
             label: "Cgroups conguration for services"

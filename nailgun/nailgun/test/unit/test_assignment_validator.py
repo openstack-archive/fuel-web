@@ -83,6 +83,49 @@ class TestNodeAssignmentValidator(BaseUnitTest):
             self.validator.check_roles_requirement(
                 roles, roles_metadata, self.models)
 
+    def test_check_roles_requirement_in_feature_group(self):
+        self.models['version'] = {
+            'feature_groups': ['advanced']
+        }
+        roles = ['test']
+        roles_metadata = {
+            'test': {
+                'restrictions': [
+                    {
+                        'condition': "not "
+                                     "('advanced' in version:feature_groups)",
+                        'message': 'error'
+                    }
+                ]
+            }
+        }
+
+        self.validator.check_roles_requirement(
+            roles, roles_metadata, self.models)
+
+    def test_check_roles_requirement_not_in_feature_group(self):
+        self.models['version'] = {
+            'feature_groups': []
+        }
+        roles = ['test']
+
+        # disabled 'advanced' feature group
+        with self.assertRaises(errors.InvalidData):
+            roles_metadata = {
+                'test': {
+                    'restrictions': [
+                        {
+                            'condition': "not ('advanced' in "
+                                         "version:feature_groups)",
+                            'message': 'error'
+                        }
+                    ]
+                }
+            }
+
+            self.validator.check_roles_requirement(
+                roles, roles_metadata, self.models)
+
     def test_validate_collection_update_schema_requirements(self):
         self.assertRaises(
             errors.InvalidData,

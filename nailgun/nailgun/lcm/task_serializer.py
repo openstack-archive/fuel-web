@@ -86,7 +86,7 @@ class Context(object):
     def get_legacy_interpreter(self, node_id):
         deployment_info = self._transaction.get_new_data(node_id)
         context = {
-            'cluster': deployment_info['cluster'],
+            'cluster': deployment_info.get('cluster', {}),
             'settings': deployment_info
         }
 
@@ -108,12 +108,12 @@ class Context(object):
         return evaluate
 
     def get_formatter_context(self, node_id):
-        deployment_info = self._transaction.get_new_data(node_id)
+        data = self._transaction.get_new_data(node_id)
         return {
-            'CLUSTER_ID': deployment_info['cluster']['id'],
-            'OPENSTACK_VERSION': deployment_info['openstack_version'],
+            'CLUSTER_ID': data.get('cluster', {}).get('id'),
+            'OPENSTACK_VERSION': data.get('openstack_version'),
             'MASTER_IP': settings.MASTER_IP,
-            'CN_HOSTNAME': deployment_info['public_ssl']['hostname'],
+            'CN_HOSTNAME': data.get('public_ssl', {}).get('hostname'),
             'SETTINGS': settings
         }
 

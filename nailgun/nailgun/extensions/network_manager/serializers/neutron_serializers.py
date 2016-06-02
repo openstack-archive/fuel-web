@@ -1304,6 +1304,10 @@ class GenerateL23Mixin80(object):
     def _generate_baremetal_network(cls, cluster):
         ng = objects.NetworkGroup.get_from_node_group_by_name(
             objects.Cluster.get_default_group(cluster).id, 'baremetal')
+        ironic_settings = cluster.attributes.editable['ironic_settings']
+        network_type='flat'
+        if ironic_settings['ironic_provision_network']['value']:
+            network_type='vlan'
         return {
             "L3": {
                 "subnet": ng.cidr,
@@ -1314,14 +1318,14 @@ class GenerateL23Mixin80(object):
                 "enable_dhcp": True
             },
             "L2": {
-                "network_type": "flat",
-                "segment_id": None,
+                "network_type": network_type,
+                "segment_id": ng.vlan_start,
                 "router_ext": False,
                 "physnet": "physnet-ironic"
             },
             "tenant": objects.Cluster.get_creds(
                 cluster)['tenant']['value'],
-            "shared": True
+            "shared": not ironic_settings['ironic_provision_network']['value']
         }
 
     @classmethod

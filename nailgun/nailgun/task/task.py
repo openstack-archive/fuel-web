@@ -54,6 +54,7 @@ from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
+from nailgun import utils
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.role_resolver import RoleResolver
@@ -442,10 +443,11 @@ class ClusterTransaction(DeploymentTask):
         return node.status in cls.node_statuses_for_redeploy
 
     @classmethod
-    def get_cluster_state(cls, deployment_info):
+    def get_cluster_state(cls, deployment_info, keys):
         """Extracts cluster state from deployment info.
 
         :param deployment_info: the deployment info
+        :param keys: the list of keys to select attributes
         :return: the cluster state
         """
         # the cluster state can be produced from master node state
@@ -453,10 +455,7 @@ class ClusterTransaction(DeploymentTask):
             return {}
 
         master_state = deployment_info[consts.MASTER_NODE_UID]
-        cluster_state = master_state.copy()
-        cluster_state.pop('roles')
-        cluster_state.pop('uid')
-        return cluster_state
+        return utils.select_keys(master_state, keys)
 
     @classmethod
     def get_current_state(cls, cluster, nodes, tasks):
@@ -468,6 +467,14 @@ class ClusterTransaction(DeploymentTask):
         :returns: current state {task_name: {node_uid: <astute.yaml>, ...},}
 
         """
+        # We do not have clear boundary between node and cluster attributes,
+        # so the best way is adding to cluster state only those attributes
+        # that are actually needed. for example it is list of nodes and
+        # product version. If other attributes will be need, it can be added
+        # to this list as well.
+        cluster_attribute_names = objects.Cluster.get_deployment_metadata(
+            cluster).get('cluster_attributes', [])
+
         nodes = {n.uid: n for n in nodes}
         nodes[consts.MASTER_NODE_UID] = None
         tasks_names = {
@@ -487,7 +494,9 @@ class ClusterTransaction(DeploymentTask):
             deployment_info = objects.Transaction.get_deployment_info(
                 transaction
             )
-            cluster_state = cls.get_cluster_state(deployment_info)
+            cluster_state = cls.get_cluster_state(
+                deployment_info, cluster_attribute_names
+            )
             for task_name, rows in groupby(data, lambda x: x[2]):
                 # exclude existed task
                 tasks_names.discard(task_name)
@@ -506,7 +515,8 @@ class ClusterTransaction(DeploymentTask):
         cluster_state = cls.get_cluster_state(
             objects.Transaction.get_deployment_info(
                 objects.TransactionCollection.get_last_succeed_run(cluster)
-            )
+            ),
+            cluster_attribute_names
         )
         # attach the cluster state from last deployment info to all left tasks
         for task_name in tasks_names:
@@ -539,8 +549,8 @@ class ClusterTransaction(DeploymentTask):
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )
-        # Added cluster state
-        expected_state[None] = cls.get_cluster_state(expected_state)
+        # Added empty state for sync-points
+        expected_state[None] = {}
 
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("tasks serialization is started.")

@@ -73,11 +73,11 @@ class TestClusterTransaction(BaseTestCase):
         }
         self.assertEqual(
             {'key': 'value'},
-            ClusterTransaction.get_cluster_state(deployments_info)
+            ClusterTransaction.get_cluster_state(deployments_info, ['key'])
         )
 
-        self.assertEqual({}, ClusterTransaction.get_cluster_state(None))
-        self.assertEqual({}, ClusterTransaction.get_cluster_state({}))
+        self.assertEqual({}, ClusterTransaction.get_cluster_state(None, []))
+        self.assertEqual({}, ClusterTransaction.get_cluster_state({}, []))
 
     def test_is_node_for_redeploy(self):
         self.assertFalse(ClusterTransaction.is_node_for_redeploy(None))
@@ -111,6 +111,9 @@ class TestClusterTransaction(BaseTestCase):
                 'version': 'mitaka-9.0'
             },
         )
+        cluster.attributes.editable['deployment']['cluster_attributes'] = [
+            'version'
+        ]
 
         nodes_ids = [n.uid for n in cluster.nodes]
         nodes_ids_with_master = nodes_ids + [consts.MASTER_NODE_UID]
@@ -155,7 +158,7 @@ class TestClusterTransaction(BaseTestCase):
             # it does not have info for node[1], see comment above
             tasks[0]['id']: {
                 None: ClusterTransaction.get_cluster_state(
-                    transactions[1].deployment_info
+                    transactions[1].deployment_info, ['version']
                 ),
                 nodes_ids[0]: transactions[1].deployment_info[nodes_ids[0]]
             },
@@ -163,13 +166,13 @@ class TestClusterTransaction(BaseTestCase):
             # there is no state for node 2, because it is provisioned
             tasks[3]['id']: {
                 None: ClusterTransaction.get_cluster_state(
-                    transactions[2].deployment_info
+                    transactions[2].deployment_info, ['version']
                 )
             },
             # contains only default state
             tasks[4]['id']: {
                 None: ClusterTransaction.get_cluster_state(
-                    transactions[0].deployment_info
+                    transactions[0].deployment_info, ['version']
                 ),
             },
         }

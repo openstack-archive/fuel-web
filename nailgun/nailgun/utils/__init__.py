@@ -324,3 +324,25 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+
+def select_keys(src, keys):
+    """Makes new list that contains only specified keys.
+
+    :param src: the source dict
+    :param keys: the list of keys, if key is list,
+                 the recursive filtering will be used.
+    :return: new dict
+    :raises: KeyError
+    """
+    result = {}
+    for key in keys:
+        if isinstance(key, list):
+            d = result
+            s = src
+            for sub_key in key[:-1]:
+                d = d.setdefault(sub_key, {})
+                s = s[sub_key]
+            d[key[-1]] = s[key[-1]]
+        else:
+            result[key] = src[key]
+    return result

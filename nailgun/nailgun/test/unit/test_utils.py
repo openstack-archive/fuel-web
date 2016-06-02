@@ -27,6 +27,7 @@ from nailgun.utils import flatten
 from nailgun.utils import get_lines
 from nailgun.utils import grouper
 from nailgun.utils import parse_bool
+from nailgun.utils import select_keys
 from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
 
@@ -150,6 +151,17 @@ class TestUtils(base.BaseIntegrationTest):
 
         self.assertRaises(ValueError, parse_bool, 'tru')
         self.assertRaises(ValueError, parse_bool, 'fals')
+
+    def test_select_keys(self):
+        self.assertEqual({}, select_keys({'a': 1}, []))
+        self.assertEqual(
+            {'a': 1, 'b': {'c': 2}},
+            select_keys(
+                {'a': 1, 'b': {'c': 2, 'e': 3}, 'd': 3},
+                ['a', ['b', 'c']]
+            )
+        )
+        self.assertRaises(KeyError, select_keys, {}, ['a'])
 
 
 class TestTraverse(base.BaseUnitTest):

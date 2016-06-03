@@ -33,25 +33,6 @@ class TestTaskSerializerContext(BaseUnitTest):
                     'openstack_version': 'liberty-9.0',
                     'public_ssl': {'hostname': 'localhost'},
                     'attribute': '1'
-                },
-                '2': {'cluster': {'id': 1}}
-            },
-            {
-                'task1': {
-                    '1': {
-                        'cluster': {'id': 1},
-                        'attribute': '2'
-                    },
-                    None: {
-                        'cluster': {'id': 1},
-                        'attribute': '3'
-                    }
-                },
-                'task2': {
-                    None: {
-                        'cluster': {'id': 1},
-                        'attribute': '4'
-                    }
                 }
             }
         )
@@ -116,22 +97,6 @@ class TestTaskSerializerContext(BaseUnitTest):
             },
             self.context.get_formatter_context('1')
         )
-
-    def test_get_yaql_interpreter(self):
-        cases = [
-            {'expected': '2', 'node_id': '1', 'task_id': 'task1'},
-            {'expected': '3', 'node_id': '2', 'task_id': 'task1'},
-            {'expected': '4', 'node_id': '1', 'task_id': 'task2'}
-        ]
-        for case in cases:
-            interpreter = self.context.get_yaql_interpreter(
-                case['node_id'], case['task_id']
-            )
-            self.assertEqual(
-                case['expected'], interpreter('old($.attribute)')
-            )
-        interpreter = self.context.get_yaql_interpreter('1', 'task3')
-        self.assertTrue(interpreter('old($.attribute).isUndef()'))
 
 
 class TestDefaultTaskSerializer(BaseUnitTest):

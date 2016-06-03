@@ -852,8 +852,6 @@ DUMP:
       - type: command
         command: fuel-bootstrap list
         to_file: fuel_bootstrap_list.txt
-      - type: file
-        path: /var/log/fuel-bootstrap-image-build.log
       - type: dir
         path: /etc/sysconfig/network-scripts
       - type: file

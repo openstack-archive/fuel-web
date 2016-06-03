@@ -15,15 +15,11 @@
 #    under the License.
 
 import datetime
-import mock
 
-from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.task.manager import DeploymentCheckMixin
-from nailgun.task.task import ClusterTransaction
-
 from nailgun.test.base import BaseTestCase
 
 
@@ -61,117 +57,3 @@ class TestDeploymentCheckMixin(BaseTestCase):
                 errors.DeploymentAlreadyStarted,
                 DeploymentCheckMixin.check_no_running_deployment,
                 self.cluster)
-
-
-class TestClusterTransaction(BaseTestCase):
-    def test_get_cluster_state(self):
-        deployments_info = {
-            consts.MASTER_NODE_UID: {
-                'uid': consts.MASTER_NODE_UID,
-                'roles': [consts.TASK_ROLES.master],
-                'key': 'value'
-            }
-        }
-        self.assertEqual(
-            {'key': 'value'},
-            ClusterTransaction.get_cluster_state(deployments_info)
-        )
-
-        self.assertEqual({}, ClusterTransaction.get_cluster_state(None))
-        self.assertEqual({}, ClusterTransaction.get_cluster_state({}))
-
-    def test_is_node_for_redeploy(self):
-        self.assertFalse(ClusterTransaction.is_node_for_redeploy(None))
-
-        self.assertFalse(ClusterTransaction.is_node_for_redeploy(
-            mock.MagicMock(status=consts.NODE_STATUSES.ready)
-        ))
-        self.assertTrue(ClusterTransaction.is_node_for_redeploy(
-            mock.MagicMock(status=consts.NODE_STATUSES.provisioned)
-        ))
-        self.assertTrue(ClusterTransaction.is_node_for_redeploy(
-            mock.MagicMock(status=consts.NODE_STATUSES.stopped)
-        ))
-        self.assertTrue(ClusterTransaction.is_node_for_redeploy(
-            mock.MagicMock(status=consts.NODE_STATUSES.discover)
-        ))
-
-    @mock.patch('nailgun.objects.TransactionCollection')
-    def test_get_current_state(self, trans_cls_mock):
-        cluster = self.env.create(
-            nodes_kwargs=[
-                {"pending_addition": True,
-                 'status': consts.NODE_STATUSES.ready},
-                {"pending_addition": True,
-                 'status': consts.NODE_STATUSES.ready},
-                {"pending_addition": True,
-                 'status': consts.NODE_STATUSES.provisioned},
-            ],
-            release_kwargs={
-                'operating_system': consts.RELEASE_OS.ubuntu,
-                'version': 'mitaka-9.0'
-            },
-        )
-
-        nodes_ids = [n.uid for n in cluster.nodes]
-        nodes_ids_with_master = nodes_ids + [consts.MASTER_NODE_UID]
-
-        deployments_info = [
-            {
-                uid: {'uid': uid, 'version': version, 'roles': []}
-                for uid in nodes_ids_with_master
-            }
-            for version in range(3)
-        ]
-
-        # delete info about node_ids[1] from deployment_info[1]
-        # to check case when deployment_info for node does not found
-        del deployments_info[1][nodes_ids[1]]
-
-        transactions = [
-            mock.MagicMock(deployment_info=x) for x in deployments_info
-        ]
-        tasks = [
-            {'id': 'task1', 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet},
-            {'id': 'group1', 'type': consts.ORCHESTRATOR_TASK_TYPES.group},
-            {'id': 'skipped1', 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped},
-            {'id': 'task2', 'type': consts.ORCHESTRATOR_TASK_TYPES.shell},
-            {'id': 'task3', 'type': consts.ORCHESTRATOR_TASK_TYPES.reboot},
-        ]
-
-        trans_cls_mock.get_last_succeed_run.return_value = transactions[0]
-
-        trans_cls_mock.get_successful_transactions_per_task.return_value = [
-            (transactions[1], nodes_ids[0], tasks[0]['id']),
-            (transactions[2], nodes_ids[2], tasks[3]['id']),
-            (transactions[1], nodes_ids[1], tasks[0]['id']),
-        ]
-
-        state = ClusterTransaction.get_current_state(
-            cluster, cluster.nodes, tasks
-        )
-
-        expected_state = {
-            # cluster state from transaction[0]
-            # it does not have info for node[1], see comment above
-            tasks[0]['id']: {
-                None: ClusterTransaction.get_cluster_state(
-                    transactions[1].deployment_info
-                ),
-                nodes_ids[0]: transactions[1].deployment_info[nodes_ids[0]]
-            },
-            # cluster state from transaction[1]
-            # there is no state for node 2, because it is provisioned
-            tasks[3]['id']: {
-                None: ClusterTransaction.get_cluster_state(
-                    transactions[2].deployment_info
-                )
-            },
-            # contains only default state
-            tasks[4]['id']: {
-                None: ClusterTransaction.get_cluster_state(
-                    transactions[0].deployment_info
-                ),
-            },
-        }
-        self.assertEqual(expected_state, state)

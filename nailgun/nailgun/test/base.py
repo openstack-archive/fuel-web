@@ -1471,6 +1471,8 @@ class BaseTestCase(BaseUnitTest):
                 ConnectionMonitorMiddleware)
         )
         syncdb()
+        # syncdb disables logger, we need to enable it again
+        logger.disabled = 0
 
     def setUp(self):
         self.db = db

@@ -17,7 +17,6 @@
 import copy
 from distutils.version import StrictVersion
 import six
-import traceback
 
 from oslo_serialization import jsonutils
 
@@ -66,11 +65,7 @@ class TaskManager(object):
         except errors.NoChanges as e:
             self._finish_task(task, al, consts.TASK_STATUSES.ready, str(e))
         except Exception as exc:
-            if any([
-                not hasattr(exc, "log_traceback"),
-                hasattr(exc, "log_traceback") and exc.log_traceback
-            ]):
-                logger.error(traceback.format_exc())
+            logger.exception("Task '%s' failed.", task.name)
             self._finish_task(task, al, consts.TASK_STATUSES.error, str(exc))
 
     def _finish_task(self, task, log_item, status, message):

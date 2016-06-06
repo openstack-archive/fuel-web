@@ -78,6 +78,11 @@ def node_extension_call(call_name, node, *args, **kwargs):
     return getattr(extension, call_name)(node, *args, **kwargs)
 
 
+def setup_yaql_context(yaql_context):
+    for extension in get_all_extensions():
+        extension.setup_yaql_context(yaql_context)
+
+
 def fire_callback_on_node_create(node):
     for extension in get_all_extensions():
         extension.on_node_create(node)

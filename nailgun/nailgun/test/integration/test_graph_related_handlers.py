@@ -317,19 +317,34 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         cluster_tasks = objects.Cluster.get_deployment_tasks(self.cluster)
         self.assertEqual(resp.json, cluster_tasks)
 
-    def test_get_deployment_tasks_wrong_task_name(self):
-        bad_task_name = 'task_that_does_not_exist'
-
+    def test_get_deployment_tasks_task_based(self):
         resp = self.app.get(
             reverse('ClusterDeploymentTasksHandler',
-                    kwargs={'obj_id': self.cluster.id}) +
-            '?start={0}'.format(bad_task_name),
+                    kwargs={'obj_id': self.cluster.id}),
+            params={'start': 'task'},
             headers=self.default_headers,
             expect_errors=True
         )
 
-        self.assertEqual(400, resp.status_int)
-        self.assertIn(bad_task_name, resp.body)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Both "start" and "end" parameters are not allowed for task-based '
+            'deployment.')
+
+        resp = self.app.get(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}),
+            params={'end': 'task'},
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Both "start" and "end" parameters are not allowed for task-based '
+            'deployment.')
 
     def test_deployment_tasks_equals_to_release(self):
         resp = self.app.get(
@@ -605,6 +620,19 @@ class TestReleasePluginsGraphHandler(BaseGraphTasksTests,
 
 class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
 
+    # start and end are available only for granular deployment,
+    # no task-based (i.e. version < 2.0.0)
+    deployment_tasks = [
+        {'id': 'a', 'version': '1.0.0', 'type': 'puppet'},
+        {'id': 'b', 'type': 'puppet'},
+    ]
+
+    def setUp(self):
+        super(TestStartEndTaskPassedCorrectly, self).setUp()
+        objects.Release.update(self.cluster.release, {
+            'deployment_tasks': self.deployment_tasks
+        })
+
     def assert_passed_correctly(self, url, **kwargs):
         with mock.patch.object(GraphSolver,
                                'find_subgraph') as mfind_subgraph:
@@ -649,6 +677,20 @@ class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
             reverse('ReleaseDeploymentTasksHandler',
                     kwargs={'obj_id': self.cluster.release.id}),
             end='task', start='another_task')
+
+    def test_get_deployment_tasks_wrong_task_name(self):
+        bad_task_name = 'task_that_does_not_exist'
+
+        resp = self.app.get(
+            reverse('ClusterDeploymentTasksHandler',
+                    kwargs={'obj_id': self.cluster.id}) +
+            '?start={0}'.format(bad_task_name),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(400, resp.status_int)
+        self.assertIn(bad_task_name, resp.body)
 
 
 @mock.patch.object(objects.Cluster, 'get_deployment_tasks')

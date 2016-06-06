@@ -19,6 +19,7 @@ import six
 import traceback
 
 from decorator import decorator
+from distutils.version import StrictVersion
 from oslo_serialization import jsonutils
 from sqlalchemy import exc as sa_exc
 import web
@@ -620,8 +621,16 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         # merged (cluster + plugins + release) tasks is returned for cluster
         # but the own release tasks is returned for release
         tasks = self.single.get_deployment_tasks(obj, graph_type=graph_type)
+
         if end or start:
             graph = orchestrator_graph.GraphSolver(tasks)
+
+            for t in tasks:
+                if StrictVersion(t.get('version')) >= \
+                        StrictVersion(consts.TASK_CROSS_DEPENDENCY):
+                    raise self.http(400, (
+                        'Both "start" and "end" parameters are not allowed '
+                        'for task-based deployment.'))
 
             try:
                 return graph.filter_subgraph(
@@ -629,7 +638,6 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
             except errors.TaskNotFound as e:
                 raise self.http(400, 'Cannot find task {0} by its '
                                      'name.'.format(e.task_name))
-
         return tasks
 
     @content

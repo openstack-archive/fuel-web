@@ -265,6 +265,11 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
         db().flush()
         TaskHelper.create_action_log(supertask)
 
+        current_cluster_status = self.cluster.status
+        # update cluster status
+        if not kwargs.get('dry_run'):
+            self.cluster.status = consts.CLUSTER_STATUSES.deployment
+
         # we should have task committed for processing in other threads
         db().commit()
         nodes_ids_to_deploy = ([node.id for node in nodes_to_provision_deploy]
@@ -278,6 +283,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
             deployment_tasks=deployment_tasks,
             force=force,
             graph_type=graph_type,
+            current_cluster_status=current_cluster_status,
             **kwargs
         )
 
@@ -320,10 +326,17 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
     def _execute_async_content(self, supertask, deployment_tasks=None,
                                nodes_to_provision_deploy=None, force=False,
-                               graph_type=None, **kwargs):
+                               graph_type=None, current_cluster_status=None,
+                               **kwargs):
         """Processes supertask async in mule
 
         :param supertask: SqlAlchemy task object
+        :param deployment_tasks: the list of task names to execute
+        :param nodes_to_provision_deploy: the list of selected node ids
+        :param force: the boolean flag, if True all nodes will be deployed
+        :param graph_type: the name of deployment graph to use
+        :param current_cluster_status: the status of cluster that was
+                                       before starting this operation
         """
 
         nodes_to_delete = []
@@ -354,10 +367,12 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
             try:
                 self.check_before_deployment(supertask)
             except errors.CheckBeforeDeploymentError:
+                if current_cluster_status is not None:
+                    self.cluster.status = current_cluster_status
                 db().commit()
                 return
 
-        if self.cluster.status == consts.CLUSTER_STATUSES.operational:
+        if current_cluster_status == consts.CLUSTER_STATUSES.operational:
             # rerun particular tasks on all deployed nodes
             modified_node_ids = {n.id for n in nodes_to_deploy}
             modified_node_ids.update(n.id for n in nodes_to_provision)
@@ -619,6 +634,9 @@ class ProvisioningTaskManager(TaskManager):
                               status=consts.TASK_STATUSES.pending,
                               cluster=self.cluster)
         db().add(task_provision)
+        # update cluster status
+        self.cluster.status = consts.CLUSTER_STATUSES.deployment
+
         db().commit()
         nodes_ids_to_provision = [node.id for node in nodes_to_provision]
 
@@ -701,6 +719,10 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             status=consts.TASK_STATUSES.pending
         )
         db().add(task_deployment)
+        # update cluster status
+        if not kwargs.get('dry_run'):
+            self.cluster.status = consts.CLUSTER_STATUSES.deployment
+
         db().commit()
 
         # perform async call
@@ -727,6 +749,7 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
         :param nodes_to_deployment: node ids
         :param graph_type: graph type
         :param force: force
+        :param dry_run: the dry run flag
         """
         task_deployment = objects.Task.get_by_uid(
             task_deployment_id,

@@ -442,23 +442,6 @@ class ClusterTransaction(DeploymentTask):
         return node.status in cls.node_statuses_for_redeploy
 
     @classmethod
-    def get_cluster_state(cls, deployment_info):
-        """Extracts cluster state from deployment info.
-
-        :param deployment_info: the deployment info
-        :return: the cluster state
-        """
-        # the cluster state can be produced from master node state
-        if not deployment_info:
-            return {}
-
-        master_state = deployment_info[consts.MASTER_NODE_UID]
-        cluster_state = master_state.copy()
-        cluster_state.pop('roles')
-        cluster_state.pop('uid')
-        return cluster_state
-
-    @classmethod
     def get_current_state(cls, cluster, nodes, tasks):
         """Current state for deployment.
 
@@ -470,47 +453,30 @@ class ClusterTransaction(DeploymentTask):
         """
         nodes = {n.uid: n for n in nodes}
         nodes[consts.MASTER_NODE_UID] = None
-        tasks_names = {
-            t['id'] for t in tasks if t['type'] not in cls.ignored_types
-        }
+        tasks_names = [t['id'] for t in tasks
+                       if t['type'] not in cls.ignored_types]
 
         transactions = list(
             objects.TransactionCollection.get_successful_transactions_per_task(
                 cluster.id, tasks_names, nodes)
         )
 
-        # sort by transaction.id and task_name
-        transactions.sort(key=lambda x: (x[0].id, x[2]))
+        # sort by transaction.id
+        transactions.sort(key=lambda x: x[0].id)
 
         state = {}
         for transaction, data in groupby(transactions, lambda x: x[0]):
             deployment_info = objects.Transaction.get_deployment_info(
-                transaction
-            )
-            cluster_state = cls.get_cluster_state(deployment_info)
-            for task_name, rows in groupby(data, lambda x: x[2]):
-                # exclude existed task
-                tasks_names.discard(task_name)
-                task_state = state.setdefault(task_name, {})
-                task_state.setdefault(None, cluster_state)
-                for _, node_uid, _ in rows:
-                    # we use cluster state for nodes that is for redeploy
-                    if not cls.is_node_for_redeploy(nodes[node_uid]):
-                        try:
-                            task_state[node_uid] = deployment_info[node_uid]
-                        except KeyError:
-                            # we do not add deployment info for node
-                            # if it does not exist
-                            pass
+                transaction)
 
-        cluster_state = cls.get_cluster_state(
-            objects.Transaction.get_deployment_info(
-                objects.TransactionCollection.get_last_succeed_run(cluster)
-            )
-        )
-        # attach the cluster state from last deployment info to all left tasks
-        for task_name in tasks_names:
-            state[task_name] = {None: cluster_state}
+            for _, node_uid, task_name in data:
+                task_state = state.setdefault(task_name, {})
+                task_state.setdefault(node_uid, {})
+
+                if cls.is_node_for_redeploy(nodes.get(node_uid)):
+                    task_state[node_uid] = {}
+                else:
+                    task_state[node_uid] = deployment_info.get(node_uid, {})
 
         return state
 
@@ -540,7 +506,7 @@ class ClusterTransaction(DeploymentTask):
             transaction, deployment_info
         )
         # Added cluster state
-        expected_state[None] = cls.get_cluster_state(expected_state)
+        expected_state[None] = {}
 
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("tasks serialization is started.")

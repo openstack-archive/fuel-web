@@ -14,12 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from oslo_serialization import jsonutils
 import six
 import yaml
 import yaql
 from yaql.language import exceptions
 
+from nailgun.extensions import BaseExtension
 from nailgun.test.base import BaseUnitTest
 from nailgun import yaql_ext
 
@@ -167,3 +169,29 @@ class TestYaqlExt(BaseUnitTest):
         for exp in expressions:
             for func in functions:
                 self.evaluate('{0}({1})'.format(func, exp), engine=engine)
+
+
+class TestYaqlExtWithExtensions(BaseUnitTest):
+
+    class YaqlUtils(BaseExtension):
+
+        name = 'yaql_utils'
+        version = '1.0.0'
+        description = "A set of helper functions for YAQL"
+
+        @classmethod
+        def setup_yaql_context(cls, context):
+            context.register_function(lambda n: bool(n % 2), name="is_odd")
+
+    def evaluage(self, expression):
+        with mock.patch('nailgun.extensions.manager.get_all_extensions',
+                        return_value=[self.YaqlUtils()]):
+            context = yaql_ext.create_context(add_extensions=True)
+            engine = yaql_ext.create_engine()
+
+        parsed_exp = engine(expression)
+        return parsed_exp.evaluate(context=context)
+
+    def test_function_from_extension(self):
+        self.assertTrue(self.evaluage('is_odd(1)'))
+        self.assertFalse(self.evaluage('is_odd(2)'))

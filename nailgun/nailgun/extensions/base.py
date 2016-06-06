@@ -106,6 +106,10 @@ class BaseExtension(object):
         return '{0}alembic_version'.format(cls.table_prefix())
 
     @classmethod
+    def setup_yaql_context(cls, yaql_context):
+        """Setup YAQL context that is going to be used for serialization"""
+
+    @classmethod
     def on_node_create(cls, node):
         """Callback which gets executed when node is created"""
 

@@ -14,6 +14,7 @@
 
 import yaql
 
+from nailgun import extensions
 from nailgun.settings import settings
 from nailgun.yaql_ext import datadiff
 from nailgun.yaql_ext import serializers
@@ -21,12 +22,15 @@ from nailgun.yaql_ext import serializers
 _global_engine = None
 
 
-def create_context(add_serializers=False, add_datadiff=False, **kwargs):
+def create_context(add_serializers=False, add_datadiff=False,
+                   add_extensions=False,  **kwargs):
     context = yaql.create_context(**kwargs)
     if add_serializers:
         serializers.register(context)
     if add_datadiff:
         datadiff.register(context)
+    if add_extensions:
+        extensions.setup_yaql_context(context)
     return context
 
 

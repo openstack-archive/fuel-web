@@ -906,7 +906,7 @@ DUMP:
       - type: dir
         path: /var/log/mysql
       - type: command
-        command: "ls -la /var/lib/mysql/ /var/run/mysqld/"
+        command: "ls -la /var/lib/mysql/"
         to_file: mysql_resources.txt
       - type: command
         command: "/usr/bin/haproxy-status.sh"

@@ -354,7 +354,9 @@ class ClusterStopDeploymentValidator(base.BaseDefferedTaskValidator):
         generated = cluster.attributes.generated
         if generated.get('deployed_before', {}).get('value') and\
                 not objects.Release.is_lcm_supported(cluster.release):
-            raise errors.CannotBeStopped()
+            raise errors.CannotBeStopped('Current deployment process is '
+                                         'running on a pre-deployed cluster '
+                                         'that does not support LCM.')
 
 
 class VmwareAttributesValidator(base.BasicValidator):

@@ -105,7 +105,9 @@ class TestStopDeploymentPre90(BaseIntegrationTest):
 
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.json_body['message'],
-                         'Stop action is forbidden for the cluster')
+                         'Stop action is forbidden for the cluster. Current '
+                         'deployment process is running on a pre-deployed '
+                         'cluster that does not support LCM.')
 
 
 class TestStopDeployment(BaseIntegrationTest):

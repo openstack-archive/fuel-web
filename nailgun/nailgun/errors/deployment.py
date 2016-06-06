@@ -46,7 +46,11 @@ class StopAlreadyRunning(DeploymentException):
 
 
 class CannotBeStopped(DeploymentException):
-    message = "Stop action is forbidden for the cluster"
+    message = "Stop action is forbidden for the cluster. {0}"
+
+    def __init__(self, message=None):
+        super(CannotBeStopped, self).__init__()
+        self.message = self.message.format(message or '')
 
 
 class WrongNodeStatus(DeploymentException):

@@ -28,6 +28,7 @@ from nailgun.extensions import fire_callback_on_node_reset
 from nailgun.extensions import fire_callback_on_node_update
 from nailgun.extensions import get_extension
 from nailgun.extensions import node_extension_call
+from nailgun.extensions import setup_yaql_context
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
@@ -201,6 +202,15 @@ class TestExtensionUtils(BaseTestCase):
 
         for ext in get_m.return_value:
             ext.on_cluster_delete.assert_called_once_with(cluster)
+
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_setup_yaql_context(self, get_m):
+        context = mock.Mock()
+        setup_yaql_context(context)
+
+        for ext in get_m.return_value:
+            ext.setup_yaql_context.assert_called_once_with(context)
 
 
 class TestPipeline(BaseExtensionCase):

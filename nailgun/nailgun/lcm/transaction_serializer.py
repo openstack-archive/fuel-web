@@ -379,19 +379,22 @@ class TransactionSerializer(object):
             # unattainable number
             return total + 1
 
+        if isinstance(percentage_or_value, six.string_types):
+            percentage_or_value = percentage_or_value.strip()
+
         try:
             if (isinstance(percentage_or_value, six.string_types) and
                     percentage_or_value[-1] == '%'):
-                result = (int(percentage_or_value[:-1]) * total) // 100
+                value = (int(percentage_or_value[:-1]) * total) // 100
             else:
-                result = int(percentage_or_value)
+                value = int(percentage_or_value)
 
-            if result >= 0:
-                return result
-            else:
+            if value < 0:
                 # the negative number means the number of nodes
-                # those have to deploy successfully
-                return max(0, total + result)
+                # which have to deploy successfully.
+                # convert it to number of nodes which may fail
+                value = max(0, total + value)
+            return value
         except ValueError as e:
             logger.error(
                 "Failed to handle fault_tolerance: '%s': %s. it is ignored",

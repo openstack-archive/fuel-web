@@ -56,7 +56,7 @@ class Context(object):
     def __init__(self, transaction):
         self._transaction = transaction
         self._yaql_context = yaql_ext.create_context(
-            add_serializers=True, add_datadiff=True
+            add_serializers=True, add_datadiff=True, add_extensions=True
         )
         self._yaql_engine = yaql_ext.create_engine()
         self._yaql_expressions_cache = {}

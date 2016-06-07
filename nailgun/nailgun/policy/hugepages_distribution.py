@@ -119,7 +119,15 @@ class Component(object):
         return not self._pages
 
 
-def distribute_hugepages(numa_topology, components):
+def distribute_hugepages(numa_topology, components, numa_sort_func):
+    """Returns Huge Pages distribution over NUMA nodes
+
+    :param numa_topology: NUMA topology from node.meta
+    :param components: Info about components Huge Pages requirements
+    :param numa_sort_func: function that takes NUMA id and return
+                           appropriate numeric value for sort key
+    :return: dict with Huge Pages distribution
+    """
     all_comps = [Component(comp) for comp in components['all']]
     any_comps = [Component(comp) for comp in components['any']]
 
@@ -134,6 +142,8 @@ def distribute_hugepages(numa_topology, components):
             memory -= consts.MEMORY_RESERVED_FOR_OPERATING_SYSTEM // 1024
 
         numa_nodes.append(NumaNode(numa_node['id'], memory))
+
+    numa_nodes.sort(key=lambda x: numa_sort_func(x.id))
 
     _allocate_all(numa_nodes, all_comps)
     _allocate_any(numa_nodes, any_comps)

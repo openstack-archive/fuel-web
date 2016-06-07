@@ -1429,17 +1429,8 @@ class DPDKSerializerMixin90(object):
                                              network_scheme,
                                              nm, networks)
 
-        dpdk_interfaces = []
         transformations = network_scheme['transformations']
-        for t in transformations:
-            action = t.get('action')
-            name = t.get('name', '')
-            if (action == 'add-port' and
-                    t.get('provider') == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
-                dpdk_interfaces.append(name)
-            if (action == 'add-bond' and
-                    t.get('provider') == consts.NEUTRON_L23_PROVIDERS.dpdkovs):
-                dpdk_interfaces.extend(t.get('interfaces'))
+        dpdk_interfaces = set(nm.dpdk_nics_names(transformations))
 
         if not node.cluster:
             dpdk_drivers = {}

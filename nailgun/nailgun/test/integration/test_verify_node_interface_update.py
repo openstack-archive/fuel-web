@@ -101,10 +101,6 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
         objects.NIC.update(nic_3, {'interface_properties': utils.dict_merge(
             nic_3.interface_properties, dpdk_settings)})
 
-        node.attributes['hugepages'] = {
-            'nova': {'type': 'custom_hugepages', 'value': {'2048': 1}},
-            'dpdk': {'type': 'text', 'value': '1025'},
-        }
         self.cluster_attrs = objects.Cluster.get_editable_attributes(
             self.cluster_db)
 
@@ -134,14 +130,6 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
             self.cluster_db, {'editable': self.cluster_attrs})
 
         self.check_fail('Only KVM hypervisor works with DPDK')
-
-    def test_hugepages_not_configured(self):
-        self.node.attributes['hugepages']['nova'] = {'value': {}}
-        self.check_fail('Hugepages for Nova are not configured')
-
-    def test_hugepages_not_configured2(self):
-        self.node.attributes['hugepages']['dpdk'] = {'value': '0'}
-        self.check_fail('Hugepages for DPDK are not configured')
 
     def test_wrong_network(self):
         self.data['interfaces'][1]['assigned_networks'] = []

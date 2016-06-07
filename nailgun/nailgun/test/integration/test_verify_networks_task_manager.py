@@ -671,12 +671,19 @@ class TestNetworkVerificationWithTemplates90(BaseIntegrationTest):
         self.upload_template(self.cluster['id'], template)
 
         for node in self.cluster.nodes:
-            objects.Node.update_attributes(
-                node,
-                {'hugepages':
-                    {'dpdk': {'value': 128},
-                     'nova': {'value': {'2048': 128}}}}
-            )
+            if 'compute' in node.all_roles:
+                objects.Node.update_attributes(
+                    node,
+                    {
+                        'hugepages': {
+                            'dpdk': {'value': 128},
+                            'nova': {'value': {'2048': 128}}
+                        },
+                        'cpu_pinning': {
+                            'dpdk': {'value': 2}
+                        }
+                    }
+                )
 
         if net_type == consts.NEUTRON_SEGMENT_TYPES.vlan:
             self.private_vlan_ids = list(range(1000, 1031))

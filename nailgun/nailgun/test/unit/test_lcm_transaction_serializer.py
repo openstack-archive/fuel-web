@@ -464,9 +464,9 @@ class TestTransactionSerializer(BaseUnitTest):
         )
         self.assertEqual(
             9,
-            lcm.TransactionSerializer.calculate_fault_tolerance('-10%', 10)
+            lcm.TransactionSerializer.calculate_fault_tolerance(' -10%', 10)
         )
         self.assertEqual(
             9,
-            lcm.TransactionSerializer.calculate_fault_tolerance('-1', 10)
+            lcm.TransactionSerializer.calculate_fault_tolerance('-1 ', 10)
         )

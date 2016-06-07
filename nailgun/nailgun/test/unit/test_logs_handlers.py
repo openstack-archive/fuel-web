@@ -554,3 +554,12 @@ class TestLogs(BaseIntegrationTest):
 
         params = mcast.call_args_list[0][0]
         self.assertEqual(params[1]['args']['settings'], custom_config)
+
+    def test_logs_handler_with_invalid_id(self):
+        resp = self.app.get(
+            reverse('LogEntryCollectionHandler'),
+            params={'id': 'abcd'},
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)

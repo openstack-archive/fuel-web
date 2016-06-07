@@ -311,7 +311,12 @@ class LogEntryCollectionHandler(BaseHandler):
         if log_config['remote'] and not log_config.get('fake'):
             if not user_data.get('node'):
                 raise self.http(400, "'node' must be specified")
-            node = objects.Node.get_by_uid(user_data.get('node'))
+            try:
+                node_id = int(user_data.get('node'))
+            except ValueError:
+                logger.debug("Invalid 'node' value: %r", user_data.get('node'))
+                raise self.http(400, "Invalid 'node' value")
+            node = objects.Node.get_by_uid(node_id)
             if not node:
                 raise self.http(404, "Node not found")
             if not node.ip:

@@ -34,6 +34,7 @@ down_revision = '675105097a69'
 def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_node_error_msg_to_allow_long_error_msg()
 
 
 def downgrade():
@@ -77,6 +78,12 @@ def upgrade_plugin_links_constraints():
         'cluster_plugin_links_cluster_id_url_uc',
         'cluster_plugin_links',
         ['cluster_id', 'url'])
+
+
+def upgrade_node_error_msg_to_allow_long_error_msg():
+    op.alter_column(table_name='nodes',
+                    column_name='error_msg',
+                    type_=sa.Text)
 
 
 def downgrade_plugin_links_constraints():
@@ -234,3 +241,9 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+def downgrade_node_error_msg_to_allow_long_error_msg():
+    op.alter_column(table_name='nodes',
+                    column_name='error_msg',
+                    type_=sa.String(255))

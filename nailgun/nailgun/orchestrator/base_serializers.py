@@ -158,18 +158,10 @@ class VmwareDeploymentSerializerMixin(object):
     def generate_vmware_data(self, node):
         """Extend serialize data with vmware attributes"""
         vmware_data = {}
-        allowed_roles = [
-            'controller',
-            'primary-controller',
-            'compute-vmware',
-            'cinder-vmware'
-        ]
-
-        all_roles = objects.Node.all_roles(node)
         use_vcenter = node.cluster.attributes.editable.get('common', {}) \
             .get('use_vcenter', {}).get('value')
 
-        if (use_vcenter and any(role in allowed_roles for role in all_roles)):
+        if use_vcenter:
             compute_instances = []
             cinder_instances = []
 

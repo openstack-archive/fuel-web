@@ -1906,6 +1906,9 @@ class TestHandlers(BaseIntegrationTest):
             task = Task.get_by_uuid(uuid=task_uuid, fail_if_not_found=True)
             self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
             self.assertEqual('dry_run_deployment', task.name)
+            self.assertItemsEqual(
+                objects.Cluster.get_deployment_tasks(self.env.clusters[0]),
+                task.tasks_snapshot)
 
     @patch('nailgun.rpc.cast')
     def test_occurs_error_not_enough_memory_for_hugepages(self, *_):

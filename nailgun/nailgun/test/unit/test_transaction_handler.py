@@ -156,6 +156,29 @@ class TestTransactionHandlers(BaseTestCase):
         self.assertEqual(200, resp.status_code)
         self.datadiff(cluster_attrs, resp.json_body['editable'])
 
+    def test_get_transaction_tasks_snapshot(self):
+        cluster = self.cluster_db
+        tasks = objects.Cluster.get_deployment_tasks(cluster)
+        transaction = objects.Transaction.create({
+            'cluster_id': cluster.id,
+            'status': consts.TASK_STATUSES.ready,
+            'name': consts.TASK_NAMES.deployment
+        })
+        objects.Transaction.attach_deployment_info(
+            transaction, tasks
+        )
+        self.assertIsNotNone(
+            objects.Transaction.get_tasks_snapshot(transaction)
+        )
+        resp = self.app.get(
+            reverse(
+                'TransactionTasksSnapshot',
+                kwargs={'transaction_id': transaction.id}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(tasks, resp.json_body)
+
     def test_get_cluster_attributes_fail_not_existed_transaction(self):
         resp = self.app.get(
             reverse(

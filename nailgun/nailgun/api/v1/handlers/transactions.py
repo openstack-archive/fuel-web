@@ -79,6 +79,11 @@ class TransactionDeploymentInfo(BaseTransactionDataHandler):
     get_data = objects.Transaction.get_deployment_info
 
 
+class TransactionTasksSnapshot(BaseTransactionDataHandler):
+
+    get_data = objects.Transaction.get_tasks_snapshot
+
+
 class TransactionClusterSettings(BaseTransactionDataHandler):
 
     get_data = objects.Transaction.get_cluster_settings

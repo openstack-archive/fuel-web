@@ -113,6 +113,7 @@ from nailgun.api.v1.handlers.transactions import TransactionCollectionHandler
 from nailgun.api.v1.handlers.transactions import TransactionDeploymentInfo
 from nailgun.api.v1.handlers.transactions import TransactionHandler
 from nailgun.api.v1.handlers.transactions import TransactionNetworkSettings
+from nailgun.api.v1.handlers.transactions import TransactionTasksSnapshot
 
 
 from nailgun.api.v1.handlers.version import VersionHandler
@@ -272,6 +273,8 @@ urls = (
     DeploymentHistoryCollectionHandler,
     r'/transactions/(?P<transaction_id>\d+)/deployment_info/?$',
     TransactionDeploymentInfo,
+    r'/transactions/(?P<transaction_id>\d+)/tasks_snapshot/?$',
+    TransactionTasksSnapshot,
     r'/transactions/(?P<transaction_id>\d+)/network_configuration/?$',
     TransactionNetworkSettings,
     r'/transactions/(?P<transaction_id>\d+)/settings/?$',

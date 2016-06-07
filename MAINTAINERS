@@ -101,6 +101,14 @@ maintainers:
       email:  ikutukov@mirantis.com
       IRC:    ikutukov
 
+    - name:   Nikita Zubkov
+      email:  nzubkov@mirantis.com
+      IRC:    zubchick
+
+    - name:   Georgy Kibardin
+      email:  gkibardin@mirantis.com
+      IRC:    gkibardin
+
 - nailgun/nailgun/extensions/volume_manager/:
     - name:   Evgeny Li
       email:  eli@mirantis.com

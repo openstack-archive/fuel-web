@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+
 import alembic
 
 from nailgun.db import db
@@ -117,3 +119,30 @@ class TestTransactionsNames(base.BaseAlembicMigrationTest):
                 }
             ]
         )
+
+
+class TestNodeErrorMessage(base.BaseAlembicMigrationTest):
+
+    def test_upgrade_node_error_msg_to_allow_long_error_msg(self):
+        nodes = self.meta.tables['nodes']
+        self.assertIsInstance(nodes.columns['error_msg'].type, sa.Text)
+
+        node_uuid = '26b508d0-0d76-4159-bce9-f67ec2765480'
+        long_error_msg = ''.join('a' for i in range(500))
+
+        db.execute(
+            nodes.insert(),
+            [{
+                'uuid': node_uuid,
+                'cluster_id': None,
+                'group_id': None,
+                'status': 'discover',
+                'meta': '{}',
+                'mac': 'aa:aa:aa:aa:aa:aa',
+                'error_msg': long_error_msg,
+                'timestamp': datetime.datetime.utcnow(),
+            }]
+        )
+
+        node = db.query(nodes).filter_by(uuid=node_uuid).first()
+        self.assertEqual(long_error_msg, node.error_msg)

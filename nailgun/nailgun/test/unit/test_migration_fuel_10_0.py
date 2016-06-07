@@ -421,3 +421,7 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
                 'node_id': node_id,
                 'attributes': jsonutils.dumps({'test_attr': 'test'})
             }])
+
+    def test_upgrade_node_error_msg_to_allow_long_error_msg(self):
+        nodes = self.meta.tables['nodes']
+        self.assertIsInstance(nodes.columns['error_msg'].type, sa.Text)

@@ -17,6 +17,7 @@
 import copy
 import operator
 
+import mock
 from oslo_serialization import jsonutils
 from six.moves import range
 import unittest2
@@ -865,6 +866,29 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                 }]
         )
 
+    def _assign_dpdk_to_nic(self, node, dpdk_nic, other_nic):
+        other_nets = other_nic.assigned_networks_list
+        dpdk_nets = dpdk_nic.assigned_networks_list
+
+        for i, net in enumerate(other_nets):
+            if net['name'] == consts.NETWORKS.private:
+                dpdk_nets.append(other_nets.pop(i))
+                break
+        objects.NIC.assign_networks(other_nic, other_nets)
+        objects.NIC.assign_networks(dpdk_nic, dpdk_nets)
+
+        objects.NIC.update(
+            dpdk_nic,
+            {
+                'interface_properties': {
+                    'dpdk': {
+                        'enabled': True,
+                        'available': True,
+                    },
+                    'pci_id': 'test_id:1',
+                }
+            })
+
     @fake_tasks()
     def test_verify_networks_after_stop(self):
         deploy_task = self.env.launch_deployment()
@@ -1002,3 +1026,29 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
 
         msg = "envs < 6.1 must not have check repo availability tasks"
         self.assertFalse(bool(check_repo_tasks), msg)
+
+    @mock_rpc(pass_mock=True)
+    @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
+    def test_verify_network_w_non_ready_dpdk_node(self, mrpc, mdrivers):
+        mdrivers.return_value = {'driver_1': ['test_id:1']}
+
+        controller = next(
+            n for n in self.cluster.nodes if 'controller' in n.roles)
+        controller.status = consts.NODE_STATUSES.ready
+
+        compute = next(n for n in self.cluster.nodes if 'compute' in n.roles)
+        self._assign_dpdk_to_nic(
+            compute, compute.interfaces[1], compute.interfaces[0])
+
+        self.env.launch_verify_networks()
+        payload = mrpc.call_args[0][1]['args']['nodes']
+
+        # now we have 1 node with dpdk and 1 without. since dpdk node is
+        # not in ready state, vlan check over private net must be performed
+        # on both nodes
+        vlans = set(range(*self.cluster.network_config.vlan_range))
+
+        for node in payload:
+            self.assertTrue(
+                any(map(lambda net: vlans.issubset(net['vlans']),
+                        node['networks'])))

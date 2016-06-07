@@ -37,6 +37,7 @@ def upgrade():
     upgrade_transaction_names()
     upgrade_clusters_replaced_info_wrong_default()
     upgrade_tasks_snapshot()
+    upgrade_node_error_msg_to_allow_long_error_msg()
 
 
 def downgrade():
@@ -44,6 +45,7 @@ def downgrade():
     downgrade_clusters_replaced_info_wrong_default()
     downgrade_transaction_names()
     downgrade_deployment_history()
+    downgrade_node_error_msg_to_allow_long_error_msg()
 
 
 def upgrade_deployment_history():
@@ -143,6 +145,12 @@ def upgrade_transaction_names():
     )
 
 
+def upgrade_node_error_msg_to_allow_long_error_msg():
+    op.alter_column(table_name='nodes',
+                    column_name='error_msg',
+                    type_=sa.Text)
+
+
 def downgrade_transaction_names():
     upgrade_enum(
         'tasks',
@@ -151,3 +159,14 @@ def downgrade_transaction_names():
         transaction_names_new,
         transaction_names_old
     )
+
+
+def downgrade_node_error_msg_to_allow_long_error_msg():
+    connection = op.get_bind()
+    connection.execute(sa.text('''
+SELECT id FROM nodes FOR UPDATE;
+UPDATE nodes SET error_msg = substring(error_msg for 255);
+'''))
+    op.alter_column(table_name='nodes',
+                    column_name='error_msg',
+                    type_=sa.String(255))

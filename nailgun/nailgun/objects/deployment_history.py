@@ -16,6 +16,8 @@
 import copy
 from datetime import datetime
 
+import six
+
 from nailgun.consts import HISTORY_TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -169,22 +171,44 @@ class DeploymentHistoryCollection(NailgunCollection):
         tasks_snapshot = Transaction.get_tasks_snapshot(transaction)
 
         if tasks_snapshot:
-            task_by_name = {}
+            task_parameters_by_name = {}
+            task_present_in_history_by_name = {}
 
             for task in tasks_snapshot:
                 # remove ambiguous id field
                 task.pop('id', None)
-                task_by_name[task['task_name']] = task
+                task_parameters_by_name[task['task_name']] = task
+                task_present_in_history_by_name[task['task_name']] = False
 
             for history_record in history:
                 task_name = history_record['task_name']
                 try:
-                    task_parameters = task_by_name[task_name]
+                    task_parameters = task_parameters_by_name[task_name]
+                    task_present_in_history_by_name[task_name] = True
                     history_record.update(task_parameters)
                 except KeyError:
                     logger.warning(
                         'Definition of "{0}" task is not found'.format(
                             task_name))
+
+            # Make surrogate history records for tasks that were not launched
+            # to provide their parameters
+            absent_tasks = [
+                k for k, v
+                in six.iteritems(task_present_in_history_by_name)
+                if not v
+            ]
+            for task_name in absent_tasks:
+                history_record = {
+                    'task_name': task_name,
+                    'node_id': None,
+                    'status': 'skipped',
+                    'time_start': None,
+                    'time_end': None
+                }
+                history_record.update(task_parameters_by_name[task_name])
+                history.append(history_record)
+
         else:
             logger.warning('No tasks snapshot is defined in given '
                            'transaction, probably it is a legacy '

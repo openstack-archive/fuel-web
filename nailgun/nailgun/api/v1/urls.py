@@ -417,6 +417,5 @@ def public_urls():
     return {
         r'/nodes/?$': ['POST'],
         r'/nodes/agent/?$': ['PUT'],
-        r'/version/?$': ['GET'],
         r'/clusters/(?P<cluster_id>\d+)/plugin_links/?$': ['POST']
     }

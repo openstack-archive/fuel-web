@@ -181,6 +181,16 @@ def load_extensions_parsers(subparsers):
     load_alembic_parsers(extensions_parser)
 
 
+def load_yaql_parsers(subparsers):
+    yaql_parser = subparsers.add_parser(
+        'yaql', help='run live YAQL console for cluster'
+    )
+    yaql_parser.add_argument(
+        '-c', '--cluster_id', dest='cluster_id', action='store', type=str,
+        help='cluster id'
+    )
+
+
 def action_dumpdata(params):
     import logging
 
@@ -334,6 +344,11 @@ def action_shell(params):
         code.interact(local={'db': db, 'settings': settings})
 
 
+def action_yaql(params):
+    from nailgun.fuyaql import fuyaql
+    fuyaql.main(params.cluster_id)
+
+
 def action_run(params):
     from nailgun.settings import settings
 
@@ -371,6 +386,7 @@ if __name__ == "__main__":
     load_shell_parsers(subparsers)
     load_settings_parsers(subparsers)
     load_extensions_parsers(subparsers)
+    load_yaql_parsers(subparsers)
 
     params, other_params = parser.parse_known_args()
     sys.argv.pop(1)

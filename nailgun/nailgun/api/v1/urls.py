@@ -142,6 +142,8 @@ from nailgun.settings import settings
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
+    r'/releases/(?P<obj_id>\d+)/attributes_metadata/?$',
+    ReleaseAttributesMetadataHandler,
     r'/releases/(?P<obj_id>\d+)/?$',
     ReleaseHandler,
     r'/releases/(?P<obj_id>\d+)/networks/?$',

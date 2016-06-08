@@ -367,7 +367,11 @@ def content(*args, **kwargs):
         if exact_mimetypes and isinstance(exact_mimetypes, list):
             accepted_types = exact_mimetypes
         if any(map(lambda m: m in accept, accepted_types)):
-            return content_json(func, *args, **kwargs)
+            try:
+                return content_json(func, *args, **kwargs)
+            except Exception as e:
+                logger.exception("Uncaught exception caught in wrapper", e)
+                raise BaseHandler.http(500)
         else:
             raise BaseHandler.http(415)
 

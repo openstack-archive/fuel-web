@@ -15,7 +15,6 @@
 #    under the License.
 
 from datetime import datetime
-import six
 import traceback
 
 from decorator import decorator
@@ -297,7 +296,7 @@ def content_json(func, cls, *args, **kwargs):
             (
                 traceback.format_exc(exc)
                 if settings.DEVELOPMENT
-                else six.text_type(exc)
+                else 'Unexpected exception, please check logs'
             )
         )
         http_error.data = json_resp(http_error.data)

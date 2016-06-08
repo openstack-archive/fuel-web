@@ -119,7 +119,7 @@ class NodeAssignmentValidator(AssignmentValidator):
             roles,
             available_roles,
             {
-                'settings': cluster.attributes.editable,
+                'settings': objects.Cluster.get_editable_attributes(cluster),
                 'cluster': cluster,
                 'version': settings.VERSION,
             })

@@ -31,6 +31,7 @@ from nailgun.middleware.http_method_override import \
     HTTPMethodOverrideMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.middleware.keystone import NailgunKeystoneAuthMiddleware
+from nailgun.middleware.rbac_middleware import RBACMiddleware
 from nailgun.middleware.static import StaticMiddleware
 from nailgun.settings import settings
 from nailgun.urls import urls
@@ -52,6 +53,7 @@ def build_middleware(app):
         ConnectionMonitorMiddleware,
         HTTPLoggerMiddleware,
         HTTPMethodOverrideMiddleware,
+        RBACMiddleware,
     ]
 
     if settings.DEVELOPMENT:

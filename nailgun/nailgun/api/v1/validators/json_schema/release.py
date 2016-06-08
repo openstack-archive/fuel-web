@@ -44,3 +44,12 @@ NETWORKS_SCHEMA = {
     },
     'required': ['nova_network', 'neutron']
 }
+
+ATTRIBUTES_METADATA_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'editable': {'type': 'object'},
+        'generated': {'type': 'object'},
+    },
+    'required': ['editable', 'generated']
+}

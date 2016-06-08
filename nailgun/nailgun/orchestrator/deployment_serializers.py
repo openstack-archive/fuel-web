@@ -251,6 +251,10 @@ class DeploymentMultinodeSerializer(object):
                 'vmware_adaptertype': 'lsiLogic',
                 'hypervisor_type': 'vmware'
             }
+        # Check if nova is set to use cow images
+        elif not c_attrs['editable']['common']['use_cow_images']['value']:
+            image_data.update({'disk_format': 'raw'})
+
 
         # NOTE(aschultz): properties was added as part of N and should be
         # used infavor of glance_properties

@@ -28,6 +28,8 @@ from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphCollectionHandler
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphHandler
+from nailgun.api.v1.validators.release import \
+    ReleaseAttributesMetadataValidator
 from nailgun.api.v1.validators.release import ReleaseNetworksValidator
 from nailgun.api.v1.validators.release import ReleaseValidator
 from nailgun.objects import Release
@@ -39,6 +41,40 @@ class ReleaseHandler(SingleHandler):
 
     single = Release
     validator = ReleaseValidator
+
+
+class ReleaseAttributesMetadataHandler(SingleHandler):
+    """Release attributes metadata handler"""
+
+    single = Release
+    validator = ReleaseAttributesMetadataValidator
+
+    @handle_errors
+    @validate
+    @serialize
+    def GET(self, obj_id):
+        """:returns: JSONized Release attributes metadata.
+
+        :http: * 200 (OK)
+               * 404 (release not found in db)
+        """
+        release = self.get_object_or_404(self.single, obj_id)
+        return release['attributes_metadata']
+
+    @handle_errors
+    @validate
+    @serialize
+    def PUT(self, obj_id):
+        """:returns: JSONized Release attributes metadata.
+
+        :http: * 200 (OK)
+               * 400 (wrong data specified)
+               * 404 (release not found in db)
+        """
+        release = self.get_object_or_404(self.single, obj_id)
+        data = self.checked_data()
+        self.single.update(release, {'attributes_metadata': data})
+        return release['attributes_metadata']
 
 
 class ReleaseCollectionHandler(CollectionHandler):

@@ -75,10 +75,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
             $.ajaxSetup({cache: false});
 
-            var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
-                cacheTokenFor: 10 * 60 * 1000,
-                tenant: 'admin'
-            });
+            this.overrideBackboneSyncMethod();
 
             this.version = new models.FuelVersion();
             this.settings = new models.FuelSettings();
@@ -86,66 +83,26 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
 
-            this.version.fetch().then(_.bind(function() {
+            var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
+                cacheTokenFor: 10 * 60 * 1000,
+                token: this.user.get('token'),
+                tenant: 'admin'
+            });
+
+            this.version.fetch().then(null, _.bind(function(response) {
+                if (response.status == 401) {
+                    this.version.set({auth_required: true});
+                    return $.Deferred().resolve();
+                }
+            }, this)).then(_.bind(function() {
                 this.user.set({authenticated: !this.version.get('auth_required')});
-
-                var originalSync = Backbone.sync;
-                Backbone.sync = function(method, model, options) {
-                    // our server doesn't support PATCH, so use PUT instead
-                    if (method == 'patch') {
-                        method = 'update';
-                    }
-                    if (app.version.get('auth_required') && !this.authExempt) {
-                        // FIXME(vkramskikh): manually moving success/error callbacks
-                        // to deferred-style callbacks. Everywhere in the code we use
-                        // deferreds, but backbone uses success/error callbacks. It
-                        // seems there is a bug somewhere: sometimes in long deferred
-                        // chains with .then() success/error callbacks are called when
-                        // deferred object is not resolved, so 'sync' event is
-                        // triggered but dfd.state() still returns 'pending'. This
-                        // leads to various bugs here and there.
-                        var callbacks = {};
-
-                        return keystoneClient.authenticate()
-                            .fail(function() {
-                                app.logout();
-                            })
-                            .then(_.bind(function() {
-                                options = options || {};
-                                options.headers = options.headers || {};
-                                options.headers['X-Auth-Token'] = keystoneClient.token;
-                                _.each(['success', 'error'], function(callback) {
-                                    if (options[callback]) {
-                                        callbacks[callback] = options[callback];
-                                        delete options[callback];
-                                    }
-                                });
-                                return originalSync.call(this, method, model, options);
-                            }, this))
-                            .done(function() {
-                                if (callbacks.success) {
-                                    callbacks.success.apply(callbacks.success, arguments);
-                                }
-                            })
-                            .fail(function() {
-                                if (callbacks.error) {
-                                    callbacks.error.apply(callbacks.error, arguments);
-                                }
-                            })
-                            .fail(function(response) {
-                                if (response && response.status == 401) {
-                                    app.logout();
-                                }
-                            });
-                    }
-                    return originalSync.call(this, method, model, options);
-                };
 
                 if (app.version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('token'));
                     return keystoneClient.authenticate()
-                        .done(function() {
+                        .then(function() {
                             app.user.set({authenticated: true});
+                            return app.version.fetch({cache: true});
                         });
                 }
                 return $.Deferred().resolve();
@@ -155,6 +112,62 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 this.renderLayout();
                 Backbone.history.start();
             }, this));
+        },
+        overrideBackboneSyncMethod: function() {
+            var originalSync = Backbone.sync;
+            if (originalSync.patched) return;
+            Backbone.sync = function(method, model, options) {
+                // our server doesn't support PATCH, so use PUT instead
+                if (method == 'patch') {
+                    method = 'update';
+                }
+                if (app.version && app.version.get('auth_required')) {
+                    // FIXME(vkramskikh): manually moving success/error callbacks
+                    // to deferred-style callbacks. Everywhere in the code we use
+                    // deferreds, but backbone uses success/error callbacks. It
+                    // seems there is a bug somewhere: sometimes in long deferred
+                    // chains with .then() success/error callbacks are called when
+                    // deferred object is not resolved, so 'sync' event is
+                    // triggered but dfd.state() still returns 'pending'. This
+                    // leads to various bugs here and there.
+                    var callbacks = {};
+
+                    return app.keystoneClient.authenticate()
+                        .fail(function() {
+                            app.logout();
+                        })
+                        .then(_.bind(function() {
+                            app.user.set('token', app.keystoneClient.token);
+                            options = options || {};
+                            options.headers = options.headers || {};
+                            options.headers['X-Auth-Token'] = app.keystoneClient.token;
+                            _.each(['success', 'error'], function(callback) {
+                                if (options[callback]) {
+                                    callbacks[callback] = options[callback];
+                                    delete options[callback];
+                                }
+                            });
+                            return originalSync.call(this, method, model, options);
+                        }, this))
+                        .done(function() {
+                            if (callbacks.success) {
+                                callbacks.success.apply(callbacks.success, arguments);
+                            }
+                        })
+                        .fail(function() {
+                            if (callbacks.error) {
+                                callbacks.error.apply(callbacks.error, arguments);
+                            }
+                        })
+                        .fail(function(response) {
+                            if (response && response.status == 401) {
+                                app.logout();
+                            }
+                        });
+                }
+                return originalSync.call(this, method, model, options);
+            };
+            Backbone.sync.patched = true;
         },
         renderLayout: function() {
             this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));

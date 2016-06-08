@@ -65,18 +65,10 @@
   parameters:
     strategy:
       type: parallel
-- id: zabbix-server
-  type: group
-  roles: [zabbix-server]
-  required_for: [deploy_end]
-  requires: [deploy_start]
-  parameters:
-    strategy:
-      type: one_by_one
 - id: mongo
   type: group
   roles: [mongo]
-  requires: [zabbix-server]
+  requires: [deploy_start]
   required_for: [deploy_end, primary-controller, controller]
   parameters:
     strategy:
@@ -135,7 +127,7 @@
   type: puppet
   groups: [primary-controller, controller,
            cinder, compute, ceph-osd,
-           zabbix-server, primary-mongo, mongo]
+           primary-mongo, mongo]
   required_for: [deploy_end]
   requires: [deploy_start]
   parameters:

@@ -128,6 +128,11 @@ class ReleaseValidator(BasicValidator):
             )
 
 
+class ReleaseAttributesMetadataValidator(BasicValidator):
+
+    single_schema = release.ATTRIBUTES_METADATA_SCHEMA
+
+
 class ReleaseNetworksValidator(BasicValidator):
 
     @classmethod

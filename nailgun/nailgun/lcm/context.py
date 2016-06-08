@@ -30,4 +30,4 @@ class TransactionContext(object):
         return self.new[node_id]
 
     def get_old_data(self, node_id, task_id):
-        return self.old.get(task_id, {}).get(node_id)
+        return self.old.get(task_id, {}).get(node_id, {})

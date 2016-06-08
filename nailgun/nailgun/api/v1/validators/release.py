@@ -128,6 +128,20 @@ class ReleaseValidator(BasicValidator):
             )
 
 
+class ReleaseSchemaValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data, schema_name):
+        parsed = super(ReleaseSchemaValidator, cls).validate(data)
+        cls.validate_schema(parsed, schema_name)
+        return parsed
+
+    @classmethod
+    def validate_schema(cls, data, schema_name):
+        return super(ReleaseSchemaValidator, cls).validate_schema(
+            data, getattr(release, schema_name))
+
+
 class ReleaseNetworksValidator(BasicValidator):
 
     @classmethod

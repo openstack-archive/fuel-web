@@ -1889,6 +1889,10 @@ class DumpTask(object):
                 dump_conf['dump']['controller']['hosts'].append(host)
             # save slaves
             dump_conf['dump']['slave']['hosts'].append(host)
+        if not dump_conf['dump']['controller']['hosts']:
+            del dump_conf['dump']['controller']
+        if not dump_conf['dump']['slave']['hosts']:
+            del dump_conf['dump']['slave']
 
         # render postgres connection data in dump settings
         dump_conf['dump']['local']['objects'].append({

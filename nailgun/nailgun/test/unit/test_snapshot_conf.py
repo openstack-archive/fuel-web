@@ -28,7 +28,8 @@ class TestSnapshotConf(base.TestCase):
         conf = task.DumpTask.conf()
         self.assertIn('local', conf['dump'])
         self.assertIn('master', conf['dump'])
-        self.assertIn('slave', conf['dump'])
+        self.assertNotIn('slave', conf['dump'])
+        self.assertNotIn('controller', conf['dump'])
 
     def test_local_host(self):
         conf = task.DumpTask.conf()

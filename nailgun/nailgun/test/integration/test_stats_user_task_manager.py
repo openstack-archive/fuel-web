@@ -22,7 +22,7 @@ from nailgun import consts
 from nailgun import objects
 from nailgun.test.base import BaseMasterNodeSettignsTest
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestStatsUserTaskManagers(BaseMasterNodeSettignsTest):

@@ -21,7 +21,7 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import ClusterChanges
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestClusterChanges(BaseIntegrationTest):

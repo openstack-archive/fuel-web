@@ -31,6 +31,24 @@ from nailgun.logger import logger
 from nailgun.settings import settings
 
 
+def reverse(name, kwargs=None):
+    from nailgun.api.v1.urls import urls
+    urldict = dict(zip(urls[1::2], urls[::2]))
+    url = urldict[name]
+    urlregex = re.compile(url)
+    for kwarg in urlregex.groupindex:
+        if kwarg not in kwargs:
+            raise KeyError("Invalid argument specified")
+        url = re.sub(
+            r"\(\?P<{0}>[^)]+\)".format(kwarg),
+            str(kwargs[kwarg]),
+            url,
+            1
+        )
+    url = re.sub(r"\??\$", "", url)
+    return "/api" + url
+
+
 def remove_silently(path):
     """Removes an element from file system
 
@@ -76,12 +94,12 @@ def traverse(data, generator_class, formatter_context=None):
 
     # generate value if generator is specified
     if isinstance(data, collections.Mapping) and 'generator' in data:
-         try:
-             generator = getattr(generator_class, data['generator'])
-             return generator(data.get('generator_arg'))
-         except AttributeError:
-             logger.error('Attribute error: %s', data['generator'])
-             raise
+        try:
+            generator = getattr(generator_class, data['generator'])
+            return generator(data.get('generator_arg'))
+        except AttributeError:
+            logger.error('Attribute error: %s', data['generator'])
+            raise
 
     # we want to traverse in all levels, so dive in child mappings
     elif isinstance(data, collections.Mapping):

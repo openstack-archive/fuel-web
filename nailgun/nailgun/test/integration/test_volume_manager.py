@@ -18,7 +18,7 @@ from mock import patch
 from oslo.serialization import jsonutils
 
 from nailgun.test import base
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 from nailgun.volumes import manager
 
 

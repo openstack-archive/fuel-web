@@ -18,7 +18,7 @@ from mock import patch
 from oslo.serialization import jsonutils
 
 from nailgun.test.base import BaseAuthenticationIntegrationTest
-from nailgun.test.base import reverse
+from nailgun.utils import reverse
 
 
 class TestPublicHandlers(BaseAuthenticationIntegrationTest):

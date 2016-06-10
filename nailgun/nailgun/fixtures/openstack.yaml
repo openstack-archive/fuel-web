@@ -1984,7 +1984,7 @@
   pk: 2
   extend: *base_release
   fields:
-    name: "Newton on Ubuntu 14.04"
+    name: "Newton on Ubuntu 16.04"
     version: "newton-10.0"
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Mitaka packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -2010,19 +2010,19 @@
               - type: "deb"
                 name: "ubuntu"
                 uri: "http://archive.ubuntu.com/ubuntu/"
-                suite: "trusty"
+                suite: "xenial"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-updates"
                 uri: "http://archive.ubuntu.com/ubuntu/"
-                suite: "trusty-updates"
+                suite: "xenial-updates"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-security"
                 uri: "http://archive.ubuntu.com/ubuntu/"
-                suite: "trusty-security"
+                suite: "xenial-security"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
@@ -2080,13 +2080,10 @@
               debconf-utils
               gdisk
               grub-pc
-              hpsa-dkms
               hwloc
-              i40e-dkms
               linux-firmware
-              linux-firmware-nonfree
-              linux-headers-generic-lts-trusty
-              linux-image-generic-lts-trusty
+              linux-headers-generic-lts-xenial
+              linux-image-generic-lts-xenial
               lvm2
               mcollective
               mdadm
@@ -2096,6 +2093,7 @@
               nailgun-mcagents
               network-checker
               ntp
+              ntpdate
               openssh-client
               openssh-server
               puppet
@@ -2119,14 +2117,14 @@
           profile:
             generator_arg: "ubuntu_bootstrap"
         provision:
-          codename: "trusty"
+          codename: "xenial"
           image_data:
             /:
-              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64.img.gz"
               format: "ext4"
               container: "gzip"
             /boot:
-              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64-boot.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
     node_attributes:
@@ -2217,7 +2215,7 @@
 - pk: 3
   extend: *ubuntu_release
   fields:
-    name: "Newton on Ubuntu+UCA 14.04"
+    name: "Newton on Ubuntu+UCA 16.04"
     version: "newton-10.0"
     description: "This option will install the OpenStack Newton packages using Ubuntu as a base operating system, including Ubuntu Cloud Archive OpenStack packages. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
@@ -2234,31 +2232,31 @@
               - type: "deb"
                 name: "ubuntu"
                 uri: "http://archive.ubuntu.com/ubuntu/"
-                suite: "trusty"
+                suite: "xenial"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-updates"
                 uri: "http://archive.ubuntu.com/ubuntu/"
-                suite: "trusty-updates"
+                suite: "xenial-updates"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-security"
                 uri: "http://archive.ubuntu.com/ubuntu/"
-                suite: "trusty-security"
+                suite: "xenial-security"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "uca"
                 uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
-                suite: "trusty-updates/mitaka"
+                suite: "xenial-updates/newton"
                 section: "main"
                 priority: 1080
               - type: "deb"
                 name: "uca-proposed"
                 uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
-                suite: "trusty-proposed/mitaka"
+                suite: "xenial-proposed/newton"
                 section: "main"
                 priority: 1080
               - type: "deb"

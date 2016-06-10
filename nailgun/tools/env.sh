@@ -25,14 +25,22 @@ case $1 in
         cleanup_nailgun_env
         ;;
     prepare_nailgun_database)
-        prepare_pgpass
-        prepare_database_role
-        prepare_database
+        if [[ "${NAILGUN_DB_PREPARE}" == "yes" ]]; then
+            prepare_pgpass
+            prepare_database_role
+            prepare_database
+        else
+            echo "Preparing database has been skipped due to NAILGUN_DB_PREPARE=${NAILGUN_DB_PREPARE}"
+        fi
         ;;
     cleanup_nailgun_database)
-        prepare_pgpass
-        cleanup_database
-        cleanup_pgpass
+        if [[ "${NAILGUN_DB_PREPARE}" == "yes" ]]; then
+            prepare_pgpass
+            cleanup_database
+            cleanup_pgpass
+        else
+            echo "Cleaning up database has been skipped due to NAILGUN_DB_PREPARE=${NAILGUN_DB_PREPARE}"
+        fi
         ;;
     cleanup_nailgun_server)
         cleanup_server

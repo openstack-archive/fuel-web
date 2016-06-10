@@ -196,14 +196,14 @@ class TestBasicAttributesValidator(base_test.BaseTestCase):
                         'name': 'ubuntu',
                         'priority': None,
                         'section': 'main universe multiverse',
-                        'suite': 'trusty',
+                        'suite': 'xenial',
                         'type': 'deb',
                         'uri': 'http://archive.ubuntu.com/ubuntu/'
                     }, {
                         'name': 'ubuntu-updates',
                         'priority': None,
                         'section': 'main universe multiverse',
-                        'suite': 'trusty-updates',
+                        'suite': 'xenial-updates',
                         'type': 'deb',
                         'uri': 'http://archive.ubuntu.com/ubuntu/'
                     }]

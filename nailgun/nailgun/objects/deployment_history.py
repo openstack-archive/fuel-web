@@ -16,8 +16,6 @@
 import copy
 from datetime import datetime
 
-import six
-
 from nailgun.consts import HISTORY_TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -152,6 +150,7 @@ class DeploymentHistoryCollection(NailgunCollection):
         :returns: tasks history
         :rtype: list[dict]
         """
+
         query = cls.filter_by(None, task_id=transaction.id)
         if nodes_ids:
             query = query.filter(cls.single.model.node_id.in_(nodes_ids))
@@ -172,19 +171,16 @@ class DeploymentHistoryCollection(NailgunCollection):
 
         if tasks_snapshot:
             task_parameters_by_name = {}
-            task_present_in_history_by_name = {}
 
             for task in tasks_snapshot:
                 # remove ambiguous id field
                 task.pop('id', None)
                 task_parameters_by_name[task['task_name']] = task
-                task_present_in_history_by_name[task['task_name']] = False
 
             for history_record in history:
                 task_name = history_record['task_name']
                 try:
                     task_parameters = task_parameters_by_name[task_name]
-                    task_present_in_history_by_name[task_name] = True
                     history_record.update(task_parameters)
                 except KeyError:
                     logger.warning(
@@ -193,15 +189,36 @@ class DeploymentHistoryCollection(NailgunCollection):
 
             # Make surrogate history records for tasks that were not launched
             # to provide their parameters
-            absent_tasks = [
-                k for k, v
-                in six.iteritems(task_present_in_history_by_name)
-                if not v
-            ]
-            for task_name in absent_tasks:
+            snapshot_tasks_names = frozenset(task_parameters_by_name)
+            # we making additional query to fetch all history tasks names
+            # not respecting filter to determine which tasks are in
+            # snapshot but not in output so we should make surrogate
+            # tasks if this names are matching filter but not returned
+            # in tasks query
+            history_tasks_names = frozenset(
+                task_name[0] for task_name in
+                cls.filter_by(
+                    db().query(cls.single.model.deployment_graph_task_name),
+                    task_id=transaction.id
+                ).distinct()
+            )
+
+            # calculates absent tasks respecting filter
+            if not statuses or 'skipped' in statuses:
+                absent_tasks_names = frozenset(
+                    snapshot_tasks_names - history_tasks_names)
+                if tasks_names:
+                    absent_tasks_names = frozenset(
+                        absent_tasks_names & tasks_names)
+            else:
+                absent_tasks_names = []
+
+            # and creating surrogate tasks if some tasks was not launched
+            # but according to filtering condition we should show it
+            for task_name in absent_tasks_names:
                 history_record = {
                     'task_name': task_name,
-                    'node_id': None,
+                    'node_id': 'was-no-run',
                     'status': 'skipped',
                     'time_start': None,
                     'time_end': None

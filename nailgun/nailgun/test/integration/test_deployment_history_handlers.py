@@ -134,24 +134,13 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
                 'time_start': None,
                 'time_end': None,
                 'custom': {}
-            } for node in cluster.nodes] + [{
-                'task_name': 'test2',
-                'roles': '*',
-                'parameters': {'param1': 'value1'},
-                'requires': ['pre_deployment_end'],
-                'version': '2.1.0',
-                'type': 'puppet',
-                'status': 'skipped',
-                'time_start': None,
-                'time_end': None,
-                'node_id': None
-            }],
+            } for node in cluster.nodes],
             response.json_body
         )
 
     @mock_rpc()
     @mock.patch('objects.Cluster.get_deployment_tasks')
-    def test_history_task_not_found_returns_surrogate_tasks(self, tasks_mock):
+    def test_unexisting_task_filter_returning_nothing(self, tasks_mock):
         tasks_mock.return_value = self.test_tasks
 
         cluster = self.env.create(**self.cluster_parameters)
@@ -173,19 +162,104 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            [],
+            response.json_body
+        )
+
+    @mock_rpc()
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    def test_dry_run(self, tasks_mock):
+        tasks_mock.return_value = self.test_tasks
+
+        cluster = self.env.create(**self.cluster_parameters)
+
+        supertask = self.env.launch_deployment(cluster.id, dry_run=True)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        deployment_task = next(
+            t for t in supertask.subtasks
+            if t.name == consts.TASK_NAMES.dry_run_deployment
+        )
+        response = self.app.get(
+            reverse(
+                'DeploymentHistoryCollectionHandler',
+                kwargs={
+                    'transaction_id': deployment_task.id
+                }
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, response.status_code)
         self.assertItemsEqual(
-            [{
-                'task_name': task_name,
-                'roles': '*',
-                'parameters': {'param1': 'value1'},
-                'requires': ['pre_deployment_end'],
-                'version': '2.1.0',
-                'type': 'puppet',
-                'status': 'skipped',
-                'time_start': None,
-                'time_end': None,
-                'node_id': None
-            } for task_name in ['test1', 'test2']],
+            [
+                {
+                    'node_id': 'was-no-run',
+                    'parameters': {'param1': 'value1'},
+                    'requires': ['pre_deployment_end'],
+                    'roles': '*',
+                    'status': 'skipped',
+                    'task_name': 'test1',
+                    'time_end': None,
+                    'time_start': None,
+                    'type': 'puppet',
+                    'version': '2.1.0'
+                },
+                {
+                    'node_id': 'was-no-run',
+                    'parameters': {'param1': 'value1'},
+                    'requires': ['pre_deployment_end'],
+                    'roles': '*',
+                    'status': 'skipped',
+                    'task_name': 'test2',
+                    'time_end': None,
+                    'time_start': None,
+                    'type': 'puppet',
+                    'version': '2.1.0'
+                }
+            ],
+            response.json_body
+        )
+
+        response = self.app.get(
+            reverse(
+                'DeploymentHistoryCollectionHandler',
+                kwargs={
+                    'transaction_id': deployment_task.id
+                }
+            ) + '?tasks_names=test1',
+            headers=self.default_headers
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertItemsEqual(
+            [
+                {
+                    'node_id': 'was-no-run',
+                    'parameters': {'param1': 'value1'},
+                    'requires': ['pre_deployment_end'],
+                    'roles': '*',
+                    'status': 'skipped',
+                    'task_name': 'test1',
+                    'time_end': None,
+                    'time_start': None,
+                    'type': 'puppet',
+                    'version': '2.1.0'
+                }
+            ],
+            response.json_body
+        )
+
+        response = self.app.get(
+            reverse(
+                'DeploymentHistoryCollectionHandler',
+                kwargs={
+                    'transaction_id': deployment_task.id
+                }
+            ) + '?tasks_names=NOSUCHTASK',
+            headers=self.default_headers
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            [],
             response.json_body
         )
 

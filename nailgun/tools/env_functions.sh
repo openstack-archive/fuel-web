@@ -66,6 +66,7 @@ EOL
 }
 
 prepare_server() {
+    python ${NAILGUN_ROOT}/manage.py dropdb > /dev/null
     python ${NAILGUN_ROOT}/manage.py syncdb > /dev/null
     python ${NAILGUN_ROOT}/manage.py loaddefault > /dev/null
     if test -n "$NAILGUN_FIXTURE_FILES"; then

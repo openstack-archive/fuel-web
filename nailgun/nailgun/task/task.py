@@ -142,7 +142,7 @@ class BaseDeploymentTask(object):
             try:
                 args = getattr(cls, method)(transaction, **kwargs)
                 # save tasks history
-                if 'tasks_graph' in args and not args.get('dry_run', False):
+                if 'tasks_graph' in args:
                     logger.info("tasks history saving is started.")
                     objects.DeploymentHistoryCollection.create(
                         transaction, args['tasks_graph']

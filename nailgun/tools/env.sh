@@ -25,9 +25,11 @@ case $1 in
         cleanup_nailgun_env
         ;;
     prepare_nailgun_database)
-        prepare_pgpass
-        prepare_database_role
-        prepare_database
+        if [[ ${NAILGUN_DB_PREPARE} == "yes"]]; then
+            prepare_pgpass
+            prepare_database_role
+            prepare_database
+        fi
         ;;
     cleanup_nailgun_database)
         prepare_pgpass

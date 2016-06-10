@@ -13,9 +13,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import copy
-from datetime import datetime
 
+from datetime import datetime
 import six
 
 from nailgun.consts import HISTORY_TASK_STATUSES
@@ -152,65 +151,69 @@ class DeploymentHistoryCollection(NailgunCollection):
         :returns: tasks history
         :rtype: list[dict]
         """
-        query = cls.filter_by(None, task_id=transaction.id)
-        if nodes_ids:
-            query = query.filter(cls.single.model.node_id.in_(nodes_ids))
-        if statuses:
-            query = query.filter(cls.single.model.status.in_(statuses))
-        if tasks_names:
-            query = query.filter(
-                cls.single.model.deployment_graph_task_name.in_(tasks_names))
+        nodes_ids = nodes_ids and frozenset(nodes_ids)
+        statuses = statuses and frozenset(statuses)
+        tasks_names = tasks_names and frozenset(tasks_names)
 
-        history = copy.deepcopy(cls.to_list(query))
-
-        # rename task id to conventional field
-        for record in history:
-            record['task_name'] = record.pop(
-                'deployment_graph_task_name', None)
-
+        task_parameters_by_name = {}
+        visited_tasks = set()
         tasks_snapshot = Transaction.get_tasks_snapshot(transaction)
+        history = []
 
         if tasks_snapshot:
-            task_parameters_by_name = {}
-            task_present_in_history_by_name = {}
-
-            for task in tasks_snapshot:
+            # make a copy for each task to avoid modification
+            for task in six.moves.map(dict, tasks_snapshot):
                 # remove ambiguous id field
                 task.pop('id', None)
                 task_parameters_by_name[task['task_name']] = task
-                task_present_in_history_by_name[task['task_name']] = False
-
-            for history_record in history:
-                task_name = history_record['task_name']
-                try:
-                    task_parameters = task_parameters_by_name[task_name]
-                    task_present_in_history_by_name[task_name] = True
-                    history_record.update(task_parameters)
-                except KeyError:
-                    logger.warning(
-                        'Definition of "{0}" task is not found'.format(
-                            task_name))
-
-            # Make surrogate history records for tasks that were not launched
-            # to provide their parameters
-            absent_tasks = [
-                k for k, v
-                in six.iteritems(task_present_in_history_by_name)
-                if not v
-            ]
-            for task_name in absent_tasks:
-                history_record = {
-                    'task_name': task_name,
-                    'node_id': None,
-                    'status': 'skipped',
-                    'time_start': None,
-                    'time_end': None
-                }
-                history_record.update(task_parameters_by_name[task_name])
-                history.append(history_record)
-
         else:
             logger.warning('No tasks snapshot is defined in given '
                            'transaction, probably it is a legacy '
                            '(Fuel<10.0) or malformed.')
+
+        for history_record in cls.filter_by(None, task_id=transaction.id):
+            task_name = history_record.deployment_graph_task_name
+            visited_tasks.add(task_name)
+
+            # the visited tasks should be calculated, it is
+            # reason why the query filter cannot be used here
+            if nodes_ids and history_record.node_id not in nodes_ids:
+                continue
+            if statuses and history_record.status not in statuses:
+                continue
+            if tasks_names and task_name not in tasks_names:
+                continue
+
+            record = cls.single.to_dict(history_record)
+            history.append(record)
+            # remove ambiguous field
+            record['task_name'] = record.pop('deployment_graph_task_name')
+
+            if task_parameters_by_name:
+                try:
+                    record.update(task_parameters_by_name[task_name])
+                except KeyError:
+                    logger.warning(
+                        'Definition of "{0}" task is not found'
+                        .format(task_name)
+                    )
+
+        # calculates absent tasks respecting filter
+        if (not nodes_ids and (
+                not statuses or HISTORY_TASK_STATUSES.skipped in statuses)):
+
+            for task_name in task_parameters_by_name:
+                if tasks_names and task_name not in tasks_names:
+                    continue
+                if task_name in visited_tasks:
+                    continue
+
+                history.append(dict(
+                    task_parameters_by_name[task_name],
+                    task_name=task_name,
+                    node_id='-',
+                    status=HISTORY_TASK_STATUSES.skipped,
+                    time_start=None,
+                    time_end=None,
+                ))
         return history

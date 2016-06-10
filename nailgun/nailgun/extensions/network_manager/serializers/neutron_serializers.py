@@ -1281,9 +1281,15 @@ class GenerateL23Mixin80(object):
             "vlan_range": None
         }
         if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            ng = objects.NetworkGroup.get_from_node_group_by_name(
+                objects.Cluster.get_default_group(cluster).id, 'baremetal')
+            ironic_settings = cluster.attributes.editable['ironic_settings']
+            vlan_range = None
+            if ironic_settings['ironic_provision_network']['value']:
+                vlan_range = "{0}:{0}".format(ng.vlan_start)
             l2["phys_nets"]["physnet-ironic"] = {
                 "bridge": consts.DEFAULT_BRIDGES_NAMES.br_ironic,
-                "vlan_range": None
+                "vlan_range": vlan_range
             }
         return l2
 
@@ -1578,3 +1584,57 @@ class NeutronNetworkTemplateSerializer90(
     NeutronNetworkTemplateSerializer80
 ):
     pass
+
+class NeutronNetworkDeploymentSerializer10(
+    NeutronNetworkDeploymentSerializer90
+):
+
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = (
+            super(NeutronNetworkDeploymentSerializer10, cls)
+            .generate_transformations(
+                node, nm, nets_by_ifaces, is_public, prv_base_ep))
+
+        if objects.Cluster.is_component_enabled(node.cluster, 'ironic'):
+            ironic_settings = node.cluster.attributes.editable['ironic_settings']
+            ir_mult_enabled = ironic_settings['ironic_provision_network']['value']
+            transformations.insert(0, {'action': 'add-br',
+                                       'name': consts.DEFAULT_BRIDGES_NAMES.br_bm})
+
+            nm = objects.Cluster.get_network_manager(node.cluster)
+            netgroup = nm.get_network_by_netname('baremetal', node.network_data)
+            bm_int = netgroup['dev']
+
+            bm_int_configured = False
+            for t in transformations:
+                action = t.get('action')
+                name = t.get('name', '')
+                if (action == 'add-patch' and
+                        t.get('bridges') == [consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                                             consts.DEFAULT_BRIDGES_NAMES.br_baremetal]):
+                    t['bridges'] = [consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                                    consts.DEFAULT_BRIDGES_NAMES.br_bm]
+                elif (action == 'add-port' and
+                        t.get('name') == bm_int):
+                    transformations.append(cls.add_patch(
+                      bridges=[consts.DEFAULT_BRIDGES_NAMES.br_bm, t.get('bridge')]))
+                    bm_int_configured = True
+            if not bm_int_configured:
+                transformations.append(cls.add_port(
+                    bm_int, consts.DEFAULT_BRIDGES_NAMES.br_bm))
+
+        return transformations
+
+    @classmethod
+    def generate_network_scheme(cls, node, networks):
+        attrs = (super(NeutronNetworkDeploymentSerializer10, cls).generate_network_scheme(node, networks))
+
+        if objects.Cluster.is_component_enabled(node.cluster, 'ironic'):
+            ironic_settings = node.cluster.attributes.editable['ironic_settings']
+            ir_mult_enabled = ironic_settings['ironic_provision_network']['value']
+            attrs['endpoints'][consts.DEFAULT_BRIDGES_NAMES.br_ironic] = {'IP': 'none'}
+
+        return attrs
+

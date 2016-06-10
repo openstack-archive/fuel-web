@@ -546,7 +546,7 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         if cluster.network_config.configuration_template:
             return neutron_serializers.NeutronNetworkTemplateSerializer90
         else:
-            return neutron_serializers.NeutronNetworkDeploymentSerializer90
+            return neutron_serializers.NeutronNetworkDeploymentSerializer10
 
     def serialize_node(self, node, role):
         serialized_node = super(

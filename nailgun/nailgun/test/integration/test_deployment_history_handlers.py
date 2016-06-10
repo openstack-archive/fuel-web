@@ -134,24 +134,13 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
                 'time_start': None,
                 'time_end': None,
                 'custom': {}
-            } for node in cluster.nodes] + [{
-                'task_name': 'test2',
-                'roles': '*',
-                'parameters': {'param1': 'value1'},
-                'requires': ['pre_deployment_end'],
-                'version': '2.1.0',
-                'type': 'puppet',
-                'status': 'skipped',
-                'time_start': None,
-                'time_end': None,
-                'node_id': None
-            }],
+            } for node in cluster.nodes],
             response.json_body
         )
 
     @mock_rpc()
     @mock.patch('objects.Cluster.get_deployment_tasks')
-    def test_history_task_not_found_returns_surrogate_tasks(self, tasks_mock):
+    def test_unexisting_task_filter_returning_nothing(self, tasks_mock):
         tasks_mock.return_value = self.test_tasks
 
         cluster = self.env.create(**self.cluster_parameters)
@@ -173,19 +162,8 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, response.status_code)
-        self.assertItemsEqual(
-            [{
-                'task_name': task_name,
-                'roles': '*',
-                'parameters': {'param1': 'value1'},
-                'requires': ['pre_deployment_end'],
-                'version': '2.1.0',
-                'type': 'puppet',
-                'status': 'skipped',
-                'time_start': None,
-                'time_end': None,
-                'node_id': None
-            } for task_name in ['test1', 'test2']],
+        self.assertEqual(
+            [],
             response.json_body
         )
 

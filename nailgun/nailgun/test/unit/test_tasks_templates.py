@@ -122,9 +122,8 @@ class TestMakeTask(base.BaseTestCase):
     def test_make_provisioning_images_task(self):
         packages = [
             'linux-firmware',
-            'linux-firmware-nonfree',
-            'linux-headers-generic-lts-trusty',
-            'linux-image-generic-lts-trusty',
+            'linux-headers-generic-lts-xenial',
+            'linux-image-generic-lts-xenial',
         ]
         result = tasks_templates.make_provisioning_images_task(
             [1, 2, 3],
@@ -132,7 +131,7 @@ class TestMakeTask(base.BaseTestCase):
                 {'name': 'repo', 'uri': 'http://some'}
             ],
             provision_data={
-                'codename': 'trusty',
+                'codename': 'xenial',
                 'image_data': {
                     '/mount': {
                         'format': 'ext4',
@@ -157,7 +156,7 @@ class TestMakeTask(base.BaseTestCase):
                     "uri": "http://some"
                 }
             ],
-            "codename": "trusty",
+            "codename": "xenial",
             "packages": packages
         }
 

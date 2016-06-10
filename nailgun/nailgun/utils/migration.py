@@ -255,9 +255,9 @@ def upgrade_release_fill_orchestrator_data(connection, versions):
             repo_path = 'http://{MASTER_IP}:8080/{OS}/fuelweb/x86_64'.format(
                 MASTER_IP=settings.MASTER_IP, OS=release[1].lower())
 
-            # for ubuntu we need to add 'trusty main'
+            # for ubuntu we need to add 'xenial main'
             if release[1].lower() == 'ubuntu':
-                repo_path += ' trusty main'
+                repo_path += ' xenial main'
 
             connection.execute(
                 insert_query,
@@ -527,7 +527,7 @@ def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):
     for attr_id, generated in connection.execute(select_query):
         attrs = jsonutils.loads(generated)
         if attrs['cobbler']['profile'] == 'ubuntu_1204_x86_64':
-            attrs['cobbler']['profile'] = 'ubuntu_1404_x86_64'
+            attrs['cobbler']['profile'] = 'ubuntu_1604_x86_64'
             connection.execute(
                 update_query,
                 generated=jsonutils.dumps(attrs),
@@ -542,7 +542,7 @@ def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):
         if attrs['generated']['cobbler']['profile']['generator_arg'] == \
                 'ubuntu_1204_x86_64':
             attrs['generated']['cobbler']['profile']['generator_arg'] = \
-                'ubuntu_1404_x86_64'
+                'ubuntu_1604_x86_64'
             connection.execute(
                 update_query,
                 attrs_meta=jsonutils.dumps(attrs),

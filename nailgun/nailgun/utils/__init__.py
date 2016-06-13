@@ -139,9 +139,10 @@ def traverse(data, formatter=None, formatter_context=None, keywords=None):
                 arg_name = k + '_arg'
                 try:
                     if arg_name in data:
-                        return keywords[k](data[k], data[arg_name])
+                        rv = keywords[k](data[k], data[arg_name])
                     else:
-                        return keywords[k](data[k])
+                        rv = keywords[k](data[k])
+                    return {"type": "hidden", "value": rv}
                 except Exception as e:
                     logger.error(
                         "Cannot evaluate expression - '%s' (%s), : %s",

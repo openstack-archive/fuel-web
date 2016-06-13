@@ -191,7 +191,7 @@ class TestTraverse(base.BaseUnitTest):
         )
 
         self.assertEqual(result, {
-            'foo': 'testvalue',
+            'foo': {'type': 'hidden', 'value': 'testvalue'},
             'bar': 'test {a} string',
             'baz': 42,
             'regex': {
@@ -215,7 +215,7 @@ class TestTraverse(base.BaseUnitTest):
         )
 
         self.assertEqual(result, {
-            'foo': 'testvalue',
+            'foo': {'type': 'hidden', 'value': 'testvalue'},
             'bar': 'test 13 string',
             'baz': 42,
             'regex': {
@@ -248,7 +248,7 @@ class TestTraverse(base.BaseUnitTest):
         )
 
         self.assertEqual(result, {
-            'foo': 'testvalue',
+            'foo': {'type': 'hidden', 'value': 'testvalue'},
             'bar': 'test {b} value',
             'baz': 42,
             'regex': {
@@ -275,7 +275,12 @@ class TestTraverse(base.BaseUnitTest):
             'exp1': generator1,
             'exp2': generator2
         })
-        self.assertEqual({'key1': 'val1', 'key2': 'val2'}, result)
+        self.assertEqual(
+            {
+                'key1': {'type': 'hidden', 'value': 'val1'},
+                'key2': {'type': 'hidden', 'value': 'val2'}
+            }, result
+        )
         generator1.assert_called_once_with('name1', 'arg1')
         generator2.assert_called_once_with('name2')
 

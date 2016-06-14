@@ -124,7 +124,7 @@ class ClusterChangesHandler(DeferredTaskHandler):
         data = web.input(graph_type=None, dry_run="0")
 
         return {
-            'graph_type': data.graph_type,
+            'graph_type': data.graph_type or None,
             'force': False,
             'dry_run': utils.parse_bool(data.dry_run),
         }
@@ -142,7 +142,7 @@ class ClusterChangesForceRedeployHandler(DeferredTaskHandler):
     def get_options(cls):
         data = web.input(graph_type=None, dry_run="0")
         return {
-            'graph_type': data.graph_type,
+            'graph_type': data.graph_type or None,
             'force': True,
             'dry_run': utils.parse_bool(data.dry_run)
         }
@@ -341,7 +341,7 @@ class ClusterPluginsDeploymentTasksHandler(BaseHandler):
                * 404 (object not found)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-        graph_type = web.input(graph_type=None).graph_type
+        graph_type = web.input(graph_type=None).graph_type or None
         tasks = self.single.get_plugins_deployment_tasks(
             obj, graph_type=graph_type)
         return tasks
@@ -359,7 +359,7 @@ class ClusterReleaseDeploymentTasksHandler(BaseHandler):
                * 404 (object not found)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-        graph_type = web.input(graph_type=None).graph_type
+        graph_type = web.input(graph_type=None).graph_type or None
         tasks = self.single.get_release_deployment_tasks(
             obj, graph_type=graph_type)
         return tasks

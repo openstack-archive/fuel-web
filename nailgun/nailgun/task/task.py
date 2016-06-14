@@ -1143,7 +1143,9 @@ class BaseNetworkVerification(object):
                 continue
             if objects.Node.should_have_public_with_ip(node):
                 nodes_w_public.add(node.id)
-            if not objects.Node.dpdk_enabled(node):
+            # it's ok to check private networks on non deployed dpdk nodes
+            if not (objects.Node.dpdk_enabled(node) and
+                    node.status == consts.NODE_STATUSES.ready):
                 nodes_wo_dpdk.add(node.id)
         if len(nodes_w_public) == 1:
             # don't check public VLANs if there is the only node with public
@@ -1168,8 +1170,7 @@ class BaseNetworkVerification(object):
             networks_to_skip = []
             if node.id not in nodes_w_public:
                 networks_to_skip.append(consts.NETWORKS.public)
-            if (node.id not in nodes_wo_dpdk and
-                    node.status == consts.NODE_STATUSES.ready):
+            if node.id not in nodes_wo_dpdk:
                 # After deployment we can't check traffic on DPDK enabled
                 # interface since it's no longer visible in the system. So we
                 # should skip "Private" network from network verification

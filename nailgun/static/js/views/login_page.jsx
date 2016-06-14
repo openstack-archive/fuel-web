@@ -38,12 +38,6 @@ function($, _, i18n, React) {
                             <LoginForm />
                         </div>
                     </div>
-                    <div className='login-copyrights'>
-                        {_.contains(app.version.get('feature_groups'), 'mirantis') &&
-                            <p className='text-center'>{i18n('common.copyright')}</p>
-                        }
-                        <p className='text-center'>{i18n('common.version')}: {app.version.get('release')}</p>
-                    </div>
                 </div>
             );
         }
@@ -64,7 +58,7 @@ function($, _, i18n, React) {
                         username: username,
                         token: keystoneClient.token
                     });
-                    return app.settings.fetch({cache: true});
+                    return $.when(app.version.fetch({cache: true}), app.settings.fetch({cache: true}));
                 }, this))
                 .done(_.bind(function() {
                     app.navigate('', {trigger: true});

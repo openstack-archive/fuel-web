@@ -207,10 +207,6 @@ class VolumeManagerExtension(VolumeObjectMethodsMixin, BaseExtension):
         cls.set_default_node_volumes(node)
 
     @classmethod
-    def on_node_reset(cls, node):
-        cls.set_default_node_volumes(node)
-
-    @classmethod
     def on_node_delete(cls, node):
         from .objects.volumes import VolumeObject
         VolumeObject.delete_by_node_ids([node.id])

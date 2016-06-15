@@ -551,6 +551,9 @@ class Node(NailgunObject):
                 consts.NODE_STATUSES.discover,
                 consts.NODE_STATUSES.error,
             )
+            unlocked_node_error_types = (
+                consts.NODE_ERRORS.discover,
+            )
         else:
             unlocked_cluster_statuses = (
                 consts.NODE_STATUSES.discover,
@@ -558,10 +561,14 @@ class Node(NailgunObject):
                 consts.NODE_STATUSES.stopped,
                 consts.NODE_STATUSES.ready
             )
+            unlocked_node_error_types = (
+                consts.NODE_ERRORS.discover,
+                consts.NODE_ERRORS.deploy
+            )
 
         return instance.status not in unlocked_cluster_statuses or (
             instance.status == consts.NODE_STATUSES.error and
-            instance.error_type != consts.NODE_ERRORS.discover
+            instance.error_type not in unlocked_node_error_types
         )
 
     @classmethod
@@ -868,7 +875,7 @@ class Node(NailgunObject):
                          instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
-        if not cls.is_interfaces_configuration_locked(instance, is_agent=True) \
+        if not cls.is_interfaces_configuration_locked(instance, is_agent=True)\
                 and data.get('ip'):
             if instance.cluster_id:
                 update_status = cls.check_ip_belongs_to_own_admin_network(

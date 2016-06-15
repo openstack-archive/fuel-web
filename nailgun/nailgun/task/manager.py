@@ -711,6 +711,7 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             ' '.join([objects.Node.get_node_fqdn(n)
                       for n in nodes_to_deployment])))
 
+        nodes_ids_to_deployment = [n.id for n in nodes_to_deployment]
         transaction_name = self.get_deployment_transaction_name(dry_run)
 
         task_deployment = Task(
@@ -731,7 +732,7 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             '_execute_async',
             self.cluster.id,
             task_deployment.id,
-            nodes_to_deployment=nodes_to_deployment,
+            nodes_ids_to_deployment=nodes_ids_to_deployment,
             deployment_tasks=deployment_tasks,
             graph_type=graph_type,
             force=force,
@@ -740,13 +741,13 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
 
         return task_deployment
 
-    def _execute_async(self, task_deployment_id, nodes_to_deployment,
+    def _execute_async(self, task_deployment_id, nodes_ids_to_deployment,
                        deployment_tasks=None, graph_type=None, force=False,
                        dry_run=False):
         """Supposed to be executed inside separate process.
 
         :param task_deployment_id: id of task
-        :param nodes_to_deployment: node ids
+        :param nodes_ids_to_deployment: node ids
         :param graph_type: graph type
         :param force: force
         :param dry_run: the dry run flag
@@ -755,6 +756,12 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             task_deployment_id,
             fail_if_not_found=True,
             lock_for_update=False
+        )
+        nodes_to_deployment = objects.NodeCollection.filter_by_list(
+            None,
+            'id',
+            nodes_ids_to_deployment,
+            order_by='id'
         )
 
         deployment_message = self._call_silently(

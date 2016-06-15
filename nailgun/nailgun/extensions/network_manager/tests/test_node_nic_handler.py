@@ -505,7 +505,6 @@ class TestHandlers(BaseIntegrationTest):
         lock_vs_status = (
             (consts.NODE_STATUSES.discover, False),
             (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.deletion),
-            (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.deploy),
             (consts.NODE_STATUSES.error, False, consts.NODE_ERRORS.discover),
             (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.provision),
             (consts.NODE_STATUSES.error, True,

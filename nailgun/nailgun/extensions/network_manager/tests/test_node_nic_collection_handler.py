@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from oslo_serialization import jsonutils
 
 from nailgun import consts
@@ -124,15 +122,20 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
         self.assertEquals(1, len(changes))
 
     def test_interface_changes_locking(self):
-        lock_vs_status = {
-            consts.NODE_STATUSES.discover: False,
-            consts.NODE_STATUSES.error: True,
-            consts.NODE_STATUSES.provisioning: True,
-            consts.NODE_STATUSES.provisioned: True,
-            consts.NODE_STATUSES.deploying: True,
-            consts.NODE_STATUSES.ready: False,
-            consts.NODE_STATUSES.stopped: False,
-            consts.NODE_STATUSES.removing: True}
+        lock_vs_status = (
+            (consts.NODE_STATUSES.discover, False),
+            (consts.NODE_STATUSES.error, False, consts.NODE_ERRORS.deploy),
+            (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.provision),
+            (consts.NODE_STATUSES.error, False, consts.NODE_ERRORS.discover),
+            (consts.NODE_STATUSES.error, False,
+                consts.NODE_ERRORS.stop_deployment),
+            (consts.NODE_STATUSES.error, True, consts.NODE_ERRORS.deletion),
+            (consts.NODE_STATUSES.provisioning, True),
+            (consts.NODE_STATUSES.provisioned, True),
+            (consts.NODE_STATUSES.deploying, True),
+            (consts.NODE_STATUSES.ready, False),
+            (consts.NODE_STATUSES.stopped, False),
+            (consts.NODE_STATUSES.removing, True))
         meta = self.env.default_metadata()
         meta['interfaces'] = [{'name': 'eth0', 'pxe': True},
                               {'name': 'eth1'}]
@@ -140,9 +143,11 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             nodes_kwargs=[{'roles': ['controller'], 'meta': meta}]
         )
         node = self.env.nodes[0]
-        node.error_type = consts.NODE_ERRORS.deploy
-        for status, lock in six.iteritems(lock_vs_status):
-            node.status = status
+        for case in lock_vs_status:
+            node.status = case[0]
+            lock = case[1]
+            if node.status == consts.NODE_STATUSES.error:
+                node.error_type = case[2]
             self.db.flush()
             # Getting nics
             resp = self.env.node_nics_get(node.id)

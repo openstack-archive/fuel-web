@@ -91,6 +91,10 @@ class NetworkCheck(object):
 
         (both nova-net and neutron)
         """
+        if self.cluster.network_config.configuration_template is not None:
+            # TODO(akasatkin) checking of network templates to be considered
+            return
+
         netw_untagged = lambda n: (n['vlan_start'] is None) \
             and (not n['meta'].get('ext_net_data')) \
             and (not n['meta'].get('neutron_vlan_range'))

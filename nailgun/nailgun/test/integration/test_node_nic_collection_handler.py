@@ -141,7 +141,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             nodes_kwargs=[{'roles': ['controller'], 'meta': meta}]
         )
         node = self.env.nodes[0]
-        node.error_type = consts.NODE_ERRORS.deploy
+        node.error_type = consts.NODE_ERRORS.provision
         for status, lock in six.iteritems(lock_vs_status):
             node.status = status
             self.db.flush()

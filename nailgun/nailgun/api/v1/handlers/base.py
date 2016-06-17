@@ -31,6 +31,7 @@ from nailgun.api.v1.validators.orchestrator_graph import \
 from nailgun import consts
 from nailgun.db import db
 from nailgun import errors
+from nailgun.errors.base import NailgunException
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
@@ -297,6 +298,11 @@ def content_json(func, cls, *args, **kwargs):
         else:
             http_error.data = json_resp(http_error.data)
         raise
+    except NailgunException as exc:
+        logger.exception('NailgunException occured')
+        http_error = BaseHandler.http(400, exc.message)
+        web.header('Content-Type', 'text/plain')
+        raise http_error
     # intercepting all errors to avoid huge HTML output
     except Exception as exc:
         logger.exception('Unexpected exception occured')

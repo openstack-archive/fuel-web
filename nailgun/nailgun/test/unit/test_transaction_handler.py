@@ -235,3 +235,144 @@ class TestTransactionHandlers(BaseTestCase):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 404)
+
+
+class TestTransactionCollectionHandlers(BaseTestCase):
+
+    def setUp(self):
+        super(TestTransactionCollectionHandlers, self).setUp()
+
+    def prepare_transactions_get(self):
+        self.cluster1 = self.env.create(
+            nodes_kwargs=[
+                {"roles": ["controller"]}
+            ]
+        )
+        self.cluster2 = self.env.create(
+            nodes_kwargs=[
+                {"roles": ["controller"]}
+            ]
+        )
+
+        tasks = [{'name': 'deployment',
+                  'cluster': self.cluster1,
+                  'status': consts.TASK_STATUSES.ready,
+                  'progress': 100},
+                 {'name': 'provision',
+                  'cluster': self.cluster1,
+                  'status': consts.TASK_STATUSES.ready,
+                  'progress': 100},
+                 {'name': 'deployment',
+                  'cluster': self.cluster1,
+                  'status': consts.TASK_STATUSES.running,
+                  'progress': 100},
+                 {'name': 'deployment',
+                  'cluster': self.cluster2,
+                  'status': consts.TASK_STATUSES.ready,
+                  'progress': 100}]
+
+        task_objs = []
+        for task in tasks:
+            task_obj = Task(**task)
+            self.db.add(task_obj)
+            task_objs.append(task_obj)
+            task['cluster'] = task['cluster'].id
+        self.db.flush()
+
+        for i in range(len(tasks)):
+            tasks[i]['uuid'] = task_objs[i].uuid
+        return tasks
+
+    def _compare_task_uuids(self, expected, actual):
+        actual_uuids = [task['uuid'] for task in actual]
+        expected_uuids = [task['uuid'] for task in expected]
+        self.assertEqual(set(actual_uuids), set(expected_uuids))
+
+    def check_transactions_get_all(self, tasks):
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_task_uuids(tasks, resp.json_body)
+
+    def check_transactions_get_by_cluster(self, tasks):
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ) + "?cluster_id=%d" % self.cluster2.id,
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_task_uuids([tasks[3]], resp.json_body)
+
+    def check_transactions_get_by_status(self, tasks):
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ) + "?statuses=running",
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_task_uuids([tasks[2]], resp.json_body)
+
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ) + "?statuses=running,ready",
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_task_uuids(tasks, resp.json_body)
+
+    def check_transactions_get_by_task_name(self, tasks):
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ) + "?tasks_names=provision",
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_task_uuids([tasks[1]], resp.json_body)
+
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ) + "?tasks_names=provision,deployment",
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_task_uuids(tasks, resp.json_body)
+
+    def test_transactions_get(self):
+        tasks = self.prepare_transactions_get()
+        self.check_transactions_get_all(tasks)
+        self.check_transactions_get_by_cluster(tasks)
+        self.check_transactions_get_by_status(tasks)
+        self.check_transactions_get_by_task_name(tasks)
+
+    def test_transactions_get_invalid_status(self):
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ) + "?statuses=invalid",
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Statuses parameter could only be',
+                      resp.json_body['message'])
+
+    def test_transactions_get_invalid_task_name(self):
+        resp = self.app.get(
+            reverse(
+                'TransactionCollectionHandler',
+            ) + "?tasks_names=invalid",
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Task names parameter could only be',
+                      resp.json_body['message'])

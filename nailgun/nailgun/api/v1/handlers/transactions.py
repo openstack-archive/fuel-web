@@ -19,8 +19,9 @@ from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
 
 from nailgun.api.v1.handlers.base import content
-from nailgun.api.v1.validators.task import TaskValidator
+from nailgun.api.v1.validators.transaction import TransactionValidator
 
+from nailgun import errors
 from nailgun import objects
 
 
@@ -39,7 +40,7 @@ class TransactionCollectionHandler(CollectionHandler):
     """Transaction collection handler"""
 
     collection = objects.TransactionCollection
-    validator = TaskValidator
+    validator = TransactionValidator
 
     @content
     def GET(self):
@@ -47,15 +48,24 @@ class TransactionCollectionHandler(CollectionHandler):
 
         :returns: Collection of JSONized Task objects.
         :http: * 200 (OK)
-               * 404 (task not found in db)
+               * 400 (wrong attributes data specified)
         """
         cluster_id = web.input(cluster_id=None).cluster_id
-        if cluster_id:
-            return self.collection.to_json(
-                self.collection.get_by_cluster_id(cluster_id)
-            )
-        else:
-            return self.collection.to_json()
+        statuses = self.get_param_as_set('statuses')
+        transaction_types = self.get_param_as_set('transaction_types')
+
+        try:
+            self.validator.validate_query(statuses=statuses,
+                                          transaction_types=transaction_types)
+        except errors.ValidationException as exc:
+            raise self.http(400, exc.message)
+
+        return self.collection.to_json(
+            self.collection.get_transactions(
+                cluster_id=cluster_id,
+                statuses=statuses,
+                transaction_types=transaction_types)
+        )
 
 
 class BaseTransactionDataHandler(TransactionHandler):

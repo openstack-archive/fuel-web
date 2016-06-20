@@ -1097,13 +1097,33 @@ class NailgunReceiver(object):
                 result[node['uid']] = node.get('data')
 
             elif node['status'] == consts.NODE_STATUSES.ready:
+                incorrect_input = False
                 for row in node.get('data', []):
-                    if not net_utils.is_same_mac(row['mac'],
-                                                 master_network_mac):
-                        row['node_name'] = node_db.name
-                        message = message_template.format(**row)
-                        messages.append(message)
+                    try:
+                        if not net_utils.is_same_mac(row['mac'],
+                                                     master_network_mac):
+                            row['node_name'] = node_db.name
+                            message = message_template.format(**row)
+                            messages.append(message)
+                    # NOTE(aroma): for example when mac's value
+                    # is an empty string
+                    except ValueError as e:
+                        logger.warning(
+                            "Failed to compare mac address "
+                            "from response data (row = {0}) "
+                            "from node with id={1}. "
+                            "Original error:\n {2}"
+                            .format(row, node['uid'], six.text_type(e)))
+                        incorrect_input = True
+                    finally:
                         result[node['uid']].append(row)
+
+                if incorrect_input:
+                    messages.append(
+                        "Something is wrong with response data from node with "
+                        "id={}. Check logs for details."
+                        .format(node['uid'])
+                    )
 
         status = status if not messages else consts.TASK_STATUSES.error
         error_msg = '\n'.join(messages) if messages else error_msg

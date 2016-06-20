@@ -85,8 +85,24 @@ class TransactionCollection(NailgunCollection):
     single = Transaction
 
     @classmethod
-    def get_by_cluster_id(cls, cluster_id):
-        return cls.filter_by(None, cluster_id=cluster_id)
+    def get_transactions(cls, cluster_id=None,
+                         transaction_types=None,
+                         statuses=None):
+        """Get list of transactions by given filters.
+
+        :param cluster_id: db id of cluster object
+        :param transaction_types: list with transaction types
+        :param statuses: list of statuses
+        :returns: list of Task objects
+        """
+        query = cls.all()
+        if cluster_id:
+            query = cls.filter_by(query, cluster_id=cluster_id)
+        if transaction_types:
+            query = cls.filter_by_list(query, 'name', transaction_types)
+        if statuses:
+            query = cls.filter_by_list(query, 'status', statuses)
+        return query
 
     @classmethod
     def get_last_succeed_run(cls, cluster):

@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 import six
 
 from nailgun.api.v1.validators import base
@@ -202,8 +203,17 @@ class NodeValidator(base.BasicValidator):
                 log_message=True
             )
 
+    HostnameRegex = re.compile(base_types.FQDN['pattern'])
+
     @classmethod
     def validate_hostname(cls, hostname, instance):
+        if not cls.HostnameRegex.match(hostname):
+            raise errors.InvalidData(
+                'Hostname must consist of english characters, '
+                'digits, minus signs and periods. '
+                '(The following pattern must apply {})'.format(
+                    base_types.FQDN['pattern']))
+
         if hostname == instance.hostname:
             return
 

@@ -138,6 +138,10 @@ class BaseExtension(object):
         """Callback which gets executed when node group is created"""
 
     @classmethod
+    def on_nodegroup_delete(cls, nodegroup):
+        """Callback which gets executed when node group is deleted"""
+
+    @classmethod
     def on_cluster_create(cls, cluster, data):
         """Callback which gets executed when cluster is initially created.
 

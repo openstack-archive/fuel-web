@@ -33,6 +33,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
+from nailgun.extensions import callback_wrapper
 from nailgun.extensions import fire_callback_on_cluster_create
 from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_cluster_patch_attributes
@@ -244,6 +245,7 @@ class Cluster(NailgunObject):
         }
 
     @classmethod
+    @callback_wrapper('cluster_delete', ['instance'])
     def delete(cls, instance):
         """Delete cluster.
 

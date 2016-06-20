@@ -181,18 +181,12 @@ class NailgunReceiver(object):
                 db().delete(ip)
             db().flush()
 
-            nm = objects.Cluster.get_network_manager(cluster)
-            admin_nets = nm.get_admin_networks()
             objects.Task.delete(task)
             for task_ in cluster.tasks:
                 if task_ != task:
                     objects.Transaction.delete(task_)
 
             objects.Cluster.delete(cluster)
-            if admin_nets != nm.get_admin_networks():
-                # import it here due to cyclic dependencies problem
-                from nailgun.task.manager import UpdateDnsmasqTaskManager
-                UpdateDnsmasqTaskManager().execute()
 
             notifier.notify(
                 "done",
@@ -1355,8 +1349,8 @@ class NailgunReceiver(object):
                            "due to task doesn't exist in DB", task_uuid)
 
     @classmethod
-    def update_dnsmasq_resp(cls, **kwargs):
-        logger.info("RPC method update_dnsmasq_resp received: %s",
+    def base_resp(cls, **kwargs):
+        logger.info("RPC method base_resp received: %s",
                     jsonutils.dumps(kwargs))
 
         task_uuid = kwargs.get('task_uuid')

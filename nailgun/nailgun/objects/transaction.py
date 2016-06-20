@@ -89,6 +89,17 @@ class TransactionCollection(NailgunCollection):
         return cls.filter_by(None, cluster_id=cluster_id)
 
     @classmethod
+    def get_transactions(cls, cluster_id, tasks_names=None, statuses=None):
+        query = cls.all()
+        if cluster_id:
+            query = cls.filter_by(query, cluster_id=cluster_id)
+        if tasks_names:
+            query = cls.filter_by_list(query, 'name', tasks_names)
+        if statuses:
+            query = cls.filter_by_list(query, 'status', statuses)
+        return query
+
+    @classmethod
     def get_last_succeed_run(cls, cluster):
         # TODO(bgaifullin) remove hardcoded name of task
         return cls.filter_by(

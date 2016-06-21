@@ -175,6 +175,15 @@ class DeploymentHistoryCollection(NailgunCollection):
             task_present_in_history_by_name = {}
 
             for task in tasks_snapshot:
+                if nodes_ids:
+                    if task.get('node_id') not in nodes_ids:
+                        continue
+                if statuses:
+                    if task.get('status') not in statuses:
+                        continue
+                if tasks_names:
+                    if task.get('task_name') not in tasks_names:
+                        continue
                 # remove ambiguous id field
                 task.pop('id', None)
                 task_parameters_by_name[task['task_name']] = task

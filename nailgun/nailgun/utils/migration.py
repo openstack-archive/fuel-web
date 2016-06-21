@@ -527,7 +527,7 @@ def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):
     for attr_id, generated in connection.execute(select_query):
         attrs = jsonutils.loads(generated)
         if attrs['cobbler']['profile'] == 'ubuntu_1204_x86_64':
-            attrs['cobbler']['profile'] = 'ubuntu_1404_x86_64'
+            attrs['cobbler']['profile'] = 'ubuntu_1604_x86_64'
             connection.execute(
                 update_query,
                 generated=jsonutils.dumps(attrs),
@@ -542,7 +542,7 @@ def upgrade_ubuntu_cobbler_profile_6_0_to_6_1(connection):
         if attrs['generated']['cobbler']['profile']['generator_arg'] == \
                 'ubuntu_1204_x86_64':
             attrs['generated']['cobbler']['profile']['generator_arg'] = \
-                'ubuntu_1404_x86_64'
+                'ubuntu_1604_x86_64'
             connection.execute(
                 update_query,
                 attrs_meta=jsonutils.dumps(attrs),

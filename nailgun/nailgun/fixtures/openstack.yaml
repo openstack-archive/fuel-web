@@ -2119,11 +2119,11 @@
           codename: "trusty"
           image_data:
             /:
-              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64.img.gz"
               format: "ext4"
               container: "gzip"
             /boot:
-              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1404_amd64-boot.img.gz"
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64-boot.img.gz"
               format: "ext2"
               container: "gzip"
     node_attributes:

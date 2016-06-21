@@ -516,6 +516,15 @@ DEFAULT_HUGEPAGE_SIZE = '2048'
 HUGE_PAGES_SIZE_MAP = [('2048', '2M'), ('1048576', '1G')]
 DPDK_OVS_CORE_CPUS = 1
 
+DEFAULT_RULES_TO_PICK_BOOT_DISK = [
+    {'type': 'exclude_disks_by_name',
+     'regex': '^nvme',
+     'description': ''},
+    {'type': 'pick_root_disk_if_disk_name_match',
+     'regex': '^md',
+     'root_mount': '/',
+     'description': ''}]
+
 MEMORY_RESERVED_FOR_OPERATING_SYSTEM = 1024 ** 3  # one GiB in bytes
 
 HYPERVISORS = Enum(

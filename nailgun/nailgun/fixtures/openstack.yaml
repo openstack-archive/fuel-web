@@ -77,6 +77,7 @@
         restrictions:
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
+            message: "VMware vCenter not enabled for cluster"
       ceph-osd:
         name: "Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
@@ -129,6 +130,7 @@
         restrictions:
           - condition: "not ('advanced' in version:feature_groups)"
             action: "hide"
+            message: "Advanced feature should be enabled in feature groups"
       compute-vmware:
         name: "Compute VMware"
         description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
@@ -147,6 +149,7 @@
         restrictions:
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
+            message: "VMware vCenter not enabled for cluster"
       ironic:
         name: "Ironic"
         description: "Ironic conductor."

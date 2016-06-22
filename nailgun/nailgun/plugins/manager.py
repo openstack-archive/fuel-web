@@ -467,6 +467,23 @@ class PluginManager(object):
         NodeNICInterfaceClusterPlugin.\
             add_cluster_plugin_for_node_nic(interface)
 
+    # FIXME: write tests
+    @classmethod
+    def get_node_metadata(cls, cluster):
+        """Get plugin node attributes metadata for cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :returns: dict -- Object with node attributes
+        """
+        plugins_node_metadata = {}
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
+            metadata = plugin_adapter.node_attributes_metadata
+            plugins_node_metadata[plugin_adapter.name] = metadata
+
+        return plugins_node_metadata
+
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
         """Sync metadata for plugins by given IDs.

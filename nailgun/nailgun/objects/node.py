@@ -1140,6 +1140,11 @@ class Node(NailgunObject):
         node.vms_conf.changed()
 
     @classmethod
+    def get_attributes(cls, instance):
+        # FIXME: get here attributes from each node_plugin
+        return copy.deepcopy(instance.attributes)
+
+    @classmethod
     def set_default_attributes(cls, instance):
         if not instance.cluster_id:
             logger.warning(
@@ -1225,6 +1230,22 @@ class Node(NailgunObject):
             return []
         nm = Cluster.get_network_manager(instance.cluster)
         return nm.dpdk_nics(instance)
+
+    @classmethod
+    def get_default_attributes(cls, instance):
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to update attributes of node "
+                u"'{0}' which isn't added to any cluster".format(
+                    instance.full_name))
+            return
+
+        cluster = instance.cluster
+        attributes = instance.cluster.release.node_attributes
+        attributes.update(
+            PluginManager.get_node_metadata(cluster))
+
+        return attributes
 
     @classmethod
     def create_nic_attributes(cls, instance):

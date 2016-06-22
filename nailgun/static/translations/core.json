@@ -1409,6 +1409,7 @@
                     "important": "重要",
                     "stay_button": "留在本页",
                     "leave_button": "离开并放弃变更",
+                    "apply_and_proceed_button": "保存并继续",
                     "default_message": "设置变更未保存，您想放弃变更并离开么？",
                     "verify_message": "正在进行网络验证，您应该保存变更或留在本页"
                 },

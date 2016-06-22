@@ -1104,4 +1104,4 @@ NTP_UPSTREAM:
   - '1.fuel.pool.ntp.org'
 
 # deadlocks detection settings
-LOG_DEADLOCKS_WARNINGS: 1
+LOG_DEADLOCKS_WARNINGS: 0

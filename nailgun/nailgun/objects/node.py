@@ -1155,11 +1155,6 @@ class Node(NailgunObject):
     def get_attributes(cls, instance):
         return copy.deepcopy(instance.attributes)
 
-    @classmethod
-    def update_attributes(cls, instance, attrs):
-        instance.attributes = utils.dict_merge(instance.attributes, attrs)
-
-    @classmethod
     def set_default_attributes(cls, instance):
         if not instance.cluster_id:
             logger.warning(
@@ -1185,6 +1180,11 @@ class Node(NailgunObject):
             if NIC.is_sriov_enabled(iface):
                 return True
         return False
+
+    @classmethod
+    def update_attributes(cls, instance, attrs):
+        # FIXME: set here attributes for each node_plugin
+        instance.attributes = utils.dict_merge(instance.attributes, attrs)
 
     @classmethod
     def refresh_dpdk_properties(cls, instance):
@@ -1225,15 +1225,20 @@ class Node(NailgunObject):
         return nm.dpdk_nics(instance)
 
     @classmethod
-    def get_bond_default_attributes(cls, instance):
+    def get_default_attributes(cls, instance):
         if not instance.cluster_id:
             logger.warning(
-                u"Attempting to get bond default attributes of node "
+                u"Attempting to update attributes of node "
                 u"'{0}' which isn't added to any cluster".format(
                     instance.full_name))
             return
 
-        return Bond.get_bond_default_attributes(instance.cluster)
+        cluster = instance.cluster
+        attributes = instance.cluster.release.node_attributes
+        attributes.update(
+            PluginManager.get_node_metadata(cluster))
+
+        return attributes
 
     @classmethod
     def create_nic_attributes(cls, instance):

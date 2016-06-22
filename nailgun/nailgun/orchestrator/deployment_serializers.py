@@ -26,6 +26,7 @@ from nailgun import extensions
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.plugins import adapters
+from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun import utils
 from nailgun.utils.role_resolver import NameMatchingPolicy
@@ -652,6 +653,22 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
                 hugepages)
 
 
+class DeploymentHASerializer100(DeploymentHASerializer90):
+
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
+        serialized_node = super(
+            DeploymentHASerializer100,
+            cls).serialize_node_for_node_list(node, role)
+
+        for plugin_name, plugin_attributes in \
+                six.iteritems(PluginManager.get_plugin_node_attributes(node)):
+            plugin_attributes.pop('metadata', None)
+            serialized_node[plugin_name] = {
+                k: v.get('value') for k, v in six.iteritems(plugin_attributes)}
+        return serialized_node
+
+
 class DeploymentLCMSerializer(DeploymentHASerializer90):
     _configs = None
     _priorities = {
@@ -815,6 +832,9 @@ def get_serializer_for_cluster(cluster):
         },
         '9.0': {
             'ha': DeploymentHASerializer90,
+        },
+        '10.0': {
+            'ha': DeploymentHASerializer100
         }
     }
 

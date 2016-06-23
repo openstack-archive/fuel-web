@@ -65,6 +65,7 @@ RABBITMQ:
   fake: "0"
   hostname: "127.0.0.1"
 
+PLUGINS_RPM_DB_PATH: '/var/lib/fuel/rpm'
 PLUGINS_PATH: '/var/www/nailgun/plugins'
 PLUGINS_SLAVES_SCRIPTS_PATH: '/etc/fuel/plugins/{plugin_name}/'
 PLUGINS_REPO_URL: 'http://{master_ip}:8080/plugins/{plugin_name}/'

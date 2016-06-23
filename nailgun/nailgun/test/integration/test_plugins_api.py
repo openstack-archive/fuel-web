@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
+
 import mock
 from oslo_serialization import jsonutils
 import yaml
@@ -23,6 +25,9 @@ from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun import objects
 from nailgun.plugins import adapters
 from nailgun.test import base
+
+from nailgun.plugins.package_manager.package_fp import PluginPackageFP
+from nailgun.plugins.package_manager.package_rpm import PluginPackageRPM
 
 
 class BasePluginTest(base.BaseIntegrationTest):
@@ -121,8 +126,23 @@ class BasePluginTest(base.BaseIntegrationTest):
 
         return resp
 
+    def upload_plugin(self, file_name, force=False, expect_errors=False):
+        return self.app.post(
+            base.reverse('PluginUploadHandler'),
+            collections.OrderedDict([('force', force)]),
+            upload_files=[('uploaded', file_name, 'some plugin data')],
+            expect_errors=expect_errors
+        )
+
 
 class TestPluginsApi(BasePluginTest):
+
+    def setUp(self):
+        super(TestPluginsApi, self).setUp()
+        self.plugin_fp_old = 'fake_plugin-1.0.0.fp'
+        self.plugin_fp_new = 'fake_plugin-1.0.1.fp'
+        self.plugin_rpm_old = 'fake_plugin-2.0-2.0.0-1.noarch.rpm'
+        self.plugin_rpm_new = 'fake_plugin-2.0-2.0.1-1.noarch.rpm'
 
     def test_plugin_created_on_post(self):
         resp = self.env.create_plugin(api=True)
@@ -165,7 +185,8 @@ class TestPluginsApi(BasePluginTest):
     def test_delete_plugin(self):
         resp = self.env.create_plugin(api=True)
         graphs_before_deletion = self.db.query(DeploymentGraph).count()
-        del_resp = self.delete_plugin(resp.json['id'])
+        with mock.patch.object(PluginPackageFP, 'remove'):
+            del_resp = self.delete_plugin(resp.json['id'])
         self.assertEqual(del_resp.status_code, 204)
         graphs_after_deletion = self.db.query(DeploymentGraph).count()
         self.assertEqual(1, graphs_before_deletion - graphs_after_deletion)
@@ -173,7 +194,8 @@ class TestPluginsApi(BasePluginTest):
     def test_delete_unused_plugin(self):
         self.create_cluster()
         resp = self.env.create_plugin(api=True)
-        del_resp = self.delete_plugin(resp.json['id'])
+        with mock.patch.object(PluginPackageFP, 'remove'):
+            del_resp = self.delete_plugin(resp.json['id'])
         self.assertEqual(del_resp.status_code, 204)
 
     def test_no_delete_of_used_plugin(self):
@@ -352,6 +374,88 @@ class TestPluginsApi(BasePluginTest):
         plugin_ids.append(resp.json['id'])
 
         return plugin_ids
+
+    def test_install_uploaded_plugin_fp(self):
+        with mock.patch.object(PluginPackageFP, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='1.0.0', package_version='1.0.0')
+            with mock.patch.object(PluginPackageFP, 'install'):
+                resp = self.upload_plugin(self.plugin_fp_old)
+                self.assertEqual(resp.json['action'], 'installed')
+
+    def test_install_uploaded_plugin_rpm(self):
+        with mock.patch.object(PluginPackageRPM, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='2.0.0', package_version='4.0.0')
+            with mock.patch.object(PluginPackageRPM, 'install'):
+                resp = self.upload_plugin(self.plugin_rpm_old)
+                self.assertEqual(resp.json['action'], 'installed')
+
+    def test_reinstall_uploaded_plugin_fp(self):
+        self.env.create_plugin(api=True, name='fake_plugin', version='1.0.0',
+                               package_version='1.0.0')
+        with mock.patch.object(PluginPackageFP, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='1.0.0', package_version='1.0.0')
+
+            resp = self.upload_plugin(self.plugin_fp_old, expect_errors=True)
+            self.assertEqual(resp.status_code, 409)
+
+            with mock.patch.object(PluginPackageFP, 'reinstall'):
+                resp = self.upload_plugin(self.plugin_fp_old, force=True)
+                self.assertEqual(resp.json['action'], 'reinstalled')
+
+    def test_reinstall_uploaded_plugin_rpm(self):
+        self.env.create_plugin(api=True, name='fake_plugin', version='2.0.0',
+                               package_version='4.0.0')
+        with mock.patch.object(PluginPackageRPM, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='2.0.0', package_version='4.0.0')
+
+            resp = self.upload_plugin(self.plugin_rpm_old, expect_errors=True)
+            self.assertEqual(resp.status_code, 409)
+
+            with mock.patch.object(PluginPackageRPM, 'reinstall'):
+                resp = self.upload_plugin(self.plugin_rpm_old, force=True)
+                self.assertEqual(resp.json['action'], 'reinstalled')
+
+    def test_upgrade_uploaded_plugin_fp(self):
+        self.env.create_plugin(api=True, name='fake_plugin', version='1.0.0',
+                               package_version='1.0.0')
+        with mock.patch.object(PluginPackageFP, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='1.0.3', package_version='1.0.0')
+            resp = self.upload_plugin(self.plugin_fp_new, expect_errors=True)
+            self.assertEqual(resp.status_code, 406)
+
+    def test_upgrade_uploaded_plugin_rpm(self):
+        self.env.create_plugin(api=True, name='fake_plugin', version='2.0.0',
+                               package_version='4.0.0')
+        with mock.patch.object(PluginPackageRPM, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='2.0.1', package_version='4.0.0')
+            with mock.patch.object(PluginPackageRPM, 'upgrade'):
+                resp = self.upload_plugin(self.plugin_rpm_new)
+                self.assertEqual(resp.json['action'], 'upgraded')
+
+    def test_downgrade_uploaded_plugin_fp(self):
+        self.env.create_plugin(api=True, name='fake_plugin', version='1.0.3',
+                               package_version='1.0.0')
+        with mock.patch.object(PluginPackageFP, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='1.0.0', package_version='1.0.0')
+            resp = self.upload_plugin(self.plugin_fp_old, expect_errors=True)
+            self.assertEqual(resp.status_code, 406)
+
+    def test_downgrade_uploaded_plugin_rpm(self):
+        self.env.create_plugin(api=True, name='fake_plugin', version='2.0.1',
+                               package_version='4.0.0')
+        with mock.patch.object(PluginPackageRPM, 'get_metadata') as meta_mock:
+            meta_mock.return_value = self.env.get_default_plugin_metadata(
+                name='fake_plugin', version='2.0.0', package_version='4.0.0')
+            with mock.patch.object(PluginPackageRPM, 'downgrade'):
+                resp = self.upload_plugin(self.plugin_rpm_old)
+                self.assertEqual(resp.json['action'], 'downgraded')
 
 
 class TestPrePostHooks(BasePluginTest):

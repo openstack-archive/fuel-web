@@ -389,10 +389,18 @@ INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
                   ORCHESTRATOR_TASK_TYPES.stage,
                   ORCHESTRATOR_TASK_TYPES.skipped)
 
+PLUGIN_CONFIG_METADATA = 'metadata.yaml'
+PLUGIN_CONFIG_TASKS = 'tasks.yaml'
 
 PLUGIN_PRE_DEPLOYMENT_HOOK = "_plugin_pre_deployment_hook"
-
 PLUGIN_POST_DEPLOYMENT_HOOK = "_plugin_post_deployment_hook"
+
+PLUGIN_UPLOAD_RESULT = Enum(
+    'installed',
+    'reinstalled',
+    'upgraded',
+    'downgraded'
+)
 
 # filter for deployment tasks which should be rerun on deployed nodes to make
 # re-setup of network on nodes

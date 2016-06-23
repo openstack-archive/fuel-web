@@ -18,8 +18,24 @@ from .base import NailgunException
 
 
 class PluginException(NailgunException):
-    """Base plugn exception"""
+    """Base plugin exception."""
+
+
+class PackageFormatIsNotCompatible(PluginException):
+    message = "Package format is not compatible"
 
 
 class PackageVersionIsNotCompatible(PluginException):
     message = "Package version is not compatible"
+
+
+class UpgradeIsNotSupported(PluginException):
+    message = "Upgrade is not supported"
+
+
+class DowngradeIsNotSupported(PluginException):
+    message = "Downgrade is not supported"
+
+
+class ShellError(PluginException):
+    message = "Shell command executed with an error"

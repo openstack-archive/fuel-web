@@ -38,8 +38,6 @@ class PluginAdapterBase(object):
     2. Uploading tasks and deployment tasks
     3. Providing repositories/deployment scripts related info to clients
     """
-    config_metadata = 'metadata.yaml'
-    config_tasks = 'tasks.yaml'
 
     def __init__(self, plugin):
         self.plugin = plugin
@@ -60,7 +58,7 @@ class PluginAdapterBase(object):
         :return: All plugin metadata
         :rtype: dict
         """
-        metadata = self._load_config(self.config_metadata) or {}
+        metadata = self._load_config(consts.PLUGIN_CONFIG_METADATA) or {}
         metadata['tasks'] = self._load_tasks()
 
         for attribute, config in six.iteritems(self.db_cfg_mapping):
@@ -88,7 +86,7 @@ class PluginAdapterBase(object):
             logger.warning("Config {0} is not readable.".format(config))
 
     def _load_tasks(self):
-        return self._load_config(self.config_tasks) or []
+        return self._load_config(consts.PLUGIN_CONFIG_TASKS) or []
 
     @property
     def plugin_release_versions(self):

@@ -1028,7 +1028,9 @@ class Node(NailgunObject):
     def get_kernel_params(cls, instance):
         """Get kernel params.
 
-        Assemble kernel_params if they weren't replaced by custom params.
+        Returns kernel_params if they were replaced by custom ones.
+        Otherwise assemble kernel_params from cluster default
+        and node specific params: hugepages, sriov, isolcpus.
         """
 
         if instance.kernel_params:
@@ -1036,23 +1038,24 @@ class Node(NailgunObject):
 
         kernel_params = Cluster.get_default_kernel_params(instance.cluster)
 
-        # Add intel_iommu=on amd_iommu=on if SR-IOV is enabled on node
-        for nic in instance.nic_interfaces:
-            if NIC.is_sriov_enabled(nic):
-                if 'intel_iommu=' not in kernel_params:
-                    kernel_params += ' intel_iommu=on'
-                if 'amd_iommu=' not in kernel_params:
-                    kernel_params += ' amd_iommu=on'
-                break
+        if Release.is_nfv_supported(instance.cluster.release):
+            # Add intel_iommu=on amd_iommu=on if SR-IOV is enabled on node
+            for nic in instance.nic_interfaces:
+                if NIC.is_sriov_enabled(nic):
+                    if 'intel_iommu=' not in kernel_params:
+                        kernel_params += ' intel_iommu=on'
+                    if 'amd_iommu=' not in kernel_params:
+                        kernel_params += ' amd_iommu=on'
+                    break
 
-        if 'hugepages' not in kernel_params:
-            kernel_params += NodeAttributes.hugepages_kernel_opts(instance)
+            if 'hugepages' not in kernel_params:
+                kernel_params += NodeAttributes.hugepages_kernel_opts(instance)
 
-        isolated_cpus = NodeAttributes.distribute_node_cpus(
-            instance)['isolated_cpus']
-        if isolated_cpus and 'isolcpus' not in kernel_params:
-            kernel_params += " isolcpus={0}".format(
-                ",".join(six.moves.map(str, isolated_cpus)))
+            isolated_cpus = NodeAttributes.distribute_node_cpus(
+                instance)['isolated_cpus']
+            if isolated_cpus and 'isolcpus' not in kernel_params:
+                kernel_params += " isolcpus={0}".format(
+                    ",".join(six.moves.map(str, isolated_cpus)))
 
         return kernel_params
 

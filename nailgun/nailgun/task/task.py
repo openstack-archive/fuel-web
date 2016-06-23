@@ -1474,8 +1474,11 @@ class CheckBeforeDeploymentTask(object):
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
         cls._validate_network_template(task)
-        cls._check_sriov_properties(task)
-        cls._check_dpdk_properties(task)
+
+        # TODO(asvechnikov): Make an appropriate versioning of tasks
+        if objects.Release.is_nfv_supported(task.cluster.release):
+            cls._check_sriov_properties(task)
+            cls._check_dpdk_properties(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)

@@ -408,7 +408,7 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
 
     def test_user_account_info(self):
         self.cluster_db = self.env.create(
-            release_kwargs={'version': 'liberty-9.0'},
+            release_kwargs={'version': 'mitaka-9.0'},
         )
         self.env.create_nodes_w_interfaces_count(
             1, 1,
@@ -469,7 +469,7 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
     def test_serialize_iommu_parameters_for_sriov(self):
         cluster = self.env.create(
             release_kwargs={
-                'version': 'liberty-9.0',
+                'version': 'mitaka-9.0',
                 'operating_system': consts.RELEASE_OS.ubuntu},
             nodes_kwargs=[
                 {'roles': ['compute']}]
@@ -489,7 +489,10 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
     def test_serialize_node_hugepages(self):
         self.env.create(
             api=False,
-            release_kwargs={'operating_system': consts.RELEASE_OS.ubuntu},
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
             nodes_kwargs=[
                 {'roles': ['compute']}])
 
@@ -506,7 +509,10 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
     def test_serialize_node_cpu_pinning(self):
         self.env.create(
             api=False,
-            release_kwargs={'operating_system': consts.RELEASE_OS.ubuntu},
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
             nodes_kwargs=[
                 {'roles': ['compute']}])
 

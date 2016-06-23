@@ -165,6 +165,16 @@ class Release(NailgunObject):
                 StrictVersion(consts.FUEL_MULTIPLE_FLOATING_IP_RANGES))
 
     @classmethod
+    def is_nfv_supported(cls, instance):
+        """Check if nfv features are available for release
+
+        :param instance: a Release instance
+        :return: boolean
+        """
+        return (StrictVersion(instance.environment_version)
+                >= StrictVersion(consts.FUEL_NFV_AVAILABLE_SINCE))
+
+    @classmethod
     def get_deployment_tasks(cls, instance, graph_type=None):
         """Get deployment graph based on release version.
 

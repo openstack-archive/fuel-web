@@ -76,6 +76,7 @@ from nailgun.api.v1.handlers.plugin import \
 from nailgun.api.v1.handlers.plugin import PluginDeploymentGraphHandler
 from nailgun.api.v1.handlers.plugin import PluginHandler
 from nailgun.api.v1.handlers.plugin import PluginSyncHandler
+from nailgun.api.v1.handlers.plugin import PluginUploadHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkCollectionHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkHandler
 
@@ -298,6 +299,8 @@ urls = (
     PluginCollectionHandler,
     r'/plugins/sync/?$',
     PluginSyncHandler,
+    r'/plugins/upload/?$',
+    PluginUploadHandler,
 
     r'/plugins/(?P<obj_id>\d+)/deployment_graphs/?$',
     PluginDeploymentGraphCollectionHandler,

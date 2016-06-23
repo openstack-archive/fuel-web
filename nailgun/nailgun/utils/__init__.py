@@ -21,8 +21,8 @@ import shutil
 import string
 import struct
 import six
+import subprocess
 import time
-import yaml
 
 from copy import deepcopy
 from itertools import chain
@@ -33,6 +33,7 @@ from six.moves import zip_longest
 
 from uuid import uuid4
 
+from nailgun import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
 
@@ -324,3 +325,23 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+
+def exec_cmd(cmd, cwd=None):
+    """Executes shell command.
+
+    :param str cmd: Shell command
+    :param str cwd: Current work directory
+    :return: Command output
+    :rtype: str
+    """
+    p = subprocess.Popen(cmd,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         shell=True,
+                         cwd=cwd)
+    out, err = p.communicate()
+    if err:
+        raise errors.ShellError(
+            "Shell command '{0}' executed with an error: {1}".format(cmd, err))
+
+    return out

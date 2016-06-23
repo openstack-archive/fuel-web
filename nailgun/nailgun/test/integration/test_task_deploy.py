@@ -227,6 +227,27 @@ class TestTaskDeploy80(BaseIntegrationTest):
         )
         self.check_reexecute_task_on_cluster_update()
 
+    @fake_tasks(mock_rpc=True, fake_rpc=True,
+                override_state={'status': consts.NODE_STATUSES.ready})
+    def test_deploy_old_env(self):
+        task = self.env.launch_deployment(self.cluster.id)
+        self.assertEqual(consts.TASK_STATUSES.ready, task.status)
+
+        self.env.create_node(
+            api=False,
+            cluster_id=self.cluster.id,
+            pending_roles=['compute'],
+            pending_addition=True
+        )
+
+        # already deployed nodes don't have numa_topology
+        # because of the have old nailgun-agent
+        for node in self.env.nodes:
+            del node.meta['numa_topology']
+
+        task = self.env.launch_deployment(self.cluster.id)
+        self.assertEqual(consts.TASK_STATUSES.ready, task.status)
+
     def test_deploy_check_failed_with_conflict_role(self):
         node = self.env.nodes[0]
 

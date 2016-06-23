@@ -16,6 +16,7 @@
 
 import collections
 from copy import deepcopy
+from distutils import version
 from itertools import groupby
 import os
 
@@ -1474,8 +1475,12 @@ class CheckBeforeDeploymentTask(object):
         cls._check_public_network(task)
         cls._check_vmware_consistency(task)
         cls._validate_network_template(task)
-        cls._check_sriov_properties(task)
-        cls._check_dpdk_properties(task)
+
+        # TODO(asvechnikov): Make an appropriate versioning of tasks
+        if (version.StrictVersion(task.cluster.release.environment_version)
+           >= version.StrictVersion(consts.FUEL_NVF_AVAILABLE_SINCE)):
+            cls._check_sriov_properties(task)
+            cls._check_dpdk_properties(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)

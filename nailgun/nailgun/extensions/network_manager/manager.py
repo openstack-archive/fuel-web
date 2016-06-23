@@ -994,10 +994,11 @@ class NetworkManager(object):
 
         # no need to copy/deepcopy as interface_properties is not modified
         # partly but replaced
-        interface_properties = interface.interface_properties
-        if not interface_properties:
-            interface_properties = \
-                cls.get_default_interface_properties()
+        interface_properties = nailgun_utils.dict_merge(
+            cls.get_default_interface_properties(),
+            interface.interface_properties or {}
+        )
+
         if interface_attrs.get('interface_properties'):
             interface_properties = nailgun_utils.dict_merge(
                 interface_properties,

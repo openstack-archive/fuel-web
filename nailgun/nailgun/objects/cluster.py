@@ -1496,6 +1496,11 @@ class Cluster(NailgunObject):
             'networking_parameters': instance.network_config,
         }
 
+    @classmethod
+    def nvf_supported(cls, instance):
+        return (StrictVersion(instance.release.environment_version)
+                >= StrictVersion(consts.FUEL_NVF_AVAILABLE_SINCE))
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

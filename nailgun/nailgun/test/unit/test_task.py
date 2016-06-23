@@ -741,6 +741,18 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         with self.assertRaisesRegexp(errors.CheckBeforeDeploymentError, msg):
             task.CheckBeforeDeploymentTask._check_vmware_consistency(self.task)
 
+    @mock.patch.object(
+        task, 'fire_callback_on_before_deployment_check')
+    @mock.patch.object(
+        task.CheckBeforeDeploymentTask, '_check_sriov_properties')
+    @mock.patch.object(
+        task.CheckBeforeDeploymentTask, '_check_dpdk_properties')
+    def test_execute_w_old_release(self, dpdk_m, sriov_m, callback_m):
+        task.CheckBeforeDeploymentTask.execute(self.task)
+        callback_m.assert_called_once_with(self.cluster)
+        self.assertEqual(0, dpdk_m.call_count)
+        self.assertEqual(0, sriov_m.call_count)
+
 
 class TestDeployTask(BaseTestCase):
 

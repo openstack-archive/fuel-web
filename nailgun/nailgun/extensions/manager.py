@@ -38,7 +38,8 @@ def get_all_extensions():
         _EXTENSION_MANAGER = ExtensionManager(
             namespace=consts.EXTENSIONS_NAMESPACE)
 
-    return (ext.plugin for ext in _EXTENSION_MANAGER.extensions)
+    return (ext.plugin for ext in sorted(_EXTENSION_MANAGER.extensions,
+                                         key=lambda e: e.plugin.weight))
 
 
 def get_extension(name):

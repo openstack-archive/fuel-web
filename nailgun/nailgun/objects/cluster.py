@@ -1564,6 +1564,21 @@ class Cluster(NailgunObject):
                 network_configuration.NeutronNetworkConfigurationSerializer
         return serializer.serialize_for_cluster(instance)
 
+    @classmethod
+    def is_lcm_ready(cls, instance):
+        """Check if LCM is available for the cluster
+
+        :param instance: a Cluster instance
+        :returns: boolean
+        """
+
+        attrs = cls.get_editable_attributes(instance)
+
+        return (
+            Release.is_lcm_supported(instance.release) or
+            attrs['common'].get('enforce_lcm', {}).get('value')
+        )
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

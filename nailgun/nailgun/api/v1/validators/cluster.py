@@ -358,7 +358,7 @@ class ClusterStopDeploymentValidator(base.BaseDefferedTaskValidator):
         # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
         generated = cluster.attributes.generated
         if generated.get('deployed_before', {}).get('value') and\
-                not objects.Release.is_lcm_supported(cluster.release):
+                not objects.Cluster.is_lcm_ready(cluster):
             raise errors.CannotBeStopped()
 
 

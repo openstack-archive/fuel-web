@@ -57,11 +57,11 @@ if __name__ == "__main__":
         description='Nailgun package',
         long_description="""Nailgun package""",
         classifiers=[
-              "Development Status :: 4 - Beta",
-              "Programming Language :: Python",
-              "Topic :: Internet :: WWW/HTTP",
-              "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
-          ],
+            "Development Status :: 4 - Beta",
+            "Programming Language :: Python",
+            "Topic :: Internet :: WWW/HTTP",
+            "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+        ],
         author='Mirantis Inc.',
         author_email='product@mirantis.com',
         url='http://mirantis.com',
@@ -89,7 +89,10 @@ if __name__ == "__main__":
             ],
             'nailgun.extensions': [
                 ('volume_manager = nailgun.extensions.volume_manager'
-                 '.extension:VolumeManagerExtension')
+                 '.extension:VolumeManagerExtension'),
+                ('converted_serializers = nailgun.'
+                 'extensions.converted_serializers.'
+                 'extension:ConvertedSerializersExtension')
             ],
         },
     )

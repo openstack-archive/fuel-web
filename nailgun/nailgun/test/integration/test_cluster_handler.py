@@ -307,7 +307,7 @@ class TestClusterComponents(BaseIntegrationTest):
     def setUp(self):
         super(TestClusterComponents, self).setUp()
         self.release = self.env.create_release(
-            version='2015.1-8.0',
+            version='liberty-8.0',
             operating_system='Ubuntu',
             modes=[consts.CLUSTER_MODES.ha_compact],
             components_metadata=[

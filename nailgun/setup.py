@@ -91,7 +91,10 @@ if __name__ == "__main__":
                 ('volume_manager = nailgun.extensions.volume_manager'
                  '.extension:VolumeManagerExtension'),
                 ('network_manager = nailgun.extensions.network_manager'
-                 '.extension:NetworkManagerExtension')
+                 '.extension:NetworkManagerExtension'),
+                ('converted_serializers = nailgun.'
+                 'extensions.converted_serializers.'
+                 'extension:ConvertedSerializersExtension')
             ],
         },
     )

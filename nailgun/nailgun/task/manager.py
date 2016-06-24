@@ -168,7 +168,7 @@ class DeploymentCheckMixin(object):
 
 class BaseDeploymentTaskManager(TaskManager):
     def get_deployment_task(self):
-        if objects.Release.is_lcm_supported(self.cluster.release):
+        if objects.Cluster.is_lcm_ready(self.cluster):
             return tasks.ClusterTransaction
         return tasks.DeploymentTask
 
@@ -187,14 +187,14 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
     def ensure_nodes_changed(
             self, nodes_to_provision, nodes_to_deploy, nodes_to_delete
     ):
-        if objects.Release.is_lcm_supported(self.cluster.release):
+        if objects.Cluster.is_lcm_ready(self.cluster):
             return
 
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
             raise errors.WrongNodeStatus("No changes to deploy")
 
     def get_nodes_to_deploy(self, force=False):
-        if objects.Release.is_lcm_supported(self.cluster.release):
+        if objects.Cluster.is_lcm_ready(self.cluster):
             return list(
                 objects.Cluster.get_nodes_not_for_deletion(self.cluster).all()
             )
@@ -424,7 +424,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
         dry_run = kwargs.get('dry_run', False)
 
         if (nodes_to_deploy or affected_nodes or
-                objects.Release.is_lcm_supported(self.cluster.release)):
+                objects.Cluster.is_lcm_ready(self.cluster)):
             if nodes_to_deploy:
                 logger.debug("There are nodes to deploy: %s",
                              " ".join((objects.Node.get_node_fqdn(n)
@@ -480,7 +480,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
         # those two tasks, let's create stripped version of
         # deployment.
         if (nodes_to_delete and not nodes_to_deploy and
-                not objects.Release.is_lcm_supported(self.cluster.release)):
+                not objects.Cluster.is_lcm_ready(self.cluster)):
             logger.debug(
                 "No nodes to deploy, just update nodes.yaml everywhere.")
 
@@ -1432,7 +1432,7 @@ class RemoveStatsUserTaskManager(BaseStatsUserTaskManager):
 class OpenstackConfigTaskManager(TaskManager):
 
     def get_deployment_task(self):
-        if objects.Release.is_lcm_supported(self.cluster.release):
+        if objects.Cluster.is_lcm_ready(self.cluster):
             return tasks.ClusterTransaction
         return tasks.UpdateOpenstackConfigTask
 

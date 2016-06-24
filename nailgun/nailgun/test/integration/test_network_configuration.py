@@ -541,7 +541,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         }
 
         self.cluster.release.network_roles_metadata.append(net_role)
-        self.cluster.release.version = '2015.1-8.0'
+        self.cluster.release.version = 'liberty-8.0'
         self.db.flush()
 
         resp = self.env.neutron_networks_put(self.cluster.id, {})

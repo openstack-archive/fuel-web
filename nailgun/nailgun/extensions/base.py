@@ -66,6 +66,7 @@ class BaseExtension(object):
     urls = []
     provides = []
     data_pipelines = []
+    weight = 0
 
     @classmethod
     def alembic_migrations_path(cls):

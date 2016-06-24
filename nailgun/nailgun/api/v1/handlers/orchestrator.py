@@ -156,7 +156,7 @@ class DefaultProvisioningInfo(DefaultOrchestratorInfo):
 class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             return deployment_serializers.serialize_for_lcm(
                 cluster, nodes, ignore_customized=True
             )
@@ -168,7 +168,7 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             raise self.http(
                 405, msg="The plugin hooks are not supported anymore."
             )
@@ -179,7 +179,7 @@ class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
 class DefaultPostPluginsHooksInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             raise self.http(
                 405, msg="The plugin hooks are not supported anymore."
             )
@@ -399,7 +399,7 @@ class TaskDeployGraph(BaseHandler):
 class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
 
     def get_default_nodes(self, cluster):
-        if objects.Release.is_lcm_supported(cluster.release):
+        if objects.Cluster.is_lcm_ready(cluster):
             return objects.Cluster.get_nodes_not_for_deletion(cluster).all()
         return TaskHelper.nodes_to_deploy(cluster)
 
@@ -422,7 +422,7 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
         task_ids = [t.strip() for t in tasks.split(',')] if tasks else None
 
         try:
-            if objects.Release.is_lcm_supported(cluster.release):
+            if objects.Cluster.is_lcm_ready(cluster):
                 # in order to do not repeat quite complex logic, we create
                 # a temporary task (transaction) instance and pass it to
                 # task_deploy serializer.

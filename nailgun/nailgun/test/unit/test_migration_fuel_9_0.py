@@ -153,7 +153,7 @@ def prepare():
         meta.tables['releases'].insert(),
         [{
             'name': 'test_name',
-            'version': '2015.1-8.0',
+            'version': 'liberty-8.0',
             'operating_system': 'ubuntu',
             'state': 'available',
             'deployment_tasks': jsonutils.dumps(JSON_TASKS),

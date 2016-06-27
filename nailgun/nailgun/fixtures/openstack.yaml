@@ -1321,14 +1321,18 @@
             label: "Storage Backends"
             weight: 60
             group: "storage"
-          volumes_lvm:
-            value: true
-            label: "Cinder LVM over iSCSI for volumes"
-            description: "It is recommended to have at least one Cinder node."
+          volumes:
+            value: "lvm"
+            values:
+              - data: "lvm"
+                label: "Cinder LVM over iSCSI for volumes"
+                description: "It is recommended to have at least one Cinder node."
+              - data: "ceph"
+                label: "Ceph RBD for volumes (Cinder)"
+                description: "Configures Cinder to store volumes in Ceph RBD images."
+            label: "Volume type"
             weight: 10
-            type: "checkbox"
-            restrictions:
-              - "settings:storage.volumes_ceph.value == true"
+            type: "radio"
           volumes_block_device:
             value: false
             label: "Cinder Block device driver"
@@ -1336,15 +1340,7 @@
             weight: 15
             type: "checkbox"
             restrictions:
-              - "settings:storage.volumes_ceph.value == true"
-          volumes_ceph:
-            value: false
-            label: "Ceph RBD for volumes (Cinder)"
-            description: "Configures Cinder to store volumes in Ceph RBD images."
-            weight: 20
-            type: "checkbox"
-            restrictions:
-              - "settings:storage.volumes_lvm.value == true or settings:storage.volumes_block_device.value == true"
+              - "settings:storage.volumes.value == \"ceph\""
           images_ceph:
             value: false
             label: "Ceph RBD for images (Glance)"

@@ -268,7 +268,7 @@ class DisksFormatConvertor(object):
                 'size': size,
                 'volumes': cls.serialize_volumes(disk['volumes']),
                 'extra': disk['extra'],
-                'bootable': disk['bootable']
+                'bootable': disk.get('bootable', False)
             }
 
             disks_in_simple_format.append(disk_simple)
@@ -1058,7 +1058,7 @@ class VolumeManager(object):
     def pick_disk_as_bootable(self, disk=None):
         """Pick given disk as a bootable
 
-        If disk is None, then all disks will be set as bootable
+        If disk is None, then bootable flag will be set to False for all disks
         """
         for d in self.disks:
             d.bootable = False

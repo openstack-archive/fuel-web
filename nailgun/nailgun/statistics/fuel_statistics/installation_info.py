@@ -319,27 +319,20 @@ class InstallationInfo(object):
 
     def get_node_meta(self, node):
         meta = copy.deepcopy(node.meta)
-        result = {}
 
         if not meta:
-            return result
+            return {}
 
-        to_copy = ['cpu', 'memory', 'disks']
-        for param in to_copy:
-            result[param] = meta.get(param)
+        if isinstance(meta.get('system'), dict):
+            meta['system'].pop('fqdn', None)
+            meta['system'].pop('serial', None)
 
-        system = meta.get('system', {})
-        system.pop('fqdn', None)
-        system.pop('serial', None)
-        result['system'] = system
+        if isinstance(meta.get('interfaces'), list):
+            for interface in meta['interfaces']:
+                if isinstance(interface, dict):
+                    interface.pop('mac', None)
 
-        interfaces = meta.get('interfaces', [])
-        result['interfaces'] = []
-        for interface in interfaces:
-            interface.pop('mac')
-            result['interfaces'].append(interface)
-
-        return result
+        return meta
 
     def get_nodes_info(self, nodes):
         nodes_info = []

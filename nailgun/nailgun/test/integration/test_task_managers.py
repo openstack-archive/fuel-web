@@ -571,8 +571,8 @@ class TestTaskManagers(BaseIntegrationTest):
 
         notification = self.db.query(models.Notification)\
             .filter(models.Notification.topic == "done")\
-            .filter(models.Notification.message == "Environment '%s' and all "
-                    "its nodes are deleted" % cluster["name"]).first()
+            .filter(models.Notification.message == "Environment '{0}' "
+                    "is deleted".format(cluster["name"])).first()
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
@@ -599,8 +599,8 @@ class TestTaskManagers(BaseIntegrationTest):
 
         notification = self.db.query(models.Notification)\
             .filter(models.Notification.topic == "done")\
-            .filter(models.Notification.message == "Environment '%s' and all "
-                    "its nodes are deleted" % cluster.name).first()
+            .filter(models.Notification.message == "Environment '{0}' "
+                    "is deleted".format(cluster.name)).first()
         self.assertIsNotNone(notification)
         self.assertIsNone(self.db.query(models.Cluster).get(cluster.id))
 
@@ -657,8 +657,8 @@ class TestTaskManagers(BaseIntegrationTest):
         for name in cluster_names:
             notification = self.db.query(models.Notification)\
                 .filter(models.Notification.topic == "done")\
-                .filter(models.Notification.message == "Environment '%s' and "
-                        "all its nodes are deleted" % name)
+                .filter(models.Notification.message == "Environment '{0}'"
+                        "is deleted".format(name))
             self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()
@@ -748,8 +748,8 @@ class TestTaskManagers(BaseIntegrationTest):
 
         notification = self.db.query(models.Notification)\
             .filter(models.Notification.topic == "done")\
-            .filter(models.Notification.message == "Environment '%s' and all "
-                    "its nodes are deleted" % cluster.name).first()
+            .filter(models.Notification.message == "Environment '{0}' "
+                    "is deleted".format(cluster.name)).first()
         self.assertIsNotNone(notification)
 
         tasks = self.db.query(models.Task).all()

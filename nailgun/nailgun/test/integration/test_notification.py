@@ -160,8 +160,7 @@ class TestNotification(BaseIntegrationTest):
         self.assertEqual(notifications[0].topic, "done")
         self.assertEqual(
             notifications[0].message,
-            "Environment '%s' and all its nodes "
-            "are deleted" % cluster_name
+            "Environment '{0}' is deleted".format(cluster_name)
         )
 
     def test_notification_delete_cluster_failed(self):

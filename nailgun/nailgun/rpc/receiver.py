@@ -190,7 +190,7 @@ class NailgunReceiver(object):
 
             notifier.notify(
                 "done",
-                u"Environment '%s' and all its nodes are deleted" % (
+                u"Environment '{0}' is deleted".format(
                     cluster_name
                 )
             )

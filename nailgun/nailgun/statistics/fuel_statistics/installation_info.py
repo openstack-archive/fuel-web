@@ -324,7 +324,7 @@ class InstallationInfo(object):
         if not meta:
             return result
 
-        to_copy = ['cpu', 'memory', 'disks']
+        to_copy = ['cpu', 'memory', 'disks', 'pci_devices', 'numa_topology']
         for param in to_copy:
             result[param] = meta.get(param)
 

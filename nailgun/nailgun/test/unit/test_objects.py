@@ -274,7 +274,7 @@ class TestNodeObject(BaseIntegrationTest):
             )
         )
 
-    def test_get_kernel_params_overwriten(self):
+    def test_get_kernel_params_overwritten(self):
         """Test verifies that overwriten kernel params will be returned."""
         cluster = self.env.create(
             nodes_kwargs=[
@@ -292,6 +292,20 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(
             objects.Node.get_kernel_params(self.env.nodes[0]),
             kernel_params)
+
+    def test_get_kernel_params_w_old_release(self):
+        cluster = self.env.create(
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': '2015.1.0-8.0',
+            },
+            nodes_kwargs=[
+                {"role": "compute"}
+            ]
+        )
+        node = cluster.nodes[0]
+        del node.meta['numa_topology']
+        self.assertNotRaises(KeyError, objects.Node.get_kernel_params, node)
 
     def test_should_have_public_with_ip(self):
         nodes = [

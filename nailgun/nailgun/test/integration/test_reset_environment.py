@@ -91,6 +91,41 @@ class TestResetEnvironment(BaseIntegrationTest):
         recover_nodes=False,
         ia_nodes_count=1
     )
+    def test_environment_reset_cleans_up_plugin_links(self):
+        cluster_db = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"name": "First",
+                 "pending_addition": True},
+                {"name": "Second",
+                 "roles": ["compute"],
+                 "pending_addition": True}
+            ]
+        )
+        self.app.post(
+            reverse('ClusterPluginLinkCollectionHandler',
+                    kwargs={'cluster_id': cluster_db.id}),
+            jsonutils.dumps({
+                'title': 'simple link',
+                'description': 'simple description',
+                'url': 'http://example.com',
+            }),
+            headers=self.default_headers
+        )
+        self.env.launch_deployment()
+        self.env.reset_environment()
+        response = self.app.get(
+            reverse('ClusterPluginLinkCollectionHandler',
+                    kwargs={'cluster_id': cluster_db.id}),
+            headers=self.default_headers)
+        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.json, [])
+
+    @fake_tasks(
+        override_state={"progress": 100, "status": "ready"},
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
     def test_reset_node_pending_statuses(self):
         self.env.create(
             cluster_kwargs={},

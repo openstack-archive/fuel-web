@@ -25,6 +25,7 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import ClusterPluginLink
 from nailgun.db.sqlalchemy.models import Task
 from nailgun import errors
 from nailgun.extensions.network_manager.objects.serializers.\
@@ -918,6 +919,10 @@ class ResetEnvironmentTaskManager(TaskManager):
             self.cluster, consts.VIRTUAL_NODE_TYPES.virt)
         for node in nodes:
             objects.Node.reset_vms_created_state(node)
+
+        db().query(ClusterPluginLink).filter_by(
+            cluster_id=self.cluster.id
+        ).delete()
 
         db().commit()
 

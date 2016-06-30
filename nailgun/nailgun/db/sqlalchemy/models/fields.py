@@ -14,8 +14,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import zlib
+
 from oslo_serialization import jsonutils
 import sqlalchemy.types as types
+
+
+class CompressedJSON(types.TypeDecorator):
+
+    impl = types.Text
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = zlib.compress(jsonutils.dumps(value))
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = jsonutils.loads(zlib.decompress(value))
+        return value
 
 
 class JSON(types.TypeDecorator):

@@ -30,6 +30,7 @@ from sqlalchemy.orm import relationship, backref, deferred
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import CompressedJSON
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
@@ -77,14 +78,14 @@ class Task(Base):
     weight = Column(Float, default=1.0)
     deleted_at = Column(DateTime)
 
-    deployment_info = deferred(Column(MutableDict.as_mutable(JSON),
+    deployment_info = deferred(Column(MutableDict.as_mutable(CompressedJSON),
                                       nullable=True))
-    cluster_settings = deferred(Column(MutableDict.as_mutable(JSON),
+    cluster_settings = deferred(Column(MutableDict.as_mutable(CompressedJSON),
                                        nullable=True))
-    network_settings = deferred(Column(MutableDict.as_mutable(JSON),
+    network_settings = deferred(Column(MutableDict.as_mutable(CompressedJSON),
                                        nullable=True))
 
-    tasks_snapshot = deferred(Column(MutableList.as_mutable(JSON),
+    tasks_snapshot = deferred(Column(MutableList.as_mutable(CompressedJSON),
                                      nullable=True))
 
     deployment_history = relationship(

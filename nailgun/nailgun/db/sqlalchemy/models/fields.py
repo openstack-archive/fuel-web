@@ -18,6 +18,22 @@ from oslo_serialization import jsonutils
 import sqlalchemy.types as types
 
 
+class CompressedJSON(types.TypeDecorator):
+    COMPRESS_LEVEL = 1
+
+    impl = types.Text
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return jsonutils.dumps(value).encode("zlib").encode("base64")
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = jsonutils.loads(value.decode("base64").decode("zlib"))
+        return value
+
+
 class JSON(types.TypeDecorator):
 
     impl = types.Text

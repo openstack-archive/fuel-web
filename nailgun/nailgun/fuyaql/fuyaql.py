@@ -24,6 +24,8 @@ import readline
 import sys
 import traceback
 
+from six.moves import input
+
 from nailgun import consts
 from nailgun.fuyaql import completion
 from nailgun.logger import logger
@@ -313,7 +315,7 @@ class FuyaqlInterpreter(object):
         """Create a loop for user input"""
         while True:
             try:
-                command = raw_input('fuel-yaql> ').strip()
+                command = input('fuel-yaql> ').strip()
             except EOFError:
                 return
             if not command:

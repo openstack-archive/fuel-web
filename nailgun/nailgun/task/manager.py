@@ -380,6 +380,8 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
         task_deletion, task_provision, task_deployment = None, None, None
 
+        dry_run = kwargs.get('dry_run', False)
+
         if nodes_to_delete:
             task_deletion = self.delete_nodes(supertask, nodes_to_delete)
 
@@ -397,10 +399,17 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
             # we should have task committed for processing in other threads
             db().commit()
+
+            if objects.Release.is_lcm_supported(self.cluster.release):
+                provision_task_class = tasks.ProvisionTransaction
+            else:
+                provision_task_class = tasks.ProvisionTask
+
             provision_message = self._call_silently(
                 task_provision,
-                tasks.ProvisionTask,
+                provision_task_class,
                 nodes_to_provision,
+                dry_run=dry_run,
                 method_name='message'
             )
             db().commit()
@@ -420,8 +429,6 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
             task_messages.append(provision_message)
 
         deployment_message = None
-
-        dry_run = kwargs.get('dry_run', False)
 
         if (nodes_to_deploy or affected_nodes or
                 objects.Release.is_lcm_supported(self.cluster.release)):
@@ -668,11 +675,17 @@ class ProvisioningTaskManager(TaskManager):
             lock_for_update=True
         )
 
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            provision_task_class = tasks.ProvisionTransaction
+        else:
+            provision_task_class = tasks.ProvisionTask
+
         provision_message = self._call_silently(
             task_provision,
-            tasks.ProvisionTask,
+            provision_task_class,
             nodes,
-            method_name='message'
+            method_name='message',
+            **kwargs
         )
 
         task_provision = objects.Task.get_by_uid(

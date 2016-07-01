@@ -55,6 +55,37 @@ JSON_TASKS = [
     }
 ]
 
+DEPLOYMENT_INFO = {
+    55: {
+        'master': {
+            'attr1': 1,
+            'attr2': 2
+        },
+        '1': {
+            'attr1': 3,
+            'attr2': 4
+        },
+        '2': {
+            'attr1': 5,
+            'attr2': 6
+        }
+    },
+    56: {
+        'master': {
+            'attr1': 7,
+            'attr2': 8
+        },
+        '1': {
+            'attr1': 9,
+            'attr2': 10
+        },
+        '2': {
+            'attr1': 11,
+            'attr2': 12
+        }
+    }
+}
+
 
 def setup_module():
     dropdb()
@@ -323,6 +354,25 @@ def prepare():
         }]
     )
 
+    result = db.execute(
+        meta.tables['tasks'].insert(),
+        [
+            {
+                'id': 55,
+                'uuid': '219eaafe-01a1-4f26-8edc-b9d9b0df06b3',
+                'name': 'deployment',
+                'status': 'running',
+                'deployment_info': jsonutils.dumps(DEPLOYMENT_INFO[55])
+            },
+            {
+                'id': 56,
+                'uuid': 'a45fbbcd-792c-4245-a619-f4fb2f094d38',
+                'name': 'deployment',
+                'status': 'running',
+                'deployment_info': jsonutils.dumps(DEPLOYMENT_INFO[56])
+            }
+        ]
+    )
     db.commit()
 
 
@@ -421,3 +471,18 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
                 'node_id': node_id,
                 'attributes': jsonutils.dumps({'test_attr': 'test'})
             }])
+
+
+class TestSplitDeploymentInfo(base.BaseAlembicMigrationTest):
+
+    def test_split_deployment_info(self):
+        node_di_table = self.meta.tables['node_deployment_info']
+        res = db.execute(sa.select([node_di_table]))
+        for data in res:
+            self.assertEqual(jsonutils.loads(data.deployment_info),
+                             DEPLOYMENT_INFO[data.task_id][data.node_uid])
+
+        tasks_table = self.meta.tables['tasks']
+        res = db.execute(sa.select([tasks_table]))
+        for data in res:
+            self.assertIsNone(data.deployment_info)

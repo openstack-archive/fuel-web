@@ -1,0 +1,210 @@
+From e86166c59875ae93b54c283e3906100fb63612a1 Mon Sep 17 00:00:00 2001
+From: Dmitry Guryanov <dguryanov@mirantis.com>
+Date: Thu, 7 Jul 2016 16:13:22 +0300
+Subject: [PATCH] tmp
+
+Change-Id: I480955560a44ca3b144d65eea9128a018942c20f
+---
+ nailgun/extensions.xml                             |  1 +
+ nailgun/nailgun.xml                                | 33 ++++++++++++++
+ nailgun/nailgun/lcm/transaction_serializer.py      |  3 +-
+ .../nailgun/orchestrator/deployment_serializers.py |  4 ++
+ .../nailgun/test/unit/test_transaction_handler.py  | 51 +++++++++++++++++++++-
+ nailgun/test_run/test.yaml                         | 17 ++++++++
+ tox.ini                                            |  2 +-
+ 7 files changed, 107 insertions(+), 4 deletions(-)
+ create mode 100644 nailgun/extensions.xml
+ create mode 100644 nailgun/nailgun.xml
+ create mode 100644 nailgun/test_run/test.yaml
+
+diff --git a/nailgun/extensions.xml b/nailgun/extensions.xml
+new file mode 100644
+index 0000000..cee91b8
+--- /dev/null
++++ b/nailgun/extensions.xml
+@@ -0,0 +1 @@
++<?xml version="1.0" encoding="utf-8"?><testsuite errors="0" failures="0" name="pytest" skips="0" tests="0" time="65.661"><testcase time="2.6777780056"></testcase></testsuite>
+\ No newline at end of file
+diff --git a/nailgun/nailgun.xml b/nailgun/nailgun.xml
+new file mode 100644
+index 0000000..43f3a0d
+--- /dev/null
++++ b/nailgun/nailgun.xml
+@@ -0,0 +1,33 @@
++<?xml version="1.0" encoding="utf-8"?><testsuite errors="0" failures="0" name="pytest" skips="0" tests="1" time="112.362"><testcase classname="nailgun.test.unit.test_transaction_handler.TestTransactionCollectionHandlers2" file="nailgun/test/base.py" line="1593" name="test_qwe" time="106.051109076"><system-err>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
++INFO  [alembic.runtime.migration] Will assume transactional DDL.
++INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
++INFO  [alembic.runtime.migration] Will assume transactional DDL.
++INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
++INFO  [alembic.runtime.migration] Will assume transactional DDL.
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/elements.py:3888: SAWarning: Textual column expression &apos;id&apos; should be explicitly declared with text(&apos;id&apos;), or use column(&apos;id&apos;) for more specificity (this warning may be suppressed after 10 occurrences)
++  if guess_is_literal else &quot;column&quot;
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (36:6f)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;node_nic_interfaces.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
++  &apos;strategies for improved performance.&apos; % expr)
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (6f:64)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;network_groups.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
++  &apos;strategies for improved performance.&apos; % expr)
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (6f:11)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (6c:3a)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (19:0a)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (2b:62)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (07:60)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (6d:7a)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (6b:4b)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++/home/dguryanov/tmp/fuel-web/.tox/py27/local/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (77:56)&apos;. (this warning may be suppressed after 10 occurrences)
++  (util.ellipses_string(value),))
++</system-err></testcase></testsuite>
+\ No newline at end of file
+diff --git a/nailgun/nailgun/lcm/transaction_serializer.py b/nailgun/nailgun/lcm/transaction_serializer.py
+index 3ffeb1c..472ffc6 100644
+--- a/nailgun/nailgun/lcm/transaction_serializer.py
++++ b/nailgun/nailgun/lcm/transaction_serializer.py
+@@ -134,7 +134,6 @@ class TransactionSerializer(object):
+         self.role_resolver = role_resolver
+         self.context = context
+         self.tasks_graph = {}
+-        self.tasks_dictionary = {}
+         # the list of groups, that contains information about
+         # ids of nodes in this group and how many nodes in this group can fail
+         # and deployment will not be interrupted
+@@ -160,7 +159,7 @@ class TransactionSerializer(object):
+             )
+ 
+         return (
+-            serializer.tasks_dictionary,
++            {},
+             tasks_graph,
+             {'fault_tolerance_groups': serializer.fault_tolerance_groups}
+         )
+diff --git a/nailgun/nailgun/orchestrator/deployment_serializers.py b/nailgun/nailgun/orchestrator/deployment_serializers.py
+index 6ded985..6d72aab 100644
+--- a/nailgun/nailgun/orchestrator/deployment_serializers.py
++++ b/nailgun/nailgun/orchestrator/deployment_serializers.py
+@@ -100,6 +100,10 @@ class DeploymentMultinodeSerializer(object):
+         finally:
+             self.finalize()
+ 
++        with open('/tmp/x.txt', 'w') as f:
++            f.write("%r" % serialized_nodes)
++
++
+         return serialized_nodes
+ 
+     def serialize_generated(self, cluster, nodes):
+diff --git a/nailgun/nailgun/test/unit/test_transaction_handler.py b/nailgun/nailgun/test/unit/test_transaction_handler.py
+index 541eecf..4ef93a0 100644
+--- a/nailgun/nailgun/test/unit/test_transaction_handler.py
++++ b/nailgun/nailgun/test/unit/test_transaction_handler.py
+@@ -17,9 +17,12 @@ from nailgun import consts
+ from nailgun.db.sqlalchemy.models import Task
+ from nailgun import objects
+ from nailgun.orchestrator import deployment_serializers
+-from nailgun.test.base import BaseTestCase
++from nailgun.test.base import BaseTestCase, BaseIntegrationTest
++from nailgun.test.base import mock_rpc
+ from nailgun.utils import reverse
+ 
++import cProfile, pstats, StringIO
++
+ 
+ class TestTransactionHandlers(BaseTestCase):
+ 
+@@ -235,3 +238,49 @@ class TestTransactionHandlers(BaseTestCase):
+             expect_errors=True
+         )
+         self.assertEqual(resp.status_code, 404)
++
++class TestTransactionCollectionHandlers2(BaseIntegrationTest):
++
++    env_version = "mitaka-9.0"
++
++    def setUp(self):
++        super(TestTransactionCollectionHandlers2, self).setUp()
++
++        self.cluster = self.env.create(
++            release_kwargs={
++                'version': self.env_version,
++                'operating_system': consts.RELEASE_OS.ubuntu
++            },
++            cluster_kwargs={
++                'mode': consts.CLUSTER_MODES.ha_compact,
++                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
++                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan},
++            nodes_kwargs=[{"roles": ["controller"]}] + [{"roles": ["compute"]}] * 99
++        )
++
++    @mock_rpc()
++    def test_qwe(self):
++#        self.app.put(
++#            reverse('ProvisionSelectedNodes',kwargs={'cluster_id': self.cluster.id}) + '?nodes={0}'.format(','.join([n.uid for n in self.cluster.nodes])),
++#            '',
++#            headers=self.default_headers,
++#            expect_errors=False)
++
++        self.emulate_nodes_provisioning(self.cluster.nodes)
++
++        pr = cProfile.Profile()
++        pr.enable()
++
++        self.app.put(
++            reverse('DeploySelectedNodes',kwargs={'cluster_id': self.cluster.id}) + '?nodes={0}'.format(','.join([n.uid for n in self.cluster.nodes])),
++            '',
++            headers=self.default_headers,
++            expect_errors=False)
++
++        pr.disable()
++        s = StringIO.StringIO()
++        sortby = 'cumulative'
++        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
++        ps.print_stats()
++        with open('/tmp/stats-old.txt', 'w') as f:
++            f.write(s.getvalue())
+diff --git a/nailgun/test_run/test.yaml b/nailgun/test_run/test.yaml
+new file mode 100644
+index 0000000..8a73a7b
+--- /dev/null
++++ b/nailgun/test_run/test.yaml
+@@ -0,0 +1,17 @@
++DEVELOPMENT: 1
++STATIC_DIR: "static"
++TEMPLATE_DIR: "static"
++DATABASE:
++  name: "openstack_citest"
++  engine: "postgresql"
++  host: "127.0.0.1"
++  port: "5432"
++  user: "openstack_citest"
++  passwd: "openstack_citest"
++API_LOG: "test_run/api.log"
++APP_LOG: "test_run/app.log"
++APP_LOGLEVEL: "ERROR"
++RPC_CONSUMER_LOG_PATH: "test_run/receiverd.log"
++ASSASSIN_LOG_PATH: "test_run/assassind.log"
++STATS_LOGS_PATH: test_run
++LCM_SERIALIZERS_CONCURRENCY_FACTOR: 1
+diff --git a/tox.ini b/tox.ini
+index f8b4065..f1699e9 100644
+--- a/tox.ini
++++ b/tox.ini
+@@ -46,7 +46,7 @@ deps = -r{toxinidir}/nailgun/test-requirements.txt
+ commands =
+     bash -c "{[base]TOOLS}/env.sh prepare_nailgun_env"
+     py.test -vv --cleandb --junit-xml {toxinidir}/nailgun/nailgun.xml -m 'not performance' -n 4 {posargs:nailgun/test}
+-    py.test -vv --junit-xml {toxinidir}/nailgun/extensions.xml {posargs:nailgun/extensions}
++#    py.test -vv --junit-xml {toxinidir}/nailgun/extensions.xml {posargs:nailgun/extensions}
+ 
+ [testenv:cleanup]
+ usedevelop = False
+-- 
+2.7.4
+

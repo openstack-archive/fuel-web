@@ -23,6 +23,8 @@ Create Date: 2016-04-08 15:20:43.989472
 from alembic import op
 import sqlalchemy as sa
 
+from oslo_serialization import jsonutils
+
 from nailgun.db.sqlalchemy.models import fields
 
 
@@ -34,9 +36,11 @@ down_revision = 'f2314e5d63c9'
 def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_node_deployment_info()
 
 
 def downgrade():
+    downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
 
@@ -234,3 +238,46 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+def upgrade_node_deployment_info():
+    op.create_table(
+        'node_deployment_info',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_uid', sa.String(20), nullable=True),
+        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('deployment_info', fields.JSON(), nullable=True),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['task_id'], ['tasks.id'], ondelete='CASCADE')
+    )
+    op.create_index('node_deployment_info_task_id_and_node_uid',
+                    'node_deployment_info', ['task_id', 'node_uid'])
+
+    connection = op.get_bind()
+    select_query = sa.sql.text("""
+        SELECT id, deployment_info
+        FROM tasks
+        WHERE deployment_info IS NOT NULL""")
+
+    insert_query = sa.sql.text("""
+        INSERT INTO node_deployment_info
+            (task_id, node_uid, deployment_info)
+        VALUES
+            (:task_id, :node_uid, :deployment_info)""")
+
+    for (task_id, deployment_info_str) in connection.execute(select_query):
+        deployment_info = jsonutils.loads(deployment_info_str)
+        for node_uid, node_deployment_info in deployment_info.iteritems():
+            connection.execute(
+                insert_query,
+                task_id=task_id,
+                node_uid=node_uid,
+                deployment_info=jsonutils.dumps(node_deployment_info))
+
+    update_query = sa.sql.text("UPDATE tasks SET deployment_info=NULL")
+    connection.execute(update_query)
+
+
+def downgrade_node_deployment_info():
+    op.drop_table('node_deployment_info')

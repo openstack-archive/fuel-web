@@ -826,7 +826,7 @@ def get_serializer_for_cluster(cluster):
 
 
 def _execute_pipeline(data, cluster, nodes, ignore_customized):
-    "Executes pipelines depending on ignore_customized boolean."
+    """Executes pipelines depending on ignore_customized boolean."""
     if ignore_customized:
         return fire_callback_on_deployment_data_serialization(
             data, cluster, nodes)

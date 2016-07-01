@@ -68,7 +68,10 @@ class Context(object):
         return self._transaction.get_new_data(node_id)
 
     def get_yaql_interpreter(self, node_id, task_id):
-        context = self._yaql_context.create_child_context()
+        common_context = self._yaql_context.create_child_context()
+        common_context['$%new'] = self._transaction.get_common_new_data()
+
+        context = common_context.create_child_context()
         context['$%new'] = self._transaction.get_new_data(node_id)
         context['$%old'] = self._transaction.get_old_data(node_id, task_id)
         cache = self._yaql_expressions_cache

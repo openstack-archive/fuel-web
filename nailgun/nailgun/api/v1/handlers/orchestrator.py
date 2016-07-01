@@ -255,6 +255,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     task_manager = manager.ProvisioningTaskManager
 
     def get_default_nodes(self, cluster):
+        if objects.Release.is_lcm_supported(cluster.release):
+            return objects.Cluster.get_nodes_not_for_deletion(cluster)
         return TaskHelper.nodes_to_provision(cluster)
 
     @content

@@ -951,7 +951,7 @@ class TestTransactionObject(BaseIntegrationTest):
         self.assertIsNone(
             objects.Transaction.get_deployment_info(transaction)
         )
-        info = {'test': 'test'}
+        info = {'test': {'test': 'test'}}
         objects.Transaction.attach_deployment_info(transaction, info)
         self.assertEqual(
             info, objects.Transaction.get_deployment_info(transaction)

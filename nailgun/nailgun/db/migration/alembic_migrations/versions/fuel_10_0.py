@@ -34,9 +34,11 @@ down_revision = '675105097a69'
 def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_node_deployment_info()
 
 
 def downgrade():
+    downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
 
@@ -234,3 +236,23 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+def upgrade_node_deployment_info():
+    op.create_table(
+        'node_deployment_info',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_uid', sa.String(20)),
+        sa.Column('task_id', sa.Integer()),
+        sa.Column('deployment_info', fields.JSON(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['task_id'], ['tasks.id'], ondelete='CASCADE')
+    )
+    op.drop_column('tasks', 'deployment_info')
+
+
+def downgrade_node_deployment_info():
+    op.drop_table('node_deployment_info')
+    op.add_column('tasks',
+                  sa.Column('deployment_info', fields.JSON(), nullable=True))

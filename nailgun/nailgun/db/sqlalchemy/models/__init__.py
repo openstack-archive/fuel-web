@@ -80,3 +80,4 @@ from nailgun.db.sqlalchemy.models.plugins \
 from nailgun.db.sqlalchemy.models.plugins import Plugin
 
 from nailgun.db.sqlalchemy.models.openstack_config import OpenstackConfig
+from nailgun.db.sqlalchemy.models.node_deployment_info import NodeDeploymentInfo

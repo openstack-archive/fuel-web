@@ -232,7 +232,6 @@ class TestReleaseGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             [
                 {
                     'id': 'custom-task',
-                    'task_name': 'custom-task',
                     'version': '1.0.0',
                     'type': 'puppet'
                 }
@@ -377,7 +376,6 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
             [
                 {
                     'id': 'custom-task',
-                    'task_name': 'custom-task',
                     'version': '1.0.0',
                     'type': 'puppet'
                 }

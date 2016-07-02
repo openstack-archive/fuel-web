@@ -138,7 +138,6 @@ class TestGraphHandlers(BaseIntegrationTest):
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
-                    'task_name': 'test-task2',
                     'version': '2.0.0'
                 }],
                 'relations': [{
@@ -168,7 +167,6 @@ class TestGraphHandlers(BaseIntegrationTest):
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
-                    'task_name': 'test-task2',
                     'version': '2.0.0'
                 }],
                 'relations': [{
@@ -434,7 +432,6 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                     'tasks': [{
                         'id': 'test-task2',
                         'type': 'puppet',
-                        'task_name': 'test-task2',
                         'version': '2.0.0'
                     }],
                     'relations': [{
@@ -492,7 +489,6 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                         'name': 'custom-graph-name1',
                         'tasks': [{
                             'id': 'custom-task1',
-                            'task_name': 'custom-task1',
                             'type': 'puppet',
                             'version': '1.0.0'
                         }],
@@ -507,7 +503,6 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                         'name': 'custom-graph-name2',
                         'tasks': [{
                             'id': 'custom-task2',
-                            'task_name': 'custom-task2',
                             'type': 'puppet',
                             'version': '1.0.0'
                         }],

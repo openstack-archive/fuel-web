@@ -1616,8 +1616,8 @@ class DeploymentTasksTestMixin(object):
         :param result: list of tasks
         :type result: list
         """
-        reference.sort(key=lambda x: x.get('id', x.get('task_name')))
-        result.sort(key=lambda x: x.get('id', x.get('task_name')))
+        reference.sort(key=lambda x: x['id'])
+        result.sort(key=lambda x: x['id'])
         self.assertEqual(len(reference), len(result))
         for ref, res in six.moves.zip(reference, result):
             for field in ref:

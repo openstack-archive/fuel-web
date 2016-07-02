@@ -63,7 +63,8 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
 
         self.db().flush()
         # this field is expected to be added for compatibility
-        self.refreshable_task['id'] = 'test_task'
+        self.refreshable_task['id'] = self.refreshable_task.pop('task_name')
+
         self.env.create_openstack_config(
             cluster_id=self.cluster.id,
             configuration={
@@ -140,7 +141,7 @@ class TestOpenstackConfigTaskManager80(base.BaseIntegrationTest):
         self.assertEqual(task.status, consts.TASK_STATUSES.pending)
 
         self.assertEqual(
-            mocked_rpc.call_args[0][1]['args']['tasks'][0]['task_name'],
+            mocked_rpc.call_args[0][1]['args']['tasks'][0]['id'],
             'custom-task'
         )
 

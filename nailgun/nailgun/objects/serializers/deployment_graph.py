@@ -22,7 +22,7 @@ from nailgun.objects.serializers.base import BasicSerializer
 class DeploymentGraphTaskSerializer(BasicSerializer):
 
     fields = (
-        "task_name",
+        "id",
         "version",
         "condition",
         "type",
@@ -41,14 +41,14 @@ class DeploymentGraphTaskSerializer(BasicSerializer):
     @classmethod
     def serialize(cls, instance, fields=None):
         legacy_fields_mapping = {
-            'task_name': 'id',
             'cross_depends': 'cross-depends',
             'cross_depended_by': 'cross-depended-by',
             'roles': 'role'
         }
+        # task_name should be re-mapped to ID during output
         serialized_task = super(
             DeploymentGraphTaskSerializer, cls
-        ).serialize(instance, fields=None)
+        ).serialize(instance, fields=cls.fields + ('task_name',))
 
         result = {}
         for field in cls.fields:
@@ -65,6 +65,7 @@ class DeploymentGraphTaskSerializer(BasicSerializer):
                     if len(value) == 1 and value[0] in consts.TASK_ROLES:
                         result['role'] = value[0]
                         result['roles'] = value[0]
+        result['id'] = serialized_task.get('task_name')
         # unwrap custom field
         result.update(instance._custom)
         return result

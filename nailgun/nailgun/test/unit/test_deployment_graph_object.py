@@ -77,7 +77,6 @@ JSON_TASKS = [
 
 EXPECTED_TASKS = [
     {
-        'task_name': 'cross-dep-test',
         'id': 'cross-dep-test',  # legacy
         'type': 'puppet',
         'version': '1.0.0',
@@ -86,20 +85,17 @@ EXPECTED_TASKS = [
         'cross-depended-by': ['a', 'b'],  # legacy
         'cross-depends': ['c', 'd'],      # legacy
     }, {
-        'task_name': 'post_deployment_end',
         'id': 'post_deployment_end',  # legacy
         'type': 'stage',
         'version': '1.0.0',
         'requires': ['post_deployment_start'],
     }, {
-        'task_name': 'test-roles',
         'id': 'test-roles',
         'role': '*',
         'roles': '*',
         'version': '1.0.0',
         'type': 'group'
     }, {
-        'task_name': 'primary-controller',
         'id': 'primary-controller',    # legacy
         'type': 'group',
         'version': '1.0.0',
@@ -111,7 +107,6 @@ EXPECTED_TASKS = [
     },
     {
         'id': 'custom-fields-test',
-        'task_name': 'custom-fields-test',
         'type': 'puppet',
         'version': '1.0.0',
         'CUSTOM_FIELD1': 'custom',
@@ -120,7 +115,6 @@ EXPECTED_TASKS = [
     },
     {
         'id': 'ssl-keys-saving',
-        'task_name': 'ssl-keys-saving',
         'type': 'puppet',
         'version': '2.0.0',
         'groups': ['primary-controller', 'controller', 'compute',
@@ -161,13 +155,13 @@ class TestDeploymentGraphModel(
     def test_deployment_graph_update(self):
         updated_tasks = [
             {
-                'task_name': 'updated',
+                'id': 'updated',
                 'type': 'puppet'
             }
         ]
         expected_updated_tasks = [
             {
-                'task_name': 'updated',
+                'id': 'updated',
                 'type': 'puppet'
             }
         ]
@@ -209,7 +203,7 @@ class TestDeploymentGraphModel(
 
     def test_create_tasks_with_yaql_condition(self):
         task = {
-            'task_name': 'test',
+            'id': 'test',
             'type': 'puppet',
             'condition': {'yaql_exp': 'changed($.nodes)'},
             'roles': ['/.*/'],

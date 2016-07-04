@@ -869,8 +869,8 @@ class Node(NailgunObject):
                          instance.human_readable_name)
             meta['disks'] = instance.meta['disks']
 
-        if not cls.is_interfaces_configuration_locked(instance, is_agent=True) \
-                and data.get('ip'):
+        if not cls.is_interfaces_configuration_locked(
+                instance, is_agent=True) and data.get('ip'):
             if instance.cluster_id:
                 update_status = cls.check_ip_belongs_to_own_admin_network(
                     instance, data['ip'])
@@ -1426,7 +1426,8 @@ class NodeAttributes(object):
 
     @classmethod
     def set_default_hugepages(cls, node):
-        supported_hugepages = node.meta['numa_topology']['supported_hugepages']
+        supported_hugepages = node.meta.get('numa_topology', {}).get(
+            'supported_hugepages', [])
         hugepages = cls._safe_get_hugepages(node)
         if not hugepages:
             return
@@ -1439,7 +1440,7 @@ class NodeAttributes(object):
 
     @classmethod
     def distribute_node_cpus(cls, node, attributes=None):
-        numa_nodes = node.meta['numa_topology']['numa_nodes']
+        numa_nodes = node.meta.get('numa_topology', {}).get('numa_nodes', [])
         components = cls.node_cpu_pinning_info(node, attributes)['components']
         dpdk_nics = Node.dpdk_nics(node)
 
@@ -1501,7 +1502,8 @@ class NodeAttributes(object):
         """
 
         hugepages = collections.defaultdict(int)
-        numa_count = len(node.meta['numa_topology']['numa_nodes'])
+        numa_count = len(node.meta.get('numa_topology',
+                                       {}).get('numa_nodes', []))
 
         hugepages_attributes = cls._safe_get_hugepages(node)
         for name, attrs in six.iteritems(hugepages_attributes):
@@ -1561,7 +1563,8 @@ class NodeAttributes(object):
             return {}
 
         dpdk_memory = hugepages['dpdk']['value']
-        numa_nodes_len = len(node.meta['numa_topology']['numa_nodes'])
+        numa_nodes_len = len(node.meta.get('numa_topology',
+                                           {}).get('numa_nodes', []))
 
         return {
             'ovs_socket_mem':
@@ -1571,7 +1574,7 @@ class NodeAttributes(object):
     def distribute_hugepages(cls, node, attributes=None):
         hugepages = cls._safe_get_hugepages(
             node, attributes=attributes)
-        topology = node.meta['numa_topology']
+        topology = node.meta.get('numa_topology', {})
 
         # split components to 2 groups:
         # components that should have pages on all numa nodes (such as dpdk)
@@ -1599,7 +1602,7 @@ class NodeAttributes(object):
 
             nova_cpus = set(cpu_distribution['components'].get('nova', []))
             numa_values = collections.defaultdict(int)
-            for numa_node in topology['numa_nodes']:
+            for numa_node in topology.get('numa_nodes', {}):
                 for cpu in numa_node['cpus']:
                     if cpu in nova_cpus:
                         numa_values[numa_node['id']] += 1

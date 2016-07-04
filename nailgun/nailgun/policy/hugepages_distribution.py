@@ -132,7 +132,7 @@ def distribute_hugepages(numa_topology, components, numa_sort_func):
     any_comps = [Component(comp) for comp in components['any']]
 
     numa_nodes = []
-    for numa_node in numa_topology['numa_nodes']:
+    for numa_node in numa_topology.get('numa_nodes', []):
         # converting memory to KiBs
         memory = numa_node['memory'] // 1024
 
@@ -173,16 +173,17 @@ def _allocate_any(numa_nodes, components):
     """
     comp = _merge_components(components)
 
-    for numa_node in numa_nodes:
-        numa_node.allocate(comp)
-        if comp.is_done():
-            break
-    else:
-        # This situation shoul be validated by API
-        # if we check all nodes with same component and not found
-        # free memory for allocation then raise error
-        raise ValueError('Not enough memory for components that can be'
-                         ' allocated on any NUMA node.')
+    if numa_nodes:
+        for numa_node in numa_nodes:
+            numa_node.allocate(comp)
+            if comp.is_done():
+                break
+        else:
+            # This situation shoul be validated by API
+            # if we check all nodes with same component and not found
+            # free memory for allocation then raise error
+            raise ValueError('Not enough memory for components that can be'
+                             ' allocated on any NUMA node.')
 
 
 def _merge_components(components):

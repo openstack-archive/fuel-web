@@ -108,9 +108,18 @@ class UpgradeHelper(object):
         #                version to another. A set of this kind of steps
         #                should define an upgrade path of a particular
         #                cluster.
+        old_generated_attrs = copy.deepcopy(orig_cluster.generated_attrs)
+        old_generated_attrs.pop('provision', None)
+        old_generated_attrs.pop('deployed_before', None)
+        old_generated_attrs.pop('cobbler', None)
+        old_generated_attrs.pop('puppet', None)
         new_cluster.generated_attrs = utils.dict_merge(
             new_cluster.generated_attrs,
-            orig_cluster.generated_attrs)
+            old_generated_attrs)
+        new_cluster.editable_attrs['public_ssl']['horizon']['value'] = False
+        new_cluster.editable_attrs['public_ssl']['services']['value'] = False
+        #new_cluster.editable_attrs['external_ntp']['ntp_list']['value'] = [master_ip]
+        #new_cluster.editable_attrs['external_dns']['dns_list']['value'] = [master_ip]
         new_cluster.editable_attrs = merge_attributes(
             orig_cluster.editable_attrs,
             new_cluster.editable_attrs)

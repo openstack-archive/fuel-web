@@ -132,7 +132,7 @@ def distribute_hugepages(numa_topology, components, numa_sort_func):
     any_comps = [Component(comp) for comp in components['any']]
 
     numa_nodes = []
-    for numa_node in numa_topology['numa_nodes']:
+    for numa_node in numa_topology.get('numa_nodes', {}):
         # converting memory to KiBs
         memory = numa_node['memory'] // 1024
 
@@ -145,8 +145,8 @@ def distribute_hugepages(numa_topology, components, numa_sort_func):
 
     numa_nodes.sort(key=lambda x: numa_sort_func(x.id))
 
-    _allocate_all(numa_nodes, all_comps)
-    _allocate_any(numa_nodes, any_comps)
+#    _allocate_all(numa_nodes, all_comps)
+#    _allocate_any(numa_nodes, any_comps)
 
     return sum([n.report() for n in numa_nodes], [])
 

@@ -220,7 +220,7 @@ class ClusterAttributesValidator(base.BasicAttributesValidator):
     @classmethod
     def validate(cls, data, cluster=None, force=False):
         d = cls.validate_json(data)
-        if "generated" in d:
+        if "generated" in d and not force:
             raise errors.InvalidData(
                 "It is not allowed to update generated attributes",
                 log_message=True

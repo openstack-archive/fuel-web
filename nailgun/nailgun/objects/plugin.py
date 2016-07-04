@@ -386,6 +386,7 @@ class NodeNICInterfaceClusterPlugin(BasicNodeClusterPlugin):
                     'class': 'plugin'
                 }
             }
+            attributes.pop('metadata', None)
             # TODO(apopovych): resolve conflicts of same attribute names
             # for different plugins
             nic_attributes[name].update(attributes)

@@ -282,6 +282,12 @@ class TestInstallationInfo(BaseTestCase):
                 self.assertNotIn('mac', iface)
             self.assertNotIn('fqdn', node_info['meta']['system'])
             self.assertNotIn('serial', node_info['meta']['system'])
+            self.assertIn('cpu', node_info['meta'])
+            self.assertIn('memory', node_info['meta'])
+            self.assertIn('disks', node_info['meta'])
+            self.assertIn('pci_devices', node_info['meta'])
+            self.assertIn('interfaces', node_info['meta'])
+            self.assertIn('numa_topology', node_info['meta'])
 
             self.assertEquals(node_info['pending_addition'],
                               node.pending_addition)

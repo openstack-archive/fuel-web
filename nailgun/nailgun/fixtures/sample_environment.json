@@ -351,6 +351,20 @@
                         ["1.0", "2.1"],
                         ["2.1", "1.0"]
                     ]
+                },
+                "pci_devices": {
+                    "id": "host.domain.tld",
+                    "class" : "system",
+                    "product" : "MS-7676 (To be filled by O.E.M.)",
+                    "vendor" : "MSI",
+                    "serial" : "To be filled by O.E.M.",
+                    "configuration" : {
+                        "boot" : "normal",
+                        "chassis" : "desktop",
+                        "family" : "To be filled by O.E.M.",
+                        "sku" : "To be filled by O.E.M.",
+                        "uuid" : "00000000-0000-0000-0000-8C89A5332338"
+                    }
                 }
             },
             "timestamp": "",

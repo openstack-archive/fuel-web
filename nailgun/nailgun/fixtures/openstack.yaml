@@ -1027,6 +1027,12 @@
             restrictions:
               - condition: "cluster:net_provider == 'neutron'"
                 action: "hide"
+          run_ping_checker:
+            value: true
+            label: "Public Gateway is Available"
+            description: "Uncheck this box if the public gateway will not be available or will not respond to ICMP requests to the deployed cluster. If unchecked, the controllers will not take public gateway availability into account as part of the cluster health.  If the cluster will not have internet access, you will need to make sure to provide proper offline mirrors for the deployment to succeed."
+            weight: 50
+            type: "checkbox"
           use_vcenter:
             value: false
             weight: 30

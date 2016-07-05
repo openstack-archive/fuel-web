@@ -13,9 +13,11 @@
 #    under the License.
 
 import copy
+from distutils.version import StrictVersion
 import six
 from six.moves import map
 
+from nailgun import consts
 from nailgun import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
@@ -65,6 +67,17 @@ class PluginManager(object):
                 )
 
     @classmethod
+    def contains_legacy_tasks(cls, plugin):
+        if plugin.tasks:
+            return True
+        min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
+        for task in plugin.get_deployment_tasks():
+            task_version = StrictVersion(task.get('version', '0.0.0'))
+            if task_version < min_task_version:
+                return True
+        return False
+
+    @classmethod
     def get_plugins_attributes(
             cls, cluster, all_versions=False, default=False):
         """Gets attributes of all plugins connected with given cluster.
@@ -98,6 +111,8 @@ class PluginManager(object):
                     actual_attrs = copy.deepcopy(plugin.attributes)
                     actual_attrs['metadata'] = default_attrs.get('metadata',
                                                                  {})
+                actual_attrs['metadata']['contains_legacy_tasks'] = \
+                    cls.contains_legacy_tasks(plugin_adapter)
                 cls.fill_plugin_metadata(plugin, actual_attrs['metadata'])
                 versions.append(actual_attrs)
 

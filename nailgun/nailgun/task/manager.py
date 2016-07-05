@@ -914,6 +914,9 @@ class ResetEnvironmentTaskManager(TaskManager):
         for node in nodes:
             objects.Node.reset_vms_created_state(node)
 
+        objects.ClusterPluginLinkCollection.delete_by_cluster_id(
+            self.cluster.id)
+
         db().commit()
 
         supertask = Task(

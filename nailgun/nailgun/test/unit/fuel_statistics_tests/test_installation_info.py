@@ -446,6 +446,7 @@ class TestInstallationInfo(BaseTestCase):
             ('service_user', 'homedir'),
             ('service_user', 'password'),
             ('service_user', 'root_password'),
+            ('common', 'run_ping_checker'),
         )
         return filter(lambda x: x not in private_paths, leafs_paths)
 

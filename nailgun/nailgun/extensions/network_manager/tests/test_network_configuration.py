@@ -459,6 +459,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             net_template = '99.61.{0}'.format(idx)
             ng_data['cidr'] = net_template + '.0/24'
             ng_data['gateway'] = net_template + '.1'
+            ng_data['meta']['use_gateway'] = True
             ng_data['meta']['notation'] = consts.NETWORK_NOTATION.ip_ranges
             ng_data['ip_ranges'] = [
                 [net_template + '.11', net_template + '.33'],
@@ -484,6 +485,7 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
             net for net in netconfig['networks']
             if net['name'] == consts.NETWORKS.storage))
         storage['ip_ranges'] = [["172.16.0.19", "172.16.0.19"]]
+        storage['meta']['notation'] = consts.NETWORK_NOTATION.ip_ranges
         self.env.neutron_networks_put(self.cluster.id, netconfig)
 
     def test_admin_public_untagged_others_tagged(self):

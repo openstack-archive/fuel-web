@@ -43,3 +43,30 @@ def make_dsn(engine, host, port, user, passwd, name):
         passwd=passwd,
         name=name,
     )
+
+
+def fuel_version(release_version):
+    """Returns fuel version based on release version.
+
+    A release version consists of 'OSt' and 'MOS' versions:
+        '2014.1.1-5.0.2'
+
+    so we need to extract 'MOS' version and returns it as result.
+
+    :returns: an environment version
+    """
+    # unfortunately, Fuel 5.0 didn't have an env version in release_version
+    # so we need to handle that special case
+    if release_version == '2014.1':
+        version = '5.0'
+    else:
+        try:
+            version = release_version.split('-')[1]
+        except IndexError:
+            version = ''
+
+    return version
+
+
+def openstack_version(release_version):
+    return release_version.split('-')[0]

@@ -71,10 +71,9 @@ class NetworkConfigurationValidator(BasicValidator):
         :raises:             errors.InvalidData
         """
         cidr = ng_data.get('cidr', ng_db.cidr)
-        ip_ranges = ng_data.get(
-            'ip_ranges',
-            [(r.first, r.last) for r in ng_db.ip_ranges])
 
+        ip_ranges_from_db = [[r.first, r.last] for r in ng_db.ip_ranges]
+        ip_ranges = ng_data.get('ip_ranges', ip_ranges_from_db)
         release = ng_data.get('release', ng_db.get('release'))
         if release != ng_db.get('release'):
             raise errors.InvalidData('Network release could not be changed.')
@@ -85,6 +84,14 @@ class NetworkConfigurationValidator(BasicValidator):
         use_gateway = meta.get('use_gateway',
                                ng_db.meta.get('use_gateway', False))
         gateway = ng_data.get('gateway', ng_db.get('gateway'))
+
+        new_ip_ranges = ip_ranges != ip_ranges_from_db
+        # Deny ip ranges change without setting ip_ranges notation
+        if new_ip_ranges and notation == consts.NETWORK_NOTATION.cidr:
+            raise errors.InvalidData(
+                "ip_ranges for network '{0}' (Network IDs: '{1}') cannot be "
+                "changed with 'cidr' notation, change notation to "
+                "'ip_ranges'".format(ng_data['name'], ng_data['id']))
 
         if use_gateway and not gateway:
             raise errors.InvalidData(

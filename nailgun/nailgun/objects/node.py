@@ -1315,10 +1315,11 @@ class NodeAttributes(object):
 
     @classmethod
     def set_default_hugepages(cls, node):
-        supported_hugepages = node.meta['numa_topology']['supported_hugepages']
         hugepages = cls._safe_get_hugepages(node)
         if not hugepages:
             return
+
+        supported_hugepages = node.meta['numa_topology']['supported_hugepages']
 
         for attrs in six.itervalues(hugepages):
             if attrs.get('type') == 'custom_hugepages':
@@ -1431,8 +1432,8 @@ class NodeAttributes(object):
 
     @classmethod
     def is_dpdk_hugepages_enabled(cls, node):
-        return int(Node.get_attributes(
-            node)['hugepages']['dpdk']['value']) != 0
+        hugepages = cls._safe_get_hugepages(node)
+        return 'dpdk' in hugepages and hugepages['dpdk']['value'] > 0
 
     @classmethod
     def dpdk_hugepages_attrs(cls, node):

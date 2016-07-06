@@ -477,6 +477,12 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
         data = cls.validate_json(data)
         full_data = utils.dict_merge(objects.Node.get_attributes(node), data)
 
+        if 'numa_topology' not in node.meta:
+            raise errors.InvalidData(
+                "Seems old nailgun-agent is used. Node '{0}' doesn't"
+                " contain information about NUMA topology."
+                .format(node.id)
+            )
         models = objects.Cluster.get_restrictions_models(cluster)
 
         attrs = cls.validate_attributes(full_data, models=models)

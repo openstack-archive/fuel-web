@@ -63,8 +63,29 @@ def prepare():
                     'config': {}
                 }
             }),
-            'volumes_metadata': jsonutils.dumps({})
-        }])
+            'volumes_metadata': jsonutils.dumps({}),
+            'attributes_metadata': jsonutils.dumps({
+                'editable': {
+                    'external_dns': {
+                        'dns_list': {
+                            'value': {
+                                'generator': 'from_settings',
+                            },
+                            'type': 'text_list',
+                        }
+                    },
+                    'external_ntp': {
+                        'ntp_list': {
+                            'value': {
+                                'generator': 'from_settings',
+                            },
+                            'type': 'text_list',
+                        }
+                    },
+                }
+            })
+        }]
+    )
     db.commit()
 
 
@@ -79,4 +100,31 @@ class TestRulesToPickBootableDisk(base.BaseAlembicMigrationTest):
         self.assertEquals(
             volumes_metadata['rule_to_pick_boot_disk'],
             rule_to_pick_bootdisk
+        )
+
+
+class TestLegacyTextList(base.BaseAlembicMigrationTest):
+
+    def test_legacy_text_list_handling(self):
+        result = db.execute(
+            sa.select([self.meta.tables['releases'].c.attributes_metadata])
+        ).fetchone()[0]
+        attributes_metadata = jsonutils.loads(result)
+        editable = attributes_metadata.get('editable', {})
+        self.assertEqual(
+            'from_settings_legacy_text_list',
+            editable['external_dns']['dns_list']['value']['generator']
+        )
+        self.assertEqual(
+            'text',
+            editable['external_dns']['dns_list']['type']
+        )
+
+        self.assertEqual(
+            'from_settings_legacy_text_list',
+            editable['external_dns']['dns_list']['value']['generator']
+        )
+        self.assertEqual(
+            'text',
+            editable['external_dns']['dns_list']['type']
         )

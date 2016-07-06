@@ -213,6 +213,11 @@ class AttributesGenerator(object):
         return getattr(settings, arg)
 
     @classmethod
+    def from_settings_legacy_text_list(cls, arg):
+        values = getattr(settings, arg)
+        return ", ".join(values)
+
+    @classmethod
     def uuid4(cls, arg=None):
         return uuid4()
 

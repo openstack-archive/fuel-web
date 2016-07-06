@@ -409,6 +409,16 @@ class TestNetworkConfigurationValidator(base.BaseIntegrationTest):
         result = validator._check_ips_out_of_ip_ranges(mgmt_db, nm, ranges)
         self.assertTrue(result)
 
+    def test_validate_network_with_new_ip_ranges_and_cidr_notation(self):
+            mgmt = self.find_net_by_name(consts.NETWORKS.management)
+            mgmt['meta']['notation'] = consts.NETWORK_NOTATION.cidr
+            mgmt['ip_ranges'] = [['10.101.0.1', '10.101.0.255']]
+            self.db.flush()
+            self.assertRaisesInvalidData(
+                "ip_ranges for network '{0}' (Network IDs: '{1}') cannot be "
+                "changed with 'cidr' notation, change notation to"
+                " 'ip_ranges'".format(mgmt['name'], mgmt['id']))
+
 
 class TestNovaNetworkConfigurationValidatorProtocol(
     BaseNetworkConfigurationValidatorProtocolTest

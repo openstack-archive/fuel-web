@@ -70,25 +70,47 @@ class NetworkConfigurationValidator(BasicValidator):
         :return:             ng_data
         :raises:             errors.InvalidData
         """
-        cidr = ng_data.get('cidr', ng_db.cidr)
-        ip_ranges = ng_data.get(
-            'ip_ranges',
-            [(r.first, r.last) for r in ng_db.ip_ranges])
-
+        ip_ranges_from_db = [[r.first, r.last] for r in ng_db.ip_ranges]
+        ip_ranges = ng_data.get('ip_ranges', ip_ranges_from_db)
         release = ng_data.get('release', ng_db.get('release'))
         if release != ng_db.get('release'):
             raise errors.InvalidData('Network release could not be changed.')
 
         # values are always taken either from request or from DB
         meta = ng_data.get('meta', {})
-        notation = meta.get('notation', ng_db.meta.get('notation'))
         use_gateway = meta.get('use_gateway',
                                ng_db.meta.get('use_gateway', False))
-        gateway = ng_data.get('gateway', ng_db.get('gateway'))
+        gateway = ng_data.get('gateway')
+        gateway_from_db = ng_db.get('gateway')
 
+        if not gateway and use_gateway:
+            # Take value from db if use_gateway is True
+            gateway = gateway_from_db
         if use_gateway and not gateway:
             raise errors.InvalidData(
                 "Flag 'use_gateway' cannot be provided without gateway")
+        if not use_gateway and gateway != gateway_from_db:
+            # raise exception if use_gateway is False and gateway was changed.
+            raise errors.InvalidData(
+                "Gateway for network '{0}' (Network IDs: '{1}') cannot be "
+                "changed while 'use_gateway' is False".format(
+                    ng_data['name'], ng_data['id']))
+
+        new_ip_ranges = sorted(ip_ranges) != sorted(ip_ranges_from_db)
+        notation_from_db = ng_db.meta.get('notation')
+        notation = meta.get('notation', notation_from_db)
+        cidr = ng_data.get('cidr', ng_db.cidr)
+        new_cidr = cidr != ng_db.cidr
+        # Deny ip ranges change without setting ip_ranges notation. Allow
+        # changing ip_ranges with cidr notation, when notation changed from
+        # ip ranges to cidr as well or if cidr changed
+        if (new_ip_ranges and notation == consts.NETWORK_NOTATION.cidr and
+                not new_cidr and
+                notation_from_db != consts.NETWORK_NOTATION.ip_ranges):
+            raise errors.InvalidData(
+                "ip_ranges for network '{0}' (Network IDs: '{1}') cannot be "
+                "changed with 'cidr' notation, change notation to "
+                "'ip_ranges'".format(ng_data['name'], ng_data['id']))
 
         # Depending on notation required parameters must be either in
         # the request or DB

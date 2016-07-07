@@ -55,6 +55,7 @@ from nailgun.objects import NIC
 from nailgun.objects import Notification
 from nailgun.objects import Release
 from nailgun.objects.serializers.node import NodeSerializer
+from nailgun.objects import Tag
 from nailgun.policy import cpu_distribution
 from nailgun.policy import hugepages_distribution
 from nailgun.settings import settings
@@ -836,6 +837,7 @@ class Node(NailgunObject):
                 instance.full_name,
                 new_roles))
 
+        cls.update_tags(instance, new_roles)
         instance.roles = new_roles
         db().flush()
 
@@ -868,6 +870,7 @@ class Node(NailgunObject):
                 node_id=instance.id
             )
 
+        cls.update_tags(instance, new_pending_roles)
         instance.pending_roles = new_pending_roles
         db().flush()
 
@@ -927,6 +930,10 @@ class Node(NailgunObject):
         cls.set_default_attributes(instance)
 
     @classmethod
+    def remove_tags(cls, instance):
+        Tag.bulk_delete([t.id for t in instance.tags])
+
+    @classmethod
     def set_network_template(cls, instance):
         template = instance.cluster.network_config.configuration_template
         cls.apply_network_template(instance, template)
@@ -984,6 +991,7 @@ class Node(NailgunObject):
                 instance.cluster,
                 node_id=instance.id
             )
+        cls.remove_tags(instance)
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, [])
         cls.remove_replaced_params(instance)
@@ -999,6 +1007,28 @@ class Node(NailgunObject):
 
         db().flush()
         db().refresh(instance)
+
+    @classmethod
+    def update_tags(cls, instance, new_roles):
+        roles_metadata = instance.cluster.release.roles_metadata
+        current_tags = set()
+        new_tags = set()
+        for role in instance.all_roles:
+            current_tags.update(roles_metadata.get(role, {}).get('tags', []))
+
+        for role in new_roles:
+            new_tags.update(roles_metadata.get(role, {}).get('tags', []))
+
+        old_role_tags = current_tags - new_tags
+        tags = []
+        for tag in instance.tags:
+            if tag.tag not in old_role_tags:
+                tags.append(tag)
+
+        instance.tags = tags
+
+        for tag in new_tags - current_tags:
+            Tag.create({'node_id': instance.id, 'tag': tag})
 
     @classmethod
     def move_roles_to_pending_roles(cls, instance):
@@ -1223,6 +1253,23 @@ class Node(NailgunObject):
             return []
         nm = Cluster.get_network_manager(instance.cluster)
         return nm.dpdk_nics(instance)
+
+    @classmethod
+    def all_tags(cls, instance):
+        role_tags = set(t.tag for t in instance.tags)
+
+        if instance.cluster:
+            roles_metadata = instance.cluster.release.roles_metadata
+
+            for role in instance.all_roles:
+                role_tags.update(roles_metadata[role]['tags'])
+
+        role_tags -= set(instance.primary_roles)
+        role_tags.update(
+            'primary-{0}'.format(r) for r in instance.primary_roles
+        )
+
+        return list(role_tags)
 
 
 class NodeCollection(NailgunCollection):

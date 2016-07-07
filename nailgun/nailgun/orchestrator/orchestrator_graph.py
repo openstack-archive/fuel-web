@@ -30,7 +30,7 @@ from nailgun import objects
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
 from nailgun.policy.name_match import NameMatchingPolicy
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
 
 
 class GraphSolver(nx.DiGraph):
@@ -432,7 +432,7 @@ class AstuteGraph(object):
         :param nodes: list of node db objects
         """
         serialized = []
-        role_resolver = RoleResolver(nodes)
+        role_resolver = LabelResolver(nodes)
 
         for task in tasks:
 

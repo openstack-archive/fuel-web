@@ -25,7 +25,7 @@ from nailgun.orchestrator.plugins_serializers import \
 from nailgun.orchestrator.plugins_serializers import \
     PluginsPreDeploymentHooksSerializer
 from nailgun.test import base
-from nailgun.utils.role_resolver import NullResolver
+from nailgun.utils.resolvers import NullResolver
 
 
 class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):

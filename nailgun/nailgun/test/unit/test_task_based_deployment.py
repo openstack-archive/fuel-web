@@ -606,6 +606,7 @@ class TestTaskSerializers(BaseTestCase):
         serialized = self.serializer.serialize(
             self.env.clusters[-1], controllers, tasks
         )[1]
+
         # serialised contains also master node
         self.assertItemsEqual(
             [n.uid for n in controllers] + [None],

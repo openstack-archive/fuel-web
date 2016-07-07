@@ -29,8 +29,8 @@ from nailgun import objects
 from nailgun.plugins import adapters
 from nailgun.settings import settings
 from nailgun import utils
-from nailgun.utils.role_resolver import NameMatchingPolicy
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
+from nailgun.utils.resolvers import NameMatchingPolicy
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
@@ -55,7 +55,7 @@ class DeploymentMultinodeSerializer(object):
 
     def initialize(self, cluster):
         self.all_nodes = objects.Cluster.get_nodes_not_for_deletion(cluster)
-        self.role_resolver = RoleResolver(self.all_nodes)
+        self.role_resolver = LabelResolver(self.all_nodes)
         self.initialized = cluster.id
 
     def finalize(self):

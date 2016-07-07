@@ -54,8 +54,8 @@ from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 from nailgun.utils import logs as logs_utils
+from nailgun.utils.resolvers import LabelResolver
 from nailgun.utils.restrictions import VmwareAttributesRestriction
-from nailgun.utils.role_resolver import RoleResolver
 
 
 def make_astute_message(task, method, respond_to, args):
@@ -321,7 +321,7 @@ class DeploymentTask(BaseDeploymentTask):
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
-        role_resolver = RoleResolver(nodes)
+        role_resolver = LabelResolver(nodes)
         serialized_cluster = deployment_serializers.serialize(
             graph, transaction.cluster, nodes)
 
@@ -518,7 +518,7 @@ class ClusterTransaction(DeploymentTask):
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer
         # also role resolver should be created after serialization completed
-        role_resolver = RoleResolver(nodes)
+        role_resolver = LabelResolver(nodes)
         cluster = transaction.cluster
 
         if objects.Cluster.is_propagate_task_deploy_enabled(cluster):

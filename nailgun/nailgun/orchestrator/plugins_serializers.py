@@ -25,7 +25,7 @@ from nailgun import errors
 from nailgun.logger import logger
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.settings import settings
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
 
 # TODO(bgaifullin) HUCK to prevent cycle imports
 from nailgun.plugins.manager import PluginManager
@@ -44,7 +44,7 @@ class BasePluginDeploymentHooksSerializer(object):
 
         self.cluster = cluster
         self.nodes = nodes
-        self.role_resolver = role_resolver or RoleResolver(nodes)
+        self.role_resolver = role_resolver or LabelResolver(nodes)
 
     def deployment_tasks(self, plugins, stage):
         plugin_tasks = []

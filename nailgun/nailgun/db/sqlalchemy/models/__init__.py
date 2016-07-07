@@ -53,7 +53,6 @@ from nailgun.extensions.network_manager.models import network
 from nailgun.db.sqlalchemy.models.node import Node
 from nailgun.db.sqlalchemy.models.node import NodeGroup
 
-
 from nailgun.extensions.network_manager.models.network_config import \
     NetworkingConfig
 from nailgun.extensions.network_manager.models.network_config import \

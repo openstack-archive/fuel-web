@@ -24,7 +24,7 @@ from nailgun import errors
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
 from nailgun.settings import settings
-from nailgun.utils.role_resolver import NameMatchingPolicy
+from nailgun.utils.resolvers import NameMatchingPolicy
 
 
 # This class has similar functional with TasksSerializer from task deploy

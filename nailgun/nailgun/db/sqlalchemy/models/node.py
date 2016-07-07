@@ -55,6 +55,21 @@ class NodeGroup(Base):
     )
 
 
+class Tag(Base):
+    __tablename__ = 'tags'
+    __table_args__ = (
+        UniqueConstraint('node_id', 'tag',
+                         name='_tag_node_uc'),
+    )
+    id = Column(Integer, primary_key=True)
+    tag = Column(String(50), nullable=False)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete='CASCADE'),
+        nullable=False
+    )
+
+
 class Node(Base):
     __tablename__ = 'nodes'
     __table_args__ = (
@@ -95,6 +110,7 @@ class Node(Base):
     online = Column(Boolean, default=True)
     labels = Column(
         MutableDict.as_mutable(JSON), nullable=False, server_default='{}')
+    tags = relationship('Tag', backref='node', cascade="all, delete-orphan")
     roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                    default=[], nullable=False, server_default='{}')
     pending_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),

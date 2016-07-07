@@ -592,11 +592,11 @@ class TestTaskSerializers(BaseTestCase):
     def test_deploy_only_selected_nodes(self):
         tasks = [
             {
-                "id": "test1", "role": ["controller"],
+                "id": "test1", "role": ["controller"], "tags": ["keystone"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             },
             {
-                "id": "test2", "role": ["compute"],
+                "id": "test2", "role": ["compute"], "tags": ["compute"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             }
         ]
@@ -619,20 +619,20 @@ class TestTaskSerializers(BaseTestCase):
     def test_serialise_with_events(self):
         tasks = [
             {
-                "id": "test1", "role": ["controller"],
+                "id": "test1", "role": ["controller"], "tags": ["controller"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             },
             {
-                "id": "test2", "role": ["compute"],
+                "id": "test2", "role": ["compute"], "tags": ["compute"],
                 "type": "puppet", "version": "2.0.0", "parameters": {},
                 "reexecute_on": ["deploy"]
             },
             {
-                "id": "test3", "role": ["compute"],
+                "id": "test3", "role": ["compute"], "tags": ["compute"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             },
             {
-                "id": "test4", "role": ["cinder"],
+                "id": "test4", "role": ["cinder"], "tags": ["cinder"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             }
         ]

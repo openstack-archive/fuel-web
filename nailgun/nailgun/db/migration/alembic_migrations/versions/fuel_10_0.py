@@ -37,6 +37,7 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_tags_table()
 
 
 def downgrade():
@@ -44,6 +45,32 @@ def downgrade():
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
+    downgrade_tags_table()
+
+
+def upgrade_tags_table():
+    op.create_table(
+        'tags',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('tag', sa.String(50), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.Column('is_primary', sa.Boolean),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint(
+            'node_id',
+            'tag',
+            name='__tag_node_uc'),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE')
+    )
+    op.add_column(
+        'releases',
+        sa.Column('tags_metadata', fields.JSON(), nullable=True),
+    )
+
+
+def downgrade_tags_table():
+    op.drop_table('tags')
 
 
 def upgrade_plugin_links_constraints():

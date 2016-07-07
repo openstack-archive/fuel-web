@@ -67,7 +67,7 @@ class NullResolver(BaseRoleResolver):
         return []
 
 
-class RoleResolver(BaseRoleResolver):
+class LabelResolver(BaseRoleResolver):
     """The general role resolver.
 
     Allows to use patterns in name of role
@@ -78,6 +78,7 @@ class RoleResolver(BaseRoleResolver):
     SPECIAL_ROLES = {
         consts.TASK_ROLES.master: [consts.MASTER_NODE_UID]
     }
+    mapper_func = objects.Node.all_roles
 
     def __init__(self, nodes):
         """Initializes.
@@ -86,7 +87,7 @@ class RoleResolver(BaseRoleResolver):
         """
         self.__mapping = defaultdict(set)
         for node in nodes:
-            for r in objects.Node.all_roles(node):
+            for r in objects.Node.all_labels(node):
                 self.__mapping[r].add(node.uid)
 
     def resolve(self, roles, policy=None):

@@ -1222,6 +1222,24 @@ class Node(NailgunObject):
         nm = Cluster.get_network_manager(instance.cluster)
         return nm.dpdk_nics(instance)
 
+    @classmethod
+    def all_labels(cls, instance):
+        labels = set(instance.roles + instance.pending_roles)
+        labels.update(instance.labels.values())
+
+        if instance.cluster:
+            roles_metadata = instance.cluster.release.roles_metadata
+
+            for role in instance.all_roles:
+                labels.update(roles_metadata.get(role, {}).get('tags', []))
+
+        labels -= set(instance.primary_roles)
+        labels.update(
+            'primary-{0}'.format(r) for r in instance.primary_roles
+        )
+
+        return list(labels)
+
 
 class NodeCollection(NailgunCollection):
     """Node collection"""

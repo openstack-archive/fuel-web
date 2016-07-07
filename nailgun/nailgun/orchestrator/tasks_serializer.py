@@ -28,7 +28,7 @@ from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
 from nailgun import utils
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -92,11 +92,12 @@ class StandardConfigRolesHook(ExpressionBasedTask):
     def __init__(self, task, cluster, nodes, role_resolver=None):
         super(StandardConfigRolesHook, self).__init__(task, cluster)
         self.nodes = nodes
-        self.role_resolver = role_resolver or RoleResolver(nodes)
+        self.role_resolver = role_resolver or LabelResolver(nodes)
 
     def get_uids(self):
         return list(self.role_resolver.resolve(
-            self.task.get('role', self.task.get('groups'))
+            self.task.get('labels', self.task.get('role',
+                                                  self.task.get('groups')))
         ))
 
     def serialize(self):

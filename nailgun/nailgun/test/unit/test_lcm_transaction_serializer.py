@@ -20,7 +20,7 @@ import multiprocessing.dummy
 from nailgun import consts
 from nailgun import errors
 from nailgun import lcm
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
 
 from nailgun.test.base import BaseUnitTest
 
@@ -116,9 +116,9 @@ class TestTransactionSerializer(BaseUnitTest):
             }
         })
 
-        with mock.patch('nailgun.utils.role_resolver.objects') as m_objects:
-            m_objects.Node.all_roles = lambda x: x.roles
-            cls.role_resolver = RoleResolver(cls.nodes)
+        with mock.patch('nailgun.utils.resolvers.objects') as m_objects:
+            m_objects.Node.all_labels = lambda x: x.roles
+            cls.role_resolver = LabelResolver(cls.nodes)
 
     def test_serialize_integration(self):
         serialized = lcm.TransactionSerializer.serialize(

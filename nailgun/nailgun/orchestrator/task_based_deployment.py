@@ -29,9 +29,9 @@ from nailgun.orchestrator.tasks_serializer import CreateVMsOnCompute
 from nailgun.orchestrator.tasks_serializer import StandardConfigRolesHook
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
 from nailgun.orchestrator.tasks_templates import make_noop_task
-from nailgun.utils.role_resolver import NameMatchingPolicy
-from nailgun.utils.role_resolver import NullResolver
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
+from nailgun.utils.resolvers import NameMatchingPolicy
+from nailgun.utils.resolvers import NullResolver
 
 
 class NoopSerializer(StandardConfigRolesHook):
@@ -417,7 +417,7 @@ class TasksSerializer(object):
             self.deployment_nodes = nodes
             self.affected_node_ids = frozenset()
         self.cluster = cluster
-        self.role_resolver = RoleResolver(self.deployment_nodes)
+        self.role_resolver = LabelResolver(self.deployment_nodes)
         self.task_serializer = DeployTaskSerializer()
         self.task_processor = TaskProcessor()
         self.tasks_connections = collections.defaultdict(dict)
@@ -495,10 +495,10 @@ class TasksSerializer(object):
                 task, self.cluster, self.deployment_nodes,
                 role_resolver=role_resolver
             )
-
         serialised_tasks = self.task_processor.process_tasks(
             task, task_serializer.serialize()
         )
+
         for serialized in serialised_tasks:
             # all skipped task shall have type skipped
             # do not exclude them from graph to keep connections between nodes

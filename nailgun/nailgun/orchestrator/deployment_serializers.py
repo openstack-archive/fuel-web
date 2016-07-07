@@ -175,7 +175,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in objects.Node.all_roles(node):
+            for role in objects.Node.all_tags(node):
                 node_list.append(cls.serialize_node_for_node_list(node, role))
 
         return node_list
@@ -204,7 +204,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in objects.Node.all_roles(node):
+            for role in objects.Node.all_tags(node):
                 serialized_nodes.append(
                     self.serialize_node(common_attrs, node, role)
                 )
@@ -720,7 +720,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
     def serialize_nodes(self, common_attrs, nodes):
         serialized_nodes = []
         for node in nodes:
-            roles = objects.Node.all_roles(node)
+            roles = objects.Node.all_tags(node)
             if roles:
                 serialized_nodes.append(
                     self.serialize_node(common_attrs, node, roles)
@@ -864,7 +864,7 @@ def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
         cluster, cluster.nodes, ignore_customized
     )
 
-    objects.Cluster.set_primary_roles(cluster, nodes)
+    objects.Cluster.set_primary_tags(cluster, nodes)
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized
     )

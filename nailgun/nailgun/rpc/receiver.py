@@ -1099,6 +1099,8 @@ class NailgunReceiver(object):
             elif node['status'] == consts.NODE_STATUSES.ready:
                 incorrect_input = False
                 for row in node.get('data', []):
+                    if not row.get('mac'):
+                        continue
                     try:
                         if not net_utils.is_same_mac(row['mac'],
                                                      master_network_mac):

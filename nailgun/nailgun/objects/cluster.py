@@ -1135,8 +1135,10 @@ class Cluster(NailgunObject):
             plugin_volumes['volumes_roles_mapping'])
 
         volumes_metadata['volumes'].extend(plugin_volumes['volumes'])
-        volumes_metadata['rule_to_pick_boot_disk'].extend(
-            plugin_volumes['rule_to_pick_boot_disk'])
+        volumes_metadata.setdefault(
+            'rule_to_pick_boot_disk',
+            []
+        ).extend(plugin_volumes['rule_to_pick_boot_disk'])
 
         return volumes_metadata
 

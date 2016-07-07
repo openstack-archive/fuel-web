@@ -834,13 +834,13 @@ class TestDhcpCheckTask(BaseReciverTestCase):
         self.assertIn(err_msg, self.task.message)
 
     def test_check_dhcp_resp_empty_mac(self):
-        err_data = [{'mac': ''}]
         kwargs = {
             'task_uuid': self.task.uuid,
+            'status': consts.TASK_STATUSES.ready,
             'nodes': [
                 {'uid': str(self.node1.id),
                  'status': 'ready',
-                 'data': err_data},
+                 'data': [{'mac': ''}]},
                 {'uid': str(self.node2.id),
                  'status': 'ready',
                  'data': [{'mac': settings.ADMIN_NETWORK['mac'],
@@ -849,18 +849,10 @@ class TestDhcpCheckTask(BaseReciverTestCase):
                            'iface': 'eth0'}]}
             ]
         }
-
         self.receiver.check_dhcp_resp(**kwargs)
         self.db.flush()
         self.db.refresh(self.task)
-        self.assertEqual(self.task.status, consts.TASK_STATUSES.error)
-        self.assertEqual(self.task.result[self.node1.uid], err_data)
-
-        err_msg = (
-            "Something is wrong with response data from node with id={}"
-            .format(self.node1.id)
-        )
-        self.assertIn(err_msg, self.task.message)
+        self.assertEqual(self.task.status, consts.TASK_STATUSES.ready)
 
 
 class TestConsumer(BaseReciverTestCase):

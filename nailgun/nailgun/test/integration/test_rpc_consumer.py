@@ -834,7 +834,7 @@ class TestDhcpCheckTask(BaseReciverTestCase):
         self.assertIn(err_msg, self.task.message)
 
     def test_check_dhcp_resp_empty_mac(self):
-        err_data = [{'mac': ''}]
+        err_data = [{'mac': '', 'iface': 'eth0'}]
         kwargs = {
             'task_uuid': self.task.uuid,
             'nodes': [
@@ -861,6 +861,24 @@ class TestDhcpCheckTask(BaseReciverTestCase):
             .format(self.node1.id)
         )
         self.assertIn(err_msg, self.task.message)
+
+    def test_check_dhcp_resp_empty_record(self):
+        kwargs = {
+            'task_uuid': self.task.uuid,
+            'status': consts.TASK_STATUSES.ready,
+            'nodes': [
+                {'uid': str(self.node1.id),
+                 'status': 'ready',
+                 'data': [{'mac': '',
+                           'server_id': '',
+                           'yiaddr': '',
+                           'iface': ''}]}
+            ]
+        }
+        self.receiver.check_dhcp_resp(**kwargs)
+        self.db.flush()
+        self.db.refresh(self.task)
+        self.assertEqual(self.task.status, consts.TASK_STATUSES.ready)
 
 
 class TestConsumer(BaseReciverTestCase):

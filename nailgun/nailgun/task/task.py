@@ -56,6 +56,7 @@ from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.restrictions import VmwareAttributesRestriction
 from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.role_resolver import TagResolver
 
 
 def make_astute_message(task, method, respond_to, args):
@@ -519,7 +520,7 @@ class ClusterTransaction(DeploymentTask):
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer
         # also role resolver should be created after serialization completed
-        role_resolver = RoleResolver(nodes)
+        role_resolver = TagResolver(nodes)
         cluster = transaction.cluster
 
         if objects.Cluster.is_propagate_task_deploy_enabled(cluster):

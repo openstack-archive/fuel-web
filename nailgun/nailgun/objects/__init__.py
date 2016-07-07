@@ -84,3 +84,6 @@ from nailgun.objects.cluster_plugin_link import ClusterPluginLink
 from nailgun.objects.cluster_plugin_link import ClusterPluginLinkCollection
 from nailgun.objects.openstack_config import OpenstackConfig
 from nailgun.objects.openstack_config import OpenstackConfigCollection
+
+from nailgun.objects.tag import Tag
+from nailgun.objects.tag import TagCollection

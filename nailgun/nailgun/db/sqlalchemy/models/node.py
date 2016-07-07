@@ -22,6 +22,7 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Table
 from sqlalchemy import Text
 from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
@@ -53,6 +54,13 @@ class NodeGroup(Base):
         backref="nodegroup",
         cascade="delete, delete-orphan"
     )
+
+
+association_table = Table(
+    'node_tag_assignment', Base.metadata,
+    Column('node_id', Integer, ForeignKey('nodes.id')),
+    Column('tag_id', Integer, ForeignKey('tags.id'))
+)
 
 
 class Node(Base):
@@ -95,6 +103,7 @@ class Node(Base):
     online = Column(Boolean, default=True)
     labels = Column(
         MutableDict.as_mutable(JSON), nullable=False, server_default='{}')
+    tags = relationship('Tag', secondary=association_table, backref='nodes')
     roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                    default=[], nullable=False, server_default='{}')
     pending_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
@@ -102,6 +111,8 @@ class Node(Base):
     primary_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                            default=[], nullable=False, server_default='{}')
 
+    primary_tags = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
+                          default=[], nullable=False, server_default='{}')
     nic_interfaces = relationship("NodeNICInterface", backref="node",
                                   cascade="all, delete-orphan",
                                   order_by="NodeNICInterface.name")
@@ -168,6 +179,10 @@ class Node(Base):
     @property
     def full_name(self):
         return u'%s (id=%s, mac=%s)' % (self.name, self.id, self.mac)
+
+    @property
+    def tag_names(self):
+        return (t.tag for t in self.tags)
 
     @property
     def all_roles(self):

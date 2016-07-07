@@ -56,8 +56,8 @@ from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 from nailgun.utils import logs as logs_utils
+from nailgun.utils.resolvers import TagResolver
 from nailgun.utils.restrictions import VmwareAttributesRestriction
-from nailgun.utils.role_resolver import RoleResolver
 
 
 def make_astute_message(task, method, respond_to, args):
@@ -323,7 +323,7 @@ class DeploymentTask(BaseDeploymentTask):
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
-        role_resolver = RoleResolver(nodes)
+        resolver = TagResolver(nodes)
         serialized_cluster = deployment_serializers.serialize(
             graph, transaction.cluster, nodes)
 
@@ -342,10 +342,10 @@ class DeploymentTask(BaseDeploymentTask):
             nodes = nodes + affected_nodes
         pre_deployment = stages.pre_deployment_serialize(
             graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
+            resolver=resolver)
         post_deployment = stages.post_deployment_serialize(
             graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
+            resolver=resolver)
 
         return {
             'deployment_info': serialized_cluster,
@@ -532,7 +532,7 @@ class ClusterTransaction(DeploymentTask):
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer
         # also role resolver should be created after serialization completed
-        role_resolver = RoleResolver(nodes)
+        resolver = TagResolver(nodes)
         cluster = transaction.cluster
 
         if objects.Cluster.is_propagate_task_deploy_enabled(cluster):
@@ -543,12 +543,12 @@ class ClusterTransaction(DeploymentTask):
                 )
             else:
                 plugin_tasks = None
-            tasks = adapt_legacy_tasks(tasks, plugin_tasks, role_resolver)
+            tasks = adapt_legacy_tasks(tasks, plugin_tasks, resolver)
 
         directory, graph, metadata = lcm.TransactionSerializer.serialize(
             context,
             tasks,
-            role_resolver,
+            resolver,
         )
 
         logger.info("tasks serialization is finished.")

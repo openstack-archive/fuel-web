@@ -187,7 +187,7 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertFalse(task.should_execute())
 
     @mock.patch.object(NetworkDeploymentSerializer, 'update_nodes_net_info')
-    @mock.patch.object(objects.Node, 'all_roles')
+    @mock.patch.object(objects.Node, 'all_tags')
     def test_upload_nodes_info(self, m_roles, m_update_nodes):
         # mark one node as ready so we can test for duplicates
         self.env.nodes[0].status = consts.NODE_STATUSES.ready

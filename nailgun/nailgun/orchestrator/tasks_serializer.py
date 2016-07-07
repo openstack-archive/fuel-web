@@ -96,7 +96,8 @@ class StandardConfigRolesHook(ExpressionBasedTask):
 
     def get_uids(self):
         return list(self.role_resolver.resolve(
-            self.task.get('role', self.task.get('groups'))
+            self.task.get('tags', self.task.get('role',
+                                                self.task.get('groups')))
         ))
 
     def serialize(self):

@@ -925,6 +925,29 @@ class Node(NailgunObject):
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
         cls.set_network_template(instance)
         cls.set_default_attributes(instance)
+        cls.set_labels(instance)
+
+    @classmethod
+    def set_labels(cls, instance):
+        roles_metadata = instance.cluster.release.roles_metadata
+
+        labels = set()
+        for role in instance.all_roles:
+            labels.update(roles_metadata.get(role, {}).get('labels', []))
+
+        labels_dict = {label: None for label in labels}
+        instance.labels.update(labels_dict)
+
+    @classmethod
+    def remove_labels(cls, instance):
+        if not instance.cluster:
+            return
+
+        roles_metadata = instance.cluster.release.roles_metadata
+
+        for role in instance.all_roles:
+            for label in roles_metadata.get(role, {}).get('labels', []):
+                del instance.labels[label]
 
     @classmethod
     def set_network_template(cls, instance):
@@ -984,6 +1007,7 @@ class Node(NailgunObject):
                 instance.cluster,
                 node_id=instance.id
             )
+        cls.remove_labels(instance)
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, [])
         cls.remove_replaced_params(instance)
@@ -1223,6 +1247,18 @@ class Node(NailgunObject):
             return []
         nm = Cluster.get_network_manager(instance.cluster)
         return nm.dpdk_nics(instance)
+
+    @classmethod
+    def all_labels(cls, instance):
+        labels = set(instance.roles + instance.pending_roles)
+        labels.update(instance.labels.values())
+
+        labels -= set(instance.primary_roles)
+        labels.update(
+            'primary-{0}'.format(r) for r in instance.primary_roles
+        )
+
+        return list(labels)
 
 
 class NodeCollection(NailgunCollection):

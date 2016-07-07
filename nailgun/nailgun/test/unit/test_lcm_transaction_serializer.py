@@ -20,7 +20,7 @@ import multiprocessing.dummy
 from nailgun import consts
 from nailgun import errors
 from nailgun import lcm
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
 
 from nailgun.test.base import BaseUnitTest
 
@@ -116,13 +116,13 @@ class TestTransactionSerializer(BaseUnitTest):
             }
         })
 
-        with mock.patch('nailgun.utils.role_resolver.objects') as m_objects:
-            m_objects.Node.all_roles = lambda x: x.roles
-            cls.role_resolver = RoleResolver(cls.nodes)
+        with mock.patch('nailgun.utils.resolvers.objects') as m_objects:
+            m_objects.Node.all_labels = lambda x: x.roles
+            cls.resolver = LabelResolver(cls.nodes)
 
     def test_serialize_integration(self):
         serialized = lcm.TransactionSerializer.serialize(
-            self.context, self.tasks, self.role_resolver
+            self.context, self.tasks, self.resolver
         )[1]
         # controller
         self.datadiff(
@@ -199,7 +199,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_resolve_nodes(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.role_resolver
+            self.context, self.resolver
         )
         self.assertEqual(
             [None],
@@ -227,7 +227,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_dependencies_de_duplication(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.role_resolver
+            self.context, self.resolver
         )
         serializer.tasks_graph = {
             None: {},
@@ -285,7 +285,7 @@ class TestTransactionSerializer(BaseUnitTest):
             'tasks': ['task4', 'task2']
         })
         serialized = lcm.TransactionSerializer.serialize(
-            self.context, tasks, self.role_resolver
+            self.context, tasks, self.resolver
         )
         tasks_per_node = serialized[1]
         self.datadiff(
@@ -334,7 +334,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_expand_dependencies(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.role_resolver
+            self.context, self.resolver
         )
         serializer.tasks_graph = {
             '1': {'task1': {}},
@@ -350,7 +350,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_expand_cross_dependencies(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.role_resolver
+            self.context, self.resolver
         )
         serializer.tasks_graph = {
             '1': {'task1': {}, 'task2': {}},
@@ -388,7 +388,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_need_update_task(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.role_resolver
+            self.context, self.resolver
         )
         self.assertTrue(serializer.need_update_task(
             {}, {"id": "task1", "type": "puppet"}

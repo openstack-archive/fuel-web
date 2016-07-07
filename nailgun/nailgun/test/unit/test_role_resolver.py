@@ -110,3 +110,52 @@ class TestNullResolver(BaseUnitTest):
             node_ids,
             role_resolver.NullResolver(node_ids).resolve("controller")
         )
+
+
+class TestTagResolver(BaseUnitTest):
+    @classmethod
+    def setUpClass(cls):
+        cls.tags_of_nodes = [
+            ["database", "rabbitmq"],
+            ["nova-controller"],
+            ["horizon", "keystone", "database"],
+            ["compute"]
+        ]
+        cls.nodes = [
+            mock.MagicMock(uid=str(i))
+            for i in six.moves.range(len(cls.tags_of_nodes))
+        ]
+
+    def setUp(self):
+        objs_mock = mock.patch('nailgun.utils.role_resolver.objects')
+        self.addCleanup(objs_mock.stop)
+        objs_mock.start().Node.all_tags.side_effect = self.tags_of_nodes
+
+    def test_resolve_by_tag(self):
+        resolver = role_resolver.TagResolver(self.nodes)
+        self.assertItemsEqual(
+            ["0", "2"],
+            resolver.resolve(["/.*database/"])
+        )
+        self.assertItemsEqual(
+            ["1"],
+            resolver.resolve(["nova-controller"])
+        )
+        self.assertItemsEqual(
+            ["0", "2"],
+            resolver.resolve(["horizon", "keystone", "database"])
+        )
+
+    def test_resolve_all(self):
+        resolver = role_resolver.TagResolver(self.nodes)
+        self.assertItemsEqual(
+            (x.uid for x in self.nodes),
+            resolver.resolve("*")
+        )
+
+    def test_resolve_master(self):
+        resolver = role_resolver.TagResolver(self.nodes)
+        self.assertItemsEqual(
+            [consts.MASTER_NODE_UID],
+            resolver.resolve(consts.TASK_ROLES.master)
+        )

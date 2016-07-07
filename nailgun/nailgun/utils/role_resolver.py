@@ -144,3 +144,81 @@ class RoleResolver(BaseRoleResolver):
                 p = NameMatchingPolicy.create(p)
                 result.update(r for r in self.__mapping if p.match(r))
         return result
+
+
+class TagResolver(BaseRoleResolver):
+    """The general role resolver.
+
+    Allows to use patterns in name of role
+    """
+    # the mapping roles, those are resolved to known list of IDs
+    # master is used to run tasks on master node
+    SPECIAL_ROLES = {
+        consts.TASK_ROLES.master: [consts.MASTER_NODE_UID]
+    }
+
+    def __init__(self, nodes):
+        """Initializes.
+
+        :param nodes: the sequence of node objects
+        """
+        self.__mapping = defaultdict(set)
+        for node in nodes:
+            for r in objects.Node.all_tags(node):
+                self.__mapping[r].add(node.uid)
+
+    def resolve(self, tags, policy=None):
+        result = set()
+        if tags == consts.TASK_ROLES.all:
+            # optimization
+            result = {
+                uid for nodes in six.itervalues(self.__mapping)
+                for uid in nodes
+            }
+        else:
+            if isinstance(tags, six.string_types):
+                tags = [tags]
+
+            if not isinstance(tags, (list, tuple, set)):
+                # TODO(bgaifullin) fix wrong format for roles in tasks.yaml
+                # After it will be allowed to raise exception here
+                logger.warn(
+                    'Wrong tags format, `tags` should be a list or "*": %s',
+                    tags
+                )
+                return result
+
+            for tag in tags:
+                if tag in self.SPECIAL_ROLES:
+                    result.update(self.SPECIAL_ROLES[tag])
+                else:
+                    pattern = NameMatchingPolicy.create(tag)
+                    for node_role, nodes_ids in six.iteritems(self.__mapping):
+                        if pattern.match(node_role):
+                            result.update(nodes_ids)
+
+        # in some cases need only one any node from pool
+        # for example if need only one any controller.
+        # to distribute load select first node from pool
+        if result and policy == consts.NODE_RESOLVE_POLICY.any:
+            result = {next(iter(result))}
+
+        logger.debug(
+            "Tag '%s' and policy '%s' was resolved to: %s",
+            tags, policy, result
+        )
+        return result
+
+    def get_all_roles(self, pattern=None):
+        if pattern is None or pattern == consts.TASK_ROLES.all:
+            return set(self.__mapping)
+
+        if isinstance(pattern, six.string_types):
+            pattern = [pattern]
+
+        result = set()
+        if isinstance(pattern, (list, tuple, set)):
+            for p in pattern:
+                p = NameMatchingPolicy.create(p)
+                result.update(r for r in self.__mapping if p.match(r))
+        return result

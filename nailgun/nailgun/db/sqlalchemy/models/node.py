@@ -55,6 +55,22 @@ class NodeGroup(Base):
     )
 
 
+class Tag(Base):
+    __tablename__ = 'tags'
+    __table_args__ = (
+        UniqueConstraint('node_id', 'tag',
+                         name='_tag_node_uc'),
+    )
+    id = Column(Integer, primary_key=True)
+    tag = Column(String(50), nullable=False)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    node = relationship('Node', backref='tags')
+
+
 class Node(Base):
     __tablename__ = 'nodes'
     __table_args__ = (

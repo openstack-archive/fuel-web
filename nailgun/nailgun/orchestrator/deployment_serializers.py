@@ -850,6 +850,7 @@ def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
     )
 
     objects.Cluster.set_primary_roles(cluster, nodes)
+    objects.Cluster.set_primary_tags(cluster, nodes)
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized
     )

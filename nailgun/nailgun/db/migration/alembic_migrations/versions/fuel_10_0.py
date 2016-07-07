@@ -22,6 +22,8 @@ Create Date: 2016-04-08 15:20:43.989472
 
 from alembic import op
 from oslo_serialization import jsonutils
+from sqlalchemy.dialects import postgresql as psql
+
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
@@ -37,6 +39,7 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_node_tagging()
 
 
 def downgrade():
@@ -44,6 +47,48 @@ def downgrade():
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
+    downgrade_node_tagging()
+
+
+def upgrade_node_tagging():
+    op.create_table(
+        'tags',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('tag', sa.String(64), nullable=False),
+        sa.Column('cluster_id', sa.Integer(), nullable=False),
+        sa.Column('has_primary', sa.Boolean),
+        sa.Column('read_only', sa.Boolean),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint(
+            'cluster_id',
+            'tag',
+            name='__tag_cluster_uc'),
+    )
+
+    op.create_table(
+        'node_tag_assignment',
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.Column('tag_id', sa.Integer(), nullable=False),
+    )
+
+    op.add_column(
+        'releases',
+        sa.Column('tags_metadata', fields.JSON(), nullable=True),
+    )
+
+    op.add_column(
+        'nodes',
+        sa.Column(
+            'primary_tags',
+            psql.ARRAY(sa.String(64)),
+            server_default='{}',
+            nullable=False))
+
+
+def downgrade_node_tagging():
+    op.drop_table('tags')
+    op.drop_table('node_tag_assignment')
+    op.drop_column('releases', 'tags_metadata')
 
 
 def upgrade_plugin_links_constraints():

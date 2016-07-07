@@ -190,12 +190,29 @@ class Cluster(NailgunObject):
         ClusterPlugin.add_compatible_plugins(cluster)
         PluginManager.enable_plugins_by_components(cluster)
 
+        cls.create_tags_from_release(cluster)
+
         fire_callback_on_cluster_create(cluster, data)
 
         if assign_nodes:
             cls.update_nodes(cluster, assign_nodes)
 
         return cluster
+
+    @classmethod
+    def create_tags_from_release(cls, instance):
+        from nailgun.objects import Tag
+        metadata = instance.release.tags_metadata
+        for role, role_data in instance.release.roles_metadata.items():
+            tag_meta = metadata.get(role, {})
+            for tag in role_data.get('tags', []):
+                data = {
+                    'cluster_id': instance.id,
+                    'tag': tag,
+                    'has_primary': tag_meta.get('has_primary', False),
+                    'read_only': True
+                }
+                Tag.create(data)
 
     @classmethod
     def get_cluster_attributes_by_components(cls, components, release_id):
@@ -836,6 +853,56 @@ class Cluster(NailgunObject):
         for role, meta in six.iteritems(roles_metadata):
             if meta.get('has_primary'):
                 cls.set_primary_role(instance, nodes, role)
+
+    @classmethod
+    def get_primary_node_by_tag(cls, instance, tag):
+        logger.debug("Getting primary node for tag: %s", tag)
+
+        primary_node = db().query(models.Node).filter_by(
+            pending_deletion=False,
+            cluster_id=instance.id
+        ).filter(
+            models.Node.primary_tags.any(tag)
+        ).first()
+
+        if primary_node is None:
+            logger.debug("Not found primary node for tag: %s", tag)
+        else:
+            logger.debug("Found primary node: %s for tag: %s",
+                         primary_node.id, tag)
+        return primary_node
+
+    @classmethod
+    def set_primary_tag(cls, instance, nodes, tag):
+        primary_node = cls.get_primary_node_by_tag(instance, tag)
+        if primary_node:
+            return
+
+        filtered_nodes = []
+        for node in nodes:
+            if (not node.pending_deletion and (
+                    tag in node.tag_names)):
+                filtered_nodes.append(node)
+        filtered_nodes = sorted(filtered_nodes, key=lambda node: node.id)
+        if filtered_nodes:
+            primary_node = next((
+                node for node in filtered_nodes
+                if node.status == consts.NODE_STATUSES.ready),
+                filtered_nodes[0])
+
+            for node_tag in primary_node.tags:
+                if node_tag.tag == tag:
+                    node_tag.is_primary = True
+                    break
+
+        db().commit()
+
+    @classmethod
+    def set_primary_tags(cls, instance, nodes):
+        tags_metadata = instance.release.tags_metadata
+        for tag, values in tags_metadata.items():
+            if values['has_primary']:
+                cls.set_primary_tag(instance, nodes, tag)
 
     @classmethod
     def get_nodes_by_role(cls, instance, role_name):

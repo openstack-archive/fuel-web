@@ -526,3 +526,9 @@ HYPERVISORS = Enum(
     "kvm",
     "qemu"
 )
+
+TAG_OWNER_TYPES = Enum(
+    'release',
+    'cluster',
+    'plugin'
+)

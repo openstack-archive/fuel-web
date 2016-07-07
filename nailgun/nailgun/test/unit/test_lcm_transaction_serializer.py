@@ -108,8 +108,9 @@ class TestTransactionSerializer(BaseUnitTest):
             }
         })
 
-        with mock.patch('nailgun.utils.role_resolver.objects') as m_objects:
-            m_objects.Node.all_roles = lambda x: x.roles
+        with mock.patch.object(
+            RoleResolver, 'mapper_func', lambda self, x: x.roles
+        ):
             cls.role_resolver = RoleResolver(cls.nodes)
 
     def test_serialize_integration(self):

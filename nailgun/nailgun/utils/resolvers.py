@@ -26,7 +26,7 @@ from nailgun.policy.name_match import NameMatchingPolicy
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseRoleResolver(object):
+class BaseResolver(object):
     """Helper class to find nodes by role."""
 
     @abc.abstractmethod
@@ -52,8 +52,8 @@ class BaseRoleResolver(object):
         """
 
 
-class NullResolver(BaseRoleResolver):
-    """The implementation of RoleResolver
+class NullResolver(BaseResolver):
+    """The implementation of BaseResolver
 
     that returns only specified IDs.
     """
@@ -67,10 +67,10 @@ class NullResolver(BaseRoleResolver):
         return []
 
 
-class RoleResolver(BaseRoleResolver):
-    """The general role resolver.
+class LabelResolver(BaseResolver):
+    """Resolve based on node labels
 
-    Allows to use patterns in name of role
+    Allows to use patterns in name of label
     """
 
     # the mapping roles, those are resolved to known list of IDs
@@ -86,37 +86,35 @@ class RoleResolver(BaseRoleResolver):
         """
         self.__mapping = defaultdict(set)
         for node in nodes:
-            for r in objects.Node.all_roles(node):
+            for r in objects.Node.all_labels(node):
                 self.__mapping[r].add(node.uid)
 
-    def resolve(self, roles, policy=None):
+    def resolve(self, labels, policy=None):
         result = set()
-        if roles == consts.TASK_ROLES.all:
+        if labels == consts.TASK_ROLES.all:
             # optimization
             result = {
                 uid for nodes in six.itervalues(self.__mapping)
                 for uid in nodes
             }
         else:
-            if isinstance(roles, six.string_types):
-                roles = [roles]
+            if isinstance(labels, six.string_types):
+                labels = [labels]
 
-            if not isinstance(roles, (list, tuple, set)):
+            if not isinstance(labels, (list, tuple, set)):
                 # TODO(bgaifullin) fix wrong format for roles in tasks.yaml
                 # After it will be allowed to raise exception here
-                logger.warn(
-                    'Wrong roles format, `roles` should be a list or "*": %s',
-                    roles
-                )
+                logger.warn('Wrong labels format, `labels` should '
+                            'be a list or "*": %s', labels)
                 return result
 
-            for role in roles:
-                if role in self.SPECIAL_ROLES:
-                    result.update(self.SPECIAL_ROLES[role])
+            for label in labels:
+                if label in self.SPECIAL_ROLES:
+                    result.update(self.SPECIAL_ROLES[label])
                 else:
-                    pattern = NameMatchingPolicy.create(role)
-                    for node_role, nodes_ids in six.iteritems(self.__mapping):
-                        if pattern.match(node_role):
+                    pattern = NameMatchingPolicy.create(label)
+                    for node_label, nodes_ids in six.iteritems(self.__mapping):
+                        if pattern.match(node_label):
                             result.update(nodes_ids)
 
         # in some cases need only one any node from pool
@@ -126,8 +124,8 @@ class RoleResolver(BaseRoleResolver):
             result = {next(iter(result))}
 
         logger.debug(
-            "Role '%s' and policy '%s' was resolved to: %s",
-            roles, policy, result
+            "Label '%s' and policy '%s' was resolved to: %s",
+            labels, policy, result
         )
         return result
 

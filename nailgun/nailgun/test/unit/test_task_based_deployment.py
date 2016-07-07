@@ -360,7 +360,7 @@ class TestTaskSerializers(BaseTestCase):
 
     def test_expand_task_groups(self):
         node_ids = ['1', '2']
-        with mock.patch.object(self.serializer, 'role_resolver') as m_resolve:
+        with mock.patch.object(self.serializer, 'resolver') as m_resolve:
             m_resolve.resolve.return_value = node_ids
             self.serializer.expand_task_groups(
                 [
@@ -433,7 +433,7 @@ class TestTaskSerializers(BaseTestCase):
 
             }
         }
-        with mock.patch.object(self.serializer, 'role_resolver') as m_resolve:
+        with mock.patch.object(self.serializer, 'resolver') as m_resolve:
             m_resolve.resolve.return_value = node_ids
             # the default role and policy
             self.assertItemsEqual(
@@ -536,7 +536,7 @@ class TestTaskSerializers(BaseTestCase):
         self.serializer.task_processor.origin_task_ids = {
             'task_1': 'task'
         }
-        self.serializer.role_resolver = task_based_deployment.NullResolver(
+        self.serializer.resolver = task_based_deployment.NullResolver(
             node_ids
         )
         self.serializer.resolve_dependencies()
@@ -606,6 +606,7 @@ class TestTaskSerializers(BaseTestCase):
         serialized = self.serializer.serialize(
             self.env.clusters[-1], controllers, tasks
         )[1]
+
         # serialised contains also master node
         self.assertItemsEqual(
             [n.uid for n in controllers] + [None],

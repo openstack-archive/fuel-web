@@ -28,8 +28,8 @@ from nailgun import objects
 from nailgun.plugins import adapters
 from nailgun.settings import settings
 from nailgun import utils
-from nailgun.utils.role_resolver import NameMatchingPolicy
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import LabelResolver
+from nailgun.utils.resolvers import NameMatchingPolicy
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
@@ -49,17 +49,17 @@ class DeploymentMultinodeSerializer(object):
     def __init__(self, tasks_graph=None):
         self.task_graph = tasks_graph
         self.all_nodes = None
-        self.role_resolver = None
+        self.resolver = None
         self.initialized = None
 
     def initialize(self, cluster):
         self.all_nodes = objects.Cluster.get_nodes_not_for_deletion(cluster)
-        self.role_resolver = RoleResolver(self.all_nodes)
+        self.resolver = LabelResolver(self.all_nodes)
         self.initialized = cluster.id
 
     def finalize(self):
         self.all_nodes = None
-        self.role_resolver = None
+        self.resolver = None
         self.initialized = None
 
     def _ensure_initialized_for(self, cluster):
@@ -148,7 +148,7 @@ class DeploymentMultinodeSerializer(object):
         username = attrs['workloads_collector'].pop('user', None)
         attrs['workloads_collector']['username'] = username
 
-        if self.role_resolver.resolve(['cinder']):
+        if self.resolver.resolve(['cinder']):
             attrs['use_cinder'] = True
 
         net_serializer = self.get_net_provider_serializer(cluster)

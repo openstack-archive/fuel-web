@@ -1054,6 +1054,12 @@ class NailgunReceiver(object):
 
         For example of kwargs check FakeCheckingDhcpThread
         """
+        # (vvalyavskiy): dhcp_check util produces one record with
+        # empty fields if no dhcp server is present, so, we can
+        # safety skip checking such kind of responses
+        def is_dhcp_resp_empty(response):
+            return len(response) == 1 and not any(response[0].values())
+
         logger.info(
             "RPC method check_dhcp_resp received: %s",
             jsonutils.dumps(kwargs)
@@ -1095,6 +1101,9 @@ class NailgunReceiver(object):
                     .format(node['uid'])
                 )
                 result[node['uid']] = node.get('data')
+
+            if is_dhcp_resp_empty(node.get('data', [])):
+                continue
 
             elif node['status'] == consts.NODE_STATUSES.ready:
                 incorrect_input = False

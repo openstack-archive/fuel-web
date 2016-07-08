@@ -658,6 +658,9 @@ class Node(NailgunObject):
 
         if add_to_cluster:
             cls.add_into_cluster(instance, instance.cluster_id)
+        elif roles_changed or pending_roles_changed:
+            # Recalculate default network for node, if roles have been changed
+            cls.configure_default_network_data(instance)
 
         if any((
             roles_changed,
@@ -906,6 +909,18 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
+    def configure_default_network_data(cls, instance):
+        """Assigns networks by default for Node.
+
+        :param instance: Node instance
+        :returns: None
+        """
+        network_manager = Cluster.get_network_manager(instance.cluster)
+        network_manager.assign_networks_by_default(instance)
+        cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
+        cls.set_network_template(instance)
+
+    @classmethod
     def add_into_cluster(cls, instance, cluster_id):
         """Adds Node to Cluster by its ID.
 
@@ -916,13 +931,9 @@ class Node(NailgunObject):
         :returns: None
         """
         instance.cluster_id = cluster_id
-
-        cls.assign_group(instance)
-        network_manager = Cluster.get_network_manager(instance.cluster)
-        network_manager.assign_networks_by_default(instance)
         cls.refresh_dpdk_properties(instance)
-        cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
-        cls.set_network_template(instance)
+        cls.assign_group(instance)
+        cls.configure_default_network_data(instance)
         cls.set_default_attributes(instance)
 
     @classmethod

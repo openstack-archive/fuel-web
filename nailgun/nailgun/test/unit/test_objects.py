@@ -698,6 +698,34 @@ class TestNodeObject(BaseIntegrationTest):
         }
         self.assertEqual(expected_attributes, node.attributes)
 
+    def test_node_update_roles(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id,
+                                    roles=['controller', 'cinder'])
+        data = {'roles': ['compute'],
+                'cluster_id': cluster.id, 'id': 1}
+        objects.Node.update(node, data)
+        # Check roles have been changed
+        self.assertListEqual(node.roles, ['compute'])
+        # Check default network mapping has been changed. Compute role should
+        # not have public network in default network mapping
+        self.assertNotIn(consts.NETWORKS.public,
+                         [net['name'] for net in node.network_data])
+
+    def test_node_update_pending_roles(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id,
+                                    pending_roles=['controller'])
+        data = {'pending_roles': ['compute'],
+                'cluster_id': cluster.id, 'id': 1}
+        objects.Node.update(node, data)
+        # Check pending roles have been changed
+        self.assertListEqual(node.pending_roles, ['compute'])
+        # Check default network mapping has been changed. Compute role should
+        # not have public network in default network mapping
+        self.assertNotIn(consts.NETWORKS.public,
+                         [net['name'] for net in node.network_data])
+
 
 class TestTaskObject(BaseIntegrationTest):
 

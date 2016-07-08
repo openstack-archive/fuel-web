@@ -180,10 +180,11 @@ class UpgradeHelper(object):
 
         node.update_cluster_assignment(seed_cluster)
         seed_manager.set_node_netgroups_ids(node, netgroups_id_mapping)
-        orig_manager.set_nic_assignment_netgroups_ids(
-            node, netgroups_id_mapping)
-        orig_manager.set_bond_assignment_netgroups_ids(
-            node, netgroups_id_mapping)
+        if not seed_cluster.network_template:
+            orig_manager.set_nic_assignment_netgroups_ids(
+                node, netgroups_id_mapping)
+            orig_manager.set_bond_assignment_netgroups_ids(
+                node, netgroups_id_mapping)
         node.add_pending_change(consts.CLUSTER_CHANGES.interfaces)
 
     @classmethod

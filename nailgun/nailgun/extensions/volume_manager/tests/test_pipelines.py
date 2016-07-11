@@ -137,11 +137,11 @@ class TestDeploymentAttributesSerialization80(
             {
                 u'_allocate_size': u'min',
                 u'label': u'Base System',
-                u'min_size': 19456,
+                u'min_size': 44032,
                 u'volumes': [
                     {
                         u'mount': u'/',
-                        u'size': -3766,
+                        u'size': -28342,
                         u'type': u'lv',
                         u'name': u'root',
                         u'file_system': u'ext4'
@@ -152,6 +152,40 @@ class TestDeploymentAttributesSerialization80(
                         u'type': u'lv',
                         u'name': u'swap',
                         u'file_system': u'swap'
+                    },
+                    {
+                        u'mount': u'/home',
+                        u'type': u'lv',
+                        u'name': u'home',
+                        u'file_system': u'ext4',
+                        u'size': 1024
+                    },
+                    {
+                        u'mount': u'/var/log/audit',
+                        u'type': u'lv',
+                        u'name': u'audit',
+                        u'file_system': u'ext4',
+                        u'size': 3072},
+                    {
+                        u'mount': u'/var',
+                        u'type': u'lv',
+                        u'name': u'var',
+                        u'file_system': u'ext4',
+                        u'size': 5120
+                    },
+                    {
+                        u'mount': u'/tmp',
+                        u'type': u'lv',
+                        u'name': u'tmp',
+                        u'file_system': u'ext4',
+                        u'size': 5120
+                    },
+                    {
+                        u'mount': u'/var/log',
+                        u'type': u'lv',
+                        u'name': u'log',
+                        u'file_system': u'ext4',
+                        u'size': 10240
                     }
                 ],
                 u'type': u'vg',

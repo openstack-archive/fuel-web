@@ -858,6 +858,11 @@ class VolumeManager(object):
             # lvm meta = 64MB for one volume group
             'calc_lvm_meta_size': lambda: 64,
             'calc_total_vg': self._calc_total_vg,
+            'calc_home_size': lambda: gb_to_mb(1),
+            'calc_audit_size': lambda: gb_to_mb(3),
+            'calc_var_size': lambda: gb_to_mb(5),
+            'calc_tmp_size': lambda: gb_to_mb(5),
+            'calc_log_size': lambda: gb_to_mb(10),
             # virtual storage = 5GB
             'calc_min_vm_size': lambda: gb_to_mb(5),
             'calc_min_glance_size': lambda: gb_to_mb(5),
@@ -873,7 +878,12 @@ class VolumeManager(object):
 
         generators['calc_os_size'] = \
             lambda: generators['calc_root_size']() + \
-            generators['calc_swap_size']()
+            generators['calc_swap_size']() + \
+            generators['calc_home_size']() + \
+            generators['calc_var_size']() + \
+            generators['calc_tmp_size']() + \
+            generators['calc_audit_size']() + \
+            generators['calc_log_size']()
 
         generators['calc_os_vg_size'] = generators['calc_os_size']
         generators['calc_min_os_size'] = generators['calc_os_size']
@@ -896,8 +906,14 @@ class VolumeManager(object):
         return size
 
     def _calc_total_root_vg(self):
-        return self._calc_total_vg('os') - \
-            self.call_generator('calc_swap_size')
+        os_size = self._calc_total_vg('os')
+        os_lvs_size_gens = [
+            'calc_swap_size', 'calc_home_size', 'calc_audit_size',
+            'calc_var_size', 'calc_log_size', 'calc_tmp_size'
+        ]
+        for lv_size_gen in os_lvs_size_gens:
+            os_size -= self.call_generator(lv_size_gen)
+        return os_size
 
     def _calc_total_vg(self, vg):
         vg_space = 0
@@ -906,7 +922,6 @@ class VolumeManager(object):
                 if subv.get('type') == 'pv' and subv.get('vg') == vg:
                     vg_space += subv.get('size', 0) - \
                         subv.get('lvm_meta_size', 0)
-
         return vg_space
 
     def _calc_swap_size(self):

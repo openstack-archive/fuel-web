@@ -638,7 +638,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
         node_db = self.create_node('controller')
         response = self.get(node_db.id)
         self.check_volumes(
-            response, ['os', 'image', 'mysql', 'logs', 'horizon'])
+            response, ['os', 'image', 'mysql', 'logs', 'horizon', 'home', 'audit', 'var', 'tmp'])
 
     def test_volumes_information_for_ceph_role(self):
         node_db = self.create_node('ceph-osd')
@@ -766,6 +766,18 @@ class TestVolumeManager(BaseIntegrationTest):
     def horizon_size(self, disks):
         return self.volumes_sum_size(disks, 'horizon')
 
+    def home_size(self, disks):
+        return self.volumes_sum_size(disks, 'home')
+
+    def audit_size(self, disks):
+        return self.volumes_sum_size(disks, 'audit')
+
+    def var_size(self, disks):
+        return self.volumes_sum_size(disks, 'var')
+
+    def tmp_size(self, disks):
+        return self.volumes_sum_size(disks, 'tmp')
+
     def mysql_size(self, disks):
         return self.volumes_sum_size(disks, 'mysql')
 
@@ -875,17 +887,10 @@ class TestVolumeManager(BaseIntegrationTest):
         node = self.create_node('controller')
         disks = only_disks(VolumeManager(node).volumes)
         disks_size_sum = sum([disk['size'] for disk in disks])
-        os_sum_size = self.os_size(disks)
-        mysql_sum_size = self.mysql_size(disks)
-        glance_sum_size = self.glance_size(disks)
-        horizon_sum_size = self.horizon_size(disks)
-        logs_sum_size = self.logs_size(disks)
-        reserved_size = self.reserved_size(disks)
-
-        self.assertEqual(disks_size_sum - reserved_size,
-                         os_sum_size + glance_sum_size +
-                         mysql_sum_size + logs_sum_size +
-                         horizon_sum_size)
+        dirs = set(['os','mysql','glance','horizon','home','audit',
+                    'var','tmp','logs'])
+        sum_size = sum([self.volumes_sum_size(disks,dir) for dir in dirs])
+        self.assertEqual(disks_size_sum - reserved_size, sum_size)
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
             VolumeManagerExtension.get_node_volumes(node))
         self.check_disk_size_equal_sum_of_all_volumes(

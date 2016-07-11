@@ -569,40 +569,52 @@
           - {allocate_size: "all", id: "image"}
           - {allocate_size: "min", id: "mysql"}
           - {allocate_size: "min", id: "horizon"}
+          - {allocate_size: "min", id: "home"}  
         compute:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
+          - {allocate_size: "min", id: "home"}
         cinder:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "cinder"}
+          - {allocate_size: "min", id: "home"}
         cinder-vmware:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "home"}
         ceph-osd:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "cephjournal"}
           - {allocate_size: "full-disk", id: "ceph"}
+          - {allocate_size: "min", id: "home"}
         cinder-block-device:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "full-disk", id: "cinder-block-device"}
+          - {allocate_size: "min", id: "home"}
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}
+          - {allocate_size: "min", id: "home"}
         other:
           - {allocate_size: "all", id: "os"}
+          - {allocate_size: "min", id: "home"}
         # NOTE(eli): it's better to use entire disk
         # for OS, but currently we have a bug for
         # Ubuntu which doesn't allow to do that:
         # https://bugs.launchpad.net/fuel/+bug/1278964
         base-os:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "home"}
         virt:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
+          - {allocate_size: "min", id: "home"}
         compute-vmware:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "home"}
         ironic:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "logs"}
+          - {allocate_size: "min", id: "home"}
       volumes:
         - id: "os"
           type: "vg"
@@ -632,6 +644,20 @@
               size:
                 generator: "calc_total_vg"
                 generator_args: ["logs"]
+              file_system: "ext4"
+        - id: "home"
+          type: "vg"
+          min_size:
+            generator: "calc_gb_to_mb"
+            generator_args: [10]
+          label: "Home"
+          volumes:
+            - mount: "/home"
+              type: "lv"
+              name: "home"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["home"]
               file_system: "ext4"
         - id: "mongo"
           type: "vg"
@@ -1027,13 +1053,6 @@
             restrictions:
               - condition: "cluster:net_provider == 'neutron'"
                 action: "hide"
-          run_ping_checker:
-            value: true
-            label: "Public Gateway is Available"
-            group: "network"
-            description: "Uncheck this box if the public gateway will not be available or will not respond to ICMP requests to the deployed cluster. If unchecked, the controllers will not take public gateway availability into account as part of the cluster health.  If the cluster will not have internet access, you will need to make sure to provide proper offline mirrors for the deployment to succeed."
-            weight: 50
-            type: "checkbox"
           use_vcenter:
             value: false
             weight: 30

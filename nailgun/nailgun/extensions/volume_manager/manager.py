@@ -873,7 +873,7 @@ class VolumeManager(object):
 
         generators['calc_os_size'] = \
             lambda: generators['calc_root_size']() + \
-            generators['calc_swap_size']()
+            generators['calc_swap_size']() + 24576
 
         generators['calc_os_vg_size'] = generators['calc_os_size']
         generators['calc_min_os_size'] = generators['calc_os_size']
@@ -897,7 +897,7 @@ class VolumeManager(object):
 
     def _calc_total_root_vg(self):
         return self._calc_total_vg('os') - \
-            self.call_generator('calc_swap_size')
+            self.call_generator('calc_swap_size') - 24576
 
     def _calc_total_vg(self, vg):
         vg_space = 0

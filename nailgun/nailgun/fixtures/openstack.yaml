@@ -569,37 +569,48 @@
           - {allocate_size: "all", id: "image"}
           - {allocate_size: "min", id: "mysql"}
           - {allocate_size: "min", id: "horizon"}
+          - {allocate_size: "min", id: "logs"}
         compute:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
+          - {allocate_size: "min", id: "logs"}
         cinder:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "cinder"}
+          - {allocate_size: "min", id: "logs"}
         cinder-vmware:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "logs"}
         ceph-osd:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "cephjournal"}
           - {allocate_size: "full-disk", id: "ceph"}
+          - {allocate_size: "min", id: "logs"}
         cinder-block-device:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "full-disk", id: "cinder-block-device"}
+          - {allocate_size: "min", id: "logs"}
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}
+          - {allocate_size: "min", id: "logs"}
         other:
           - {allocate_size: "all", id: "os"}
+          - {allocate_size: "min", id: "logs"}
         # NOTE(eli): it's better to use entire disk
         # for OS, but currently we have a bug for
         # Ubuntu which doesn't allow to do that:
         # https://bugs.launchpad.net/fuel/+bug/1278964
         base-os:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "logs"}
         virt:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
+          - {allocate_size: "min", id: "logs"}
         compute-vmware:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "logs"}
         ironic:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "logs"}
@@ -619,6 +630,34 @@
               name: "swap"
               size: {generator: "calc_swap_size"}
               file_system: "swap"
+            - mount: "/home"
+              type: "lv"
+              name: "home"
+              size:
+                generator: "calc_gb_to_mb"
+                generator_args: [1]
+              file_system: "ext4"
+            - mount: "/var/log/audit"
+              type: "lv"
+              name: "audit"
+              size:
+                generator: "calc_gb_to_mb"
+                generator_args: [3]
+              file_system: "ext4"
+            - mount: "/var"
+              type: "lv"
+              name: "var"
+              size:
+                generator: "calc_gb_to_mb"
+                generator_args: [5]
+              file_system: "ext4"
+            - mount: "/tmp"
+              type: "lv"
+              name: "tmp"
+              size:
+                generator: "calc_gb_to_mb"
+                generator_args: [5]
+              file_system: "ext4"
         - id: "logs"
           type: "vg"
           min_size:

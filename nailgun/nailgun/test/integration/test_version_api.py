@@ -69,7 +69,7 @@ class TestVersionApi(BaseAuthenticationIntegrationTest):
 
     @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
     def test_500_no_html_production(self, handler_get):
-        exc_text = "Here goes an exception"
+        exc_text = "Unexpected exception, please check logs"
         handler_get.side_effect = Exception(exc_text)
         self.headers['X-Auth-Token'] = self.token
         with patch('nailgun.settings.settings.DEVELOPMENT', 0):

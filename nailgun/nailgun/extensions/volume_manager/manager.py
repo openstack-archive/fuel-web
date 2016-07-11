@@ -858,6 +858,7 @@ class VolumeManager(object):
             # lvm meta = 64MB for one volume group
             'calc_lvm_meta_size': lambda: 64,
             'calc_total_vg': self._calc_total_vg,
+            'calc_rootvg_lv_size': self._calc_total_lv_size('os'),
             # virtual storage = 5GB
             'calc_min_vm_size': lambda: gb_to_mb(5),
             'calc_min_glance_size': lambda: gb_to_mb(5),
@@ -873,7 +874,8 @@ class VolumeManager(object):
 
         generators['calc_os_size'] = \
             lambda: generators['calc_root_size']() + \
-            generators['calc_swap_size']()
+            generators['calc_swap_size']() + \
+            generators['calc_rootvg_lv_size']()
 
         generators['calc_os_vg_size'] = generators['calc_os_size']
         generators['calc_min_os_size'] = generators['calc_os_size']
@@ -897,7 +899,8 @@ class VolumeManager(object):
 
     def _calc_total_root_vg(self):
         return self._calc_total_vg('os') - \
-            self.call_generator('calc_swap_size')
+            self.call_generator('calc_swap_size') - \
+            self._calc_total_lv_size('os')
 
     def _calc_total_vg(self, vg):
         vg_space = 0
@@ -908,6 +911,17 @@ class VolumeManager(object):
                         subv.get('lvm_meta_size', 0)
 
         return vg_space
+
+    def _calc_total_lv_size(self, vg_name):
+        lv_space = 0
+        for vg in only_vg(self.volumes):
+                if vg.get('id') == vg_name:
+                    for lv in vg['volumes']:
+                        if lv.get('name') == 'swap' or \
+                           lv.get('name') == 'root':
+                            continue
+                        lv_space += lv.get('size', 0)
+        return lv_space
 
     def _calc_swap_size(self):
         """Calc swap size according to RAM.

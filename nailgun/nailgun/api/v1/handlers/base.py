@@ -386,6 +386,16 @@ def content(*args, **kwargs):
     return wrapper
 
 
+def get_list_param(param_name, delimiter=','):
+    if param_name in web.input():
+        return set(six.moves.map(
+            six.text_type.strip,
+            getattr(web.input(), param_name).split(delimiter))
+        )
+    else:
+        return None
+
+
 class SingleHandler(BaseHandler):
 
     single = None

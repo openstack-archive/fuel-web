@@ -122,6 +122,26 @@ class BasicValidator(object):
                 "from Fuel Master node, please check '/etc/puppet' "
                 "directory.".format(cluster.release.name))
 
+    @classmethod
+    def validate_id_list(cls, data):
+        """Validate list of integer identifiers
+
+        :param data: data, iterable of strings
+        :return: list of integers
+        """
+        try:
+            if data:
+                d = [int(d) for d in data]
+            else:
+                d = []
+        except ValueError:
+            raise errors.InvalidData('Comma-separated number list expected',
+                                     log_message=True)
+
+        cls.validate_schema(d, base_types.IDS_ARRAY)
+
+        return d
+
 
 class BaseDefferedTaskValidator(BasicValidator):
 

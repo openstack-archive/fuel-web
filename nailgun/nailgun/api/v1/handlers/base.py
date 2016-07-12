@@ -252,6 +252,16 @@ class BaseHandler(object):
 
         raise self.http(status, objects.Task.to_json(task))
 
+    @staticmethod
+    def get_set_param(param_name, delimiter=','):
+        if param_name in web.input():
+            return set(six.moves.map(
+                six.text_type.strip,
+                getattr(web.input(), param_name).split(delimiter))
+            )
+        else:
+            return None
+
 
 def content_json(func, cls, *args, **kwargs):
     json_resp = lambda data: (

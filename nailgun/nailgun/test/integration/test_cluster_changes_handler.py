@@ -181,6 +181,7 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts = {
                     'uid': str(node.id),
+                    'is_customized': False,
                     'status': node.status,
                     'role': role,
                     'online': node.online,
@@ -596,6 +597,7 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts = {
                     'uid': str(node.id),
+                    'is_customized': False,
                     'status': node.status,
                     'role': role,
                     'online': node.online,
@@ -1086,6 +1088,7 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts = {
                     'uid': str(node.id),
+                    'is_customized': False,
                     'status': node.status,
                     'role': role,
                     'online': node.online,

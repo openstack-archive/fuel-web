@@ -252,6 +252,25 @@ class BaseHandler(object):
 
         raise self.http(status, objects.Task.to_json(task))
 
+    @staticmethod
+    def get_param_as_set(param_name, delimiter=',', default=None):
+        """Parse array param from web.input()
+
+        :param param_name: parameter name in web.input()
+        :type param_name: str
+        :param delimiter: delimiter
+        :type delimiter: str
+        :returns: list of items
+        :rtype: set of str or None
+        """
+        if param_name in web.input():
+            return set(six.moves.map(
+                six.text_type.strip,
+                getattr(web.input(), param_name).split(delimiter))
+            )
+        else:
+            return default
+
 
 def content_json(func, cls, *args, **kwargs):
     json_resp = lambda data: (

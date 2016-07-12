@@ -15,6 +15,7 @@
 #    under the License.
 
 import json
+import urllib
 
 import web
 
@@ -75,8 +76,8 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         headers = {
-            'Content-Type': 'application/json',
-            'ETag': '737060cd8c284d8af7ad3082f209582d',
+            'content-type': 'application/json',
+            'etag': '737060cd8c284d8af7ad3082f209582d',
         }
 
         # test response status code and message
@@ -142,3 +143,19 @@ class TestHandlers(BaseIntegrationTest):
             ('Content-Type', 'application/json'),
             web.ctx.headers
         )
+
+    def test_get_set_param(self):
+        urls = ("/hello", "hello")
+
+        class hello(object):
+            def GET(self_inner):
+                web.header('Content-Type', 'application/json')
+                data = BaseHandler.get_set_param('test_param', delimiter=';')
+                return json.dumps(list(data))
+
+        app = web.application(urls, {'hello': hello})
+        url = '/hello?test_param=' + urllib.quote('1;4 ; 777; 4;x  ')
+        resp = app.request(url)
+
+        self.assertEqual(set(json.loads(resp.data)),
+                         set(['1', '4', '777', 'x']))

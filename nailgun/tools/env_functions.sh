@@ -85,7 +85,7 @@ prepare_server() {
 
     which curl >/dev/null 2>&1
     if [[ $? -ne 0 ]]; then
-        echo "WARNING: Cannot check whether Nailgun is running bacause curl is not available."
+        echo "WARNING: Cannot check whether Nailgun is running because curl is not available."
         return 1
     fi
 

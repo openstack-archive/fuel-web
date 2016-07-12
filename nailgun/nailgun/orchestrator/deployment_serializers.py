@@ -97,18 +97,20 @@ class DeploymentMultinodeSerializer(object):
             #  changes in tasks introduced during granular deployment,
             #  and that mech should be used
             self.set_tasks(serialized_nodes)
+
+            deployment_info = {'common_attrs': self.get_common_attrs(cluster),
+                               'nodes': serialized_nodes}
         finally:
             self.finalize()
 
-        return serialized_nodes
+        return deployment_info
 
     def serialize_generated(self, cluster, nodes):
         nodes = self.serialize_nodes(nodes)
-        common_attrs = self.get_common_attrs(cluster)
 
         self.set_deployment_priorities(nodes)
         for node in nodes:
-            yield utils.dict_merge(node, common_attrs)
+            yield node
 
     def serialize_customized(self, cluster, nodes):
         for node in nodes:
@@ -689,6 +691,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
                 data = utils.dict_merge(data, role_data)
             if roles:
                 data['roles'] = roles
+#            data['is_customized'] = True
             yield data
 
     def serialize_nodes(self, nodes):
@@ -838,16 +841,18 @@ def _execute_pipeline(data, cluster, nodes, ignore_customized):
         return node['uid'] in nodes_without_customized
 
     # not customized nodes
-    nodes_data_for_pipeline = list(six.moves.filter(keyfunc, data))
+    nodes_data_for_pipeline = list(six.moves.filter(keyfunc, data['nodes']))
+    data_for_pipeline = {'common_attrs': data['common_attrs'],
+                         'nodes': nodes_data_for_pipeline}
 
     # NOTE(sbrzeczkowski): pipelines must be executed for nodes
     # which don't have replaced_deployment_info specified
     updated_data = fire_callback_on_deployment_data_serialization(
-        nodes_data_for_pipeline, cluster,
+        data_for_pipeline, cluster,
         list(six.itervalues(nodes_without_customized)))
 
     # customized nodes
-    updated_data.extend(six.moves.filterfalse(keyfunc, data))
+    updated_data['nodes'].extend(six.moves.filterfalse(keyfunc, data['nodes']))
     return updated_data
 
 
@@ -861,6 +866,13 @@ def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
         cluster, nodes, ignore_customized=ignore_customized
     )
     return _execute_pipeline(data, cluster, nodes, ignore_customized)
+
+
+def deployment_info_to_legacy(deployment_info):
+    common_attrs = deployment_info['common_attrs']
+    nodes = [utils.dict_merge(common_attrs, n)
+             for n in deployment_info['nodes']]
+    return nodes
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):

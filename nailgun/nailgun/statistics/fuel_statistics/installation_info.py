@@ -155,6 +155,11 @@ class InstallationInfo(object):
                       'public_ssl_services', None),
         WhiteListRule(('public_ssl', 'cert_source', 'value'),
                       'public_ssl_cert_source', None),
+
+        WhiteListRule(('ssh', 'security_enabled', 'value'),
+                      'security_enabled', bool),
+        WhiteListRule(('ssh', 'security_networks', 'value'),
+                      'security_networks', None),
     )
 
     vmware_attributes_white_list = (

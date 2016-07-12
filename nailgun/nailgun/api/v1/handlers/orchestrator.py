@@ -21,6 +21,7 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import get_set_param
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
@@ -369,7 +370,7 @@ class TaskDeployGraph(BaseHandler):
 
         tasks = web.input(tasks=None).tasks
         parents_for = web.input(parents_for=None).parents_for
-        remove = web.input(remove=None).remove
+        remove = get_set_param('remove')
 
         if tasks:
             tasks = self.checked_data(
@@ -387,7 +388,7 @@ class TaskDeployGraph(BaseHandler):
             logger.debug('Graph with predecessors for %s', parents_for)
 
         if remove:
-            remove = list(set(remove.split(',')))
+            remove = list(remove)
             remove = self.checked_data(
                 self.validator.validate_tasks_types,
                 data=remove)
@@ -419,9 +420,8 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         nodes = self.get_nodes(cluster)
-        tasks = web.input(tasks=None).tasks
         graph_type = web.input(graph_type=None).graph_type or None
-        task_ids = [t.strip() for t in tasks.split(',')] if tasks else None
+        task_ids = get_set_param('tasks')
 
         try:
             if objects.Release.is_lcm_supported(cluster.release):

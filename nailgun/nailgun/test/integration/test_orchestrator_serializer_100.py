@@ -14,7 +14,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import unittest
+
+from nailgun import consts
+from nailgun import objects
+from nailgun.orchestrator import deployment_serializers
+from nailgun.test.integration.test_orchestrator_serializer import \
+    BaseDeploymentSerializer
 from nailgun.test.integration import test_orchestrator_serializer_90
+
+
+class TestSerializer100Mixin(object):
+    env_version = "newton-10.0"
+    task_deploy = True
+
+    @classmethod
+    def create_serializer(cls, cluster):
+        serializer_type = deployment_serializers.get_serializer_for_cluster(
+            cluster
+        )
+        return serializer_type(None)
 
 
 class TestDeploymentHASerializer100(
@@ -28,3 +47,143 @@ class TestDeploymentHASerializer100(
 
         common_attrs = serializer.get_common_attrs(cluster_db)
         self.assertNotIn('nodes', common_attrs)
+
+
+class TestDeploymentAttributesSerialization100(
+    TestSerializer100Mixin,
+    BaseDeploymentSerializer
+):
+
+    def setUp(self, *args):
+        super(TestDeploymentAttributesSerialization100, self).setUp()
+        self.env.create(
+            release_kwargs={'version': self.env_version},
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact},
+            nodes_kwargs=[{'roles': ['controller']}]
+        )
+        self.cluster = self.env.clusters[0]
+
+    def serialize(self):
+        objects.Cluster.prepare_for_deployment(self.cluster)
+        serializer = self.create_serializer(self.cluster)
+        return serializer.serialize(self.cluster, self.env.nodes)
+
+    @unittest.skip('Should be rewritten')
+    def test_bond_attributes_exist_in_network_schema(self):
+        expected_attributes = {
+            'mode': {
+                'type': 'select',
+                'values': ['balance-rr'],
+                'value': 'balance-rr',
+                'label': 'Mode'}}
+        bond_config = self.env.get_default_plugin_bond_config()
+        node = self.env.nodes[0]
+        nic_names = [iface.name for iface in node.nic_interfaces]
+        self.env.make_bond_via_api(
+            'lnx_bond', '', nic_names, node.id,
+            bond_properties={'mode': consts.BOND_MODES.balance_rr},
+            attrs=bond_config)
+        serialized_data = self.serialize()[0]
+        for t in serialized_data['network_scheme']['transformations']:
+            if t.get('name') == 'lnx_bond':
+                self.assertDictEqual(
+                    expected_attributes, t['attributes'])
+
+    def test_interface_attributes_exist_in_network_schema(self):
+        expected_attributes = {
+            'offloading': {
+                'disable': {
+                    'value': False,
+                    'label': 'Disable offloading',
+                    'type': 'checkbox',
+                    'weight': 10
+                },
+                'metadata': {
+                    'label': 'Offloading',
+                    'weight': 10
+                },
+                'modes': {
+                    'description': 'Offloading modes',
+                    'value': {},
+                    'label': 'Offloading modes',
+                    'type': 'offloading_modes',
+                    'weight': 20
+                }
+            },
+            'mtu': {
+                'value': {
+                    'value': None,
+                    'label': 'MTU',
+                    'type': 'text',
+                    'weight': 10
+                },
+                'metadata': {
+                    'label': 'MTU',
+                    'weight': 20
+                }
+            },
+            'sriov': {
+                'enabled': {
+                    'value': False,
+                    'label': 'SRIOV enabled',
+                    'type': 'checkbox',
+                    'weight': 10
+                },
+                'physnet': {
+                    'value': 'physnet2',
+                    'label': 'Physical network',
+                    'type': 'text',
+                    'weight': 30
+                },
+                'metadata': {
+                    'label': 'SRIOV',
+                    'weight': 30
+                },
+                'numvfs': {
+                    'value': None,
+                    'label': 'Virtual functions',
+                    'weight': 20,
+                    'type': 'number',
+                    'min': 0
+                },
+            },
+            'dpdk': {
+                'enabled': {
+                    'value': False,
+                    'label': 'DPDK enabled',
+                    'type': 'checkbox',
+                    'weight': 10
+                },
+                'metadata': {
+                    'label': 'DPDK',
+                    'weight': 40
+                }
+            }
+        }
+
+        offloading_modes = {
+            'eth0': {
+                'rx-checksumming': None,
+                'tx-checksum-sctp': False,
+                'tx-checksumming': True,
+                'tx-checksum-ipv4': None,
+                'tx-checksum-ipv6': True
+            },
+            'eth1': {
+                'tx-checksum-sctp': None,
+                'rx-checksumming': None,
+                'tx-checksumming': None,
+                'tx-checksum-ipv6': False,
+                'tx-checksum-ipv4': None
+            }
+        }
+        serialized_data = self.serialize()[0]
+        node = self.env.nodes[0]
+        nic_names = [iface.name for iface in node.nic_interfaces]
+        interfaces = serialized_data['network_scheme']['interfaces']
+        for nic_name in nic_names:
+            expected_attributes['offloading']['modes']['value'] = \
+                offloading_modes[nic_name]
+            self.assertDictEqual(
+                expected_attributes, interfaces[nic_name]['attributes'])

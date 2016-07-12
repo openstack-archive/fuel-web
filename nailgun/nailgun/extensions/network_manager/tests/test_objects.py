@@ -166,6 +166,44 @@ class TestNICObject(BaseTestCase):
             self.env.clusters[0])
         self.assertEqual(len(nic_interfaces), len(interfaces))
 
+    def test_update_offloading_modes(self):
+        node = self.env.nodes[0]
+        new_modes = [
+            {'state': True, 'name': 'tx-checksumming', 'sub': [
+                {'state': False, 'name': 'tx-checksum-sctp', 'sub': []},
+                {'state': True, 'name': 'tx-checksum-ipv6', 'sub': []},
+                {'state': None, 'name': 'tx-checksum-ipv4', 'sub': []}]},
+            {'state': None, 'name': 'rx-checksumming', 'sub': []},
+            {'state': True, 'name': 'new_offloading_mode', 'sub': []}]
+        objects.NIC.update_offloading_modes(node.interfaces[0], new_modes)
+        self.assertListEqual(node.interfaces[0].offloading_modes, new_modes)
+
+    def test_update_offloading_modes_keep_states(self):
+        node = self.env.nodes[0]
+        old_modes = [
+            {'state': True, 'name': 'tx-checksumming', 'sub': [
+                {'state': False, 'name': 'tx-checksum-sctp', 'sub': []},
+                {'state': True, 'name': 'tx-checksum-ipv6', 'sub':
+                    [{'state': None, 'name': 'tx-checksum-ipv4', 'sub': []}]}]
+             }]
+
+        node.interfaces[0].offloading_modes = old_modes
+        new_mode = {'state': True, 'name': 'new_offloading_mode', 'sub': []}
+        new_modes = [
+            {'state': True, 'name': 'tx-checksumming', 'sub': [
+                {'state': True, 'name': 'tx-checksum-sctp', 'sub': []},
+                {'state': True, 'name': 'tx-checksum-ipv6', 'sub':
+                    [{'state': False, 'name': 'tx-checksum-ipv4', 'sub': []}]}]
+             },
+            new_mode]
+
+        objects.NIC.update_offloading_modes(node.interfaces[0], new_modes,
+                                            keep_states=True)
+        old_modes.append(new_mode)
+        # States for old offloading modes should be preserved
+        self.assertListEqual(node.interfaces[0].offloading_modes,
+                             old_modes)
+
 
 class TestIPAddrObject(BaseTestCase):
 

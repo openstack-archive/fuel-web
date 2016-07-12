@@ -463,7 +463,9 @@ class TestDeploymentAttributesSerialization70(
             changed_offloading_modes[interface['name']] = \
                 NetworkManager._get_modified_offloading_modes(
                     interface.get('offloading_modes'))
-
+        print '========================'
+        print changed_offloading_modes
+        raise Exception
         for node in self.serialized_for_astute:
             interfaces = node['network_scheme']['interfaces']
             for iface_name in interfaces:

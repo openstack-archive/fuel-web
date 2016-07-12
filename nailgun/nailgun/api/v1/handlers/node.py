@@ -164,9 +164,10 @@ class NodeCollectionHandler(CollectionHandler):
         """
         # TODO(pkaminski): web.py does not support parsing of array arguments
         # in the queryset so we specify the input as comma-separated list
+        node_ids = self.get_param_as_set('ids', default=[])
         node_ids = self.checked_data(
-            validate_method=self.validator.validate_collection_delete,
-            data=web.input().get('ids', '')
+            validate_method=self.validator.validate_ids_list,
+            data=node_ids
         )
 
         nodes = self.get_objects_list_or_404(self.collection, node_ids)

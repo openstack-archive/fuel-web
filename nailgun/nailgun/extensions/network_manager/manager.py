@@ -802,8 +802,6 @@ class NetworkManager(object):
                     current_iface.interface_properties,
                     iface['interface_properties']
                 )
-            if 'offloading_modes' in iface:
-                update['offloading_modes'] = iface['offloading_modes']
             if 'attributes' in iface:
                 update['attributes'] = nailgun_utils.dict_merge(
                     current_iface.attributes,
@@ -837,12 +835,7 @@ class NetworkManager(object):
             # Add new slaves.
             node_nics = {nic['name']: nic for nic in node_db.nic_interfaces}
             slaves = [node_nics[n['name']] for n in bond['slaves']]
-
-            update = {
-                'slaves': slaves,
-                'offloading_modes': bond.get('offloading_modes', {})
-            }
-            objects.Bond.update(bond_db, update)
+            objects.Bond.update(bond_db, {'slaves': slaves})
 
         return node_db.id
 

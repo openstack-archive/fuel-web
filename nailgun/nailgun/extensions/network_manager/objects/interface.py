@@ -109,12 +109,21 @@ class NIC(DPDKMixin, NailgunObject):
         :param keep_states: If True, information about available modes will be
                updated, but states configured by user will not be overwritten.
         """
+        def set_old_states(modes):
+            """Set old state for offloading modes
+
+            :param modes: List of offloading modes
+            """
+            for mode in modes:
+                if mode["name"] in old_modes_states:
+                    mode["state"] = old_modes_states[mode["name"]]
+                if 'sub' in mode and mode['sub']:
+                    set_old_states(mode['sub'])
+
         if keep_states:
             old_modes_states = instance.offloading_modes_as_flat_dict(
                 instance.offloading_modes)
-            for mode in new_modes:
-                if mode["name"] in old_modes_states:
-                    mode["state"] = old_modes_states[mode["name"]]
+            set_old_states(new_modes)
         instance.offloading_modes = new_modes
 
     @classmethod

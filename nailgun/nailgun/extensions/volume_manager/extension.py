@@ -84,7 +84,7 @@ class NodeVolumesPipeline(VolumeObjectMethodsMixin, BasePipeline):
 
             nodes_wo_master = six.moves.filter(
                 lambda n: n['uid'] != consts.MASTER_NODE_UID,
-                deployment_data)
+                deployment_data['nodes'])
 
             nodes_dict = {int(node['uid']): node for node in nodes_wo_master}
 
@@ -120,7 +120,9 @@ class PgCountPipeline(VolumeObjectMethodsMixin, BasePipeline):
                     if part.get('name') == 'ceph' and part.get('size', 0) > 0:
                         osd_num += 1
 
-        for node in data:
+        for node in data['nodes'] + [data['common_attrs']]:
+            if 'storage' not in node:
+                continue
             storage_attrs = node['storage']
 
             pg_counts = get_pool_pg_count(
@@ -147,7 +149,7 @@ class SetImageCacheMaxSizePipeline(VolumeObjectMethodsMixin, BasePipeline):
     def process_deployment(cls, deployment_data, cluster, nodes, **kwargs):
         nodes_wo_master = six.moves.filter(
             lambda n: n['uid'] != consts.MASTER_NODE_UID,
-            deployment_data)
+            deployment_data['nodes'])
         cls._set_image_cache_max_size(nodes_wo_master, cluster, nodes)
         return deployment_data
 

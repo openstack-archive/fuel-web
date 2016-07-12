@@ -22,11 +22,21 @@ name = 'nailgun'
 version = '10.0.0'
 
 
-def find_requires():
+def find_requires(testing=False):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     requirements = []
-    with open('{0}/requirements.txt'.format(dir_path), 'r') as reqs:
-        requirements = reqs.readlines()
+
+    if testing:
+        filename = 'test-requirements.txt'
+    else:
+        filename = 'requirements.txt'
+
+    with open(os.path.join(dir_path, filename), 'r') as reqs:
+        for line in reqs:
+            if line[0] in ('#', '-', '\n'):
+                continue
+            requirements.append(line.strip())
+
     return requirements
 
 
@@ -59,6 +69,9 @@ if __name__ == "__main__":
         packages=find_packages(),
         zip_safe=False,
         install_requires=find_requires(),
+        extras_require={
+            'test': find_requires(testing=True),
+        },
         include_package_data=True,
         scripts=['manage.py'],
         entry_points={

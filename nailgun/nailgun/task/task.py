@@ -160,12 +160,16 @@ class BaseDeploymentTask(object):
         )
 
     @classmethod
-    def _save_deployment_info(cls, transaction, deployment_info):
-        # TODO(bgaifullin) need to rework serializers, it should return dict
-        # instead of list
+    def _save_old_deployment_info(cls, transaction, deployment_info):
         normalized = {node['uid']: node for node in deployment_info}
-        objects.Transaction.attach_deployment_info(transaction, normalized)
+        objects.Transaction.attach_deployment_info(
+            transaction, {'nodes': normalized})
         return normalized
+
+    @classmethod
+    def _save_deployment_info(cls, transaction, deployment_info):
+        objects.Transaction.attach_deployment_info(
+            transaction, deployment_info)
 
 
 class DeploymentTask(BaseDeploymentTask):
@@ -325,7 +329,7 @@ class DeploymentTask(BaseDeploymentTask):
         serialized_cluster = deployment_serializers.serialize(
             graph, transaction.cluster, nodes)
 
-        cls._save_deployment_info(transaction, serialized_cluster)
+        cls._save_old_deployment_info(transaction, serialized_cluster)
 
         if affected_nodes:
             graph.reexecutable_tasks(events)
@@ -376,7 +380,7 @@ class DeploymentTask(BaseDeploymentTask):
         serialized_cluster = deployment_serializers.serialize(
             None, transaction.cluster, nodes
         )
-        cls._save_deployment_info(transaction, serialized_cluster)
+        cls._save_old_deployment_info(transaction, serialized_cluster)
         logger.info("cluster serialization is finished.")
         tasks_events = events and \
             task_based_deployment.TaskEvents('reexecute_on', events)
@@ -478,10 +482,13 @@ class ClusterTransaction(DeploymentTask):
                 task_state = state.setdefault(task_name, {})
                 task_state.setdefault(node_uid, {})
 
+                task_state['nodes'] = {}
                 if cls.is_node_for_redeploy(nodes.get(node_uid)):
-                    task_state[node_uid] = {}
+                    task_state['nodes'][node_uid] = {}
                 else:
-                    task_state[node_uid] = deployment_info.get(node_uid, {})
+                    node_info = deployment_info['nodes'].get(node_uid, {})
+                    task_state['nodes'][node_uid] = node_info
+                task_state['common_attrs'] = deployment_info['common_attrs']
 
         return state
 
@@ -493,7 +500,7 @@ class ClusterTransaction(DeploymentTask):
         # we should update information for all nodes except deleted
         # TODO(bgaifullin) pass role resolver to serializers
 
-        deployment_info = deployment_serializers.serialize_for_lcm(
+        expected_state = deployment_serializers.serialize_for_lcm(
             transaction.cluster, nodes
         )
         logger.info("cluster serialization is finished.")
@@ -502,16 +509,15 @@ class ClusterTransaction(DeploymentTask):
             tasks = list(cls.mark_skipped(tasks, selected_task_ids))
 
         if force:
-            current_state = {}
+            current_state = {'common_attrs': {}, 'nodes': {}}
         else:
             current_state = cls.get_current_state(
                 transaction.cluster, nodes, tasks)
 
-        expected_state = cls._save_deployment_info(
-            transaction, deployment_info
-        )
+        cls._save_deployment_info(transaction, expected_state)
+
         # Added cluster state
-        expected_state[None] = {}
+        expected_state['nodes'][None] = {}
 
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("tasks serialization is started.")
@@ -534,6 +540,7 @@ class ClusterTransaction(DeploymentTask):
             tasks,
             role_resolver,
         )
+
         logger.info("tasks serialization is finished.")
         return {
             "tasks_directory": directory,

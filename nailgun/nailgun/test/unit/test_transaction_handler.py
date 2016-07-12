@@ -18,6 +18,7 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun.test.base import BaseTestCase
+from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
 
 
@@ -169,10 +170,9 @@ class TestTransactionHandlers(BaseTestCase):
     def test_get_transaction_deployment_info(self):
         cluster = self.cluster_db
         nodes = objects.Cluster.get_nodes_not_for_deletion(cluster)
-        deployment_node_info = deployment_serializers.serialize_for_lcm(
+        deployment_info = deployment_serializers.serialize_for_lcm(
             cluster, nodes
         )
-        deployment_info = {node['uid']: node for node in deployment_node_info}
         transaction = objects.Transaction.create({
             'cluster_id': cluster.id,
             'status': consts.TASK_STATUSES.ready,

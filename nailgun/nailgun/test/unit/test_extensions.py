@@ -269,8 +269,10 @@ class TestPipeline(BaseExtensionCase):
             ]
         )
 
-        data = [{"uid": n.uid} for n in cluster.nodes]
-        expected_data = copy.deepcopy(data[1:])
+        data = {'common_attrs': {},
+                'nodes': [{"uid": n.uid} for n in cluster.nodes]}
+        expected_data = {'common_attrs': {},
+                         'nodes': copy.deepcopy(data['nodes'][1:])}
 
         mserializer = mock.MagicMock()
         mserializer.return_value = mock.MagicMock()

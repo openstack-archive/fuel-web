@@ -32,7 +32,9 @@ from nailgun.settings import settings
 from nailgun.utils import remove_silently
 
 
-def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
+def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR, deployment=True):
+    """If deployment=False this function will be idempotent"""
+
     logger.debug("Preparing syslog directories for node: %s",
                  objects.Node.get_node_fqdn(node))
     logger.debug("prepare_syslog_dir prefix=%s", prefix)
@@ -49,45 +51,50 @@ def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
 
     # backup directory if it exists
     if os.path.isdir(new):
-        logger.debug("New %s already exists. Trying to backup", new)
+        logger.debug("New %s already exists.", new)
         if os.path.islink(bak):
             logger.debug("Bak %s already exists and it is link. "
                          "Trying to unlink", bak)
             os.unlink(bak)
-        elif os.path.isdir(bak):
-            logger.debug("Bak %s already exists and it is directory. "
-                         "Trying to remove", bak)
-            shutil.rmtree(bak)
-        os.rename(new, bak)
+
+        if deployment or (os.path.isdir(old) and not os.path.islink(old)):
+            if os.path.isdir(bak):
+                logger.debug("Bak %s already exists and it is directory. "
+                             "Trying to remove", bak)
+                shutil.rmtree(bak)
+            logger.debug("Trying to backup %s.", new)
+            os.rename(new, bak)
 
     try:
         # rename bootstrap directory into fqdn
         if os.path.islink(old):
-            logger.debug("Old %s exists and it is link. "
-                         "Trying to unlink", old)
-            os.unlink(old)
-        if os.path.isdir(old):
+            if deployment:
+                logger.debug("Old %s exists and it is link. "
+                             "Trying to unlink", old)
+                os.unlink(old)
+        if os.path.isdir(old) and not os.path.islink(old):
             subprocess.check_call(["/usr/bin/pkill", "-STOP", "rsyslog"])
 
             logger.debug("Old %s exists and it is directory. "
                          "Trying to rename into %s", old, new)
             os.rename(old, new)
-        else:
+        if not os.path.isdir(new):
             logger.debug("Creating %s", new)
             os.makedirs(new)
 
         # creating symlinks
         for l in links:
-            if os.path.islink(l) or os.path.isfile(l):
+            if (os.path.islink(l) and deployment) or os.path.isfile(l):
                 logger.debug("%s already exists. "
                              "Trying to unlink", l)
                 os.unlink(l)
-            if os.path.isdir(l):
+            if os.path.isdir(l) and not os.path.islink(l):
                 logger.debug("%s already exists and it directory. "
                              "Trying to remove", l)
                 shutil.rmtree(l)
-            logger.debug("Creating symlink %s -> %s", l, new)
-            os.symlink(objects.Node.get_node_fqdn(node), l)
+            if deployment or not os.path.exists(l):
+                logger.debug("Creating symlink %s -> %s", l, new)
+                os.symlink(objects.Node.get_node_fqdn(node), l)
     finally:
         subprocess.check_call(["/usr/bin/pkill", "-CONT", "rsyslog"])
 

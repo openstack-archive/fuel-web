@@ -93,6 +93,8 @@ mkdir -p %{buildroot}/%{_sysconfdir}/nailgun
 mkdir -p %{buildroot}%{_localstatedir}/log/nailgun
 install -m 755 %{_builddir}/%{name}-%{version}/bin/fencing-agent.rb %{buildroot}/opt/nailgun/bin/fencing-agent.rb
 install -m 644 %{_builddir}/%{name}-%{version}/bin/fencing-agent.cron %{buildroot}/%{_sysconfdir}/cron.d/fencing-agent
+install -m 755 %{_builddir}/%{name}-%{version}/bin/syslog-maintenance.py %{buildroot}/opt/nailgun/bin/syslog-maintenance.py
+install -m 644 %{_builddir}/%{name}-%{version}/bin/syslog-maintenance.cron %{buildroot}/%{_sysconfdir}/cron.d/syslog-maintenance
 install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/settings.yaml %{buildroot}/%{_sysconfdir}/nailgun/settings.yaml
 install -p -D -m 644 %{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml %{buildroot}%{_datadir}/fuel-openstack-metadata/openstack.yaml
 python -c "import yaml; print filter(lambda r: r['fields'].get('name'), yaml.safe_load(open('%{_builddir}/%{name}-%{version}/nailgun/nailgun/fixtures/openstack.yaml')))[0]['fields']['version']" > %{buildroot}%{_sysconfdir}/fuel_openstack_version
@@ -109,6 +111,9 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(-, nailgun, nailgun) %{_sysconfdir}/nailgun/settings.yaml
 %dir %attr(0755,nailgun,root) %{_localstatedir}/log/nailgun
 %defattr(0755,root,root)
+
+/opt/nailgun/bin/syslog-maintenance.py
+%attr(0644, root, root) /etc/cron.d/syslog-maintenance
 
 %if %{defined _unitdir}
 %attr(0644, root, root) /%{_unitdir}/*

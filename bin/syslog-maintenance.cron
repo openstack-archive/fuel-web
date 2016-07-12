@@ -1,0 +1,1 @@
+0 * * * * root flock -w 30 -o /var/lock/syslog-maintenance.lock -c "/opt/nailgun/bin/syslog-maintenance.py 2>&1 | tee -a /var/log/syslog-maintenance  | /usr/bin/logger -t syslog-maintenance || true"

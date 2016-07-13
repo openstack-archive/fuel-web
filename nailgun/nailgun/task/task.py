@@ -1860,7 +1860,8 @@ class DumpTask(object):
     def conf(cls):
         logger.debug("Preparing config for snapshot")
         nodes = db().query(Node).filter(
-            Node.status.in_(['ready', 'provisioned', 'deploying', 'error'])
+            Node.status.in_(['ready', 'provisioned', 'deploying',
+                             'error', 'stopped'])
         ).all()
 
         dump_conf = deepcopy(settings.DUMP)

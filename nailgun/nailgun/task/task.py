@@ -325,7 +325,7 @@ class DeploymentTask(BaseDeploymentTask):
         serialized_cluster = deployment_serializers.serialize(
             graph, transaction.cluster, nodes)
 
-        cls._save_deployment_info(transaction, serialized_cluster)
+        cls._save_deployment_info(transaction, serialized_cluster, [])
 
         if affected_nodes:
             graph.reexecutable_tasks(events)
@@ -376,7 +376,7 @@ class DeploymentTask(BaseDeploymentTask):
         serialized_cluster = deployment_serializers.serialize(
             None, transaction.cluster, nodes
         )
-        cls._save_deployment_info(transaction, serialized_cluster)
+        cls._save_deployment_info(transaction, serialized_cluster, [])
         logger.info("cluster serialization is finished.")
         tasks_events = events and \
             task_based_deployment.TaskEvents('reexecute_on', events)
@@ -395,7 +395,9 @@ class DeploymentTask(BaseDeploymentTask):
         }
 
 
-class ClusterTransaction(DeploymentTask):
+class BaseTransaction(object):
+
+    transaction_cls = None
 
     ignored_types = {
         consts.ORCHESTRATOR_TASK_TYPES.skipped,
@@ -403,16 +405,9 @@ class ClusterTransaction(DeploymentTask):
         consts.ORCHESTRATOR_TASK_TYPES.stage,
     }
 
-    node_statuses_for_redeploy = {
-        consts.NODE_STATUSES.discover,
-        consts.NODE_STATUSES.error,
-        consts.NODE_STATUSES.provisioned,
-        consts.NODE_STATUSES.stopped,
-    }
-
     @classmethod
-    def get_deployment_methods(cls, cluster):
-        return ['task_deploy']
+    def prepare(cls, **kwargs):
+        """Actions which run before start transaction"""
 
     @classmethod
     def mark_skipped(cls, tasks, ids_not_to_skip):
@@ -428,7 +423,6 @@ class ClusterTransaction(DeploymentTask):
                     task['type'] not in cls.ignored_types):
                 task = task.copy()
                 task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
-
             yield task
 
     @classmethod
@@ -438,10 +432,7 @@ class ClusterTransaction(DeploymentTask):
         :param node: db Node object or None
         :returns: Bool
         """
-        if node is None:
-            return False
-
-        return node.status in cls.node_statuses_for_redeploy
+        return False
 
     @classmethod
     def get_current_state(cls, cluster, nodes, tasks):
@@ -486,18 +477,18 @@ class ClusterTransaction(DeploymentTask):
         return state
 
     @classmethod
-    def task_deploy(cls, transaction, tasks, nodes, force=False,
-                    selected_task_ids=None, dry_run=False, **kwargs):
+    def get_expected_state(cls, cluster, nodes):
+        """Calculates the expected state for transaction."""
+
+    @classmethod
+    def get_plan(cls, transaction, tasks, nodes, force=False,
+                 selected_task_ids=None, dry_run=False, **kwargs):
+        """Gets the transaction plan."""
         logger.info("The cluster transaction is initiated.")
         logger.info("cluster serialization is started.")
-        # we should update information for all nodes except deleted
-        # TODO(bgaifullin) pass role resolver to serializers
-
-        deployment_info = deployment_serializers.serialize_for_lcm(
-            transaction.cluster, nodes
-        )
+        expected_state = cls.get_expected_state(transaction.cluster, nodes)
+        objects.Transaction.attach_deployment_info(transaction, expected_state)
         logger.info("cluster serialization is finished.")
-
         if selected_task_ids:
             tasks = list(cls.mark_skipped(tasks, selected_task_ids))
 
@@ -507,10 +498,7 @@ class ClusterTransaction(DeploymentTask):
             current_state = cls.get_current_state(
                 transaction.cluster, nodes, tasks)
 
-        expected_state = cls._save_deployment_info(
-            transaction, deployment_info
-        )
-        # Added cluster state
+            # Added cluster state
         expected_state[None] = {}
 
         context = lcm.TransactionContext(expected_state, current_state)
@@ -541,6 +529,104 @@ class ClusterTransaction(DeploymentTask):
             "tasks_metadata": metadata,
             "dry_run": dry_run,
         }
+
+
+class DeploymentTransaction(DeploymentTask, BaseTransaction):
+    transaction_cls = consts.TASK_NAMES.deployment
+
+    node_statuses_for_redeploy = {
+        consts.NODE_STATUSES.discover,
+        consts.NODE_STATUSES.error,
+        consts.NODE_STATUSES.provisioned,
+        consts.NODE_STATUSES.stopped,
+    }
+
+    @classmethod
+    def get_deployment_methods(cls, cluster):
+        return ['task_deploy']
+
+    @classmethod
+    def is_node_for_redeploy(cls, node):
+        """Should node's previous state be cleared.
+
+        :param node: db Node object or None
+        :returns: Bool
+        """
+        if node is None:
+            return False
+
+        return node.status in cls.node_statuses_for_redeploy
+
+    @classmethod
+    def get_expected_state(cls, cluster, nodes):
+        """Calculates the expected state for transaction."""
+        deployment_info = deployment_serializers.serialize_for_lcm(
+            cluster, nodes
+        )
+        return {node['uid']: node for node in deployment_info}
+
+    @classmethod
+    def task_deploy(cls, *args, **kwargs):
+        return cls.get_plan(*args, **kwargs)
+
+
+class ProvisionTransaction(BaseTransaction):
+    transaction_cls = consts.TASK_NAMES.provision
+
+    @classmethod
+    def is_node_for_redeploy(cls, node):
+        """Should node's previous state be cleared.
+
+        :param node: db Node object or None
+        :returns: Bool
+        """
+        if node is None:
+            return False
+        return (
+            node.status == consts.NODE_STATUSES.discover or
+            node.needs_reprovision
+        )
+
+    @classmethod
+    def get_expected_state(cls, cluster, nodes):
+        """Calculates the expected state for transaction."""
+        provision_info = provisioning_serializers.serialize(
+            cluster, nodes
+        )
+        nodes = {n['uid']: n for n in provision_info.pop("nodes")}
+        nodes[consts.MASTER_NODE_UID] = provision_info
+        return nodes
+
+    @classmethod
+    def message(cls, transaction, nodes, graph_type=None, **kwargs):
+        logger.debug("start provision, transaction id '%'", transaction.uuid)
+        transaction = objects.Task.get_by_uid(
+            transaction.id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+        objects.NodeCollection.lock_nodes(nodes)
+        for node in nodes:
+            if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
+                continue
+            logs_utils.prepare_syslog_dir(node)
+
+        deployment_tasks = objects.Cluster.get_deployment_tasks(
+            transaction.cluster, graph_type or 'provision'
+        )
+        objects.Transaction.attach_tasks_snapshot(
+            transaction,
+            deployment_tasks
+        )
+
+        plan = cls.get_plan(transaction, deployment_tasks, nodes, **kwargs)
+        db().flush()
+        return make_astute_message(
+            transaction,
+            'task_deploy',
+            'provision_resp',
+            plan
+        )
 
 
 class UpdateNodesInfoTask(object):
@@ -599,7 +685,7 @@ class ProvisionTask(object):
         return 'image_provision'
 
     @classmethod
-    def message(cls, task, nodes_to_provisioning):
+    def message(cls, task, nodes_to_provisioning, **kwargs):
         logger.debug("ProvisionTask.message(task=%s)" % task.uuid)
         task = objects.Task.get_by_uid(
             task.id,

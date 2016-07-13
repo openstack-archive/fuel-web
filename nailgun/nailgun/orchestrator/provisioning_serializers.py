@@ -56,8 +56,10 @@ class ProvisioningSerializer(MellanoxMixin):
 
         serialized_info = (cluster.replaced_provisioning_info or
                            cls.serialize_cluster_info(cluster_attrs, nodes))
-        serialized_info['fault_tolerance'] = cls.fault_tolerance(cluster,
-                                                                 nodes)
+
+        cls.inject_fault_tolerance(serialized_info, cluster, nodes)
+        cls.inject_pre_provision(serialized_info, cluster_attrs, nodes)
+
         serialized_info['nodes'] = serialized_nodes
         return serialized_info
 
@@ -261,7 +263,9 @@ class ProvisioningSerializer(MellanoxMixin):
         return settings.PATH_TO_SSH_KEY
 
     @classmethod
-    def fault_tolerance(cls, cluster, nodes):
+    def inject_fault_tolerance(cls, serialized_info, cluster, nodes):
+        """Adds fault tolerance information into serialized_info."""
+
         may_fail = []
         roles_metadata = objects.Cluster.get_roles(cluster)
         for role in roles_metadata:
@@ -277,40 +281,35 @@ class ProvisioningSerializer(MellanoxMixin):
                         uids.append(node.uid)
                 may_fail.append({'uids': uids,
                                  'percentage': int(percentage)})
-        return may_fail
+
+        serialized_info['fault_tolerance'] = may_fail
+
+    @classmethod
+    def inject_pre_provision(cls, serialized_info, cluster_attrs, nodes):
+        """Adds deployment tasks"""
 
 
 class ProvisioningSerializer61(ProvisioningSerializer):
 
     @classmethod
-    def serialize(cls, cluster, nodes, ignore_customized=False):
-        serialized_info = super(ProvisioningSerializer61, cls).serialize(
-            cluster, nodes, ignore_customized)
-        serialized_info['pre_provision'] = \
-            cls.serialize_pre_provision_tasks(cluster)
-        return serialized_info
-
-    @classmethod
-    def serialize_pre_provision_tasks(cls, cluster):
+    def inject_pre_provision(cls, serialized_info, cluster_attrs, nodes):
         tasks = []
-        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
-
-        is_build_images = all([
-            cluster.release.operating_system == consts.RELEASE_OS.ubuntu,
-            attrs['provision']['method'] == consts.PROVISION_METHODS.image])
-
+        provision = cluster_attrs['provision']
+        is_build_images = (
+            provision['method'] == consts.PROVISION_METHODS.image
+        )
         if is_build_images:
-            packages = cls._make_provisioning_package_list(attrs['provision'])
+            packages = cls._make_provisioning_package_list(provision)
             tasks.append(
                 tasks_templates.make_provisioning_images_task(
                     [consts.MASTER_NODE_UID],
-                    attrs['repo_setup']['repos'],
-                    attrs['provision'],
-                    cluster.id,
+                    cluster_attrs['repo_setup']['repos'],
+                    provision,
+                    cluster_attrs['id'],
                     packages))
 
         PriorityStrategy().one_by_one(tasks)
-        return tasks
+        serialized_info['pre_provision'] = tasks
 
     @classmethod
     def serialize_node(cls, cluster_attrs, node):
@@ -401,25 +400,24 @@ class ProvisioningSerializer70(ProvisioningSerializer61):
 class ProvisioningSerializer80(ProvisioningSerializer70):
 
     @classmethod
-    def serialize_pre_provision_tasks(cls, cluster):
-        tasks = super(ProvisioningSerializer80,
-                      cls).serialize_pre_provision_tasks(cluster)
+    def inject_pre_provision(cls, serialized_info, cluster_attrs, nodes):
+        super(ProvisioningSerializer80, cls).inject_pre_provision(
+            serialized_info, cluster_attrs, nodes
+        )
 
-        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
-
-        if attrs['ironic']['enabled']:
+        tasks = serialized_info['pre_provision']
+        if cluster_attrs['ironic']['enabled']:
             tasks.append(
                 tasks_templates.generate_ironic_bootstrap_keys_task(
                     [consts.MASTER_NODE_UID],
-                    cluster.id))
+                    cluster_attrs['id']))
 
             tasks.append(
                 tasks_templates.make_ironic_bootstrap_task(
                     [consts.MASTER_NODE_UID],
-                    cluster.id))
+                    cluster_attrs['id']))
 
         PriorityStrategy().one_by_one(tasks)
-        return tasks
 
 
 class ProvisioningSerializer90(ProvisioningSerializer80):
@@ -466,3 +464,30 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
                                                        root_user_dict]
 
         return serialized_node
+
+    @classmethod
+    def serialize_cluster_info(cls, cluster_attrs, nodes):
+        parent = super(ProvisioningSerializer90, cls)
+        cluster_info = parent.serialize_cluster_info(cluster_attrs, nodes)
+
+        provision = cluster_info['provision'] = cluster_attrs['provision']
+        is_build_images = (
+            provision['method'] == consts.PROVISION_METHODS.image
+        )
+
+        if is_build_images:
+            packages = cls._make_provisioning_package_list(provision)
+            cluster_info['image'] = {
+                'repo_setup': cluster_attrs['repo_setup']['repos'],
+                'packages': packages
+            }
+
+        return cluster_info
+
+    @classmethod
+    def inject_fault_tolerance(cls, serialized_info, cluster, nodes):
+        """Adds fault tolerance information into serialized_info."""
+
+    @classmethod
+    def inject_pre_provision(cls, serialized_info, cluster_attrs, nodes):
+        """Adds deployment tasks"""

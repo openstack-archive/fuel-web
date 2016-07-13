@@ -75,7 +75,9 @@ class FuYaqlController(object):
             self._set_task(self.EXPECTED, None)
             self._set_task(
                 self.CURRENT,
-                objects.TransactionCollection.get_last_succeed_run(cluster)
+                objects.TransactionCollection.get_last_succeed_run(
+                    consts.TASK_NAMES.deployment, cluster
+                )
             )
             return True
         return False

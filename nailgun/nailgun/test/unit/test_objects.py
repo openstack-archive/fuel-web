@@ -938,7 +938,7 @@ class TestTransactionObject(BaseIntegrationTest):
             'status': consts.TASK_STATUSES.error
         })
         transaction = objects.TransactionCollection.get_last_succeed_run(
-            self.cluster
+            consts.TASK_NAMES.deployment, self.cluster
         )
         self.assertIsNone(transaction)
         objects.Transaction.create({
@@ -952,7 +952,7 @@ class TestTransactionObject(BaseIntegrationTest):
             'status': consts.TASK_STATUSES.ready
         })
         transaction = objects.TransactionCollection.get_last_succeed_run(
-            self.cluster
+            consts.TASK_NAMES.deployment, self.cluster
         )
         self.assertEqual(finished2.id, transaction.id)
 

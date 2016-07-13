@@ -38,6 +38,7 @@ from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 
+from nailgun import consts
 from nailgun import errors
 from nailgun.logger import logger
 from nailgun import objects
@@ -300,7 +301,9 @@ class ClusterAttributesDeployedHandler(BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         attrs = objects.Transaction.get_cluster_settings(
-            objects.TransactionCollection.get_last_succeed_run(cluster)
+            objects.TransactionCollection.get_last_succeed_run(
+                consts.TASK_NAMES.deployment, cluster
+            )
         )
         if not attrs:
             raise self.http(

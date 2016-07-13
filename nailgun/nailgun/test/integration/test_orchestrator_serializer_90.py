@@ -312,7 +312,7 @@ class TestDeploymentAttributesSerialization90(
 
         self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
         self.assertEqual(serialized_node['dpdk']['ovs_pmd_core_mask'], '0x4')
-        self.assertNotIn('cpu_pinning', serialized_node['nova'])
+        self.assertNotIn('cpu_pinning', serialized_node.get('nova', {}))
 
         node_name = objects.Node.get_slave_name(node)
         network_data = serialized_for_astute['common']['network_metadata']

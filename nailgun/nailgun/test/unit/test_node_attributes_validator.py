@@ -146,6 +146,30 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
             errors.InvalidData, 'could not require more memory than node has',
             validator, json.dumps(data), self.node, self.cluster)
 
+    @mock_cluster_attributes
+    def test_limited_supported_hugepages(self, m_dpdk_nics):
+        data = {
+            'hugepages': {
+                'nova': {
+                    'value': {
+                        '2048': 3,
+                        '1048576': 0,
+                    },
+                },
+            },
+        }
+
+        self.node.meta['numa_topology']['supported_hugepages'] = ['2048']
+        self.assertNotRaises(errors.InvalidData, validator,
+                             json.dumps(data), self.node, self.cluster)
+
+        data['hugepages']['nova']['value']['1048576'] = 1
+        self.assertRaisesWithMessageIn(
+            errors.InvalidData,
+            "Node 1 doesn't support 1048576 Huge Page(s),"
+            " supported Huge Page(s): 2048.",
+            validator, json.dumps(data), self.node, self.cluster)
+
 
 @mock.patch.object(objects.Node, 'dpdk_nics', return_value=[])
 class TestNodeAttributesValidatorCpuPinning(BaseNodeAttributeValidatorTest):

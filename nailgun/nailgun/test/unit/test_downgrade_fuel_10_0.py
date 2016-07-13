@@ -15,6 +15,8 @@
 #    under the License.
 
 import alembic
+import datetime
+from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
 from nailgun.db import db
@@ -24,7 +26,7 @@ from nailgun.test import base
 
 
 _prepare_revision = 'c6edea552f1e'
-_test_revision = '675105097a69'
+_test_revision = 'f2314e5d63c9'
 
 
 def setup_module():
@@ -71,6 +73,111 @@ def prepare():
     )
     cluster_id = result.inserted_primary_key[0]
 
+    new_node = db.execute(
+        meta.tables['nodes'].insert(),
+        [{
+            'uuid': '26b508d0-0d76-4159-bce9-f67ec2765481',
+            'cluster_id': None,
+            'group_id': None,
+            'status': 'discover',
+            'mac': 'aa:aa:aa:aa:aa:aa',
+            'timestamp': datetime.datetime.utcnow()
+        }]
+    )
+    node_id = new_node.inserted_primary_key[0]
+
+    bond_interface = db.execute(
+        meta.tables['node_bond_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'name': 'test_bond_interface',
+            'mode': 'balance-tlb',
+            'attributes': jsonutils.dumps({
+                'lacp_rate': {'value': {'value': ''}},
+                'xmit_hash_policy': {'value': {'value': 'layer2'}},
+                'offloading': {
+                    'disable': {'value': True},
+                    'modes': {'value': {'tx-checksumming': None,
+                                        'tx-checksum-sctp': None}}
+                },
+                'mtu': {'value': {'value': 50}},
+                'lacp': {'value': {'value': ''}},
+                'mode': {'value': {'value': 'balance-tlb'}},
+                'type__': {'value': 'linux'},
+                'dpdk': {'enabled': {'value': False}}
+            })
+        }]
+    )
+    bond_id = bond_interface.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'name': 'test_nic_empty_attributes',
+            'mac': '00:00:00:00:00:01',
+            'attributes': jsonutils.dumps({}),
+            'meta': jsonutils.dumps({})
+        }]
+    )
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'name': 'test_nic_attributes',
+            'parent_id': bond_id,
+            'mac': '00:00:00:00:00:01',
+            'attributes': jsonutils.dumps({
+                'offloading': {
+                    'disable': {'value': 'test_disable_offloading'},
+                    'modes': {
+                        'value': {
+                            'tx-checksum-ipv4': 'IPV4_STATE',
+                            'tx-checksumming': 'TX_STATE',
+                            'rx-checksumming': 'RX_STATE',
+                            'tx-checksum-ipv6': 'IPV6_STATE'
+                        }
+                    }
+                },
+                'mtu': {
+                    'value': {'value': 'test_mtu'}
+                },
+                'sriov': {
+                    'numvfs': {'value': 'test_sriov_numfs'},
+                    'enabled': {'value': 'test_sriov_enabled'},
+                    'physnet': {'value': 'test_sriov_physnet'}
+                },
+                'dpdk': {
+                    'enabled': {'value': 'test_dpdk_enabled'}
+                }
+            }),
+            'meta': jsonutils.dumps({
+                'offloading_modes': [{
+                    'state': None,
+                    'name': 'tx-checksumming',
+                    'sub': [
+                        {'state': False, 'name': 'tx-checksum-sctp',
+                         'sub': []},
+                        {'state': None, 'name': 'tx-checksum-ipv6',
+                         'sub': []},
+                        {'state': None, 'name': 'tx-checksum-ipv4',
+                         'sub': []}
+                    ]
+                }, {
+                    'state': None, 'name': 'rx-checksumming', 'sub': []
+                }],
+                'numa_node': 12345,
+                'pci_id': 'test_pci_id',
+                'sriov': {
+                    'available': 'test_sriov_available',
+                    'totalvfs': 6789,
+                    'pci_id': 'test_sriov_pci_id'
+                },
+                'dpdk': {'available': True}
+            })
+        }]
+    )
+
     TestPluginLinksConstraints.prepare(meta, cluster_id)
 
 
@@ -109,3 +216,117 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
     def test_downgrade_release_required_component_types(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('required_component_types', releases_table.c)
+
+
+class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_release_with_nic_attributes(self):
+        releases_table = self.meta.tables['releases']
+        result = db.execute(
+            sa.select([releases_table.c.nic_attributes,
+                       releases_table.c.bond_attributes])
+        ).fetchall()[0]
+        self.assertEqual(result['nic_attributes'], '{}')
+        self.assertEqual(result['bond_attributes'], '{}')
+
+    def test_downgrade_node_nic_attributes_with_empty_attributes(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([interfaces_table.c.interface_properties,
+                       interfaces_table.c.offloading_modes]).
+            where(interfaces_table.c.name == 'test_nic_empty_attributes')
+        ).fetchone()
+        self.assertEqual(
+            jsonutils.loads(result['interface_properties']),
+            {
+                'mtu': None,
+                'pci_id': '',
+                'disable_offloading': False,
+                'sriov': {
+                    'enabled': False,
+                    'available': False,
+                    'sriov_numvfs': None,
+                    'physnet': 'physnet2',
+                    'pci_id': '',
+                    'sriov_totalvfs': 0
+                },
+                'dpdk': {
+                    'enabled': False,
+                    'available': False
+                }
+            }
+        )
+        self.assertEqual(jsonutils.loads(result['offloading_modes']), [])
+
+    def test_downgrade_node_nic_attributes(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([interfaces_table.c.interface_properties,
+                       interfaces_table.c.offloading_modes,
+                       interfaces_table.c.attributes,
+                       interfaces_table.c.meta]).
+            where(interfaces_table.c.name == 'test_nic_attributes')
+        ).fetchone()
+
+        self.assertEqual(
+            jsonutils.loads(result['interface_properties']),
+            {
+                'mtu': 'test_mtu',
+                'pci_id': 'test_pci_id',
+                'disable_offloading': 'test_disable_offloading',
+                'sriov': {
+                    'enabled': 'test_sriov_enabled',
+                    'available': 'test_sriov_available',
+                    'sriov_numvfs': 'test_sriov_numfs',
+                    'physnet': 'test_sriov_physnet',
+                    'pci_id': 'test_sriov_pci_id',
+                    'sriov_totalvfs': 6789
+                },
+                'dpdk': {
+                    'enabled': 'test_dpdk_enabled',
+                    'available': True
+                }
+            }
+        )
+        self.assertEqual(
+            jsonutils.loads(result['offloading_modes']),
+            [{
+                'state': 'TX_STATE',
+                'name': 'tx-checksumming',
+                'sub': [
+                    {'state': False, 'name': 'tx-checksum-sctp', 'sub': []},
+                    {'state': 'IPV6_STATE', 'name': 'tx-checksum-ipv6',
+                     'sub': []},
+                    {'state': 'IPV4_STATE', 'name': 'tx-checksum-ipv4',
+                     'sub': []}
+                ]
+            }, {
+                'state': 'RX_STATE', 'name': 'rx-checksumming', 'sub': []
+            }]
+        )
+
+        self.assertEqual(result['meta'], '{}')
+        self.assertEqual(result['attributes'], '{}')
+
+    def test_downgrade_node_bond_attributes(self):
+        node_bonds_table = self.meta.tables['node_bond_interfaces']
+        result = db.execute(
+            sa.select([node_bonds_table.c.interface_properties,
+                       node_bonds_table.c.bond_properties,
+                       node_bonds_table.c.offloading_modes,
+                       node_bonds_table.c.attributes]).
+            where(node_bonds_table.c.name == 'test_bond_interface')
+        ).fetchone()
+
+        self.assertEqual(
+            jsonutils.loads(result['bond_properties']),
+            {'type__': 'linux', 'mode': 'balance-tlb',
+             'xmit_hash_policy': 'layer2'}
+        )
+        self.assertEqual(
+            jsonutils.loads(result['interface_properties']),
+            {'mtu': 50, 'disable_offloading': True,
+             'dpdk': {'available': True, 'enabled': False}}
+        )
+        self.assertEqual(result['offloading_modes'], "[]")
+        self.assertEqual(result['attributes'], "{}")

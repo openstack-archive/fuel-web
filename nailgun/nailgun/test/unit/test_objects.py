@@ -938,7 +938,7 @@ class TestTransactionObject(BaseIntegrationTest):
             'status': consts.TASK_STATUSES.error
         })
         transaction = objects.TransactionCollection.get_last_succeed_run(
-            self.cluster
+            consts.TASK_NAMES.deployment, self.cluster
         )
         self.assertIsNone(transaction)
         objects.Transaction.create({
@@ -952,7 +952,7 @@ class TestTransactionObject(BaseIntegrationTest):
             'status': consts.TASK_STATUSES.ready
         })
         transaction = objects.TransactionCollection.get_last_succeed_run(
-            self.cluster
+            consts.TASK_NAMES.deployment, self.cluster
         )
         self.assertEqual(finished2.id, transaction.id)
 
@@ -1035,21 +1035,27 @@ class TestTransactionObject(BaseIntegrationTest):
 
         # create some tasks in history
         task1 = make_task_with_history('ready', tasks_graph)
-        transactions = get_succeed(self.cluster.id, ['dns-client']).all()
+        transactions = get_succeed(
+            consts.TASK_NAMES.deployment, self.cluster.id, ['dns-client']
+        ).all()
         self.assertEqual(transactions, [(task1, uid1, 'dns-client')])
 
         # remove 'dns-client' and add 'test' to graph for two nodes
         tasks_graph[uid1] = tasks_graph[uid2] = [{'id': 'test'}]
         task2 = make_task_with_history('ready', tasks_graph)
-        transactions = get_succeed(self.cluster.id, ['test']).all()
+        transactions = get_succeed(
+            consts.TASK_NAMES.deployment, self.cluster.id, ['test']
+        ).all()
         self.assertEqual(transactions, [(task2, uid1, 'test'),
                                         (task2, uid2, 'test')])
 
         # remove 'test' and add 'dns-client' to graph, leave node2 as previous
         tasks_graph[uid1] = [{'id': 'dns-client'}]
         task3 = make_task_with_history('ready', tasks_graph)
-        transactions = get_succeed(self.cluster.id,
-                                   ['dns-client', 'test']).all()
+        transactions = get_succeed(
+            consts.TASK_NAMES.deployment,
+            self.cluster.id, ['dns-client', 'test']
+        ).all()
 
         # now we should find both `test` and `dns-client` transactions
         # on node 1 and onle `test` on node 2
@@ -1061,8 +1067,10 @@ class TestTransactionObject(BaseIntegrationTest):
         )
 
         # filter out node 2
-        transactions = get_succeed(self.cluster.id,
-                                   ['dns-client', 'test'], [uid1]).all()
+        transactions = get_succeed(
+            consts.TASK_NAMES.deployment, self.cluster.id,
+            ['dns-client', 'test'], [uid1]
+        ).all()
         self.assertEqual(
             transactions,
             [(task3, uid1, 'dns-client'),

@@ -382,7 +382,9 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'skipped',
     'reboot',
     'copy_files',
-    'role'
+    'role',
+    'master_shell',
+    'move_to_bootstrap'
 )
 
 INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,

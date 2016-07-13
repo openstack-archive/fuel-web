@@ -704,7 +704,9 @@ class TestNeutronNetworkConfigurationHandler(BaseIntegrationTest):
         })
         objects.Transaction.attach_network_settings(transaction, net_attrs)
         self.assertIsNotNone(
-            objects.TransactionCollection.get_last_succeed_run(self.cluster)
+            objects.TransactionCollection.get_last_succeed_run(
+                consts.TASK_NAMES.deployment, self.cluster
+            )
         )
         resp = self.app.get(
             reverse(

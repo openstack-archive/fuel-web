@@ -255,6 +255,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     task_manager = manager.ProvisioningTaskManager
 
     def get_default_nodes(self, cluster):
+        if objects.Release.is_lcm_supported(cluster.release):
+            return objects.Cluster.get_nodes_not_for_deletion(cluster)
         return TaskHelper.nodes_to_provision(cluster)
 
     @content
@@ -430,7 +432,7 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
                 # task_deploy serializer.
                 transaction = objects.Transaction.model(
                     name=consts.TASK_NAMES.deployment, cluster=cluster)
-                rv = task.ClusterTransaction.task_deploy(
+                rv = task.DeploymentTransaction.task_deploy(
                     transaction,
                     objects.Cluster.get_deployment_tasks(cluster, graph_type),
                     nodes,

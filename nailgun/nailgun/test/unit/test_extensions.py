@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import copy
 import mock
 
 from nailgun import errors
@@ -29,9 +28,6 @@ from nailgun.extensions import fire_callback_on_node_update
 from nailgun.extensions import get_extension
 from nailgun.extensions import node_extension_call
 from nailgun.extensions import setup_yaql_context
-from nailgun.orchestrator import deployment_serializers
-from nailgun.orchestrator import orchestrator_graph
-from nailgun.orchestrator import provisioning_serializers
 from nailgun.test.base import BaseTestCase
 
 
@@ -215,195 +211,34 @@ class TestExtensionUtils(BaseTestCase):
 
 class TestPipeline(BaseExtensionCase):
 
-    def _create_cluster_with_extensions(self, nodes_kwargs=None):
-        if nodes_kwargs is None:
-            nodes_kwargs = [
-                {'roles': ['controller'], 'pending_addition': True},
-            ]
-
-        cluster = self.env.create(
-            cluster_kwargs={'api': False},
-            nodes_kwargs=nodes_kwargs)
-
-        cluster.extensions = [self.extension.name, 'volume_manager']
-        self.db.flush()
-
-        return cluster
-
-    @mock.patch.object(orchestrator_graph.AstuteGraph, 'deploy_task_serialize')
-    def test_deployment_serialization_ignore_customized(self, _):
-        cluster = self._create_cluster_with_extensions()
-
-        data = [{"uid": n.uid} for n in cluster.nodes]
-        mserializer = mock.MagicMock()
-        mserializer.return_value = mock.MagicMock()
-        mserializer.return_value.serialize.return_value = data
-
-        with mock.patch(
-                'nailgun.orchestrator.deployment_serializers.'
-                'get_serializer_for_cluster',
-                return_value=mserializer):
-            with mock.patch('nailgun.orchestrator.deployment_serializers.'
-                            'fire_callback_on_deployment_data_serialization'
-                            ) as mfire_callback:
-
-                replaced_data = ["it's", "something"]
-                with mock.patch.object(
-                        cluster.nodes[0], 'replaced_deployment_info',
-                        new_callable=mock.Mock(return_value=replaced_data)):
-
-                    graph = orchestrator_graph.AstuteGraph(cluster)
-                    deployment_serializers.serialize(
-                        graph, cluster, cluster.nodes, ignore_customized=True)
-
-        mfire_callback.assert_called_once_with(data, cluster, cluster.nodes)
-
-    @mock.patch.object(orchestrator_graph.AstuteGraph, 'deploy_task_serialize')
-    def test_deployment_serialization_ignore_customized_false(self, _):
-        cluster = self._create_cluster_with_extensions(
-            nodes_kwargs=[
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['controller'], 'pending_addition': True},
-            ]
+    def test_cannot_instantiate_class_with_method_process_provision(self):
+        with self.assertRaises(RuntimeError) as ctx:
+            class DeprecatedPipeline(BasePipeline):
+                @classmethod
+                def process_provisioning(cls, *args, **kwargs):
+                    pass
+        self.assertIn(
+            'Please implement methods process_provisioning_for_* instead',
+            str(ctx.exception)
         )
 
-        data = [{"uid": n.uid} for n in cluster.nodes]
-        expected_data = copy.deepcopy(data[1:])
-
-        mserializer = mock.MagicMock()
-        mserializer.return_value = mock.MagicMock()
-        mserializer.return_value.serialize.return_value = data
-
-        with mock.patch(
-                'nailgun.orchestrator.deployment_serializers.'
-                'get_serializer_for_cluster',
-                return_value=mserializer):
-            with mock.patch('nailgun.orchestrator.deployment_serializers.'
-                            'fire_callback_on_deployment_data_serialization',
-                            ) as mfire_callback:
-
-                replaced_data = ["it's", "something"]
-                with mock.patch.object(
-                        cluster.nodes[0], 'replaced_deployment_info',
-                        new_callable=mock.Mock(return_value=replaced_data)):
-
-                    graph = orchestrator_graph.AstuteGraph(cluster)
-                    deployment_serializers.serialize(
-                        graph, cluster, cluster.nodes, ignore_customized=False)
-
-        self.assertEqual(mfire_callback.call_args[0][0], expected_data)
-        self.assertIs(mfire_callback.call_args[0][1], cluster)
-        self.assertItemsEqual(
-            mfire_callback.call_args[0][2], cluster.nodes[1:])
-
-    def test_provisioning_serialization_ignore_customized(self):
-        cluster = self._create_cluster_with_extensions()
-
-        data = {"nodes": cluster.nodes}
-        mserializer = mock.MagicMock()
-        mserializer.serialize.return_value = data
-
-        with mock.patch(
-                'nailgun.orchestrator.provisioning_serializers.'
-                'get_serializer_for_cluster',
-                return_value=mserializer):
-            with mock.patch('nailgun.orchestrator.provisioning_serializers.'
-                            'fire_callback_on_provisioning_data_serialization'
-                            ) as mfire_callback:
-
-                replaced_data = {"it's": "something"}
-                with mock.patch.object(
-                        cluster.nodes[0], 'replaced_provisioning_info',
-                        new_callable=mock.Mock(return_value=replaced_data)):
-
-                    provisioning_serializers.serialize(
-                        cluster, cluster.nodes, ignore_customized=True)
-
-        mfire_callback.assert_called_once_with(data, cluster, cluster.nodes)
-
-    def test_provisioning_serialization_ignore_customized_false(self):
-        cluster = self._create_cluster_with_extensions(
-            nodes_kwargs=[
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['controller'], 'pending_addition': True},
-            ]
+    def test_cannot_instantiate_class_with_method_process_deployment(self):
+        with self.assertRaises(RuntimeError) as ctx:
+            class DeprecatedPipeline(BasePipeline):
+                @classmethod
+                def process_deployment(cls, *args, **kwargs):
+                    pass
+        self.assertIn(
+            'Please implement methods process_deployment_for_* instead',
+            str(ctx.exception)
         )
 
-        data = {"nodes": [{"uid": n.uid} for n in cluster.nodes]}
-        expected_data = {"nodes": copy.deepcopy(data["nodes"][1:])}
-
-        mserializer = mock.MagicMock()
-        mserializer.serialize.return_value = data
-
-        with mock.patch(
-                'nailgun.orchestrator.provisioning_serializers.'
-                'get_serializer_for_cluster',
-                return_value=mserializer):
-            with mock.patch('nailgun.orchestrator.provisioning_serializers.'
-                            'fire_callback_on_provisioning_data_serialization'
-                            ) as mfire_callback:
-
-                replaced_data = {"it's": "something"}
-                with mock.patch.object(
-                        cluster.nodes[0], 'replaced_provisioning_info',
-                        new_callable=mock.Mock(return_value=replaced_data)):
-
-                    provisioning_serializers.serialize(
-                        cluster, cluster.nodes, ignore_customized=False)
-
-        self.assertEqual(mfire_callback.call_args[0][0], expected_data)
-        self.assertIs(mfire_callback.call_args[0][1], cluster)
-        self.assertItemsEqual(
-            mfire_callback.call_args[0][2], cluster.nodes[1:])
-
-    def test_pipeline_change_data(self):
-        cluster = self.env.create(
-            cluster_kwargs={'api': False},
-            nodes_kwargs=[{'roles': ['controller'], 'pending_addition': True}]
-        )
-        cluster.extensions = [self.extension.name]
-        self.db.flush()
-
-        class PipelinePlus1(BasePipeline):
+    def test_no_error_if_no_deprecated_methods(self):
+        class TestPipeline(BasePipeline):
+            @classmethod
+            def process_deployment_for_cluster(cls, cluster, cluster_data):
+                pass
 
             @classmethod
-            def process_provisioning(cls, data, cluster, nodes, **kwargs):
-                data['key'] += 1
-                return data
-
-        class PipelinePlus2(BasePipeline):
-
-            @classmethod
-            def process_provisioning(cls, data, cluster, nodes, **kwargs):
-                data['key'] += 2
-                return data
-
-        class Extension(BaseExtension):
-            name = 'ext_name'
-            version = '1.0.0'
-            description = 'ext description'
-            data_pipelines = (PipelinePlus1, PipelinePlus2)
-
-        extension = Extension()
-
-        cluster.extensions = [extension.name]
-        self.db.flush()
-
-        data = {'key': 0, 'nodes': []}
-
-        mserializer = mock.MagicMock()
-        mserializer.serialize.return_value = data
-
-        with mock.patch('nailgun.extensions.manager.get_all_extensions',
-                        return_value=[extension]):
-            with mock.patch('nailgun.orchestrator.provisioning_serializers.'
-                            'get_serializer_for_cluster',
-                            return_value=mserializer):
-                new_data = provisioning_serializers.serialize(
-                    cluster, cluster.nodes)
-
-        self.assertEqual(new_data['key'], 3)
+            def process_deployment_for_node(cls, cluster, cluster_data):
+                pass

@@ -361,7 +361,7 @@ class TestTaskDeploy90(BaseIntegrationTest):
                 'type': 'puppet',
                 'roles': ['compute'],
                 'condition': {
-                    'yaql_exp': 'changedAny($.network_scheme, $.dpdk)',
+                    'yaql_exp': 'changedAny($.network_scheme, $.get(dpdk))',
                 },
                 'parameters': {},
             },
@@ -371,7 +371,7 @@ class TestTaskDeploy90(BaseIntegrationTest):
                 'type': 'puppet',
                 'roles': ['compute'],
                 'condition': {
-                    'yaql_exp': 'changedAny($.network_scheme, $.dpdk)',
+                    'yaql_exp': 'changedAny($.network_scheme, $.get(dpdk))',
                 },
                 'parameters': {},
             }]
@@ -450,7 +450,7 @@ class TestTaskDeploy90AfterDeployment(BaseIntegrationTest):
             .filter_by(task_name='netconfig')\
             .update({
                 'condition': {
-                    'yaql_exp': 'changedAny($.network_scheme, $.dpdk)',
+                    'yaql_exp': 'changedAny($.network_scheme, $.get(dpdk))',
                 }
             })
 

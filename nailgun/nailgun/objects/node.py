@@ -1095,14 +1095,16 @@ class Node(NailgunObject):
                         kernel_params += ' amd_iommu=on'
                     break
 
-            if 'hugepages' not in kernel_params:
+            if ('hugepages' not in kernel_params
+                    and NodeAttributes.is_hugepages_enabled(instance)):
                 kernel_params += NodeAttributes.hugepages_kernel_opts(instance)
 
-            isolated_cpus = NodeAttributes.distribute_node_cpus(
-                instance)['isolated_cpus']
-            if isolated_cpus and 'isolcpus' not in kernel_params:
-                kernel_params += " isolcpus={0}".format(
-                    ",".join(six.moves.map(str, isolated_cpus)))
+            if NodeAttributes.is_cpu_pinning_enabled(instance):
+                isolated_cpus = NodeAttributes.distribute_node_cpus(
+                    instance)['isolated_cpus']
+                if isolated_cpus and 'isolcpus' not in kernel_params:
+                    kernel_params += " isolcpus={0}".format(
+                        ",".join(six.moves.map(str, isolated_cpus)))
 
         return kernel_params
 
@@ -1413,14 +1415,15 @@ class NodeAttributes(object):
 
     @classmethod
     def set_default_hugepages(cls, node):
-        supported_hugepages = node.meta['numa_topology']['supported_hugepages']
         hugepages = cls._safe_get_hugepages(node)
         if not hugepages:
             return
 
+        sizes = [x[0] for x in consts.HUGE_PAGES_SIZE_MAP]
+
         for attrs in six.itervalues(hugepages):
             if attrs.get('type') == 'custom_hugepages':
-                attrs['value'] = dict.fromkeys(supported_hugepages, 0)
+                attrs['value'] = dict.fromkeys(sizes, 0)
 
         Node.update_attributes(node, {'hugepages': hugepages})
 
@@ -1457,11 +1460,6 @@ class NodeAttributes(object):
         return {'total_required_cpus': total_required_cpus,
                 'components': components}
 
-    @classmethod
-    def is_nova_cpu_pinning_enabled(cls, node):
-        cpu_pinning = cls._safe_get_cpu_pinning(node)
-        return 'nova' in cpu_pinning and bool(cpu_pinning['nova']['value'])
-
     @staticmethod
     def pages_per_numa_node(size):
         """Convert memory size to 2 MiB pages count.
@@ -1473,7 +1471,7 @@ class NodeAttributes(object):
         return int(math.ceil(float(size) / 2))
 
     @classmethod
-    def total_hugepages(cls, node):
+    def total_hugepages(cls, node, attributes=None):
         """Return total hugepages for the node
 
         Iterate over hugepages attributes and sum them
@@ -1490,7 +1488,9 @@ class NodeAttributes(object):
         hugepages = collections.defaultdict(int)
         numa_count = len(node.meta['numa_topology']['numa_nodes'])
 
-        hugepages_attributes = cls._safe_get_hugepages(node)
+        hugepages_attributes = cls._safe_get_hugepages(
+            node, attributes=attributes)
+
         for name, attrs in six.iteritems(hugepages_attributes):
             if attrs.get('type') == 'custom_hugepages':
                 value = attrs['value']
@@ -1502,6 +1502,10 @@ class NodeAttributes(object):
                 count_per_numa_node = cls.pages_per_numa_node(attrs['value'])
                 hugepages[consts.DEFAULT_HUGEPAGE_SIZE] += (
                     count_per_numa_node * numa_count)
+
+        for size in list(hugepages):
+            if not hugepages[size]:
+                hugepages.pop(size)
 
         return hugepages
 
@@ -1522,15 +1526,39 @@ class NodeAttributes(object):
         return kernel_opts
 
     @classmethod
-    def is_nova_hugepages_enabled(cls, node):
-        hugepages = cls._safe_get_hugepages(node)
+    def is_hugepages_enabled(cls, node, attributes=None):
+        return (
+            cls.is_nova_hugepages_enabled(node, attributes=attributes)
+            or cls.is_dpdk_hugepages_enabled(node, attributes=attributes)
+        )
+
+    @classmethod
+    def is_cpu_pinning_enabled(cls, node, attributes=None):
+        return (
+            cls.is_nova_cpu_pinning_enabled(node, attributes=attributes)
+            or cls.is_dpdk_cpu_pinning_enabled(node, attributes=attributes)
+        )
+
+    @classmethod
+    def is_dpdk_cpu_pinning_enabled(cls, node, attributes=None):
+        cpu_pinning = cls._safe_get_cpu_pinning(node, attributes=attributes)
+        return 'dpdk' in cpu_pinning and bool(cpu_pinning['dpdk']['value'])
+
+    @classmethod
+    def is_nova_cpu_pinning_enabled(cls, node, attributes=None):
+        cpu_pinning = cls._safe_get_cpu_pinning(node, attributes=attributes)
+        return 'nova' in cpu_pinning and bool(cpu_pinning['nova']['value'])
+
+    @classmethod
+    def is_nova_hugepages_enabled(cls, node, attributes=None):
+        hugepages = cls._safe_get_hugepages(node, attributes=attributes)
         return ('nova' in hugepages and
                 any(six.itervalues(hugepages['nova']['value'])))
 
     @classmethod
-    def is_dpdk_hugepages_enabled(cls, node):
-        return int(Node.get_attributes(
-            node)['hugepages']['dpdk']['value']) != 0
+    def is_dpdk_hugepages_enabled(cls, node, attributes=None):
+        hugepages = cls._safe_get_hugepages(node, attributes=attributes)
+        return 'dpdk' in hugepages and bool(hugepages['dpdk']['value'])
 
     @classmethod
     def dpdk_hugepages_attrs(cls, node):

@@ -262,7 +262,9 @@ class NetworkAttributesDeployedHandler(BaseHandler):
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         attrs = objects.Transaction.get_network_settings(
-            objects.TransactionCollection.get_last_succeed_run(cluster)
+            objects.TransactionCollection.get_last_succeed_run(
+                consts.TASK_NAMES.deployment, cluster
+            )
         )
         if not attrs:
             raise self.http(

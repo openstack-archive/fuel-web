@@ -61,7 +61,7 @@ class TestFuyaqlController(base.BaseUnitTest):
         )
 
         obj_mock.TransactionCollection.get_last_succeed_run.\
-            assert_called_once_with('cluster')
+            assert_called_once_with('deployment', 'cluster')
         s_task.assert_any_call(self.controller.EXPECTED, None)
         s_task.assert_called_with(self.controller.CURRENT, 'task')
 

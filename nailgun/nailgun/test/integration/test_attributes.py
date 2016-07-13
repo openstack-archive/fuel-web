@@ -342,7 +342,9 @@ class TestClusterAttributes(BaseIntegrationTest):
             transaction, {'editable': cluster_attrs}
         )
         self.assertIsNotNone(
-            objects.TransactionCollection.get_last_succeed_run(cluster)
+            objects.TransactionCollection.get_last_succeed_run(
+                consts.TASK_NAMES.deployment, cluster
+            )
         )
         resp = self.app.get(
             reverse(

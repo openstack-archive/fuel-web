@@ -104,19 +104,19 @@ class TransactionCollection(NailgunCollection):
         return cls.filter_by(None, cluster_id=cluster_id)
 
     @classmethod
-    def get_last_succeed_run(cls, cluster):
-        # TODO(bgaifullin) remove hardcoded name of task
+    def get_last_succeed_run(cls, transaction_cls, cluster):
         return cls.filter_by(
-            None, cluster_id=cluster.id, name=consts.TASK_NAMES.deployment,
+            None, cluster_id=cluster.id, name=transaction_cls,
             status=consts.TASK_STATUSES.ready
         ).order_by('-id').limit(1).first()
 
     @classmethod
-    def get_successful_transactions_per_task(cls, cluster_id,
-                                             task_names=None,
-                                             nodes_uids=None):
+    def get_successful_transactions_per_task(
+            cls, transaction_cls, cluster_id, task_names=None, nodes_uids=None
+    ):
         """Get last successful transaction for every task name.
 
+        :param transaction_cls: the class of tranaction
         :param cluster_id: db id of cluster object
         :param task_names: list with task names
         :param nodes_uids: db Node uids, which state you need
@@ -131,7 +131,7 @@ class TransactionCollection(NailgunCollection):
             history.deployment_graph_task_name,
         ).join(history).filter(
             model.cluster_id == cluster_id,
-            model.name == consts.TASK_NAMES.deployment,
+            model.name == transaction_cls,
             history.status == consts.HISTORY_TASK_STATUSES.ready,
         )
 

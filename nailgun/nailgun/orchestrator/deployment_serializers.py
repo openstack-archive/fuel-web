@@ -21,8 +21,7 @@ from copy import deepcopy
 import six
 
 from nailgun import consts
-from nailgun.extensions import fire_callback_on_deployment_data_serialization
-from nailgun.extensions import node_extension_call
+from nailgun import extensions
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
 from nailgun import objects
@@ -97,6 +96,11 @@ class DeploymentMultinodeSerializer(object):
         """Method generates facts which are passed to puppet."""
         try:
             self.initialize(cluster)
+            common_attrs = self.get_common_attrs(cluster)
+            extensions.fire_callback_on_cluster_serialization_for_deployment(
+                cluster, common_attrs
+            )
+
             serialized_nodes = []
 
             origin_nodes = []
@@ -111,10 +115,10 @@ class DeploymentMultinodeSerializer(object):
                         origin_nodes.append(node)
 
             serialized_nodes.extend(
-                self.serialize_generated(cluster, origin_nodes)
+                self.serialize_generated(common_attrs, origin_nodes)
             )
             serialized_nodes.extend(
-                self.serialize_customized(cluster, customized_nodes)
+                self.serialize_customized(common_attrs, customized_nodes)
             )
 
             # NOTE(dshulyak) tasks should not be preserved from replaced
@@ -127,15 +131,21 @@ class DeploymentMultinodeSerializer(object):
 
         return serialized_nodes
 
-    def serialize_generated(self, cluster, nodes):
-        common_attrs = self.get_common_attrs(cluster)
-        nodes = self.serialize_nodes(common_attrs, nodes)
+    def serialize_generated(self, common_attrs, nodes):
+        serialized_nodes = self.serialize_nodes(common_attrs, nodes)
+        nodes_map = {n.uid: n for n in nodes}
 
-        self.set_deployment_priorities(nodes)
-        for node in nodes:
-            yield utils.dict_merge(node, common_attrs)
+        self.set_deployment_priorities(serialized_nodes)
+        for node_data in serialized_nodes:
+            # the serialized nodes may contain fake nodes like master node
+            # which does not have related db object. it shall be excluded.
+            if node_data['uid'] in nodes_map:
+                extensions.fire_callback_on_node_serialization_for_deployment(
+                    nodes_map[node_data['uid']], node_data
+                )
+            yield utils.dict_merge(common_attrs, node_data)
 
-    def serialize_customized(self, cluster, nodes):
+    def serialize_customized(self, common_attrs, nodes):
         for node in nodes:
             for role_data in node.replaced_deployment_info:
                 yield role_data
@@ -188,8 +198,9 @@ class DeploymentMultinodeSerializer(object):
         ceph_nodes = objects.NodeCollection.filter_by_id_list(
             self.all_nodes, ceph_nodes_uids
         )
+        call_node_extension = extensions.node_extension_call
         for node in ceph_nodes:
-            for disk in node_extension_call('get_node_volumes', node):
+            for disk in call_node_extension('get_node_volumes', node):
                 for part in disk.get('volumes', []):
                     if part.get('name') == 'ceph' and part.get('size', 0) > 0:
                         osd_num += 1
@@ -249,10 +260,12 @@ class DeploymentMultinodeSerializer(object):
         serialized_nodes = []
         for node in nodes:
             for role in objects.Node.all_roles(node):
-                serialized_nodes.append(self.serialize_node(node, role))
+                serialized_nodes.append(
+                    self.serialize_node(common_attrs, node, role)
+                )
         return serialized_nodes
 
-    def serialize_node(self, node, role):
+    def serialize_node(self, common_attrs, node, role):
         """Serialize node, then it will be merged with common attributes."""
         node_attrs = {
             # Yes, uid is really should be a string
@@ -281,7 +294,7 @@ class DeploymentMultinodeSerializer(object):
             image_cache_max_size = '0'
         else:
             image_cache_max_size = volume_manager.calc_glance_cache_size(
-                node_extension_call('get_node_volumes', node))
+                extensions.node_extension_call('get_node_volumes', node))
         return {'glance': {'image_cache_max_size': image_cache_max_size}}
 
     def generate_test_vm_image_data(self, node):
@@ -462,9 +475,9 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
     nova_network_serializer = NovaNetworkDeploymentSerializer61
     neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
-    def serialize_node(self, node, role):
-        serialized_node = super(
-            DeploymentMultinodeSerializer61, self).serialize_node(node, role)
+    def serialize_node(self, common_attrs, node, role):
+        base = super(DeploymentMultinodeSerializer61, self)
+        serialized_node = base.serialize_node(common_attrs, node, role)
         serialized_node['user_node_name'] = node.name
         serialized_node.update(self.generate_vmware_data(node))
 
@@ -485,9 +498,9 @@ class DeploymentHASerializer61(DeploymentHASerializer,
     nova_network_serializer = NovaNetworkDeploymentSerializer61
     neutron_network_serializer = NeutronNetworkDeploymentSerializer61
 
-    def serialize_node(self, node, role):
-        serialized_node = super(
-            DeploymentHASerializer61, self).serialize_node(node, role)
+    def serialize_node(self, common_attrs, node, role):
+        base = super(DeploymentHASerializer61, self)
+        serialized_node = base.serialize_node(common_attrs, node, role)
         serialized_node['user_node_name'] = node.name
         serialized_node.update(self.generate_vmware_data(node))
 
@@ -557,9 +570,9 @@ class DeploymentHASerializer70(DeploymentHASerializer61):
 
 class DeploymentHASerializer80(DeploymentHASerializer70):
 
-    def serialize_node(self, node, role):
-        serialized_node = super(
-            DeploymentHASerializer80, self).serialize_node(node, role)
+    def serialize_node(self, common_attrs, node, role):
+        base = super(DeploymentHASerializer80, self)
+        serialized_node = base.serialize_node(common_attrs, node, role)
         serialized_node.update(self.generate_node_volumes_data(node))
 
         return serialized_node
@@ -578,7 +591,8 @@ class DeploymentHASerializer80(DeploymentHASerializer70):
         volume groups for each node in cluster.
         Will be passed to Astute.
         """
-        return {'node_volumes': node_extension_call('get_node_volumes', node)}
+        volumes = extensions.node_extension_call('get_node_volumes', node)
+        return {'node_volumes': volumes}
 
 
 class DeploymentHASerializer90(DeploymentHASerializer80):
@@ -607,9 +621,9 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         else:
             return NeutronNetworkDeploymentSerializer90
 
-    def serialize_node(self, node, role):
-        serialized_node = super(
-            DeploymentHASerializer90, self).serialize_node(node, role)
+    def serialize_node(self, common_attrs, node, role):
+        base = super(DeploymentHASerializer90, self)
+        serialized_node = base.serialize_node(common_attrs, node, role)
         self.serialize_node_attributes(node, serialized_node)
         return serialized_node
 
@@ -743,8 +757,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         )
         return attrs
 
-    def serialize_customized(self, cluster, nodes):
-        common_attrs = self.get_common_attrs(cluster)
+    def serialize_customized(self, common_attrs, nodes):
         for node in nodes:
             data = {}
             roles = []
@@ -754,7 +767,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
                     # of old serialized info, the old info
                     # have serialized data per role
                     roles.append(role_data.pop('role'))
-                data = utils.dict_merge(data, role_data)
+                utils.dict_update(data, role_data)
             if roles:
                 data['roles'] = roles
             self.inject_provision_info(common_attrs, node, data)
@@ -779,8 +792,8 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         # serialize all roles to one config
         # Since there is no role depended things except
         # OpenStack configs, we can do this
-        serialized_node = super(
-            DeploymentLCMSerializer, self).serialize_node(node, roles[0])
+        base = super(DeploymentLCMSerializer, self)
+        serialized_node = base.serialize_node(common_attrs, node, roles[0])
         del serialized_node['role']
         serialized_node['roles'] = roles
         if node.pending_deletion:
@@ -901,40 +914,13 @@ def get_serializer_for_cluster(cluster):
     return serializers_map[latest_version][env_mode]
 
 
-def _execute_pipeline(data, cluster, nodes, ignore_customized):
-    "Executes pipelines depending on ignore_customized boolean."
-    if ignore_customized:
-        return fire_callback_on_deployment_data_serialization(
-            data, cluster, nodes)
-
-    nodes_without_customized = {n.uid: n for n in nodes
-                                if not n.replaced_deployment_info}
-
-    def keyfunc(node):
-        return node['uid'] in nodes_without_customized
-
-    # not customized nodes
-    nodes_data_for_pipeline = list(six.moves.filter(keyfunc, data))
-
-    # NOTE(sbrzeczkowski): pipelines must be executed for nodes
-    # which don't have replaced_deployment_info specified
-    updated_data = fire_callback_on_deployment_data_serialization(
-        nodes_data_for_pipeline, cluster,
-        list(six.itervalues(nodes_without_customized)))
-
-    # customized nodes
-    updated_data.extend(six.moves.filterfalse(keyfunc, data))
-    return updated_data
-
-
 def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
-    objects.Cluster.set_primary_roles(cluster, nodes)
     # TODO(apply only for specified subset of nodes)
     objects.Cluster.prepare_for_deployment(cluster, cluster.nodes)
-    data = serializer.serialize(
+    objects.Cluster.set_primary_roles(cluster, nodes)
+    return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized
     )
-    return _execute_pipeline(data, cluster, nodes, ignore_customized)
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):

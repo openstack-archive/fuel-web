@@ -179,6 +179,7 @@ class TestDeploymentAttributesSerialization80(
             roles=['compute'],
             meta={"disks": disks},
         )
+
         serialized_for_astute = deployment_serializers.serialize(
             AstuteGraph(self.cluster_db),
             self.cluster_db,

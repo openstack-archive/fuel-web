@@ -696,7 +696,7 @@
           type: "vg"
           min_size:
             generator: "calc_gb_to_mb"
-            generator_args: [5]
+            generator_args: [1]
           label: "Home"
           volumes:
             - mount: "/home"

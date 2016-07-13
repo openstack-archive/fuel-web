@@ -26,8 +26,12 @@ from nailgun.extensions.manager import fire_callback_on_node_update
 from nailgun.extensions.manager import fire_callback_on_node_reset
 from nailgun.extensions.manager import fire_callback_on_cluster_delete
 from nailgun.extensions.manager import \
-    fire_callback_on_deployment_data_serialization
+    fire_callback_on_cluster_serialization_for_deployment
 from nailgun.extensions.manager import \
-    fire_callback_on_provisioning_data_serialization
+    fire_callback_on_node_serialization_for_deployment
+from nailgun.extensions.manager import \
+    fire_callback_on_cluster_serialization_for_provisioning
+from nailgun.extensions.manager import \
+    fire_callback_on_node_serialization_for_provisioning
 from nailgun.extensions.manager import set_extensions_for_object
 from nailgun.extensions.manager import setup_yaql_context

@@ -160,11 +160,13 @@ def calc_glance_cache_size(volumes):
     Based on formula:
     10%*(/var/lib/glance) if > 5GB else 5GB
     """
-    cache_size_form = lambda size: int(0.1 * mb_to_byte(size))
-    cache_min_size = gb_to_byte(5)
     glance_mount_size = find_size_by_name(volumes, 'glance', 'image')
-    cache_size = cache_size_form(glance_mount_size)
-    return str(cache_size if cache_size > cache_min_size else cache_min_size)
+    if glance_mount_size == 0:
+        return '0'
+
+    cache_size = int(0.1 * mb_to_byte(glance_mount_size))
+    cache_min_size = gb_to_byte(5)
+    return str(max(cache_size, cache_min_size))
 
 
 def get_logical_volumes_by_name(volumes, name, id_type):

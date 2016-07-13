@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import datetime
 
 import alembic
@@ -71,6 +72,122 @@ NEW_TAGS_LIST = [
     'database',
     'keystone',
     'neutron'
+]
+
+
+DEFAULT_NIC_ATTRIBUTES = {
+    'offloading': {
+        'disable': {'type': 'checkbox', 'value': False,
+                    'weight': 10, 'label': 'Disable offloading'},
+        'modes': {'value': {}, 'type': 'offloading_modes',
+                  'description': 'Offloading modes', 'weight': 20,
+                  'label': 'Offloading modes'},
+        'metadata': {'weight': 10, 'label': 'Offloading'}
+    },
+    'mtu': {
+        'value': {'type': 'number', 'value': None, 'weight': 10,
+                  'label': 'MTU'},
+        'metadata': {'weight': 20, 'label': 'MTU'}
+    },
+    'sriov': {
+        'numvfs': {'min': 0, 'type': 'number', 'value': None,
+                   'weight': 20, 'label': 'Virtual functions'},
+        'enabled': {'type': 'checkbox', 'value': False,
+                    'weight': 10, 'label': 'SR-IOV enabled'},
+        'physnet': {'type': 'text', 'value': '', 'weight': 30,
+                    'label': 'Physical network'},
+        'metadata': {'weight': 30, 'label': 'SR-IOV'}
+    },
+    'dpdk': {
+        'enabled': {'type': 'checkbox', 'value': False,
+                    'weight': 10, 'label': 'DPDK enabled'},
+        'metadata': {'weight': 40, 'label': 'DPDK'}
+    }
+}
+
+DEFAULT_BOND_ATTRIBUTES = {
+    'lacp_rate': {
+        'value': {'type': 'select', 'weight': 10, 'value': '',
+                  'label': 'Lacp rate'},
+        'metadata': {'weight': 60, 'label': 'Lacp rate'}
+    },
+    'xmit_hash_policy': {
+        'value': {'type': 'select', 'weight': 10, 'value': '',
+                  'label': 'Xmit hash policy'},
+        'metadata': {'weight': 70, 'label': 'Xmit hash policy'}
+    },
+    'offloading': {
+        'disable': {'type': 'checkbox', 'weight': 10, 'value': False,
+                    'label': 'Disable offloading'},
+        'modes': {'weight': 20, 'type': 'offloading_modes',
+                  'description': 'Offloading modes', 'value': {},
+                  'label': 'Offloading modes'},
+        'metadata': {'weight': 20, 'label': 'Offloading'}
+    },
+    'mtu': {
+        'value': {'type': 'number', 'weight': 10, 'value': None,
+                  'label': 'MTU'},
+        'metadata': {'weight': 30, 'label': 'MTU'}
+    },
+    'lacp': {
+        'value': {'type': 'select', 'weight': 10, 'value': '',
+                  'label': 'Lacp'},
+        'metadata': {'weight': 50, 'label': 'Lacp'}
+    },
+    'mode': {
+        'value': {'type': 'select', 'weight': 10, 'value': '',
+                  'label': 'Mode'},
+        'metadata': {'weight': 10, 'label': 'Mode'}
+    },
+    'type__': {'type': 'hidden', 'value': None},
+    'dpdk': {
+        'enabled': {'type': 'checkbox', 'weight': 10, 'value': None,
+                    'label': 'DPDK enabled'},
+        'metadata': {'weight': 40, 'label': 'DPDK'}
+    }
+}
+
+NODE_NIC_PROPERTIES = {
+    'mtu': 'test_mtu',
+    'disable_offloading': 'test_disable_offloading',
+    'sriov': {
+        'available': 'test_sriov_available',
+        'sriov_numvfs': 'test_sriov_sriov_numvfs',
+        'enabled': 'test_sriov_enabled',
+        'pci_id': 'test_sriov_pci_id',
+        'sriov_totalvfs': 'test_sriov_totalvfs',
+        'physnet': 'test_sriov_physnet'
+    },
+    'dpdk': {
+        'available': 'test_dpdk_available',
+        'enabled': 'test_dpdk_enabled',
+    },
+    'pci_id': 'test_pci_id',
+    'numa_node': 12345
+}
+
+NODE_OFFLOADING_MODES = [
+    {
+        'state': True,
+        'name': 'tx-checksumming',
+        'sub': [{
+            'state': True,
+            'name': 'tx-checksum-sctp',
+            'sub': []
+        }, {
+            'state': False,
+            'name': 'tx-checksum-ipv6',
+            'sub': []
+        }]
+    }, {
+        'state': None,
+        'name': 'rx-checksumming',
+        'sub': []
+    }, {
+        'state': None,
+        'name': 'rx-vlan-offload',
+        'sub': []
+    }
 ]
 
 
@@ -163,11 +280,9 @@ def prepare():
 
     cluster_id = result.inserted_primary_key[0]
 
-    node_id = 1
     db.execute(
         meta.tables['nodes'].insert(),
         [{
-            'id': node_id,
             'uuid': 'fcd49872-3917-4a18-98f9-3f5acfe3fdec',
             'cluster_id': cluster_id,
             'group_id': None,
@@ -177,6 +292,144 @@ def prepare():
             'meta': '{}',
             'mac': 'bb:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
+        }]
+    )
+
+    node_interface_properties = copy.deepcopy(NODE_NIC_PROPERTIES)
+    node_interface_properties['dpdk'].pop('available')
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [{
+            'uuid': '26b508d0-0d76-4159-bce9-f67ec2765481',
+            'cluster_id': cluster_id,
+            'group_id': None,
+            'status': 'ready',
+            'roles': ['controller', 'ceph-osd'],
+            'meta': jsonutils.dumps({
+                'interfaces': [
+                    {
+                        'name': 'test_nic_empty_attributes',
+                        'mac': '00:00:00:00:00:01',
+                        'interface_properties': {}
+                    },
+                    {
+                        'name': 'test_nic_attributes',
+                        'mac': '00:00:00:00:00:02',
+                        'interface_properties': node_interface_properties,
+                        'offloading_modes': NODE_OFFLOADING_MODES
+                    },
+                    {
+                        'name': 'test_nic_attributes_2',
+                        'mac': '00:00:00:00:00:03',
+                        'interface_properties': node_interface_properties,
+                        'offloading_modes': [
+                            {
+                                'state': True,
+                                'name': 'tx-checksumming',
+                                'sub': [{
+                                    'state': False,
+                                    'name': 'tx-checksum-sctp',
+                                    'sub': []
+                                }]
+                            }, {
+                                'state': True,
+                                'name': 'rx-checksumming',
+                                'sub': []
+                            }, {
+                                'state': False,
+                                'name': 'rx-vlan-offload',
+                                'sub': []
+                            }
+                        ]
+                    }
+                ]
+            }),
+            'mac': 'bb:bb:aa:aa:aa:aa',
+            'timestamp': datetime.datetime.utcnow(),
+            'hostname': 'test_node'
+        }]
+    )
+    node_id = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['node_bond_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'name': 'test_bond_interface',
+            'mode': 'active-backup',
+            'bond_properties': jsonutils.dumps(
+                {'test_property': 'test_value'})
+        }]
+    )
+
+    bond = db.execute(
+        meta.tables['node_bond_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'name': 'test_bond_interface_attributes',
+            'mode': '802.3ad',
+            'bond_properties': jsonutils.dumps(
+                {'lacp_rate': 'slow', 'type__': 'linux',
+                 'mode': '802.3ad', 'xmit_hash_policy': 'layer2'}),
+            'interface_properties': jsonutils.dumps(
+                {'mtu': 2000, 'disable_offloading': False,
+                 'dpdk': {'available': True, 'enabled': True}})
+        }]
+    )
+    bond_id = bond.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'name': 'test_nic_empty_attributes',
+            'mac': '00:00:00:00:00:01',
+            'interface_properties': "{}",
+            'offloading_modes': "[]"
+        }]
+    )
+
+    changed_offloading_modes = copy.deepcopy(NODE_OFFLOADING_MODES)
+    changed_offloading_modes[0]['state'] = False
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'parent_id': bond_id,
+            'name': 'test_nic_attributes',
+            'mac': '00:00:00:00:00:02',
+            'interface_properties': jsonutils.dumps(NODE_NIC_PROPERTIES),
+            'offloading_modes': jsonutils.dumps(changed_offloading_modes)
+        }]
+    )
+
+    db.execute(
+        meta.tables['node_nic_interfaces'].insert(),
+        [{
+            'node_id': node_id,
+            'parent_id': bond_id,
+            'name': 'test_nic_attributes_2',
+            'mac': '00:00:00:00:00:03',
+            'interface_properties': jsonutils.dumps(NODE_NIC_PROPERTIES),
+            'offloading_modes': jsonutils.dumps([
+                {
+                    'state': True,
+                    'name': 'tx-checksumming',
+                    'sub': [{
+                        'state': True,
+                        'name': 'tx-checksum-sctp',
+                        'sub': []
+                    }]
+                }, {
+                    'state': True,
+                    'name': 'rx-checksumming',
+                    'sub': []
+                }, {
+                    'state': False,
+                    'name': 'rx-vlan-offload',
+                    'sub': []
+                }
+            ])
         }]
     )
 
@@ -276,3 +529,136 @@ class TestTags(base.BaseAlembicMigrationTest):
             tags_meta = jsonutils.loads(tags_meta)
             wrong_tags = set(NEW_TAGS_LIST) - set(tags_meta)
             self.assertNotEqual(len(wrong_tags), 0)
+
+
+class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
+
+    def test_upgrade_release_with_nic_attributes(self):
+        releases_table = self.meta.tables['releases']
+        result = db.execute(
+            sa.select([releases_table.c.nic_attributes,
+                       releases_table.c.bond_attributes])
+        ).fetchone()
+        self.assertEqual(DEFAULT_NIC_ATTRIBUTES,
+                         jsonutils.loads(result['nic_attributes']))
+        self.assertEqual(DEFAULT_BOND_ATTRIBUTES,
+                         jsonutils.loads(result['bond_attributes']))
+
+    def test_upgrade_node_nic_attributes_with_empty_properties(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([interfaces_table.c.meta,
+                       interfaces_table.c.attributes]).
+            where(interfaces_table.c.name == 'test_nic_empty_attributes')
+        ).fetchone()
+
+        self.assertEqual(jsonutils.loads(result['meta']),
+                         {'offloading_modes': [],
+                          'sriov': {'available': False,
+                                    'pci_id': '', 'totalvfs': 0},
+                          'dpdk': {'available': False},
+                          'pci_id': '',
+                          'numa_node': None})
+
+        expected_nic_attributes = copy.deepcopy(DEFAULT_NIC_ATTRIBUTES)
+        expected_nic_attributes['sriov']['enabled']['value'] = False
+        expected_nic_attributes['sriov']['physnet']['value'] = 'physnet2'
+        expected_nic_attributes['dpdk']['enabled']['value'] = False
+        self.assertEqual(jsonutils.loads(result['attributes']),
+                         expected_nic_attributes)
+
+    def test_upgrade_node_nic_attributes(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([interfaces_table.c.meta,
+                       interfaces_table.c.attributes]).
+            where(interfaces_table.c.name == 'test_nic_attributes')
+        ).fetchone()
+
+        self.assertEqual(
+            jsonutils.loads(result['meta']),
+            {
+                'offloading_modes': NODE_OFFLOADING_MODES,
+                'sriov': {'available': 'test_sriov_available',
+                          'pci_id': 'test_sriov_pci_id',
+                          'totalvfs': 'test_sriov_totalvfs'},
+                'dpdk': {'available': 'test_dpdk_available'},
+                'pci_id': 'test_pci_id',
+                'numa_node': 12345
+            }
+        )
+        expected_nic_attributes = copy.deepcopy(DEFAULT_NIC_ATTRIBUTES)
+        expected_nic_attributes['mtu']['value']['value'] = \
+            NODE_NIC_PROPERTIES['mtu']
+        expected_nic_attributes['sriov']['enabled']['value'] = \
+            NODE_NIC_PROPERTIES['sriov']['enabled']
+        expected_nic_attributes['sriov']['numvfs']['value'] = \
+            NODE_NIC_PROPERTIES['sriov']['sriov_numvfs']
+        expected_nic_attributes['sriov']['physnet']['value'] = \
+            NODE_NIC_PROPERTIES['sriov']['physnet']
+        expected_nic_attributes['dpdk']['enabled']['value'] = \
+            NODE_NIC_PROPERTIES['dpdk']['enabled']
+        expected_nic_attributes['offloading']['disable']['value'] = \
+            NODE_NIC_PROPERTIES['disable_offloading']
+        expected_nic_attributes['offloading']['modes']['value'] = {
+            'tx-checksumming': False, 'tx-checksum-sctp': True,
+            'tx-checksum-ipv6': False, 'rx-checksumming': None,
+            'rx-vlan-offload': None
+        }
+        self.assertEqual(jsonutils.loads(result['attributes']),
+                         expected_nic_attributes)
+        # TODO(apopovych): uncomment after removing redundant data
+        # self.assertNotIn('offloading_modes', interfaces_table.c)
+        # self.assertNotIn('interface_properties', interfaces_table.c)
+
+    def test_upgrade_node_nic_attributes_only_for_cluster_node(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        nodes_table = self.meta.tables['nodes']
+
+        result = db.execute(
+            sa.select([nodes_table.c.cluster_id, interfaces_table.c.attributes,
+                       interfaces_table.c.meta])
+            .select_from(interfaces_table.join(
+                nodes_table, interfaces_table.c.node_id == nodes_table.c.id))
+        )
+        for cluster_id, attributes, meta in result:
+            self.assertTrue(bool(jsonutils.loads(meta)))
+            self.assertEqual(bool(jsonutils.loads(attributes)),
+                             bool(cluster_id))
+
+    def test_upgrade_node_bond_attributes_all_defaults(self):
+        bonds_table = self.meta.tables['node_bond_interfaces']
+        result = db.execute(
+            sa.select([bonds_table.c.attributes]).
+            where(bonds_table.c.name == 'test_bond_interface')
+        ).fetchone()
+
+        expected_attributes = copy.deepcopy(DEFAULT_BOND_ATTRIBUTES)
+        expected_attributes['mode']['value']['value'] = 'active-backup'
+        self.assertEqual(jsonutils.loads(result['attributes']),
+                         expected_attributes)
+
+    def test_upgrade_node_bond_attributes(self):
+        bonds_table = self.meta.tables['node_bond_interfaces']
+        result = db.execute(
+            sa.select([bonds_table.c.attributes]).
+            where(bonds_table.c.name == 'test_bond_interface_attributes')
+        ).fetchone()
+
+        expected_attributes = copy.deepcopy(DEFAULT_BOND_ATTRIBUTES)
+        expected_attributes['mtu']['value']['value'] = 2000
+        expected_attributes['lacp_rate']['value']['value'] = 'slow'
+        expected_attributes['xmit_hash_policy']['value']['value'] = 'layer2'
+        expected_attributes['offloading']['disable']['value'] = False
+        expected_attributes['dpdk']['enabled']['value'] = True
+        expected_attributes['type__']['value'] = 'linux'
+        expected_attributes['mode']['value']['value'] = '802.3ad'
+        expected_attributes['offloading']['modes']['value'] = {
+            'tx-checksumming': False, 'tx-checksum-sctp': True,
+            'rx-checksumming': None, 'rx-vlan-offload': False}
+        self.assertEqual(jsonutils.loads(result['attributes']),
+                         expected_attributes)
+        # TODO(apopovych): uncomment after removing redundant data
+        # self.assertNotIn('offloading_modes', bonds_table.c)
+        # self.assertNotIn('interface_properties', bonds_table.c)
+        # self.assertNotIn('bond_properties', bonds_table.c)

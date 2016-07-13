@@ -27,8 +27,7 @@ _EXTENSION_MANAGER = None
 
 
 def on_load_failure(manager, endpoint, exc):
-    logger.exception("Failed to load %s extension", endpoint.name)
-    raise
+    logger.exception("Failed to load %s extension: %s", endpoint.name, exc)
 
 
 def get_all_extensions():
@@ -172,9 +171,9 @@ def fire_callback_on_cluster_delete(cluster):
         extension.on_cluster_delete(cluster)
 
 
-def fire_callback_on_before_deployment_check(cluster):
+def fire_callback_on_before_deployment_check(cluster, nodes=None):
     for extension in get_all_extensions():
-        extension.on_before_deployment_check(cluster)
+        extension.on_before_deployment_check(cluster, nodes or cluster.nodes)
 
 
 def fire_callback_on_before_deployment_serialization(cluster, nodes,
@@ -199,17 +198,21 @@ def _collect_data_pipelines_for_cluster(cluster):
                                if e.name in extensions)
 
 
-def fire_callback_on_deployment_data_serialization(data, cluster, nodes,
-                                                   **kwargs):
+def fire_callback_on_node_serialization_for_deployment(node, node_data):
+    for pipeline in _collect_data_pipelines_for_cluster(node.cluster):
+        pipeline.process_deployment_for_node(node, node_data)
+
+
+def fire_callback_on_node_serialization_for_provisioning(node, node_data):
+    for pipeline in _collect_data_pipelines_for_cluster(node.cluster):
+        pipeline.process_provisioning_for_node(node, node_data)
+
+
+def fire_callback_on_cluster_serialization_for_deployment(cluster, data):
     for pipeline in _collect_data_pipelines_for_cluster(cluster):
-        data = pipeline.process_deployment(data, cluster, nodes, **kwargs)
-
-    return data
+        pipeline.process_deployment_for_cluster(cluster, data)
 
 
-def fire_callback_on_provisioning_data_serialization(data, cluster, nodes,
-                                                     **kwargs):
+def fire_callback_on_cluster_serialization_for_provisioning(cluster, data):
     for pipeline in _collect_data_pipelines_for_cluster(cluster):
-        data = pipeline.process_provisioning(data, cluster, nodes, **kwargs)
-
-    return data
+        pipeline.process_provisioning_for_cluster(cluster, data)

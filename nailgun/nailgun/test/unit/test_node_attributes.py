@@ -166,7 +166,7 @@ class TestNodeAttributes(base.BaseUnitTest):
             objects.NodeAttributes.distribute_hugepages(node), expected)
 
     def test_set_default_hugepages(self):
-        fake_hugepages = ['0', '1', '2', '3']
+        hugepages = ['2048', '1048576']
         node = mock.Mock(
             id=1,
             attributes={
@@ -177,12 +177,8 @@ class TestNodeAttributes(base.BaseUnitTest):
                     }
                 }
             },
-            meta={
-                'numa_topology': {
-                    'supported_hugepages': fake_hugepages,
-                    'numa_nodes': []}}
         )
         objects.NodeAttributes.set_default_hugepages(node)
-        hugepages = node.attributes['hugepages']['nova']['value']
-        for size in fake_hugepages:
-            self.assertEqual(0, hugepages[size])
+        nova_hugepages = node.attributes['hugepages']['nova']['value']
+        for size in hugepages:
+            self.assertEqual(0, nova_hugepages[size])

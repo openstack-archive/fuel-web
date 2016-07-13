@@ -464,6 +464,10 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
 
     @classmethod
     def _validate_cpu_pinning(cls, node, attrs):
+        if not objects.NodeAttributes.is_cpu_pinning_enabled(
+                node, attributes=attrs):
+            return
+
         pining_info = objects.NodeAttributes.node_cpu_pinning_info(node, attrs)
 
         # check that we have at least one CPU for operating system
@@ -477,6 +481,28 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
 
     @classmethod
     def _validate_hugepages(cls, node, attrs):
+        if not objects.NodeAttributes.is_hugepages_enabled(
+                node, attributes=attrs):
+            return
+
+        hugepage_sizes = set(
+            objects.NodeAttributes.total_hugepages(node, attributes=attrs)
+        )
+        supported_hugepages = set(
+            str(page)
+            for page in node.meta['numa_topology']['supported_hugepages']
+        )
+
+        if not hugepage_sizes.issubset(supported_hugepages):
+            raise errors.InvalidData(
+                "Node {0} doesn't support {1} Huge Page(s), supported Huge"
+                " Page(s): {2}.".format(
+                    node.id,
+                    ", ".join(hugepage_sizes - supported_hugepages),
+                    ", ".join(supported_hugepages)
+                )
+            )
+
         try:
             objects.NodeAttributes.distribute_hugepages(node, attrs)
         except ValueError as exc:

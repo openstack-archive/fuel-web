@@ -22,8 +22,7 @@ from distutils.version import StrictVersion
 import six
 
 from nailgun import consts
-from nailgun.extensions import fire_callback_on_before_deployment_serialization
-from nailgun.extensions import fire_callback_on_deployment_data_serialization
+from nailgun import extensions
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.plugins import adapters
@@ -103,12 +102,21 @@ class DeploymentMultinodeSerializer(object):
         return serialized_nodes
 
     def serialize_generated(self, cluster, nodes):
-        nodes = self.serialize_nodes(nodes)
-        common_attrs = self.get_common_attrs(cluster)
+        serialized_nodes = self.serialize_nodes(nodes)
+        nodes_map = {n.uid: n for n in nodes}
 
-        self.set_deployment_priorities(nodes)
-        for node in nodes:
-            yield utils.dict_merge(node, common_attrs)
+        common_attrs = self.get_common_attrs(cluster)
+        extensions.fire_callback_on_cluster_serialization_for_deployment(
+            cluster, common_attrs
+        )
+
+        self.set_deployment_priorities(serialized_nodes)
+        for node_data in serialized_nodes:
+            if node_data['uid'] in nodes_map:
+                extensions.fire_callback_on_node_serialization_for_deployment(
+                    nodes_map[node_data['uid']], node_data
+                )
+            yield utils.dict_merge(common_attrs, node_data)
 
     def serialize_customized(self, cluster, nodes):
         for node in nodes:
@@ -635,18 +643,6 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
                 hugepages)
 
 
-class DeploymentHASerializer10(DeploymentHASerializer90):
-
-    def get_common_attrs(self, cluster):
-        attrs = super(DeploymentHASerializer10, self).get_common_attrs(cluster)
-
-        # we don't need nodes in serialized data for 10.0 environments
-        # https://bugs.launchpad.net/fuel/+bug/1531128
-        attrs.pop('nodes')
-
-        return attrs
-
-
 class DeploymentLCMSerializer(DeploymentHASerializer90):
     _configs = None
     _priorities = {
@@ -809,9 +805,6 @@ def get_serializer_for_cluster(cluster):
         '9.0': {
             'ha': DeploymentHASerializer90,
         },
-        '10.0': {
-            'ha': DeploymentHASerializer10,
-        },
     }
 
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
@@ -825,42 +818,15 @@ def get_serializer_for_cluster(cluster):
     return serializers_map[latest_version][env_mode]
 
 
-def _execute_pipeline(data, cluster, nodes, ignore_customized):
-    "Executes pipelines depending on ignore_customized boolean."
-    if ignore_customized:
-        return fire_callback_on_deployment_data_serialization(
-            data, cluster, nodes)
-
-    nodes_without_customized = {n.uid: n for n in nodes
-                                if not n.replaced_deployment_info}
-
-    def keyfunc(node):
-        return node['uid'] in nodes_without_customized
-
-    # not customized nodes
-    nodes_data_for_pipeline = list(six.moves.filter(keyfunc, data))
-
-    # NOTE(sbrzeczkowski): pipelines must be executed for nodes
-    # which don't have replaced_deployment_info specified
-    updated_data = fire_callback_on_deployment_data_serialization(
-        nodes_data_for_pipeline, cluster,
-        list(six.itervalues(nodes_without_customized)))
-
-    # customized nodes
-    updated_data.extend(six.moves.filterfalse(keyfunc, data))
-    return updated_data
-
-
 def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
-    fire_callback_on_before_deployment_serialization(
+    extensions.fire_callback_on_before_deployment_serialization(
         cluster, cluster.nodes, ignore_customized
     )
 
     objects.Cluster.set_primary_roles(cluster, nodes)
-    data = serializer.serialize(
+    return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized
     )
-    return _execute_pipeline(data, cluster, nodes, ignore_customized)
 
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):

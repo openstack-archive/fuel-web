@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import datetime
 
 import alembic
@@ -182,7 +183,11 @@ def prepare():
             'cluster_id': None,
             'group_id': None,
             'status': 'discover',
-            'meta': '{}',
+            'meta': jsonutils.dumps({
+                'interfaces': [{
+                    'mac': '00:00:00:00:00:01'
+                }]
+            }),
             'mac': 'aa:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
         }]
@@ -328,7 +333,6 @@ def prepare():
     db.execute(
         meta.tables['node_nic_interfaces'].insert(),
         [{
-            'id': 1,
             'node_id': node_id,
             'name': 'test_interface',
             'mac': '00:00:00:00:00:01',
@@ -375,6 +379,7 @@ def prepare():
         ]
     )
     TestRequiredComponentTypesField.prepare(meta)
+    TestNodeNICAttributesMigration.prepare(meta, cluster_ids[0])
     db.commit()
 
 
@@ -395,22 +400,251 @@ class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):
         self.assertEqual(links_count, 2)
 
 
-class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
+class TestNodeNICAttributesMigration(base.BaseAlembicMigrationTest):
+    default_nic_attributes = {
+        'offloading': {
+            'disable': {'type': 'checkbox', 'value': False,
+                        'weight': 10, 'label': 'Disable offloading'},
+            'modes': {'value': {}, 'type': 'offloading_modes',
+                      'description': 'Offloading modes', 'weight': 20,
+                      'label': 'Offloading modes'},
+            'metadata': {'weight': 10, 'label': 'Offloading'}
+        },
+        'mtu': {
+            'value': {'type': 'text', 'value': None, 'weight': 10,
+                      'label': 'MTU'},
+            'metadata': {'weight': 20, 'label': 'MTU'}
+        },
+        'sriov': {
+            'numvfs': {'min': 0, 'type': 'number', 'value': None,
+                       'weight': 20, 'label': 'Virtual functions'},
+            'enabled': {'type': 'checkbox', 'value': None,
+                        'weight': 10, 'label': 'SRIOV enabled'},
+            'physnet': {'type': 'text', 'value': '', 'weight': 30,
+                        'label': 'Physical network'},
+            'metadata': {'weight': 30, 'label': 'SRIOV'}
+        },
+        'dpdk': {
+            'enabled': {'type': 'checkbox', 'value': None,
+                        'weight': 10, 'label': 'DPDK enabled'},
+            'metadata': {'weight': 40, 'label': 'DPDK'}
+        }
+    }
+    default_bond_attributes = {
+        'offloading': {
+            'disable': {'type': 'checkbox', 'value': False,
+                        'weight': 10, 'label': 'Disable offloading'},
+            'modes': {'value': {}, 'type': 'offloading_modes',
+                      'description': 'Offloading modes', 'weight': 20,
+                      'label': 'Offloading modes'},
+            'metadata': {'weight': 20, 'label': 'Offloading'}
+        },
+        'mode': {
+            'value': {'values': [{'data': 'balance-rr',
+                                  'label': 'balance-rr'}],
+                      'type': 'select', 'value': 'balance-rr', 'weight': 10,
+                      'label': 'Mode'},
+            'metadata': {'weight': 10, 'label': 'Mode'}
+        },
+        'mtu': {
+            'value': {'type': 'text', 'value': '', 'weight': 10,
+                      'label': 'MTU'},
+            'metadata': {'weight': 30, 'label': 'MTU'}
+        }
+    }
 
+    node_nic_properties = {
+        'mtu': 'test_mtu',
+        'disable_offloading': 'test_disable_offloading',
+        'sriov': {
+            'available': 'test_sriov_available',
+            'sriov_numvfs': 'test_sriov_sriov_numvfs',
+            'enabled': 'test_sriov_enabled',
+            'pci_id': 'test_sriov_pci_id',
+            'sriov_totalvfs': 'test_sriov_totalvfs',
+            'physnet': 'test_sriov_physnet'
+        },
+        'dpdk': {
+            'available': 'test_dpdk_available',
+            'enabled': 'test_dpdk_enabled',
+        },
+        'pci_id': 'test_pci_id',
+        'numa_node': 12345
+    }
+
+    node_offloading_modes = [
+        {
+            'state': True,
+            'name': 'tx-checksumming',
+            'sub': [{
+                'state': True,
+                'name': 'tx-checksum-sctp',
+                'sub': []
+            }, {
+                'state': False,
+                'name': 'tx-checksum-ipv6',
+                'sub': []
+            }]
+        }, {
+            'state': None,
+            'name': 'rx-checksumming',
+            'sub': []
+        }
+    ]
+
+    @classmethod
+    def prepare(cls, meta, cluster_id):
+        result = db.execute(
+            meta.tables['nodes'].insert(),
+            [{
+                'uuid': '26b508d0-0d76-4159-bce9-f67ec2765481',
+                'cluster_id': cluster_id,
+                'group_id': None,
+                'status': 'discover',
+                'meta': jsonutils.dumps({
+                    'interfaces': [
+                        {
+                            'name': 'test_nic_empty_attributes',
+                            'mac': '00:00:00:00:00:01',
+                            'interface_properties': {}
+                        },
+                        {
+                            'name': 'test_nic_attributes',
+                            'mac': '00:00:00:00:00:02',
+                            'interface_properties': cls.node_nic_properties,
+                            'offloading_modes': cls.node_offloading_modes
+                        }
+                    ]
+                }),
+                'mac': 'aa:aa:aa:aa:aa:ab',
+                'timestamp': datetime.datetime.utcnow(),
+            }]
+        )
+        node_id = result.inserted_primary_key[0]
+
+        db.execute(
+            meta.tables['node_nic_interfaces'].insert(),
+            [{
+                'node_id': node_id,
+                'name': 'test_nic_empty_attributes',
+                'mac': '00:00:00:00:00:01',
+                'interface_properties': "{}",
+                'offloading_modes': "[]"
+            }]
+        )
+
+        db.execute(
+            meta.tables['node_nic_interfaces'].insert(),
+            [{
+                'node_id': node_id,
+                'name': 'test_nic_attributes',
+                'mac': '00:00:00:00:00:02',
+                'interface_properties': jsonutils.dumps(
+                    cls.node_nic_properties),
+                'offloading_modes': jsonutils.dumps(
+                    cls.node_offloading_modes)
+            }]
+        )
+
+    def test_upgrade_release_with_nic_attributes(self):
+        releases_table = self.meta.tables['releases']
+        result = db.execute(
+            sa.select([releases_table.c.nic_attributes,
+                       releases_table.c.bond_attributes])
+        ).fetchone()
+        self.assertEqual(self.default_nic_attributes,
+                         jsonutils.loads(result['nic_attributes']))
+        self.assertEqual(self.default_bond_attributes,
+                         jsonutils.loads(result['bond_attributes']))
+
+    def test_upgrade_node_nic_attributes_with_empty_properties(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([interfaces_table.c.meta,
+                       interfaces_table.c.attributes]).
+            where(interfaces_table.c.name == 'test_nic_empty_attributes')
+        ).fetchone()
+
+        self.assertEqual(jsonutils.loads(result['meta']),
+                         {'offloading_modes': [],
+                          'sriov': {'available': False,
+                                    'pci_id': '', 'totalvfs': 0},
+                          'dpdk': {'available': False},
+                          'pci_id': '',
+                          'numa_node': None})
+
+        expected_nic_attributes = copy.deepcopy(self.default_nic_attributes)
+        expected_nic_attributes['sriov']['enabled']['value'] = False
+        expected_nic_attributes['sriov']['physnet']['value'] = 'physnet2'
+        expected_nic_attributes['dpdk']['enabled']['value'] = False
+        self.assertEqual(jsonutils.loads(result['attributes']),
+                         expected_nic_attributes)
+
+    def test_upgrade_node_nic_attributes(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        result = db.execute(
+            sa.select([interfaces_table.c.meta,
+                       interfaces_table.c.attributes]).
+            where(interfaces_table.c.name == 'test_nic_attributes')
+        ).fetchone()
+
+        self.assertEqual(
+            jsonutils.loads(result['meta']),
+            {
+                'offloading_modes': self.node_offloading_modes,
+                'sriov': {'available': 'test_sriov_available',
+                          'pci_id': 'test_sriov_pci_id',
+                          'totalvfs': 'test_sriov_totalvfs'},
+                'dpdk': {'available': 'test_dpdk_available'},
+                'pci_id': 'test_pci_id',
+                'numa_node': 12345
+            }
+        )
+        expected_nic_attributes = copy.deepcopy(self.default_nic_attributes)
+        expected_nic_attributes['mtu']['value']['value'] = \
+            self.node_nic_properties['mtu']
+        expected_nic_attributes['sriov']['enabled']['value'] = \
+            self.node_nic_properties['sriov']['enabled']
+        expected_nic_attributes['sriov']['numvfs']['value'] = \
+            self.node_nic_properties['sriov']['sriov_numvfs']
+        expected_nic_attributes['sriov']['physnet']['value'] = \
+            self.node_nic_properties['sriov']['physnet']
+        expected_nic_attributes['dpdk']['enabled']['value'] = \
+            self.node_nic_properties['dpdk']['enabled']
+        expected_nic_attributes['offloading']['disable']['value'] = \
+            self.node_nic_properties['disable_offloading']
+        expected_nic_attributes['offloading']['modes']['value'] = {
+            'tx-checksumming': True, 'tx-checksum-sctp': True,
+            'tx-checksum-ipv6': False, 'rx-checksumming': None
+        }
+        self.assertEqual(jsonutils.loads(result['attributes']),
+                         expected_nic_attributes)
+
+    def test_upgrade_node_nic_attributes_only_for_cluster_node(self):
+        interfaces_table = self.meta.tables['node_nic_interfaces']
+        nodes_table = self.meta.tables['nodes']
+
+        result = db.execute(
+            sa.select([nodes_table.c.cluster_id, interfaces_table.c.attributes,
+                       interfaces_table.c.meta])
+            .select_from(interfaces_table.join(
+                nodes_table, interfaces_table.c.node_id == nodes_table.c.id))
+        )
+        for cluster_id, attributes, meta in result:
+            self.assertTrue(bool(jsonutils.loads(meta)))
+            self.assertEqual(bool(jsonutils.loads(attributes)),
+                             bool(cluster_id))
+
+
+class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
     def test_new_attributes_fields_exist(self):
         node_bond_interfaces_table = self.meta.tables['node_bond_interfaces']
-        node_nic_interfaces_table = self.meta.tables['node_nic_interfaces']
         plugins_table = self.meta.tables['plugins']
-        releases_table = self.meta.tables['releases']
         columns = [
             plugins_table.c.nic_attributes_metadata,
             plugins_table.c.bond_attributes_metadata,
             plugins_table.c.node_attributes_metadata,
             node_bond_interfaces_table.c.attributes,
-            node_nic_interfaces_table.c.attributes,
-            node_nic_interfaces_table.c.meta,
-            releases_table.c.nic_attributes,
-            releases_table.c.bond_attributes
         ]
 
         for column in columns:

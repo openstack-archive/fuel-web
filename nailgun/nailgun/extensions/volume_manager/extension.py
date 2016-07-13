@@ -67,106 +67,62 @@ class VolumeObjectMethodsMixin(object):
 
 class NodeVolumesPipeline(VolumeObjectMethodsMixin, BasePipeline):
 
-    @classmethod
-    def process_provisioning(cls, provisioning_data, cluster, nodes, **kwargs):
-        nodes_db = {node.id: node for node in nodes}
-
-        for node in provisioning_data['nodes']:
-            volumes = cls.get_node_volumes(nodes_db[int(node['uid'])])
-            node['ks_meta']['pm_data']['ks_spaces'] = volumes
-
-        return provisioning_data
+    MIN_SUPPORTED_VERSION = StrictVersion("8.0")
 
     @classmethod
-    def process_deployment(cls, deployment_data, cluster, nodes, **kwargs):
-        if (StrictVersion(cluster.release.environment_version) >=
-                StrictVersion('8.0')):
+    def process_provisioning_for_node(cls, node, node_data):
+        ks_meta = node_data.setdefault('ks_meta', {})
+        pm_data = ks_meta.setdefault('pm_data', {})
+        pm_data['ks_spaces'] = cls.get_node_volumes(node)
 
-            nodes_wo_master = six.moves.filter(
-                lambda n: n['uid'] != consts.MASTER_NODE_UID,
-                deployment_data)
-
-            nodes_dict = {int(node['uid']): node for node in nodes_wo_master}
-
-            for node in nodes:
-                volumes = cls.get_node_volumes(node)
-                nodes_dict[node.id]['node_volumes'] = volumes
-
-        return deployment_data
+    @classmethod
+    def process_deployment_for_node(cls, node, node_data):
+        version = StrictVersion(node.cluster.release.environment_version)
+        if version >= cls.MIN_SUPPORTED_VERSION:
+            node_data['node_volumes'] = cls.get_node_volumes(node) or []
 
 
 class PgCountPipeline(VolumeObjectMethodsMixin, BasePipeline):
 
     @classmethod
-    def process_deployment(cls, deployment_data, cluster, nodes, **kwargs):
-        cls._set_pg_count_storage_parameters(deployment_data, nodes)
-        return deployment_data
-
-    @classmethod
-    def _set_pg_count_storage_parameters(cls, data, nodes):
-        """Generate pg_num
-
-        pg_num is generated as the number of OSDs across the cluster
-        multiplied by 100, divided by Ceph replication factor, and
-        rounded up to the nearest power of 2.
-        """
+    def process_deployment_for_cluster(cls, cluster, cluster_data):
+        all_nodes = {n.uid: n for n in cluster.nodes}
         osd_num = 0
-        osd_nodes = [node for node in nodes
-                     if 'ceph-osd' in node.all_roles]
+        for n in cluster_data['nodes']:
+            if 'ceph-osd' in (n.get('roles') or [n.get('role')]):
+                volumes = cls.get_node_volumes(all_nodes[n['uid']])
+                for volume in volumes or []:
+                    for part in volume.get('volumes', []):
+                        if (part.get('name') == 'ceph' and
+                                part.get('size', 0) > 0):
+                            osd_num += 1
 
-        for node in osd_nodes:
-            for disk in cls.get_node_volumes(node):
-                for part in disk.get('volumes', []):
-                    if part.get('name') == 'ceph' and part.get('size', 0) > 0:
-                        osd_num += 1
+        storage_attrs = cluster_data.setdefault('storage', {})
+        pg_counts = get_pool_pg_count(
+            osd_num=osd_num,
+            pool_sz=int(storage_attrs['osd_pool_size']),
+            ceph_version='firefly',
+            volumes_ceph=storage_attrs['volumes_ceph'],
+            objects_ceph=storage_attrs['objects_ceph'],
+            ephemeral_ceph=storage_attrs['ephemeral_ceph'],
+            images_ceph=storage_attrs['images_ceph'],
+            emulate_pre_7_0=False)
 
-        for node in data:
-            storage_attrs = node['storage']
-
-            pg_counts = get_pool_pg_count(
-                osd_num=osd_num,
-                pool_sz=int(storage_attrs['osd_pool_size']),
-                ceph_version='firefly',
-                volumes_ceph=storage_attrs['volumes_ceph'],
-                objects_ceph=storage_attrs['objects_ceph'],
-                ephemeral_ceph=storage_attrs['ephemeral_ceph'],
-                images_ceph=storage_attrs['images_ceph'],
-                emulate_pre_7_0=False)
-
-            # Log {pool_name: pg_count} mapping
-            pg_str = ", ".join(map("{0[0]}={0[1]}".format, pg_counts.items()))
-            logger.debug("Ceph: PG values {%s}", pg_str)
-
-            storage_attrs['pg_num'] = pg_counts['default_pg_num']
-            storage_attrs['per_pool_pg_nums'] = pg_counts
+        # Log {pool_name: pg_count} mapping
+        pg_str = ", ".join(map("{0[0]}={0[1]}".format, pg_counts.items()))
+        logger.debug("Ceph: PG values {%s}", pg_str)
+        storage_attrs['pg_num'] = pg_counts['default_pg_num']
+        storage_attrs['per_pool_pg_nums'] = pg_counts
 
 
 class SetImageCacheMaxSizePipeline(VolumeObjectMethodsMixin, BasePipeline):
 
     @classmethod
-    def process_deployment(cls, deployment_data, cluster, nodes, **kwargs):
-        nodes_wo_master = six.moves.filter(
-            lambda n: n['uid'] != consts.MASTER_NODE_UID,
-            deployment_data)
-        cls._set_image_cache_max_size(nodes_wo_master, cluster, nodes)
-        return deployment_data
-
-    @classmethod
-    def _set_image_cache_max_size(cls, data, cluster, nodes):
-        nodes_db = {node.id: node for node in nodes}
-
-        editable_attrs = objects.Cluster.get_editable_attributes(cluster)
-        images_ceph = editable_attrs['storage']['images_ceph']['value']
-
-        for node in data:
-            if images_ceph:
-                image_cache_max_size = '0'
-            else:
-                volumes = cls.get_node_volumes(nodes_db[int(node['uid'])])
-                image_cache_max_size = calc_glance_cache_size(volumes)
-
-            node.setdefault(
-                'glance', {})['image_cache_max_size'] = image_cache_max_size
+    def process_deployment_for_node(cls, node, node_data):
+        volumes = cls.get_node_volumes(node)
+        image_cache_max_size = calc_glance_cache_size(volumes)
+        glance = node_data.setdefault('glance', {})
+        glance['image_cache_max_size'] = image_cache_max_size
 
 
 class VolumeManagerExtension(VolumeObjectMethodsMixin, BaseExtension):
@@ -217,9 +173,9 @@ class VolumeManagerExtension(VolumeObjectMethodsMixin, BaseExtension):
         VolumeObject.delete_by_node_ids(node_ids)
 
     @classmethod
-    def on_before_deployment_check(cls, cluster):
-        cls._check_disks(cluster)
-        cls._check_volumes(cluster)
+    def on_before_deployment_check(cls, cluster, nodes):
+        cls._check_disks(nodes)
+        cls._check_volumes(nodes)
 
     @classmethod
     def _is_disk_checking_required(cls, node):
@@ -238,23 +194,28 @@ class VolumeManagerExtension(VolumeObjectMethodsMixin, BaseExtension):
         return True
 
     @classmethod
-    def _check_disks(cls, cluster):
-        try:
-            for node in cluster.nodes:
-                if cls._is_disk_checking_required(node):
-                    VolumeManager(node).check_disk_space_for_deployment()
-        except errors.NotEnoughFreeSpace:
-            raise errors.NotEnoughFreeSpace(
-                u"Node '{}' has insufficient disk space".format(
-                    node.human_readable_name))
+    def _check_disks(cls, nodes):
+        cls._check_spaces(
+            nodes, lambda vm: vm.check_disk_space_for_deployment()
+        )
 
     @classmethod
-    def _check_volumes(cls, cluster):
-        try:
-            for node in cluster.nodes:
-                if cls._is_disk_checking_required(node):
-                    VolumeManager(node).check_volume_sizes_for_deployment()
-        except errors.NotEnoughFreeSpace as e:
-            raise errors.NotEnoughFreeSpace(
-                u"Node '{}' has insufficient disk space\n{}".format(
-                    node.human_readable_name, e.message))
+    def _check_volumes(cls, nodes):
+        cls._check_spaces(
+            nodes, lambda vm: vm.check_volume_sizes_for_deployment()
+        )
+
+    @classmethod
+    def _check_spaces(cls, nodes, checker):
+        messages = []
+        for node in nodes:
+            if cls._is_disk_checking_required(node):
+                try:
+                    checker(VolumeManager(node))
+                except errors.NotEnoughFreeSpace:
+                    messages.append(
+                        u"Node '{}' has insufficient disk space"
+                        .format(node.human_readable_name)
+                    )
+        if messages:
+            raise errors.NotEnoughFreeSpace(u'\n'.join(messages))

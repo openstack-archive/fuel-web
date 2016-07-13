@@ -1466,7 +1466,9 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def execute(cls, task):
-        fire_callback_on_before_deployment_check(task.cluster)
+        fire_callback_on_before_deployment_check(
+            task.cluster, TaskHelper.nodes_to_deploy(task.cluster)
+        )
 
         cls._check_nodes_are_online(task)
         cls._check_nodes_roles(task)

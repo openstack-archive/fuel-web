@@ -75,8 +75,6 @@ if __name__ == "__main__":
                  'delete_expired_oswl_entries'),
             ],
             'nailgun.extensions': [
-                ('cluster_upgrade = nailgun.extensions.cluster_upgrade'
-                 '.extension:ClusterUpgradeExtension'),
                 ('volume_manager = nailgun.extensions.volume_manager'
                  '.extension:VolumeManagerExtension'),
                 ('network_manager = nailgun.extensions.network_manager'

@@ -14,30 +14,106 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"Contains base class for Nailgun extensions"
+# Contains base class for Nailgun extensions
 
 import abc
 
 import six
 
 
+class DeprecationController(type):
+    @staticmethod
+    def mark_as_deprecated(obj, details):
+        obj.__deprecated__ = details
+
+    @staticmethod
+    def is_deprecated(obj):
+        return hasattr(obj, '__deprecated__')
+
+    def __new__(mcls, name, bases, namespace):
+        cls = super(DeprecationController, mcls).__new__(
+            mcls, name, bases, namespace
+        )
+        deprecated_methods = set()
+        for base in bases:
+            for name in dir(base):
+                value = getattr(base, name, None)
+                # checks that attribute was marker as deprecated in base class
+                # and it is not marked as deprecated in current class
+                if (
+                    DeprecationController.is_deprecated(value) and
+                    not DeprecationController.is_deprecated(getattr(cls, name))
+                ):
+                    deprecated_methods.add((base, value))
+
+        if deprecated_methods:
+            raise RuntimeError(
+                '\n'.join(
+                    "{0}.{1} was removed. {2}.".format(
+                        c.__name__, m.__name__, m.__deprecated__
+                    ) for c, m in deprecated_methods
+                )
+            )
+
+        return cls
+
+
+def deprecated(instructions):
+    def wrapper(func):
+        DeprecationController.mark_as_deprecated(func, instructions)
+        return func
+    return wrapper
+
+
+@six.add_metaclass(DeprecationController)
 class BasePipeline(object):
+    @classmethod
+    def process_deployment_for_cluster(cls, cluster, cluster_data):
+        """Extend or modify deployment data for cluster.
+
+        :param cluster_data: serialized data for cluster
+        :param cluster: the instance of Cluster
+        """
 
     @classmethod
+    def process_deployment_for_node(cls, node, node_data):
+        """Extend or modify deployment data for node.
+
+        :param node_data: serialized data for node
+        :param node: the instance of Node
+        """
+
+    @classmethod
+    def process_provisioning_for_cluster(cls, cluster, cluster_data):
+        """Extend or modify provisioning data for cluster.
+
+        :param cluster: the instance of Cluster
+        :param cluster_data: serialized data for cluster
+        """
+
+    @classmethod
+    def process_provisioning_for_node(cls, node, node_data):
+        """Extend or modify provisioning data for node.
+
+        :param node: the instance of Node
+        :param node_data: serialized data for node
+        """
+
+    @classmethod
+    @deprecated("Please implement methods process_deployment_for_* instead")
     def process_deployment(cls, deployment_data, cluster, nodes, **kwargs):
         """Change the deployment_data.
 
         :param deployment_data: serialized data
         """
-        return deployment_data
 
     @classmethod
+    @deprecated("Please implement methods process_provisioning_for_* instead")
     def process_provisioning(cls, provisioning_data, cluster, nodes, **kwargs):
         """Change the provisioning_data.
 
         :param provisioning_data: serialized data
         """
-        return provisioning_data
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -158,7 +234,7 @@ class BaseExtension(object):
         """Callback which gets executed when cluster is deleted"""
 
     @classmethod
-    def on_before_deployment_check(cls, cluster):
+    def on_before_deployment_check(cls, cluster, nodes):
         """Callback which gets executed when "before deployment check" runs"""
 
     @classmethod

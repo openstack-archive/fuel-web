@@ -67,14 +67,14 @@ class TestCheckBeforeDeploymentCallback(BaseTestCase):
         with mock.patch.object(
                 VolumeManager,
                 'check_disk_space_for_deployment') as check_mock:
-            fire_callback_on_before_deployment_check(self.cluster)
+            fire_callback_on_before_deployment_check(self.cluster, [self.node])
 
         self.assertFalse(check_mock.called)
 
         with mock.patch.object(
                 VolumeManager,
                 'check_volume_sizes_for_deployment') as check_mock:
-            fire_callback_on_before_deployment_check(self.cluster)
+            fire_callback_on_before_deployment_check(self.cluster, [self.node])
 
         self.assertFalse(check_mock.called)
 
@@ -84,13 +84,13 @@ class TestCheckBeforeDeploymentCallback(BaseTestCase):
         with mock.patch.object(
                 VolumeManager,
                 'check_disk_space_for_deployment') as check_mock:
-            fire_callback_on_before_deployment_check(self.cluster)
+            fire_callback_on_before_deployment_check(self.cluster, [self.node])
 
         self.assertEqual(check_mock.call_count, 1)
 
         with mock.patch.object(
                 VolumeManager,
                 'check_volume_sizes_for_deployment') as check_mock:
-            fire_callback_on_before_deployment_check(self.cluster)
+            fire_callback_on_before_deployment_check(self.cluster, [self.node])
 
         self.assertEqual(check_mock.call_count, 1)

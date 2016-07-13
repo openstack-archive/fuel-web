@@ -2257,8 +2257,9 @@ class UpdateDnsmasqTask(object):
                     'uids': ['master'],
                     'parameters': {
                         'provisioning_info':
+                            # TODO(bgaifullin) get rid of this code
                             provisioning_serializers.ProvisioningSerializer.
-                            serialize_cluster_info(None, None)
+                            serialize_cluster(None, None)
                     }
                 }]
             }

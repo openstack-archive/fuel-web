@@ -37,7 +37,8 @@ def get_all_extensions():
 
     if _EXTENSION_MANAGER is None:
         _EXTENSION_MANAGER = ExtensionManager(
-            namespace=consts.EXTENSIONS_NAMESPACE)
+            namespace=consts.EXTENSIONS_NAMESPACE
+        )
 
     return (ext.plugin for ext in _EXTENSION_MANAGER.extensions)
 
@@ -129,17 +130,21 @@ def _collect_extensions_for_cluster(cluster):
         yield get_extension(e)
 
 
-def fire_callback_on_deployment_data_serialization(data, cluster, nodes,
-                                                   **kwargs):
+def fire_callback_on_node_serialization_for_deployment(node, node_data):
+    for pipeline in _collect_data_pipelines_for_cluster(node.cluster):
+        pipeline.process_deployment_for_node(node, node_data)
+
+
+def fire_callback_on_node_serialization_for_provisioning(node, node_data):
+    for pipeline in _collect_data_pipelines_for_cluster(node.cluster):
+        pipeline.process_provisioning_for_node(node, node_data)
+
+
+def fire_callback_on_cluster_serialization_for_deployment(cluster, data):
     for pipeline in _collect_data_pipelines_for_cluster(cluster):
-        data = pipeline.process_deployment(data, cluster, nodes, **kwargs)
-
-    return data
+        pipeline.process_deployment_for_cluster(cluster, data)
 
 
-def fire_callback_on_provisioning_data_serialization(data, cluster, nodes,
-                                                     **kwargs):
+def fire_callback_on_cluster_serialization_for_provisioning(cluster, data):
     for pipeline in _collect_data_pipelines_for_cluster(cluster):
-        data = pipeline.process_provisioning(data, cluster, nodes, **kwargs)
-
-    return data
+        pipeline.process_provisioning_for_cluster(cluster, data)

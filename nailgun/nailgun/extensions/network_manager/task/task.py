@@ -42,7 +42,7 @@ class UpdateDnsmasqTask(object):
                     'parameters': {
                         'provisioning_info':
                             provisioning_serializers.ProvisioningSerializer.
-                            serialize_cluster_info(None, None)
+                            serialize_cluster(None, None)
                     }
                 }]
             }

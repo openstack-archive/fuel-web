@@ -24,7 +24,7 @@ from nailgun.test import base
 
 
 _prepare_revision = 'c6edea552f1e'
-_test_revision = '675105097a69'
+_test_revision = '41c8a3895417'
 
 
 def setup_module():

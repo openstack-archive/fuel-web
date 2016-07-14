@@ -367,15 +367,37 @@ class NetAssignmentValidator(BasicValidator):
                             "must have name".format(node['id'], iface['name']),
                             log_message=True
                         )
-                if 'bond_properties' in iface:
-                    for k in iface['bond_properties'].keys():
-                        if k not in consts.BOND_PROPERTIES:
-                            raise errors.InvalidData(
-                                "Node '{0}', interface '{1}': unknown bond "
-                                "property '{2}'".format(
-                                    node['id'], iface['name'], k),
-                                log_message=True
-                            )
+                if 'bond_properties' not in iface:
+                    raise errors.InvalidData(
+                        "Node '{0}': bond interface '{1}': doesn't have "
+                        "bond_properties".format(node['id'], iface['name']),
+                        log_message=True
+                    )
+                for k in iface['bond_properties']:
+                    if k not in consts.BOND_PROPERTIES:
+                        raise errors.InvalidData(
+                            "Node '{0}', interface '{1}': unknown bond "
+                            "property '{2}'".format(
+                                node['id'], iface['name'], k),
+                            log_message=True
+                        )
+                if 'type__' not in iface['bond_properties']:
+                    raise errors.InvalidData(
+                        "Node '{0}': bond interface '{1}': doesn't have "
+                        "bond_properties.type__".format(
+                            node['id'], iface['name']),
+                        log_message=True
+                    )
+                if iface['bond_properties']['type__'] not in consts.BOND_TYPES:
+                    raise errors.InvalidData(
+                        "Node '{0}', interface '{1}': unknown type__ '{2}'. "
+                        "type__ should be in '{3}'".format(
+                            node['id'], iface['name'],
+                            iface['bond_properties']['type__'],
+                            ','.join([k for k in consts.BOND_TYPES])),
+                        log_message=True
+                    )
+
                 bond_mode = cls.get_bond_mode(iface)
                 if not bond_mode:
                     raise errors.InvalidData(

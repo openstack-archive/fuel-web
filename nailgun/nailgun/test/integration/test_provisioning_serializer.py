@@ -214,7 +214,8 @@ class TestProvisioningSerializer(BaseIntegrationTest):
                                    ['eth1', 'eth4'],
                                    node['id'],
                                    bond_properties={
-                                       'mode': consts.BOND_MODES.balance_rr
+                                       'mode': consts.BOND_MODES.balance_rr,
+                                       'type__': consts.BOND_TYPES.linux
                                    })
         # check serialized data
         serialized_node = ps.serialize(self.cluster_db, [node_db])['nodes'][0]

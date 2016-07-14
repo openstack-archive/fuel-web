@@ -367,15 +367,37 @@ class NetAssignmentValidator(BasicValidator):
                             "must have name".format(node['id'], iface['name']),
                             log_message=True
                         )
-                if 'bond_properties' in iface:
-                    for k in iface['bond_properties'].keys():
-                        if k not in consts.BOND_PROPERTIES:
-                            raise errors.InvalidData(
-                                "Node '{0}', interface '{1}': unknown bond "
-                                "property '{2}'".format(
-                                    node['id'], iface['name'], k),
-                                log_message=True
-                            )
+                if 'bond_properties' not in iface:
+                    raise errors.InvalidData(
+                        "Node '{0}', bond interface '{1}': doesn't have "
+                        "bond_properties".format(node['id'], iface['name']),
+                        log_message=True
+                    )
+                for k in iface['bond_properties']:
+                    if k not in consts.BOND_PROPERTIES:
+                        raise errors.InvalidData(
+                            "Node '{0}', interface '{1}': unknown bond "
+                            "property '{2}'".format(
+                                node['id'], iface['name'], k),
+                            log_message=True
+                        )
+                if 'type__' not in iface['bond_properties']:
+                    raise errors.InvalidData(
+                        "Node '{0}', bond interface '{1}': doesn't have "
+                        "bond_properties.type__".format(
+                            node['id'], iface['name']),
+                        log_message=True
+                    )
+                bond_type = iface['bond_properties']['type__']
+                if bond_type not in consts.BOND_TYPES:
+                    raise errors.InvalidData(
+                        "Node '{0}', interface '{1}': unknown type__ '{2}'. "
+                        "type__ should be in '{3}'".format(
+                            node['id'], iface['name'], bond_type,
+                            ','.join(consts.BOND_TYPES)),
+                        log_message=True
+                    )
+
                 bond_mode = cls.get_bond_mode(iface)
                 if not bond_mode:
                     raise errors.InvalidData(
@@ -388,6 +410,17 @@ class NetAssignmentValidator(BasicValidator):
                         "Node '{0}': bond interface '{1}' has unknown "
                         "mode '{2}'".format(
                             node['id'], iface['name'], bond_mode),
+                        log_message=True
+                    )
+
+                allowed_modes = cls.get_allowed_modes_for_bond_type(bond_type)
+                if bond_mode not in allowed_modes:
+                    raise errors.InvalidData(
+                        "Node '{0}', bond interface '{1}': mode '{2}' "
+                        "is not allowed for type '{3}'. Allowed modes for "
+                        "'{3}' type: '{4}'".format(
+                            node['id'], iface['name'], bond_mode,
+                            bond_type, allowed_modes),
                         log_message=True
                     )
             if 'assigned_networks' not in iface or \
@@ -435,6 +468,30 @@ class NetAssignmentValidator(BasicValidator):
         if 'mode' in iface.get('bond_properties', {}):
             bond_mode = iface['bond_properties']['mode']
         return bond_mode
+
+    @classmethod
+    def get_allowed_modes_for_bond_type(cls, bond_type):
+        if (bond_type == consts.BOND_TYPES.ovs or
+                bond_type == consts.BOND_TYPES.dpdkovs):
+            allowed_modes = (consts.BOND_MODES.active_backup,
+                             consts.BOND_MODES.balance_slb,
+                             consts.BOND_MODES.balance_tcp,
+                             consts.BOND_MODES.lacp_balance_tcp,
+                             )
+
+        elif bond_type == consts.BOND_TYPES.linux:
+            allowed_modes = (consts.BOND_MODES.active_backup,
+                             consts.BOND_MODES.balance_rr,
+                             consts.BOND_MODES.balance_xor,
+                             consts.BOND_MODES.broadcast,
+                             consts.BOND_MODES.l_802_3ad,
+                             consts.BOND_MODES.balance_tlb,
+                             consts.BOND_MODES.balance_alb,
+                             )
+        else:
+            return None
+
+        return allowed_modes
 
     @classmethod
     def validate_collection_structure_and_data(cls, webdata):

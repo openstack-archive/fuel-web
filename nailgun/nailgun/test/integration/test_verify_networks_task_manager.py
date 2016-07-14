@@ -286,10 +286,10 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
 
         for node in self.env.nodes:
             data, admin_nic, other_nic, empty_nic = self.verify_nics(node)
-            self.env.make_bond_via_api("ovs-bond0",
-                                       consts.BOND_MODES.balance_slb,
-                                       [other_nic["name"], empty_nic["name"]],
-                                       node["id"])
+            self.env.make_bond_via_api(
+                "ovs-bond0", consts.BOND_MODES.balance_slb,
+                [other_nic["name"], empty_nic["name"]], node["id"],
+                bond_properties={'type__': consts.BOND_TYPES.linux})
             self.verify_bonds(node)
 
     def verify_nics(self, node):

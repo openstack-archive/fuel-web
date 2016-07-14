@@ -364,6 +364,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "mode": "unknown",
+            "bond_properties": {
+                'type__': BOND_TYPES.linux
+            },
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -380,6 +383,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                'type__': BOND_TYPES.linux
+            },
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -396,7 +402,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
-                "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3
+                "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3,
+                'type__': BOND_TYPES.linux
             },
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -414,7 +421,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
-                "mode": 'unknown'
+                "mode": 'unknown',
+                'type__': BOND_TYPES.linux
             },
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -433,6 +441,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "type": NETWORK_INTERFACE_TYPES.bond,
             "bond_properties": {
                 "mode": BOND_MODES.balance_xor,
+                'type__': BOND_TYPES.linux,
                 "policy": BOND_XMIT_HASH_POLICY.layer2_3
             },
             "slaves": [
@@ -480,6 +489,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -496,6 +508,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -514,6 +529,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "mode": BOND_MODES.balance_slb,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -533,6 +551,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
             "mode": BOND_MODES.balance_slb,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": "some_nic"}],
@@ -549,6 +570,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -566,6 +590,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -587,6 +614,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'lnx-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": mode,
             "slaves": [
                 {"name": self.admin_nic["name"]},
@@ -610,6 +640,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": mode,
             "slaves": [
                 {"name": self.admin_nic["name"]},
@@ -632,6 +665,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": mode,
             "slaves": [
                 {"name": self.admin_nic["name"]},
@@ -653,6 +689,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": mode,
             "slaves": [
                 {"name": self.empty_nic["name"]},
@@ -714,6 +753,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'ovs-bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "type__": BOND_TYPES.linux
+            },
             "mode": BOND_MODES.balance_slb,
             "slaves": [
                 {"name": self.admin_nic["name"]},
@@ -734,3 +776,51 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "enabled interface '{1}'".format(self.env.nodes[0]["id"],
                                              self.sriov_nic['name'])
         )
+
+    def test_nics_bond_create_failed_without_type__(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": BOND_MODES.balance_slb
+            },
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.sriov_nic["name"]}],
+            "assigned_networks": self.sriov_nic["assigned_networks"]
+        })
+        self.node_nics_put_check_error(
+            "Node '{0}': bond interface 'ovs-bond0': doesn't have "
+            "bond_properties.type__".format(self.env.nodes[0]["id"]))
+
+    def test_nics_bond_create_failed_without_bond_properties(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": BOND_MODES.balance_slb,
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.sriov_nic["name"]}],
+            "assigned_networks": self.sriov_nic["assigned_networks"]
+        })
+        self.node_nics_put_check_error(
+            "Node '{0}': bond interface 'ovs-bond0': doesn't have "
+            "bond_properties".format(self.env.nodes[0]["id"]))
+
+    def test_nics_bond_create_failed_with_unexpected_type__(self):
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "bond_properties": {
+                "mode": BOND_MODES.balance_slb,
+                "type__": 'unexpected_type',
+            },
+            "slaves": [
+                {"name": self.admin_nic["name"]},
+                {"name": self.sriov_nic["name"]}],
+            "assigned_networks": self.sriov_nic["assigned_networks"]
+        })
+        self.node_nics_put_check_error(
+            "Node '{0}', interface 'ovs-bond0': unknown type__ "
+            "'unexpected_type'. type__ should be in '{1}'".format(
+                self.env.nodes[0]["id"], ','.join([k for k in BOND_TYPES])))

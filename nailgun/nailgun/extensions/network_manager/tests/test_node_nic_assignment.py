@@ -878,18 +878,16 @@ class TestPublicNetworkAssigment(BaseIntegrationTest):
         node1, macs1 = self.create_node_with_preset_macs(cluster,
                                                          ['controller'],
                                                          3)
-        self.env.make_bond_via_api('ovsbond0',
-                                   consts.BOND_MODES.balance_tcp,
-                                   ['eth1', 'eth2'],
-                                   node1['id'])
+        self.env.make_bond_via_api(
+            'ovsbond0', consts.BOND_MODES.balance_tcp, ['eth1', 'eth2'],
+            node1['id'], bond_properties={'type__': consts.BOND_TYPES.linux})
 
         node2, macs2 = self.create_node_with_preset_macs(cluster,
                                                          ['cinder'],
                                                          3)
-        self.env.make_bond_via_api('ovsbond0',
-                                   consts.BOND_MODES.balance_tcp,
-                                   ['eth1', 'eth2'],
-                                   node2['id'])
+        self.env.make_bond_via_api(
+            'ovsbond0', consts.BOND_MODES.balance_tcp, ['eth1', 'eth2'],
+            node2['id'], bond_properties={'type__': consts.BOND_TYPES.linux})
 
         self.check_network_assigments(node1, {
             'eth0': self.default_networks,

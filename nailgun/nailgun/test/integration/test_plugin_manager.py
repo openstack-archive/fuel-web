@@ -326,14 +326,16 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_a1.id,
                 'plugin_version': plugin_a1.version,
-                'hot_pluggable': False
+                'hot_pluggable': False,
+                'contains_legacy_tasks': False
             }, pl_a1['metadata']
         )
         self.assertItemsEqual(
             {
                 'plugin_id': plugin_a2.id,
                 'plugin_version': plugin_a2.version,
-                'hot_pluggable': True
+                'hot_pluggable': True,
+                'contains_legacy_tasks': False
             },
             pl_a2['metadata']
         )
@@ -342,6 +344,7 @@ class TestPluginManager(base.BaseIntegrationTest):
                 'plugin_id': plugin_b.id,
                 'plugin_version': plugin_b.version,
                 'hot_pluggable': False,
+                'contains_legacy_tasks': False,
                 'restrictions': [
                     {
                         "condition": "cluster:net_provider != 'neutron'",
@@ -402,7 +405,8 @@ class TestPluginManager(base.BaseIntegrationTest):
             {
                 'plugin_id': plugin_a1.id,
                 'plugin_version': plugin_a1.version,
-                'hot_pluggable': False
+                'hot_pluggable': False,
+                'contains_legacy_tasks': False
             }, pl_a1['metadata']
         )
         self.assertItemsEqual(
@@ -410,6 +414,7 @@ class TestPluginManager(base.BaseIntegrationTest):
                 'plugin_id': plugin_a2.id,
                 'plugin_version': plugin_a2.version,
                 'hot_pluggable': True,
+                'contains_legacy_tasks': False
             },
             pl_a2['metadata']
         )
@@ -418,6 +423,7 @@ class TestPluginManager(base.BaseIntegrationTest):
                 'plugin_id': plugin_b.id,
                 'plugin_version': plugin_b.version,
                 'hot_pluggable': False,
+                'contains_legacy_tasks': False,
                 'restrictions': [
                     {
                         "condition": "cluster:net_provider != 'neutron'",

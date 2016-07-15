@@ -36,6 +36,7 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.settings import settings
 from nailgun import utils as nailgun_utils
+from nailgun.utils import get_in
 from nailgun.utils.restrictions import RestrictionBase
 
 
@@ -762,8 +763,13 @@ class NetworkManager(object):
             objects.NIC.update(current_iface, update)
 
         objects.Node.clear_bonds(node_db)
+
         for bond in bond_interfaces:
-            if bond.get('bond_properties', {}).get('mode'):
+            # upadted via API
+            if get_in(bond, 'attributes', 'mode', 'value', 'value'):
+                mode = bond['attributes']['mode']['value']['value']
+            # updated via network templates
+            elif bond.get('bond_properties', {}).get('mode'):
                 mode = bond['bond_properties']['mode']
             else:
                 mode = bond['mode']
@@ -772,7 +778,6 @@ class NetworkManager(object):
                 'name': bond['name'],
                 'mode': mode,
                 'mac': bond.get('mac'),
-                'bond_properties': bond.get('bond_properties', {}),
                 'attributes': bond.get('attributes', {})
             }
             bond_db = objects.Bond.create(data)
@@ -1337,11 +1342,20 @@ class NetworkManager(object):
 
     @classmethod
     def get_lnx_bond_properties(cls, bond):
-        properties = {'mode': bond.mode}
-        properties.update(bond.bond_properties)
-        to_drop = [k for k in properties.keys() if k.endswith('__')]
-        for prop in to_drop:
-            properties.pop(prop)
+        properties = {}
+        attributes = nailgun_utils.dict_merge(
+            {'mode': {'value': {'value': bond.mode}}}, bond.attributes)
+        if get_in(attributes, 'mode', 'value', 'value'):
+            properties['mode'] = attributes['mode']['value']['value']
+        if get_in(attributes, 'lacp', 'value', 'value'):
+            properties['lacp'] = attributes['lacp']['value']['value']
+        if get_in(attributes, 'lacp_rate', 'value', 'value'):
+            properties['lacp_rate'] = \
+                attributes['lacp_rate']['value']['value']
+        if get_in(attributes, 'xmit_hash_policy', 'value', 'value'):
+            properties['xmit_hash_policy'] = \
+                attributes['xmit_hash_policy']['value']['value']
+
         return properties
 
     @classmethod

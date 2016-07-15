@@ -47,7 +47,8 @@ def merge_attributes(a, b):
                 # to 'text_list' (a list of strings of IP-addresses).
                 if a_values[key]['type'] == 'text' and \
                         values['type'] == 'text_list':
-                    values["value"] = values['value'].split(',')
+                    values["value"] =\
+                        [value.strip() for value in values['value'].split(',')]
     return attrs
 
 

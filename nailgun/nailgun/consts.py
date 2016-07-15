@@ -209,6 +209,8 @@ BOND_MODES = Enum(
 )
 
 BOND_PROPERTIES = Enum(
+    'mtu',
+    'dpdk',
     'mode',
     'xmit_hash_policy',
     'lacp_rate',

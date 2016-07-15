@@ -367,8 +367,8 @@ class NetAssignmentValidator(BasicValidator):
                             "must have name".format(node['id'], iface['name']),
                             log_message=True
                         )
-                if 'bond_properties' in iface:
-                    for k in iface['bond_properties'].keys():
+                if 'attributes' in iface:
+                    for k in iface['attributes'].keys():
                         if k not in consts.BOND_PROPERTIES:
                             raise errors.InvalidData(
                                 "Node '{0}', interface '{1}': unknown bond "
@@ -432,8 +432,8 @@ class NetAssignmentValidator(BasicValidator):
         bond_mode = None
         if 'mode' in iface:
             bond_mode = iface['mode']
-        if 'mode' in iface.get('bond_properties', {}):
-            bond_mode = iface['bond_properties']['mode']
+        if 'mode' in iface.get('attributes', {}):
+            bond_mode = iface['attributes']['mode']['value']['value']
         return bond_mode
 
     @classmethod
@@ -568,6 +568,8 @@ class NetAssignmentValidator(BasicValidator):
         if db_iface is None:
             db_iface = cls._get_iface_by_name(iface['name'], db_interfaces)
 
+        attributes = iface.get('attributes', {})
+        bond_type = attributes.get('type__', {}).get('value')
         if db_iface is None:
             # looks like user creates new bond
             # let's check every slave in input data
@@ -580,21 +582,16 @@ class NetAssignmentValidator(BasicValidator):
 
                 hw_available &= objects.NIC.dpdk_available(
                     slave_iface, dpdk_drivers)
-
-            attributes = iface.get('attributes', {})
-            bond_type = iface.get('bond_properties', {}).get('type__')
         else:
             if iface['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 iface_cls = objects.NIC
             elif iface['type'] == consts.NETWORK_INTERFACE_TYPES.bond:
                 iface_cls = objects.Bond
-                bond_type = iface.get('bond_properties', {}).get(
-                    'type__', db_iface.bond_properties.get('type__'))
+                bond_type = bond_type or db_iface.attributes.get(
+                    'type__', {}).get('value')
             hw_available = iface_cls.dpdk_available(db_iface, dpdk_drivers)
             attributes = utils.dict_merge(
-                db_iface.attributes,
-                iface.get('attributes', {})
-            )
+                db_iface.attributes, attributes)
 
         enabled = attributes.get('dpdk', {}).get('enabled', {}).get(
             'value', False)

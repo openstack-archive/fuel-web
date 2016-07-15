@@ -27,6 +27,7 @@ from nailgun.utils import flatten
 from nailgun.utils import get_lines
 from nailgun.utils import grouper
 from nailgun.utils import parse_bool
+from nailgun.utils import remove_key_from_dict
 from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
 
@@ -150,6 +151,19 @@ class TestUtils(base.BaseIntegrationTest):
 
         self.assertRaises(ValueError, parse_bool, 'tru')
         self.assertRaises(ValueError, parse_bool, 'fals')
+
+    def test_remove_key_from_dict(self):
+        input_dict = {
+            'spam': {
+                'egg': {
+                    'key_to_remove': 'a'
+                }
+            },
+            'key_to_remove': 'b'
+        }
+        output_dict = remove_key_from_dict(input_dict, 'key_to_remove')
+
+        self.assertDictEqual({'spam': {'egg': {}}}, output_dict)
 
 
 class TestTraverse(base.BaseUnitTest):

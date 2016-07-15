@@ -70,6 +70,7 @@ class BasePluginTest(base.BaseIntegrationTest):
     def modify_plugin(self, cluster, plugin_name, plugin_id, enabled):
         editable_attrs = objects.Cluster.get_editable_attributes(
             cluster, all_plugins_versions=True)
+        editable_attrs['common']['propagate_task_deploy']['value'] = True
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
         editable_attrs[plugin_name]['metadata']['chosen_id'] = plugin_id
 

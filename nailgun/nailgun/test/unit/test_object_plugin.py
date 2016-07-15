@@ -308,12 +308,12 @@ class TestNodeBondInterfaceClusterPlugin(ExtraFunctions):
         cluster = self._create_test_cluster(
             nodes=[{'roles': ['controller']}])
 
+        bond_config.update({
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}})
         for node in cluster.nodes:
             nic_names = [iface.name for iface in node.nic_interfaces]
             self.env.make_bond_via_api(
-                'lnx_bond', '', nic_names, node.id,
-                bond_properties={'mode': consts.BOND_MODES.balance_rr},
-                attrs=bond_config)
+                'lnx_bond', '', nic_names, node.id, attrs=bond_config)
 
         node_bond_interface_cluster_plugin = self.db.execute(
             meta.tables['node_bond_interface_cluster_plugins'].select()

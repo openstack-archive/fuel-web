@@ -18,6 +18,7 @@ import mock
 import six
 
 from oslo_serialization import jsonutils
+import unittest2
 
 from nailgun import consts
 from nailgun import objects
@@ -633,6 +634,13 @@ class TestDeploymentHASerializer90(
         for item in serialized:
             self.assertIn(item, cust_serialized)
 
+    def test_remove_nodes_from_common_attrs(self):
+        cluster_db = self.env.clusters[0]
+        serializer = self.create_serializer(cluster_db)
+
+        common_attrs = serializer.get_common_attrs(cluster_db)
+        self.assertNotIn('nodes', common_attrs)
+
 
 class TestDeploymentTasksSerialization90(
     TestSerializer90Mixin,
@@ -700,6 +708,14 @@ class TestNetworkTemplateSerializer90CompatibleWith80(
                 self.assertEqual(node_attrs['user_node_name'], node.name)
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
                 self.assertEqual(node_attrs['nova_cpu_pinning_enabled'], False)
+
+    @unittest2.skip(
+        "'nodes' key was removed from 9.0 version serializer output, "
+        "thus test bound to this data (that exists in parent test case class) "
+        "must be skipped"
+    )
+    def test_network_not_mapped_to_nics_w_template(self):
+        pass
 
 
 class TestNetworkTemplateSerializer90(

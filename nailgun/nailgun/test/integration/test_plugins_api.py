@@ -67,9 +67,12 @@ class BasePluginTest(base.BaseIntegrationTest):
             headers=self.default_headers)
         return resp
 
-    def modify_plugin(self, cluster, plugin_name, plugin_id, enabled):
+    def modify_plugin(self, cluster, plugin_name, plugin_id, enabled,
+                      propagate_task_deploy=True, expect_errors=False):
         editable_attrs = objects.Cluster.get_editable_attributes(
             cluster, all_plugins_versions=True)
+        editable_attrs['common']['propagate_task_deploy']['value'] = \
+            propagate_task_deploy
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
         editable_attrs[plugin_name]['metadata']['chosen_id'] = plugin_id
 
@@ -77,7 +80,8 @@ class BasePluginTest(base.BaseIntegrationTest):
             base.reverse('ClusterAttributesHandler',
                          {'cluster_id': cluster.id}),
             jsonutils.dumps({'editable': editable_attrs}),
-            headers=self.default_headers)
+            headers=self.default_headers,
+            expect_errors=expect_errors)
 
         return resp
 
@@ -285,6 +289,15 @@ class TestPluginsApi(BasePluginTest):
 
         resp = self.sync_plugins(params={'ids': ids}, expect_errors=True)
         self.assertEqual(resp.status_code, 404)
+
+    def test_enable_plugin_without_propagate_task_deploy(self):
+        resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
+        plugin = objects.Plugin.get_by_uid(resp.json['id'])
+        cluster = self.create_cluster()
+        resp = self.modify_plugin(cluster, plugin.name, plugin.id, True,
+                                  propagate_task_deploy=False,
+                                  expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
 
     @mock.patch('nailgun.plugins.adapters.open', create=True)
     @mock.patch('nailgun.plugins.adapters.os.access')

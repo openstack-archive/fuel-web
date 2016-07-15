@@ -30,6 +30,17 @@ from nailgun.utils import dict_update
 class PluginManager(object):
 
     @classmethod
+    def contains_legacy_tasks(cls, plugin):
+        if plugin.tasks:
+            return True
+        min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
+        for task in plugin.get_deployment_tasks():
+            task_version = StrictVersion(task.get('version', '0.0.0'))
+            if task_version < min_task_version:
+                return True
+        return False
+
+    @classmethod
     def process_cluster_attributes(cls, cluster, attributes):
         """Generate Cluster-Plugins relation based on attributes.
 
@@ -61,21 +72,18 @@ class PluginManager(object):
                     continue
                 enabled = container['enabled']\
                     and plugin_id == container['chosen_id']
+                if (enabled and
+                    not attributes['common'].get(
+                        'propagate_task_deploy', {}).get('value') and
+                    cls.contains_legacy_tasks(
+                        wrap_plugin(Plugin.get_by_uid(plugin.id)))):
+                    raise errors.InvalidData(
+                        'Cannot enable plugin with legacy tasks unless '
+                        'propagate_task_deploy attribute is set')
                 ClusterPlugin.set_attributes(
                     cluster.id, plugin.id, enabled=enabled,
                     attrs=attrs if enabled or default else None
                 )
-
-    @classmethod
-    def contains_legacy_tasks(cls, plugin):
-        if plugin.tasks:
-            return True
-        min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
-        for task in plugin.get_deployment_tasks():
-            task_version = StrictVersion(task.get('version', '0.0.0'))
-            if task_version < min_task_version:
-                return True
-        return False
 
     @classmethod
     def get_plugins_attributes(

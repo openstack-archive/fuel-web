@@ -1352,6 +1352,35 @@
             restrictions:
               - condition: "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
                 action: "hide"
+        ssh:
+          metadata:
+            label: "SSH security"
+            weight: 120
+            group: "security"
+            toggleable: false
+            enabled: true
+          security_enabled:
+            value: false
+            label: "Restrict SSH service on network"
+            description: |
+              NOTE: When enabled, provide at least one working IP address (the Fuel Master node IP is already added).
+              We recommend adding new addresses instead of replacing the provided Fuel Master node IP.
+              When disabled (by default), the admin, management, and storage networks are only allowed to connect to the SSH service.
+            weight: 10
+            type: "checkbox"
+          security_networks:
+            value:
+              - "{settings.MASTER_IP}"
+            label: "Restrict access to"
+            description: "IPv4/CIDR address"
+            weight: 20
+            type: "text_list"
+            regex:
+              source: &ipv4_cidr_regex '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))*$'
+              error: "Invalid IPv4/CIDR address"
+            restrictions:
+              - condition: "settings:ssh.security_enabled.value == false"
+                action: "hide"
         kernel_params:
           metadata:
             label: "Kernel parameters"

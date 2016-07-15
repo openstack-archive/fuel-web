@@ -1328,9 +1328,8 @@ class EnvironmentManager(object):
                 "Nothing to verify - try creating cluster"
             )
 
-    def make_bond_via_api(self, bond_name, bond_mode, nic_names, node_id=None,
-                          bond_properties=None, interface_properties=None,
-                          attrs=None):
+    def make_bond_via_api(self, bond_name, bond_mode, nic_names,
+                          node_id=None, attrs=None):
         if not node_id:
             node_id = self.nodes[0]["id"]
         resp = self.app.get(
@@ -1361,15 +1360,6 @@ class EnvironmentManager(object):
             "assigned_networks": assigned_nets,
             "attributes": attrs or {}
         }
-        if bond_properties:
-            bond_dict["bond_properties"] = bond_properties
-        else:
-            bond_dict["bond_properties"] = {}
-
-        if interface_properties:
-            bond_dict["interface_properties"] = interface_properties
-        else:
-            bond_dict["interface_properties"] = {}
         data.append(bond_dict)
         resp = self.node_nics_put(node_id, data)
         self.tester.assertEqual(resp.status_code, 200)

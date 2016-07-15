@@ -2158,6 +2158,9 @@
           type: "checkbox"
           value: False
     bond_attributes:
+      type__:
+        type: 'hidden'
+        value: null
       mode:
         metadata:
           label: "Mode"
@@ -2166,11 +2169,7 @@
           label: "Mode"
           weight: 10
           type: "select"
-          values:
-            -
-              label: balance-rr
-              data: balance-rr
-          value: balance-rr
+          value: ''
       offloading:
         metadata:
           label: "Offloading"
@@ -2195,6 +2194,42 @@
           weight: 10
           type: "number"
           value: null
+      dpdk:
+        metadata:
+          label: "DPDK"
+          weight: 40
+        enabled:
+          label: "DPDK enabled"
+          weight: 10
+          type: "checkbox"
+          value: False
+      lacp:
+        metadata:
+          label: "Lacp"
+          weight: 50
+        value:
+          label: "Lacp"
+          weight: 10
+          type: "select"
+          value: ''
+      lacp_rate:
+        metadata:
+          label: "Lacp rate"
+          weight: 60
+        value:
+          label: "Lacp rate"
+          weight: 10
+          type: "select"
+          value: ''
+      xmit_hash_policy:
+        metadata:
+          label: "Xmit hash policy"
+          weight: 70
+        value:
+          label: "Xmit hash policy"
+          weight: 10
+          type: "select"
+          value: ''
     modes: ['ha_compact']
     extensions: ['volume_manager', 'network_manager']
 - pk: 1

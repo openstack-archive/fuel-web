@@ -1097,8 +1097,21 @@ class NailgunReceiver(object):
                 result[node['uid']] = node.get('data')
 
             elif node['status'] == consts.NODE_STATUSES.ready:
+                # (vvalyavskiy): dhcp_check util produces one record with
+                # empty fields if no dhcp server is present, so, we can
+                # safely skip checking such kind of responses
+                response = node.get('data', [])
+                if (len(response) == 1 and isinstance(response[0], dict)
+                        and not any(response[0].values())):
+                    logger.warning(
+                        "No DHCP servers were found! "
+                        "Node's UID {0}. Node's data {1}"
+                        .format(node['uid'], response)
+                    )
+                    continue
+
                 incorrect_input = False
-                for row in node.get('data', []):
+                for row in response:
                     try:
                         if not net_utils.is_same_mac(row['mac'],
                                                      master_network_mac):

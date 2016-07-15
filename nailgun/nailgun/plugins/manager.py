@@ -23,9 +23,21 @@ from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.plugins.adapters import wrap_plugin
 from nailgun.utils import dict_update
+from nailgun.utils import get_in
 
 
 class PluginManager(object):
+
+    @classmethod
+    def contains_legacy_tasks(cls, plugin):
+        if plugin.tasks:
+            return True
+        min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
+        for task in plugin.get_deployment_tasks():
+            task_version = StrictVersion(task.get('version', '0.0.0'))
+            if task_version < min_task_version:
+                return True
+        return False
 
     @classmethod
     def process_cluster_attributes(cls, cluster, attributes):
@@ -60,7 +72,16 @@ class PluginManager(object):
                     continue
                 enabled = container['enabled']\
                     and plugin_id == container['chosen_id']
-                ClusterPlugins.set_attributes(
+                legacy_tasks_are_ignored = not get_in(
+                    attributes, 'common', 'propagate_task_deploy', 'value')
+                if (enabled and
+                    legacy_tasks_are_ignored and
+                    cls.contains_legacy_tasks(
+                        wrap_plugin(Plugin.get_by_uid(plugin.id)))):
+                    raise errors.InvalidData(
+                        'Cannot enable plugin with legacy tasks unless '
+                        'propagate_task_deploy attribute is set')
+                ClusterPlugin.set_attributes(
                     cluster.id, plugin.id, enabled=enabled,
                     attrs=attrs if enabled or default else None
                 )

@@ -18,6 +18,7 @@ import copy
 import six
 
 from nailgun import consts
+from nailgun.extensions.cluster_upgrade.upgrade import merge_attributes
 from nailgun.extensions.network_manager.objects.serializers import \
     network_configuration
 
@@ -42,6 +43,34 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
             "gateway": "192.168.42.1",
             "ip_ranges": [["192.168.42.5", "192.168.42.11"]],
         }
+
+    def test_merge_attributes(self):
+        src_editable_attrs = {
+            "test":
+                {"metadata": "src_fake",
+                 "key":
+                     {"type": "text",
+                      "value": "fake1, fake2,fake3 , fake4"},
+                 "src_key": "src_data"
+                 },
+            "repo_setup": "src_data"
+        }
+
+        new_editable_attrs = {
+            "test":
+                {"metadata": "new_fake",
+                 "key":
+                     {"type": "text_list",
+                      "value": "fake"},
+                 "new_key": "new_data"
+                 },
+            "repo_setup": "new_data"
+        }
+        result = merge_attributes(src_editable_attrs, new_editable_attrs)
+        new_editable_attrs["test"]["key"]["value"] = \
+            [value.strip() for value in
+             src_editable_attrs["test"]["key"]["value"].split(',')]
+        self.assertEqual(result, new_editable_attrs)
 
     def test_create_cluster_clone(self):
         new_cluster = self.helper.create_cluster_clone(self.src_cluster,

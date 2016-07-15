@@ -294,45 +294,57 @@ class TestHandlers(BaseIntegrationTest):
                     'weight': 30
                 },
                 'enabled': {
-                    'label': 'SR-IOV enabled',
+                    'label': 'Enable SR-IOV',
+                    'description': 'Single-root I/O Virtualization (SR-IOV) '
+                                   'is a specification that, when implemented '
+                                   'by a physical PCIe device, enables it to '
+                                   'appear as multiple separate PCIe devices. '
+                                   'This enables multiple virtualized guests '
+                                   'to share direct access to the physical '
+                                   'device, offering improved performance '
+                                   'over an equivalent virtual device.',
                     'weight': 10,
                     'type': 'checkbox',
-                    'value': False
+                    'value': False,
+                    'restrictions': [{
+                        "settings:common.libvirt_type.value != 'kvm'":
+                        "Only KVM hypervisor works with SR-IOV"
+                    }]
                 },
                 'numvfs': {
-                    'label': 'Virtual functions',
+                    'label': 'Number of Virtual Functions',
                     'weight': 20,
                     'type': 'number',
-                    'min': 0,
-                    'value': None
+                    'min': 1,
+                    'value': None,
+                    'restrictions': [
+                        "nic_attributes:sriov.enabled.value == false"]
                 },
                 'physnet': {
-                    'label': 'Physical network',
+                    'label': 'Physical Network Name',
                     'weight': 30,
                     'type': 'text',
-                    'value': 'physnet2'
-                }
-            })
-        self.assertEqual(
-            resp_nic['meta']['sriov'],
-            {
-                'available': True,
-                'pci_id': '1234:5678',
-                'totalvfs': 8
-            })
-
-        self.assertEqual(
-            resp_nic['attributes']['dpdk'],
-            {
-                'metadata': {
-                    'label': 'DPDK',
-                    'weight': 40
-                },
-                'enabled': {
-                    'label': 'DPDK enabled',
-                    'weight': 10,
-                    'type': 'checkbox',
-                    'value': False
+                    'value': 'physnet2',
+                    'regex': {
+                        'source': "^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$",
+                        'error': "Invalid physical network name"
+                    },
+                    'restrictions': [
+                        "nic_attributes:sriov.enabled.value == false",
+                        {
+                            'condition': "nic_attributes:sriov.physnet.value "
+                                         "!= 'physnet2'",
+                            'message': "Only \"physnet2\" will be configured "
+                                       "by Fuel in Neutron. Configuration of "
+                                       "other physical networks is up to "
+                                       "Operator or plugin. Fuel will just "
+                                       "configure appropriate "
+                                       "pci_passthrough_whitelist option in "
+                                       "nova.conf for such interface and "
+                                       "physical networks.",
+                            'action': "none"
+                        }
+                    ]
                 }
             })
         self.assertEqual(
@@ -385,10 +397,17 @@ class TestHandlers(BaseIntegrationTest):
                     'weight': 40
                 },
                 'enabled': {
-                    'label': 'DPDK enabled',
+                    'label': 'Enable DPDK',
+                    'description': 'The Data Plane Development Kit (DPDK) '
+                                   'provides high-performance packet '
+                                   'processing libraries and user space '
+                                   'drivers.',
                     'weight': 10,
                     'type': 'checkbox',
-                    'value': False
+                    'value': False,
+                    'restrictions': [{
+                        "settings:common.libvirt_type.value != 'kvm'":
+                        "Only KVM hypervisor works with DPDK"}]
                 }
             })
         self.assertEqual(
@@ -631,7 +650,9 @@ class TestHandlers(BaseIntegrationTest):
                 'label': 'MTU',
                 'weight': 10,
                 'type': 'number',
-                'value': 1500
+                'value': 1500,
+                'min': 42,
+                'max': 65536
             }
         }
         nodes_list = [{'id': node['id'], 'interfaces': [nic]}]
@@ -662,7 +683,9 @@ class TestHandlers(BaseIntegrationTest):
                 'label': 'MTU',
                 'weight': 10,
                 'type': 'number',
-                'value': 1500
+                'value': 1500,
+                'min': 42,
+                'max': 65536
             }
         })
 
@@ -1174,7 +1197,7 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
         'offloading': {
             'disable': {
                 'value': False,
-                'label': 'Disable offloading',
+                'label': 'Disable Offloading',
                 'type': 'checkbox',
                 'weight': 10
             },
@@ -1183,9 +1206,8 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
                 'weight': 10
             },
             'modes': {
-                'description': 'Offloading modes',
                 'value': {},
-                'label': 'Offloading modes',
+                'label': 'Offloading Modes',
                 'type': 'offloading_modes',
                 'weight': 20
             }
@@ -1195,7 +1217,9 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
                 'value': None,
                 'label': 'MTU',
                 'type': 'number',
-                'weight': 10
+                'weight': 10,
+                'min': 42,
+                'max': 65536
             },
             'metadata': {
                 'label': 'MTU',
@@ -1203,40 +1227,81 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
             }
         },
         'sriov': {
-            'enabled': {
-                'value': False,
-                'label': 'SR-IOV enabled',
-                'type': 'checkbox',
-                'weight': 10
-            },
-            'physnet': {
-                'value': 'physnet2',
-                'label': 'Physical network',
-                'type': 'text',
-                'weight': 30
-            },
             'metadata': {
                 'label': 'SR-IOV',
                 'weight': 30
             },
+            'enabled': {
+                'label': 'Enable SR-IOV',
+                'description': 'Single-root I/O Virtualization (SR-IOV) '
+                               'is a specification that, when implemented '
+                               'by a physical PCIe device, enables it to '
+                               'appear as multiple separate PCIe devices. '
+                               'This enables multiple virtualized guests '
+                               'to share direct access to the physical '
+                               'device, offering improved performance '
+                               'over an equivalent virtual device.',
+                'weight': 10,
+                'type': 'checkbox',
+                'value': False,
+                'restrictions': [{
+                    "settings:common.libvirt_type.value != 'kvm'":
+                    "Only KVM hypervisor works with SR-IOV"
+                }]
+            },
             'numvfs': {
-                'value': None,
-                'label': 'Virtual functions',
+                'label': 'Number of Virtual Functions',
                 'weight': 20,
                 'type': 'number',
-                'min': 0
+                'min': 1,
+                'value': None,
+                'restrictions': [
+                    "nic_attributes:sriov.enabled.value == false"]
             },
+            'physnet': {
+                'label': 'Physical Network Name',
+                'weight': 30,
+                'type': 'text',
+                'value': 'physnet2',
+                'regex': {
+                    'source': "^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$",
+                    'error': "Invalid physical network name"
+                },
+                'restrictions': [
+                    "nic_attributes:sriov.enabled.value == false",
+                    {
+                        'condition': "nic_attributes:sriov.physnet.value "
+                                     "!= 'physnet2'",
+                        'message': "Only \"physnet2\" will be configured "
+                                   "by Fuel in Neutron. Configuration of "
+                                   "other physical networks is up to "
+                                   "Operator or plugin. Fuel will just "
+                                   "configure appropriate "
+                                   "pci_passthrough_whitelist option in "
+                                   "nova.conf for such interface and "
+                                   "physical networks.",
+                        'action': "none"
+                    }
+                ]
+            }
         },
         'dpdk': {
-            'enabled': {
-                'value': False,
-                'label': 'DPDK enabled',
-                'type': 'checkbox',
-                'weight': 10
-            },
             'metadata': {
                 'label': 'DPDK',
                 'weight': 40
+            },
+            'enabled': {
+                'label': 'Enable DPDK',
+                'description': 'The Data Plane Development Kit (DPDK) '
+                               'provides high-performance packet '
+                               'processing libraries and user space '
+                               'drivers.',
+                'weight': 10,
+                'type': 'checkbox',
+                'value': False,
+                'restrictions': [{
+                    "settings:common.libvirt_type.value != 'kvm'":
+                    "Only KVM hypervisor works with DPDK"}]
             }
         },
         'plugin_a_with_nic_attributes': {

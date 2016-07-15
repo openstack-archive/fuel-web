@@ -1328,7 +1328,7 @@ class Node(NailgunObject):
                     instance.full_name))
             return
 
-        return Bond.get_bond_default_attributes(instance.cluster)
+        return Bond.get_default_attributes(instance.cluster)
 
     @classmethod
     def create_nic_attributes(cls, instance):

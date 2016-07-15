@@ -373,6 +373,7 @@ class NodeNICInterfaceClusterPlugin(BasicNodeClusterPlugin):
             cls.model.attributes
         ).join(
             models.ClusterPlugin,
+            models.Plugin
         ).filter(
             cls.model.interface_id == interface.id
         ).filter(

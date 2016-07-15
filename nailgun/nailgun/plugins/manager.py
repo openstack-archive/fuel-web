@@ -398,7 +398,6 @@ class PluginManager(object):
 
         return components
 
-    # ENTRY POINT
     @classmethod
     def get_bond_default_attributes(cls, cluster):
         """Get plugin bond attributes metadata for cluster.
@@ -448,7 +447,7 @@ class PluginManager(object):
 
         for plugin in plugins:
             metadata = plugin.pop('metadata')
-            NodeNICInterfaceClusterPlugin.\
+            NodeBondInterfaceClusterPlugin.\
                 set_attributes(
                     metadata['bond_plugin_id'],
                     plugin

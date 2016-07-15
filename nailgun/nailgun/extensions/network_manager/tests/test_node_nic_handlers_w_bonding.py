@@ -743,15 +743,16 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
 
     EXPECTED_ATTRIBUTES = {
+        'type__': {
+            'value': None,
+            'type': 'hidden'
+        },
         'mode': {
             'value': {
                 'weight': 10,
                 'type': 'select',
-                'value': 'balance-rr',
-                'label': 'Mode',
-                'values': [
-                    {'data': 'balance-rr', 'label': 'balance-rr'}
-                ]
+                'value': '',
+                'label': 'Mode'
             },
             'metadata': {
                 'weight': 10,
@@ -787,6 +788,54 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 'type': 'text',
                 'value': '',
                 'label': 'MTU'
+            }
+        },
+        'dpdk': {
+            'enabled': {
+                'value': None,
+                'label': 'DPDK enabled',
+                'type': 'checkbox',
+                'weight': 10
+            },
+            'metadata': {
+                'label': 'DPDK',
+                'weight': 40
+            }
+        },
+        'lacp': {
+            'metadata': {
+                'weight': 50,
+                'label': 'Lacp'
+            },
+            'value': {
+                'weight': 10,
+                'type': 'select',
+                'value': '',
+                'label': 'Lacp'
+            }
+        },
+        'lacp_rate': {
+            'metadata': {
+                'weight': 60,
+                'label': 'Lacp rate'
+            },
+            'value': {
+                'weight': 10,
+                'type': 'select',
+                'value': '',
+                'label': 'Lacp rate'
+            }
+        },
+        'xmit_hash_policy': {
+            'metadata': {
+                'weight': 70,
+                'label': 'Xmit hash policy'
+            },
+            'value': {
+                'weight': 10,
+                'type': 'select',
+                'value': '',
+                'label': 'Xmit hash policy'
             }
         },
         'plugin_a_with_bond_attributes': {

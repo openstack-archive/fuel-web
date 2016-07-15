@@ -31,6 +31,7 @@ class NodeSerializer(BasicSerializer):
         'progress',
         'kernel_params',
         'roles',
+        'primary_roles',
         'pending_roles',
         'status',
         'mac',

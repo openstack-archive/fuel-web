@@ -36,6 +36,7 @@ from nailgun.logger import logger
 from nailgun import objects
 from nailgun.settings import settings
 from nailgun import utils as nailgun_utils
+from nailgun.utils import get_in
 from nailgun.utils.restrictions import RestrictionBase
 
 
@@ -778,8 +779,13 @@ class NetworkManager(object):
             objects.NIC.update(current_iface, update)
 
         objects.Node.clear_bonds(node_db)
+
         for bond in bond_interfaces:
-            if bond.get('bond_properties', {}).get('mode'):
+            # updated via API
+            if get_in(bond, 'attributes', 'mode', 'value', 'value'):
+                mode = bond['attributes']['mode']['value']['value']
+            # updated via network templates
+            elif get_in(bond, 'bond_properties', 'mode'):
                 mode = bond['bond_properties']['mode']
             else:
                 mode = bond['mode']
@@ -787,9 +793,7 @@ class NetworkManager(object):
                 'node': node_db,
                 'name': bond['name'],
                 'mode': mode,
-                'mac': bond.get('mac'),
-                'bond_properties': bond.get('bond_properties', {}),
-                'attributes': bond.get('attributes', {})
+                'mac': bond.get('mac')
             }
             bond_db = objects.Bond.create(data)
 
@@ -802,9 +806,19 @@ class NetworkManager(object):
             node_nics = {nic['name']: nic for nic in node_db.nic_interfaces}
             slaves = [node_nics[n['name']] for n in bond['slaves']]
 
+            bond_attributes = bond.get('attributes', {})
+            nailgun_utils.remove_key_from_dict(
+                bond_attributes, 'bond_plugin_id')
+
+            bond_attributes = nailgun_utils.dict_merge(
+                objects.Bond.get_attributes(bond_db),
+                bond_attributes
+            )
+
             update = {
                 'slaves': slaves,
-                'offloading_modes': bond.get('offloading_modes', {})
+                'offloading_modes': bond.get('offloading_modes', {}),
+                'attributes': bond_attributes
             }
             objects.Bond.update(bond_db, update)
 
@@ -1354,20 +1368,33 @@ class NetworkManager(object):
 
     @classmethod
     def get_lnx_bond_properties(cls, bond):
-        properties = {'mode': bond.mode}
-        properties.update(bond.bond_properties)
-        to_drop = [k for k in properties.keys() if k.endswith('__')]
-        for prop in to_drop:
-            properties.pop(prop)
+        properties = {}
+        attributes = nailgun_utils.dict_merge(
+            {'mode': {'value': {'value': bond.mode}}}, bond.attributes)
+
+        def set_property(*args):
+            if get_in(attributes, *args):
+                temp_attrs = attributes
+                for arg in args:
+                    value = temp_attrs[arg]
+                    temp_attrs = value
+                properties[args[0]] = value
+
+        keys = (('mode', 'value', 'value'),
+                ('lacp', 'value', 'value'),
+                ('lacp_rate', 'value', 'value'),
+                ('xmit_hash_policy', 'value', 'value'))
+        for key in keys:
+            set_property(*key)
+
         return properties
 
     @classmethod
     def get_iface_properties(cls, iface):
         properties = {}
-        if iface.attributes.get('mtu', {}).get('value', {}).get('value'):
+        if get_in(iface.attributes, 'mtu', 'value', 'value'):
             properties['mtu'] = iface.attributes['mtu']['value']['value']
-        if iface.attributes.get('offloading', {}).get('disable', {}).get(
-                'value'):
+        if get_in(iface.attributes, 'offloading', 'disable', 'value'):
             properties['vendor_specific'] = {
                 'disable_offloading':
                 iface.attributes['offloading']['disable']['value']

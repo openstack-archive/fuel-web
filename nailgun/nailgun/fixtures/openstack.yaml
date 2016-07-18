@@ -1381,6 +1381,15 @@
             restrictions:
               - condition: "settings:ssh.security_enabled.value == false"
                 action: "hide"
+          brute_force_protection:
+            value: false
+            label: "Brute force protection"
+            description: "When enabled, the access from all networks (except the provided ones) will be granted, but the networks will be checked against the brute force attack."
+            weight: 30
+            type: "checkbox"
+            restrictions:
+              - condition: "settings:ssh.security_enabled.value == false"
+                action: "hide"
         kernel_params:
           metadata:
             label: "Kernel parameters"

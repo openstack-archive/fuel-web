@@ -160,6 +160,8 @@ class InstallationInfo(object):
                       'security_enabled', bool),
         WhiteListRule(('ssh', 'security_networks', 'value'),
                       'security_networks', None),
+        WhiteListRule(('ssh', 'brute_force_protection', 'value'),
+                      'brute_force_protection', bool),
     )
 
     vmware_attributes_white_list = (

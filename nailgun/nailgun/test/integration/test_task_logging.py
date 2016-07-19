@@ -19,7 +19,6 @@ from mock import patch
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import mock_rpc
-from nailgun.utils import reverse
 
 from nailgun import consts
 from nailgun import objects
@@ -169,18 +168,6 @@ class TestTasksLogging(BaseIntegrationTest):
         self.assertGreaterEqual(len(logger.call_args_list), 1)
         self.check_task_name_and_sanitized_data(
             -1, logger, consts.TASK_NAMES.stop_deployment)
-
-    @mock_rpc()
-    @patch.object(TaskHelper, 'update_action_log')
-    def test_dump_task_logging(self, logger):
-        resp = self.app.put(
-            reverse('LogPackageHandler'), headers=self.default_headers
-        )
-        self.assertEqual(resp.status_code, 202)
-
-        self.assertGreaterEqual(len(logger.call_args_list), 1)
-        self.check_task_name_and_sanitized_data(
-            -1, logger, consts.TASK_NAMES.dump)
 
     @mock_rpc()
     @patch.object(TaskHelper, 'update_action_log')

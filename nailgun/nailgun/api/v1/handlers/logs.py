@@ -34,8 +34,6 @@ from nailgun import objects
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.settings import settings
-from nailgun.task.manager import DumpTaskManager
-from nailgun.task.task import DumpTask
 
 
 logger = logging.getLogger(__name__)
@@ -380,39 +378,6 @@ class LogEntryCollectionHandler(BaseHandler):
         }
 
 
-class LogPackageHandler(BaseHandler):
-    """Log package handler"""
-    @content
-    def PUT(self):
-        """:returns: JSONized Task object.
-
-        :http: * 200 (task successfully executed)
-               * 400 (data validation failed)
-               * 404 (cluster not found in db)
-        """
-        try:
-            conf = jsonutils.loads(web.data()) if web.data() else None
-            task_manager = DumpTaskManager()
-            task = task_manager.execute(conf=conf)
-        except Exception as exc:
-            logger.warn(u'DumpTask: error while execution '
-                        'dump environment task: {0}'.format(str(exc)))
-            raise self.http(400, str(exc))
-
-        self.raise_task(task)
-
-
-class LogPackageDefaultConfig(BaseHandler):
-
-    @content
-    def GET(self):
-        """Generates default config for snapshot
-
-        :http: * 200
-        """
-        return DumpTask.conf()
-
-
 class LogSourceCollectionHandler(BaseHandler):
     """Log source collection handler"""
 
@@ -423,21 +388,6 @@ class LogSourceCollectionHandler(BaseHandler):
         :http: * 200 (OK)
         """
         return settings.LOGS
-
-
-class SnapshotDownloadHandler(BaseHandler):
-
-    def GET(self, snapshot_name):
-        """:returns: empty response
-
-        :resheader X-Accel-Redirect: snapshot_name
-        :http: * 200 (OK)
-               * 401 (Unauthorized)
-               * 404 (Snapshot with given name does not exist)
-        """
-
-        web.header('X-Accel-Redirect', '/dump/' + snapshot_name)
-        return ''
 
 
 class LogSourceByNodeCollectionHandler(BaseHandler):

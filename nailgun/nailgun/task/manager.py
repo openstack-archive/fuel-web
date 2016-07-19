@@ -1221,23 +1221,6 @@ class ClusterDeletionManager(TaskManager):
         return task
 
 
-class DumpTaskManager(TaskManager):
-
-    def execute(self, conf=None, **kwargs):
-        logger.info("Trying to start dump_environment task")
-        self.check_running_task(consts.TASK_NAMES.dump)
-
-        task = Task(name=consts.TASK_NAMES.dump)
-        db().add(task)
-        db().flush()
-        self._call_silently(
-            task,
-            tasks.DumpTask,
-            conf=conf
-        )
-        return task
-
-
 class GenerateCapacityLogTaskManager(TaskManager):
 
     def execute(self, **kwargs):

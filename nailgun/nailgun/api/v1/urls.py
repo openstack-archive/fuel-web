@@ -55,11 +55,8 @@ from nailgun.api.v1.handlers.deployment_history \
     import DeploymentHistoryCollectionHandler
 
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
-from nailgun.api.v1.handlers.logs import LogPackageDefaultConfig
-from nailgun.api.v1.handlers.logs import LogPackageHandler
 from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
-from nailgun.api.v1.handlers.logs import SnapshotDownloadHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
@@ -303,14 +300,8 @@ urls = (
     r'/notifications/(?P<obj_id>\d+)/?$',
     NotificationHandler,
 
-    r'/dump/(?P<snapshot_name>[A-Za-z0-9-_.]+)$',
-    SnapshotDownloadHandler,
     r'/logs/?$',
     LogEntryCollectionHandler,
-    r'/logs/package/?$',
-    LogPackageHandler,
-    r'/logs/package/config/default/?$',
-    LogPackageDefaultConfig,
     r'/logs/sources/?$',
     LogSourceCollectionHandler,
     r'/logs/sources/nodes/(?P<node_id>\d+)/?$',

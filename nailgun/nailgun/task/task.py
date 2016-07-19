@@ -15,7 +15,6 @@
 #    under the License.
 
 import collections
-from copy import deepcopy
 from itertools import groupby
 import os
 
@@ -1853,94 +1852,6 @@ class CheckBeforeDeploymentTask(object):
             if h_type != consts.HYPERVISORS.kvm:
                 raise errors.InvalidData(
                     'Only KVM hypervisor works with DPDK.')
-
-
-class DumpTask(object):
-    @classmethod
-    def conf(cls):
-        logger.debug("Preparing config for snapshot")
-        nodes = db().query(Node).filter(
-            Node.status.in_(['ready', 'provisioned', 'deploying',
-                             'error', 'stopped'])
-        ).all()
-
-        dump_conf = deepcopy(settings.DUMP)
-        for node in nodes:
-            if node.cluster is None:
-                logger.info("Node {id} is not assigned to an environment, "
-                            "falling back to root".format(id=node.id))
-                ssh_user = "root"
-            else:
-                editable_attrs = objects.Cluster.get_editable_attributes(
-                    node.cluster
-                )
-                try:
-                    ssh_user = editable_attrs['service_user']['name']['value']
-                except KeyError:
-                    logger.info("Environment {env} doesn't support non-root "
-                                "accounts on the slave nodes, falling back "
-                                "to root for node-{node}".format(
-                                    env=node.cluster_id,
-                                    node=node.id))
-                    ssh_user = "root"
-
-            host = {
-                'hostname': objects.Node.get_slave_name(node),
-                'address': node.ip,
-                'ssh-user': ssh_user,
-                'ssh-key': settings.SHOTGUN_SSH_KEY,
-            }
-
-            # save controllers
-            if 'controller' in node.roles:
-                dump_conf['dump']['controller']['hosts'].append(host)
-            # save slaves
-            dump_conf['dump']['slave']['hosts'].append(host)
-        if 'controller' in dump_conf['dump'] and \
-           not dump_conf['dump']['controller']['hosts']:
-            del dump_conf['dump']['controller']
-        if 'slave' in dump_conf['dump'] and \
-           not dump_conf['dump']['slave']['hosts']:
-            del dump_conf['dump']['slave']
-
-        # render postgres connection data in dump settings
-        dump_conf['dump']['local']['objects'].append({
-            'type': 'postgres',
-            'dbhost': settings.DATABASE['host'],
-            'dbname': settings.DATABASE['name'],
-            'username': settings.DATABASE['user'],
-            'password': settings.DATABASE['passwd'],
-        })
-
-        # render cobbler coonection data in dump settings
-        # NOTE: we no need user/password for cobbler
-        dump_conf['dump']['local']['objects'].append({
-            'type': 'xmlrpc',
-            'server': settings.COBBLER_URL,
-            'methods': [
-                'get_distros',
-                'get_profiles',
-                'get_systems',
-            ],
-            'to_file': 'cobbler.txt',
-        })
-
-        logger.debug("Dump conf: %s", str(dump_conf))
-        return dump_conf
-
-    @classmethod
-    def execute(cls, task, conf=None):
-        logger.debug("DumpTask: task={0}".format(task.uuid))
-        message = make_astute_message(
-            task,
-            'dump_environment',
-            'dump_environment_resp',
-            {
-                'settings': conf or cls.conf()
-            }
-        )
-        db().flush()
-        rpc.cast('naily', message)
 
 
 class GenerateCapacityLogTask(object):

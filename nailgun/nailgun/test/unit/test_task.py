@@ -687,7 +687,7 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         task.CheckBeforeDeploymentTask, '_check_dpdk_properties')
     def test_execute_w_old_release(self, dpdk_m, sriov_m, callback_m):
         task.CheckBeforeDeploymentTask.execute(self.task)
-        callback_m.assert_called_once_with(self.cluster)
+        callback_m.assert_called_once_with(self.cluster, [])
         self.assertEqual(0, dpdk_m.call_count)
         self.assertEqual(0, sriov_m.call_count)
 

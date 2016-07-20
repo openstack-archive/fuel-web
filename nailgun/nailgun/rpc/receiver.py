@@ -48,7 +48,6 @@ logger = logging.getLogger('receiverd')
 
 
 class NailgunReceiver(object):
-
     @classmethod
     def remove_nodes_resp(cls, **kwargs):
         logger.info(

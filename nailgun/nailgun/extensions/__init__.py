@@ -37,8 +37,12 @@ from nailgun.extensions.manager import \
 from nailgun.extensions.manager import \
     fire_callback_on_cluster_patch_attributes
 from nailgun.extensions.manager import \
-    fire_callback_on_deployment_data_serialization
+    fire_callback_on_cluster_serialization_for_deployment
 from nailgun.extensions.manager import \
-    fire_callback_on_provisioning_data_serialization
+    fire_callback_on_node_serialization_for_deployment
+from nailgun.extensions.manager import \
+    fire_callback_on_cluster_serialization_for_provisioning
+from nailgun.extensions.manager import \
+    fire_callback_on_node_serialization_for_provisioning
 from nailgun.extensions.manager import node_extension_call
 from nailgun.extensions.manager import setup_yaql_context

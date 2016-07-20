@@ -47,6 +47,7 @@ from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
+from nailgun.task.transactions import TransactionsManager
 
 
 class ClusterHandler(SingleHandler):
@@ -116,8 +117,16 @@ class ClusterChangesHandler(DeferredTaskHandler):
     log_message = u"Trying to start deployment at environment '{env_id}'"
     log_error = u"Error during execution of deployment " \
                 u"task on environment '{env_id}': {error}"
-    task_manager = ApplyChangesTaskManager
     validator = ClusterChangesValidator
+
+    @classmethod
+    def task_manager(cls, cluster_id):
+        cluster = objects.Cluster.get_by_uid(
+            cluster_id, fail_if_not_found=True
+        )
+        if objects.Release.is_lcm_supported(cluster.release):
+            return TransactionsManager(cluster.id)
+        return ApplyChangesTaskManager(cluster.id)
 
     @classmethod
     def get_options(cls):

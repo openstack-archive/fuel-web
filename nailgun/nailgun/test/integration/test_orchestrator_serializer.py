@@ -77,6 +77,7 @@ class OrchestratorSerializerTestBase(BaseSerializerTest):
         self.cluster_mock.id = 0
         self.cluster_mock.deployment_tasks = []
         self.cluster_mock.release.deployment_tasks = []
+        self.common_attrs = mock.MagicMock()
 
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node['role'], nodes)
@@ -213,7 +214,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assert_nodes_with_role(nodes, 'mongo', 1)
 
     def test_serialize_nodes(self):
-        serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
+        serialized_nodes = self.serializer.serialize_nodes(
+            self.common_attrs, self.cluster.nodes
+        )
         self.assert_roles_flattened(serialized_nodes)
 
         # Each not should be same as result of
@@ -222,7 +225,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             node_db = self.db.query(Node).get(int(serialized_node['uid']))
 
             expected_node = self.serializer.serialize_node(
-                node_db, serialized_node['role'])
+                self.common_attrs, node_db, serialized_node['role']
+            )
             self.assertEqual(serialized_node, expected_node)
 
     def test_serialize_node(self):
@@ -234,7 +238,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         node_db = self.db.query(Node).get(node['id'])
 
-        serialized_data = self.serializer.serialize_node(node_db, 'controller')
+        serialized_data = self.serializer.serialize_node(
+            self.common_attrs, node_db, 'controller'
+        )
 
         self.assertEqual(serialized_data['role'], 'controller')
         self.assertEqual(serialized_data['uid'], str(node_db.id))
@@ -254,7 +260,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         vms_conf = [{'id': 1, 'cluster_id': self.cluster.id}]
         node_db.vms_conf = vms_conf
 
-        serialized_data = self.serializer.serialize_node(node_db, 'controller')
+        serialized_data = self.serializer.serialize_node(
+            self.common_attrs, node_db, 'controller'
+        )
         self.assertEqual(serialized_data['vms_conf'], vms_conf)
 
     def test_node_list(self):
@@ -426,7 +434,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster_mock.release.environment_version = '5.0'
         serializer = DeploymentMultinodeSerializer(
             AstuteGraph(self.cluster_mock))
-        serialized_nodes = serializer.serialize_nodes(self.cluster.nodes)
+        serialized_nodes = serializer.serialize_nodes(
+            self.common_attrs, self.cluster.nodes
+        )
         # primary-contoller is not critical for MultiNode serializer
         expected_ciritial_roles = [
             {'fail_if_error': False, 'role': 'cinder'},
@@ -1306,7 +1316,9 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         self.assertEqual(expected_priorities, nodes)
 
     def test_set_critital_node(self):
-        serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
+        serialized_nodes = self.serializer.serialize_nodes(
+            self.common_attrs, self.cluster.nodes
+        )
         expected_ciritial_roles = [
             {'fail_if_error': True, 'role': 'primary-controller'},
             {'fail_if_error': True, 'role': 'controller'},
@@ -1508,7 +1520,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         )
 
     def test_serialize_nodes(self):
-        serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
+        serialized_nodes = self.serializer.serialize_nodes(
+            self.common_attrs, self.cluster.nodes
+        )
         self.assert_roles_flattened(serialized_nodes)
 
         # Each not should be same as result of
@@ -1517,7 +1531,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             node_db = self.db.query(Node).get(int(serialized_node['uid']))
 
             expected_node = self.serializer.serialize_node(
-                node_db, serialized_node['role'])
+                self.common_attrs, node_db, serialized_node['role']
+            )
             self.assertEqual(serialized_node, expected_node)
 
     def test_neutron_vlan_ids_tag_present_on_6_0_env(self):
@@ -1586,7 +1601,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         objects.Cluster.prepare_for_deployment(self.cluster)
 
         node_db = self.db.query(Node).get(node['id'])
-        serialized_data = self.serializer.serialize_node(node_db, 'controller')
+        serialized_data = self.serializer.serialize_node(
+            self.common_attrs, node_db, 'controller'
+        )
 
         self.assertEqual(serialized_data['role'], 'controller')
         self.assertEqual(serialized_data['uid'], str(node_db.id))
@@ -2304,8 +2321,12 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
 
     def test_mongo_roles_equals_in_defferent_modes(self):
         cluster = self.create_env()
-        ha_nodes = self.serializer_ha.serialize_nodes(cluster.nodes)
-        mn_nodes = self.serializer_mn.serialize_nodes(cluster.nodes)
+        ha_nodes = self.serializer_ha.serialize_nodes(
+            self.common_attrs, cluster.nodes
+        )
+        mn_nodes = self.serializer_mn.serialize_nodes(
+            self.common_attrs, cluster.nodes
+        )
         self.assertEqual(mn_nodes, ha_nodes)
 
 
@@ -2367,6 +2388,10 @@ class BaseDeploymentSerializer(BaseSerializerTest):
     serializer = None
     env_version = '2014.2-6.1'
 
+    def setUp(self):
+        super(BaseDeploymentSerializer, self).setUp()
+        self.common_attrs = mock.MagicMock()
+
     def create_env(self, mode):
         if mode == consts.CLUSTER_MODES.multinode:
             available_modes = [consts.CLUSTER_MODES.ha_compact,
@@ -2393,7 +2418,8 @@ class BaseDeploymentSerializer(BaseSerializerTest):
     def check_serialize_node(self):
         self.assertEqual(
             self.serializer.serialize_node(
-                self.env.nodes[0], 'role')['user_node_name'],
+                self.common_attrs, self.env.nodes[0], 'role'
+            )['user_node_name'],
             self.node_name)
 
     def check_serialize_node_for_node_list(self):
@@ -2459,7 +2485,8 @@ class BaseDeploymentSerializer(BaseSerializerTest):
         self.db.flush()
 
         result = self.serializer.serialize_node(
-            self.env.nodes[0], 'controller')
+            self.common_attrs, self.env.nodes[0], 'controller'
+        )
 
         self.assertEqual(len(result['vcenter']['computes']), 4)
 
@@ -2684,6 +2711,7 @@ class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
     def setUp(self):
         super(TestSerializeInterfaceDriversData, self).setUp()
+        self.common_attrs = mock.MagicMock()
 
     def _create_cluster_for_interfaces(self, driver_mapping={},
                                        bus_mapping={},
@@ -2724,8 +2752,9 @@ class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
             self._create_cluster_for_interfaces(driver_mapping, bus_mapping)
         self.db.commit()
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        node = self.serializer.serialize_node(cluster_db.nodes[0],
-                                              'controller')
+        node = self.serializer.serialize_node(
+            self.common_attrs, cluster_db.nodes[0], 'controller'
+        )
         interfaces = node['network_scheme']['interfaces']
         for iface, iface_attrs in interfaces.items():
             self.assertIn('vendor_specific', iface_attrs)
@@ -2758,8 +2787,9 @@ class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
         self.db.commit()
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        node = self.serializer.serialize_node(cluster_db.nodes[0],
-                                              'controller')
+        node = self.serializer.serialize_node(
+            self.common_attrs, cluster_db.nodes[0], 'controller'
+        )
         endpoints = node['network_scheme']['endpoints']
         net_roles = node['network_scheme']['roles']
         for net_role, bridge in net_roles.items():

@@ -654,13 +654,6 @@ class TestDeploymentHASerializer90(
         for item in serialized:
             self.assertIn(item, cust_serialized)
 
-    def test_remove_nodes_from_common_attrs(self):
-        cluster_db = self.env.clusters[0]
-        serializer = self.create_serializer(cluster_db)
-
-        common_attrs = serializer.get_common_attrs(cluster_db)
-        self.assertNotIn('nodes', common_attrs)
-
 
 class TestDeploymentTasksSerialization90(
     TestSerializer90Mixin,

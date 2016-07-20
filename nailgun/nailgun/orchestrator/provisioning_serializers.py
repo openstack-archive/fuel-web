@@ -22,9 +22,7 @@ import netaddr
 import six
 
 from nailgun import consts
-from nailgun.extensions import \
-    fire_callback_on_before_provisioning_serialization
-from nailgun.extensions import fire_callback_on_provisioning_data_serialization
+from nailgun import extensions
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import MellanoxMixin
@@ -54,25 +52,48 @@ class ProvisioningSerializer(MellanoxMixin):
                 serialized_nodes.extend(
                     cls.serialize_nodes(cluster_attrs, node_group))
 
-        serialized_info = (cluster.replaced_provisioning_info or
-                           cls.serialize_cluster_info(cluster_attrs, nodes))
-        serialized_info['fault_tolerance'] = cls.fault_tolerance(cluster,
-                                                                 nodes)
+        if cluster.replaced_provisioning_info:
+            serialized_info = cluster.replaced_provisioning_info
+        else:
+            serialized_info = cls.serialize_cluster_info(
+                cluster, cluster_attrs
+            )
+
+        serialized_info['fault_tolerance'] = cls.fault_tolerance(
+            cluster, nodes
+        )
         serialized_info['nodes'] = serialized_nodes
         return serialized_info
 
     @classmethod
-    def serialize_cluster_info(cls, cluster_attrs, nodes):
+    def serialize_node_info(cls, cluster_attrs, node):
+        data = cls.serialize_node(cluster_attrs, node)
+        extensions.fire_callback_on_node_serialization_for_provisioning(
+            node, data
+        )
+        return data
+
+    @classmethod
+    def serialize_cluster_info(cls, cluster, cluster_attrs):
+        data = cls.serialize_cluster(cluster, cluster_attrs)
+        extensions.fire_callback_on_cluster_serialization_for_provisioning(
+            cluster, data
+        )
+        return data
+
+    @classmethod
+    def serialize_cluster(cls, cluster, cluster_attrs):
         return {
             'engine': {
                 'url': settings.COBBLER_URL,
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
-            }}
+            }
+        }
 
     @classmethod
-    def serialize_customized(self, nodes):
+    def serialize_customized(cls, nodes):
         serialized = []
         for node in nodes:
             serialized.append(node.replaced_provisioning_info)
@@ -83,7 +104,8 @@ class ProvisioningSerializer(MellanoxMixin):
         """Serialize nodes."""
         serialized_nodes = []
         for node in nodes:
-            serialized_nodes.append(cls.serialize_node(cluster_attrs, node))
+            node_data = cls.serialize_node_info(cluster_attrs, node)
+            serialized_nodes.append(node_data)
         return serialized_nodes
 
     @classmethod
@@ -352,46 +374,17 @@ def get_serializer_for_cluster(cluster):
     return ProvisioningSerializer90
 
 
-def _execute_pipeline(data, cluster, nodes, ignore_customized):
-    "Executes pipelines depending on ignore_customized boolean."
-    if ignore_customized:
-        return fire_callback_on_provisioning_data_serialization(
-            data, cluster, nodes)
-
-    nodes_without_customized = {n.uid: n for n in nodes
-                                if not n.replaced_provisioning_info}
-
-    def keyfunc(node):
-        return node['uid'] in nodes_without_customized
-
-    temp_nodes = data['nodes']
-
-    # not customized nodes
-    data['nodes'] = list(six.moves.filter(keyfunc, temp_nodes))
-
-    # NOTE(sbrzeczkowski): pipelines must be executed for nodes
-    # which don't have replaced_provisioning_info specified
-    updated_data = fire_callback_on_provisioning_data_serialization(
-        data, cluster, list(six.itervalues(nodes_without_customized)))
-
-    # customized nodes
-    updated_data['nodes'].extend(six.moves.filterfalse(keyfunc, temp_nodes))
-
-    return updated_data
-
-
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""
 
-    fire_callback_on_before_provisioning_serialization(
+    extensions.fire_callback_on_before_provisioning_serialization(
         cluster, nodes, ignore_customized
     )
     serializer = get_serializer_for_cluster(cluster)
 
-    data = serializer.serialize(
-        cluster, nodes, ignore_customized=ignore_customized)
-
-    return _execute_pipeline(data, cluster, nodes, ignore_customized)
+    return serializer.serialize(
+        cluster, nodes, ignore_customized=ignore_customized
+    )
 
 
 class ProvisioningSerializer70(ProvisioningSerializer61):

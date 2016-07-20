@@ -19,34 +19,33 @@ Handlers dealing with clusters
 """
 
 import traceback
+
 import web
 
+from nailgun import errors
+from nailgun import objects
+from nailgun import utils
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DeferredTaskHandler
 from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphCollectionHandler
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphHandler
-
 from nailgun.api.v1.validators.cluster import ClusterAttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterChangesValidator
 from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
-
-from nailgun import errors
 from nailgun.logger import logger
-from nailgun import objects
-from nailgun import utils
-
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
+from nailgun.transactions import TransactionsManager
 
 
 class ClusterHandler(SingleHandler):
@@ -116,8 +115,16 @@ class ClusterChangesHandler(DeferredTaskHandler):
     log_message = u"Trying to start deployment at environment '{env_id}'"
     log_error = u"Error during execution of deployment " \
                 u"task on environment '{env_id}': {error}"
-    task_manager = ApplyChangesTaskManager
     validator = ClusterChangesValidator
+
+    @classmethod
+    def task_manager(cls, cluster_id):
+        cluster = objects.Cluster.get_by_uid(
+            cluster_id, fail_if_not_found=True
+        )
+        if objects.Release.is_lcm_supported(cluster.release):
+            return TransactionsManager(cluster.id)
+        return ApplyChangesTaskManager(cluster.id)
 
     @classmethod
     def get_options(cls):

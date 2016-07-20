@@ -19,6 +19,10 @@ import traceback
 import six
 import web
 
+from nailgun import consts
+from nailgun import errors
+from nailgun import objects
+from nailgun import utils
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
@@ -27,24 +31,18 @@ from nailgun.api.v1.validators.node import NodeDeploymentValidator
 from nailgun.api.v1.validators.node import NodesFilterValidator
 from nailgun.api.v1.validators.orchestrator_graph import \
     GraphSolverVisualizationValidator
-
 from nailgun.logger import logger
-
-from nailgun import consts
-from nailgun import errors
-from nailgun import objects
-from nailgun import utils
-
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import graph_visualization
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
+from nailgun.orchestrator import task_based_deployment
 from nailgun.orchestrator.stages import post_deployment_serialize
 from nailgun.orchestrator.stages import pre_deployment_serialize
-from nailgun.orchestrator import task_based_deployment
-from nailgun.task.helpers import TaskHelper
 from nailgun.task import manager
 from nailgun.task import task
+from nailgun.task.helpers import TaskHelper
+from nailgun.transactions import TransactionsManager
 
 
 class NodesFilterMixin(object):
@@ -278,7 +276,15 @@ class ProvisionSelectedNodes(SelectedNodesBase):
 class BaseDeploySelectedNodes(SelectedNodesBase):
 
     validator = DeploySelectedNodesValidator
-    task_manager = manager.DeploymentTaskManager
+
+    @classmethod
+    def task_manager(cls, cluster_id):
+        cluster = objects.Cluster.get_by_uid(
+            cluster_id, fail_if_not_found=True
+        )
+        if objects.Release.is_lcm_supported(cluster.release):
+            return TransactionsManager(cluster.id)
+        return manager.DeploymentTaskManager(cluster_id)
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

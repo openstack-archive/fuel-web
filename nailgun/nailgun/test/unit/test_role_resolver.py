@@ -33,7 +33,7 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
             ["compute"],
         ]
         cls.nodes = [
-            mock.MagicMock(uid=str(i))
+            mock.MagicMock(uid=str(i), pending_deletion=False)
             for i in six.moves.range(len(cls.roles_of_nodes))
         ]
 
@@ -100,6 +100,25 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
         self.assertEqual(
             {'compute', "cinder"},
             resolver.get_all_roles(["compute", "cinder", "cinder2"])
+        )
+
+    def test_get_deleted_nodes(self):
+        nodes = self.nodes[:]
+        nodes.append(mock.MagicMock(
+            uid=str(len(nodes) + 1), pending_deletion=True
+        ))
+        resolver = role_resolver.RoleResolver(nodes)
+        self.assertItemsEqual(
+            [n.uid for n in self.nodes], resolver.resolve("*")
+        )
+        self.assertItemsEqual(
+            [n.uid for n in self.nodes], resolver.resolve("/.*/")
+        )
+        self.assertItemsEqual(
+            [n.uid for n in nodes], resolver.resolve(["/.*/", "deleted"])
+        )
+        self.assertItemsEqual(
+            [nodes[-1].uid], resolver.resolve(["deleted"])
         )
 
 

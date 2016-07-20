@@ -13,6 +13,7 @@
         weight: 10
         conflicts:
           - compute
+          - ceph-osd
         update_required:
           - compute
           - cinder

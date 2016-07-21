@@ -27,5 +27,6 @@ class TaskSerializer(BasicSerializer):
         "result",
         "message",
         "status",
-        "progress"
+        "progress",
+        "parent_id"
     )

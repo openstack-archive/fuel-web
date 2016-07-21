@@ -2420,3 +2420,334 @@
             weight: 61
             type: "checkbox"
             value: true
+- &ubuntu_xenial
+  pk: 4
+  extend: *base_release
+  fields:
+    name: "Newton on Ubuntu 16.04"
+    version: "newton-10.0"
+    operating_system: "Ubuntu"
+    description: "This option will install the OpenStack Mitaka packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      editable:
+        kernel_params:
+          kernel:
+            value: "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
+        repo_setup:
+          metadata:
+            label: "Repositories"
+            weight: 50
+            group: "general"
+            always_editable: true
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: null
+            description: |
+              Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
+              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
+              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+            value:
+              - type: "deb"
+                name: "ubuntu"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-updates"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial-updates"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-security"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial-security"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "mos"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
+                suite: "mos10.0"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-updates"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-updates"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-security"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-holdback"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-holdback"
+                section: "main restricted"
+                priority: 1100
+              - type: "deb"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
+                suite: "auxiliary"
+                section: "main restricted"
+                priority: 1150
+        provision:
+          metadata:
+            label: "Provision"
+            weight: 80
+            group: "general"
+            restrictions:
+              - condition: "false"
+                action: "hide"
+          packages:
+            label: "Initial packages"
+            weight: 10
+            type: "textarea"
+            value: |
+              acl
+              anacron
+              bash-completion
+              bridge-utils
+              bsdmainutils
+              build-essential
+              cloud-init
+              curl
+              daemonize
+              debconf-utils
+              gdisk
+              grub-pc
+              hwloc
+              linux-firmware
+              linux-headers-generic-lts-xenial
+              linux-image-generic-lts-xenial
+              lvm2
+              mcollective
+              mdadm
+              multipath-tools
+              multipath-tools-boot
+              nailgun-agent
+              nailgun-mcagents
+              network-checker
+              ntp
+              ntpdate
+              openssh-client
+              openssh-server
+              puppet
+              python-amqp
+              ruby-augeas
+              ruby-ipaddress
+              ruby-json
+              ruby-netaddr
+              ruby-openstack
+              ruby-shadow
+              ruby-stomp
+              telnet
+              ubuntu-minimal
+              ubuntu-standard
+              uuid-runtime
+              vim
+              virt-what
+              vlan
+      generated:
+        cobbler:
+          profile:
+            generator_arg: "ubuntu_bootstrap"
+        provision:
+          codename: "xenial"
+          image_data:
+            /:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64.img.gz"
+              format: "ext4"
+              container: "gzip"
+            /boot:
+              uri: "http://{settings.MASTER_IP}:8080/targetimages/env_{cluster.id}_ubuntu_1604_amd64-boot.img.gz"
+              format: "ext2"
+              container: "gzip"
+    node_attributes:
+      cpu_pinning:
+        metadata:
+          group: "nfv"
+          label: "CPU pinning"
+          weight: 10
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              action: "hide"
+        nova:
+          weight: 10
+          description: "Number of CPUs for Nova usage"
+          label: "Nova CPU pinning"
+          type: "number"
+          value: 0
+          min: 0
+        dpdk:
+          weight: 20
+          description: "Number of CPUs for DPDK usage"
+          label: "DPDK CPU pinning"
+          type: "number"
+          value: 0
+          min: 0
+          restrictions:
+            - condition: "not ('experimental' in version:feature_groups)"
+              action: "hide"
+      hugepages:
+        metadata:
+          group: "nfv"
+          label: "Huge Pages"
+          weight: 20
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              action: "hide"
+        nova:
+          weight: 10
+          description: "Nova Huge Pages configuration"
+          label: "Nova Huge Pages"
+          type: "custom_hugepages"
+          value: {}
+        dpdk:
+          weight: 20
+          description: "DPDK Huge Pages per NUMA node in MB"
+          label: "DPDK Huge Pages"
+          type: "number"
+          value: 0
+          min: 0
+          restrictions:
+            - condition: "not ('experimental' in version:feature_groups)"
+              action: "hide"
+    networks_metadata:
+      dpdk_drivers:
+        # Sources:
+        # http://dpdk.org/browse/dpdk/tree/doc/guides/rel_notes/known_issues.rst?h=releases&id=7173acefc7cfdfbbb9b91fcba1c9a67adb4c07c9#n168
+        # http://dpdk.org/browse/dpdk/tree/lib/librte_eal/common/include/rte_pci_dev_ids.h?h=releases&id=7173acefc7cfdfbbb9b91fcba1c9a67adb4c07c9
+        igb_uio: [
+          "8086:100e", "8086:100f", "8086:1011", "8086:1010", "8086:1012",
+          "8086:101d", "8086:105e", "8086:105f", "8086:1060", "8086:10d9",
+          "8086:10da", "8086:10a4", "8086:10d5", "8086:10a5", "8086:10bc",
+          "8086:107d", "8086:107e", "8086:107f", "8086:10b9", "8086:109a",
+          "8086:10d3", "8086:10f6", "8086:150c", "8086:10c9", "8086:10e6",
+          "8086:10e7", "8086:10e8", "8086:1526", "8086:150a", "8086:1518",
+          "8086:150d", "8086:10a7", "8086:10a9", "8086:10d6", "8086:150e",
+          "8086:150f", "8086:1510", "8086:1511", "8086:1516", "8086:1527",
+          "8086:1521", "8086:1522", "8086:1523", "8086:1524", "8086:1546",
+          "8086:1533", "8086:1534", "8086:1535", "8086:1536", "8086:1537",
+          "8086:1538", "8086:1539", "8086:1f40", "8086:1f41", "8086:1f45",
+          "8086:0438", "8086:043a", "8086:043c", "8086:0440", "8086:10b6",
+          "8086:1508", "8086:10c6", "8086:10c8", "8086:150b", "8086:10db",
+          "8086:10dd", "8086:10ec", "8086:10f1", "8086:10f4", "8086:10f7",
+          "8086:1514", "8086:1517", "8086:10f9", "8086:10fb", "8086:11a9",
+          "8086:1f72", "8086:17d0", "8086:0470", "8086:152a", "8086:1529",
+          "8086:1507", "8086:154d", "8086:154a", "8086:1558", "8086:1557",
+          "8086:10fc", "8086:151c", "8086:154f", "8086:1528", "8086:1560",
+          "8086:15ae", "8086:1563", "8086:15aa", "8086:15ab", "8086:155d",
+          "8086:1572", "8086:1574", "8086:157f", "8086:1580", "8086:1581",
+          "8086:1583", "8086:1584", "8086:1585", "8086:1586", "8086:15a4",
+          "8086:10ca", "8086:152d", "8086:1520", "8086:152f", "8086:10ed",
+          "8086:152e", "8086:1515", "8086:1530", "8086:1564", "8086:1565",
+          "8086:15a8", "8086:15a9", "8086:154c", "8086:1571", "1af4:1000",
+          "15ad:07b0", "8086:15a5", "1137:0043", "1137:0071", "14e4:168a",
+          "14e4:16a9", "14e4:164f", "14e4:168e", "14e4:16af", "14e4:163d",
+          "14e4:163f", "14e4:168d", "14e4:16a1", "14e4:16a2", "14e4:16ad",
+          "14e4:16ae", "14e4:163e", "14e4:16a4"
+        ]
+- pk: 5
+  extend: *ubuntu_xenial
+  fields:
+    name: "Newton on Ubuntu+UCA 16.04"
+    version: "newton-10.0"
+    description: "This option will install the OpenStack Newton packages using Ubuntu as a base operating system, including Ubuntu Cloud Archive OpenStack packages. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      editable:
+        repo_setup:
+          repos:
+            type: "custom_repo_configuration"
+            extra_priority: null
+            description: |
+              Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.
+              To create a local repository mirror on the Fuel master node, please follow the instructions provided by running "fuel-createmirror --help" on the Fuel master node.
+              Please make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.
+            value:
+              - type: "deb"
+                name: "ubuntu"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-updates"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial-updates"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "ubuntu-security"
+                uri: "http://archive.ubuntu.com/ubuntu/"
+                suite: "xenial-security"
+                section: "main universe multiverse"
+                priority: null
+              - type: "deb"
+                name: "uca"
+                uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
+                suite: "xenial-updates/mitaka"
+                section: "main"
+                priority: 1080
+              - type: "deb"
+                name: "uca-proposed"
+                uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
+                suite: "xenial-proposed/mitaka"
+                section: "main"
+                priority: 1080
+              - type: "deb"
+                name: "mos"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
+                suite: "mos10.0"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-updates"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-updates"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-security"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-security"
+                section: "main restricted"
+                priority: 1050
+              - type: "deb"
+                name: "mos-holdback"
+                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
+                suite: "mos10.0-holdback"
+                section: "main restricted"
+                priority: 1100
+              - type: "deb"
+                name: "Auxiliary"
+                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"
+                suite: "auxiliary"
+                section: "main restricted"
+                priority: 1150
+          repo_type:
+            type: "hidden"
+            weight: 58
+            value: "uca"
+          pin_haproxy:
+            label: "HAProxy APT Pinning"
+            description: "Use Fuel HAProxy packages instead of upstream"
+            weight: 59
+            type: "checkbox"
+            value: true
+          pin_rabbitmq:
+            label: "RabbitMQ APT Pinning"
+            description: "Use Fuel RabbitMQ packages instead of upstream"
+            weight: 60
+            type: "checkbox"
+            value: true
+          pin_ceph:
+            label: "Ceph APT Pinning"
+            description: "Use Fuel Ceph packages instead of upstream"
+            weight: 61
+            type: "checkbox"
+            value: true

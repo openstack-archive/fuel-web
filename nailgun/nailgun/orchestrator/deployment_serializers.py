@@ -101,10 +101,13 @@ class DeploymentMultinodeSerializer(object):
             #  changes in tasks introduced during granular deployment,
             #  and that mech should be used
             self.set_tasks(serialized_nodes)
+
+            deployment_info = {'common_attrs': common_attrs,
+                               'nodes': serialized_nodes}
         finally:
             self.finalize()
 
-        return serialized_nodes
+        return deployment_info
 
     def serialize_generated(self, common_attrs, nodes):
         serialized_nodes = self.serialize_nodes(common_attrs, nodes)
@@ -118,7 +121,7 @@ class DeploymentMultinodeSerializer(object):
                 extensions.fire_callback_on_node_serialization_for_deployment(
                     nodes_map[node_data['uid']], node_data
                 )
-            yield utils.dict_merge(common_attrs, node_data)
+            yield node_data
 
     def serialize_customized(self, common_attrs, nodes):
         for node in nodes:
@@ -837,13 +840,21 @@ def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode."""
-    return _invoke_serializer(
+    serialized = _invoke_serializer(
         get_serializer_for_cluster(cluster)(orchestrator_graph),
         cluster, nodes, ignore_customized
     )
+    return serialized
 
 
 def serialize_for_lcm(cluster, nodes, ignore_customized=False):
     return _invoke_serializer(
         DeploymentLCMSerializer(), cluster, nodes, ignore_customized
     )
+
+
+def deployment_info_to_legacy(deployment_info):
+    common_attrs = deployment_info['common_attrs']
+    nodes = [utils.dict_merge(common_attrs, n)
+             for n in deployment_info['nodes']]
+    return nodes

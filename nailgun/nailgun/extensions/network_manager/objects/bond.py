@@ -52,18 +52,6 @@ class Bond(DPDKMixin, NailgunObject):
         instance.assigned_networks_list = networks
 
     @classmethod
-    def update(cls, instance, data):
-        """Update existing Bond with specified parameters.
-
-        :param instance: object (model) instance
-        :param data: dictionary of key-value pairs as object fields
-        :returns: instance of an object (model)
-        """
-        instance.update(data)
-        instance.offloading_modes = data.get('offloading_modes', {})
-        return instance
-
-    @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):
         return all(NIC.get_dpdk_driver(iface, dpdk_drivers)
                    for iface in instance.slaves)

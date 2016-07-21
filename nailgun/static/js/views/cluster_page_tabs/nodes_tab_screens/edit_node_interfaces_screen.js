@@ -55,7 +55,7 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
         },
         isLocked: function() {
             var nodesAvailableForChanges = this.nodes.filter(function(node) {
-                return node.get('pending_addition') || node.get('status') == 'error';
+                return node.get('pending_addition');
             });
             return !nodesAvailableForChanges.length || this.constructor.__super__.isLocked.apply(this);
         },

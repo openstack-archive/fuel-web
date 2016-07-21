@@ -47,10 +47,12 @@ class Transaction(NailgunObject):
 
     @classmethod
     def attach_deployment_info(cls, instance, deployment_info):
-        for node_uid, node_di in deployment_info.items():
+        for uid, dinfo in deployment_info['nodes'].items():
             NodeDeploymentInfo.create({'task_id': instance.id,
-                                       'node_uid': node_uid,
-                                       'deployment_info': node_di})
+                                       'node_uid': uid,
+                                       'deployment_info': dinfo})
+        if 'common_attrs' in deployment_info:
+            instance.deployment_info = deployment_info['common_attrs']
 
     @classmethod
     def get_deployment_info(cls, instance, node_uids=None):
@@ -63,9 +65,12 @@ class Transaction(NailgunObject):
             node_di_list = NodeDeploymentInfoCollection.filter_by_list(
                 node_di_list, "node_uid", node_uids)
 
-        deployment_info = {node_di.node_uid: node_di.deployment_info
-                           for node_di in node_di_list}
-        return deployment_info
+        nodes_info = {node_di.node_uid: node_di.deployment_info
+                      for node_di in node_di_list}
+        if nodes_info or instance.deployment_info:
+            return {'common_attrs': instance.deployment_info or {},
+                    'nodes': nodes_info}
+        return {}
 
     @classmethod
     def attach_network_settings(cls, instance, settings):

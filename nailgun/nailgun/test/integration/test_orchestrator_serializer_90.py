@@ -23,6 +23,8 @@ import unittest2
 from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator.deployment_serializers import \
+    deployment_info_to_legacy
 from nailgun.plugins import adapters
 from nailgun.utils import reverse
 
@@ -91,8 +93,8 @@ class TestDeploymentAttributesSerialization90(
 
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        self.assertEqual(len(serialised_for_astute), 1)
-        node = serialised_for_astute[0]
+        self.assertEqual(len(serialised_for_astute['nodes']), 1)
+        node = serialised_for_astute['nodes'][0]
         dpdk = node.get('dpdk')
         self.assertIsNotNone(dpdk)
         self.assertTrue(dpdk.get('enabled'))
@@ -170,8 +172,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        self.assertEqual(len(serialised_for_astute), 1)
-        node = serialised_for_astute[0]
+        self.assertEqual(len(serialised_for_astute['nodes']), 1)
+        node = serialised_for_astute['nodes'][0]
         dpdk = node.get('dpdk')
         self.assertIsNotNone(dpdk)
         self.assertTrue(dpdk.get('enabled'))
@@ -239,6 +241,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
 
         serialized_node = serialized_for_astute[0]
 
@@ -274,6 +278,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
 
         serialized_node = serialized_for_astute[0]
 
@@ -316,6 +322,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
 
         serialized_node = serialized_for_astute[0]
 
@@ -356,6 +364,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         serialized_node = serialized_for_astute[0]
 
         self.assertNotIn('hugepages', serialized_node)
@@ -391,6 +401,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         serialized_node = serialized_for_astute[0]
 
         expected = [
@@ -410,6 +422,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
 
         for serialized_node in serialized_for_astute:
             nova = serialized_node.get('nova', {})
@@ -433,6 +447,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
 
         for serialized_node in serialized_for_astute:
             nova = serialized_node.get('nova', {})
@@ -462,6 +478,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node_data in serialized_for_astute:
             for k, v in six.iteritems(node_data['network_metadata']['nodes']):
                 node = objects.Node.get_by_uid(v['uid'])
@@ -513,33 +531,34 @@ class TestDeploymentLCMSerialization90(
         )
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
+
         self.assertEqual(
             {'glance_config': 'value1',
              'nova_config': 'value3',
              'ceph_config': 'value2'},
-            serialized[0]['configuration']
+            serialized['nodes'][0]['configuration']
         )
 
     def test_cluster_attributes_in_serialized(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
-        for node_info in serialized:
-            self.assertEqual(
-                objects.Cluster.to_dict(self.cluster_db),
-                node_info['cluster']
-            )
-            self.assertEqual(
-                objects.Release.to_dict(self.cluster_db.release),
-                node_info['release']
-            )
+
+        self.assertEqual(
+            objects.Cluster.to_dict(self.cluster_db),
+            serialized['common_attrs']['cluster']
+        )
+        self.assertEqual(
+            objects.Release.to_dict(self.cluster_db.release),
+            serialized['common_attrs']['release']
+        )
 
         self.assertEqual(
             ['compute'],
-            serialized[0]['roles']
+            serialized['nodes'][0]['roles']
         )
         self.assertEqual(
             [consts.TASK_ROLES.master],
-            serialized[1]['roles']
+            serialized['nodes'][1]['roles']
         )
 
     @mock.patch.object(
@@ -601,18 +620,21 @@ class TestDeploymentLCMSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        for node in serialized:
-            self.assertIn('plugins', node)
-            self.datadiff(plugins_data, node['plugins'], compare_sorted=True)
+
+        self.assertIn('plugins', serialized['common_attrs'])
+        self.datadiff(plugins_data, serialized['common_attrs']['plugins'],
+                      compare_sorted=True)
 
     def test_serialize_with_customized(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        serialized = deployment_info_to_legacy(serialized)
 
         objects.Cluster.replace_deployment_info(self.cluster_db, serialized)
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         cust_serialized = self.serializer.serialize(
             self.cluster_db, [self.node])
+        cust_serialized = deployment_info_to_legacy(cust_serialized)
 
         for item in serialized:
             if item['uid'] != consts.MASTER_NODE_UID:
@@ -666,11 +688,13 @@ class TestDeploymentHASerializer90(
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)
+        serialized = deployment_info_to_legacy(serialized)
 
         objects.Cluster.replace_deployment_info(cluster, serialized)
         objects.Cluster.prepare_for_deployment(cluster)
-        cust_serialized = serializer.serialize(
-            cluster, cluster.nodes)
+        cust_serialized = serializer.serialize(cluster, cluster.nodes)
+        cust_serialized = deployment_serializers.deployment_info_to_legacy(
+            cust_serialized)
 
         for item in serialized:
             self.assertIn(item, cust_serialized)
@@ -849,9 +873,11 @@ class TestSriovSerialization90(
         else:
             self.fail('NIC without assigned networks was not found')
 
-        node0 = self.serialize()[0]
+        serialized = self.serialize()
+        node0 = serialized['nodes'][0]
+        common_attrs = serialized['common_attrs']
         self.assertEqual(
-            node0['quantum_settings']['supported_pci_vendor_devs'],
+            common_attrs['quantum_settings']['supported_pci_vendor_devs'],
             ['1234:5678']
         )
         for trans in node0['network_scheme']['transformations']:

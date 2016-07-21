@@ -54,7 +54,7 @@ class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
             AstuteGraph(self.cluster_db),
             self.cluster_db,
             self.cluster_db.nodes)
-        for node in serialized_for_astute:
+        for node in serialized_for_astute['nodes']:
             self.assertIn("node_volumes", node)
             for node_volume in node["node_volumes"]:
                 if node_volume["id"] == "cinder-block-device":
@@ -184,7 +184,7 @@ class TestDeploymentAttributesSerialization80(
             self.cluster_db,
             self.cluster_db.nodes)
 
-        for node in serialized_for_astute:
+        for node in serialized_for_astute['nodes']:
             self.assertIn("node_volumes", node)
             self.assertItemsEqual(
                 expected_node_volumes_hash, node["node_volumes"])
@@ -219,26 +219,26 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
         return deployment_serializers.serialize(
             AstuteGraph(cluster),
             cluster,
-            cluster.nodes)
+            cluster.nodes)['common_attrs']
 
     def test_pg_num_no_osd_nodes(self):
         cluster = self.create_env([
             {'roles': ['controller']}])
         data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 128)
+        self.assertEqual(data['storage']['pg_num'], 128)
 
     def test_pg_num_1_osd_node(self):
         cluster = self.create_env([
             {'roles': ['controller', 'ceph-osd']}])
         data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 256)
+        self.assertEqual(data['storage']['pg_num'], 256)
 
     def test_pg_num_1_osd_node_repl_4(self):
         cluster = self.create_env(
             [{'roles': ['controller', 'ceph-osd']}],
             '4')
         data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 128)
+        self.assertEqual(data['storage']['pg_num'], 128)
 
     def test_pg_num_3_osd_nodes(self):
         cluster = self.create_env([
@@ -246,4 +246,4 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
             {'roles': ['compute', 'ceph-osd']},
             {'roles': ['compute', 'ceph-osd']}])
         data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 512)
+        self.assertEqual(data['storage']['pg_num'], 512)

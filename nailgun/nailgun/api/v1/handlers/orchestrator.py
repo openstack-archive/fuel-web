@@ -170,12 +170,14 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
         if objects.Release.is_lcm_supported(cluster.release):
-            return deployment_serializers.serialize_for_lcm(
+            serialized = deployment_serializers.serialize_for_lcm(
                 cluster, nodes, ignore_customized=True
             )
-        graph = orchestrator_graph.AstuteGraph(cluster)
-        return deployment_serializers.serialize(
-            graph, cluster, nodes, ignore_customized=True)
+        else:
+            graph = orchestrator_graph.AstuteGraph(cluster)
+            serialized = deployment_serializers.serialize(
+                graph, cluster, nodes, ignore_customized=True)
+        return deployment_serializers.deployment_info_to_legacy(serialized)
 
 
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):

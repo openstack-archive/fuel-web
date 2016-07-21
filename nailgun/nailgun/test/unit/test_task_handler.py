@@ -164,3 +164,34 @@ class TestTaskHandlers(BaseTestCase):
             self.assertIsNotNone(t.deleted_at)
         self.db.refresh(cluster)
         self.assertEqual(consts.CLUSTER_STATUSES.operational, cluster.status)
+
+    def test_task_contains_field_parent(self):
+        parent_task = Task(
+            name=consts.TASK_NAMES.deployment,
+            cluster=self.cluster_db,
+            status=consts.TASK_STATUSES.running,
+            progress=10
+        )
+        child_task = parent_task.create_subtask(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            progress=10
+        )
+
+        cluster_tasks = self.app.get(
+            reverse(
+                'TaskCollectionHandler',
+                kwargs={'cluster_id': self.cluster_db.id}
+            ),
+            headers=self.default_headers
+        ).json_body
+
+        child_task_data = next(
+            t for t in cluster_tasks if t['id'] == child_task.id
+        )
+
+        self.assertEqual(parent_task.id, child_task_data['parent_id'])
+        parent_task_data = next(
+            t for t in cluster_tasks if t['id'] == parent_task.id
+        )
+        self.assertIsNone(parent_task_data['parent_id'])

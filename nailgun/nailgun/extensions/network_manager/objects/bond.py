@@ -59,14 +59,15 @@ class Bond(DPDKMixin, NailgunObject):
         :param data: dictionary of key-value pairs as object fields
         :returns: instance of an object (model)
         """
-        attributes = data.pop('attributes', None)
+        data_to_update = copy.deepcopy(data)
+        attributes = data_to_update.pop('attributes', None)
         if attributes:
             PluginManager.update_bond_attributes(attributes)
             instance.attributes = utils.dict_merge(
                 instance.attributes, attributes)
-        instance.offloading_modes = data.get('offloading_modes', {})
+        instance.offloading_modes = data_to_update.get('offloading_modes', {})
 
-        return super(Bond, cls).update(instance, data)
+        return super(Bond, cls).update(instance, data_to_update)
 
     @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):

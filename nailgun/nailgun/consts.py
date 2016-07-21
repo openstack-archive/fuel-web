@@ -505,9 +505,6 @@ IRONIC_BOOTSTRAP_PKGS = ('openssh-server',
                          'squashfs-tools',
                          'linux-firmware',
                          'msmtp-mta',
-                         'hpsa-dkms',
-                         'i40e-dkms',
-                         'linux-firmware-nonfree',
                          'xz-utils',
                          'linux-headers-generic')
 

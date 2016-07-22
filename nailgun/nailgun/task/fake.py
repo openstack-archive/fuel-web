@@ -15,9 +15,8 @@
 #    under the License.
 
 import copy
-
-from itertools import chain
 from itertools import repeat
+import math
 from random import randrange
 import threading
 import time
@@ -28,18 +27,34 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
 
-from nailgun import objects
-
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun import objects
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
 
 
+def task_executor(tasks):
+    for i, task in enumerate(tasks):
+        ctx = {'deployment_graph_task_name': task['id'],
+               'progress': math.ceil(100.0 / len(tasks) * i)}
+
+        if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.skipped:
+            ctx.update({'task_status': consts.HISTORY_TASK_STATUSES.skipped})
+            yield ctx
+
+        else:
+            ctx.update({'task_status': consts.HISTORY_TASK_STATUSES.running})
+            yield ctx
+
+            ctx.update({'task_status': consts.HISTORY_TASK_STATUSES.ready})
+            yield ctx
+
+
 class FSMNodeFlow(Fysom):
 
-    def __init__(self, data, initial=None):
+    def __init__(self, data, initial=None, tasks=None):
         super(FSMNodeFlow, self).__init__({
             'initial': initial or consts.NODE_STATUSES.discover,
             'events': [
@@ -89,8 +104,11 @@ class FSMNodeFlow(Fysom):
                 'onready': self.on_ready
             }
         })
+
         self.data = data
         self.data.setdefault('progress', 0)
+        self._executor = task_executor(tasks or [])
+
         if data.get('status') == consts.NODE_STATUSES.error:
             self.error()
         else:
@@ -121,11 +139,23 @@ class FSMNodeFlow(Fysom):
             self.data['progress'] = 0
         self.data['status'] = e.dst
 
+    def step(self):
+        try:
+            self.data.update(next(self._executor))
+        except StopIteration:
+            self.next()
+
     def update_progress(self, value):
         self.data['progress'] += value
         if self.data['progress'] >= 100:
             self.data['progress'] = 100
             self.next()
+
+    def is_slave(self):
+        return all([
+            self.data['uid'] is not None,
+            self.data['uid'] != consts.MASTER_NODE_UID,
+        ])
 
 
 class FakeThread(threading.Thread):
@@ -184,10 +214,13 @@ class FakeThread(threading.Thread):
                 time.sleep(r)
 
     def refresh_nodes(self, nodes):
-        nodes_map = {str(n['uid']): n for n in nodes}
-        nodes_db = db().query(Node).filter(
-            Node.id.in_(nodes_map)
-        )
+        nodes_map = {
+            str(node['uid']): node
+            for node in nodes
+            if node['uid'] and node['uid'] != consts.MASTER_NODE_UID
+        }
+        nodes_db = db().query(Node).filter(Node.id.in_(nodes_map))
+
         for node_db in nodes_db:
             node = nodes_map[node_db.uid]
             for field in self.NODE_FIELDS:
@@ -212,7 +245,8 @@ class FakeThread(threading.Thread):
         ready = False
 
         if random_error:
-            smart_nodes[randrange(0, len(smart_nodes))].error()
+            node = next((n for n in smart_nodes if n.is_slave()), None)
+            node.error()
 
         while not ready and not self.stoprequest.isSet():
             for sn in smart_nodes:
@@ -228,12 +262,15 @@ class FakeThread(threading.Thread):
                 if instant:
                     sn.ready()
                 else:
-                    sn.update_progress(
-                        randrange(
-                            self.low_tick_count,
-                            self.tick_count
+                    if sn.data['status'] == consts.NODE_STATUSES.deploying:
+                        sn.step()
+                    else:
+                        sn.update_progress(
+                            randrange(
+                                self.low_tick_count,
+                                self.tick_count
+                            )
                         )
-                    )
 
             if role:
                 test_nodes = [
@@ -305,14 +342,10 @@ class FakeDeploymentThread(FakeAmpqThread):
 
         override_state = self.params.get("override_state", False)
 
-        if 'tasks_graph' in self.data['args']:
-            nodes = [
-                {'uid': uid}
-                for uid in self.data['args']['tasks_graph']
-                if uid and uid != consts.MASTER_NODE_UID
-            ]
-        else:
-            nodes = self.data['args']['deployment_info']
+        nodes = [
+            {'uid': uid}
+            for uid in self.data['args']['tasks_graph']
+        ]
         self.refresh_nodes(nodes)
 
         kwargs = {
@@ -332,33 +365,23 @@ class FakeDeploymentThread(FakeAmpqThread):
             raise StopIteration
 
         smart_nodes = [
-            FSMNodeFlow(n, consts.NODE_STATUSES.provisioned)
-            for n in kwargs['nodes']
+            FSMNodeFlow(
+                node,
+                consts.NODE_STATUSES.provisioned,
+                self.data['args']['tasks_graph'][node['uid']]
+            )
+            for node in kwargs['nodes']
         ]
 
         stages_errors = {
             # no errors - default deployment
-            None: chain(
-                self.run_until_status(
-                    smart_nodes, consts.NODE_STATUSES.deploying
-                ),
-                self.run_until_status(
-                    smart_nodes, consts.NODE_STATUSES.ready, 'controller'
-                ),
-                self.run_until_status(
-                    smart_nodes, consts.NODE_STATUSES.ready
-                )
+            None: self.run_until_status(
+                smart_nodes, consts.NODE_STATUSES.ready
             ),
             # error on deployment stage
-            'deployment': chain(
-                self.run_until_status(
-                    smart_nodes, consts.NODE_STATUSES.deploying
-                ),
-                self.run_until_status(
-                    smart_nodes, consts.NODE_STATUSES.ready,
-                    'controller', random_error=True
-                )
-            )
+            'deployment': self.run_until_status(
+                smart_nodes, consts.NODE_STATUSES.ready, random_error=True
+            ),
         }
 
         mode = stages_errors[error]

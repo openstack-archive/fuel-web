@@ -1505,6 +1505,23 @@ class TestClusterObject(BaseTestCase):
             objects.Cluster.get_network_roles(cluster)
         )
 
+    def test_get_volumes_metadata_when_no_boot_rules_in_release(self):
+        expected_volumes_metadata = {
+            'volumes_roles_mapping': {},
+            'volumes': [],
+            'rule_to_pick_boot_disk': []
+        }
+        cluster = self.env.create(release_kwargs={
+            'volumes_metadata': {
+                'volumes_roles_mapping': {},
+                'volumes': []
+            }
+        })
+        volumes_metadata = objects.Cluster.get_volumes_metadata(
+            cluster)
+        self.assertEqual(
+            volumes_metadata, expected_volumes_metadata)
+
     def test_get_volumes_metadata_when_plugins_are_enabled(self):
         plugin_volumes_metadata = {
             'volumes_roles_mapping': {

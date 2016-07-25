@@ -16,8 +16,10 @@
 
 
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.deployment_graph import DeploymentGraphValidator
 from nailgun import objects
 from nailgun.objects.serializers.deployment_graph import \
@@ -32,7 +34,9 @@ class RelatedDeploymentGraphHandler(SingleHandler):
     single = objects.DeploymentGraph
     related = None  # related should be substituted during handler inheritance
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, obj_id, graph_type=None):
         """Get deployment graph.
 
@@ -56,7 +60,9 @@ class RelatedDeploymentGraphHandler(SingleHandler):
             raise self.http(404, "Graph with type: {0} is not defined".format(
                 graph_type))
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self, obj_id, graph_type=None):
         """Create deployment graph.
 
@@ -84,7 +90,9 @@ class RelatedDeploymentGraphHandler(SingleHandler):
                 data, obj, graph_type=graph_type)
             return self.single.to_json(deployment_graph)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, obj_id, graph_type=None):
         """Update deployment graph.
 
@@ -111,7 +119,9 @@ class RelatedDeploymentGraphHandler(SingleHandler):
             raise self.http(404, "Graph with type: {0} is not defined".format(
                 graph_type))
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PATCH(self, obj_id, graph_type=None):
         """Update deployment graph.
 
@@ -157,7 +167,9 @@ class RelatedDeploymentGraphCollectionHandler(CollectionHandler):
     collection = objects.DeploymentGraphCollection
     related = None  # related should be substituted during handler inheritance
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, obj_id):
         """Get deployment graphs list for given object.
 
@@ -181,7 +193,9 @@ class DeploymentGraphHandler(SingleHandler):
     validator = DeploymentGraphValidator
     single = objects.DeploymentGraph
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def DELETE(self, obj_id):
         """Delete deployment graph.
 
@@ -192,7 +206,9 @@ class DeploymentGraphHandler(SingleHandler):
         self.single.delete(d_e)
         raise self.http(204)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PATCH(self, obj_id):
         return self.PUT(obj_id)
 

@@ -19,7 +19,9 @@ Handlers dealing with nodes assignment
 """
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.assignment import NodeAssignmentValidator
 from nailgun.api.v1.validators.assignment import NodeUnassignmentValidator
 
@@ -31,7 +33,9 @@ class NodeAssignmentHandler(BaseHandler):
     """Node assignment handler"""
     validator = NodeAssignmentValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self, cluster_id):
         """:returns: Empty string
 
@@ -62,7 +66,9 @@ class NodeUnassignmentHandler(BaseHandler):
     """Node assignment handler"""
     validator = NodeUnassignmentValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self, cluster_id):
         """:returns: Empty string
 

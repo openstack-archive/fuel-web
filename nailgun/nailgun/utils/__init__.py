@@ -324,3 +324,10 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+def skip_value(*args):
+    """
+    Delete items
+    """
+    for item in args:
+        del(item)
+

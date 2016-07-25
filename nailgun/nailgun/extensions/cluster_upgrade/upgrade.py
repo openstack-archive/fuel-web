@@ -89,6 +89,7 @@ class UpgradeHelper(object):
         cls.copy_network_config(orig_cluster, new_cluster)
         relations.UpgradeRelationObject.create_relation(orig_cluster.id,
                                                         new_cluster.id)
+        cls.change_env_settings(orig_cluster, new_cluster)
         return new_cluster
 
     @classmethod
@@ -109,12 +110,32 @@ class UpgradeHelper(object):
         #                version to another. A set of this kind of steps
         #                should define an upgrade path of a particular
         #                cluster.
+        utils.skip_value(new_cluster.generated_attrs['provision'],
+                         orig_cluster.generated_attrs['provision'])
         new_cluster.generated_attrs = utils.dict_merge(
             new_cluster.generated_attrs,
             orig_cluster.generated_attrs)
         new_cluster.editable_attrs = merge_attributes(
             orig_cluster.editable_attrs,
             new_cluster.editable_attrs)
+
+    @classmethod
+    def change_env_settings(cls, orig_cluster, new_cluster):
+        attrs = new_cluster.attributes
+        if version.LooseVersion(orig_cluster.release.environment_version) <=\
+                version.LooseVersion("6.1"):
+            attrs['editable']['public_ssl']['horizon']['value'] = False
+            attrs['editable']['public_ssl']['services']['value'] = False
+        if cls.get_env_provision_method(new_cluster) != 'image':
+            attrs['editable']['provision']['method']['value'] = 'image'
+
+    @classmethod
+    def get_env_provision_method(cls, new_cluster):
+        attrs = new_cluster.attributes
+        if 'provision' in attrs['editable']:
+            return attrs['editable']['provision']['method']['value']
+        else:
+            return 'cobbler'
 
     @classmethod
     def transform_vips_for_net_groups_70(cls, vips):

@@ -195,10 +195,12 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
     def get_nodes_to_deploy(self, force=False):
         if objects.Release.is_lcm_supported(self.cluster.release):
-            return list(
-                objects.Cluster.get_nodes_not_for_deletion(self.cluster).all()
-            )
-        return TaskHelper.nodes_to_deploy(self.cluster, force)
+            return objects.Cluster.get_nodes_ids(self.cluster)
+
+        # FIXME(ikutukov): add deletion nodes to this helper too
+        return [
+            n['id'] for n in TaskHelper.nodes_to_deploy(self.cluster, force)
+        ]
 
     def _remove_obsolete_tasks(self):
         cluster_tasks = objects.TaskCollection.get_cluster_tasks(
@@ -345,7 +347,9 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
                 n.needs_reprovision]),
                 nodes_to_deploy)
         else:
-            nodes_to_deploy = self.get_nodes_to_deploy(force=force)
+            nodes_to_deploy = objects.NodeCollection.get_by_ids(
+                self.get_nodes_to_deploy(force=force)
+            )
             nodes_to_provision = TaskHelper.nodes_to_provision(self.cluster)
             nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
 

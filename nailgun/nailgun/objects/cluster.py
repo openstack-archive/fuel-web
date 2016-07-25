@@ -1292,9 +1292,13 @@ class Cluster(NailgunObject):
             Node.apply_network_template(node, template)
 
     @classmethod
+    def get_all_nodes(cls, instance):
+        return db().query(models.Node.id).filter(
+            models.Node.cluster_id == instance.id).all()
+
+    @classmethod
     def get_nodes_ids(cls, instance):
-        return [x[0] for x in db().query(models.Node.id).filter(
-            models.Node.cluster_id == instance.id).all()]
+        return [x[0] for x in cls.get_all_nodes(instance)]
 
     @classmethod
     def get_vips(cls, instance):

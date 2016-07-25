@@ -15,7 +15,9 @@
 #    under the License.
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators import cluster_plugin_link
 from nailgun import errors
 from nailgun import objects
@@ -37,7 +39,9 @@ class ClusterPluginLinkHandler(base.SingleHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         return self.single.to_json(obj)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -62,7 +66,9 @@ class ClusterPluginLinkHandler(base.SingleHandler):
         """
         return self.PUT(cluster_id, obj_id)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def DELETE(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -79,7 +85,9 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
     collection = objects.ClusterPluginLinkCollection
     validator = cluster_plugin_link.ClusterPluginLinkValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: Collection of JSONized ClusterPluginLink objects.
 
@@ -91,7 +99,9 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
             self.collection.get_by_cluster_id(cluster_id)
         )
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self, cluster_id):
         """:returns: JSONized REST object.
 

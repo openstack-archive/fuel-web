@@ -20,7 +20,9 @@ import six
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators import node as validators
 
 from nailgun.logger import logger
@@ -72,7 +74,9 @@ class SpawnVmsHandler(BaseHandler):
         else:
             raise self.http(400, "No VMs to spawn")
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
 
@@ -93,7 +97,9 @@ class NodeVMsHandler(BaseHandler):
 
     validator = validators.NodeVMsValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: JSONized node vms_conf.
 
@@ -104,7 +110,9 @@ class NodeVMsHandler(BaseHandler):
         node_vms = node.vms_conf
         return {"vms_conf": node_vms}
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, node_id):
         """:returns: JSONized node vms_conf.
 

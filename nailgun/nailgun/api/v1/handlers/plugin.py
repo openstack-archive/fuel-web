@@ -17,7 +17,9 @@
 import six
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphCollectionHandler
 from nailgun.api.v1.handlers.deployment_graph import \
@@ -39,7 +41,9 @@ class PluginCollectionHandler(base.CollectionHandler):
     collection = objects.PluginCollection
     validator = plugin.PluginValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self):
         """:returns: JSONized REST object.
 
@@ -59,7 +63,9 @@ class PluginSyncHandler(base.BaseHandler):
 
     validator = plugin.PluginSyncValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self):
         """:returns: JSONized REST object.
 

@@ -170,6 +170,39 @@ class TestYaqlExt(BaseUnitTest):
             for func in functions:
                 self.evaluate('{0}({1})'.format(func, exp), engine=engine)
 
+    def test_create_engine(self):
+        engine1 = yaql_ext.create_engine()
+        engine2 = yaql_ext.create_engine()
+        self.assertIsNot(engine1, engine2)
+
+    @mock.patch('nailgun.yaql_ext.yaql')
+    def test_create_engine_with_non_default_options(self, yaql_m):
+        yaql_ext.create_engine(limit_iterators=10, memory_quota=20)
+        yaql_m.YaqlFactory().create.assert_called_once_with({
+            'yaql.limitIterators': 10,
+            'yaql.memoryQuota': 20,
+            'yaql.convertTuplesToLists': True,
+            'yaql.convertSetsToLists': True
+        })
+
+    @mock.patch('nailgun.yaql_ext.yaql')
+    @mock.patch('nailgun.yaql_ext.settings')
+    def test_create_engine_with_default_options(self, settings_m, yaql_m):
+        settings_m.YAQL_LIMIT_ITERATORS = 100
+        settings_m.YAQL_MEMORY_QUOTA = 200
+        yaql_ext.create_engine()
+        yaql_m.YaqlFactory().create.assert_called_once_with({
+            'yaql.limitIterators': 100,
+            'yaql.memoryQuota': 200,
+            'yaql.convertTuplesToLists': True,
+            'yaql.convertSetsToLists': True
+        })
+
+    def test_get_default_engine(self):
+        engine1 = yaql_ext.get_default_engine()
+        engine2 = yaql_ext.get_default_engine()
+        self.assertIs(engine1, engine2)
+
 
 class TestYaqlExtWithExtensions(BaseUnitTest):
 

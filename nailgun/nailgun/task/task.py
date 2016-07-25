@@ -261,7 +261,8 @@ class DeploymentTask(BaseDeploymentTask):
             if deploy_task['type'] == consts.ORCHESTRATOR_TASK_TYPES.puppet:
                 logger.debug("Update puppet task: %s with debug=%s",
                              deploy_task['id'], puppet_debug)
-                deploy_task['parameters']['debug'] = puppet_debug
+                deploy_task.setdefault('parameters', {})['debug'] = \
+                    puppet_debug
 
         deployment_mode, message = cls.call_deployment_method(
             task, tasks=deployment_tasks, nodes=nodes,

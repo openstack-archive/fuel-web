@@ -33,7 +33,7 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
             ["compute"],
         ]
         cls.nodes = [
-            mock.MagicMock(uid=str(i))
+            mock.MagicMock(uid=str(i), pending_deletion=False)
             for i in six.moves.range(len(cls.roles_of_nodes))
         ]
 

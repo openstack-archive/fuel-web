@@ -67,10 +67,18 @@ class TestTransactionSerializer(BaseUnitTest):
         ]
 
         cls.nodes = [
-            mock.MagicMock(uid='1', roles=['controller']),
-            mock.MagicMock(uid='2', roles=['compute']),
-            mock.MagicMock(uid='3', roles=['cinder']),
-            mock.MagicMock(uid='4', roles=['custom']),
+            mock.MagicMock(
+                uid='1', roles=['controller'], pending_deletion=False
+            ),
+            mock.MagicMock(
+                uid='2', roles=['compute'], pending_deletion=False
+            ),
+            mock.MagicMock(
+                uid='3', roles=['cinder'], pending_deletion=False
+            ),
+            mock.MagicMock(
+                uid='4', roles=['custom'], pending_deletion=False
+            ),
         ]
 
         cls.context = lcm.TransactionContext({

@@ -170,6 +170,16 @@ class TestYaqlExt(BaseUnitTest):
             for func in functions:
                 self.evaluate('{0}({1})'.format(func, exp), engine=engine)
 
+    def test_create_engine(self):
+        engine1 = yaql_ext.create_engine()
+        engine2 = yaql_ext.create_engine()
+        self.assertIsNot(engine1, engine2)
+
+    def test_get_default_engine(self):
+        engine1 = yaql_ext.get_default_engine()
+        engine2 = yaql_ext.get_default_engine()
+        self.assertIs(engine1, engine2)
+
 
 class TestYaqlExtWithExtensions(BaseUnitTest):
 

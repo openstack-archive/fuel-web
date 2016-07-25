@@ -67,6 +67,8 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
 
         self.helper.copy_attributes(self.src_cluster, new_cluster)
 
+        self.assertFalse(new_cluster.generated_attrs.get('provision'))
+
         self.assertEqual(self.src_cluster.generated_attrs,
                          new_cluster.generated_attrs)
         editable_attrs = self.src_cluster.editable_attrs
@@ -181,3 +183,28 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
         self.helper.copy_attributes(self.src_cluster, new_cluster)
         self._check_dns_and_ntp_list_values(
             new_cluster, ["4", "5", "6"], ["1", "2", "3"])
+
+    def test_change_env_settings_no_public_ssl(self):
+        new_cluster = self.helper.create_cluster_clone(self.src_cluster,
+                                                       self.data)
+        self.helper.copy_attributes(self.src_cluster, new_cluster)
+
+        attrs = new_cluster.attributes
+
+        self.helper.change_env_settings(self.src_cluster, new_cluster)
+        self.assertFalse(attrs['editable']['public_ssl']['horizon']['value'])
+        self.assertFalse(attrs['editable']['public_ssl']['services']['value'])
+        self.assertEqual('image',
+                         attrs['editable']['provision']['method']['value'])
+
+    def test_change_env_settings_no_editable_provision(self):
+        new_cluster = self.helper.create_cluster_clone(self.src_cluster,
+                                                       self.data)
+        self.helper.copy_attributes(self.src_cluster, new_cluster)
+        attrs = new_cluster.attributes
+        attrs['editable']['provision']['method']['value'] = None
+        self.helper.change_env_settings(self.src_cluster, new_cluster)
+        self.assertEqual('image',
+                         attrs['editable']['provision']['method']['value'])
+
+

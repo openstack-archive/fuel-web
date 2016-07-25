@@ -324,3 +324,10 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+def skip_value(key, *args):
+    """
+    Delete items from dicts
+    """
+    for item in args:
+        del(item[key])
+

@@ -480,8 +480,8 @@ NODE_RESOLVE_POLICY = Enum(
 )
 
 TASK_ROLES = Enum(
-    '*', 'master', 'self',
-    names=('all', 'master', 'self')
+    '*', 'master', 'self', 'deleted',
+    names=('all', 'master', 'self', 'deleted')
 )
 
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'

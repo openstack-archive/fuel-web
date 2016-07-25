@@ -160,7 +160,12 @@ class TestTaskManagers(BaseIntegrationTest):
         if not is_task_deploy:
             self.env.disable_task_deploy(cluster)
 
-        nodes_ids = [n.uid for n in cluster.nodes if not n.pending_deletion]
+        if is_lcm:
+            nodes_ids = [n.uid for n in cluster.nodes]
+        else:
+            nodes_ids = [
+                n.uid for n in cluster.nodes if not n.pending_deletion]
+
         supertask = self.env.launch_deployment(cluster.id)
         self.assertNotEqual(TASK_STATUSES.error, supertask.status)
         deployment_task = next(

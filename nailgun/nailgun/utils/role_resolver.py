@@ -73,21 +73,23 @@ class RoleResolver(BaseRoleResolver):
     Allows to use patterns in name of role
     """
 
-    # the mapping roles, those are resolved to known list of IDs
-    # master is used to run tasks on master node
-    SPECIAL_ROLES = {
-        consts.TASK_ROLES.master: [consts.MASTER_NODE_UID]
-    }
-
     def __init__(self, nodes):
         """Initializes.
 
         :param nodes: the sequence of node objects
         """
+        self.special_roles = {
+            consts.TASK_ROLES.master: [consts.MASTER_NODE_UID],
+            consts.TASK_ROLES.deleted: []
+        }
+
         self.__mapping = defaultdict(set)
         for node in nodes:
-            for r in objects.Node.all_roles(node):
-                self.__mapping[r].add(node.uid)
+            if node.pending_deletion:
+                self.special_roles[consts.TASK_ROLES.deleted].append(node.uid)
+            else:
+                for r in objects.Node.all_roles(node):
+                    self.__mapping[r].add(node.uid)
 
     def resolve(self, roles, policy=None):
         result = set()
@@ -111,8 +113,8 @@ class RoleResolver(BaseRoleResolver):
                 return result
 
             for role in roles:
-                if role in self.SPECIAL_ROLES:
-                    result.update(self.SPECIAL_ROLES[role])
+                if role in self.special_roles:
+                    result.update(self.special_roles[role])
                 else:
                     pattern = NameMatchingPolicy.create(role)
                     for node_role, nodes_ids in six.iteritems(self.__mapping):

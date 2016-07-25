@@ -365,6 +365,24 @@ class ClusterReleaseDeploymentTasksHandler(BaseHandler):
         return tasks
 
 
+class ClusterOwnDeploymentTasksHandler(BaseHandler):
+    """Handler for cluster own deployment tasks serialization."""
+    single = objects.Cluster
+
+    @content
+    def GET(self, obj_id):
+        """:returns: Cluster own deployment tasks
+
+        :http: * 200 OK
+               * 404 (object not found)
+        """
+        obj = self.get_object_or_404(self.single, obj_id)
+        graph_type = web.input(graph_type=None).graph_type or None
+        tasks = self.single.get_own_deployment_tasks(
+            obj, graph_type=graph_type)
+        return tasks
+
+
 class VmwareAttributesHandler(BaseHandler):
     """Vmware attributes handler"""
 

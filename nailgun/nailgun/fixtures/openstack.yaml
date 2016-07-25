@@ -1461,6 +1461,15 @@
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
             weight: 80
             type: "checkbox"
+          auth_s3_keystone_ceph:
+            value: false
+            label: "Enable S3 API Authentication via Keystone in Ceph RadosGW"
+            description: "This allows to authenticate S3 requests basing on EC2/S3 credentials managed by Keystone. Please note that enabling the integration will increase the latency of S3 requests as well as load on Keystone service. Please consult with Mirantis Technical Bulletin 27 and Mirantis Support on mitigating the risks related with load."
+            weight: 82
+            type: "checkbox"
+            restrictions:
+              - condition: "settings:storage.objects_ceph.value == false"
+                action: "hide"
           osd_pool_size:
             value: "3"
             label: "Ceph object replication factor"

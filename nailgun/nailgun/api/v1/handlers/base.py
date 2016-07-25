@@ -253,38 +253,17 @@ class BaseHandler(object):
         raise self.http(status, objects.Task.to_json(task))
 
 
-def content_json(func, cls, *args, **kwargs):
-    json_resp = lambda data: (
-        jsonutils.dumps(data)
-        if isinstance(data, (dict, list)) or data is None else data
-    )
+def json_resp(data):
+    if isinstance(data, (dict, list)) or data is None:
+        return jsonutils.dumps(data)
+    else:
+        return data
 
-    request_validate_needed = True
-    response_validate_needed = True
 
-    resource_type = "single"
-    if issubclass(
-        cls.__class__,
-        CollectionHandler
-    ) and not func.func_name == "POST":
-        resource_type = "collection"
-
-    if (
-        func.func_name in ("GET", "DELETE") or
-        getattr(cls.__class__, 'validator', None) is None or
-        resource_type == "single" and not cls.validator.single_schema or
-        resource_type == "collection" and not cls.validator.collection_schema
-    ):
-        request_validate_needed = False
-
+@decorator
+def handle_errors(func, cls, *args, **kwargs):
     try:
-        if request_validate_needed:
-            BaseHandler.checked_data(
-                cls.validator.validate_request,
-                resource_type=resource_type
-            )
-
-        resp = func(cls, *args, **kwargs)
+        return func(cls, *args, **kwargs)
     except web.notmodified:
         raise
     except web.HTTPError as http_error:
@@ -318,6 +297,35 @@ def content_json(func, cls, *args, **kwargs):
         web.header('Content-Type', 'text/plain')
         raise http_error
 
+
+@decorator
+def validate(func, cls, *args, **kwargs):
+    request_validate_needed = True
+    response_validate_needed = True
+
+    resource_type = "single"
+    if issubclass(
+        cls.__class__,
+        CollectionHandler
+    ) and not func.func_name == "POST":
+        resource_type = "collection"
+
+    if (
+        func.func_name in ("GET", "DELETE") or
+        getattr(cls.__class__, 'validator', None) is None or
+        resource_type == "single" and not cls.validator.single_schema or
+        resource_type == "collection" and not cls.validator.collection_schema
+    ):
+        request_validate_needed = False
+
+    if request_validate_needed:
+        BaseHandler.checked_data(
+            cls.validator.validate_request,
+            resource_type=resource_type
+        )
+
+    resp = func(cls, *args, **kwargs)
+
     if all([
         settings.DEVELOPMENT,
         response_validate_needed,
@@ -328,43 +336,38 @@ def content_json(func, cls, *args, **kwargs):
             resource_type=resource_type
         )
 
-    web.header('Content-Type', 'application/json', unique=True)
-    return json_resp(resp)
+    return resp
 
 
-def content(*args, **kwargs):
+def serialize(*args, **kwargs):
     """Set context-type of response based on Accept header
 
     This decorator checks Accept header received from client
     and returns corresponding wrapper (only JSON is currently
     supported). It can be used as is:
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         ...
 
     Default behavior may be overriden by passing list of
     exact mimetypes to decorator:
 
-    @content(["text/plain"])
+    @handle_errors
+    @validate
+    @serialize(["text/plain"])
     def GET(self):
         ...
     """
-    # TODO(ikutukov): this decorator is not coherent and doing more
-    # than just a response mimetype setting via type-specific content_json
-    # method that perform validation.
-    # Before you start to implement handler business logic ensure that
-    # @content decorator not already doing what you are planning to write.
-    # I think that validation routine and common http headers formation not
-    # depending on each other and should be decoupled. At least they should
-    # not be under one decorator with abstract name.
 
     exact_mimetypes = None
     if len(args) >= 1 and isinstance(args[0], list):
         exact_mimetypes = args[0]
 
     @decorator
-    def wrapper(func, *args, **kwargs):
+    def wrapper(func, cls, *args, **kwargs):
         accept = web.ctx.env.get("HTTP_ACCEPT", "application/json")
         accepted_types = [
             "application/json",
@@ -373,16 +376,18 @@ def content(*args, **kwargs):
         if exact_mimetypes and isinstance(exact_mimetypes, list):
             accepted_types = exact_mimetypes
         if any(map(lambda m: m in accept, accepted_types)):
-            return content_json(func, *args, **kwargs)
+            resp = func(cls, *args, **kwargs)
+            web.header('Content-Type', 'application/json', unique=True)
+            return json_resp(resp)
         else:
             raise BaseHandler.http(415)
 
-    # case of @content without arguments, meaning arg[0] to be callable
+    # case of @serialize without arguments, meaning arg[0] to be callable
     # handler
     if len(args) >= 1 and callable(args[0]):
         return wrapper(args[0], *args[1:], **kwargs)
 
-    # case of @content(["mimetype"]) with explicit arguments
+    # case of @serialize(["mimetype"]) with explicit arguments
     return wrapper
 
 
@@ -391,7 +396,9 @@ class SingleHandler(BaseHandler):
     single = None
     validator = BasicValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, obj_id):
         """:returns: JSONized REST object.
 
@@ -401,7 +408,9 @@ class SingleHandler(BaseHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         return self.single.to_json(obj)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, obj_id):
         """:returns: JSONized REST object.
 
@@ -417,7 +426,9 @@ class SingleHandler(BaseHandler):
         self.single.update(obj, data)
         return self.single.to_json(obj)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def DELETE(self, obj_id):
         """:returns: Empty string
 
@@ -444,7 +455,9 @@ class CollectionHandler(BaseHandler):
     validator = BasicValidator
     eager = ()
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """:returns: Collection of JSONized REST objects.
 
@@ -453,7 +466,9 @@ class CollectionHandler(BaseHandler):
         q = self.collection.eager(None, self.eager)
         return self.collection.to_json(q)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self):
         """:returns: JSONized REST object.
 
@@ -487,7 +502,9 @@ class DBSingletonHandler(BaseHandler):
 
         return instance
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """Get singleton object from DB
 
@@ -498,7 +515,9 @@ class DBSingletonHandler(BaseHandler):
 
         return self.single.to_json(instance)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """Change object in DB
 
@@ -514,7 +533,9 @@ class DBSingletonHandler(BaseHandler):
 
         return self.single.to_json(instance)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PATCH(self):
         """Update object
 
@@ -549,7 +570,9 @@ class DeferredTaskHandler(BaseHandler):
     def get_options(cls):
         return {}
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
 
@@ -610,7 +633,9 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
 
     validator = GraphSolverTasksValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, obj_id):
         """:returns: Deployment tasks
 
@@ -646,7 +671,9 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
                                      'name.'.format(e.task_name))
         return tasks
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, obj_id):
         """:returns:  Deployment tasks
 

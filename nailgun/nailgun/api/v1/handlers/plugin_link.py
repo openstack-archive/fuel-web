@@ -15,7 +15,9 @@
 #    under the License.
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators import plugin_link
 from nailgun import errors
 from nailgun import objects
@@ -45,7 +47,9 @@ class PluginLinkHandler(base.SingleHandler):
         obj = self._get_plugin_link_object(plugin_id, obj_id)
         return self.single.to_json(obj)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -69,7 +73,9 @@ class PluginLinkHandler(base.SingleHandler):
         """
         return self.PUT(plugin_id, obj_id)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def DELETE(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -86,7 +92,9 @@ class PluginLinkCollectionHandler(base.CollectionHandler):
     collection = objects.PluginLinkCollection
     validator = plugin_link.PluginLinkValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, plugin_id):
         """:returns: Collection of JSONized PluginLink objects.
 
@@ -98,7 +106,9 @@ class PluginLinkCollectionHandler(base.CollectionHandler):
             self.collection.get_by_plugin_id(plugin_id)
         )
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self, plugin_id):
         """:returns: JSONized REST object.
 

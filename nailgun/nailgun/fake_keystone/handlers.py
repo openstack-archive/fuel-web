@@ -15,7 +15,9 @@
 #    under the License.
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.fake_keystone import generate_token
 from nailgun.fake_keystone import validate_password_credentials
 from nailgun.fake_keystone import validate_token
@@ -24,7 +26,9 @@ from nailgun.settings import settings
 
 class TokensHandler(BaseHandler):
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def POST(self):
         data = self.checked_data()
         try:
@@ -73,7 +77,9 @@ class TokensHandler(BaseHandler):
 
 class VersionHandler(BaseHandler):
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         keystone_href = 'http://{ip_addr}:{port}/keystone/v2.0/'.format(
             ip_addr=settings.LISTEN_ADDRESS, port=settings.LISTEN_PORT)
@@ -107,7 +113,9 @@ class VersionHandler(BaseHandler):
 
 class ServicesHandler(BaseHandler):
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         return {
             'OS-KSADM:services': [{'type': 'ostf', 'enabled': True,
@@ -127,7 +135,9 @@ class ServicesHandler(BaseHandler):
 
 class EndpointsHandler(BaseHandler):
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         keystone_href = 'http://{ip_addr}:{port}/keystone/v2.0'.format(
             ip_addr=settings.AUTH['auth_host'], port=settings.LISTEN_PORT)

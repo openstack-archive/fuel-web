@@ -19,14 +19,18 @@ Product info handlers
 """
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.settings import settings
 
 
 class VersionHandler(BaseHandler):
     """Version info handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """:returns: FUEL/FUELWeb commit SHA, release version.
 

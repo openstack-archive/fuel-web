@@ -29,7 +29,9 @@ class ClusterUpgradeCloneHandler(base.BaseHandler):
     single = objects.Cluster
     validator = validators.ClusterUpgradeValidator
 
-    @base.content
+    @base.handle_errors
+    @base.validate
+    @base.serialize
     def POST(self, cluster_id):
         """Initialize the upgrade of the cluster.
 
@@ -67,7 +69,9 @@ class NodeReassignHandler(base.BaseHandler):
 
         self.raise_task(task)
 
-    @base.content
+    @base.handle_errors
+    @base.validate
+    @base.serialize
     def POST(self, cluster_id):
         """Reassign node to the given cluster.
 
@@ -107,7 +111,9 @@ class CopyVIPsHandler(base.BaseHandler):
     single = objects.Cluster
     validator = validators.CopyVIPsValidator
 
-    @base.content
+    @base.handle_errors
+    @base.validate
+    @base.serialize
     def POST(self, cluster_id):
         """Copy VIPs from original cluster to new one
 

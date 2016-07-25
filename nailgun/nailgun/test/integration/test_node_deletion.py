@@ -16,12 +16,16 @@
 
 import logging
 
+from oslo_serialization import jsonutils
+
 from nailgun import consts
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Task
+from nailgun.objects import DeploymentGraph
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import mock_rpc
@@ -35,8 +39,136 @@ class TestNodeDeletion(BaseIntegrationTest):
     def setUp(self):
         super(TestNodeDeletion, self).setUp()
         self.cluster = self.env.create(
-            nodes_kwargs=[{"pending_addition": True}])
+            nodes_kwargs=[{"pending_addition": True}],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'newton-10.0'
+            }
+        )
         self.node_ids = [node.id for node in self.cluster.nodes]
+
+    @fake_tasks()
+    def test_deletion_on_deploy_changes(self):
+        DeploymentGraph.delete(DeploymentGraph.get_for_model(self.cluster))
+        DeploymentGraph.create_for_model({
+            'name': None,
+            'tasks': [{
+                'id': 'running-in-deleted',
+                'type': 'puppet',
+                'roles': ['deleted'],
+                'version': '2.0.0'
+            }]
+        }, self.cluster)
+
+        # delete as UI do
+        self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': self.node_ids[0]}),
+            jsonutils.dumps({
+                'pending_deletion': True
+            }),
+            headers=self.default_headers
+        )
+
+        supertask = self.env.launch_deployment(self.cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        deployment_task = next(
+            t for t in supertask.subtasks
+            if t.name == consts.TASK_NAMES.deployment
+        )
+
+        response = self.app.get(
+            reverse(
+                'DeploymentHistoryCollectionHandler',
+                kwargs={
+                    'transaction_id': deployment_task.id
+                }
+            ),
+            headers=self.default_headers
+        )
+        self.maxDiff = None
+        self.assertIn(
+            {
+                'node_id': str(self.node_ids[0]),
+                'status': 'pending',
+                'time_start': None,
+                'roles': 'deleted',
+                'role': 'deleted',
+                'time_end': None,
+                'version': '2.0.0',
+                'task_name': 'running-in-deleted',
+                'type': 'puppet',
+                'custom': {}
+            },
+            response.json_body
+        )
+
+    @fake_tasks()
+    def test_deletion_on_execute(self):
+        DeploymentGraph.delete(DeploymentGraph.get_for_model(self.cluster))
+        DeploymentGraph.create_for_model({
+            'name': None,
+            'tasks': [{
+                'id': 'running-in-deleted',
+                'type': 'puppet',
+                'roles': ['deleted'],
+                'version': '2.0.0'
+            }]
+        }, self.cluster)
+
+        # delete as UI do
+        self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': self.node_ids[0]}),
+            jsonutils.dumps({
+                'pending_deletion': True
+            }),
+            headers=self.default_headers
+        )
+
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={
+                    'cluster_id': self.cluster.id,
+                    'graph_type': 'default'
+                }
+            ),
+            headers=self.default_headers)
+
+        supertask = self.db.query(Task).filter_by(
+            uuid=resp.json_body['uuid']
+        ).first()
+
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        deployment_task = next(
+            t for t in supertask.subtasks
+            if t.name == consts.TASK_NAMES.deployment
+        )
+
+        response = self.app.get(
+            reverse(
+                'DeploymentHistoryCollectionHandler',
+                kwargs={
+                    'transaction_id': deployment_task.id
+                }
+            ),
+            headers=self.default_headers
+        )
+        self.maxDiff = None
+        self.assertIn(
+            {
+                'node_id': str(self.node_ids[0]),
+                'status': 'pending',
+                'time_start': None,
+                'roles': 'deleted',
+                'role': 'deleted',
+                'time_end': None,
+                'version': '2.0.0',
+                'task_name': 'running-in-deleted',
+                'type': 'puppet',
+                'custom': {}
+            },
+            response.json_body
+        )
 
     @fake_tasks()
     def test_node_deletion_and_attributes_clearing(self):

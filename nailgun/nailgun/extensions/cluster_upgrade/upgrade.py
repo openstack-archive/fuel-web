@@ -23,7 +23,6 @@ from nailgun import consts
 from nailgun.extensions.network_manager.objects.serializers import \
     network_configuration
 from nailgun import objects
-from nailgun import utils
 
 from .objects import adapters
 
@@ -50,6 +49,20 @@ def merge_attributes(a, b):
                         values['type'] == 'text_list':
                     values["value"] = values['value'].split(',')
     return attrs
+
+
+def merge_generated_attrs(a, b):
+    if not isinstance(b, dict):
+        return copy.deepcopy(b)
+    result = copy.deepcopy(a)
+    for k, v in six.iteritems(b):
+        if k == 'provision':
+            continue
+        if k in result and isinstance(result[k], dict):
+            result[k] = merge_generated_attrs(result[k], v)
+        else:
+            result[k] = copy.deepcopy(v)
+    return result
 
 
 def merge_nets(a, b):
@@ -89,6 +102,7 @@ class UpgradeHelper(object):
         cls.copy_network_config(orig_cluster, new_cluster)
         relations.UpgradeRelationObject.create_relation(orig_cluster.id,
                                                         new_cluster.id)
+        cls.change_env_settings(orig_cluster, new_cluster)
         return new_cluster
 
     @classmethod
@@ -109,12 +123,22 @@ class UpgradeHelper(object):
         #                version to another. A set of this kind of steps
         #                should define an upgrade path of a particular
         #                cluster.
-        new_cluster.generated_attrs = utils.dict_merge(
+        new_cluster.generated_attrs = merge_generated_attrs(
             new_cluster.generated_attrs,
             orig_cluster.generated_attrs)
         new_cluster.editable_attrs = merge_attributes(
             orig_cluster.editable_attrs,
             new_cluster.editable_attrs)
+
+    @classmethod
+    def change_env_settings(cls, orig_cluster, new_cluster):
+        attrs = new_cluster.attributes
+        if version.LooseVersion(orig_cluster.release.environment_version) <=\
+                version.LooseVersion("6.1"):
+            attrs['editable']['public_ssl']['horizon']['value'] = False
+            attrs['editable']['public_ssl']['services']['value'] = False
+        if attrs['editable']['provision']['method']['value'] != 'image':
+            attrs['editable']['provision']['method']['value'] = 'image'
 
     @classmethod
     def transform_vips_for_net_groups_70(cls, vips):

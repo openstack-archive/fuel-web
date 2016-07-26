@@ -34,16 +34,28 @@ def create_context(add_serializers=False, add_datadiff=False,
     return context
 
 
-def create_engine():
-    global _global_engine
+def get_default_engine():
+    """Gets the default yaql engine.
 
+    NOTE: do not share default engine between threads(processes).
+    """
+    global _global_engine
+    if _global_engine is None:
+        _global_engine = create_engine()
+    return _global_engine
+
+
+def create_engine(limit_iterators=None, memory_quota=None):
+    """Creates a new yaql engine instance."""
+    if not limit_iterators:
+        limit_iterators = settings.YAQL_LIMIT_ITERATORS or 10000
+    if not memory_quota:
+        memory_quota = settings.YAQL_MEMORY_QUOTA or 100 * 1024 * 1024
     engine_options = {
-        'yaql.limitIterators': settings.YAQL_LIMIT_ITERATORS or 10000,
-        'yaql.memoryQuota': settings.YAQL_MEMORY_QUOTA or 100 * 1024 * 1024,
+        'yaql.limitIterators': limit_iterators,
+        'yaql.memoryQuota': memory_quota,
         'yaql.convertTuplesToLists': True,
         'yaql.convertSetsToLists': True
     }
 
-    if _global_engine is None:
-        _global_engine = yaql.YaqlFactory().create(engine_options)
-    return _global_engine
+    return yaql.YaqlFactory().create(engine_options)

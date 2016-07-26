@@ -534,3 +534,34 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestTasksSchemaMigration(base.BaseAlembicMigrationTest):
+    def test_dry_run_field_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending',
+                'dry_run': 'false'
+            }]
+        )
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'].c.dry_run,
+            ])
+        ).first()
+        self.assertFalse(result['dry_run'])
+
+
+class TestOrchestratorTaskTypesMigration(base.BaseAlembicMigrationTest):
+    def test_enum_has_new_values(self):
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
+        )).fetchall()
+        expected_values = {
+            'master_shell', 'move_to_bootstrap', 'set_node_properties',
+            'erase_node'
+        }
+        self.assertTrue(expected_values.issubset((x[0] for x in result)))

@@ -109,3 +109,35 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
     def test_downgrade_release_required_component_types(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('required_component_types', releases_table.c)
+
+
+class TestTasksSchemaDowngrade(base.BaseAlembicMigrationTest):
+    def test_dry_run_field_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending'
+            }]
+        )
+        result = db.execute(
+            sa.select([
+                self.meta.tables['tasks'],
+            ])
+        ).first()
+        self.assertNotIn('dry_run', result)
+
+
+class TestOrchestratorTaskTypesDowngrade(base.BaseAlembicMigrationTest):
+    def test_enum_does_not_have_new_values(self):
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
+        )).fetchall()
+        expected_values = {
+            'master_shell', 'move_to_bootstrap', 'set_node_properties',
+            'erase_node'
+        }
+        self.assertFalse(
+            expected_values.intersection((x[0] for x in result))
+        )

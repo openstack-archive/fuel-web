@@ -2183,3 +2183,27 @@ class TestOpenstackConfigCollection(BaseTestCase):
             self.assertEqual(config.node_id, node_id)
             self.assertEqual(configs[0].config_type,
                              consts.OPENSTACK_CONFIG_TYPES.node)
+
+    def test_node_status(self):
+        node = self.nodes[0]
+        transition_statuses = [
+            consts.NODE_STATUSES.deploying, consts.NODE_STATUSES.provisioning,
+            consts.NODE_STATUSES.removing
+        ]
+        for s in transition_statuses:
+            node.status = s
+            self.assertEqual(s, objects.Node.get_status(node))
+
+        node.progress = 1
+        node.status = consts.NODE_STATUSES.provisioned
+        self.assertEqual(
+            consts.NODE_STATUSES.deploying, objects.Node.get_status(node)
+        )
+        node.progress = 100
+        self.assertEqual(
+            consts.NODE_STATUSES.provisioned, objects.Node.get_status(node)
+        )
+        node.error_msg = "some error"
+        self.assertEqual(
+            consts.NODE_STATUSES.error, objects.Node.get_status(node)
+        )

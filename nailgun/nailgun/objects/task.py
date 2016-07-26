@@ -291,6 +291,49 @@ class Task(NailgunObject):
         return result
 
     @classmethod
+    def update_recursively(cls, instance, data, update_cluster=True):
+        logger.debug("Updating task: %s", instance.uuid)
+        clean_data = cls._clean_data(data)
+        super(Task, cls).update(instance, data)
+
+        if instance.parent:
+            parent = instance.parent
+            siblings = parent.subtasks
+            status = clean_data.get('status')
+            if status == consts.TASK_STATUSES.ready:
+                ready_siblings_count = sum(
+                    x.status == consts.TASK_STATUSES.ready for x in siblings
+                )
+                if ready_siblings_count == len(siblings):
+                    parent.status = consts.TASK_STATUSES.ready
+            elif status == consts.TASK_STATUSES.error:
+                parent.status = consts.TASK_STATUSES.error
+                for s in siblings:
+                    if s.status != consts.TASK_STATUSES.ready:
+                        s.status = consts.TASK_STATUSES.error
+                        s.progress = 100
+                        s.message = "Task aborted"
+                        clean_data['progress'] = 100
+                TaskHelper.update_action_log(parent)
+
+            if 'progress' in clean_data:
+                total_progress = sum(x.progress for x in siblings)
+                parent.progress = total_progress // len(siblings)
+
+            task_status = parent.status
+        else:
+            task_status = instance.status
+
+        if update_cluster and task_status == consts.TASK_STATUSES.ready:
+            cls.__update_cluster_status(
+                instance.cluster,
+                consts.CLUSTER_STATUSES.operational,
+                consts.NODE_STATUSES.ready
+            )
+
+        db().flush()
+
+    @classmethod
     def update(cls, instance, data):
         logger.debug("Updating task: %s", instance.uuid)
         clean_data = cls._clean_data(data)

@@ -14,7 +14,6 @@
 #    under the License.
 
 from nailgun import consts
-from nailgun import errors
 from nailgun.lcm.context import TransactionContext
 from nailgun.lcm import task_serializer
 from nailgun.settings import settings
@@ -302,14 +301,3 @@ class TestTasksSerializersFactory(BaseUnitTest):
                 factory.create_serializer(task),
                 task_serializer.NoopTaskSerializer
             )
-
-    def test_create_raise_error_if_unknown_type(self):
-        unsupported_task_types = [
-            consts.ORCHESTRATOR_TASK_TYPES.group,
-            consts.ORCHESTRATOR_TASK_TYPES.role
-        ]
-        factory = self.factory_class(TransactionContext({}))
-        for task_type in unsupported_task_types:
-            task = {'id': 'test', 'type': task_type}
-            with self.assertRaises(errors.SerializerNotSupported):
-                factory.create_serializer(task)

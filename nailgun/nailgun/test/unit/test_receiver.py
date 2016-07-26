@@ -267,3 +267,107 @@ class TestNailgunReceiver(base.BaseTestCase):
             node_id="123",
             task_uuid=sub_task.uuid
         )
+
+    @patch('nailgun.rpc.receiver.notifier.notify')
+    def test_transaction_resp_if_node_fail(self, notify_mock):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id
+        )
+        node = self.cluster.nodes[0]
+        node.status = consts.NODE_STATUSES.provisioned
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            nodes=[{
+                'uid': node.uid, 'status': 'error', 'error_msg': 'test_error'
+            }]
+        )
+        self.db.refresh(node)
+        # the node status should not changed if error obscures
+        self.assertEqual(consts.NODE_STATUSES.provisioned, node.status)
+        self.assertEqual('test_error', node.error_msg)
+        # check that notifier was called
+        notify_mock.notify(
+            consts.NOTIFICATION_TOPICS.error,
+            "Failed to {0} node '{1}': {2}".format(
+                task.name, node.name, 'test_error'
+            ),
+            cluster_id=self.cluster.id,
+            node_id=node.uid,
+            task_uuid=task.uuid
+        )
+
+    def test_transaction_resp_delete_node_from_cluster(self):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id
+        )
+        node = self.cluster.nodes[0]
+        node.status = consts.NODE_STATUSES.provisioned
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            nodes=[{'uid': node.uid, 'status': 'deleted'}]
+        )
+        self.db.refresh(node)
+        self.assertIsNone(node.cluster)
+
+    def test_transaction_resp_update_node_attributes(self):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id
+        )
+        node = self.cluster.nodes[0]
+        node.status = consts.NODE_STATUSES.provisioned
+        node.progress = 1
+        node.pending_addition = True
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            nodes=[{
+                'uid': node.uid, 'progress': 50, 'pending_addition': False
+            }]
+        )
+        self.db.refresh(node)
+        self.assertEqual(50, node.progress)
+        self.assertFalse(node.pending_addition)
+
+    @patch('nailgun.rpc.receiver.notifier.notify')
+    def test_transaction_resp_update_transaction_status(self, _):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id
+        )
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            status=consts.TASK_STATUSES.ready
+        )
+        self.db.refresh(task)
+        self.assertEqual(consts.TASK_STATUSES.ready, task.status)
+
+    @patch('nailgun.rpc.receiver.notifier.notify')
+    def test_transaction_resp_does_not_update_nodes_if_dry_run(self, _):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id,
+            dry_run=True
+        )
+        self.cluster.status = consts.CLUSTER_STATUSES.operational
+        node = self.cluster.nodes[0]
+        node.status = consts.NODE_STATUSES.provisioned
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            status=consts.TASK_STATUSES.error,
+            nodes=[{'uid': node.uid, 'status': 'error'}]
+        )
+        self.db.refresh(task)
+        self.db.refresh(node)
+        self.db.refresh(self.cluster)
+        self.assertEqual(consts.TASK_STATUSES.error, task.status)
+        self.assertEqual(consts.NODE_STATUSES.provisioned, node.status)
+        self.assertEqual(
+            consts.CLUSTER_STATUSES.operational, self.cluster.status
+        )

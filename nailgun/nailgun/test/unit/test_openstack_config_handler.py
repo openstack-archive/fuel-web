@@ -218,6 +218,17 @@ class TestOpenstackConfigHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json_body), 1)
 
+        # List all configurations for specific nodes
+        url = self._make_filter_url(
+            cluster_id=self.clusters[0].id,
+            node_ids=','.join([str(self.nodes[1].id),
+                               str(self.nodes[2].id)]))
+        resp = self.app.get(url, headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        node_ids = set(cfg['node_id'] for cfg in resp.json_body)
+        self.assertEqual(node_ids, set([self.nodes[1].id,
+                                        self.nodes[2].id]))
+
         # List all inactive configurations for cluster
         url = self._make_filter_url(
             cluster_id=self.clusters[0].id, is_active=0)

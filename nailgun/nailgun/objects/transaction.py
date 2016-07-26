@@ -108,7 +108,7 @@ class TransactionCollection(NailgunCollection):
         # TODO(bgaifullin) remove hardcoded name of task
         return cls.filter_by(
             None, cluster_id=cluster.id, name=consts.TASK_NAMES.deployment,
-            status=consts.TASK_STATUSES.ready
+            status=consts.TASK_STATUSES.ready, dry_run=False,
         ).order_by('-id').limit(1).first()
 
     @classmethod
@@ -132,6 +132,7 @@ class TransactionCollection(NailgunCollection):
         ).join(history).filter(
             model.cluster_id == cluster_id,
             model.name == consts.TASK_NAMES.deployment,
+            model.dry_run.is_(False),
             history.status == consts.HISTORY_TASK_STATUSES.ready,
         )
 

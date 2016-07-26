@@ -820,6 +820,7 @@ class Node(NailgunObject):
         instance.group_id = None
         instance.kernel_params = None
         cls.update_roles(instance, roles)
+        cls.update_primary_roles(instance, [])
         cls.update_pending_roles(instance, pending_roles)
         cls.remove_replaced_params(instance)
         cls.assign_group(instance)

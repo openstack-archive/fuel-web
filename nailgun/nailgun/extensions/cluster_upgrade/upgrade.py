@@ -177,8 +177,8 @@ class UpgradeHelper(object):
         if version.LooseVersion(orig_cluster.release.environment_version) < \
                 version.LooseVersion("7.0"):
             vips = cls.transform_vips_for_net_groups_70(vips)
-        new_net_manager.assign_given_vips_for_net_groups(vips)
         new_net_manager.assign_vips_for_net_groups()
+        new_net_manager.assign_given_vips_for_net_groups(vips)
 
     @classmethod
     def get_node_roles(cls, reprovision, current_roles, given_roles):

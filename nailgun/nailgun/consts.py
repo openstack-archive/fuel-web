@@ -382,7 +382,11 @@ ORCHESTRATOR_TASK_TYPES = Enum(
     'skipped',
     'reboot',
     'copy_files',
-    'role'
+    'role',
+    'master_shell',
+    'move_to_bootstrap',
+    'set_node_properties',
+    'erase_node'
 )
 
 INTERNAL_TASKS = (ORCHESTRATOR_TASK_TYPES.group,
@@ -480,8 +484,8 @@ NODE_RESOLVE_POLICY = Enum(
 )
 
 TASK_ROLES = Enum(
-    '*', 'master', 'self',
-    names=('all', 'master', 'self')
+    '*', 'master', 'self', 'deleted',
+    names=('all', 'master', 'self', 'deleted')
 )
 
 OVERRIDE_CONFIG_BASE_PATH = '/etc/hiera/override/configuration/'

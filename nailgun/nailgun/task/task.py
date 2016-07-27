@@ -1517,7 +1517,8 @@ class CheckBeforeDeploymentTask(object):
 
         models = objects.Cluster.get_restrictions_models(cluster)
 
-        nodes = TaskHelper.nodes_to_deploy(cluster)
+        nodes = (TaskHelper.nodes_to_deploy(cluster) +
+                 TaskHelper.nodes_to_provision(cluster))
         roles_metadata = objects.Cluster.get_roles(cluster)
 
         for node in nodes:

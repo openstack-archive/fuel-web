@@ -14,7 +14,7 @@
 
 cleanup_server() {
     echo "Stopping Nailgun and waiting $NAILGUN_START_MAX_WAIT_TIME seconds."
-    local pid="$(lsof -ti tcp:${NAILGUN_PORT})"
+    local pid="$(lsof -ti :${NAILGUN_PORT} -s tcp:LISTEN)"
     local kill9=0
     if [[ -z "$pid" ]]; then
         return 0

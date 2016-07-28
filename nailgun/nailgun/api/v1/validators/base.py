@@ -111,10 +111,9 @@ class BasicValidator(object):
                 and not objects.Cluster.get_deployment_tasks(
                 cluster, graph_type)):
             raise errors.NoDeploymentTasks(
-                "Deployment tasks not found for '{0}' release in the "
-                "database. Please upload them. If you're operating "
-                "from Fuel Master node, please check '/etc/puppet' "
-                "directory.".format(cluster.release.name))
+                "There are no deployment tasks for graph type '{}'. "
+                "Checked cluster (ID={}), its plugins and release (ID={})."
+                "".format(graph_type, cluster.id, cluster.release.id))
 
     @classmethod
     def validate_ids_list(cls, data):

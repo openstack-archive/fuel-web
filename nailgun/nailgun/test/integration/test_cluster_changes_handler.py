@@ -1711,7 +1711,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
 
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("Deployment tasks not found", resp.body)
+        self.assertIn("There are no deployment tasks", resp.body)
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
     def test_enough_osds_for_ceph(self):

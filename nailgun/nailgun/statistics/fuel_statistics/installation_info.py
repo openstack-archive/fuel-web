@@ -200,6 +200,8 @@ class InstallationInfo(object):
             ('bond_attributes_metadata',), 'bond_attributes_metadata', None),
         WhiteListRule(
             ('node_attributes_metadata',), 'node_attributes_metadata', None),
+        WhiteListRule(('vmware_attributes_metadata',),
+                      'vmware_attributes_metadata', None),
         WhiteListRule(('deployment_tasks',), 'deployment_tasks', None),
         WhiteListRule(('tasks',), 'tasks', None),
     )

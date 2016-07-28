@@ -44,9 +44,11 @@ def upgrade():
     upgrade_deployment_graphs_attributes()
     upgrade_orchestrator_task_types()
     upgrade_node_error_type()
+    upgrade_with_vmware_plugin_attributes()
 
 
 def downgrade():
+    downgrade_with_vmware_plugin_attributes()
     downgrade_node_error_type()
     downgrade_orchestrator_task_types()
     downgrade_deployment_graphs_attributes()
@@ -325,7 +327,28 @@ def upgrade_task_model():
     op.add_column(
         'tasks',
         sa.Column(
-            'dry_run', sa.Boolean(), nullable=False, server_default='false'
+            'dry_run', sa.Boolean(), nullable=False, server_default='false')
+    )
+
+
+def upgrade_with_vmware_plugin_attributes():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'vmware_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'cluster_plugins',
+        sa.Column(
+            'vmware_attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
         )
     )
 
@@ -439,3 +462,8 @@ def downgrade_node_error_type():
         u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
         u' USING error_type::text::node_error_type'
     )
+
+
+def downgrade_with_vmware_plugin_attributes():
+    op.drop_column('cluster_plugins', 'vmware_attributes')
+    op.drop_column('plugins', 'vmware_attributes_metadata')

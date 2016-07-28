@@ -18,7 +18,9 @@
 import web
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import to_json
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun.extensions.network_manager.validators import ip_addr
 from nailgun import objects
 
@@ -51,7 +53,9 @@ class ClusterVIPHandler(base.SingleHandler):
         else:
             return obj
 
-    @content
+    @handle_errors
+    @validate
+    @to_json
     def GET(self, cluster_id, ip_addr_id):
         """Get VIP record.
 
@@ -68,9 +72,11 @@ class ClusterVIPHandler(base.SingleHandler):
         """
         obj = self._get_vip_from_cluster_or_http_error(
             int(cluster_id), int(ip_addr_id))
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
-    @content
+    @handle_errors
+    @validate
+    @to_json
     def PUT(self, cluster_id, ip_addr_id):
         """Update VIP record.
 
@@ -94,7 +100,7 @@ class ClusterVIPHandler(base.SingleHandler):
             existing_obj=obj
         )
         self.single.update(obj, data)
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
     def PATCH(self, cluster_id, ip_addr_id):
         """Update VIP record.
@@ -126,7 +132,9 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
     collection = objects.IPAddrCollection
     validator = ip_addr.IPAddrValidator
 
-    @content
+    @handle_errors
+    @validate
+    @to_json
     def GET(self, cluster_id):
         """Get VIPs collection optionally filtered by network or network role.
 
@@ -141,7 +149,7 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
         network_role = web.input(network_role=None).network_role
 
         self.get_object_or_404(objects.Cluster, int(cluster_id))
-        return self.collection.to_json(
+        return self.collection.to_list(
             self.collection.get_vips_by_cluster_id(
                 int(cluster_id),
                 network_id,
@@ -149,7 +157,8 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
             )
         )
 
-    @content
+    @handle_errors
+    @validate
     def POST(self, cluster_id):
         """Create (allocate) VIP
 
@@ -174,7 +183,9 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
 
         raise self.http(200, self.collection.single.to_json(vip))
 
-    @content
+    @handle_errors
+    @validate
+    @to_json
     def PUT(self, cluster_id):
         """Update VIPs collection.
 
@@ -191,7 +202,7 @@ class ClusterVIPCollectionHandler(base.CollectionHandler):
             cluster_id=int(cluster_id)
         )
 
-        return self.collection.to_json(
+        return self.collection.to_list(
             self.collection.update_vips(update_data)
         )
 

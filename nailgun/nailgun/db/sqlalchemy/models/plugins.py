@@ -50,6 +50,9 @@ class ClusterPlugin(Base):
     attributes = Column(MutableDict.as_mutable(JSON),
                         nullable=False,
                         server_default='{}')
+    vmware_attributes = Column(MutableDict.as_mutable(JSON),
+                               nullable=False,
+                               server_default='{}')
     cluster = relationship("Cluster", backref=backref(
         "cluster_plugins", cascade="delete"))
     plugin = relationship("Plugin", backref=backref(
@@ -187,6 +190,8 @@ class Plugin(Base):
     bond_attributes_metadata = Column(
         MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
     node_attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
+    vmware_attributes_metadata = Column(
         MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
     components_metadata = Column(
         MutableList.as_mutable(JSON), server_default='[]')

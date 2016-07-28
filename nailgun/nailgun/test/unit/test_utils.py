@@ -151,6 +151,9 @@ class TestUtils(base.BaseIntegrationTest):
         self.assertRaises(ValueError, parse_bool, 'tru')
         self.assertRaises(ValueError, parse_bool, 'fals')
 
+    def test_search_objects_by_key_values(self):
+        pass
+
 
 class TestTraverse(base.BaseUnitTest):
 

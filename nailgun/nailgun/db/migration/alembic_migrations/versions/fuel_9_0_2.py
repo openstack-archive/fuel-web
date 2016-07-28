@@ -52,9 +52,11 @@ def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_task_model()
+    upgrade_with_vmware_plugin_attributes()
 
 
 def downgrade():
+    downgrade_with_vmware_plugin_attributes()
     downgrade_task_model()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
@@ -264,6 +266,33 @@ def upgrade_task_model():
     )
 
 
+def upgrade_with_vmware_plugin_attributes():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'vmware_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'cluster_plugins',
+        sa.Column(
+            'vmware_attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+
 def downgrade_task_model():
     op.drop_column('tasks', 'dry_run')
     op.drop_column('tasks', 'graph_type')
+
+
+def downgrade_with_vmware_plugin_attributes():
+    op.drop_column('cluster_plugins', 'vmware_attributes')
+    op.drop_column('plugins', 'vmware_attributes_metadata')

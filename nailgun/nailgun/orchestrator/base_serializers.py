@@ -16,12 +16,17 @@
 
 """Base classes of deployment serializers for orchestrator"""
 
+<<<<<<< HEAD
 from copy import deepcopy
 from netaddr import IPNetwork
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
+=======
+import six
+
+>>>>>>> f07b5a2... Vmware plugin attributes
 from nailgun import objects
 from nailgun.settings import settings
 
@@ -164,9 +169,8 @@ class VmwareDeploymentSerializerMixin(object):
         if use_vcenter:
             compute_instances = []
             cinder_instances = []
-
-            vmware_attributes = node.cluster.vmware_attributes.editable \
-                .get('value', {})
+            vmware_attributes = objects.Cluster.get_vmware_attributes(
+                node.cluster).get('editable').get('value', {})
             availability_zones = vmware_attributes \
                 .get('availability_zones', {})
             glance_instance = vmware_attributes.get('glance', {})
@@ -174,33 +178,48 @@ class VmwareDeploymentSerializerMixin(object):
 
             for zone in availability_zones:
 
-                vc_user = self.escape_dollar(zone.get('vcenter_username', ''))
-                vc_password = self.escape_dollar(zone.get('vcenter_password',
-                                                          ''))
+                vc_user = self.escape_dollar(
+                    zone.pop('vcenter_username', ''))
+                vc_password = self.escape_dollar(
+                    zone.pop('vcenter_password', ''))
+                vc_host = zone.pop('vcenter_host', '')
+                az_name = zone.pop('az_name', '')
+                vc_insecure = zone.pop('vcenter_insecure', ''),
+                vc_ca_file = zone.pop('vcenter_ca_file', '')
 
-                for compute in zone.get('nova_computes', {}):
+                for compute in zone.pop('nova_computes', {}):
                     datastore_regex = \
-                        self.escape_dollar(compute.get('datastore_regex', ''))
+                        self.escape_dollar(compute.pop('datastore_regex', ''))
 
                     compute_item = {
-                        'availability_zone_name': zone.get('az_name', ''),
-                        'vc_host': zone.get('vcenter_host', ''),
+                        'availability_zone_name': az_name,
+                        'vc_host': vc_host,
                         'vc_user': vc_user,
                         'vc_password': vc_password,
-                        'service_name': compute.get('service_name', ''),
-                        'vc_cluster': compute.get('vsphere_cluster', ''),
+                        'vc_insecure': vc_insecure,
+                        'vc_ca_file': vc_ca_file,
+                        'service_name': compute.pop('service_name', ''),
+                        'vc_cluster': compute.pop('vsphere_cluster', ''),
                         'datastore_regex': datastore_regex,
-                        'target_node': compute.get('target_node', {}).get(
+                        'target_node': compute.pop('target_node', {}).get(
                             'current', {}).get('id', 'controllers')
                     }
+
+                    for k, v in six.iteritems(zone):
+                        compute_item[k] = v
+
+                    for k, v in six.iteritems(compute):
+                        compute_item[k] = v
 
                     compute_instances.append(compute_item)
 
                 cinder_item = {
-                    'availability_zone_name': zone.get('az_name', ''),
-                    'vc_host': zone.get('vcenter_host', ''),
+                    'availability_zone_name': az_name,
+                    'vc_host': vc_host,
                     'vc_user': vc_user,
-                    'vc_password': vc_password
+                    'vc_password': vc_password,
+                    'vc_insecure': vc_insecure,
+                    'vc_ca_file': vc_ca_file
                 }
                 cinder_instances.append(cinder_item)
 
@@ -209,7 +228,7 @@ class VmwareDeploymentSerializerMixin(object):
             if compute_instances:
                 vmware_data['vcenter'] = {
                     'esxi_vlan_interface':
-                    network.get('esxi_vlan_interface', ''),
+                    network.pop('esxi_vlan_interface', ''),
                     'computes': compute_instances
                 }
 
@@ -221,19 +240,29 @@ class VmwareDeploymentSerializerMixin(object):
             if glance_instance:
                 glance_username = \
                     self.escape_dollar(glance_instance
-                                       .get('vcenter_username', ''))
+                                       .pop('vcenter_username', ''))
                 glance_password = \
                     self.escape_dollar(glance_instance
-                                       .get('vcenter_password', ''))
+                                       .pop('vcenter_password', ''))
 
                 vmware_data['glance'] = {
-                    'vc_host': glance_instance.get('vcenter_host', ''),
+                    'vc_host': glance_instance.pop('vcenter_host', ''),
                     'vc_user': glance_username,
                     'vc_password': glance_password,
+<<<<<<< HEAD
                     'vc_datacenter': glance_instance.get('datacenter', ''),
                     'vc_datastore': glance_instance.get('datastore', ''),
                     'vc_ca_file': glance_instance.get('ca_file', '')
+=======
+                    'vc_datacenter': glance_instance.pop('datacenter', ''),
+                    'vc_datastore': glance_instance.pop('datastore', ''),
+                    'vc_insecure': glance_instance.pop('vcenter_insecure', ''),
+                    'vc_ca_file': glance_instance.pop('ca_file', '')
+>>>>>>> f07b5a2... Vmware plugin attributes
                 }
+
+                for k, v in six.iteritems(glance_instance):
+                    vmware_data['glance'][k] = v
 
         return vmware_data
 

@@ -393,7 +393,7 @@ class VmwareAttributesHandler(BaseHandler):
         if not attributes:
             raise self.http(404, "No vmware attributes found")
 
-        return self.render(attributes)
+        return attributes
 
     @handle_errors
     @validate
@@ -420,16 +420,12 @@ class VmwareAttributesHandler(BaseHandler):
             raise self.http(400, "Cluster doesn't support vmware "
                                  "configuration")
 
-        attributes = objects.Cluster.get_vmware_attributes(cluster)
-        if not attributes:
-            raise self.http(404, "No vmware attributes found")
-
         if cluster.is_locked and \
                 not objects.Cluster.has_compute_vmware_changes(cluster):
             raise self.http(403, "Environment attributes can't be changed "
                                  "after or during deployment.")
 
-        data = self.checked_data(instance=attributes)
+        data = self.checked_data(cluster=cluster)
         attributes = objects.Cluster.update_vmware_attributes(cluster, data)
 
         return {"editable": attributes}

@@ -1182,14 +1182,25 @@ class Cluster(NailgunObject):
 
         Now we have relation with cluster 1:1.
         """
-        return db().query(models.VmwareAttributes).filter(
+        vmware_attributes = db().query(models.VmwareAttributes).filter(
             models.VmwareAttributes.cluster_id == instance.id
         ).first()
+
+        if not vmware_attributes:
+            return {}
+        else:
+            return dict_merge(
+                VmwareAttributes.to_dict(
+                    vmware_attributes, fields=('editable',)),
+                PluginManager.get_vmware_attributes(instance))
 
     @classmethod
     def get_default_vmware_attributes(cls, instance):
         """Get metadata from release with empty value section."""
         editable = instance.release.vmware_attributes_metadata.get("editable")
+        default_plugin_vmware_attributes = PluginManager.get_vmware_attributes(
+            instance, True)
+        editable = dict_merge(editable, default_plugin_vmware_attributes)
         editable = traverse(
             editable,
             formatter_context={'cluster': instance, 'settings': settings},
@@ -1204,6 +1215,7 @@ class Cluster(NailgunObject):
         Actually we allways update only value section in editable.
         """
         metadata = instance.vmware_attributes.editable['metadata']
+        PluginManager.process_vmware_attributes(instance, data)
         value = data.get('editable', {}).get('value')
         vmware_attr = {
             'metadata': metadata,

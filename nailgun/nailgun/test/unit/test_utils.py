@@ -27,6 +27,7 @@ from nailgun.utils import flatten
 from nailgun.utils import get_lines
 from nailgun.utils import grouper
 from nailgun.utils import parse_bool
+from nailgun.utils import search_objects_by_key_values
 from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
 
@@ -150,6 +151,19 @@ class TestUtils(base.BaseIntegrationTest):
 
         self.assertRaises(ValueError, parse_bool, 'tru')
         self.assertRaises(ValueError, parse_bool, 'fals')
+
+    def test_search_objects_by_key_values(self):
+        test_target = {
+            'a': {'b': {'c': 1, 'type': 'stype'}},
+            'd': {'e': 2, 'type': 'stype'},
+            'f': {'g': 3, 'type': 'ftype'}
+        }
+        result = search_objects_by_key_values(
+            test_target, 'type', ('stype',))
+        self.assertEqual([
+            {'c': 1, 'type': 'stype'},
+            {'e': 2, 'type': 'stype'}
+        ], sorted(result))
 
 
 class TestTraverse(base.BaseUnitTest):

@@ -94,7 +94,8 @@ class TestAttributesValidator(BaseTestCase):
         with self.assertRaisesRegexp(errors.InvalidData, error_msg):
             VmwareAttributesValidator._validate_nova_computes(
                 {"editable": self._get_value_vmware_attributes(nova_computes)},
-                self.cluster.vmware_attributes
+                self.cluster.vmware_attributes,
+                self.cluster
             )
 
     def test_change_exist_nova_compute(self):
@@ -190,7 +191,8 @@ class TestAttributesValidator(BaseTestCase):
                              VmwareAttributesValidator._validate_nova_computes,
                              {"editable": self._get_value_vmware_attributes(
                                  new_nova_computes)},
-                             attributes)
+                             attributes,
+                             self.cluster)
 
     def test_change_controller_nova_computes_pass(self):
         cluster = self.env.create(
@@ -220,7 +222,8 @@ class TestAttributesValidator(BaseTestCase):
                              VmwareAttributesValidator._validate_nova_computes,
                              {"editable": self._get_value_vmware_attributes(
                                  new_nova_computes)},
-                             cluster.vmware_attributes)
+                             cluster.vmware_attributes,
+                             cluster)
 
     @patch("nailgun.db.sqlalchemy.models.Cluster.is_locked", return_value=True)
     def test_change_controllers_nova_compute_setting(self, lock_mock):

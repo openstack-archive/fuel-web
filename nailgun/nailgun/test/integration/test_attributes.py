@@ -23,6 +23,7 @@ from nailgun.db.sqlalchemy.models import Release
 from nailgun import objects
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.utils import dict_merge
 from nailgun.utils import reverse
 
 
@@ -635,8 +636,11 @@ class TestVmwareAttributes(BaseIntegrationTest):
         # one-by-one
         self.assertEqual(
             release.vmware_attributes_metadata['editable'],
-            attrs.editable
+            attrs['editable']
         )
+
+    def test_get_vmware_attributes_with_wmware_plugin(self):
+        pass
 
     def test_vmware_attributes_update(self):
         self._set_use_vcenter(self.cluster_db)
@@ -654,10 +658,46 @@ class TestVmwareAttributes(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
 
-        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
-        self.assertEqual('bar', attrs.editable.get('value', {}).get('foo'))
-        attrs.editable.get('value', {}).pop('foo')
-        self.assertEqual(attrs.editable.get('value'), {})
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster)
+        self.assertEqual('bar', attrs['editable']['value']['foo'])
+        attrs['editable']['value'].pop('foo')
+        self.assertEqual({}, attrs['editable']['value'])
+
+    def test_vmware_attributes_update_with_vmware_plugin(self):
+        cluster = self.env.create_cluster(api=False)
+        self._set_use_vcenter(cluster)
+        vmware_config = self.env.get_default_plugin_vmware_config()
+        self.env.create_plugin(
+            name='vmware_plugin',
+            cluster=cluster,
+            package_version='5.0.0',
+            vmware_attributes_metadata=vmware_config
+        )
+        resp = self.app.get(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers
+        )
+        attributes = resp.json_body
+        attributes['editable']['value']['glance'][
+            'vmware_plugin_attribute'] = 'test'
+        attributes['editable']['value']['availability_zones'][0][
+            'nova_computes'][0]['service_name'] = 'sn'
+        attributes['editable']['value']['availability_zones'][0][
+            'nova_computes'][0]['vsphere_cluster'] = 'vc'
+
+        resp = self.app.put(
+            reverse(
+                'VmwareAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            params=jsonutils.dumps(attributes),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        attributes = resp.json_body
+        self.assertEqual('test', attributes['editable']['value'][
+            'glance']['vmware_plugin_attribute'])
 
     def test_vmware_attributes_update_with_invalid_json_format(self):
         self._set_use_vcenter(self.cluster_db)
@@ -787,10 +827,12 @@ class TestVmwareAttributes(BaseIntegrationTest):
                 headers=self.default_headers
             )
         self.assertEqual(200, resp.status_code)
-        attrs = objects.Cluster.get_vmware_attributes(self.cluster_db)
-        self.assertEqual('bar', attrs.editable.get('value', {}).get('foo'))
-        attrs.editable.get('value', {}).pop('foo')
-        self.assertEqual(attrs.editable.get('value'), {})
+
+        attrs = objects.Cluster.get_vmware_attributes(self.cluster)
+        self.assertEqual('bar', attrs['editable']['value']['foo'])
+        attrs['editable']['value'].pop('foo')
+        self.assertEqual({}, attrs['editable']['value'])
+
 
     def _set_use_vcenter(self, cluster):
         cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
@@ -819,6 +861,73 @@ class TestVmwareAttributesDefaults(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(
             release.vmware_attributes_metadata,
+            jsonutils.loads(resp.testbody)
+        )
+
+    def test_get_default_vmware_attrubutes_with_vmware_plugin(self):
+        cluster = self.env.create_cluster(api=True)
+        cluster_attrs = objects.Cluster.get_editable_attributes(cluster)
+        cluster_attrs['common']['use_vcenter']['value'] = True
+        objects.Cluster.update_attributes(
+            cluster, {'editable': cluster_attrs})
+        vmware_config = self.env.get_default_plugin_vmware_config()
+        plugin = self.env.create_plugin(
+            name='vmware_plugin',
+            cluster=cluster,
+            package_version='5.0.0',
+            vmware_attributes_metadata=vmware_config
+        )
+        resp = self.app.get(
+            reverse(
+                'VmwareAttributesDefaultsHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers
+        )
+        expected_plugin_attributes = {
+            'metadata': [{
+                'name': 'availability_zones',
+                'type': 'array',
+                'fields': [{
+                    'name': 'nova_computes',
+                    'fields': [{
+                        'name': 'test_field',
+                        'type': 'text',
+                        'label': 'Test field',
+                        'description': 'Test compute field via plugin',
+                        'class': 'plugin',
+                        'plugin_id': plugin.id
+                    }]
+                }]
+            }, {
+                'name': 'glance',
+                'type': 'object',
+                'fields': [{
+                    'name': 'vmware_plugin_attribute',
+                    'type': 'text',
+                    'label': 'Vmware plugin attributes',
+                    'description': 'Vmware plugin attributes',
+                    'class': 'plugin',
+                    'plugin_id': plugin.id
+                }]
+            }],
+            'value': {
+                'availability_zones': [{
+                    'nova_computes': [{
+                        'test_field': 'comp1'
+                    }]
+                }],
+                'glance': {
+                    'vmware_plugin_attribute': ''
+                }
+            }
+        }
+        release = objects.Release.get_by_uid(cluster['release_id'])
+        expected_attributes = dict_merge(
+            release.vmware_attributes_metadata['editable'],
+            expected_plugin_attributes)
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            {'editable': expected_attributes},
             jsonutils.loads(resp.testbody)
         )
 

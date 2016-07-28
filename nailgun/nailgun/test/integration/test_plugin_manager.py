@@ -495,6 +495,58 @@ class TestPluginManager(base.BaseIntegrationTest):
             versions, '3')
         self.assertEqual({}, not_existed_plugin_version_attrs)
 
+    def test_get_default_vmware_attributes(self):
+        cluster = self.env.create(api=False)
+        vmware_config = self.env.get_default_plugin_vmware_config()
+        plugin = self.env.create_plugin(
+            name='vmware_plugin',
+            cluster=cluster,
+            package_version='5.0.0',
+            vmware_attributes_metadata=vmware_config
+        )
+
+        expected_attributes = {
+            'metadata': [{
+                'name': 'availability_zones',
+                'type': 'array',
+                'fields': [{
+                    'name': 'nova_computes',
+                    'fields': [{
+                        'name': 'test_field',
+                        'type': 'text',
+                        'label': 'Test field',
+                        'description': 'Test compute field via plugin',
+                        'class': 'plugin',
+                        'plugin_id': plugin.id
+                    }]
+                }]
+            }, {
+                'name': 'glance',
+                'type': 'object',
+                'fields': [{
+                    'name': 'vmware_plugin_attribute',
+                    'type': 'text',
+                    'label': 'Vmware plugin attributes',
+                    'description': 'Vmware plugin attributes',
+                    'class': 'plugin',
+                    'plugin_id': plugin.id
+                }]
+            }],
+            'value': {
+                'availability_zones': [{
+                    'nova_computes': [{
+                        'test_field': 'comp1'
+                    }]
+                }],
+                'glance': {
+                    'vmware_plugin_attribute': ''
+                }
+            }
+        }
+
+        attributes = PluginManager.get_vmware_attributes(cluster, True)
+        self.assertEqual(expected_attributes, attributes)
+
 
 class TestClusterPluginIntegration(base.BaseTestCase):
 

@@ -367,3 +367,10 @@ def public_urls():
         r'/nodes/?$': ['POST'],
         r'/nodes/agent/?$': ['PUT'],
     }
+
+
+def cookie_urls():
+    return [
+        r'/api(/v[0-9]+)?/dump/[A-Za-z0-9-_.]+$',
+        r'/api(/v[0-9]+)?/capacity/csv/?$'
+    ]

@@ -13,13 +13,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import web
 
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.deployment_graph import DeploymentGraphValidator
 from nailgun import objects
+from nailgun import utils
 from nailgun.objects.serializers.deployment_graph import \
     DeploymentGraphSerializer
 
@@ -160,10 +161,6 @@ class RelatedDeploymentGraphCollectionHandler(CollectionHandler):
     @content
     def GET(self, obj_id):
         """Get deployment graphs list for given object.
-
-        :param obj_id: related model object ID
-        :type obj_id: int|basestring
-
         :returns: JSONized object.
 
         :http: * 200 (OK)
@@ -200,3 +197,54 @@ class DeploymentGraphHandler(SingleHandler):
 class DeploymentGraphCollectionHandler(CollectionHandler):
     """Handler for deployment graphs collection."""
     collection = objects.DeploymentGraphCollection
+
+    @content
+    def GET(self):
+        """Get deployment graphs list with filtering.
+
+        :returns: JSONized object.
+
+        :http: * 200 (OK)
+               * 400 (invalid object data specified)
+               * 404 (object not found in db)
+        """
+        clusters_ids = web.input(clusters_ids=None).clusters_ids
+        plugins_ids = web.input(plugins_ids=None).plugins_ids
+        releases_ids = web.input(releases_ids=None).releases_ids
+        graph_types = web.input(graph_types=None).graph_types
+        fetch_related = utils.parse_bool(
+            web.input(fetch_related='0').fetch_related
+        )
+
+        entities = []  # here all objects for which related graphs is fetched
+
+        # almost nothing to filter
+        if not (clusters_ids or plugins_ids or releases_ids):
+            entities = self.collection.all()
+            if not graph_types:
+                return self.collection.to_json(entities)
+
+        if clusters_ids:
+            entities.extend(
+                objects.ClusterCollection.filter_by_id_list(
+                    None, clusters_ids.split(',')
+                ).all()
+            )
+        if plugins_ids:
+            entities.extend(
+                objects.PluginCollection.filter_by_id_list(
+                    None, plugins_ids.split(',')
+                ).all()
+            )
+        if releases_ids:
+            entities.extend(
+                objects.ReleaseCollection.filter_by_id_list(
+                    None, releases_ids.split(',')
+                ).all()
+            )
+
+        return self.collection.to_json(
+            self.collection.get_related_graphs(
+                entities, graph_types, fetch_related
+            )
+        )

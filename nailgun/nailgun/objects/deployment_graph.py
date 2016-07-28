@@ -16,6 +16,7 @@
 
 import six
 
+import nailgun
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -92,16 +93,19 @@ class DeploymentGraph(NailgunObject):
 
     model = models.DeploymentGraph
     serializer = DeploymentGraphSerializer
+    associations = (
+        (models.Plugin, models.PluginDeploymentGraph),
+        (models.Release, models.ReleaseDeploymentGraph),
+        (models.Cluster, models.ClusterDeploymentGraph)
+    )
 
     @classmethod
     def get_association_for_model(cls, target_model):
         relation_model = None
-        if isinstance(target_model, models.Plugin):
-            relation_model = models.PluginDeploymentGraph
-        elif isinstance(target_model, models.Release):
-            relation_model = models.ReleaseDeploymentGraph
-        elif isinstance(target_model, models.Cluster):
-            relation_model = models.ClusterDeploymentGraph
+        for model, related_model in cls.associations:
+            if isinstance(target_model, model):
+                relation_model = related_model
+                break
         return relation_model
 
     @classmethod
@@ -332,3 +336,35 @@ class DeploymentGraphCollection(NailgunCollection):
             instance.__class__.id == instance.id
         )
         return graphs.all()
+
+    @classmethod
+    def get_related_graphs(cls, iterable, types, fetch_related=True):
+        # FIXME: set default fetch_related=False
+        """Get all graphs related to given models."""
+        iterable = list(iterable)
+
+        graphs_assoc = []
+        while True:
+            try:
+                instance = iterable.pop()
+                if fetch_related:  # fetch related entities for clusters
+                    if isinstance(instance, models.Cluster):
+                        iterable.append(instance.release)
+                        plugins = nailgun.objects.ClusterPlugin.get_enabled(
+                            instance.id)
+                        iterable.extend(plugins)
+                if types:
+                    graphs_assoc.extend(
+                        instance.deployment_graphs_assoc.filter(
+                            instance.deployment_graphs_assoc.__class__.type.in_(types)
+                        )
+                    )
+                else:
+                    graphs_assoc.extend(instance.deployment_graphs_assoc)
+            except IndexError:
+                break
+
+        ids = frozenset(
+            str(assoc.deployment_graph_id) for assoc in graphs_assoc
+        )
+        return cls.filter_by_id_list(None, ids).all()

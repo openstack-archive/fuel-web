@@ -28,6 +28,19 @@ class TestGraphHandlers(BaseIntegrationTest):
     def setUp(self):
         super(TestGraphHandlers, self).setUp()
         self.cluster = self.env.create_cluster(api=False)
+        plugin_data = {
+            'releases': [
+                {
+                    'repository_path': 'repositories/ubuntu',
+                    'version': self.cluster.release.version,
+                    'os': self.cluster.release.operating_system.lower(),
+                    'mode': [self.cluster.mode],
+                }
+            ],
+            'cluster': self.cluster,
+            'enabled': True,
+        }
+        self.plugin = self.env.create_plugin(**plugin_data)
         self.custom_graph = DeploymentGraph.create_for_model(
             {
                 'name': 'custom-graph-name',
@@ -39,6 +52,7 @@ class TestGraphHandlers(BaseIntegrationTest):
             self.cluster,
             graph_type='custom-graph'
         )
+        self.env.db().commit()
 
     def test_graphs_list_request(self):
         default_graph = DeploymentGraph.get_for_model(self.cluster)
@@ -73,22 +87,125 @@ class TestGraphHandlers(BaseIntegrationTest):
                     }
                 ],
                 'name': None
+            },
+            {
+                'id': DeploymentGraph.get_for_model(
+                    self.plugin, graph_type='default').id,
+                'relations': [{
+                    'model_id': self.plugin.id,
+                    'model': 'plugin',
+                    'type': 'default'
+                }],
+                'name': None
             }
         ]
-        resp = self.app.get(
+        response = self.app.get(
             reverse(
                 'DeploymentGraphCollectionHandler',
                 kwargs={}
+            ) + '?fetch_related=1',
+            headers=self.default_headers
+        ).json_body
+        for r in response:
+            r.pop('tasks')
+        self.assertItemsEqual(expected_list, response)
+
+    def test_graphs_list_filtered_release_and_plugin(self):
+        expected_list = [
+            {
+                'id': DeploymentGraph.get_for_model(
+                    self.cluster.release, graph_type='default').id,
+                'name': None,
+                'relations': [{
+                    'model_id': self.cluster.release.id,
+                    'model': 'release',
+                    'type': 'default'
+                }]
+            },
+            {
+                'id': DeploymentGraph.get_for_model(
+                    self.plugin, graph_type='default').id,
+                'name': None,
+                'relations': [
+                    {
+                        'model_id': self.plugin.id,
+                        'model': 'plugin',
+                        'type': 'default'
+                    }
+                ],
+            }
+        ]
+
+        response = self.app.get(
+            reverse(
+                'DeploymentGraphCollectionHandler',
+                kwargs={}
+            ) + '?releases_ids={}&plugins_ids={}'.format(
+                self.cluster.release.id,
+                self.plugin.id
             ),
             headers=self.default_headers
-        )
-        response = resp.json_body
+        ).json_body
+
+        for r in response:
+            r.pop('tasks')
+        self.assertItemsEqual(expected_list, response)
+
+    def test_graphs_list_filtered_cluster(self):
+        expected_list = [
+            {
+                'id': DeploymentGraph.get_for_model(
+                    self.cluster.release, graph_type='default').id,
+                'name': None,
+                'relations': [{
+                    'model_id': self.cluster.release.id,
+                    'model': 'release',
+                    'type': 'default'
+                }]
+            },
+            {
+                'id': DeploymentGraph.get_for_model(self.cluster).id,
+                'name': None,
+                'relations': [{
+                    'model_id': self.cluster.id,
+                    'model': 'cluster',
+                    'type': 'default'
+                }]
+            },
+            {
+                'id': DeploymentGraph.get_for_model(
+                    self.cluster, graph_type='custom-graph').id,
+                'name': 'custom-graph-name',
+                'relations': [{
+                    'model_id': self.cluster.id,
+                    'model': 'cluster',
+                    'type': 'custom-graph'
+                }]
+            },
+            {
+                'id': DeploymentGraph.get_for_model(self.plugin).id,
+                'name': None,
+                'relations': [{
+                    'model_id': self.plugin.id,
+                    'model': 'plugin',
+                    'type': 'default'
+                }],
+            }
+        ]
+
+        response = self.app.get(
+            reverse(
+                'DeploymentGraphCollectionHandler',
+                kwargs={}
+            ) + '?clusters_ids={}&fetch_related=1'.format(self.cluster.id),
+            headers=self.default_headers
+        ).json_body
+
         for r in response:
             r.pop('tasks')
         self.assertItemsEqual(expected_list, response)
 
     def test_graphs_by_id_request(self):
-
         resp = self.app.get(
             reverse(
                 'DeploymentGraphHandler',

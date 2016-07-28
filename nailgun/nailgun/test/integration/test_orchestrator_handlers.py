@@ -493,8 +493,8 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
 
         self.assertFalse(mcast.called)
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("Deployment tasks not found", resp_msg)
-        self.assertIn(self.cluster.release.name, resp_msg)
+        self.assertIn("There are no deployment tasks", resp_msg)
+        self.assertIn('={})'.format(self.cluster.release.id), resp_msg)
 
 
 class TestCustomGraphAction(BaseSelectedNodesTest):

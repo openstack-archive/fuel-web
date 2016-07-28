@@ -43,18 +43,25 @@ class CookieTokenMixin(object):
     Token is taken from X-Auth-Token header or
     if that doesn't exist, from the cookie.
     """
+
+    cookie_routes = [
+        r'/api(/v[0-9]+)?/dump/[A-Za-z0-9-_.]+$',
+        r'/api(/v[0-9]+)?/capacity/csv/?$'
+    ]
+
+    cookie_routes_regexs = [re.compile(r) for r in cookie_routes]
+
     def get_auth_token(self, env):
         token = env.get('HTTP_X_AUTH_TOKEN', '')
-
         if token:
             return token
 
-        c = Cookie.SimpleCookie(env.get('HTTP_COOKIE', ''))
-
-        token = c.get('token')
-
-        if token:
-            return token.value
+        path = env.get('PATH_INFO', '/')
+        if any(r.match(path) for r in self.cookie_routes_regexs):
+            c = Cookie.SimpleCookie(env.get('HTTP_COOKIE', ''))
+            token = c.get('token')
+            if token:
+                return token.value
 
         return ''
 

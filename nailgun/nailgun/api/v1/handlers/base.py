@@ -14,8 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import csv
 from datetime import datetime
 import six
+from StringIO import StringIO
 import traceback
 
 from decorator import decorator
@@ -154,7 +156,10 @@ class BaseHandler(object):
             exc = exc_status_map[status_code](message=msg)
         except TypeError:
             exc = exc_status_map[status_code]()
-        exc.data = msg
+        if isinstance(msg, (list, dict)):
+            exc.data = jsonutils.dumps(msg)
+        else:
+            exc.data = msg
         exc.err_list = err_list or []
         exc.status_code = status_code
 
@@ -272,11 +277,56 @@ class BaseHandler(object):
             return default
 
 
-def json_resp(data):
-    if isinstance(data, (dict, list)) or data is None:
+def serializer_plain(data):
+    web.header('Content-Type', 'text/plain', unique=True)
+    return str(data)
+
+
+def serializer_json(data):
+    web.header('Content-Type', 'application/json', unique=True)
+    if isinstance(data, (list, dict)) or data is None:
         return jsonutils.dumps(data)
     else:
         return data
+
+
+def serializer_csv(data):
+    web.header('Content-Type', 'text/csv', unique=True)
+    web.header('Content-Disposition', 'attachment; filename="output.csv"')
+    if not (isinstance(data, list) and
+            all(map(lambda x: isinstance(x, dict), data))):
+        raise BaseHandler.http(415, repr(data))
+
+    keys = set()
+    for obj in data:
+        keys.update(obj.keys())
+    keys = list(keys)
+
+    res = StringIO()
+    csv_writer = csv.writer(res)
+    csv_writer.writerow(keys)
+    for obj in data:
+        values = []
+        for k in keys:
+            v = obj.get(k)
+            if isinstance(v, (list, dict)):
+                v = jsonutils.dumps(v)
+            values.append(v)
+        csv_writer.writerow(values)
+
+    web.header('Content-Length', len(res.getvalue()))
+    return res.getvalue()
+
+
+response_serializers = {'application/json': serializer_json,
+                        'text/csv': serializer_csv,
+                        'text/plain': serializer_plain}
+
+
+def get_response_serializer():
+    headers = {k.lower(): v.lower() for k, v in web.ctx.headers}
+    content_type = headers.get('content-type', 'application/json')
+    return response_serializers.get(content_type, serializer_json)
 
 
 @decorator
@@ -289,12 +339,10 @@ def handle_errors(func, cls, *args, **kwargs):
         if http_error.status_code != 204:
             web.header('Content-Type', 'application/json', unique=True)
         if http_error.status_code >= 400:
-            http_error.data = json_resp({
+            http_error.data = jsonutils.dumps({
                 "message": http_error.data,
                 "errors": http_error.err_list
             })
-        else:
-            http_error.data = json_resp(http_error.data)
         raise
     except NailgunException as exc:
         logger.exception('NailgunException occured')
@@ -312,7 +360,7 @@ def handle_errors(func, cls, *args, **kwargs):
                 else 'Unexpected exception, please check logs'
             )
         )
-        http_error.data = json_resp(http_error.data)
+        http_error.data = jsonutils.dumps(http_error.data)
         web.header('Content-Type', 'text/plain')
         raise http_error
 
@@ -396,8 +444,7 @@ def serialize(*args, **kwargs):
             accepted_types = exact_mimetypes
         if any(map(lambda m: m in accept, accepted_types)):
             resp = func(cls, *args, **kwargs)
-            web.header('Content-Type', 'application/json', unique=True)
-            return json_resp(resp)
+            return get_response_serializer()(resp)
         else:
             raise BaseHandler.http(415)
 

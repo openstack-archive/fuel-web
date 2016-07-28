@@ -31,7 +31,7 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
 
     @handle_errors
     @validate
-    @serialize
+    @serialize(['application/json', 'text/csv'])
     def GET(self, transaction_id):
         """:returns: Collection of JSONized DeploymentHistory records.
 
@@ -53,6 +53,9 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
                                           tasks_names=tasks_names)
         except errors.ValidationException as exc:
             raise self.http(400, exc.message)
+
+        if web.ctx.env.get("HTTP_ACCEPT") == 'text/csv':
+            web.header('Content-Type', 'text/csv', unique=True)
 
         # fetch and serialize history
         return self.collection.get_history(transaction=transaction,

@@ -15,7 +15,9 @@
 #    under the License.
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import serialize
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun.api.v1.validators import plugin_link
 from nailgun import errors
 from nailgun import objects
@@ -36,6 +38,9 @@ class PluginLinkHandler(base.SingleHandler):
                 "Plugin with id {0} not found".format(plugin_id)
             )
 
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -43,9 +48,11 @@ class PluginLinkHandler(base.SingleHandler):
                * 404 (dashboard entry not found in db)
         """
         obj = self._get_plugin_link_object(plugin_id, obj_id)
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -58,7 +65,7 @@ class PluginLinkHandler(base.SingleHandler):
             self.validator.validate_update,
             instance=obj)
         self.single.update(obj, data)
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
     def PATCH(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
@@ -69,7 +76,8 @@ class PluginLinkHandler(base.SingleHandler):
         """
         return self.PUT(plugin_id, obj_id)
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, plugin_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -86,7 +94,8 @@ class PluginLinkCollectionHandler(base.CollectionHandler):
     collection = objects.PluginLinkCollection
     validator = plugin_link.PluginLinkValidator
 
-    @content
+    @handle_errors
+    @validate
     def GET(self, plugin_id):
         """:returns: Collection of JSONized PluginLink objects.
 
@@ -94,11 +103,12 @@ class PluginLinkCollectionHandler(base.CollectionHandler):
                * 404 (plugin not found in db)
         """
         self.get_object_or_404(objects.Plugin, plugin_id)
-        return self.collection.to_json(
+        return self.collection.to_list(
             self.collection.get_by_plugin_id(plugin_id)
         )
 
-    @content
+    @handle_errors
+    @validate
     def POST(self, plugin_id):
         """:returns: JSONized REST object.
 

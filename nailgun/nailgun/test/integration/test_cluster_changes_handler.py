@@ -1684,7 +1684,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
 
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("Deployment tasks not found", resp.body)
+        self.assertIn("There are no deployment tasks", resp.body)
 
     @mock_rpc()
     def test_enough_osds_for_ceph(self):

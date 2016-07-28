@@ -43,6 +43,8 @@ class NameMatchingPolicy(object):
         """
         if pattern.startswith("/") and pattern.endswith("/"):
             return PatternMatchingPolicy(pattern[1:-1])
+        if TagsMatchingPolicy.TAGS_SEPARATOR in pattern:
+            return TagsMatchingPolicy(pattern)
         return ExactMatchingPolicy(pattern)
 
 
@@ -68,3 +70,14 @@ class PatternMatchingPolicy(NameMatchingPolicy):
 
     def match(self, name):
         return self.pattern.match(name)
+
+
+class TagsMatchingPolicy(NameMatchingPolicy):
+    """Tests that tags matches to argument."""
+    TAGS_SEPARATOR = "::"
+
+    def __init__(self, tag):
+        self.tag = tag
+
+    def match(self, name):
+        return self.tag.startswith(name)

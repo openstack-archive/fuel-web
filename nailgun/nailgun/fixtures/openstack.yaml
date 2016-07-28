@@ -28,6 +28,11 @@
             - condition: "settings:neutron_advanced_configuration.neutron_l3_ha.value == true"
               min: 2
               message: "Neutron L3 HA requires at least 2 Controller nodes to function properly."
+        tags:
+          - keystone
+          - rabbitmq
+          - neutron
+          - database
       compute:
         name: "Compute"
         description: "A Compute node creates, manages, and terminates virtual machine instances."

@@ -31,6 +31,7 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
             ["controller", "compute"],
             ["controller", "cinder"],
             ["compute"],
+            ["controller::mysql"]
         ]
         cls.nodes = [
             mock.MagicMock(uid=str(i))
@@ -45,7 +46,7 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
     def test_resolve_by_pattern(self):
         resolver = role_resolver.RoleResolver(self.nodes)
         self.assertItemsEqual(
-            ["0", "2", "3"],
+            ["0", "2", "3", "5"],
             resolver.resolve(["/.*controller/"])
         )
         self.assertItemsEqual(
@@ -53,8 +54,12 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
             resolver.resolve(["controller"])
         )
         self.assertItemsEqual(
-            ["1", "2", "3", "4"],
+            ["1", "2", "3", "4", "5"],
             resolver.resolve(["/c.+/"])
+        )
+        self.assertItemsEqual(
+            ["2", "3", "5"],
+            resolver.resolve(["controller::mysql"])
         )
 
     def test_resolve_all(self):
@@ -94,7 +99,7 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
             consts.TASK_ROLES.all
         ))
         self.assertEqual(
-            {'controller', 'primary-controller'},
+            {'controller', 'primary-controller', 'controller::mysql'},
             resolver.get_all_roles("/.*controller/")
         )
         self.assertEqual(

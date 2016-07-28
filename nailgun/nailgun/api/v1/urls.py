@@ -422,3 +422,10 @@ def public_urls():
         r'/nodes/agent/?$': ['PUT'],
         r'/clusters/(?P<cluster_id>\d+)/plugin_links/?$': ['POST']
     }
+
+
+def cookie_urls():
+    return [
+        r'/api(/v[0-9]+)?/dump/[A-Za-z0-9-_.]+$',
+        r'/api(/v[0-9]+)?/capacity/csv/?$'
+    ]

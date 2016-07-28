@@ -20,7 +20,9 @@ import six
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import serialize
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
@@ -79,7 +81,9 @@ class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
     Need to redefine serializer variable
     """
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized default data which will be passed to orchestrator
 
@@ -110,7 +114,9 @@ class OrchestratorInfo(BaseHandler):
         """Method should override data which will be passed to orchestrator"""
         raise NotImplementedError('Please Implement this method')
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
 
@@ -120,7 +126,9 @@ class OrchestratorInfo(BaseHandler):
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return self.get_orchestrator_info(cluster)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, cluster_id):
         """:returns: JSONized data which will be passed to orchestrator
 
@@ -136,7 +144,8 @@ class OrchestratorInfo(BaseHandler):
                      .format(cluster_id))
         return data
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, cluster_id):
         """:returns: {}
 
@@ -235,7 +244,8 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
 
         self.raise_task(task)
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
 
@@ -257,7 +267,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_provision(cluster)
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
 
@@ -303,7 +314,8 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
 class DeploySelectedNodes(BaseDeploySelectedNodes, DryRunMixin):
     """Handler for deployment selected nodes."""
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
 
@@ -324,7 +336,8 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, DryRunMixin):
 
     validator = NodeDeploymentValidator
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
 
@@ -353,6 +366,8 @@ class TaskDeployGraph(BaseHandler):
 
     validator = GraphSolverVisualizationValidator
 
+    @handle_errors
+    @validate
     def GET(self, cluster_id):
         """:returns: DOT representation of deployment graph.
 
@@ -407,7 +422,9 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
             return objects.Cluster.get_nodes_not_for_deletion(cluster).all()
         return TaskHelper.nodes_to_deploy(cluster)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: serialized tasks in json format
 

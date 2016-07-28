@@ -22,7 +22,9 @@ from nailgun.objects.serializers.release import ComponentSerializer
 class ComponentCollectionHandler(base.CollectionHandler):
     """Component collection handler"""
 
-    @base.content
+    @base.handle_errors
+    @base.validate
+    @base.serialize
     def GET(self, release_id):
         """:returns: JSONized component data for release and releated plugins.
 

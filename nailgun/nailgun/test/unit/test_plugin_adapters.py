@@ -430,6 +430,7 @@ class TestPluginV5(TestPluginBase):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()
         tasks = self.env.get_default_plugin_tasks()
         components_metadata = self.env.get_default_components()
+        vmware_metadata = self.env.get_default_plugin_vmware_config()
 
         mocked_metadata = {
             self._find_path('metadata'): plugin_metadata,
@@ -442,7 +443,8 @@ class TestPluginV5(TestPluginBase):
             self._find_path('components'): components_metadata,
             self._find_path('nic_config'): nic_attributes_metadata,
             self._find_path('bond_config'): bond_attributes_metadata,
-            self._find_path('node_config'): node_attributes_metadata
+            self._find_path('node_config'): node_attributes_metadata,
+            self._find_path('vmware_config'): vmware_metadata
         }
 
         with mock.patch.object(

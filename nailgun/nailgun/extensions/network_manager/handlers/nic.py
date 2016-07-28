@@ -21,7 +21,9 @@ Handlers dealing with nodes
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import serialize
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun.extensions.network_manager.validators.network import \
     NetAssignmentValidator
 
@@ -42,7 +44,9 @@ class NodeNICsHandler(BaseHandler):
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: Collection of JSONized Node interfaces.
 
@@ -52,7 +56,9 @@ class NodeNICsHandler(BaseHandler):
         node = self.get_object_or_404(objects.Node, node_id)
         return map(self.render, node.interfaces)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, node_id):
         """:returns: Collection of JSONized Node objects.
 
@@ -79,7 +85,9 @@ class NodeCollectionNICsHandler(BaseHandler):
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
 
@@ -107,7 +115,9 @@ class NodeCollectionNICsHandler(BaseHandler):
 class NodeNICsDefaultHandler(BaseHandler):
     """Node default network interfaces handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: Collection of default JSONized interfaces for node.
 
@@ -129,7 +139,9 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
 
     validator = NetAssignmentValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """May receive cluster_id parameter to filter list of nodes
 

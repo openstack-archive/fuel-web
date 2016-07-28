@@ -19,10 +19,8 @@ import urllib
 
 import web
 
-from mock import patch
-
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import serialize
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -99,11 +97,11 @@ class TestHandlers(BaseIntegrationTest):
 
         class FakeHandler(object):
 
-            @content
+            @serialize
             def GET(self):
                 return {}
 
-            @content(["text/plain"])
+            @serialize(["text/plain"])
             def POST(self):
                 return "Plain Text"
 
@@ -116,18 +114,7 @@ class TestHandlers(BaseIntegrationTest):
             fake_handler.GET
         )
 
-        web.ctx.env = {"HTTP_ACCEPT": "application/json"}
-
-        with patch("nailgun.api.v1.handlers.base.content_json") as cj:
-            fake_handler.GET()
-            self.assertEqual(cj.call_count, 1)
-
         web.ctx.env = {"HTTP_ACCEPT": "*/*"}
-
-        with patch("nailgun.api.v1.handlers.base.content_json") as cj:
-            fake_handler.GET()
-            self.assertEqual(cj.call_count, 1)
-
         web.ctx.headers = []
         fake_handler.GET()
         self.assertIn(

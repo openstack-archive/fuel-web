@@ -18,7 +18,9 @@ import web
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import SingleHandler
 
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import to_json
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun.api.v1.validators.task import TaskValidator
 
 from nailgun import errors
@@ -38,7 +40,8 @@ class TaskHandler(SingleHandler):
     single = objects.Task
     validator = TaskValidator
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, obj_id):
         """:returns: Empty string
 
@@ -68,7 +71,9 @@ class TaskCollectionHandler(CollectionHandler):
     collection = objects.TaskCollection
     validator = TaskValidator
 
-    @content
+    @handle_errors
+    @validate
+    @to_json
     def GET(self):
         """May receive cluster_id parameter to filter list of tasks
 
@@ -79,8 +84,8 @@ class TaskCollectionHandler(CollectionHandler):
         cluster_id = web.input(cluster_id=None).cluster_id
 
         if cluster_id is not None:
-            return self.collection.to_json(
+            return self.collection.to_list(
                 self.collection.get_by_cluster_id(cluster_id)
             )
         else:
-            return self.collection.to_json(self.collection.all_not_deleted())
+            return self.collection.to_list(self.collection.all_not_deleted())

@@ -50,15 +50,29 @@ class TestAuthToken(BaseAuthenticationIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
 
-    def test_cookie_token(self):
+    def test_no_cookies_accepted(self):
         """Make sure that Cookie authentication works."""
         self.headers['Cookie'] = 'token=%s' % self.token
 
         resp = self.app.get(
             '/api/nodes/allocation/stats',
-            headers=self.headers
+            headers=self.headers,
+            expect_errors=True
         )
-        self.assertEqual(200, resp.status_code)
+        self.assertEqual(401, resp.status_code)
+
+    def test_cookie_accepted_for_download_urls(self):
+        """Make sure that Cookie authentication works."""
+        self.headers['Cookie'] = 'token=%s' % self.token
+
+        resp = self.app.get(
+            '/api/capacity/csv',
+            headers=self.headers,
+            expect_errors=True
+        )
+        # there is no capacity log by default
+        # so it returns 404 which mean successful auth
+        self.assertEqual(404, resp.status_code)
 
     def test_x_auth_token_header_has_priority_over_cookie(self):
         """X-Auth-Token header has priority over the Cookie token."""

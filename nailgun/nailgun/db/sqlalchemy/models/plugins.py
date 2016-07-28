@@ -188,6 +188,8 @@ class Plugin(Base):
         MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
     node_attributes_metadata = Column(
         MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
+    vmware_attributes_metadata = Column(
+        MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
     components_metadata = Column(
         MutableList.as_mutable(JSON), server_default='[]')
     # TODO(apopovych): To support old plugins versions we need separate

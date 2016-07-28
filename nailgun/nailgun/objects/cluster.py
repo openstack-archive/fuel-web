@@ -1171,9 +1171,13 @@ class Cluster(NailgunObject):
 
         Now we have relation with cluster 1:1.
         """
-        return db().query(models.VmwareAttributes).filter(
+        plugin_vmware_attributes = PluginManager.get_vmware_attributes(
+            instance)
+        vmware_attributes = db().query(models.VmwareAttributes).filter(
             models.VmwareAttributes.cluster_id == instance.id
         ).first()
+
+        return dict_merge(vmware_attributes, plugin_vmware_attributes)
 
     @classmethod
     def get_default_vmware_attributes(cls, instance):

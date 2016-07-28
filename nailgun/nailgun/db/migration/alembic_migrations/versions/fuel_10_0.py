@@ -38,9 +38,11 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_with_vmware_plugin_attributes()
 
 
 def downgrade():
+    downgrade_with_vmware_plugin_attributes()
     downgrade_release_required_component_types()
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
@@ -305,3 +307,30 @@ def downgrade_node_deployment_info():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def upgrade_with_vmware_plugin_attributes():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'vmware_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'cluster_plugins',
+        sa.Column(
+            'vmware_attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+
+def downgrade_with_vmware_plugin_attributes():
+    op.drop_column('cluster_plugins', 'attributes')
+    op.drop_column('plugins', 'vmware_attributes_metadata')

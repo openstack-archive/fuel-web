@@ -140,6 +140,14 @@ class PluginManager(object):
         return plugins_attributes
 
     @classmethod
+    def process_vmware_attributes(cls, cluster, attributes):
+        # Update vmware attributes in cluster_plugins
+
+    @classmethod
+    def get_vmware_attributes(cls, cluster, default=False):
+        # Get vmware specific data
+
+    @classmethod
     def inject_plugin_attribute_values(cls, attributes):
         """Inject given attributes with plugin attributes values.
 

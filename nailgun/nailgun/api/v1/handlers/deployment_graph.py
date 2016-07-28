@@ -13,7 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import web
 
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import handle_errors
@@ -24,6 +24,7 @@ from nailgun.api.v1.validators.deployment_graph import DeploymentGraphValidator
 from nailgun import objects
 from nailgun.objects.serializers.deployment_graph import \
     DeploymentGraphSerializer
+from nailgun import utils
 
 
 class RelatedDeploymentGraphHandler(SingleHandler):
@@ -175,9 +176,6 @@ class RelatedDeploymentGraphCollectionHandler(CollectionHandler):
     def GET(self, obj_id):
         """Get deployment graphs list for given object.
 
-        :param obj_id: related model object ID
-        :type obj_id: int|basestring
-
         :returns: JSONized object.
 
         :http: * 200 (OK)
@@ -214,3 +212,78 @@ class DeploymentGraphHandler(SingleHandler):
 class DeploymentGraphCollectionHandler(CollectionHandler):
     """Handler for deployment graphs collection."""
     collection = objects.DeploymentGraphCollection
+
+    @content
+    def GET(self):
+        """Get deployment graphs list with filtering.
+
+        :returns: JSONized object.
+
+        :http: * 200 (OK)
+               * 400 (invalid object data specified)
+               * 404 (object not found in db)
+        :http GET params:
+               * clusters_ids = comma separated list of clusters IDs
+               * plugins_ids = comma separated list of plugins IDs
+               * releases_ids = comma separated list of releases IDs
+               * graph_types = comma separated list of deployment graph types
+               * fetch_related = 0/1 bool value that enables fetching graphs
+                 related to clusters release and plugins (default=0/False)
+        """
+        # process args
+        clusters_ids = self.get_param_as_set('clusters_ids')
+        if clusters_ids:
+            clusters_ids = self.checked_data(
+                validate_method=self.validator.validate_ids_list,
+                data=clusters_ids
+            )
+
+        plugins_ids = self.get_param_as_set('plugins_ids')
+        if plugins_ids:
+            plugins_ids = self.checked_data(
+                validate_method=self.validator.validate_ids_list,
+                data=self.get_param_as_set('plugins_ids')
+            )
+
+        releases_ids = self.get_param_as_set('releases_ids')
+        if releases_ids:
+            releases_ids = self.checked_data(
+                validate_method=self.validator.validate_ids_list,
+                data=self.get_param_as_set('releases_ids')
+            )
+
+        graph_types = self.get_param_as_set('graph_types')
+        fetch_related = utils.parse_bool(
+            web.input(fetch_related='1').fetch_related
+        )
+
+        # apply filtering
+        if clusters_ids or plugins_ids or releases_ids:
+            entities = []  # all objects for which related graphs is fetched
+            if clusters_ids:
+                entities.extend(
+                    objects.ClusterCollection.filter_by_id_list(
+                        None, clusters_ids
+                    ).all()
+                )
+            if plugins_ids:
+                entities.extend(
+                    objects.PluginCollection.filter_by_id_list(
+                        None, plugins_ids
+                    ).all()
+                )
+            if releases_ids:
+                entities.extend(
+                    objects.ReleaseCollection.filter_by_id_list(
+                        None, releases_ids
+                    ).all()
+                )
+            result = self.collection.get_related_graphs(
+                entities, graph_types, fetch_related
+            )
+        else:
+            if graph_types:  # and no other filters
+                result = self.collection.filter_by_graph_types(graph_types)
+            else:
+                result = self.collection.all()
+        return self.collection.to_list(result)

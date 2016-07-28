@@ -547,6 +547,7 @@ class EnvironmentManager(object):
         nic_config = plugin_data.pop('nic_config', None)
         bond_config = plugin_data.pop('bond_config', None)
         node_config = plugin_data.pop('node_config', None)
+        vmware_config = plugin_data.pop('vmware_attributes_metadata', None)
 
         mocked_metadata = {
             'metadata.*': plugin_data,
@@ -560,7 +561,8 @@ class EnvironmentManager(object):
             'components.yaml': components,
             'nic_config.yaml': nic_config,
             'bond_config.yaml': bond_config,
-            'node_config.yaml': node_config
+            'node_config.yaml': node_config,
+            'vmware_config.yaml': vmware_config
         }
         # good only when everything is located in root dir
         files_manager_m.side_effect = lambda key: copy.deepcopy(
@@ -762,6 +764,42 @@ class EnvironmentManager(object):
     def get_default_attributes_metadata(self):
         return self.read_fixtures(
             ['openstack'])[0]['fields']['attributes_metadata']
+
+    def get_default_plugin_vmware_config(self, **kwargs):
+        return {
+            'metadata': [{
+                'name': 'availability_zones',
+                'type': 'array',
+                'fields': [{
+                    'name': 'nova_computes',
+                    'fields': [{
+                        'name': 'test_field',
+                        'type': 'text',
+                        'label': 'Test field',
+                        'description': 'Test compute field via plugin'
+                    }]
+                }]
+            }, {
+                'name': 'glance',
+                'type': 'object',
+                'fields': [{
+                    'name': 'vmware_plugin_attribute',
+                    'type': 'text',
+                    'label': 'Vmware plugin attributes',
+                    'description': 'Vmware plugin attributes'
+                }]
+            }],
+            'value': {
+                'availability_zones': [{
+                    'nova_computes': [{
+                        'test_field': 'comp1'
+                    }]
+                }],
+                'glance': {
+                    'vmware_plugin_attribute': ''
+                }
+            }
+        }
 
     def get_default_plugin_env_config(self, **kwargs):
         return {

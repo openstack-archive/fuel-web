@@ -407,7 +407,7 @@ class TestPluginV5(TestPluginBase):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()
         tasks = self.env.get_default_plugin_tasks()
         components_metadata = self.env.get_default_components()
-
+        vmware_metadata = self.env.get_default_plugin_vmware_config()
         nic_attributes_metadata = self.env.get_default_plugin_nic_config()
         bond_attributes_metadata = self.env.get_default_plugin_bond_config()
         node_attributes_metadata = self.env.get_default_plugin_node_config()
@@ -422,7 +422,8 @@ class TestPluginV5(TestPluginBase):
             'components_metadata': components_metadata,
             'nic_attributes_metadata': nic_attributes_metadata,
             'bond_attributes_metadata': bond_attributes_metadata,
-            'node_attributes_metadata': node_attributes_metadata
+            'node_attributes_metadata': node_attributes_metadata,
+            'vmware_attributes_metadata': vmware_metadata
         })
 
         with mock.patch.object(

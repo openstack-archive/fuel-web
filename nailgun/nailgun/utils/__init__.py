@@ -340,3 +340,20 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+
+def search_objects_by_key_values(target, key, values):
+    result = []
+
+    def search_in_target(starget, skey, svalues):
+        if isinstance(starget, (list, tuple, set)):
+            for item in starget:
+                search_in_target(item, skey, svalues)
+        elif isinstance(starget, dict):
+            for k, v in six.iteritems(starget):
+                if k == skey and v in svalues:
+                    result.append(starget)
+                search_in_target(v, skey, svalues)
+
+    search_in_target(target, key, values)
+
+    return result

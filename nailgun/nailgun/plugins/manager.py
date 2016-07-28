@@ -25,8 +25,10 @@ from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
+from nailgun.utils import dict_merge
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
+from nailgun.utils import search_objects_by_key_values
 
 
 class PluginManager(object):
@@ -139,6 +141,43 @@ class PluginManager(object):
                 container.update(plugin.attributes)
 
         return plugins_attributes
+
+    @classmethod
+    def process_vmware_attributes(cls, cluster, attributes):
+        target_objects = search_objects_by_key_values(
+            attributes, 'class', ('plugin',))
+        for item in target_objects:
+            ClusterPlugin.set_attributes(
+                cluster.id,
+                item['plugin_id'],
+                vm_attrs=attributes['editable']['value']
+            )
+
+    @classmethod
+    def get_vmware_attributes(cls, cluster, default=False):
+        vmware_attributes = {}
+
+        for plugin in ClusterPlugin.get_enabled(cluster.id):
+            plugin_adapter = wrap_plugin(plugin)
+            default_attrs = plugin_adapter.vmware_attributes_metadata
+            vmware_attributes.update(default_attrs)
+            target_objects = search_objects_by_key_values(
+                vmware_attributes,
+                'type',
+                ('text', 'passwords', 'select', 'file'))
+
+            for item in target_objects:
+                item.update({
+                    'class': 'plugin',
+                    'plugin_id': plugin.id
+                })
+            if not default:
+                cluster_plugin = ClusterPlugin.get_by_cluster_and_plugin(
+                    cluster, plugin)
+                vmware_attributes = dict_merge(
+                    vmware_attributes, cluster_plugin.vmware_attributes)
+
+        return vmware_attributes
 
     @classmethod
     def inject_plugin_attribute_values(cls, attributes):

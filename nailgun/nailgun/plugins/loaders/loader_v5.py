@@ -32,7 +32,9 @@ class PluginLoaderV5(PluginLoaderBase):
 
         'nic_attributes_metadata': 'nic_config.yaml',
         'bond_attributes_metadata': 'bond_config.yaml',
-        'node_attributes_metadata': 'node_config.yaml'
+        'node_attributes_metadata': 'node_config.yaml',
+
+        'vmware_attributes_metadata': 'vmware_config.yaml'
     }
 
     @property

@@ -216,11 +216,14 @@ class ClusterPlugin(NailgunObject):
         for plugin in cls.get_compatible_plugins(cluster):
             plugin_attributes = dict(plugin.attributes_metadata)
             plugin_attributes.pop('metadata', None)
+            plugin_vmware_attributes = dict(
+                plugin.vmware_attributes_metadata.get('value', {}))
             cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
-                'attributes': plugin_attributes
+                'attributes': plugin_attributes,
+                'vmware_attributes': plugin_vmware_attributes
             })
 
     @classmethod
@@ -245,16 +248,20 @@ class ClusterPlugin(NailgunObject):
         """
         plugin_attributes = dict(plugin.attributes_metadata)
         plugin_attributes.pop('metadata', None)
+        plugin_vmware_attributes = dict(
+            plugin.vmware_attributes_metadata.get('value', {}))
         for cluster in cls.get_compatible_clusters(plugin):
             cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
-                'attributes': plugin_attributes
+                'attributes': plugin_attributes,
+                'vmware_attributes': plugin_vmware_attributes
             })
 
     @classmethod
-    def set_attributes(cls, cluster_id, plugin_id, enabled=None, attrs=None):
+    def set_attributes(cls, cluster_id, plugin_id,
+                       enabled=None, attrs=None, vm_attrs=None):
         """Sets plugin's attributes in cluster_plugins table.
 
         :param cluster_id: Cluster ID
@@ -271,6 +278,8 @@ class ClusterPlugin(NailgunObject):
             params['enabled'] = enabled
         if attrs is not None:
             params['attributes'] = attrs
+        if vm_attrs is not None:
+            params['vmware_attributes'] = vm_attrs
 
         db().query(cls.model)\
             .filter_by(plugin_id=plugin_id, cluster_id=cluster_id)\
@@ -365,3 +374,11 @@ class ClusterPlugin(NailgunObject):
             .filter(cls.model.enabled.is_(True))
 
         return db().query(q.exists()).scalar()
+
+    @classmethod
+    def get_by_cluster_and_plugin(cls, cluster, plugin):
+        return db().query(
+            cls.model
+        ).filter(
+            cls.model.cluster_id == cluster.id,
+            cls.model.plugin_id == plugin.id).first()

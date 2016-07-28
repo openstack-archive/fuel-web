@@ -187,6 +187,10 @@ class PluginAdapterBase(object):
         return self.plugin.node_attributes_metadata
 
     @property
+    def vmware_attributes_metadata(self):
+        return self.plugin.vmware_attributes_metadata
+
+    @property
     def releases(self):
         return self.plugin.releases
 

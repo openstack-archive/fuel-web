@@ -15,7 +15,9 @@
 #    under the License.
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import to_json
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun.api.v1.validators import cluster_plugin_link
 from nailgun import errors
 from nailgun import objects
@@ -26,6 +28,9 @@ class ClusterPluginLinkHandler(base.SingleHandler):
     validator = cluster_plugin_link.ClusterPluginLinkValidator
     single = objects.ClusterPluginLink
 
+    @handle_errors
+    @validate
+    @to_json
     def GET(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -35,9 +40,11 @@ class ClusterPluginLinkHandler(base.SingleHandler):
         self.get_object_or_404(objects.Cluster, cluster_id)
 
         obj = self.get_object_or_404(self.single, obj_id)
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
-    @content
+    @handle_errors
+    @validate
+    @to_json
     def PUT(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -51,7 +58,7 @@ class ClusterPluginLinkHandler(base.SingleHandler):
             instance=obj
         )
         self.single.update(obj, data)
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
     def PATCH(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
@@ -62,7 +69,8 @@ class ClusterPluginLinkHandler(base.SingleHandler):
         """
         return self.PUT(cluster_id, obj_id)
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, cluster_id, obj_id):
         """:returns: JSONized REST object.
 
@@ -79,7 +87,9 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
     collection = objects.ClusterPluginLinkCollection
     validator = cluster_plugin_link.ClusterPluginLinkValidator
 
-    @content
+    @handle_errors
+    @validate
+    @to_json
     def GET(self, cluster_id):
         """:returns: Collection of JSONized ClusterPluginLink objects.
 
@@ -87,11 +97,12 @@ class ClusterPluginLinkCollectionHandler(base.CollectionHandler):
                * 404 (cluster not found in db)
         """
         self.get_object_or_404(objects.Cluster, cluster_id)
-        return self.collection.to_json(
+        return self.collection.to_list(
             self.collection.get_by_cluster_id(cluster_id)
         )
 
-    @content
+    @handle_errors
+    @validate
     def POST(self, cluster_id):
         """:returns: JSONized REST object.
 

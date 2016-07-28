@@ -74,8 +74,8 @@ class NailgunClusterAdapter(object):
             instance=self.cluster)
         return NailgunNetworkManager(self.cluster, net_manager)
 
-    def to_json(self):
-        return objects.Cluster.to_json(self.cluster)
+    def to_dict(self):
+        return objects.Cluster.to_dict(self.cluster)
 
     @classmethod
     def get_by_uid(cls, cluster_id):

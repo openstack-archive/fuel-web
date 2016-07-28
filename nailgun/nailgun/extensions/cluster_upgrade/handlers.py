@@ -16,7 +16,10 @@
 
 import six
 
-from nailgun.api.v1.handlers import base
+from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import to_json
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun import objects
 from nailgun.task import manager
 
@@ -25,11 +28,13 @@ from . import validators
 from .objects import adapters
 
 
-class ClusterUpgradeCloneHandler(base.BaseHandler):
+class ClusterUpgradeCloneHandler(BaseHandler):
     single = objects.Cluster
     validator = validators.ClusterUpgradeValidator
 
-    @base.content
+    @handle_errors
+    @validate
+    @to_json
     def POST(self, cluster_id):
         """Initialize the upgrade of the cluster.
 
@@ -50,10 +55,10 @@ class ClusterUpgradeCloneHandler(base.BaseHandler):
         request_data = self.checked_data(cluster=orig_cluster)
         new_cluster = upgrade.UpgradeHelper.clone_cluster(orig_cluster,
                                                           request_data)
-        return new_cluster.to_json()
+        return new_cluster.to_dict()
 
 
-class NodeReassignHandler(base.BaseHandler):
+class NodeReassignHandler(BaseHandler):
     single = objects.Cluster
     validator = validators.NodeReassignValidator
     task_manager = manager.ProvisioningTaskManager
@@ -67,7 +72,9 @@ class NodeReassignHandler(base.BaseHandler):
 
         self.raise_task(task)
 
-    @base.content
+    @handle_errors
+    @validate
+    @to_json
     def POST(self, cluster_id):
         """Reassign node to the given cluster.
 
@@ -103,11 +110,13 @@ class NodeReassignHandler(base.BaseHandler):
             self.handle_task(cluster_id, [node.node])
 
 
-class CopyVIPsHandler(base.BaseHandler):
+class CopyVIPsHandler(BaseHandler):
     single = objects.Cluster
     validator = validators.CopyVIPsValidator
 
-    @base.content
+    @handle_errors
+    @validate
+    @to_json
     def POST(self, cluster_id):
         """Copy VIPs from original cluster to new one
 

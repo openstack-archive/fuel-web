@@ -188,6 +188,10 @@ class PluginAdapterBase(object):
         return self.plugin.node_attributes_metadata
 
     @property
+    def vmware_attributes_metadata(self):
+        return self.plugin.vmware_attributes_metadata
+
+    @property
     def releases(self):
         return self.plugin.releases
 
@@ -388,6 +392,8 @@ class PluginAdapterV5(PluginAdapterV4):
         self.db_cfg_mapping['nic_attributes_metadata'] = 'nic_config.yaml'
         self.db_cfg_mapping['bond_attributes_metadata'] = 'bond_config.yaml'
         self.db_cfg_mapping['node_attributes_metadata'] = 'node_config.yaml'
+        self.db_cfg_mapping['vmware_attributes_metadata'] = \
+            'vmware_config.yaml'
 
 
 __version_mapping = {

@@ -308,14 +308,15 @@ class VmwareAttributesValidator(base.BasicValidator):
         return nova_compute_data['target_node']['current']['id']
 
     @classmethod
-    def _validate_updated_attributes(cls, attributes, instance):
+    def _validate_updated_attributes(cls, attributes, db_attributes):
         """Validate that attributes contains changes only for allowed fields.
 
         :param attributes: new vmware attribute settings for db instance
-        :param instance: nailgun.db.sqlalchemy.models.VmwareAttributes instance
+        :param cluster: nailgun.db.sqlalchemy.models.Cluster instance
         """
-        metadata = instance.editable.get('metadata', {})
-        db_editable_attributes = instance.editable.get('value', {})
+        editable = db_attributes.get('editable', {})
+        metadata = editable.get('metadata', {})
+        db_editable_attributes = editable.get('value', {})
         new_editable_attributes = attributes.get('editable', {}).get('value')
         for attribute_metadata in metadata:
             if attribute_metadata.get('type') == 'array':
@@ -389,26 +390,25 @@ class VmwareAttributesValidator(base.BasicValidator):
                                      new_attributes.get(field_name))
 
     @classmethod
-    def _validate_nova_computes(cls, attributes, instance):
+    def _validate_nova_computes(cls, attributes, db_attributes, cluster):
         """Validates a 'nova_computes' attributes from vmware_attributes
 
         Raise InvalidData exception if new attributes is not valid.
 
-        :param instance: nailgun.db.sqlalchemy.models.VmwareAttributes instance
         :param attributes: new attributes for db instance for validation
+        :param instance: nailgun.db.sqlalchemy.models.VmwareAttributes instance
         """
         input_nova_computes = objects.VmwareAttributes.get_nova_computes_attrs(
             attributes.get('editable'))
 
         cls.check_nova_compute_duplicate_and_empty_values(input_nova_computes)
-
         db_nova_computes = objects.VmwareAttributes.get_nova_computes_attrs(
-            instance.editable)
-        if instance.cluster.is_locked:
+            db_attributes.get('editable', {}))
+        if cluster.is_locked:
             cls.check_operational_controllers_settings(input_nova_computes,
                                                        db_nova_computes)
         operational_compute_nodes = objects.Cluster.\
-            get_operational_vmware_compute_nodes(instance.cluster)
+            get_operational_vmware_compute_nodes(cluster)
         cls.check_operational_node_settings(
             input_nova_computes, db_nova_computes, operational_compute_nodes)
 
@@ -541,10 +541,14 @@ class VmwareAttributesValidator(base.BasicValidator):
             )
 
     @classmethod
-    def validate(cls, data, instance):
+    def validate(cls, data, cluster):
         d = cls.validate_json(data)
+        attributes = objects.Cluster.get_vmware_attributes(cluster)
+        if not attributes:
+            raise errors.ObjectNotFound("No vmware attributes found")
+
         if 'metadata' in d.get('editable'):
-            db_metadata = instance.editable.get('metadata')
+            db_metadata = attributes.get('editable', {}).get('metadata')
             input_metadata = d.get('editable').get('metadata')
             if db_metadata != input_metadata:
                 raise errors.InvalidData(
@@ -552,9 +556,9 @@ class VmwareAttributesValidator(base.BasicValidator):
                     log_message=True
                 )
 
-        if instance.cluster.is_locked:
-            cls._validate_updated_attributes(d, instance)
-        cls._validate_nova_computes(d, instance)
+        if cluster.is_locked:
+            cls._validate_updated_attributes(d, attributes)
+        cls._validate_nova_computes(d, attributes, cluster)
 
         # TODO(apopovych): write validation processing from
         # openstack.yaml for vmware

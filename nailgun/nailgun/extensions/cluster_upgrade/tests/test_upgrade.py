@@ -21,6 +21,7 @@ from nailgun import consts
 from nailgun.extensions.cluster_upgrade.upgrade import merge_attributes
 from nailgun.extensions.network_manager.objects.serializers import \
     network_configuration
+from nailgun.test.base import fake_tasks
 
 from . import base as base_tests
 from ..objects import adapters
@@ -210,3 +211,33 @@ class TestUpgradeHelperCloneCluster(base_tests.BaseCloneClusterTest):
         self.helper.copy_attributes(self.src_cluster, new_cluster)
         self._check_dns_and_ntp_list_values(
             new_cluster, ["4", "5", "6"], ["1", "2", "3"])
+
+    @fake_tasks()
+    def test_assign_node_to_cluster(self):
+        new_cluster = self.helper.clone_cluster(self.src_cluster, self.data)
+        node = adapters.NailgunNodeAdapter(self.src_cluster.cluster.nodes[0])
+        self.helper.assign_node_to_cluster(node, new_cluster, node.roles, [])
+        self.db.add(new_cluster.cluster)
+        self.db.commit()
+        self.assertEqual(node.cluster_id, new_cluster.id)
+        self.env.clusters.append(new_cluster.cluster)
+        task = self.env.launch_provisioning_selected(cluster_id=new_cluster.id)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        for n in new_cluster.cluster.nodes:
+            self.assertEqual(consts.NODE_STATUSES.provisioned, n.status)
+
+    @fake_tasks()
+    def test_assign_node_to_cluster_with_template(self):
+        new_cluster = self.helper.clone_cluster(self.src_cluster, self.data)
+        node = adapters.NailgunNodeAdapter(self.src_cluster.cluster.nodes[0])
+        net_template = self.env.read_fixtures(['network_template_80'])[0]
+        new_cluster.set_network_template(net_template)
+        self.helper.assign_node_to_cluster(node, new_cluster, node.roles, [])
+        self.assertEqual(node.cluster_id, new_cluster.id)
+        self.db.add(new_cluster.cluster)
+        self.db.commit()
+        self.env.clusters.append(new_cluster.cluster)
+        task = self.env.launch_provisioning_selected(cluster_id=new_cluster.id)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        for n in new_cluster.cluster.nodes:
+            self.assertEqual(consts.NODE_STATUSES.provisioned, n.status)

@@ -533,7 +533,7 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                 resp.json_body
             )
 
-    def test_linked_graph_deletion_delete(self):
+    def test_linked_graph_deletion(self):
         for related_class, ref_graph in six.iteritems(self.custom_graphs):
             resp = self.app.delete(
                 reverse(
@@ -545,7 +545,7 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                 ),
                 headers=self.default_headers,
             )
-            self.assertEqual(200, resp.status_code)
+            self.assertEqual(204, resp.status_code)
 
     def test_linked_graph_collection_should_not_delete(self):
         for related_class, ref_graph in six.iteritems(self.custom_graphs):

@@ -58,13 +58,17 @@ class NailgunClusterAdapter(object):
     def editable_attrs(self):
         return self.cluster.attributes.editable
 
+    @editable_attrs.setter
+    def editable_attrs(self, attrs):
+        self.cluster.attributes.editable = attrs
+
     @property
     def network_template(self):
         return self.cluster.network_config.configuration_template
 
-    @editable_attrs.setter
-    def editable_attrs(self, attrs):
-        self.cluster.attributes.editable = attrs
+    @network_template.setter
+    def network_template(self, template):
+        self.cluster.network_config.configuration_template = template
 
     def get_create_data(self):
         return objects.Cluster.get_create_data(self.cluster)

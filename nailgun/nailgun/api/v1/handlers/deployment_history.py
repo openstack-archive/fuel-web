@@ -14,6 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import csv
+from StringIO import StringIO
+import web
+
+from oslo_serialization import jsonutils
+
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.decorators import handle_errors
 from nailgun.api.v1.handlers.decorators import to_json
@@ -29,9 +35,25 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
     collection = objects.DeploymentHistoryCollection
     validator = DeploymentHistoryValidator
 
+    def _to_csv(self, data):
+        keys = list(data[0].keys())
+
+        res = StringIO()
+        csv_writer = csv.writer(res)
+        csv_writer.writerow(keys)
+        for obj in data:
+            values = []
+            for k in keys:
+                v = obj.get(k)
+                if isinstance(v, (list, dict)):
+                    v = jsonutils.dumps(v)
+                values.append(v)
+            csv_writer.writerow(values)
+
+        return res.getvalue()
+
     @handle_errors
     @validate
-    @to_json
     def GET(self, transaction_id):
         """:returns: Collection of JSONized DeploymentHistory records.
 
@@ -55,7 +77,20 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
             raise self.http(400, exc.message)
 
         # fetch and serialize history
-        return self.collection.get_history(transaction=transaction,
+        data = self.collection.get_history(transaction=transaction,
                                            nodes_ids=nodes_ids,
                                            statuses=statuses,
                                            tasks_names=tasks_names)
+
+        # FIXME: Accept is a very complicated header, need
+        # to handle it appropriately
+        if 'text/csv' in web.ctx.env.get('HTTP_ACCEPT', ''):
+            web.header('Content-Type', 'text/csv', unique=True)
+            web.header('Content-Disposition',
+                       'attachment; filename="output.csv"')
+            ret = self._to_csv(data)
+            web.header('Content-Length', len(ret))
+            return ret
+        else:
+            web.header('Content-Type', 'application/json', unique=True)
+            return jsonutils.dumps(data)

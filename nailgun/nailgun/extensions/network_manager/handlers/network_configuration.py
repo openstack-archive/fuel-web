@@ -19,7 +19,9 @@ Handlers dealing with network configurations
 """
 from ..task.manager import UpdateDnsmasqTaskManager
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import serialize
+from nailgun.api.v1.handlers.decorators import validate
 
 from nailgun.extensions.network_manager.objects.serializers.\
     network_configuration import NeutronNetworkConfigurationSerializer
@@ -71,7 +73,9 @@ class ProviderHandler(BaseHandler):
             cluster=cluster, networks_required=False)
         return cluster, data
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized network configuration for cluster.
 
@@ -91,7 +95,9 @@ class ProviderHandler(BaseHandler):
             logger.exception('Serialization failed')
             raise
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, cluster_id):
         """:returns: JSONized network configuration for cluster.
 
@@ -153,7 +159,9 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
             raise self.http(403, "Network template cannot be changed "
                                  "during deployment and after upgrade.")
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: network template for cluster (json format)
 
@@ -163,7 +171,8 @@ class TemplateNetworkConfigurationHandler(BaseHandler):
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return cluster.network_config.configuration_template
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self, cluster_id):
         """:returns: {}
 
@@ -202,7 +211,8 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
 
     validator = NetworkConfigurationValidator
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self, cluster_id):
         """:IMPORTANT: this method should be rewritten to be more RESTful
 
@@ -252,7 +262,9 @@ class NeutronNetworkConfigurationVerifyHandler(
 class NetworkAttributesDeployedHandler(BaseHandler):
     """Cluster deployed network attributes handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized deployed Cluster network configuration.
 

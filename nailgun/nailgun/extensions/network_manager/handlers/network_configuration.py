@@ -85,7 +85,7 @@ class ProviderHandler(BaseHandler):
             # there are a plenty of reasons why serializer could throw
             # an exception. usually that means we don't handle properly
             # some corner cases, and it should be fixed. in order
-            # to simplify troubleshootng, let's print traceback to log.
+            # to simplify troubleshooting, let's print traceback to log.
             return self.serializer.serialize_for_cluster(cluster)
         except Exception:
             logger.exception('Serialization failed')

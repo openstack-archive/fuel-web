@@ -38,6 +38,7 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_add_task_start_end_time()
 
 
 def downgrade():
@@ -45,6 +46,7 @@ def downgrade():
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
+    downgrade_add_task_start_end_time()
 
 
 def upgrade_plugin_links_constraints():
@@ -299,9 +301,34 @@ def upgrade_node_deployment_info():
     connection.execute(update_query)
 
 
+def upgrade_add_task_start_end_time():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'timestamp_start',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'timestamp_end',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+
 def downgrade_node_deployment_info():
     op.drop_table('node_deployment_info')
 
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def downgrade_add_task_start_end_time():
+    op.drop_column('tasks', 'timestamp_start')
+    op.drop_column('tasks', 'timestamp_end')

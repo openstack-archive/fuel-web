@@ -21,6 +21,7 @@ import itertools
 import logging
 import os
 import six
+import time
 
 from oslo_serialization import jsonutils
 from sqlalchemy import or_
@@ -1368,6 +1369,9 @@ class NailgunReceiver(object):
         try:
             task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
                                             lock_for_update=True)
+
+            task.timestamp_start = time.time()
+
             if task.status == consts.TASK_STATUSES.pending:
                 objects.Task.update(
                     task, {'status': consts.TASK_STATUSES.running})

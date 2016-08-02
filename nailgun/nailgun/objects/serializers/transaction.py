@@ -27,5 +27,7 @@ class TransactionSerializer(BasicSerializer):
         "result",
         "message",
         "status",
-        "progress"
+        "progress",
+        "timestamp_start",
+        "timestamp_end"
     )

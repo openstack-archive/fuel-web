@@ -24,8 +24,10 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.decorators import handle_errors
+from nailgun.api.v1.handlers.decorators import serialize
+from nailgun.api.v1.handlers.decorators import validate
 from nailgun.api.v1.validators import node as node_validators
 
 from nailgun import errors
@@ -44,7 +46,9 @@ class NodeHandler(SingleHandler):
     single = objects.Node
     validator = node_validators.NodeValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, obj_id):
         """:returns: JSONized Node object.
 
@@ -69,9 +73,10 @@ class NodeHandler(SingleHandler):
         except errors.NetworkTemplateCannotBeApplied as exc:
             raise self.http(400, exc.message)
 
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, obj_id):
         """Deletes a node from DB and from Cobbler.
 
@@ -100,7 +105,9 @@ class NodeCollectionHandler(CollectionHandler):
     validator = node_validators.NodeValidator
     collection = objects.NodeCollection
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """May receive cluster_id parameter to filter list of nodes
 
@@ -115,9 +122,11 @@ class NodeCollectionHandler(CollectionHandler):
         elif cluster_id:
             nodes = nodes.filter_by(cluster_id=cluster_id)
 
-        return self.collection.to_json(nodes)
+        return self.collection.to_list(nodes)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
 
@@ -147,9 +156,10 @@ class NodeCollectionHandler(CollectionHandler):
             self.collection.eager_nodes_handlers(None),
             nodes_updated
         )
-        return self.collection.to_json(nodes)
+        return self.collection.to_list(nodes)
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self):
         """Deletes a batch of nodes.
 
@@ -188,7 +198,9 @@ class NodeAgentHandler(BaseHandler):
     collection = objects.NodeCollection
     validator = node_validators.NodeValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: node id.
 
@@ -227,7 +239,9 @@ class NodeAgentHandler(BaseHandler):
 class NodesAllocationStatsHandler(BaseHandler):
     """Node allocation stats handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """:returns: Total and unallocated nodes count.
 
@@ -245,7 +259,9 @@ class NodeAttributesHandler(BaseHandler):
 
     validator = node_validators.NodeAttributesValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: JSONized Node attributes.
 
@@ -256,7 +272,9 @@ class NodeAttributesHandler(BaseHandler):
 
         return objects.Node.get_attributes(node)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, node_id):
         """:returns: JSONized Node attributes.
 

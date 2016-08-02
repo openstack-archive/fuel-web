@@ -260,7 +260,7 @@ class TestNetworkManager(BaseIntegrationTest):
         needed_vip_ip = [
             vip_info for network, vip_info in six.iteritems(vips_after)
             if vip.network_data.name == network and vip.vip_name in vip_info
-        ][0][vip.vip_name]
+        ][0][vip.vip_name].ip_addr
 
         self.assertEqual(needed_vip_ip, ip_before)
 
@@ -662,6 +662,13 @@ class TestNetworkManager(BaseIntegrationTest):
             for net in iface.assigned_networks_list:
                 self.assertEquals(admin_ng_id, net.id)
 
+    def _convert_vips(self, vips):
+        vips = deepcopy(vips)
+        for net in vips:
+            for vip_name, vip in vips[net].items():
+                vips[net][vip_name] = vip['ip_addr']
+        return vips
+
     def test_get_assigned_vips(self):
         vips_to_create = {
             consts.NETWORKS.management: {
@@ -676,7 +683,7 @@ class TestNetworkManager(BaseIntegrationTest):
         cluster = self.create_env_w_controller()
         self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
         vips = self.env.network_manager.get_assigned_vips(cluster)
-        self.assertEqual(vips_to_create, vips)
+        self.assertEqual(vips_to_create, self._convert_vips(vips))
 
     def test_assign_given_vips_for_net_groups(self):
         vips_to_assign = {
@@ -693,7 +700,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.env.network_manager.assign_given_vips_for_net_groups(
             cluster, vips_to_assign)
         vips = self.env.network_manager.get_assigned_vips(cluster)
-        self.assertEqual(vips_to_assign, vips)
+        self.assertEqual(vips_to_assign, self._convert_vips(vips))
 
     def test_assign_given_vips_for_net_groups_idempotent(self):
         cluster = self.env.create_cluster(api=False)
@@ -1492,7 +1499,7 @@ class TestNeutronManager70(BaseIntegrationTest):
                 'public': '172.16.0.3',
             },
         }
-        self.assertEqual(expected_vips, vips)
+        self.assertEqual(expected_vips, self._convert_vips(vips))
 
     def test_assign_given_vips_for_net_groups(self):
         # rewrite VIPs allocated on creation of cluster

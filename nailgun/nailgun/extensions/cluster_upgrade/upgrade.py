@@ -143,11 +143,11 @@ class UpgradeHelper(object):
         renamed_vips = collections.defaultdict(dict)
         for ng_name, vips in six.iteritems(vips):
             ng_vip_rules = rename_vip_rules[ng_name]
-            for vip_name, vip_addr in six.iteritems(vips):
+            for vip_name, vip in six.iteritems(vips):
                 if vip_name not in ng_vip_rules:
                     continue
                 new_vip_name = ng_vip_rules[vip_name]
-                renamed_vips[ng_name][new_vip_name] = vip_addr
+                renamed_vips[ng_name][new_vip_name] = vip
         return renamed_vips
 
     @classmethod

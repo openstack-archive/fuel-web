@@ -636,6 +636,8 @@ class TestStartEndTaskPassedCorrectly(BaseGraphTasksTests):
     def assert_passed_correctly(self, url, **kwargs):
         with mock.patch.object(GraphSolver,
                                'find_subgraph') as mfind_subgraph:
+            mfind_subgraph.return_value.node.values.return_value = {}
+
             resp = self.app.get(
                 url,
                 params=kwargs,

@@ -85,8 +85,10 @@
         limits:
             min: "settings:storage.osd_pool_size.value"
         restrictions:
-          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false and settings:storage.objects_ceph.value == false"
+          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false"
             message: "Ceph should be enabled in the environment settings."
+          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.objects_ceph.value == true"
+            message: "Ceph for images should be enabled with ceph for objects."
         update_once:
           - controller
       mongo:
@@ -1370,6 +1372,8 @@
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
             weight: 80
             type: "checkbox"
+            restrictions:
+              - "settings:storage.images_ceph.value == false": "Ceph RBD for Images should be selected."
           osd_pool_size:
             value: "3"
             label: "Ceph object replication factor"
@@ -1785,6 +1789,11 @@
           - name: storage:block:ceph
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
+        requires:
+          - one_of:
+              items:
+                - storage:image:ceph
+              message: "dialog.create_cluster_wizard.compute.vcenter_warning"
       - name: storage:ephemeral:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
         description: "dialog.create_cluster_wizard.storage.ceph_ephemeral"

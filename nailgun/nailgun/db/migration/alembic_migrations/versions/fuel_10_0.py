@@ -15,7 +15,7 @@
 """Fuel 10.0
 
 Revision ID: c6edea552f1e
-Revises: 675105097a69
+Revises: 04e474f95313
 Create Date: 2016-04-08 15:20:43.989472
 
 """
@@ -30,7 +30,7 @@ from nailgun.db.sqlalchemy.models import fields
 
 # revision identifiers, used by Alembic.
 revision = 'c6edea552f1e'
-down_revision = 'f2314e5d63c9'
+down_revision = '04e474f95313'
 
 
 def upgrade():

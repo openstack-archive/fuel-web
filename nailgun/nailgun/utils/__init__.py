@@ -224,6 +224,11 @@ class AttributesGenerator(object):
         return str(arg)
 
     @classmethod
+    def from_settings_legacy_text_list(cls, arg):
+        values = getattr(settings, arg)
+        return ", ".join(values)
+
+    @classmethod
     def from_settings(cls, arg):
         return getattr(settings, arg)
 

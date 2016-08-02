@@ -87,7 +87,7 @@
         limits:
             min: "settings:storage.osd_pool_size.value"
         restrictions:
-          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false and settings:storage.objects_ceph.value == false"
+          - condition: "settings:storage.volumes_ceph.value == false and settings:storage.images_ceph.value == false and settings:storage.ephemeral_ceph.value == false"
             message: "Ceph should be enabled in the environment settings."
         update_once:
           - controller
@@ -1461,6 +1461,8 @@
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
             weight: 80
             type: "checkbox"
+            restrictions:
+              - "settings:storage.images_ceph.value == false": "Ceph RBD for Images should be enabled."
           auth_s3_keystone_ceph:
             value: false
             label: "Enable S3 API Authentication via Keystone in Ceph RadosGW"
@@ -1919,6 +1921,9 @@
           - name: storage:block:ceph
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
+        requires:
+          - name: storage:image:ceph
+            message: 'Ceph storage for Images should be enabled'
       - name: storage:ephemeral:ceph
         label: "dialog.create_cluster_wizard.storage.ceph"
         description: "dialog.create_cluster_wizard.storage.ceph_ephemeral"

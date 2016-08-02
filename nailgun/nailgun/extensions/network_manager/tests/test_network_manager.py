@@ -53,6 +53,29 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import mock_rpc
 
 
+def _convert_vips(vips):
+    vips = deepcopy(vips)
+    for net in vips:
+        for vip_name, vip in vips[net].items():
+            vips[net][vip_name] = vip['ip_addr']
+    return vips
+
+
+def _make_vip(**kwargs):
+    data = {
+        'id': 1,
+        'ip_addr': '0.0.0.0',
+        'network': None,
+        'vip_name': 'test',
+        'vip_namespace': consts.NETWORK_VIP_NAMES_V6_1.vrouter,
+        'is_user_defined': False,
+        'network_data': None,
+        'node_data': None,
+    }
+    data.update(kwargs)
+    return data
+
+
 class TestNetworkManager(BaseIntegrationTest):
 
     @mock_rpc()
@@ -262,7 +285,7 @@ class TestNetworkManager(BaseIntegrationTest):
         needed_vip_ip = [
             vip_info for network, vip_info in six.iteritems(vips_after)
             if vip.network_data.name == network and vip.vip_name in vip_info
-        ][0][vip.vip_name]
+        ][0][vip.vip_name]['ip_addr']
 
         self.assertEqual(needed_vip_ip, ip_before)
 
@@ -723,24 +746,26 @@ class TestNetworkManager(BaseIntegrationTest):
         cluster = self.create_env_w_controller()
         self.env.create_ip_addrs_by_rules(cluster, vips_to_create)
         vips = self.env.network_manager.get_assigned_vips(cluster)
-        self.assertEqual(vips_to_create, vips)
+        self.assertEqual(vips_to_create, _convert_vips(vips))
 
     def test_assign_given_vips_for_net_groups(self):
+        haproxy = consts.NETWORK_VIP_NAMES_V6_1.haproxy
+        vrouter = consts.NETWORK_VIP_NAMES_V6_1.vrouter
         vips_to_assign = {
             consts.NETWORKS.management: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '192.168.0.1',
-                consts.NETWORK_VIP_NAMES_V6_1.vrouter: '192.168.0.2',
+                haproxy: _make_vip(ip_addr='192.168.0.1'),
+                vrouter: _make_vip(ip_addr='192.168.0.2'),
             },
             consts.NETWORKS.public: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '172.16.0.4',
-                consts.NETWORK_VIP_NAMES_V6_1.vrouter: '172.16.0.5',
+                haproxy: _make_vip(ip_addr='172.16.0.4'),
+                vrouter: _make_vip(ip_addr='172.16.0.5'),
             },
         }
         cluster = self.env.create_cluster(api=False)
         self.env.network_manager.assign_given_vips_for_net_groups(
             cluster, vips_to_assign)
         vips = self.env.network_manager.get_assigned_vips(cluster)
-        self.assertEqual(vips_to_assign, vips)
+        self.assertEqual(_convert_vips(vips_to_assign), _convert_vips(vips))
 
     def test_assign_given_vips_for_net_groups_idempotent(self):
         cluster = self.env.create_cluster(api=False)
@@ -755,7 +780,8 @@ class TestNetworkManager(BaseIntegrationTest):
     def test_assign_given_vips_for_net_groups_assign_error(self):
         vips_to_assign = {
             consts.NETWORKS.management: {
-                consts.NETWORK_VIP_NAMES_V6_1.haproxy: '10.10.0.1',
+                consts.NETWORK_VIP_NAMES_V6_1.haproxy:
+                _make_vip(ip_addr='10.10.0.1'),
             },
         }
         expected_msg_regexp = '^Cannot assign VIP with the address "10.10.0.1"'
@@ -1541,24 +1567,24 @@ class TestNeutronManager70(BaseIntegrationTest):
                 'public': '172.16.0.3',
             },
         }
-        self.assertEqual(expected_vips, vips)
+        self.assertEqual(expected_vips, _convert_vips(vips))
 
     def test_assign_given_vips_for_net_groups(self):
         # rewrite VIPs allocated on creation of cluster
         vips_to_assign = {
             'management': {
-                'vrouter': '192.168.0.4',
-                'management': '192.168.0.5',
+                'vrouter': _make_vip(ip_addr='192.168.0.4'),
+                'management': _make_vip(ip_addr='192.168.0.5'),
             },
             'public': {
-                'vrouter_pub': '172.16.0.4',
-                'public': '172.16.0.5',
+                'vrouter_pub': _make_vip(ip_addr='172.16.0.4'),
+                'public': _make_vip(ip_addr='172.16.0.5'),
             },
         }
         self.net_manager.assign_given_vips_for_net_groups(
             self.cluster, vips_to_assign)
         vips = self.net_manager.get_assigned_vips(self.cluster)
-        self.assertEqual(vips_to_assign, vips)
+        self.assertEqual(_convert_vips(vips_to_assign), _convert_vips(vips))
 
 
 class TestNovaNetworkManager70(TestNeutronManager70):

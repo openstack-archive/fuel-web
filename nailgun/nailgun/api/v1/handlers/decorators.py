@@ -15,8 +15,10 @@
 #    under the License.
 
 
+import csv
 from decorator import decorator
 from oslo_serialization import jsonutils
+from StringIO import StringIO
 import traceback
 import web
 import yaml
@@ -123,6 +125,30 @@ def _get_requested_mime():
 
 
 def _serialize_to_csv(data):
+    if not (isinstance(data, list) and
+            all(map(lambda x: isinstance(x, dict), data))):
+        raise BaseHandler.http(415, repr(data))
+
+    keys = set()
+    for obj in data:
+        keys.update(obj.keys())
+    keys = list(keys)
+    keys.sort()
+
+    res = StringIO()
+    csv_writer = csv.writer(res)
+    csv_writer.writerow(keys)
+    for obj in data:
+        values = []
+        for k in keys:
+            v = obj.get(k)
+            if isinstance(v, (list, dict)):
+                v = jsonutils.dumps(v)
+            values.append(v)
+        csv_writer.writerow(values)
+
+    return res.getvalue()
+
 
 
 @decorator
@@ -143,6 +169,7 @@ def serialize(func, cls, *args, **kwargs):
     accepted_types = [
         "application/json",
         "application/x-yaml",
+        "text/csv",
         "*/*"
     ]
     accept = _get_requested_mime()

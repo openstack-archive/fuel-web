@@ -432,20 +432,21 @@ class Node(NailgunObject):
     @classmethod
     def assign_group(cls, instance):
         if instance.group_id is None and instance.ip:
-            admin_ngs = db().query(models.NetworkGroup).filter_by(
-                name="fuelweb_admin")
-            ip = IPAddress(instance.ip)
-
-            for ng in admin_ngs:
-                if ip in IPNetwork(ng.cidr):
-                    instance.group_id = ng.group_id
-                    break
-
+            instance.group_id = cls.find_node_group(instance)
         if not instance.group_id:
             instance.group_id = Cluster.get_default_group(instance.cluster).id
 
         db().add(instance)
         db().flush()
+
+    @classmethod
+    def find_node_group(cls, instance):
+        admin_ngs = db().query(models.NetworkGroup).filter_by(
+            name="fuelweb_admin")
+        ip = IPAddress(instance.ip)
+        for ng in admin_ngs:
+            if ip in IPNetwork(ng.cidr):
+                return ng.group_id
 
     @classmethod
     def is_interfaces_configuration_locked(cls, instance, is_agent=False):

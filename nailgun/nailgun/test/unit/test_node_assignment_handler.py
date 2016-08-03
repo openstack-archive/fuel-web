@@ -16,11 +16,13 @@
 
 import yaml
 
+from mock import patch
 from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import NodeBondInterface
 
 from nailgun import consts
+from nailgun import rpc
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -329,6 +331,35 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertIn('add-br', net_scheme['transformations'][0].values())
         self.assertIn('add-port', net_scheme['transformations'][1].values())
         self.assertEquals('eth1', net_scheme['transformations'][1]['name'])
+
+    def test_assign_node_to_cluster_wo_proper_node_group(self):
+        # cluster with custom node group
+        cluster_w_ng = self.env.create_cluster()
+        node_group = self.env.create_node_group(cluster_id=cluster_w_ng.id,
+                                                api=False)
+
+        with patch.object(rpc, 'cast'):
+            self.env.setup_networks_for_nodegroup(cluster_id=cluster_w_ng.id,
+                                                  node_group=node_group,
+                                                  cidr_start='10.109')
+        # node, is booted from custom node group
+        node = self.env.create_node(ip='10.109.9.4')
+        assignment_data = [
+            {
+                "id": node.id,
+                "roles": ['controller']
+            }
+        ]
+        # cluster without custom node group
+        self.cluster = self.env.create_cluster()
+        # attempt to assign node from custom node group to cluster without
+        # this group
+        resp = self._assign_roles(assignment_data, True)
+        self.assertEquals(400, resp.status_code)
+        self.assertEquals(
+            'Cannot assign node (ID={0}) to cluster {1}. Node group belongs '
+            'to other cluster.'.format(node.id, self.cluster.id),
+            resp.json_body['message'])
 
 
 class TestClusterStateUnassignment(BaseIntegrationTest):

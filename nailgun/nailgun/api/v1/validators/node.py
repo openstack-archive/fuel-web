@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
 import re
 import six
 
@@ -23,6 +24,7 @@ from nailgun.api.v1.validators.orchestrator_graph import \
     TaskDeploymentValidator
 from nailgun import consts
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun import errors
@@ -312,6 +314,11 @@ class NodeValidator(base.BasicValidator):
                     .format(d["group_id"], instance.id)
                 )
 
+        if d.get('cluster_id'):
+            cluster = objects.Cluster.get_by_uid(
+                d['cluster_id'], fail_if_not_found=True
+            )
+            cls.validate_node_group(cluster, instance)
         return d
 
     @classmethod
@@ -330,6 +337,37 @@ class NodeValidator(base.BasicValidator):
         for nd in d:
             cls.validate_update(nd)
         return d
+
+    @staticmethod
+    def validate_node_group(cluster, instance):
+        """Validate node group of instance belongs to cluster
+
+        If instances is booted from custom node group, it can be assigned only
+        to cluster, which owns this node group
+
+        :param cluster: cluster object
+        :param instance: node object
+
+        """
+        admin_ngs = db().query(NetworkGroup).filter_by(name="fuelweb_admin")
+        ip = netaddr.IPAddress(instance.ip)
+        for ng in admin_ngs:
+            if ip in netaddr.IPNetwork(ng.cidr):
+                # default node groups have group_id = None
+                if not ng.group_id:
+                    return
+                group_id = ng.group_id
+                break
+        else:
+            raise errors.InvalidData('Cannot find admin network for ip "%s".'
+                                     % instance.ip)
+
+        env_node_groups = [ng.id for ng in cluster.node_groups]
+        if group_id not in env_node_groups:
+            raise errors.InvalidData(
+                'Cannot assign node (ID={0}) to cluster {1}. '
+                'Node group belongs to other cluster.'.format(instance.id,
+                                                              cluster.id))
 
 
 class NodesFilterValidator(base.BasicValidator):

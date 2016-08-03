@@ -114,11 +114,10 @@ class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
     def test_add_node_to_cluster_then_remove_from_cluster(self):
         nodes_delete_list = []
         nodes_add_list = []
-        self.cluster = self.env.create_cluster(api=True)
         for node in self.env.nodes:
             nodes_delete_list.append({'id': node.id, 'cluster': None})
             nodes_add_list.append({'id': node.id,
-                                   'cluster': self.cluster['id']})
+                                   'cluster': self.cluster.id})
         func = functools.partial(
             self.put_handler,
             'NodeCollectionHandler',

@@ -1311,6 +1311,7 @@ class TestTaskManagers(BaseIntegrationTest):
             }
         )
         cluster = self.env.clusters[-1]
+        self.env.create_node(cluster=cluster.id)
         # deploy cluster at first time
         supertask = self.env.launch_deployment(cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)

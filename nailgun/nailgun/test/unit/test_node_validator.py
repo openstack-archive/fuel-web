@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 import re
 
 from nailgun.api.v1.validators.json_schema import node_schema
 from nailgun.api.v1.validators import node
+from nailgun import consts
 from nailgun import errors
 
 from nailgun.test import base
@@ -196,3 +198,28 @@ class TestNodeVmsValidation(base.BaseUnitTest):
     def test_schema_fail_missing_value(self):
         data = {'vms_conf': [{'cpu': 1, 'mem': 4}]}
         self.assertInvalidData(data, "'id' is a required property")
+
+
+class TestProvisionSelectedNodesValidator(base.BaseUnitTest):
+
+    def test_fail_provision_cluster_without_nodes(self):
+        cluster = mock.Mock(id=15, nodes=[])
+        self.assertRaisesWithMessage(
+            errors.CheckBeforeDeploymentError,
+            "Cluster '15' does not have nodes",
+            node.ProvisionSelectedNodesValidator.validate_provision,
+            {},
+            cluster)
+
+    def test_fail_provision_cluster_unavailable_release(self):
+        cluster = mock.Mock()
+        attrs = {'release.state': consts.RELEASE_STATES.unavailable,
+                 'release.name': 'test_release',
+                 'release.version': 1}
+        cluster.configure_mock(**attrs)
+        self.assertRaisesWithMessage(
+            errors.UnavailableRelease,
+            "Release 'test_release 1' is unavailable!",
+            node.ProvisionSelectedNodesValidator.validate_provision,
+            {},
+            cluster)

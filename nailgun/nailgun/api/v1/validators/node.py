@@ -366,6 +366,10 @@ class ProvisionSelectedNodesValidator(NodesFilterValidator):
         :param cluster: cluster instance
         :returns: loaded json or empty array
         """
+        if not cluster.nodes:
+            raise errors.CheckBeforeDeploymentError(
+                "Cluster '%s' does not have nodes" % cluster.id)
+
         if cluster.release.state == consts.RELEASE_STATES.unavailable:
             raise errors.UnavailableRelease(
                 "Release '{0} {1}' is unavailable!".format(

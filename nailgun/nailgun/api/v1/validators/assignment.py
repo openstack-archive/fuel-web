@@ -20,6 +20,7 @@ from nailgun.api.v1.validators.json_schema.assignment \
     import assignment_format_schema
 from nailgun.api.v1.validators.json_schema.assignment \
     import unassignment_format_schema
+from nailgun.api.v1.validators import node as node_validator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun import errors
@@ -95,6 +96,8 @@ class NodeAssignmentValidator(AssignmentValidator):
         )
         cls.check_unique_hostnames(nodes, cluster_id)
 
+        for node in nodes:
+            node_validator.NodeValidator.validate_node_group(cluster, node)
         for node_id in received_node_ids:
             cls.validate_roles(
                 cluster,

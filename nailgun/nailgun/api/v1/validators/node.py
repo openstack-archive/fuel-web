@@ -312,6 +312,11 @@ class NodeValidator(base.BasicValidator):
                     .format(d["group_id"], instance.id)
                 )
 
+        if d.get('cluster_id'):
+            cluster = objects.Cluster.get_by_uid(
+                d['cluster_id'], fail_if_not_found=True
+            )
+            cls.validate_node_group(cluster, instance)
         return d
 
     @classmethod
@@ -330,6 +335,27 @@ class NodeValidator(base.BasicValidator):
         for nd in d:
             cls.validate_update(nd)
         return d
+
+    @staticmethod
+    def validate_node_group(cluster, instance):
+        """Validate node group of instance belongs to cluster
+
+        If instances is booted from custom node group, it can be assigned only
+        to cluster, which owns this node group
+
+        :param cluster: cluster object
+        :param instance: node object
+
+        """
+        group_id = objects.Node.find_node_group(instance)
+        if group_id is None:
+            return
+        env_node_groups = [ng.id for ng in cluster.node_groups]
+        if group_id not in env_node_groups:
+            raise errors.InvalidData(
+                'Cannot assign node (ID={0}) to cluster {1}. '
+                'Node group belongs to other cluster.'.format(instance.id,
+                                                              cluster.id))
 
 
 class NodesFilterValidator(base.BasicValidator):

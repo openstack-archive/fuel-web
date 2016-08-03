@@ -26,6 +26,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
 from nailgun import objects
+from nailgun import rpc
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -493,6 +494,33 @@ class TestNodeGroups(BaseIntegrationTest):
         message = resp.json_body['message']
         self.assertEquals(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
+
+    def test_assign_node_w_custom_nodegroup_to_cluster_without_this_ng(self):
+
+        node_group = self.env.create_node_group(cluster_id=self.cluster.id,
+                                                api=False)
+
+        with patch.object(rpc, 'cast'):
+            self.env.setup_networks_for_nodegroup(cluster_id=self.cluster.id,
+                                                  node_group=node_group,
+                                                  cidr_start='10.109')
+
+        node = self.env.create_node(ip='10.109.9.4')
+        cluster = self.env.create_cluster()
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node['id']}),
+            json.dumps({'cluster_id': cluster.id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        message = resp.json_body['message']
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(message,
+                          'Cannot assign node (ID=%s) to cluster %s. '
+                          'Node group belongs to other cluster.' % (node['id'],
+                                                                    cluster.id)
+                          )
 
     def test_default_group_created_at_cluster_creation(self):
         cluster = self.env.create_cluster()

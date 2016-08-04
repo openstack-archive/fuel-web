@@ -15,8 +15,10 @@
 #    under the License.
 
 
+import csv
 from decorator import decorator
 from oslo_serialization import jsonutils
+from StringIO import StringIO
 import traceback
 import web
 import yaml
@@ -38,6 +40,8 @@ def handle_errors(func, cls, *args, **kwargs):
     from nailgun.api.v1.handlers.base import BaseHandler
     try:
         return func(cls, *args, **kwargs)
+    except web.notmodified:
+        raise
     except web.HTTPError as http_error:
         if http_error.status_code != 204:
             web.header('Content-Type', 'application/json', unique=True)
@@ -120,6 +124,33 @@ def _get_requested_mime():
     return accept
 
 
+def _serialize_to_csv(data):
+    from nailgun.api.v1.handlers.base import BaseHandler
+    if not (isinstance(data, list) and
+            all(map(lambda x: isinstance(x, dict), data))):
+        raise BaseHandler.http(415, repr(data))
+
+    keys = set()
+    for obj in data:
+        keys.update(obj.keys())
+    keys = list(keys)
+
+    res = StringIO()
+    csv_writer = csv.writer(res)
+    csv_writer.writerow(keys)
+    for obj in data:
+        values = []
+        for k in keys:
+            v = obj.get(k)
+            if isinstance(v, (list, dict)):
+                v = jsonutils.dumps(v)
+            values.append(v)
+        csv_writer.writerow(values)
+
+    web.header('Content-Length', len(res.getvalue()))
+    return res.getvalue()
+
+
 @decorator
 def serialize(func, cls, *args, **kwargs):
     """Set context-type of response based on Accept header
@@ -138,6 +169,7 @@ def serialize(func, cls, *args, **kwargs):
     accepted_types = [
         "application/json",
         "application/x-yaml",
+        "text/csv",
         "*/*"
     ]
     accept = _get_requested_mime()
@@ -148,6 +180,9 @@ def serialize(func, cls, *args, **kwargs):
     if accept == 'application/x-yaml':
         web.header('Content-Type', 'application/x-yaml', unique=True)
         return yaml.dump(resp, default_flow_style=False)
+    if accept == 'text/csv':
+        web.header('Content-Type', 'text/csv', unique=True)
+        return _serialize_to_csv(resp)
     else:
         # default is json
         web.header('Content-Type', 'application/json', unique=True)

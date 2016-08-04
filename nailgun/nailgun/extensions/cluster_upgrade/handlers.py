@@ -129,11 +129,8 @@ class CopyVIPsHandler(base.BaseHandler):
         self.checked_data(cluster=cluster, relation=relation)
 
         # get original cluster object and create adapter with it
-        orig_cluster_adapter = \
-            adapters.NailgunClusterAdapter(
-                adapters.NailgunClusterAdapter.get_by_uid(
-                    relation.orig_cluster_id)
-            )
+        orig_cluster_adapter = adapters.NailgunClusterAdapter.get_by_uid(
+            relation.orig_cluster_id)
 
         seed_cluster_adapter = adapters.NailgunClusterAdapter(cluster)
 

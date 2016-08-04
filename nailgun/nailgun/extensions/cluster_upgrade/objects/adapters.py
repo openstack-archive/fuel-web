@@ -35,6 +35,10 @@ class NailgunClusterAdapter(object):
         return self.cluster.name
 
     @property
+    def node_groups(self):
+        return self.cluster.node_groups
+
+    @property
     def net_provider(self):
         return self.cluster.net_provider
 
@@ -122,8 +126,9 @@ class NailgunNetworkManager(object):
     def update(self, network_configuration):
         self.net_manager.update(self.cluster, network_configuration)
 
-    def get_assigned_vips(self):
-        return self.net_manager.get_assigned_vips(self.cluster)
+    def get_assigned_vips(self, include=None):
+        return self.net_manager.get_assigned_vips(
+            self.cluster, include=include)
 
     def assign_vips_for_net_groups(self):
         return self.net_manager.assign_vips_for_net_groups(self.cluster)
@@ -205,3 +210,7 @@ class NailgunNetworkGroupAdapter(object):
     @property
     def name(self):
         return self.network_group.name
+
+    @property
+    def nodegroup(self):
+        return self.network_group.nodegroup

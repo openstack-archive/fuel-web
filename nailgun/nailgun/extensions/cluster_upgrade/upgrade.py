@@ -53,11 +53,22 @@ def merge_attributes(a, b):
 
 def merge_nets(a, b):
     new_settings = copy.deepcopy(b)
-    source_networks = dict((n["name"], n) for n in a["networks"])
+    source_networks = {}
+    for net in a["networks"]:
+        group_name = None
+        if net["group_id"]:
+            group_name = objects.NodeGroup.get_by_uid(net["group_id"]).name
+
+        source_networks[(net["name"], group_name)] = net
     for net in new_settings["networks"]:
-        if net["name"] not in source_networks:
+        group_name = None
+        if net["group_id"]:
+            group_name = objects.NodeGroup.get_by_uid(net["group_id"]).name
+
+        net_key = (net["name"], group_name)
+        if net_key not in source_networks:
             continue
-        source_net = source_networks[net["name"]]
+        source_net = source_networks[net_key]
         for key, value in six.iteritems(net):
             if (key not in ("cluster_id", "id", "meta", "group_id") and
                     key in source_net):
@@ -85,6 +96,7 @@ class UpgradeHelper(object):
 
         new_cluster = cls.create_cluster_clone(orig_cluster, data)
         cls.copy_attributes(orig_cluster, new_cluster)
+        cls.copy_node_groups(orig_cluster, new_cluster)
         cls.copy_network_config(orig_cluster, new_cluster)
         relations.UpgradeRelationObject.create_relation(orig_cluster.id,
                                                         new_cluster.id)
@@ -141,14 +153,26 @@ class UpgradeHelper(object):
             },
         }
         renamed_vips = collections.defaultdict(dict)
-        for ng_name, vips in six.iteritems(vips):
-            ng_vip_rules = rename_vip_rules[ng_name]
-            for vip_name, vip_addr in six.iteritems(vips):
-                if vip_name not in ng_vip_rules:
+        for ng_id, vips in six.iteritems(vips):
+            for vip_name, vip in six.iteritems(vips):
+                rename_rule = rename_vip_rules[vip.network_data.name]
+                if vip_name not in rename_rule:
                     continue
-                new_vip_name = ng_vip_rules[vip_name]
-                renamed_vips[ng_name][new_vip_name] = vip_addr
+                new_vip_name = rename_rule[vip_name]
+                renamed_vips[ng_id][new_vip_name] = vip
         return renamed_vips
+
+    @classmethod
+    def copy_node_groups(cls, orig_cluster, new_cluster):
+        for ng in orig_cluster.node_groups:
+            if getattr(ng, 'is_default', False) or ng.name == 'default':
+                continue
+
+            data = {
+                'name': ng.name,
+                'cluster_id': new_cluster.id
+            }
+            objects.NodeGroup.create(data)
 
     @classmethod
     def copy_network_config(cls, orig_cluster, new_cluster):
@@ -166,19 +190,29 @@ class UpgradeHelper(object):
         orig_net_manager = orig_cluster.get_network_manager()
         new_net_manager = new_cluster.get_network_manager()
 
-        vips = orig_net_manager.get_assigned_vips()
-        for ng_name in vips:
-            if ng_name not in (consts.NETWORKS.public,
-                               consts.NETWORKS.management):
-                vips.pop(ng_name)
+        vips = orig_net_manager.get_assigned_vips(
+            include=(consts.NETWORKS.public, consts.NETWORKS.management))
+
+        netgroups_id_mapping = cls.get_netgroups_id_mapping(
+            orig_cluster, new_cluster)
+        new_vips = cls.reassociate_vips(vips, netgroups_id_mapping)
+
         # NOTE(akscram): In the 7.0 release was introduced networking
         #                templates that use the vip_name column as
         #                unique names of VIPs.
         if version.LooseVersion(orig_cluster.release.environment_version) < \
                 version.LooseVersion("7.0"):
-            vips = cls.transform_vips_for_net_groups_70(vips)
-        new_net_manager.assign_given_vips_for_net_groups(vips)
+            new_vips = cls.transform_vips_for_net_groups_70(new_vips)
+        new_net_manager.assign_given_vips_for_net_groups(new_vips)
         new_net_manager.assign_vips_for_net_groups()
+
+    @classmethod
+    def reassociate_vips(cls, vips, netgroups_id_mapping):
+        new_vips = collections.defaultdict(dict)
+        for orig_net_id, net_vips in vips.items():
+            new_net_id = netgroups_id_mapping[orig_net_id]
+            new_vips[new_net_id] = net_vips
+        return new_vips
 
     @classmethod
     def get_node_roles(cls, reprovision, current_roles, given_roles):
@@ -227,8 +261,10 @@ class UpgradeHelper(object):
         orig_ng = orig_cluster.get_network_groups()
         seed_ng = seed_cluster.get_network_groups()
 
-        seed_ng_dict = dict((ng.name, ng.id) for ng in seed_ng)
-        mapping = dict((ng.id, seed_ng_dict[ng.name]) for ng in orig_ng)
+        seed_ng_dict = dict(((ng.name, ng.nodegroup.name), ng.id)
+                            for ng in seed_ng)
+        mapping = dict((ng.id, seed_ng_dict[(ng.name, ng.nodegroup.name)])
+                       for ng in orig_ng)
         mapping[orig_cluster.get_admin_network_group().id] = \
             seed_cluster.get_admin_network_group().id
         return mapping

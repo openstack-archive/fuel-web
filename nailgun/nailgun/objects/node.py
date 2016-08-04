@@ -519,7 +519,9 @@ class Node(NailgunObject):
             ip = IPAddress(instance.ip)
 
             for ng in admin_ngs:
-                if ip in IPNetwork(ng.cidr):
+                if ip in IPNetwork(ng.cidr) and \
+                        ng.nodegroup and \
+                        ng.nodegroup.cluster == instance.cluster:
                     instance.group_id = ng.group_id
                     break
 

@@ -1779,12 +1779,6 @@
         description: "dialog.create_cluster_wizard.compute.qemu_description"
         compatible:
           - name: hypervisor:vmware
-        requires:
-          - one_of:
-              items:
-                - network:neutron:ml2:vlan
-                - network:neutron:ml2:tun
-              message: "dialog.create_cluster_wizard.compute.qemu_requires_network_backend"
       - name: hypervisor:vmware
         weight: 15
         bind:

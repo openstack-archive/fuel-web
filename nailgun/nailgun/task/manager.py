@@ -495,21 +495,27 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
         network_info["networks"] = [
             n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
         ]
+        # if there is only deletion task,
+        # CheckRepositoryConnectionFromMasterNodeTask are not needed
+        nodes_to_provision = TaskHelper.nodes_in_provisioning(self.cluster)
+        nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
 
-        check_repo_connect = supertask.create_subtask(
-            consts.TASK_NAMES.check_networks)
+        if nodes_to_deploy or nodes_to_provision:
+            check_repo_connect = supertask.create_subtask(
+                consts.TASK_NAMES.check_networks)
 
-        self._call_silently(
-            check_repo_connect,
-            tasks.CheckRepositoryConnectionFromMasterNodeTask,
-        )
-
-        if check_repo_connect.status == consts.TASK_STATUSES.error:
-            logger.warning(
-                "Checking connectivity to repositories failed: %s",
-                check_repo_connect.message
+            self._call_silently(
+                check_repo_connect,
+                tasks.CheckRepositoryConnectionFromMasterNodeTask,
             )
-            raise errors.CheckBeforeDeploymentError(check_repo_connect.message)
+
+            if check_repo_connect.status == consts.TASK_STATUSES.error:
+                logger.warning(
+                    "Checking connectivity to repositories failed: %s",
+                    check_repo_connect.message
+                )
+                raise errors.CheckBeforeDeploymentError(
+                    check_repo_connect.message)
 
         check_networks = supertask.create_subtask(
             consts.TASK_NAMES.check_networks)

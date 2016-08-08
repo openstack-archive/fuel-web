@@ -2183,3 +2183,123 @@ class TestOpenstackConfigCollection(BaseTestCase):
             self.assertEqual(config.node_id, node_id)
             self.assertEqual(configs[0].config_type,
                              consts.OPENSTACK_CONFIG_TYPES.node)
+
+    def test_task_update_recursively(self):
+        parent = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.pending,
+            cluster_id=self.cluster.id
+        )
+        child1 = parent.create_subtask(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.pending
+        )
+        child2 = parent.create_subtask(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.pending
+        )
+        # update progress for child1
+        objects.Task.update_recursively(
+            child1, {'status': consts.TASK_STATUSES.running, 'progress': 50}
+        )
+        self.assertEqual(50, child1.progress)
+        self.assertEqual(consts.TASK_STATUSES.running, child1.status)
+        self.assertEqual(25, parent.progress)
+        self.assertEqual(consts.TASK_STATUSES.running, parent.status)
+        # finish child 1
+        objects.Task.update_recursively(
+            child1, {'status': consts.TASK_STATUSES.ready}
+        )
+        self.assertEqual(100, child1.progress)
+        self.assertEqual(consts.TASK_STATUSES.ready, child1.status)
+        self.assertEqual(50, parent.progress)
+        self.assertEqual(consts.TASK_STATUSES.running, parent.status)
+        # finish child 2
+        objects.Task.update_recursively(
+            child2, {'status': consts.TASK_STATUSES.ready}
+        )
+        self.assertEqual(100, parent.progress)
+        self.assertEqual(consts.TASK_STATUSES.ready, parent.status)
+        # fail child 2 when child1 is ready
+        objects.Task.update_recursively(
+            child2, {'status': consts.TASK_STATUSES.error}
+        )
+        self.assertEqual(100, parent.progress)
+        self.assertEqual(consts.TASK_STATUSES.error, parent.status)
+        self.assertEqual(consts.TASK_STATUSES.ready, child1.status)
+        child1.status = consts.TASK_STATUSES.running
+        objects.Task.update_recursively(
+            child2, {'status': consts.TASK_STATUSES.error}
+        )
+        self.assertEqual(100, parent.progress)
+        self.assertEqual(consts.TASK_STATUSES.error, parent.status)
+        self.assertEqual(consts.TASK_STATUSES.error, child1.status)
+
+    def test_update_cluster_status_on_updating_task_status(self):
+        with mock.patch.object(objects.Task, '_update_cluster_status') as m:
+            task = self.env.create_task(
+                name=consts.TASK_NAMES.deployment,
+                status=consts.TASK_STATUSES.running,
+                cluster_id=self.cluster.id,
+                dry_run=True
+            )
+            child1 = task.create_subtask(
+                name=consts.TASK_NAMES.deployment,
+                status=consts.TASK_STATUSES.pending,
+                dry_run=True
+            )
+            child2 = task.create_subtask(
+                name=consts.TASK_NAMES.deployment,
+                status=consts.TASK_STATUSES.pending,
+                dry_run=True
+            )
+            objects.Task.update_recursively(
+                task, {'status': consts.TASK_STATUSES.error}
+            )
+            objects.Task.update_recursively(
+                task, {'status': consts.TASK_STATUSES.ready}
+            )
+
+            task.dry_run = False
+            child1.dry_run = False
+            child2.dry_run = False
+            task.status = consts.TASK_STATUSES.running
+            objects.Task.update_recursively(
+                child1, {'status': consts.TASK_STATUSES.ready}
+            )
+            self.assertEqual(0, m.call_count)
+
+            objects.Task.update_recursively(
+                child2, {'status': consts.TASK_STATUSES.ready}
+            )
+            m.assert_called_with(
+                task.cluster,
+                consts.CLUSTER_STATUSES.operational,
+                consts.NODE_STATUSES.ready
+            )
+            objects.Task.update_recursively(
+                child2, {'status': consts.TASK_STATUSES.error}
+            )
+
+            m.assert_called_with(
+                task.cluster,
+                consts.CLUSTER_STATUSES.error,
+                None
+            )
+
+            objects.Task.update_recursively(
+                task, {'status': consts.TASK_STATUSES.ready}
+            )
+            m.assert_called_with(
+                task.cluster,
+                consts.CLUSTER_STATUSES.operational,
+                consts.NODE_STATUSES.ready
+            )
+            objects.Task.update_recursively(
+                task, {'status': consts.TASK_STATUSES.error}
+            )
+            m.assert_called_with(
+                task.cluster,
+                consts.CLUSTER_STATUSES.error,
+                None
+            )

@@ -19,12 +19,14 @@
 # we do not do it via uwsgi and this code raises ImportError and later the
 # task is called synchronously -- so it should work exactly as before.
 
-from nailgun.logger import logger
+import functools
 
 try:
     import uwsgidecorators
 except ImportError:
     uwsgidecorators = None
+
+from nailgun.logger import logger
 
 
 def call_task_manager_async(klass, func, cluster_id, *args, **kwargs):
@@ -46,6 +48,18 @@ def call_task_manager_async(klass, func, cluster_id, *args, **kwargs):
     getattr(instance, func)(*args, **kwargs)
     if uwsgidecorators:
         logger.debug('MULE FINISHED for %s.%s', klass.__name__, func)
+
+
+def run_function(fn):
+    if uwsgidecorators:
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            logger.debug('Starting "%s" in uWSGI mule.', fn.__name__)
+            fn(*args, **kwargs)
+            logger.debug('Finished "%s" in uWSGI mule.', fn.__name__)
+        return uwsgidecorators.mulefunc(wrapper)
+    return fn
+
 
 if uwsgidecorators:
     call_task_manager_async = uwsgidecorators.mulefunc(call_task_manager_async)

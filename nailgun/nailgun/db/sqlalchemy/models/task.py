@@ -16,6 +16,7 @@
 
 import uuid
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
@@ -76,7 +77,9 @@ class Task(Base):
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
     deleted_at = Column(DateTime)
-
+    dry_run = Column(Boolean(), nullable=False, default=False,
+                     server_default='false')
+    graph_type = Column(String(255))
     deployment_info = deferred(Column(MutableDict.as_mutable(JSON),
                                       nullable=True))
     cluster_settings = deferred(Column(MutableDict.as_mutable(JSON),

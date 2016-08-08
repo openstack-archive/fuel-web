@@ -68,3 +68,32 @@ class TestDropRulesToPickBootableDisk(base.BaseAlembicMigrationTest):
         ).fetchone()[0]
         volumes_metadata = jsonutils.loads(result)
         self.assertNotIn('rule_to_pick_boot_disk', volumes_metadata)
+
+
+class TestTasksSchemaDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_dry_run_field_does_no_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending'
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertNotIn('dry_run', result)
+
+    def test_graph_type_field_does_no_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending'
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertNotIn('graph_type', result)

@@ -51,9 +51,11 @@ rule_to_pick_bootdisk = [
 def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_task_model()
 
 
 def downgrade():
+    downgrade_task_model()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
 
@@ -247,3 +249,21 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+def upgrade_task_model():
+    op.add_column(
+        'tasks',
+        sa.Column('graph_type', sa.String(255), nullable=True)
+    )
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'dry_run', sa.Boolean(), nullable=False, server_default='false'
+        )
+    )
+
+
+def downgrade_task_model():
+    op.drop_column('tasks', 'dry_run')
+    op.drop_column('tasks', 'graph_type')

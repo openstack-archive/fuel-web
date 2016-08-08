@@ -24,7 +24,7 @@ from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
 
-_prepare_revision = '675105097a69'
+_prepare_revision = 'f2314e5d63c9'
 _test_revision = 'c6edea552f1e'
 
 JSON_TASKS = [
@@ -534,3 +534,32 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestTasksSchemaMigration(base.BaseAlembicMigrationTest):
+
+    def test_dry_run_field_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending',
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertIn('dry_run', result)
+
+    def test_graph_type_field_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending',
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertIn('graph_type', result)

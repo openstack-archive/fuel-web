@@ -151,6 +151,17 @@ class TestObjects(BaseIntegrationTest):
             elif r.operating_system == consts.RELEASE_OS.centos:
                 self.assertNotEqual(r.name, "A")
 
+    def test_to_list_iterable_none(self):
+        nodes_count = 3
+        self.env.create_nodes(nodes_count)
+        nodes_db = objects.NodeCollection.to_list()
+        self.assertEqual(nodes_count, len(nodes_db))
+
+    def test_to_list_iterable_empty(self):
+        self.env.create_nodes(count=3)
+        nodes_db = objects.NodeCollection.to_list([])
+        self.assertEquals(0, len(nodes_db))
+
 
 class TestNodeObject(BaseIntegrationTest):
 

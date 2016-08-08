@@ -419,7 +419,10 @@ class NailgunCollection(object):
         :param fields: exact fields to serialize
         :returns: collection of objects as a list of dicts
         """
-        use_iterable = iterable or cls.all()
+        if iterable is not None:
+            use_iterable = iterable
+        else:
+            use_iterable = cls.all()
         return [cls.single.to_dict(o, fields=fields) for o in use_iterable]
 
     @classmethod

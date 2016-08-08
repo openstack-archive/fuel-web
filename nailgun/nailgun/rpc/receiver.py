@@ -29,6 +29,7 @@ from nailgun import consts
 from nailgun import errors as nailgun_errors
 from nailgun import notifier
 from nailgun import objects
+from nailgun import transactions
 from nailgun.settings import settings
 
 from nailgun.consts import TASK_STATUSES
@@ -228,6 +229,128 @@ class NailgunReceiver(object):
             logger.error("Removing IBP images failed: task_uuid %s", task_uuid)
 
         objects.Task.update(task, {'status': status})
+
+    @classmethod
+    def _update_nodes(cls, transaction, db_nodes, node_params_map):
+        if transaction.dry_run:
+            # for dry_run transaction we can update only progress
+            update_fields = {'progress'}
+        else:
+            update_fields = {
+                'status',
+                'progress',
+                'online',
+                'pending_addition'
+            }
+        # First of all, let's update nodes in database
+        for node_db in db_nodes:
+            node = node_params_map.pop(node_db.uid)
+
+            for param in update_fields.intersection(node):
+                logger.debug("Updating node %s - set %s to %s",
+                             node['uid'], param, node[param])
+
+                if param == 'status':
+                    if node[param] == 'deleted':
+                        # the deleted is special status which causes
+                        # to delete node from cluster
+                        objects.Node.remove_from_cluster(node_db)
+                    elif node[param] == 'error':
+                        # do not update status of node, only set
+                        # appropriate error message
+                        node_db.error_msg = node.get(
+                            'error_msg', 'Unknown Error'
+                        )
+                        node_db.progress = 100
+                        # Notification on particular node failure
+                        notifier.notify(
+                            consts.NOTIFICATION_TOPICS.error,
+                            u"Failed to {0} node '{1}': {2}".format(
+                                transaction.name,
+                                node_db.name,
+                                node_db.error_msg or "Unknown error"
+                            ),
+                            cluster_id=transaction.cluster_id,
+                            node_id=node['uid'],
+                            task_uuid=transaction.uuid
+                        )
+                    else:
+                        node_db.status = node[param]
+                else:
+                    setattr(node_db, param, node[param])
+
+        if node_params_map:
+            logger.warning(
+                "The following nodes are not found: %s",
+                ",".join(sorted(node_params_map))
+            )
+
+    @classmethod
+    def transaction_resp(cls, **kwargs):
+        logger.info(
+            "RPC method transaction_resp received: %s" %
+            jsonutils.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        nodes = kwargs.get('nodes') or []
+        message = kwargs.get('error')
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+
+        transaction = objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
+        # lock cluster
+        objects.Cluster.get_by_uid(
+            transaction.cluster_id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
+        node_params_map = {str(n['uid']): n for n in nodes}
+        node_params_map.pop(consts.MASTER_NODE_UID, None)
+        node_params_map.pop('None', None)
+
+        if node_params_map:
+            # lock nodes for updating so they can't be deleted
+            q_nodes = objects.NodeCollection.filter_by_id_list(
+                None,
+                node_params_map,
+            )
+            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+            db_nodes = objects.NodeCollection.lock_for_update(q_nodes).all()
+        else:
+            db_nodes = []
+
+        cls._update_nodes(transaction, db_nodes, node_params_map)
+        for node in nodes:
+            if node.get('deployment_graph_task_name') \
+                    and node.get('task_status'):
+                objects.DeploymentHistory.update_if_exist(
+                    transaction.id,
+                    node['uid'],
+                    node['deployment_graph_task_name'],
+                    node['task_status'],
+                    node.get('custom')
+                )
+            db().flush()
+
+        if status:
+            objects.Task.update_recursively(
+                transaction,
+                cls._assemble_task_update(
+                    transaction, status, progress, message, db_nodes
+                )
+            )
+
+        # if transaction is completed successfully, we've got to initiate
+        # the next one
+        if transaction.parent and status in (consts.TASK_STATUSES.ready, ):
+            manager = transactions.TransactionsManager(transaction.cluster.id)
+            manager.continue_(transaction.parent)
 
     @classmethod
     def deploy_resp(cls, **kwargs):
@@ -464,6 +587,25 @@ class NailgunReceiver(object):
         )
 
     @classmethod
+    def _assemble_task_update(cls, task, status, progress, message, nodes):
+        """Assemble arguments to update task.
+
+        :param task: objects.Task object
+        :param status: consts.TASK_STATUSES value
+        :param progress: progress number value
+        :param message: message text
+        :param nodes: the modified nodes list
+        """
+
+        if status == consts.TASK_STATUSES.error:
+            data = cls._error_action(task, status, progress, message)
+        elif status == consts.TASK_STATUSES.ready:
+            data = cls._success_action(task, status, progress, nodes)
+        else:
+            data = {'status': status, 'progress': progress, 'message': message}
+        return data
+
+    @classmethod
     def _update_task_status(cls, task, status, progress, message, nodes):
         """Do update task status actions.
 
@@ -473,14 +615,10 @@ class NailgunReceiver(object):
         :param message: message text
         :param nodes: the modified nodes list
         """
-        # Let's check the whole task status
-        if status == consts.TASK_STATUSES.error:
-            cls._error_action(task, status, progress, message)
-        elif status == consts.TASK_STATUSES.ready:
-            cls._success_action(task, status, progress, nodes)
-        else:
-            data = {'status': status, 'progress': progress, 'message': message}
-            objects.Task.update(task, data)
+        objects.Task.update(
+            task,
+            cls._assemble_task_update(task, status, progress, message, nodes)
+        )
 
     @classmethod
     def _update_action_log_entry(cls, task_status, task_name, task_uuid,
@@ -562,15 +700,14 @@ class NailgunReceiver(object):
             notify_message = message if error_message is not None else None
 
         cls._notify(task, consts.NOTIFICATION_TOPICS.error, notify_message)
-        data = {'status': status, 'progress': progress, 'message': message}
-        objects.Task.update(task, data)
+        return {'status': status, 'progress': progress, 'message': message}
 
     @classmethod
     def _success_action(cls, task, status, progress, nodes):
-        # check if all nodes are ready
+        # we shouldn't report success if there's at least one node in
+        # error state
         if any(n.status == consts.NODE_STATUSES.error for n in nodes):
-            cls._error_action(task, 'error', 100)
-            return
+            return cls._error_action(task, 'error', 100)
 
         task_name = task.name.title()
         if nodes:
@@ -596,8 +733,7 @@ class NailgunReceiver(object):
                 message = '{0}\n\n{1}'.format(message, plugins_msg)
 
         cls._notify(task, consts.NOTIFICATION_TOPICS.done, message)
-        data = {'status': status, 'progress': progress, 'message': message}
-        objects.Task.update(task, data)
+        return {'status': status, 'progress': progress, 'message': message}
 
     @classmethod
     def _make_plugins_success_message(cls, plugins):

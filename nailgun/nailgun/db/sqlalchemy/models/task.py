@@ -66,7 +66,8 @@ class Task(Base):
     subtasks = relationship(
         "Task",
         backref=backref('parent', remote_side=[id]),
-        cascade="all,delete"
+        cascade="all,delete",
+        order_by='Task.id'
     )
     notifications = relationship(
         "Notification",

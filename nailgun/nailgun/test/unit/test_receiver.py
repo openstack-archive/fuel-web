@@ -54,11 +54,11 @@ class TestNailgunReceiver(base.BaseTestCase):
             cluster_id=self.cluster.id)
 
     def test_success_action_with_plugins(self):
-        NailgunReceiver._success_action(
+        data = NailgunReceiver._success_action(
             self.task, 'ready', 100, self.env.nodes
         )
         self.assertRegexpMatches(
-            self.task.message,
+            data['message'],
             "Deployment of environment '[^\s]+' is done."
             "\n\n"
             "Plugin name\d is deployed. description\d\n"
@@ -266,4 +266,63 @@ class TestNailgunReceiver(base.BaseTestCase):
             sub_task.cluster_id,
             node_id="123",
             task_uuid=sub_task.uuid
+        )
+
+    def test_transaction_resp_update_node_attributes(self):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id
+        )
+        node = self.cluster.nodes[0]
+        node.status = consts.NODE_STATUSES.provisioned
+        node.progress = 1
+        node.pending_addition = True
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            nodes=[{
+                'uid': node.uid, 'progress': 50, 'pending_addition': False
+            }]
+        )
+        self.db.refresh(node)
+        self.assertEqual(50, node.progress)
+        self.assertFalse(node.pending_addition)
+
+    @patch('nailgun.rpc.receiver.notifier.notify')
+    def test_transaction_resp_update_transaction_status(self, _):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id
+        )
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            status=consts.TASK_STATUSES.ready
+        )
+        self.db.refresh(task)
+        self.assertEqual(consts.TASK_STATUSES.ready, task.status)
+
+    @patch('nailgun.rpc.receiver.notifier.notify')
+    def test_transaction_resp_does_not_update_nodes_if_dry_run(self, _):
+        task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.running,
+            cluster_id=self.cluster.id,
+            dry_run=True
+        )
+        self.cluster.status = consts.CLUSTER_STATUSES.operational
+        node = self.cluster.nodes[0]
+        node.status = consts.NODE_STATUSES.provisioned
+        NailgunReceiver.transaction_resp(
+            task_uuid=task.uuid,
+            status=consts.TASK_STATUSES.ready,
+            nodes=[{'uid': node.uid, 'status': consts.NODE_STATUSES.ready}]
+        )
+        self.db.refresh(task)
+        self.db.refresh(node)
+        self.db.refresh(self.cluster)
+        self.assertEqual(consts.TASK_STATUSES.ready, task.status)
+        self.assertEqual(consts.NODE_STATUSES.provisioned, node.status)
+        self.assertEqual(
+            consts.CLUSTER_STATUSES.operational, self.cluster.status
         )

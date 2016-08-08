@@ -38,9 +38,11 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_task_model()
 
 
 def downgrade():
+    downgrade_task_model()
     downgrade_release_required_component_types()
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
@@ -305,3 +307,21 @@ def downgrade_node_deployment_info():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def upgrade_task_model():
+    op.add_column(
+        'tasks',
+        sa.Column('graph_type', sa.String(255), nullable=True)
+    )
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'dry_run', sa.Boolean(), nullable=False, server_default='false'
+        )
+    )
+
+
+def downgrade_task_model():
+    op.drop_column('tasks', 'dry_run')
+    op.drop_column('tasks', 'graph_type')

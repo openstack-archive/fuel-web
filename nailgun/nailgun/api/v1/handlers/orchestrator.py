@@ -21,6 +21,7 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
 from nailgun.api.v1.validators.node import NodeDeploymentValidator
@@ -282,11 +283,21 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
     def get_graph_type(self):
         return web.input(graph_type=None).graph_type
 
+    def get_force(self):
+        return utils.parse_bool(web.input(force='0').force)
+
     def get_nodes(self, cluster):
         nodes_to_deploy = super(
             BaseDeploySelectedNodes, self).get_nodes(cluster)
         self.validate(cluster, nodes_to_deploy, self.get_graph_type())
         return nodes_to_deploy
+
+    def get_subgraphs(self):
+        subgraphs = None
+        data = self.checked_data(validate_method=BasicValidator.validate_json)
+        if data:
+            subgraphs = data.get('subgraphs', None)
+        return subgraphs
 
     def validate(self, cluster, nodes_to_deploy, graph_type=None):
         self.checked_data(self.validator.validate_nodes_to_deploy,
@@ -308,11 +319,14 @@ class DeploySelectedNodes(BaseDeploySelectedNodes, DryRunMixin):
                * 400 (data validation failed)
                * 404 (cluster or nodes not found in db)
         """
+        subgraphs = self.get_subgraphs()
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return self.handle_task(
             cluster=cluster,
             graph_type=self.get_graph_type(),
-            dry_run=self.get_dry_run()
+            dry_run=self.get_dry_run(),
+            force=self.get_force(),
+            subgraphs=subgraphs
         )
 
 
@@ -330,7 +344,6 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, DryRunMixin):
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        force = utils.parse_bool(web.input(force='0').force)
 
         data = self.checked_data(
             self.validator.validate_deployment,
@@ -340,7 +353,7 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, DryRunMixin):
             cluster,
             deployment_tasks=data,
             graph_type=self.get_graph_type(),
-            force=force,
+            force=self.get_force(),
             dry_run=self.get_dry_run()
         )
 

@@ -199,7 +199,13 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
 
     def check_deployment_call_made(self, nodes_uids, mcast):
         args, kwargs = mcast.call_args
-        deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            deployed_uids = args[1]['args']['tasks_graph'].keys()
+            deployed_uids.remove('master')
+            deployed_uids.remove(None)
+        else:
+            deployed_uids = [n['uid'] for n in
+                             args[1]['args']['deployment_info']]
         self.assertEqual(len(nodes_uids), len(deployed_uids))
         self.assertItemsEqual(nodes_uids, deployed_uids)
 
@@ -334,6 +340,42 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         ]
         self.check_deployment_call_made([controller_to_deploy], mcast)
         self.assertItemsEqual(['custom-task'], executed_task_ids)
+
+    @patch('nailgun.task.task.rpc.cast')
+    @patch('objects.Release.is_lcm_supported')
+    def test_start_sel_nodes_deployment_w_subgraph(self, _, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'custom-task',
+                    'type': 'puppet',
+                    'roles': '*',
+                    'version': '2.0.0',
+                    'requires': ['pre_deployment_start'],
+                    'parameters': {'debug': True}
+                }
+            ]}, self.cluster, 'custom-graph')
+
+        self.emulate_nodes_provisioning(controller_nodes)
+        nodes_uids = [n.uid for n in controller_nodes]
+        controller_to_deploy = nodes_uids[0]
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            [controller_to_deploy]
+        ) + '&graph_type=default'
+        subgraphs = [{"start": "primary-database",
+                      "end": "keystone-db"}]
+        self.send_put(deploy_action_url,
+                      {'subgraphs': subgraphs})
+        mcast_args = mcast.call_args[0][1]['args']
+        subgraph_to_orchestrator = mcast_args['tasks_metadata']['subgraphs']
+
+        self.check_deployment_call_made([controller_to_deploy], mcast)
+        self.assertEqual(subgraph_to_orchestrator, subgraphs)
 
     @patch('nailgun.task.task.rpc.cast')
     def test_validator_fail_on_deployment_w_custom_graph(self, mcast):

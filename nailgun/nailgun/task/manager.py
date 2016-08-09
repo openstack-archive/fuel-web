@@ -697,7 +697,7 @@ class ProvisioningTaskManager(TaskManager):
 
 class DeploymentTaskManager(BaseDeploymentTaskManager):
     def execute(self, nodes_to_deployment, deployment_tasks=None,
-                graph_type=None, force=False, dry_run=False,
+                graph_type=None, force=False, dry_run=False, subgraphs=None,
                 **kwargs):
         deployment_tasks = deployment_tasks or []
         self._lock_cluster_to_run_unique_task(consts.TASK_NAMES.deployment)
@@ -720,6 +720,8 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             self.cluster.status = consts.CLUSTER_STATUSES.deployment
 
         db().commit()
+        logger.debug('subgraphs')
+        logger.debug(subgraphs)
 
         # perform async call
         mule.call_task_manager_async(
@@ -731,14 +733,15 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             deployment_tasks=deployment_tasks,
             graph_type=graph_type,
             force=force,
-            dry_run=dry_run
+            dry_run=dry_run,
+            subgraphs=subgraphs
         )
 
         return task_deployment
 
     def _execute_async(self, task_deployment_id, nodes_ids_to_deployment,
                        deployment_tasks=None, graph_type=None, force=False,
-                       dry_run=False):
+                       dry_run=False, subgraphs=None, **kwargs):
         """Supposed to be executed inside separate process.
 
         :param task_deployment_id: id of task
@@ -766,6 +769,7 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             deployment_tasks=deployment_tasks,
             method_name='message',
             graph_type=graph_type,
+            subgraphs=subgraphs,
             force=force,
             dry_run=dry_run)
 

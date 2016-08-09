@@ -14,20 +14,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import SingleHandler
-from nailgun.api.v1.validators.deployment_graph import DeploymentGraphValidator
+from nailgun.api.v1.validators import deployment_graph as validators
+
+from nailgun.errors import errors
 from nailgun import objects
 from nailgun.objects.serializers.deployment_graph import \
     DeploymentGraphSerializer
+from nailgun.transactions import TransactionsManager
 
 
 class RelatedDeploymentGraphHandler(SingleHandler):
     """Handler for deployment graph related to model."""
 
-    validator = DeploymentGraphValidator
+    validator = validators.DeploymentGraphValidator
     serializer = DeploymentGraphSerializer
     single = objects.DeploymentGraph
     related = None  # related should be substituted during handler inheritance
@@ -153,7 +156,7 @@ class RelatedDeploymentGraphHandler(SingleHandler):
 class RelatedDeploymentGraphCollectionHandler(CollectionHandler):
     """Handler for deployment graphs related to the models collection."""
 
-    validator = DeploymentGraphValidator
+    validator = validators.DeploymentGraphValidator
     collection = objects.DeploymentGraphCollection
     related = None  # related should be substituted during handler inheritance
 
@@ -178,7 +181,7 @@ class RelatedDeploymentGraphCollectionHandler(CollectionHandler):
 class DeploymentGraphHandler(SingleHandler):
     """Handler for fetching and deletion of the deployment graph."""
 
-    validator = DeploymentGraphValidator
+    validator = validators.DeploymentGraphValidator
     single = objects.DeploymentGraph
 
     @content
@@ -200,3 +203,32 @@ class DeploymentGraphHandler(SingleHandler):
 class DeploymentGraphCollectionHandler(CollectionHandler):
     """Handler for deployment graphs collection."""
     collection = objects.DeploymentGraphCollection
+
+
+class GraphsExecutorHandler(BaseHandler):
+
+    validator = validators.GraphExecuteParamsValidator
+
+    @content
+    def POST(self):
+        """:returns: JSONized Task object.
+
+        :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
+               * 404 (cluster or nodes not found in db)
+               * 409 (graph execution is in progress)
+        """
+        data = self.checked_data(self.validator.validate_params)
+        cluster_id = self.get_object_or_404(
+            objects.Cluster, data.pop('cluster')).id
+
+        try:
+            manager = TransactionsManager(cluster_id)
+            self.raise_task(manager.execute(**data))
+        except errors.ObjectNotFound as e:
+            raise self.http(404, e.message)
+        except errors.DeploymentAlreadyStarted as e:
+            raise self.http(409, e.message)
+        except errors.InvalidData as e:
+            raise self.http(400, e.message)

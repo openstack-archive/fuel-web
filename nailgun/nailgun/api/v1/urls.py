@@ -137,6 +137,8 @@ from nailgun.api.v1.handlers.deployment_graph import \
     DeploymentGraphCollectionHandler
 from nailgun.api.v1.handlers.deployment_graph import \
     DeploymentGraphHandler
+from nailgun.api.v1.handlers.deployment_graph import \
+    DeploymentGraphsExecutorHandler
 
 from nailgun.settings import settings
 
@@ -232,6 +234,8 @@ urls = (
     DeploymentGraphCollectionHandler,
     r'/graphs/(?P<obj_id>\d+)/?$',
     DeploymentGraphHandler,
+    r'/graphs/execute/?$',
+    DeploymentGraphsExecutorHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,

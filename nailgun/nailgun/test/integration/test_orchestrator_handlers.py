@@ -23,7 +23,6 @@ from nailgun import errors
 from nailgun import objects
 from nailgun.objects import DeploymentGraph
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
-
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import mock_rpc
 from nailgun.utils import reverse
@@ -215,7 +214,13 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
 
     def check_deployment_call_made(self, nodes_uids, mcast):
         args, kwargs = mcast.call_args
-        deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
+        if objects.Release.is_lcm_supported(self.cluster.release):
+            deployed_uids = list(args[1]['args']['tasks_graph'])
+            deployed_uids.remove('master')
+            deployed_uids.remove(None)
+        else:
+            deployed_uids = [n['uid'] for n in
+                             args[1]['args']['deployment_info']]
         self.assertEqual(len(nodes_uids), len(deployed_uids))
         self.assertItemsEqual(nodes_uids, deployed_uids)
 

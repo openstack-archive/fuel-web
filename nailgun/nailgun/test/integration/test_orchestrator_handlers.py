@@ -23,7 +23,6 @@ from nailgun.errors import errors
 from nailgun import objects
 from nailgun.objects import DeploymentGraph
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
-
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -327,6 +326,41 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             [controller_to_deploy]
         ) + '&graph_type=custom-graph'
         self.send_put(deploy_action_url, ['custom-task'])
+
+        executed_task_ids = [
+            t['id'] for t in
+            mcast.call_args[0][1]['args']['tasks_graph'][controller_to_deploy]
+        ]
+        self.check_deployment_call_made([controller_to_deploy], mcast)
+        self.assertItemsEqual(['custom-task'], executed_task_ids)
+
+    @patch('nailgun.task.task.rpc.cast')
+    @patch('objects.Cluster.is_lcm_ready')
+    def test_start_sel_nodes_deployment_w_subgraph(self, _, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+        objects.DeploymentGraph.create_for_model(
+            {'tasks': [
+                {
+                    'id': 'custom-task',
+                    'type': 'puppet',
+                    'roles': '*',
+                    'version': '2.0.0',
+                    'requires': ['pre_deployment_start'],
+                    'parameters': {'debug': True}
+                }
+            ]}, self.cluster, 'custom-graph')
+
+        self.emulate_nodes_provisioning(controller_nodes)
+        nodes_uids = [n.uid for n in controller_nodes]
+        controller_to_deploy = nodes_uids[0]
+        deploy_action_url = self.make_action_url(
+            "DeploySelectedNodes",
+            [controller_to_deploy]
+        ) + '&graph_type=default'
+        self.send_put(deploy_action_url, {"subgraphs": [{"start": "primary-database", "end": "keystone-db"}]})
 
         executed_task_ids = [
             t['id'] for t in

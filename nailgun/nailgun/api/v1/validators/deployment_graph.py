@@ -14,15 +14,15 @@
 #    under the License.
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema.deployment_graph import \
-    DEPLOYMENT_GRAPH_SCHEMA
-from nailgun.api.v1.validators.json_schema.deployment_graph import \
-    DEPLOYMENT_GRAPHS_SCHEMA
+from nailgun.api.v1.validators.json_schema import deployment_graph as schema
+
+from nailgun import errors
+from nailgun import objects
 
 
 class DeploymentGraphValidator(BasicValidator):
-    single_schema = DEPLOYMENT_GRAPH_SCHEMA
-    collection_schema = DEPLOYMENT_GRAPHS_SCHEMA
+    single_schema = schema.DEPLOYMENT_GRAPH_SCHEMA
+    collection_schema = schema.DEPLOYMENT_GRAPHS_SCHEMA
 
     @classmethod
     def validate_update(cls, data, instance):
@@ -32,3 +32,31 @@ class DeploymentGraphValidator(BasicValidator):
             cls.single_schema
         )
         return parsed
+
+
+class GraphExecuteParamsValidator(BasicValidator):
+
+    single_schema = schema.GRAPH_EXECUTE_PARAMS_SCHEMA
+
+    @classmethod
+    def validate_params(cls, data):
+        parsed = cls.validate_json(data)
+        cls.validate_schema(parsed, cls.single_schema)
+
+        nodes_to_check = set([])
+        for graph in parsed['graphs']:
+            nodes_to_check.update(graph.get('nodes', []))
+
+        cls.validate_nodes(nodes_to_check, parsed['cluster'])
+        return parsed
+
+    @classmethod
+    def validate_nodes(cls, ids, cluster_id):
+        nodes = objects.NodeCollection.filter_by(None, cluster_id=cluster_id)
+        nodes = objects.NodeCollection.filter_by_list(nodes, 'id', ids)
+
+        if nodes.count() != len(ids):
+            raise errors.InvalidData(
+                'Nodes {} do not belong to the same cluster {}'
+                .format(', '.join(ids), cluster_id)
+            )

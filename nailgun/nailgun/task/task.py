@@ -500,12 +500,11 @@ class ClusterTransaction(DeploymentTask):
     @classmethod
     def task_deploy(cls, transaction, tasks, nodes, force=False,
                     selected_task_ids=None, dry_run=False, noop_run=False,
-                    **kwargs):
+                    subgraphs=None, **kwargs):
         logger.info("The cluster transaction is initiated.")
         logger.info("cluster serialization is started.")
         # we should update information for all nodes except deleted
         # TODO(bgaifullin) pass role resolver to serializers
-
         deployment_info = deployment_serializers.serialize_for_lcm(
             transaction.cluster, nodes
         )
@@ -550,7 +549,7 @@ class ClusterTransaction(DeploymentTask):
             tasks,
             role_resolver,
         )
-
+        metadata['subgraphs'] = subgraphs
         logger.info("tasks serialization is finished.")
         return {
             "tasks_directory": directory,

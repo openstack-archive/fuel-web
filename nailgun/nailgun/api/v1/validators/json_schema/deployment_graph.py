@@ -31,3 +31,45 @@ DEPLOYMENT_GRAPHS_SCHEMA = {
     "type": "array",
     "items": DEPLOYMENT_GRAPH_SCHEMA,
 }
+
+
+GRAPH_EXECUTE_PARAMS_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "title": "Graph execution parameters",
+    "description": "The parameters of api method to execute graphs",
+    "required": ["graphs", "cluster"],
+    "additionalProperties": False,
+    "properties": {
+        "cluster": {
+            "type": "integer",
+        },
+        "graphs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": ["type"],
+                "parameters": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "nodes": {
+                        "type": "array",
+                        "items": {"type": "integer"}
+                    },
+                    "tasks": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                }
+            }
+        },
+        "dry_run": {
+            "type": "boolean"
+        },
+        "force": {
+            "type": "boolean"
+        }
+    }
+}

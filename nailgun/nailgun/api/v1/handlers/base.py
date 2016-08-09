@@ -169,7 +169,9 @@ class BaseHandler(object):
         try:
             data = kwargs.pop('data', web.data())
             method = validate_method or cls.validator.validate
+	    logger.debug(data)
             valid_data = method(data, **kwargs)
+	    logger.debug(data)
         except (
             errors.InvalidInterfacesInfo,
             errors.InvalidMetadata

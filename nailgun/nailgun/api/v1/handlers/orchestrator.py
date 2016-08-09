@@ -314,6 +314,9 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
     def get_graph_type(self):
         return web.input(graph_type=None).graph_type or None
 
+    def get_force(self):
+        return utils.parse_bool(web.input(force='0').force)
+
     def get_nodes(self, cluster):
         nodes_to_deploy = super(
             BaseDeploySelectedNodes, self).get_nodes(cluster)
@@ -342,13 +345,12 @@ class DeploySelectedNodes(BaseDeploySelectedNodes, RunMixin):
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        force = utils.parse_bool(web.input(force='0').force)
         return self.handle_task(
             cluster=cluster,
             graph_type=self.get_graph_type(),
-            force=force,
             dry_run=self.get_dry_run(),
-            noop_run=self.get_noop_run()
+            noop_run=self.get_noop_run(),
+            force=self.get_force()
         )
 
 
@@ -367,7 +369,6 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, RunMixin):
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        force = utils.parse_bool(web.input(force='0').force)
 
         data = self.checked_data(
             self.validator.validate_deployment,
@@ -377,9 +378,9 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, RunMixin):
             cluster,
             deployment_tasks=data,
             graph_type=self.get_graph_type(),
-            force=force,
             dry_run=self.get_dry_run(),
-            noop_run=self.get_noop_run()
+            noop_run=self.get_noop_run(),
+            force=self.get_force()
         )
 
 

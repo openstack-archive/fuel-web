@@ -61,6 +61,8 @@ def make_astute_message(transaction, context, graph, node_resolver):
         'failed': _get_node_attributes(graph, 'on_error'),
         'stopped': _get_node_attributes(graph, 'on_stop')
     }
+    if transaction.cache.get('subgraphs'):
+        metadata['subgraphs'] = transaction.cache.get('subgraphs')
     objects.DeploymentHistoryCollection.create(transaction, tasks)
 
     return {
@@ -125,7 +127,7 @@ class TransactionsManager(object):
         self.cluster_id = cluster_id
 
     def execute(self, graphs, dry_run=False, noop_run=False, force=False,
-                debug=False):
+                debug=False, subgraphs=None):
         """Start a new transaction with a given parameters.
 
         Under the hood starting a new transaction means serialize a lot of
@@ -185,6 +187,7 @@ class TransactionsManager(object):
             cache['noop_run'] = noop_run
             cache['dry_run'] = dry_run
             cache['debug'] = debug
+            cache['subgraphs'] = subgraphs
 
             transaction.create_subtask(
                 self.task_name,

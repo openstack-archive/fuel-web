@@ -1658,6 +1658,18 @@
                   source: *non_empty_string
                   error: "Empty vCenter password"
               -
+                name: "vcenter_insecure"
+                type: "checkbox"
+                label: "Bypass vCenter certificate verification"
+              -
+                name: "vc_ca_file"
+                type: "file"
+                label: "CA file"
+                description: "File containing the trusted CA bundle that emitted vCenter server certificate. Even if CA bundle is not uploaded, certificate verification is turned on."
+                restrictions:
+                  - condition: "currentVCenter:vcenter_insecure == true"
+                    message: "Bypass vCenter certificate verification should be disabled."
+              -
                 name: "nova_computes"
                 type: "array"
                 editable_for_deployed: true
@@ -1739,10 +1751,17 @@
                   source: *non_empty_string
                   error: "Invalid datastore"
               -
+                name: "vcenter_insecure"
+                type: "checkbox"
+                label: "Bypass vCenter certificate verification"
+              -
                 name: "ca_file"
                 type: "file"
                 label: "CA file"
-                description: "File containing the trusted CA bundle that emitted vCenter server certificate. If empty vCenters certificate is not verified."
+                description: "File containing the trusted CA bundle that emitted vCenter server certificate. Even if CA bundle is not uploaded, certificate verification is turned on."
+                restrictions:
+                  - condition: "Glance:vcenter_insecure == true"
+                    message: "Bypass vCenter certificate verification should be disabled."
         value:
           availability_zones:
             -
@@ -1750,6 +1769,8 @@
               vcenter_host: ""
               vcenter_username: ""
               vcenter_password: ""
+              vcenter_insecure: true
+              vc_ca_file: {}
               nova_computes:
                 -
                   vsphere_cluster: ""
@@ -1768,7 +1789,8 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
-            ca_file: ""
+            vcenter_insecure: true
+            ca_file: {}
     components_metadata:
       - name: hypervisor:qemu
         default: true

@@ -29,6 +29,23 @@
                         "label": "vCenter password"
                     },
                     {
+        							  "type": "checkbox",
+        							  "name": "vcenter_insecure",
+        							  "label": "Bypass vCenter certificate verification"
+        						},
+                    {
+        							  "type": "file",
+        							  "description": "File containing the trusted CA bundle that emitted vCenter server certificate. Even if CA bundle is not uploaded, certificate verification is turned on.",
+        							  "name": "vc_ca_file",
+        							  "label": "CA file",
+        							  "restrictions": [
+        								  {
+        									  "condition": "currentVCenter:vcenter_insecure == true",
+        									  "message": "Bypass vCenter certificate verification should be disabled."
+        								  }
+        							  ]
+        						},
+                    {
                         "fields": [
                             {
                                 "type": "text",
@@ -131,11 +148,22 @@
                         }
                     },
                     {
-                        "type": "file",
-                        "description": "File containing the trusted CA bundle that emitted vCenter server certificate. If empty vCenters certificate is not verified.",
-                        "name": "ca_file",
-                        "label": "CA file"
-                    }
+         							"type": "checkbox",
+        							"name": "vcenter_insecure",
+        							"label": "Bypass vCenter certificate verification"
+        						},
+        						{
+        							"type": "file",
+        							"description": "File containing the trusted CA bundle that emitted vCenter server certificate. Even if CA bundle is not uploaded, certificate verification is turned on.",
+                      "name": "ca_file",
+        							"label": "CA file",
+        							"restrictions": [
+        								{
+        									"condition": "Glance:vcenter_insecure == true",
+        									"message": "Bypass vCenter certificate verification should be disabled."
+        								}
+        							]
+        						}
                 ],
                 "type": "object",
                 "name": "glance",
@@ -154,6 +182,8 @@
                     "vcenter_host": "1.2.3.4",
                     "vcenter_username": "admin",
                     "vcenter_password": "secret",
+                    "vcenter_insecure": "true",
+                    "vcenter_ca_file": "file_blob",
                     "nova_computes": [
                         {
                             "vsphere_cluster": "cluster1",
@@ -182,6 +212,8 @@
                     "vcenter_host": "1.2.3.6",
                     "vcenter_username": "user$",
                     "vcenter_password": "pass$word",
+                    "vcenter_insecure": "true",
+                    "vcenter_ca_file": "file_blob",
                     "nova_computes": [
                         {
                             "vsphere_cluster": "cluster1",
@@ -202,6 +234,7 @@
                 "vcenter_password": "secret",
                 "datacenter": "test_datacenter",
                 "datastore": "test_datastore",
+                "vcenter_insecure": "true",
                 "ca_file": "file_blob"
             },
             "network": {

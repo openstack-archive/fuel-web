@@ -151,7 +151,7 @@
   parameters:
     path: /etc/hiera/nodes.yaml
     data:
-      yaql_exp: '$.network_metadata.nodes.values().toYaml()'
+      yaql_exp_common: '$.network_metadata.nodes.values().toYaml()'
 
 - id: update_hosts
   version: 2.0.0
@@ -198,5 +198,18 @@
     timeout: 180
     path: /etc/openstack/config.yml
     data:
-      yaql_exp: '$.toYaml()'
+      yaql_exp: 'new_node_info($).toYaml()'
+  refresh_on: ['*']
+
+- id: upload_configuration_common
+  type: upload_file
+  version: 2.1.0
+  roles: [master, '/.*/']
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment_end]
+  parameters:
+    timeout: 180
+    path: /etc/openstack/config-common.yml
+    data:
+      yaql_exp_common: '$.toYaml()'
   refresh_on: ['*']

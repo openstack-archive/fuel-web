@@ -1567,6 +1567,15 @@
                   source: *non_empty_string
                   error: "Empty vCenter password"
               -
+                name: "vcenter_insecure"
+                type: "checkbox"
+                label: "Bypass vCenter certificate verification"
+              -
+                name: "vc_ca_file"
+                type: "file"
+                label: "CA file"
+                description: "File containing the trusted CA bundle that emitted vCenter server certificate. Even if CA bundle is not uploaded, certificate verification is turned on."
+              -
                 name: "nova_computes"
                 type: "array"
                 editable_for_deployed: true
@@ -1648,10 +1657,14 @@
                   source: *non_empty_string
                   error: "Invalid datastore"
               -
+                name: "vcenter_insecure"
+                type: "checkbox"
+                label: "Bypass vCenter certificate verification"
+              -
                 name: "ca_file"
                 type: "file"
                 label: "CA file"
-                description: "File containing the trusted CA bundle that emitted vCenter server certificate. If empty vCenters certificate is not verified."
+                description: "File containing the trusted CA bundle that emitted vCenter server certificate. Even if CA bundle is not uploaded, certificate verification is turned on."
         value:
           availability_zones:
             -
@@ -1659,6 +1672,8 @@
               vcenter_host: ""
               vcenter_username: ""
               vcenter_password: ""
+              vcenter_insecure: true
+              vc_ca_file: {}
               nova_computes:
                 -
                   vsphere_cluster: ""
@@ -1677,7 +1692,8 @@
             vcenter_password: ""
             datacenter: ""
             datastore: ""
-            ca_file: ""
+            vcenter_insecure: true
+            ca_file: {}
     components_metadata:
       - name: hypervisor:qemu
         default: true

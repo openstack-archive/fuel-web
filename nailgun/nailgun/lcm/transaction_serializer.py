@@ -16,6 +16,7 @@
 
 from distutils.version import StrictVersion
 import multiprocessing
+import json
 
 import six
 
@@ -193,10 +194,29 @@ class TransactionSerializer(object):
         :param tasks: the deployment tasks
         :return the mapping tasks per node
         """
+        nodes_and_task_templates = list(self.expand_tasks(tasks))
+        task_templates = {}
+        for _, task_template in nodes_and_task_templates:
+            if task_template['id'] not in task_templates:
+                task_templates[task_template['id']] = task_template
+
+        # task templates after one step of processing
+        task_templates2 = {}
+        factory = self.serializer_factory_class(self.context)
+        for task_id, task_template in task_templates.items():
+            task_serializer = factory.create_serializer(task_template)
+            task_template2, finalized = task_serializer.serialize_common()
+            task_templates2[task_id] = task_template2
+            self.tasks_dictionary[task_id] = finalized
+
+        nodes_and_task_templates2 = []
+        for node_id, task in nodes_and_task_templates:
+            nodes_and_task_templates2.append((node_id, task_templates2[task['id']]))
+
         serialized = self.concurrency_policy.execute(
             self.context,
             self.serializer_factory_class,
-            self.expand_tasks(tasks)
+            nodes_and_task_templates2
         )
 
         for node_and_task in serialized:
@@ -210,6 +230,10 @@ class TransactionSerializer(object):
 
         # make sure that null node is present
         self.tasks_graph.setdefault(None, {})
+        with open('/tmp/qqq-dict.txt', 'w') as f:
+                f.write(json.dumps(self.tasks_dictionary))
+        with open('/tmp/qqq-graph.txt', 'w') as f:
+                f.write(json.dumps(self.tasks_graph))
 
     def expand_tasks(self, tasks):
         groups = []

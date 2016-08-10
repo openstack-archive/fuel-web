@@ -39,3 +39,23 @@ class TransactionContext(object):
         else:
             return UnionDict(dinfo['common_attrs'],
                              dinfo['nodes'].get(node_id, {}))
+
+    def get_new_data_node(self, node_id):
+        return self.new['nodes'][node_id]
+
+    def get_old_data_node(self, node_id, task_id):
+        dinfo = self.old.get(task_id, {})
+        if not dinfo:
+            return {}
+        else:
+            return dinfo['nodes'].get(node_id, {})
+
+    def get_new_data_common(self):
+        return self.new['common_attrs']
+
+    def get_old_data_common(self, task_id):
+        dinfo = self.old.get(task_id, {})
+        if not dinfo:
+            return {}
+        else:
+            return dinfo['common_attrs']

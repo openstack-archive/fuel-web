@@ -551,6 +551,13 @@ class ClusterTransaction(DeploymentTask):
             role_resolver,
         )
 
+#        with open("/tmp/xxx.txt", 'w') as f:
+#            f.write(repr(directory))
+#        with open("/tmp/yyy.txt", 'w') as f:
+#            f.write(repr(graph))
+#        with open("/tmp/zzz.txt", 'w') as f:
+#            f.write(repr(metadata))
+
         logger.info("tasks serialization is finished.")
         return {
             "tasks_directory": directory,

@@ -60,6 +60,7 @@ class Context(object):
         )
         self._yaql_engine = yaql_ext.create_engine()
         self._yaql_expressions_cache = {}
+        self._yaql_expressions_cache_common = {}
 
     def get_transaction_option(self, name, default=None):
         return self._transaction.options.get(name, default)
@@ -71,6 +72,8 @@ class Context(object):
         context = self._yaql_context.create_child_context()
         context['$%new'] = self._transaction.get_new_data(node_id)
         context['$%old'] = self._transaction.get_old_data(node_id, task_id)
+        context['$%new_node'] = self._transaction.get_new_data_node(node_id)
+        context['$%old_node'] = self._transaction.get_old_data_node(node_id, task_id)
         cache = self._yaql_expressions_cache
 
         def evaluate(expression):
@@ -81,6 +84,23 @@ class Context(object):
                 parsed_exp = self._yaql_engine(expression)
                 cache[expression] = parsed_exp
             return parsed_exp.evaluate(data=context['$%new'], context=context)
+        return evaluate
+
+    def get_yaql_interpreter_common(self, task_id):
+        context = self._yaql_context.create_child_context()
+        context['$%new_common'] = self._transaction.get_new_data_common()
+        context['$%old_common'] = self._transaction.get_old_data_common(task_id)
+        cache = self._yaql_expressions_cache_common
+
+        def evaluate(expression):
+            logger.debug("evaluate yaql expression: %s", expression)
+            try:
+                parsed_exp = cache[expression]
+            except KeyError:
+                parsed_exp = self._yaql_engine(expression)
+                cache[expression] = parsed_exp
+            return parsed_exp.evaluate(data=context['$%new_common'],
+                                       context=context)
         return evaluate
 
     def get_legacy_interpreter(self, node_id):
@@ -117,6 +137,15 @@ class Context(object):
             'SETTINGS': settings
         }
 
+    def get_formatter_context_common(self):
+        data = self._transaction.get_new_data_common()
+        return {
+            'CLUSTER_ID': data.get('cluster', {}).get('id'),
+            'OPENSTACK_VERSION': data.get('openstack_version'),
+            'MASTER_IP': settings.MASTER_IP,
+            'SETTINGS': settings
+        }
+
     @classmethod
     def transform_legacy_condition(cls, condition):
         # we need to adjust legacy condition, because current is run
@@ -145,6 +174,20 @@ class DeploymentTaskSerializer(object):
         :return: the result
         """
 
+    def serialize_common(self):
+        task = utils.traverse(
+            self.task_template,
+            utils.text_format_safe,
+            self.context.get_formatter_context_common(),
+            {
+                'yaql_exp_common': self.context.get_yaql_interpreter_common(
+                    self.task_template['id'])
+            }
+        )
+
+        task2 = task.copy()
+        return task, self.normalize(self.finalize_common(task2))
+
     def serialize(self, node_id):
         """Serialize task in expected by orchestrator format.
 
@@ -164,7 +207,12 @@ class DeploymentTaskSerializer(object):
                     node_id, self.task_template['id'])
             }
         )
-        return self.normalize(self.finalize(task, node_id))
+        if task != self.task_template:
+            with open('/tmp/qqq2.txt', 'a') as f:
+                f.write("%s, %s differs\n" % (node_id, task['id']))
+            return self.normalize(self.finalize(task, node_id))
+        else:
+            return {'id': task['id']}
 
     def normalize(self, task):
         """Removes unnecessary fields.
@@ -190,6 +238,12 @@ class NoopTaskSerializer(DeploymentTaskSerializer):
         task['fail_on_error'] = False
         return task
 
+    def finalize_common(self, task):
+        task.pop('parameters', None)
+        task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
+        task['fail_on_error'] = False
+        return task
+
 
 class DefaultTaskSerializer(NoopTaskSerializer):
 
@@ -209,6 +263,11 @@ class DefaultTaskSerializer(NoopTaskSerializer):
             )
             return super(DefaultTaskSerializer, self).finalize(task, node_id)
 
+        task.setdefault('parameters', {}).setdefault('cwd', '/')
+        task.setdefault('fail_on_error', True)
+        return task
+
+    def finalize_common(self, task):
         task.setdefault('parameters', {}).setdefault('cwd', '/')
         task.setdefault('fail_on_error', True)
         return task

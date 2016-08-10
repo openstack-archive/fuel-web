@@ -43,6 +43,25 @@ def get_old(expression, context):
 
 
 @specs.parameter('expression', yaqltypes.Lambda())
+def get_new_node(expression, context):
+    return expression(context['$%new_node'])
+
+
+@specs.parameter('expression', yaqltypes.Lambda())
+def get_old_node(expression, context):
+    try:
+        return expression(context['$%old_node'])
+    except Exception as e:
+        # exception in evaluation on old data interprets
+        # we return special sentinel to check that data was actually changed
+        # we cannot use empty object here, because new data can be empty
+        # as well, and in this case there is no chance to detect
+        # data was changed or not
+        logger.debug('Cannot evaluate expression on old data: %s', e)
+        return _UNDEFINED
+
+
+@specs.parameter('expression', yaqltypes.Lambda())
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def changed(finalizer, expression, context):
     new_data = finalizer(get_new(expression, context))
@@ -95,6 +114,8 @@ def is_undef(finalizer, receiver):
 def register(context):
     context.register_function(get_new, name='new')
     context.register_function(get_old, name='old')
+    context.register_function(get_new_node, name='new_node_info')
+    context.register_function(get_old_node, name='old_node_info')
     context.register_function(changed)
     context.register_function(changed_all)
     context.register_function(changed_any)

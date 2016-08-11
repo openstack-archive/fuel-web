@@ -27,6 +27,7 @@ from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.plugins import adapters
+from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun import utils
 from nailgun.utils.ceph import get_pool_pg_count
@@ -604,6 +605,19 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             return NeutronNetworkTemplateSerializer90
         else:
             return NeutronNetworkDeploymentSerializer90
+
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
+        serialized_node = super(
+            DeploymentHASerializer90,
+            cls).serialize_node_for_node_list(node, role)
+
+        for plugin_name, plugin_attributes in \
+                six.iteritems(PluginManager.get_plugin_node_attributes(node)):
+            plugin_attributes.pop('metadata', None)
+            serialized_node[plugin_name] = {
+                k: v.get('value') for k, v in six.iteritems(plugin_attributes)}
+        return serialized_node
 
     def serialize_node(self, node, role):
         serialized_node = super(

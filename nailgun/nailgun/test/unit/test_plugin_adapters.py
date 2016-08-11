@@ -553,7 +553,7 @@ class TestPluginV5(TestPluginBase):
                 bond_attributes_metadata)
             self.assertEqual(
                 self.plugin.node_attributes_metadata,
-                bond_attributes_metadata)
+                node_attributes_metadata)
 
             # check custom graph
             dg = DeploymentGraph.get_for_model(

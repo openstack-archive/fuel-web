@@ -607,6 +607,20 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         else:
             return NeutronNetworkDeploymentSerializer90
 
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
+        serialized_node = super(
+            DeploymentHASerializer90,
+            cls).serialize_node_for_node_list(node, role)
+
+        for plugin_name, plugin_attributes in six.iteritems(
+                plugins.manager.PluginManager.
+                get_plugin_node_attributes(node)):
+            plugin_attributes.pop('metadata', None)
+            serialized_node[plugin_name] = {
+                k: v.get('value') for k, v in six.iteritems(plugin_attributes)}
+        return serialized_node
+
     def serialize_node(self, node, role):
         serialized_node = super(
             DeploymentHASerializer90, self).serialize_node(node, role)

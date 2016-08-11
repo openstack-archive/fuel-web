@@ -802,12 +802,17 @@ class EnvironmentManager(object):
 
     def get_default_plugin_node_config(self, **kwargs):
         node_attributes = {
-            'plugin_name_text': {
-                'value': 'value',
-                'type': 'text',
-                'description': 'Some description',
-                'weight': 25,
-                'label': 'label'
+            'plugin_a_section': {
+                'metadata': {
+                    'label': 'Plugin A Section'
+                },
+                'plugin_attr_key': {
+                    'value': 'plugin_attr_val',
+                    'type': 'text',
+                    'description': 'Some description',
+                    'weight': 25,
+                    'label': 'label'
+                }
             }
         }
 

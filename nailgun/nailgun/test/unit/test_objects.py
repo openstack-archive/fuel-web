@@ -661,15 +661,21 @@ class TestNodeObject(BaseIntegrationTest):
             errors.CannotUpdate, objects.Node.update, node_0, data)
 
     def test_get_attributes(self):
-        node = self.env.create_node()
-
         fake_attributes = {
             'fake_attributes': {'fake_key_1': 'fake_value_1',
                                 'fake_key_2': 'fake_value_2'}
         }
-        node.attributes = fake_attributes
-        self.assertDictEqual(fake_attributes,
-                             objects.Node.get_attributes(node))
+        fake_plugin_attributes = {
+            'plugin_a': {'plugin_attr_key': 'plugin_attr_val'}
+        }
+        node = self.env.create_node(attributes=fake_attributes)
+
+        with mock.patch('nailgun.plugins.manager.PluginManager.'
+                        'get_plugin_node_attributes',
+                        return_value=fake_plugin_attributes):
+            fake_attributes.update(fake_plugin_attributes)
+            self.assertDictEqual(fake_attributes,
+                                 objects.Node.get_attributes(node))
 
     def test_update_attributes(self):
         node = self.env.create_node()
@@ -681,8 +687,13 @@ class TestNodeObject(BaseIntegrationTest):
         objects.Node.update_attributes(
             node,
             {
-                'fake_attributes':
-                    {'fake_key_1': {'key': 'new_value'}}
+                'fake_attributes': {
+                    'fake_key_1': {'key': 'new_value'}
+                },
+                'plugin_a': {
+                    'plugin_attr_key': {'value': 'new_attr_val'},
+                    'metadata': {'class': 'plugin', 'node_plugin_id': 1}
+                }
             }
         )
 
@@ -691,6 +702,12 @@ class TestNodeObject(BaseIntegrationTest):
                                 'fake_key_2': 'fake_value_2'}
         }
         self.assertEqual(expected_attributes, node.attributes)
+
+    def test_get_default_attributes(self):
+        pass
+
+    def test_set_default_attributes(self):
+            pass
 
 
 class TestTaskObject(BaseIntegrationTest):

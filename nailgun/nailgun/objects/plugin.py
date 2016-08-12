@@ -28,6 +28,7 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.plugin import PluginSerializer
 from nailgun.plugins.adapters import wrap_plugin
+from nailgun.utils import dict_update
 
 
 class Plugin(NailgunObject):
@@ -229,6 +230,31 @@ class ClusterPlugin(NailgunObject):
             params['enabled'] = enabled
         if attrs is not None:
             params['attributes'] = attrs
+
+        db().query(cls.model)\
+            .filter_by(plugin_id=plugin_id, cluster_id=cluster_id)\
+            .update(params, synchronize_session='fetch')
+        db().flush()
+
+    @classmethod
+    def update_attributes(cls, cluster_id, plugin_id, attrs):
+        """Updates plugin's attributes in cluster_plugins table.
+
+        :param cluster_id: Cluster ID
+        :type cluster_id: int
+        :param plugin_id: Plugin ID
+        :type plugin_id: int
+        :param attrs: Plugin metadata
+        :type attrs: dict
+        """
+        params = {}
+
+        current_attrs = db().query(cls.model.attributes)\
+            .filter_by(plugin_id=plugin_id, cluster_id=cluster_id)\
+            .first()[0]
+
+        dict_update(current_attrs, attrs)
+        params['attributes'] = current_attrs
 
         db().query(cls.model)\
             .filter_by(plugin_id=plugin_id, cluster_id=cluster_id)\

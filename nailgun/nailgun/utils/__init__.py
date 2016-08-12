@@ -339,3 +339,27 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+
+def update_attributes_dict_by_binds_exp(attributes_dict, bind_exp, value):
+    """Update cluster and attributes data with bound values
+
+    :param attributes_dict: dictionary where attributes will be stored
+    :type attributes_dict: dict
+    :param bind_exp: path to specific attribute for model in format
+                     model:some.attribute.value. Model can be
+                     settings|cluster
+    :type bind_exp: str
+    :param value: value for specific attribute
+    :type value: bool|str|int
+    :returns: None
+    """
+    model, attr_expr = bind_exp.split(':')
+    if model not in ('settings', 'cluster', 'plugin'):
+        return
+
+    path_items = attr_expr.split('.')
+    path_items.insert(0, model)
+    attributes = attributes_dict
+    for i in six.moves.range(0, len(path_items) - 1):
+        attributes = attributes.setdefault(path_items[i], {})
+    attributes[path_items[-1]] = value

@@ -49,6 +49,7 @@ class DeploymentHistory(NailgunObject):
             return
 
         getattr(cls, 'to_{0}'.format(status))(deployment_history)
+        deployment_history.custom.update(custom or {})
 
     @classmethod
     def find_history(cls, task_id, node_id, deployment_graph_task_name):

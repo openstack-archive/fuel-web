@@ -92,8 +92,7 @@ class GraphSolverVisualizationValidator(TaskDeploymentValidator):
         :returns: list of tasks
         :rtype: list[dict]
         """
-        tasks = list(set(data.split(',')))
-        return cls.validate_tasks(tasks, cluster, graph_type)
+        return cls.validate_tasks(data, cluster, graph_type)
 
     @classmethod
     def validate_task_presence(cls, task, graph):

@@ -59,15 +59,15 @@ class NodesFilterMixin(object):
 
         else return default nodes
         """
-        nodes = web.input(nodes=None).nodes
-        if nodes:
-            node_ids = self.checked_data(data=nodes)
-            return self.get_objects_list_or_404(
-                objects.NodeCollection,
-                node_ids
-            )
+        nodes = self.get_param_as_set('nodes', default=[])
+        if not nodes:
+            return self.get_default_nodes(cluster) or []
 
-        return self.get_default_nodes(cluster) or []
+        node_ids = self.checked_data(data=nodes)
+        return self.get_objects_list_or_404(
+            objects.NodeCollection,
+            node_ids
+        )
 
 
 class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
@@ -363,14 +363,14 @@ class TaskDeployGraph(BaseHandler):
         tasks = objects.Cluster.get_deployment_tasks(cluster, graph_type)
         graph = orchestrator_graph.GraphSolver(tasks)
 
-        tasks = web.input(tasks=None).tasks
+        tasks = self.get_param_as_set('tasks', default=[])
         parents_for = web.input(parents_for=None).parents_for
-        remove = web.input(remove=None).remove
+        remove = self.get_param_as_set('remove')
 
         if tasks:
             tasks = self.checked_data(
                 self.validator.validate,
-                data=tasks,
+                data=list(tasks),
                 cluster=cluster,
                 graph_type=graph_type)
             logger.debug('Tasks used in dot graph %s', tasks)
@@ -383,7 +383,7 @@ class TaskDeployGraph(BaseHandler):
             logger.debug('Graph with predecessors for %s', parents_for)
 
         if remove:
-            remove = list(set(remove.split(',')))
+            remove = list(remove)
             remove = self.checked_data(
                 self.validator.validate_tasks_types,
                 data=remove)
@@ -417,9 +417,8 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
         nodes = self.get_nodes(cluster)
         self.checked_data(self.validator.validate_placement,
                           data=nodes, cluster=cluster)
-        tasks = web.input(tasks=None).tasks
         graph_type = web.input(graph_type=None).graph_type
-        task_ids = [t.strip() for t in tasks.split(',')] if tasks else None
+        task_ids = self.get_param_as_set('tasks')
 
         try:
             if objects.Release.is_lcm_supported(cluster.release):

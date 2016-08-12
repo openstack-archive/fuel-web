@@ -52,6 +52,7 @@ from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import text_format_safe
 from nailgun.utils import traverse
+from nailgun.utils import update_attributes_dict_by_binds_exp
 
 
 class Attributes(NailgunObject):
@@ -206,39 +207,18 @@ class Cluster(NailgunObject):
         :type release_id: str
         :returns: dict -- objects with enabled attributes for cluster
         """
-
-        def _update_attributes_dict_by_binds_exp(bind_exp, value):
-            """Update cluster and attributes data with bound values
-
-            :param bind_exp: path to specific attribute for model in format
-                             model:some.attribute.value. Model can be
-                             settings|cluster
-            :type bind_exp: str
-            :param value: value for specific attribute
-            :type value: bool|str|int
-            :returns: None
-            """
-            model, attr_expr = bind_exp.split(':')
-            if model not in ('settings', 'cluster'):
-                return
-
-            path_items = attr_expr.split('.')
-            path_items.insert(0, model)
-            attributes = cluster_attributes
-            for i in six.moves.range(0, len(path_items) - 1):
-                attributes = attributes.setdefault(path_items[i], {})
-            attributes[path_items[-1]] = value
-
         release = Release.get_by_uid(release_id)
         cluster_attributes = {}
         for component in Release.get_all_components(release):
             if component['name'] in components:
                 for bind_item in component.get('bind', []):
                     if isinstance(bind_item, six.string_types):
-                        _update_attributes_dict_by_binds_exp(bind_item, True)
+                        update_attributes_dict_by_binds_exp(cluster_attributes,
+                                                            bind_item, True)
                     elif isinstance(bind_item, list):
-                        _update_attributes_dict_by_binds_exp(bind_item[0],
-                                                             bind_item[1])
+                        update_attributes_dict_by_binds_exp(cluster_attributes,
+                                                            bind_item[0],
+                                                            bind_item[1])
         return {
             'editable': cluster_attributes.get('settings', {}),
             'cluster': cluster_attributes.get('cluster', {})

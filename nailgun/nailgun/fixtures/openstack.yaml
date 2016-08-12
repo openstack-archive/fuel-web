@@ -2710,8 +2710,8 @@
                 priority: 1080
               - type: "deb"
                 name: "mos"
-                uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
-                suite: "mos10.0"
+                uri: "http://packages.fuel-infra.org/repositories/ubuntu/master-xenial"
+                suite: "master-xenial"
                 section: "main restricted"
                 priority: 1050
               - type: "deb"

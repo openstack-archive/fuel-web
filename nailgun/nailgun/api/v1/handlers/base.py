@@ -279,7 +279,6 @@ def content_json(func, cls, *args, **kwargs):
     )
 
     request_validate_needed = True
-    response_validate_needed = True
 
     resource_type = "single"
     if issubclass(
@@ -336,16 +335,6 @@ def content_json(func, cls, *args, **kwargs):
         http_error.data = json_resp(http_error.data)
         web.header('Content-Type', 'text/plain')
         raise http_error
-
-    if all([
-        settings.DEVELOPMENT,
-        response_validate_needed,
-        getattr(cls.__class__, 'validator', None) is not None
-    ]):
-        BaseHandler.checked_data(
-            cls.validator.validate_response,
-            resource_type=resource_type
-        )
 
     web.header('Content-Type', 'application/json', unique=True)
     return json_resp(resp)

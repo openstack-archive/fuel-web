@@ -2713,25 +2713,7 @@
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/x86_64"
                 suite: "mos10.0"
                 section: "main restricted"
-                priority: 1050
-              - type: "deb"
-                name: "mos-updates"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos10.0-updates"
-                section: "main restricted"
-                priority: 1050
-              - type: "deb"
-                name: "mos-security"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos10.0-security"
-                section: "main restricted"
-                priority: 1050
-              - type: "deb"
-                name: "mos-holdback"
-                uri: "http://mirror.fuel-infra.org/mos-repos/ubuntu/{cluster.release.environment_version}/"
-                suite: "mos10.0-holdback"
-                section: "main restricted"
-                priority: 1100
+                priority: 550
               - type: "deb"
                 name: "Auxiliary"
                 uri: "http://{settings.MASTER_IP}:8080/{cluster.release.version}/ubuntu/auxiliary"

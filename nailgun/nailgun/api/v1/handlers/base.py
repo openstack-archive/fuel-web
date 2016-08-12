@@ -14,6 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import codecs
+import cStringIO
+import csv
 from datetime import datetime
 from decorator import decorator
 from oslo_serialization import jsonutils
@@ -350,6 +353,69 @@ def _get_requested_mime():
     return accept
 
 
+class UnicodeCsvWriter(object):
+    """Unicode CSV writer.
+
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+
+    This code is taken from python official docs.
+    """
+
+    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+        # Redirect output to a queue
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+
+    def writerow(self, row):
+        # NOTE: I've changed s.encode("utf-8") to unicode(s).encode("utf-8")
+        # to handle non-strings
+        row = [s.encode("utf-8") if isinstance(s, six.text_type) else s
+               for s in row]
+        self.writer.writerow(row)
+        # Fetch UTF-8 output from the queue ...
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        # ... and reencode it into the target encoding
+        data = self.encoder.encode(data)
+        # write to the target stream
+        self.stream.write(data)
+        # empty queue
+        self.queue.truncate(0)
+
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)
+
+
+def _serialize_to_csv(data):
+    if not (isinstance(data, list) and
+            all(map(lambda x: isinstance(x, dict), data))):
+        raise BaseHandler.http(415, repr(data))
+
+    keys = set()
+    for obj in data:
+        keys.update(obj.keys())
+    keys = list(keys)
+
+    res = cStringIO.StringIO()
+    csv_writer = UnicodeCsvWriter(res)
+    csv_writer.writerow(keys)
+    for obj in data:
+        values = []
+        for k in keys:
+            v = obj.get(k)
+            if isinstance(v, (list, dict)):
+                v = jsonutils.dumps(v)
+            values.append(v)
+        csv_writer.writerow(values)
+
+    web.header('Content-Length', len(res.getvalue()))
+    return res.getvalue()
+
+
 @decorator
 def serialize(func, cls, *args, **kwargs):
     """Set context-type of response based on Accept header.
@@ -367,6 +433,7 @@ def serialize(func, cls, *args, **kwargs):
     accepted_types = (
         "application/json",
         "application/x-yaml",
+        "text/csv",
         "*/*"
     )
     accept = _get_requested_mime()
@@ -377,6 +444,9 @@ def serialize(func, cls, *args, **kwargs):
     if accept == 'application/x-yaml':
         web.header('Content-Type', 'application/x-yaml', unique=True)
         return yaml.dump(resp, default_flow_style=False)
+    if accept == 'text/csv':
+        web.header('Content-Type', 'text/csv', unique=True)
+        return _serialize_to_csv(resp)
     else:
         # default is json
         web.header('Content-Type', 'application/json', unique=True)

@@ -26,6 +26,7 @@ from nailgun.objects.plugin import PluginCollection
 from nailgun.plugins.adapters import wrap_plugin
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
+from nailgun.utils import update_attributes_dict_by_binds_exp
 
 
 class PluginManager(object):
@@ -86,6 +87,22 @@ class PluginManager(object):
                     cluster.id, plugin.id, enabled=enabled,
                     attrs=attrs if enabled or default else None
                 )
+
+    @classmethod
+    def get_plugin_attributes_by_components(cls, components, release):
+        plugin_components_metadata = cls.get_components_metadata(release)
+        plugin_attributes = {}
+        for component in plugin_components_metadata:
+            if component['name'] in components:
+                for bind_item in component.get('bind', []):
+                    if isinstance(bind_item, six.string_types):
+                        update_attributes_dict_by_binds_exp(plugin_attributes,
+                                                            bind_item, True)
+                    elif isinstance(bind_item, list):
+                        update_attributes_dict_by_binds_exp(plugin_attributes,
+                                                            bind_item[0],
+                                                            bind_item[1])
+        return plugin_attributes.get('plugin', {})
 
     @classmethod
     def get_plugins_attributes(
@@ -414,9 +431,17 @@ class PluginManager(object):
                 component['name']
                 for component in plugin_adapter.components_metadata)
 
+            comp_attrs = PluginManager.get_plugin_attributes_by_components(
+                plugin_components,
+                cluster.release
+            ).get(plugin.name)
+
             if cluster_components & plugin_components:
                 ClusterPlugin.set_attributes(
                     cluster.id, plugin.id, enabled=True)
+                if comp_attrs:
+                    ClusterPlugin.update_attributes(
+                        cluster.id, plugin.id, comp_attrs)
 
     @classmethod
     def get_legacy_tasks_for_cluster(cls, cluster):

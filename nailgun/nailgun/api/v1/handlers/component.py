@@ -14,15 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1.handlers import base
+from nailgun.api.v1.handlers.base import CollectionHandler
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.objects import Release
 from nailgun.objects.serializers.release import ComponentSerializer
 
 
-class ComponentCollectionHandler(base.CollectionHandler):
+class ComponentCollectionHandler(CollectionHandler):
     """Component collection handler"""
 
-    @base.content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, release_id):
         """:returns: JSONized component data for release and releated plugins.
 

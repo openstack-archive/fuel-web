@@ -303,36 +303,12 @@ class NodeValidator(base.BasicValidator):
             cls.validate_update(nd)
         return d
 
-    @classmethod
-    def validate_collection_delete(cls, data):
-        try:
-            d = map(int, data.split(','))
-        except ValueError:
-            raise errors.InvalidData('Comma-separated number list expected',
-                                     log_message=True)
-
-        cls.validate_schema(d, base_types.IDS_ARRAY)
-
-        return d
-
 
 class NodesFilterValidator(base.BasicValidator):
 
     @classmethod
     def validate(cls, nodes):
-        """Used for filtering nodes
-
-        :param nodes: list of ids in string representation.
-                      Example: "1,99,3,4"
-
-        :returns: list of integers
-        """
-        try:
-            node_ids = set(map(int, nodes.split(',')))
-        except ValueError:
-            raise errors.InvalidData('Provided id is not integer')
-
-        return node_ids
+        return super(NodesFilterValidator, cls).validate_ids_list(nodes)
 
     @classmethod
     def validate_placement(cls, nodes, cluster):

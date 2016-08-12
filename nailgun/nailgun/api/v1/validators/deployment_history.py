@@ -21,10 +21,11 @@ class DeploymentHistoryValidator(BasicValidator):
 
     @classmethod
     def validate_query(cls, nodes_ids, statuses, tasks_names):
-        if statuses:
-            statuses = set(statuses.strip().split(','))
-            if not statuses.issubset(set(consts.HISTORY_TASK_STATUSES)):
-                raise errors.ValidationException(
-                    "Statuses parameter could be only: {}".format(
-                        ", ".join(consts.HISTORY_TASK_STATUSES))
-                )
+        if not statuses:
+            return
+
+        if not statuses.issubset(set(consts.HISTORY_TASK_STATUSES)):
+            raise errors.ValidationException(
+                "Statuses parameter could be only: {}".format(
+                    ", ".join(consts.HISTORY_TASK_STATUSES))
+            )

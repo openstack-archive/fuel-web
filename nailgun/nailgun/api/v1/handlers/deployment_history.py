@@ -13,7 +13,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import web
 
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import content
@@ -41,23 +40,15 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
             objects.Transaction, transaction_id)
 
         # process input parameters
-        nodes_ids = web.input(nodes=None).nodes
-        statuses = web.input(statuses=None).statuses
-        tasks_names = web.input(tasks_names=None).tasks_names
-
+        nodes_ids = self.get_param_as_set('nodes_ids')
+        statuses = self.get_param_as_set('statuses')
+        tasks_names = self.get_param_as_set('tasks_names')
         try:
             self.validator.validate_query(nodes_ids=nodes_ids,
                                           statuses=statuses,
                                           tasks_names=tasks_names)
         except errors.ValidationException as exc:
             raise self.http(400, exc.message)
-
-        if nodes_ids:
-            nodes_ids = set(nodes_ids.strip().split(','))
-        if statuses:
-            statuses = set(statuses.strip().split(','))
-        if tasks_names:
-            tasks_names = set(tasks_names.strip().split(','))
 
         # fetch and serialize history
         return self.collection.get_history(transaction=transaction,

@@ -205,11 +205,14 @@ class DeploymentInfo(OrchestratorInfo):
         return objects.Cluster.replace_deployment_info(cluster, data)
 
 
-class DryRunMixin(object):
-    """Provides dry_run parameters."""
+class RunMixin(object):
+    """Provides dry_run or noop_run parameters."""
 
     def get_dry_run(self):
         return utils.parse_bool(web.input(dry_run='0').dry_run)
+
+    def get_noop_run(self):
+        return utils.parse_bool(web.input(noop_run='0').noop_run)
 
 
 class SelectedNodesBase(NodesFilterMixin, BaseHandler):
@@ -296,7 +299,7 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
                           graph_type=graph_type)
 
 
-class DeploySelectedNodes(BaseDeploySelectedNodes, DryRunMixin):
+class DeploySelectedNodes(BaseDeploySelectedNodes, RunMixin):
     """Handler for deployment selected nodes."""
 
     @content
@@ -312,11 +315,12 @@ class DeploySelectedNodes(BaseDeploySelectedNodes, DryRunMixin):
         return self.handle_task(
             cluster=cluster,
             graph_type=self.get_graph_type(),
-            dry_run=self.get_dry_run()
+            dry_run=self.get_dry_run(),
+            noop_run=self.get_noop_run()
         )
 
 
-class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, DryRunMixin):
+class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, RunMixin):
 
     validator = NodeDeploymentValidator
 
@@ -341,7 +345,8 @@ class DeploySelectedNodesWithTasks(BaseDeploySelectedNodes, DryRunMixin):
             deployment_tasks=data,
             graph_type=self.get_graph_type(),
             force=force,
-            dry_run=self.get_dry_run()
+            dry_run=self.get_dry_run(),
+            noop_run=self.get_noop_run()
         )
 
 

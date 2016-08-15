@@ -47,6 +47,8 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
         nodes_ids = self.get_param_as_set('nodes_ids')
         statuses = self.get_param_as_set('statuses')
         tasks_names = self.get_param_as_set('tasks_names')
+        include_summary = utils.parse_bool(
+            web.input(include_summary="0").include_summary)
         try:
             self.validator.validate_query(nodes_ids=nodes_ids,
                                           statuses=statuses,
@@ -58,4 +60,5 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
         return self.collection.get_history(transaction=transaction,
                                            nodes_ids=nodes_ids,
                                            statuses=statuses,
-                                           tasks_names=tasks_names)
+                                           tasks_names=tasks_names,
+                                           include_summary=include_summary)

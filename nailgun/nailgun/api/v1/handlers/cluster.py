@@ -126,12 +126,13 @@ class ClusterChangesHandler(DeferredTaskHandler):
 
     @classmethod
     def get_options(cls):
-        data = web.input(graph_type=None, dry_run="0")
+        data = web.input(graph_type=None, dry_run="0", noop_run="0")
 
         return {
             'graph_type': data.graph_type or None,
             'force': False,
             'dry_run': utils.parse_bool(data.dry_run),
+            'noop_run': utils.parse_bool(data.noop_run),
         }
 
 
@@ -145,11 +146,12 @@ class ClusterChangesForceRedeployHandler(DeferredTaskHandler):
 
     @classmethod
     def get_options(cls):
-        data = web.input(graph_type=None, dry_run="0")
+        data = web.input(graph_type=None, dry_run="0", noop_run="0")
         return {
             'graph_type': data.graph_type or None,
             'force': True,
-            'dry_run': utils.parse_bool(data.dry_run)
+            'dry_run': utils.parse_bool(data.dry_run),
+            'noop_run': utils.parse_bool(data.noop_run),
         }
 
 

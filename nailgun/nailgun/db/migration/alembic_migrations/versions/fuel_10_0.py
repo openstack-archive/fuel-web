@@ -44,9 +44,11 @@ def upgrade():
     upgrade_deployment_graphs_attributes()
     upgrade_orchestrator_task_types()
     upgrade_node_error_type()
+    upgrade_deployment_history_summary()
 
 
 def downgrade():
+    downgrade_deployment_history_summary()
     downgrade_node_error_type()
     downgrade_orchestrator_task_types()
     downgrade_deployment_graphs_attributes()
@@ -256,6 +258,17 @@ def upgrade_release_required_component_types():
     )
 
 
+def upgrade_deployment_history_summary():
+    op.add_column(
+        'deployment_history',
+        sa.Column(
+            'summary',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
 def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_table('node_cluster_plugins')
     op.drop_table('node_bond_interface_cluster_plugins')
@@ -439,3 +452,7 @@ def downgrade_node_error_type():
         u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
         u' USING error_type::text::node_error_type'
     )
+
+
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')

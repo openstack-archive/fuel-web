@@ -38,7 +38,7 @@ class DeploymentHistory(NailgunObject):
 
     @classmethod
     def update_if_exist(cls, task_id, node_id, deployment_graph_task_name,
-                        status, custom):
+                        status, summary, custom):
         deployment_history = cls.find_history(task_id, node_id,
                                               deployment_graph_task_name)
 
@@ -49,6 +49,8 @@ class DeploymentHistory(NailgunObject):
             return
 
         getattr(cls, 'to_{0}'.format(status))(deployment_history)
+
+        deployment_history.summary = summary
 
     @classmethod
     def find_history(cls, task_id, node_id, deployment_graph_task_name):
@@ -137,7 +139,7 @@ class DeploymentHistoryCollection(NailgunCollection):
 
     @classmethod
     def get_history(cls, transaction, nodes_ids=None, statuses=None,
-                    tasks_names=None):
+                    tasks_names=None, include_summary=False):
         """Get deployment tasks history.
 
         :param transaction: task SQLAlchemy object
@@ -170,7 +172,10 @@ class DeploymentHistoryCollection(NailgunCollection):
             logger.warning('No tasks snapshot is defined in given '
                            'transaction, probably it is a legacy '
                            '(Fuel<10.0) or malformed.')
-        history_records = cls.filter_by(None, task_id=transaction.id)
+        query = None
+        if include_summary:
+            query = cls.options(undefer('summary'))
+        history_records = cls.filter_by(query, task_id=transaction.id)
         if tasks_names:
             history_records = cls.filter_by_list(
                 history_records, 'deployment_graph_task_name', tasks_names
@@ -206,6 +211,8 @@ class DeploymentHistoryCollection(NailgunCollection):
                         'Definition of "{0}" task is not found'
                         .format(task_name)
                     )
+            if include_summary:
+                record['summary'] = history_record.summary
 
         # calculates absent tasks respecting filter
         if (not nodes_ids and (

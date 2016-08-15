@@ -175,6 +175,7 @@ db = scoped_session(
 
 def syncdb():
     from nailgun.db.migration import do_upgrade_head
+    dropdb()
     do_upgrade_head()
 
 

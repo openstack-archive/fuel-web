@@ -88,6 +88,7 @@ class TestGraphExecutorHandler(base.BaseIntegrationTest):
                     },
                     'tasks_directory': {},
                     'dry_run': False,
+                    'noop_run': False,
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',

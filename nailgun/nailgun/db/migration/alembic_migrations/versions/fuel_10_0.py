@@ -42,9 +42,11 @@ def upgrade():
     upgrade_task_model()
     upgrade_deployment_graphs_attributes()
     upgrade_orchestrator_task_types()
+    upgrade_deployment_history_summary()
 
 
 def downgrade():
+    downgrade_deployment_history_summary()
     downgrade_orchestrator_task_types()
     downgrade_deployment_graphs_attributes()
     downgrade_task_model()
@@ -253,6 +255,17 @@ def upgrade_release_required_component_types():
     )
 
 
+def upgrade_deployment_history_summary():
+    op.add_column(
+        'deployment_history',
+        sa.Column(
+            'summary',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
 def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_table('node_cluster_plugins')
     op.drop_table('node_bond_interface_cluster_plugins')
@@ -413,3 +426,6 @@ def downgrade_orchestrator_task_types():
         orchestrator_task_types_new,
         orchestrator_task_types_old
     )
+
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')

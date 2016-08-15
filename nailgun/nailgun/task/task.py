@@ -487,7 +487,8 @@ class ClusterTransaction(DeploymentTask):
 
     @classmethod
     def task_deploy(cls, transaction, tasks, nodes, force=False,
-                    selected_task_ids=None, dry_run=False, **kwargs):
+                    selected_task_ids=None, dry_run=False, noop_run=False,
+                    **kwargs):
         logger.info("The cluster transaction is initiated.")
         logger.info("cluster serialization is started.")
         # we should update information for all nodes except deleted
@@ -540,6 +541,7 @@ class ClusterTransaction(DeploymentTask):
             "tasks_graph": graph,
             "tasks_metadata": metadata,
             "dry_run": dry_run,
+            "noop_run": noop_run,
         }
 
 

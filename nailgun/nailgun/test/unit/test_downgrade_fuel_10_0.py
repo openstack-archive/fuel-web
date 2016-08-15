@@ -165,3 +165,10 @@ class TestOrchestratorTaskTypesDowngrade(base.BaseAlembicMigrationTest):
         self.assertFalse(
             expected_values.intersection((x[0] for x in result))
         )
+
+
+class TestDeploymentHistorySummaryField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        deployment_history = self.meta.tables['deployment_history']
+        self.assertNotIn('summary', deployment_history.c)

@@ -648,6 +648,7 @@ class Cluster(NailgunObject):
             nodes_to_add
         )
         map(Node.set_default_attributes, nodes_to_add)
+        map(Node.create_nic_attributes, nodes_to_add)
         map(Node.refresh_dpdk_properties, nodes_to_add)
         cls.update_nodes_network_template(instance, nodes_to_add)
         db().flush()

@@ -612,9 +612,9 @@ class EnvironmentManager(object):
         deployment_tasks = plugin_data.pop('deployment_tasks', None)
         tasks = plugin_data.pop('tasks', None)
         components = plugin_data.pop('components', None)
-        nic_config = plugin_data.pop('nic_config', None)
-        bond_config = plugin_data.pop('bond_config', None)
-        node_config = plugin_data.pop('node_config', None)
+        nic_config = plugin_data.pop('nic_attributes_metadata', None)
+        bond_config = plugin_data.pop('bond_attributes_metadata', None)
+        node_config = plugin_data.pop('node_attributes_metadata', None)
 
         mocked_metadata = {
             'metadata.*': plugin_data,
@@ -998,7 +998,7 @@ class EnvironmentManager(object):
                  'deployment_scripts_path': 'deployment_scripts/'},
                 {'repository_path': 'repositories/ubuntu',
                  'version': 'mitaka-9.0', 'os': 'ubuntu',
-                 'mode': ['ha', 'multinode'],
+                 'mode': ['ha'],
                  'deployment_scripts_path': 'deployment_scripts/'},
             ]
         }
@@ -1289,7 +1289,8 @@ class EnvironmentManager(object):
             )
 
     def make_bond_via_api(self, bond_name, bond_mode, nic_names, node_id=None,
-                          bond_properties=None, interface_properties=None):
+                          bond_properties=None, interface_properties=None,
+                          attrs=None):
         if not node_id:
             node_id = self.nodes[0]["id"]
         resp = self.app.get(
@@ -1317,7 +1318,8 @@ class EnvironmentManager(object):
             "type": NETWORK_INTERFACE_TYPES.bond,
             "mode": bond_mode,
             "slaves": slaves,
-            "assigned_networks": assigned_nets
+            "assigned_networks": assigned_nets,
+            "attributes": attrs or {}
         }
         if bond_properties:
             bond_dict["bond_properties"] = bond_properties

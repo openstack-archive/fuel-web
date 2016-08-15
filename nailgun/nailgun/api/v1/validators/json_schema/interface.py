@@ -46,19 +46,47 @@ INTERFACES = {
                 }
             },
             "pxe": {"type": "boolean"},
-            "interface_properties": {
+            "attributes": {
                 "type": "object",
                 "properties": {
+                    "offloading": {
+                        "type": "object"},
+                    "mtu": {
+                        "type": "object"},
                     "sriov": {
                         "type": "object",
                         "properties": {
-                            "enabled": base_types.NULLABLE_BOOL,
-                            "available": {"type": "boolean"},
-                            "sriov_numvfs":
-                                base_types.NULLABLE_POSITIVE_INTEGER,
-                            "sriov_totalvfs": base_types.NON_NEGATIVE_INTEGER,
-                            "pci_id": {"type": "string"},
-                            "physnet": {"type": "string"}
+                            "enabled": {
+                                "type": "object",
+                                "properties": {
+                                    "value":
+                                    base_types.NULLABLE_BOOL
+                                }
+                            },
+                            "numvfs": {
+                                "type": "object",
+                                "properties": {
+                                    "value":
+                                    base_types.NULLABLE_POSITIVE_INTEGER
+                                }
+                            },
+                            "physnet": {
+                                "type": "object",
+                                "properties": {
+                                    "value": {"type": "string"}
+                                }
+                            }
+                        }
+                    },
+                    "dpdk": {
+                        "properties": {
+                            "enabled": {
+                                "type": "object",
+                                "properties": {
+                                    "value":
+                                    base_types.NULLABLE_BOOL
+                                }
+                            }
                         }
                     }
                 }

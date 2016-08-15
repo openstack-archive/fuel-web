@@ -626,13 +626,10 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         )
         for node in cluster.nodes:
             self.move_network(node.id, 'management', 'eth0', 'eth1')
-            self.env.make_bond_via_api('lnx_bond',
-                                       '',
-                                       ['eth1', 'eth2'],
-                                       node.id,
-                                       bond_properties={
-                                           'mode': consts.BOND_MODES.balance_rr
-                                       })
+            self.env.make_bond_via_api(
+                'lnx_bond', '', ['eth1', 'eth2'], node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.balance_rr})
         serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
@@ -676,13 +673,10 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         for node in cluster.nodes:
             self.move_network(node.id, 'management', 'eth0', 'eth1')
             self.move_network(node.id, 'fixed', 'eth0', 'eth1')
-            self.env.make_bond_via_api('lnx_bond',
-                                       '',
-                                       ['eth1', 'eth2'],
-                                       node.id,
-                                       bond_properties={
-                                           'mode': consts.BOND_MODES.balance_rr
-                                       })
+            self.env.make_bond_via_api(
+                'lnx_bond', '', ['eth1', 'eth2'], node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.balance_rr})
         serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
@@ -766,13 +760,10 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             self.assertEquals(200, resp.status_code)
             interfaces = jsonutils.loads(resp.body)
             for iface in interfaces:
-                self.assertEqual(
-                    iface['interface_properties'],
-                    self.env.network_manager.get_default_interface_properties()
-                )
                 if iface['name'] == 'eth0':
-                    iface['interface_properties']['mtu'] = 1500
-                    iface['interface_properties']['disable_offloading'] = True
+                    iface['attributes']['mtu']['value']['value'] = 1500
+                    iface['attributes']['offloading'][
+                        'disable']['value'] = True
             nodes_list.append({'id': node.id, 'interfaces': interfaces})
         resp_put = self.app.put(
             reverse('NodeCollectionNICsHandler'),
@@ -956,16 +947,14 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                   nic_count=3)
         for node in cluster.nodes:
             self.move_network(node.id, 'storage', 'eth0', 'eth1')
-            self.env.make_bond_via_api('lnx_bond',
-                                       '',
-                                       ['eth1', 'eth2'],
-                                       node.id,
-                                       bond_properties={
-                                           'mode': consts.BOND_MODES.balance_rr
-                                       },
-                                       interface_properties={
-                                           'mtu': 9000
-                                       })
+            self.env.make_bond_via_api(
+                'lnx_bond', '', ['eth1', 'eth2'], node.id,
+                bond_properties={
+                    'mode': consts.BOND_MODES.balance_rr
+                },
+                attrs={'mtu': {'value': {'value': 9000}}},
+                interface_properties={'mtu': 9000}
+            )
         serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
@@ -1104,19 +1093,15 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         for node in cluster.nodes:
             self.move_network(node.id, 'storage', 'eth0', 'eth1')
             self.env.make_bond_via_api(
-                'lnx_bond',
-                '',
-                ['eth1', 'eth2'],
-                node.id,
+                'lnx_bond', '', ['eth1', 'eth2'], node.id,
                 bond_properties={
                     'mode': consts.BOND_MODES.l_802_3ad,
                     'xmit_hash_policy': consts.BOND_XMIT_HASH_POLICY.layer2,
                     'lacp_rate': consts.BOND_LACP_RATES.slow,
                     'type__': consts.BOND_TYPES.linux
                 },
-                interface_properties={
-                    'mtu': 9000
-                })
+                attrs={'mtu': {'value': {'value': 9000}}},
+                interface_properties={'mtu': 9000})
         serializer = self.create_serializer(cluster)
         facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:

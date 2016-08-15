@@ -103,6 +103,7 @@ from nailgun.api.v1.handlers.plugin import PluginSyncHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkCollectionHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkHandler
 
+from nailgun.api.v1.handlers.node import NodeBondAttributesDefaultsHandler
 from nailgun.api.v1.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
@@ -348,6 +349,8 @@ urls = (
     NodeAttributesHandler,
     r'/nodes/(?P<node_id>\d+)/attributes/defaults/?$',
     NodeAttributesDefaultsHandler,
+    r'/nodes/(?P<node_id>\d+)/bonds/attributes/defaults/?$',
+    NodeBondAttributesDefaultsHandler,
     r'/nodes/interfaces/?$',
     NodeCollectionNICsHandler,
     r'/nodes/interfaces/default_assignment/?$',

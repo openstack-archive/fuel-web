@@ -536,48 +536,6 @@ class NetworkManager(object):
         objects.Bond.bulk_delete([bond.id for bond in node.bond_interfaces])
 
     @classmethod
-    def get_default_interface_properties(cls, interface_properties=None):
-        """Interface properties defaults.
-
-        Some interface's "defaults" properties come from hardware (for
-        example pci_id). If interface_properties parameter is provided
-        than hardware dependent properties would be get from it.
-
-        :param interface_properties: interface properties dict
-
-        """
-        data = {
-            'mtu': None,
-            'disable_offloading': False,
-            'sriov': {
-                'enabled': False,
-                'sriov_numvfs': None,
-                'physnet': 'physnet2',
-            },
-            'dpdk': {
-                'enabled': False,
-            }
-        }
-        if interface_properties is None:
-            interface_properties = {}
-
-        sriov = interface_properties.get('sriov', {})
-        dpdk = interface_properties.get('dpdk', {})
-
-        hw_default_properties = {
-            'sriov': {
-                'pci_id': sriov.get('pci_id', ''),
-                'available': sriov.get('available', False),
-                'sriov_totalvfs': sriov.get('sriov_totalvfs', 0),
-            },
-            'dpdk': {
-                'available': dpdk.get('available', False),
-            }
-        }
-
-        return nailgun_utils.dict_merge(data, hw_default_properties)
-
-    @classmethod
     def assign_network_to_interface_by_default(cls, ng):
         """Assign network to interface by default for all nodes in node group
 
@@ -657,12 +615,10 @@ class NetworkManager(object):
         ), None)
         for nic in node.nic_interfaces:
             nic_dict = NodeInterfacesSerializer.serialize(nic)
-            if 'interface_properties' in nic_dict:
-                default_properties = cls.get_default_interface_properties(
-                    nic_dict['interface_properties'])
-                nic_dict['interface_properties'] = nailgun_utils.dict_merge(
-                    nic_dict['interface_properties'],
-                    default_properties)
+            if 'attributes' in nic_dict:
+                default_attributes = objects.NIC.get_default_attributes(nic)
+                nic_dict['attributes'] = default_attributes
+
             nic_dict['assigned_networks'] = []
 
             if to_assign_ids:
@@ -828,17 +784,17 @@ class NetworkManager(object):
                  in iface['assigned_networks']]
             objects.NIC.assign_networks(current_iface, nets_to_assign)
             update = {}
-            if 'interface_properties' in iface:
-                update['interface_properties'] = nailgun_utils.dict_merge(
-                    current_iface.interface_properties,
-                    iface['interface_properties']
-                )
             if 'offloading_modes' in iface:
                 update['offloading_modes'] = iface['offloading_modes']
+            if 'attributes' in iface:
+                update['attributes'] = nailgun_utils.dict_merge(
+                    current_iface.attributes,
+                    iface['attributes']
+                )
 
             objects.NIC.update(current_iface, update)
-        objects.Node.clear_bonds(node_db)
 
+        objects.Node.clear_bonds(node_db)
         for bond in bond_interfaces:
             if bond.get('bond_properties', {}).get('mode'):
                 mode = bond['bond_properties']['mode']
@@ -850,7 +806,7 @@ class NetworkManager(object):
                 'mode': mode,
                 'mac': bond.get('mac'),
                 'bond_properties': bond.get('bond_properties', {}),
-                'interface_properties': bond.get('interface_properties', {}),
+                'attributes': bond.get('attributes', {})
             }
             bond_db = objects.Bond.create(data)
 
@@ -1022,19 +978,23 @@ class NetworkManager(object):
         interface.bus_info = interface_attrs.get('bus_info')
         interface.pxe = interface_attrs.get('pxe', False)
 
-        interface_properties = nailgun_utils.dict_merge(
-            cls.get_default_interface_properties(),
-            interface.interface_properties or {}
+        meta = nailgun_utils.dict_merge(
+            objects.NIC.get_default_meta(),
+            interface.meta or {}
         )
 
         if interface_attrs.get('interface_properties'):
-            interface_properties = nailgun_utils.dict_merge(
-                interface_properties,
-                interface_attrs['interface_properties']
+            meta = nailgun_utils.dict_merge(
+                meta,
+                objects.NIC.get_default_meta(interface_attrs[
+                    'interface_properties'])
             )
         # update interface_properties in DB only if something was changed
-        if interface.interface_properties != interface_properties:
-            interface.interface_properties = interface_properties
+        if interface_attrs.get('offloading_modes'):
+            meta['offloading_modes'] = interface_attrs['offloading_modes']
+
+        if interface.meta != meta:
+            interface.meta = meta
 
     @classmethod
     def __delete_not_found_interfaces(cls, node, interfaces):
@@ -1412,13 +1372,16 @@ class NetworkManager(object):
     @classmethod
     def get_iface_properties(cls, iface):
         properties = {}
-        if iface.interface_properties.get('mtu'):
-            properties['mtu'] = iface.interface_properties['mtu']
-        if iface.interface_properties.get('disable_offloading'):
+        if iface.attributes.get('mtu', {}).get('value', {}).get('value'):
+            properties['mtu'] = iface.attributes['mtu']['value']['value']
+        if iface.attributes.get('offloading', {}).get('disable', {}).get(
+                'value'):
             properties['vendor_specific'] = {
                 'disable_offloading':
-                iface.interface_properties['disable_offloading']
+                iface.attributes['offloading']['disable']['value']
             }
+
+        # TODO(apopovych): rewrite to get offloading data from attributes
         if iface.offloading_modes:
             modified_offloading_modes = \
                 cls._get_modified_offloading_modes(iface.offloading_modes)

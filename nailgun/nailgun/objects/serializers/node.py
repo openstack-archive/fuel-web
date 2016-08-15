@@ -65,13 +65,13 @@ class NodeInterfacesSerializer(BasicSerializer):
         'mac',
         'name',
         'type',
-        'interface_properties',
         'state',
         'current_speed',
         'max_speed',
         'assigned_networks',
         'driver',
         'bus_info',
+        'meta',
         'offloading_modes',
         'pxe'
     )
@@ -121,31 +121,31 @@ class NodeInterfacesSerializer(BasicSerializer):
 
     @classmethod
     def serialize_nic_interface(cls, instance, fields=None):
+        from objects.interface import NIC
         if not fields:
             if StrictVersion(cls._get_env_version(instance)) < \
                     StrictVersion('6.1'):
                 fields = cls.nic_fields_60
             else:
                 fields = cls.nic_fields
-        return BasicSerializer.serialize(
-            instance,
-            fields=fields
-        )
+        data_dict = BasicSerializer.serialize(instance, fields=fields)
+        data_dict['attributes'] = NIC.get_attributes(instance)
+
+        return data_dict
 
     @classmethod
     def serialize_bond_interface(cls, instance, fields=None):
+        from objects.bond import Bond
         if not fields:
             if StrictVersion(cls._get_env_version(instance)) < \
                     StrictVersion('6.1'):
                 fields = cls.bond_fields_60
             else:
                 fields = cls.bond_fields
-        data_dict = BasicSerializer.serialize(
-            instance,
-            fields=fields
-        )
-        data_dict['slaves'] = [{'name': slave.name}
-                               for slave in instance.slaves]
+        data_dict = BasicSerializer.serialize(instance, fields=fields)
+        data_dict['slaves'] = [{'name': s.name} for s in instance.slaves]
+        data_dict['attributes'] = Bond.get_attributes(instance)
+
         return data_dict
 
     @classmethod

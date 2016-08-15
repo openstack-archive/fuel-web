@@ -52,9 +52,11 @@ def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_task_model()
+    upgrade_deployment_history_summary()
 
 
 def downgrade():
+    downgrade_deployment_history_summary()
     downgrade_task_model()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
@@ -79,6 +81,18 @@ def upgrade_release_with_rules_to_pick_bootable_disk():
             id=id,
             volumes_metadata=jsonutils.dumps(volumes_metadata),
         )
+
+
+def upgrade_deployment_history_summary():
+    op.add_column(
+        'deployment_history',
+        sa.Column(
+            'summary',
+            fields.JSON(),
+            nullable=True,
+            server_default='{}'
+        )
+    )
 
 
 def downgrade_release_with_rules_to_pick_bootable_disk():
@@ -267,3 +281,7 @@ def upgrade_task_model():
 def downgrade_task_model():
     op.drop_column('tasks', 'dry_run')
     op.drop_column('tasks', 'graph_type')
+
+
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')

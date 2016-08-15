@@ -17,6 +17,7 @@
 import sqlalchemy as sa
 
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import deferred
 
 from nailgun import consts
 
@@ -56,3 +57,5 @@ class DeploymentHistory(Base):
 
     custom = sa.Column(MutableDict.as_mutable(JSON), default={},
                        server_default='{}', nullable=False)
+    summary = deferred(sa.Column(MutableDict.as_mutable(JSON), default={},
+                       server_default='{}', nullable=True))

@@ -109,3 +109,17 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
     def test_downgrade_release_required_component_types(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('required_component_types', releases_table.c)
+
+
+class TestTasksNoopRunField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        tasks = self.meta.tables['tasks']
+        self.assertNotIn('noop_run', tasks.c)
+
+
+class TestDeploymentHistorySummaryField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        deployment_history = self.meta.tables['deployment_history']
+        self.assertNotIn('summary', deployment_history.c)

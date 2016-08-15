@@ -51,9 +51,11 @@ rule_to_pick_bootdisk = [
 def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_deployment_history_summary()
 
 
 def downgrade():
+    downgrade_deployment_history_summary()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
 
@@ -77,6 +79,18 @@ def upgrade_release_with_rules_to_pick_bootable_disk():
             id=id,
             volumes_metadata=jsonutils.dumps(volumes_metadata),
         )
+
+
+def upgrade_deployment_history_summary():
+    op.add_column(
+        'deployment_history',
+        sa.Column(
+            'summary',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
 
 
 def downgrade_release_with_rules_to_pick_bootable_disk():
@@ -247,3 +261,7 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')

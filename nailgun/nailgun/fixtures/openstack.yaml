@@ -426,8 +426,8 @@
       bonding:
         availability:
           - dpdkovs: "'experimental' in version:feature_groups and interface:pxe == false and
-                   interface:interface_properties.dpdk.enabled and not interface:interface_properties.sriov.enabled"
-          - linux: "not interface:interface_properties.sriov.enabled"
+                   interface:attributes.dpdk.enabled.value and not interface:attributes.sriov.enabled.value"
+          - linux: "not interface:attributes.sriov.enabled.value"
         properties:
           linux:
             mode:
@@ -1985,6 +1985,98 @@
         incompatible:
           - name: network:neutron:ml2:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"
+    nic_attributes:
+      offloading:
+        metadata:
+          label: "Offloading"
+          weight: 10
+        disable:
+          label: "Disable offloading"
+          weight: 10
+          type: "checkbox"
+          value: False
+        modes:
+          label: "Offloading modes"
+          weight: 20
+          description: "Offloading modes"
+          type: "offloading_modes"
+          value: {}
+      mtu:
+        metadata:
+          label: "MTU"
+          weight: 20
+        value:
+          label: "MTU"
+          weight: 10
+          type: "number"
+          value: null
+      sriov:
+        metadata:
+          label: "SR-IOV"
+          weight: 30
+        enabled:
+          label: "SR-IOV enabled"
+          weight: 10
+          type: "checkbox"
+          value: False
+        numvfs:
+          label: "Virtual functions"
+          weight: 20
+          type: "number"
+          min: 0
+          value: null
+        physnet:
+          label: "Physical network"
+          weight: 30
+          type: "text"
+          value: ''
+      dpdk:
+        metadata:
+          label: "DPDK"
+          weight: 40
+        enabled:
+          label: "DPDK enabled"
+          weight: 10
+          type: "checkbox"
+          value: False
+    bond_attributes:
+      mode:
+        metadata:
+          label: "Mode"
+          weight: 10
+        value:
+          label: "Mode"
+          weight: 10
+          type: "select"
+          values:
+            -
+              label: balance-rr
+              data: balance-rr
+          value: balance-rr
+      offloading:
+        metadata:
+          label: "Offloading"
+          weight: 20
+        disable:
+          label: "Disable offloading"
+          weight: 10
+          type: "checkbox"
+          value: False
+        modes:
+          label: "Offloading modes"
+          weight: 20
+          description: "Offloading modes"
+          type: "offloading_modes"
+          value: {}
+      mtu:
+        metadata:
+          label: "MTU"
+          weight: 30
+        value:
+          label: "MTU"
+          weight: 10
+          type: "number"
+          value: null
     modes: ['ha_compact']
     extensions: ['volume_manager']
 - pk: 1

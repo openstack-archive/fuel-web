@@ -54,9 +54,11 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_task_model()
     upgrade_node_error_type()
+    upgrade_deployment_history_summary()
 
 
 def downgrade():
+    downgrade_deployment_history_summary()
     downgrade_node_error_type()
     downgrade_task_model()
     downgrade_plugin_with_nics_and_nodes_attributes()
@@ -82,6 +84,18 @@ def upgrade_release_with_rules_to_pick_bootable_disk():
             id=id,
             volumes_metadata=jsonutils.dumps(volumes_metadata),
         )
+
+
+def upgrade_deployment_history_summary():
+    op.add_column(
+        'deployment_history',
+        sa.Column(
+            'summary',
+            fields.JSON(),
+            nullable=True,
+            server_default='{}'
+        )
+    )
 
 
 def downgrade_release_with_rules_to_pick_bootable_disk():
@@ -293,3 +307,7 @@ def downgrade_node_error_type():
         u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
         u' USING error_type::text::node_error_type'
     )
+
+
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')

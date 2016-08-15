@@ -374,6 +374,19 @@ def prepare():
             }
         ]
     )
+    result = db.execute(
+        meta.tables['deployment_history'].insert(),
+        [
+            {
+                'uuid': 'fake_uuid_0',
+                'deployment_graph_task_name': 'fake',
+                'node_id': 'fake_node_id',
+                'task_id': 'fake_task_uuid_0',
+                'status': 'pending',
+                'summary': jsonutils.dumps({'fake': 'fake'}),
+            }
+        ]
+    )
     TestRequiredComponentTypesField.prepare(meta)
     db.commit()
 

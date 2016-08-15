@@ -138,3 +138,16 @@ class TestTasksSchemaDowngrade(base.BaseAlembicMigrationTest):
 
         result = db.execute(sa.select([self.meta.tables['tasks']])).first()
         self.assertNotIn('graph_type', result)
+
+class TestTasksNoopRunField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        tasks = self.meta.tables['tasks']
+        self.assertNotIn('noop_run', tasks.c)
+
+
+class TestDeploymentHistorySummaryField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        deployment_history = self.meta.tables['deployment_history']
+        self.assertNotIn('summary', deployment_history.c)

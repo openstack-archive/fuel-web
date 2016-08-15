@@ -234,7 +234,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
         db().flush()
 
     def execute(self, nodes_to_provision_deploy=None, deployment_tasks=None,
-                force=False, graph_type=None, **kwargs):
+                force=False, graph_type=None, noop_run=False, **kwargs):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
                 self.cluster.name or self.cluster.id
@@ -245,7 +245,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
         self._remove_obsolete_tasks()
 
         supertask = Task(name=self.deployment_type, cluster=self.cluster,
-                         status=consts.TASK_STATUSES.pending)
+                         status=consts.TASK_STATUSES.pending, noop_run=noop_run)
         db().add(supertask)
 
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
@@ -279,6 +279,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
             force=force,
             graph_type=graph_type,
             current_cluster_status=current_cluster_status,
+            noop_run=noop_run,
             **kwargs
         )
 

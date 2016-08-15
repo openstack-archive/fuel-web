@@ -63,6 +63,9 @@ def make_astute_message(transaction, context, graph, node_resolver):
     }
     objects.DeploymentHistoryCollection.create(transaction, tasks)
 
+    dry_run = transaction.dry_run
+    noop_run = transaction.cache.get('noop_run')
+
     return {
         'api_version': settings.VERSION['api'],
         'method': 'task_deploy',
@@ -72,7 +75,8 @@ def make_astute_message(transaction, context, graph, node_resolver):
             'tasks_directory': directory,
             'tasks_graph': tasks,
             'tasks_metadata': metadata,
-            'dry_run': transaction.dry_run,
+            'dry_run': False if noop_run else dry_run,
+            'noop_run': noop_run,
         }
     }
 
@@ -122,7 +126,7 @@ class TransactionsManager(object):
     def __init__(self, cluster_id):
         self.cluster_id = cluster_id
 
-    def execute(self, graphs, dry_run=False, force=False):
+    def execute(self, graphs, dry_run=False, noop_run=False, force=False):
         """Start a new transaction with a given parameters.
 
         Under the hood starting a new transaction means serialize a lot of
@@ -132,11 +136,13 @@ class TransactionsManager(object):
 
         :param graphs: a list of graph type to be run on a given nodes
         :param dry_run: run a new transaction in dry run mode
+        :param noop_run: run a new transaction in noop run mode
         :param force: re-evaluate tasks's conditions as it's a first run
         """
         logger.debug(
-            'Start new transaction: cluster=%d graphs=%s dry_run=%d force=%d',
-            self.cluster_id, graphs, dry_run, force
+            'Start new transaction: '
+            'cluster=%d graphs=%s dry_run=%d noop_run=%s force=%d',
+            self.cluster_id, graphs, dry_run, noop_run, force
         )
 
         # So far we don't support parallel execution of transactions within
@@ -158,6 +164,8 @@ class TransactionsManager(object):
         #        we can safely remove this workaround.
         _remove_obsolete_tasks(cluster)
 
+        dry_run = dry_run or noop_run
+
         transaction = objects.Transaction.create({
             'name': self.task_name,
             'cluster_id': self.cluster_id,
@@ -175,6 +183,7 @@ class TransactionsManager(object):
             # receiver).
             cache = graph.copy()
             cache['force'] = force
+            cache['noop_run'] = noop_run
 
             sub_transaction = transaction.create_subtask(
                 self.task_name,

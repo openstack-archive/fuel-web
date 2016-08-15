@@ -37,9 +37,11 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_deployment_history_summary()
 
 
 def downgrade():
+    downgrade_deployment_history_summary()
     downgrade_release_required_component_types()
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
@@ -82,6 +84,18 @@ def upgrade_plugin_links_constraints():
         'cluster_plugin_links_cluster_id_url_uc',
         'cluster_plugin_links',
         ['cluster_id', 'url'])
+
+
+def upgrade_deployment_history_summary():
+    op.add_column(
+        'deployment_history',
+        sa.Column(
+            'summary',
+            fields.JSON(),
+            nullable=True,
+            server_default='{}'
+        )
+    )
 
 
 def downgrade_plugin_links_constraints():
@@ -304,3 +318,7 @@ def downgrade_node_deployment_info():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')

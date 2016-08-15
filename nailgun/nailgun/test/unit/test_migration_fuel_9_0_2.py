@@ -390,3 +390,18 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
                 'node_id': node_id,
                 'attributes': jsonutils.dumps({'test_attr': 'test'})
             }])
+
+
+class TestOrchestratorTaskTypesMigration(base.BaseAlembicMigrationTest):
+
+    def test_enum_has_new_values(self):
+        expected_values = {
+            'master_shell',
+            'move_to_bootstrap',
+            'erase_node',
+        }
+
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
+        )).fetchall()
+        self.assertTrue(expected_values.issubset((x[0] for x in result)))

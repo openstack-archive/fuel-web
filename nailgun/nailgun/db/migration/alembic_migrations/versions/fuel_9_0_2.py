@@ -25,6 +25,7 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_enum
 
 
 # revision identifiers, used by Alembic.
@@ -51,9 +52,11 @@ rule_to_pick_bootdisk = [
 def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_orchestrator_task_types()
 
 
 def downgrade():
+    downgrade_orchestrator_task_types()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
 
@@ -247,3 +250,44 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+orchestrator_task_types_old = (
+    'puppet',
+    'shell',
+    'sync',
+    'upload_file',
+    'group',
+    'stage',
+    'skipped',
+    'reboot',
+    'copy_files',
+    'role'
+)
+
+
+orchestrator_task_types_new = orchestrator_task_types_old + (
+    'master_shell',
+    'move_to_bootstrap',
+    'erase_node'
+)
+
+
+def upgrade_orchestrator_task_types():
+    upgrade_enum(
+        'deployment_graph_tasks',
+        'type',
+        'deployment_graph_tasks_type',
+        orchestrator_task_types_old,
+        orchestrator_task_types_new
+    )
+
+
+def downgrade_orchestrator_task_types():
+    upgrade_enum(
+        'deployment_graph_tasks',
+        'type',
+        'deployment_graph_tasks_type',
+        orchestrator_task_types_new,
+        orchestrator_task_types_old
+    )

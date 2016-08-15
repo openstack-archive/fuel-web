@@ -68,3 +68,20 @@ class TestDropRulesToPickBootableDisk(base.BaseAlembicMigrationTest):
         ).fetchone()[0]
         volumes_metadata = jsonutils.loads(result)
         self.assertNotIn('rule_to_pick_boot_disk', volumes_metadata)
+
+
+class TestOrchestratorTaskTypesDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_enum_does_not_have_new_values(self):
+        expected_values = {
+            'master_shell',
+            'move_to_bootstrap',
+            'erase_node',
+        }
+
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
+        )).fetchall()
+        self.assertFalse(
+            expected_values.intersection((x[0] for x in result))
+        )

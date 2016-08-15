@@ -40,6 +40,10 @@ from nailgun.task.task import TaskHelper
 from nailgun.utils import mule
 
 
+def is_dry_run(kwargs):
+    return kwargs.get('dry_run') or kwargs.get('noop_run')
+
+
 class TaskManager(object):
 
     def __init__(self, cluster_id=None):
@@ -276,8 +280,10 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
         current_cluster_status = self.cluster.status
         # update cluster status
-        if not kwargs.get('dry_run'):
+        if not is_dry_run(kwargs):
             self.cluster.status = consts.CLUSTER_STATUSES.deployment
+        else:
+            supertask.dry_run = True
 
         # we should have task committed for processing in other threads
         db().commit()
@@ -452,10 +458,12 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
             deployment_task_provider = self.get_deployment_task()
 
-            transaction_name = self.get_deployment_transaction_name(dry_run)
+            transaction_name = self.get_deployment_transaction_name(
+                is_dry_run(kwargs))
 
             task_deployment = supertask.create_subtask(
                 name=transaction_name,
+                dry_run=is_dry_run(kwargs),
                 status=consts.TASK_STATUSES.pending
             )
             # we should have task committed for processing in other threads
@@ -518,7 +526,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
                 node.status = consts.NODE_STATUSES.provisioning
             db().commit()
 
-        if not dry_run:
+        if not is_dry_run(kwargs):
             objects.Cluster.get_by_uid(
                 self.cluster.id,
                 fail_if_not_found=True
@@ -716,8 +724,7 @@ class ProvisioningTaskManager(TaskManager):
 
 class DeploymentTaskManager(BaseDeploymentTaskManager):
     def execute(self, nodes_to_deployment, deployment_tasks=None,
-                graph_type=None, force=False, dry_run=False,
-                **kwargs):
+                graph_type=None, force=False, **kwargs):
         deployment_tasks = deployment_tasks or []
         self._lock_cluster_to_run_unique_task(consts.TASK_NAMES.deployment)
 
@@ -726,16 +733,18 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
                       for n in nodes_to_deployment])))
 
         nodes_ids_to_deployment = [n.id for n in nodes_to_deployment]
-        transaction_name = self.get_deployment_transaction_name(dry_run)
+        transaction_name = self.get_deployment_transaction_name(
+            is_dry_run(kwargs))
 
         task_deployment = Task(
             name=transaction_name,
             cluster=self.cluster,
+            dry_run=is_dry_run(kwargs),
             status=consts.TASK_STATUSES.pending
         )
         db().add(task_deployment)
         # update cluster status
-        if not kwargs.get('dry_run'):
+        if not is_dry_run(kwargs):
             self.cluster.status = consts.CLUSTER_STATUSES.deployment
 
         db().commit()
@@ -750,14 +759,15 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             deployment_tasks=deployment_tasks,
             graph_type=graph_type,
             force=force,
-            dry_run=dry_run
+            dry_run=kwargs.get('dry_run', False),
+            noop_run=kwargs.get('noop_run', False)
         )
 
         return task_deployment
 
     def _execute_async(self, task_deployment_id, nodes_ids_to_deployment,
                        deployment_tasks=None, graph_type=None, force=False,
-                       dry_run=False):
+                       dry_run=False, noop_run=False):
         """Supposed to be executed inside separate process.
 
         :param task_deployment_id: id of task
@@ -765,6 +775,7 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
         :param graph_type: graph type
         :param force: force
         :param dry_run: the dry run flag
+        :param noop_run: the noop run flag
         """
         task_deployment = objects.Task.get_by_uid(
             task_deployment_id,
@@ -787,7 +798,9 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             method_name='message',
             graph_type=graph_type,
             force=force,
-            dry_run=dry_run)
+            dry_run=dry_run,
+            noop_run=noop_run
+        )
 
         db().refresh(task_deployment)
 

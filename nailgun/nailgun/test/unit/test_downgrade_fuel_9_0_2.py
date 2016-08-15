@@ -123,3 +123,10 @@ class TestDeploymentGraphsDowngrade(base.BaseAlembicMigrationTest):
         self.assertNotIn('on_success', graphs_table.c)
         self.assertNotIn('on_error', graphs_table.c)
         self.assertNotIn('on_stop', graphs_table.c)
+
+
+class TestDeploymentHistorySummaryField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        deployment_history = self.meta.tables['deployment_history']
+        self.assertNotIn('summary', deployment_history.c)

@@ -138,3 +138,20 @@ class TestTasksSchemaDowngrade(base.BaseAlembicMigrationTest):
 
         result = db.execute(sa.select([self.meta.tables['tasks']])).first()
         self.assertNotIn('graph_type', result)
+
+
+class TestOrchestratorTaskTypesDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_enum_does_not_have_new_values(self):
+        expected_values = {
+            'master_shell',
+            'move_to_bootstrap',
+            'erase_node',
+        }
+
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
+        )).fetchall()
+        self.assertFalse(
+            expected_values.intersection((x[0] for x in result))
+        )

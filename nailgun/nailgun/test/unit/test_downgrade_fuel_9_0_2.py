@@ -140,3 +140,10 @@ class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
             {'deploy', 'provision', 'deletion', 'discover', 'stop_deployment'},
             {x[0] for x in result},
         )
+
+
+class TestDeploymentHistorySummaryField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        deployment_history = self.meta.tables['deployment_history']
+        self.assertNotIn('summary', deployment_history.c)

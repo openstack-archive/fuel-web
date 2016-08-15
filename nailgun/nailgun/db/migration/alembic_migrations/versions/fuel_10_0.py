@@ -38,6 +38,8 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_noop_run()
+    upgrade_deployment_history_summary()
 
 
 def downgrade():
@@ -45,6 +47,8 @@ def downgrade():
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
+    downgrade_noop_run()
+    downgrade_deployment_history_summary()
 
 
 def upgrade_plugin_links_constraints():
@@ -246,6 +250,30 @@ def upgrade_release_required_component_types():
     )
 
 
+def upgrade_noop_run():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'noop_run',
+            sa.Boolean,
+            nullable=False,
+            default=False,
+            server_default="false"
+        )
+    )
+
+
+def upgrade_deployment_history_summary():
+    op.add_column(
+        'deployment_history',
+        sa.Column(
+            'summary',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
 def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_table('node_cluster_plugins')
     op.drop_table('node_bond_interface_cluster_plugins')
@@ -305,3 +333,11 @@ def downgrade_node_deployment_info():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def downgrade_noop_run():
+    op.drop_column('tasks', 'noop_run')
+
+
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')

@@ -95,6 +95,7 @@ class TestDeploymentHistoryObject(base.BaseTestCase):
             node_id=self.node_id,
             deployment_graph_task_name=self.deployment_graph_task_name,
             status=consts.HISTORY_TASK_STATUSES.running,
+            summary={},
             custom={})
 
         history = deployment_history.DeploymentHistory.find_history(

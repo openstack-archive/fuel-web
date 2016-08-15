@@ -283,7 +283,8 @@ class NailgunReceiver(object):
         task = objects.Task.get_by_uuid(task_uuid)
         # Dry run deployments should not actually lead to update of
         # nodes' statuses
-        if task.name != consts.TASK_NAMES.dry_run_deployment:
+        if task.name != consts.TASK_NAMES.dry_run_deployment and \
+                not task.dry_run:
 
             # First of all, let's update nodes in database
             for node_db in db_nodes:
@@ -334,7 +335,8 @@ class NailgunReceiver(object):
                     node['uid'],
                     node['deployment_graph_task_name'],
                     node['task_status'],
-                    node.get('custom')
+                    node.get('summary'),
+                    node.get('custom'),
                 )
         db().flush()
 

@@ -68,3 +68,10 @@ class TestDropRulesToPickBootableDisk(base.BaseAlembicMigrationTest):
         ).fetchone()[0]
         volumes_metadata = jsonutils.loads(result)
         self.assertNotIn('rule_to_pick_boot_disk', volumes_metadata)
+
+
+class TestDeploymentHistorySummaryField(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_tasks_noop(self):
+        deployment_history = self.meta.tables['deployment_history']
+        self.assertNotIn('summary', deployment_history.c)

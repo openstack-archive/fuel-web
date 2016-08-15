@@ -95,6 +95,14 @@ class TestTaskDeploy80(BaseIntegrationTest):
         self.assertIn('dry_run', message["args"])
 
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
+    @mock.patch.object(objects.Release, "is_lcm_supported", return_value=True)
+    def test_task_deploy_noop_run(self, _, lcm_mock):
+        message = self.get_deploy_message(noop_run=True)
+        self.assertEqual("task_deploy", message["method"])
+        self.assertIn('noop_run', message['args'])
+        self.assertTrue(message["args"]['noop_run'])
+
+    @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     def test_fallback_to_granular_deploy(self, ensure_allowed):
         ensure_allowed.side_effect = errors.TaskBaseDeploymentNotAllowed
         message = self.get_deploy_message()

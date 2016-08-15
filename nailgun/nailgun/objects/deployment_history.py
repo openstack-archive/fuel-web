@@ -38,7 +38,7 @@ class DeploymentHistory(NailgunObject):
 
     @classmethod
     def update_if_exist(cls, task_id, node_id, deployment_graph_task_name,
-                        status, custom):
+                        status, custom, summary):
         deployment_history = cls.find_history(task_id, node_id,
                                               deployment_graph_task_name)
 
@@ -49,6 +49,8 @@ class DeploymentHistory(NailgunObject):
             return
 
         getattr(cls, 'to_{0}'.format(status))(deployment_history)
+
+        deployment_history.summary = summary
 
     @classmethod
     def find_history(cls, task_id, node_id, deployment_graph_task_name):
@@ -137,7 +139,7 @@ class DeploymentHistoryCollection(NailgunCollection):
 
     @classmethod
     def get_history(cls, transaction, nodes_ids=None, statuses=None,
-                    tasks_names=None):
+                    tasks_names=None, include_summary=False):
         """Get deployment tasks history.
 
         :param transaction: task SQLAlchemy object
@@ -197,6 +199,9 @@ class DeploymentHistoryCollection(NailgunCollection):
             history.append(record)
             # remove ambiguous field
             record['task_name'] = record.pop('deployment_graph_task_name')
+
+            if 'summary' in record and not include_summary:
+                record.pop('summary')
 
             if task_parameters_by_name:
                 try:

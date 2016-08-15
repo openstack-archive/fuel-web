@@ -17,6 +17,8 @@ from datetime import datetime
 
 import six
 
+from sqlalchemy.orm import undefer
+
 from nailgun.consts import HISTORY_TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -38,7 +40,7 @@ class DeploymentHistory(NailgunObject):
 
     @classmethod
     def update_if_exist(cls, task_id, node_id, deployment_graph_task_name,
-                        status, custom):
+                        status, summary, custom):
         deployment_history = cls.find_history(task_id, node_id,
                                               deployment_graph_task_name)
 
@@ -49,7 +51,9 @@ class DeploymentHistory(NailgunObject):
             return
 
         getattr(cls, 'to_{0}'.format(status))(deployment_history)
+
         deployment_history.custom.update(custom or {})
+        deployment_history.summary.update(summary or {})
 
     @classmethod
     def find_history(cls, task_id, node_id, deployment_graph_task_name):
@@ -138,7 +142,7 @@ class DeploymentHistoryCollection(NailgunCollection):
 
     @classmethod
     def get_history(cls, transaction, nodes_ids=None, statuses=None,
-                    tasks_names=None):
+                    tasks_names=None, include_summary=False):
         """Get deployment tasks history.
 
         :param transaction: task SQLAlchemy object
@@ -148,6 +152,7 @@ class DeploymentHistoryCollection(NailgunCollection):
         :param statuses: filter by statuses
         :type statuses: list[basestring]|None
         :param tasks_names: filter by deployment graph task names
+        :param include_summary: bool flag to include summary
         :type tasks_names: list[basestring]|None
         :returns: tasks history
         :rtype: list[dict]
@@ -172,7 +177,10 @@ class DeploymentHistoryCollection(NailgunCollection):
             logger.warning('No tasks snapshot is defined in given '
                            'transaction, probably it is a legacy '
                            '(Fuel<10.0) or malformed.')
-        history_records = cls.filter_by(None, task_id=transaction.id)
+        query = None
+        if include_summary:
+            query = cls.options(undefer('summary'))
+        history_records = cls.filter_by(query, task_id=transaction.id)
         if tasks_names:
             history_records = cls.filter_by_list(
                 history_records, 'deployment_graph_task_name', tasks_names
@@ -195,7 +203,10 @@ class DeploymentHistoryCollection(NailgunCollection):
             if statuses and history_record.status not in statuses:
                 continue
 
-            record = cls.single.to_dict(history_record)
+            fields = list(DeploymentHistorySerializer.fields)
+            if include_summary:
+                fields.append('summary')
+            record = cls.single.to_dict(history_record, fields=fields)
             history.append(record)
             # remove ambiguous field
             record['task_name'] = record.pop('deployment_graph_task_name')

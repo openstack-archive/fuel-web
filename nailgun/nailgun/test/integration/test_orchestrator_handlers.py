@@ -280,6 +280,25 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
         self.assertTrue(mcast.call_args[0][1]['args']['dry_run'])
 
     @patch('nailgun.rpc.cast')
+    @patch("objects.Release.is_lcm_supported", return_value=True)
+    @patch('nailgun.task.task.rpc.cast')
+    def test_start_noop_run_deployment_on_selected_nodes(self, _, __, mcast):
+        controller_nodes = [
+            n for n in self.cluster.nodes
+            if "controller" in n.roles
+        ]
+
+        self.emulate_nodes_provisioning(controller_nodes)
+
+        deploy_action_url = reverse(
+            "DeploySelectedNodes",
+            kwargs={'cluster_id': self.cluster.id}) + \
+            make_query(nodes=[n.uid for n in controller_nodes], noop_run='1')
+
+        self.send_put(deploy_action_url)
+        self.assertTrue(mcast.call_args[0][1]['args']['noop_run'])
+
+    @patch('nailgun.rpc.cast')
     @patch('nailgun.task.task.rpc.cast')
     def test_start_deployment_on_selected_nodes_with_tasks(self, _, mcast):
         controller_nodes = [

@@ -294,6 +294,19 @@ def prepare():
                 {'test_property': 'test_value'})
         }]
     )
+    db.execute(
+        meta.tables['deployment_history'].insert(),
+        [
+            {
+                'uuid': 'fake_uuid_0',
+                'deployment_graph_task_name': 'fake',
+                'node_id': 'fake_node_id',
+                'task_id': 'fake_task_uuid_0',
+                'status': 'pending',
+                'summary': jsonutils.dumps({'fake': 'fake'}),
+            }
+        ]
+    )
 
     db.commit()
 
@@ -438,3 +451,11 @@ class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
             ]).where(nodes_table.c.id == node_id)
         ).first()
         self.assertEqual('custom_error_type', result[0])
+
+
+class TestDeploymentHistoryMigration(base.BaseAlembicMigrationTest):
+
+    def test_deployment_history_summary_field_exist(self):
+        result = db.execute(sa.select([
+            self.meta.tables['deployment_history']])).first()
+        self.assertIn('summary', result)

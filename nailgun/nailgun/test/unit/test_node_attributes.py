@@ -37,8 +37,8 @@ class TestNodeAttributes(base.BaseUnitTest):
             'components': comp_entity
         }
         m_dpdk_nics.return_value = [
-            mock.Mock(interface_properties={'numa_node': None}),
-            mock.Mock(interface_properties={'numa_node': 1}),
+            mock.Mock(meta={'numa_node': None}),
+            mock.Mock(meta={'numa_node': 1}),
         ]
 
         node = mock.Mock(

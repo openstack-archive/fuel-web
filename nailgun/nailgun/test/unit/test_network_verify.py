@@ -55,7 +55,7 @@ class TestNetworkVerification(BaseTestCase):
                     dpdk_iface = iface
                 network_config.append({'name': ng.name, 'vlans': vlans})
 
-        dpdk_iface.interface_properties['dpdk']['enabled'] = True
+        dpdk_iface.attributes['dpdk']['enabled']['value'] = True
 
         task = VerifyNetworksTask(None, network_config)
         task.get_ifaces_on_deployed_node(node, node_json, [])
@@ -107,7 +107,7 @@ class TestNetworkVerification(BaseTestCase):
                     if ng.name == consts.NETWORKS.private:
                         private_ifaces[node.name] = iface.name
 
-        dpdk_iface.interface_properties['dpdk']['enabled'] = True
+        dpdk_iface.attributes['dpdk']['enabled']['value'] = True
 
         task = models.Task(
             name=consts.TASK_NAMES.check_networks,
@@ -147,8 +147,9 @@ class TestNetworkVerification(BaseTestCase):
                     continue
                 network_config.append({'name': ng.name, 'vlans': vlans})
 
-        dpdk_iface.interface_properties['dpdk'].update({'available': True,
-                                                        'enabled': True})
+        dpdk_iface.attributes['dpdk']['enabled']['value'] = True
+        dpdk_iface.meta['dpdk']['available'] = True
+
         private_iface.assigned_networks_list = [private_ng]
 
         task = VerifyNetworksTask(None, network_config)

@@ -15,6 +15,7 @@
 #    under the License.
 
 from mock import patch
+import uuid
 
 from copy import deepcopy
 from oslo_serialization import jsonutils
@@ -241,9 +242,13 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_NIC_updates_by_agent(self):
         meta = self.env.default_metadata()
-        self.env.set_interfaces_in_meta(meta, [
-            {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
-             'state': 'up'}])
+        self.env.set_interfaces_in_meta(meta, [{
+            'name': 'eth0',
+            'mac': '00:00:00:00:00:00',
+            'current_speed': 1,
+            'state': 'up'}
+        ])
+
         node = self.env.create_node(api=True, meta=meta)
         new_meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(new_meta, [
@@ -268,7 +273,8 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps(node_data),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
-
+        # add node into cluster
+        self.env.create_cluster(nodes=[node['id']])
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
@@ -281,23 +287,60 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
         self.assertEqual(resp_nic['state'], nic['state'])
         self.assertEqual(
-            resp_nic['interface_properties']['sriov'],
+            resp_nic['attributes']['sriov'],
             {
-                'enabled': False,
-                'sriov_numvfs': None,
-                'sriov_totalvfs': 8,
-                'available': True,
-                'pci_id': '1234:5678',
-                'physnet': 'physnet2'
+                'metadata': {
+                    'label': 'SR-IOV',
+                    'weight': 30
+                },
+                'enabled': {
+                    'label': 'SR-IOV enabled',
+                    'weight': 10,
+                    'type': 'checkbox',
+                    'value': False
+                },
+                'numvfs': {
+                    'label': 'Virtual functions',
+                    'weight': 20,
+                    'type': 'number',
+                    'min': 0,
+                    'value': None
+                },
+                'physnet': {
+                    'label': 'Physical network',
+                    'weight': 30,
+                    'type': 'text',
+                    'value': 'physnet2'
+                }
             })
         self.assertEqual(
-            resp_nic['interface_properties']['dpdk'],
+            resp_nic['meta']['sriov'],
             {
-                'enabled': False,
-                'available': False
+                'available': True,
+                'pci_id': '1234:5678',
+                'totalvfs': 8
             })
-        for conn in ('assigned_networks', ):
-            self.assertEqual(resp_nic[conn], [])
+
+        self.assertEqual(
+            resp_nic['attributes']['dpdk'],
+            {
+                'metadata': {
+                    'label': 'DPDK',
+                    'weight': 40
+                },
+                'enabled': {
+                    'label': 'DPDK enabled',
+                    'weight': 10,
+                    'type': 'checkbox',
+                    'value': False
+                }
+            })
+
+        self.assertEqual(
+            resp_nic['meta']['dpdk'], {'available': False})
+        nets = ('fuelweb_admin', 'public', 'management', 'storage', 'private')
+        rnets = tuple(net['name'] for net in resp_nic['assigned_networks'])
+        self.assertEqual(nets, rnets)
 
     def create_cluster_and_node_with_dpdk_support(self, segment_type,
                                                   drivers_mock):
@@ -339,17 +382,28 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), 1)
         resp_nic = resp.json_body[0]
         self.assertEqual(
-            resp_nic['interface_properties']['dpdk'],
+            resp_nic['attributes']['dpdk'],
             {
-                'enabled': False,
-                'available': dpdk_available
+                'metadata': {
+                    'label': 'DPDK',
+                    'weight': 40
+                },
+                'enabled': {
+                    'label': 'DPDK enabled',
+                    'weight': 10,
+                    'type': 'checkbox',
+                    'value': False
+                }
             })
+        self.assertEqual(
+            resp_nic['meta']['dpdk'], {'available': dpdk_available})
+
         return resp.json_body
 
     def check_put_request_passes_without_dpdk_section(self, node, nics):
         # remove 'dpdk' section from all interfaces
         for nic in nics:
-            nic['interface_properties'].pop('dpdk', None)
+            nic['attributes'].pop('dpdk', None)
         resp = self.app.put(
             reverse("NodeNICsHandler", kwargs={"node_id": node['id']}),
             jsonutils.dumps(nics),
@@ -553,7 +607,7 @@ class TestHandlers(BaseIntegrationTest):
 
     @patch.dict('nailgun.api.v1.handlers.version.settings.VERSION', {
         'release': '6.1'})
-    def test_interface_properties_after_update_by_agent(self):
+    def test_interface_attributes_after_update_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': '00:00:00:00:00:00', 'current_speed': 1,
@@ -571,12 +625,21 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         nic = resp.json_body[0]
-        self.assertEqual(
-            nic['interface_properties'],
-            self.env.network_manager.get_default_interface_properties()
-        )
+
         # change mtu
-        nic['interface_properties']['mtu'] = 1500
+        nic['attributes']['mtu'] = {
+            'metadata': {
+                'label': 'MTU',
+                'weight': 20
+            },
+            'value': {
+                'label': 'MTU',
+                'weight': 10,
+                'type': 'number',
+                'value': 1500
+            }
+        }
+
         nodes_list = [{'id': node['id'], 'interfaces': [nic]}]
         resp_put = self.app.put(
             reverse('NodeCollectionNICsHandler'),
@@ -596,7 +659,18 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         resp_nic = resp.json_body[0]
-        self.assertEqual(resp_nic['interface_properties']['mtu'], 1500)
+        self.assertEqual(resp_nic['attributes']['mtu'], {
+            'metadata': {
+                'label': 'MTU',
+                'weight': 20
+            },
+            'value': {
+                'label': 'MTU',
+                'weight': 10,
+                'type': 'number',
+                'value': 1500
+            }
+        })
 
     def test_nic_adds_by_agent(self):
         meta = self.env.default_metadata()
@@ -859,27 +933,21 @@ class TestSriovHandlers(BaseIntegrationTest):
         return resp.json_body
 
     def test_get_update_sriov_properties(self):
-        sriov_default = \
-            self.env.network_manager.get_default_interface_properties()[
-                'sriov']
         # Use NIC #2 as SR-IOV can be enabled only on NICs that have no
         # assigned networks. First two NICs have assigned networks.
-        self.assertEqual(self.nics[2]['interface_properties']['sriov'],
-                         sriov_default)
-
         # change NIC properties in DB as SR-IOV parameters can be set up only
         # for NICs that have hardware SR-IOV support
         nic = self.env.nodes[0].nic_interfaces[2]
-        nic.interface_properties['sriov']['available'] = True
-        nic.interface_properties['sriov']['sriov_totalvfs'] = 8
-        nic.interface_properties.changed()
+        nic.meta['sriov']['available'] = True
+        nic.meta['sriov']['totalvfs'] = 8
+        nic.meta.changed()
 
         nics = self.get_node_interfaces()
-        nics[2]['interface_properties']['sriov'].update({
-            'enabled': True,
-            'sriov_numvfs': 8,
-            'physnet': 'new_physnet'
-        })
+        sriov = nics[2]['attributes']['sriov']
+        sriov['enabled']['value'] = True
+        sriov['numvfs']['value'] = 8
+        sriov['physnet']['value'] = 'new_physnet'
+
         resp = self.app.put(
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0].id}),
@@ -887,13 +955,13 @@ class TestSriovHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
 
-        sriov = resp.json_body[2]['interface_properties']['sriov']
-        self.assertEqual(sriov['enabled'], True)
-        self.assertEqual(sriov['sriov_numvfs'], 8)
-        self.assertEqual(sriov['physnet'], 'new_physnet')
+        sriov = resp.json_body[2]['attributes']['sriov']
+        self.assertEqual(sriov['enabled']['value'], True)
+        self.assertEqual(sriov['numvfs']['value'], 8)
+        self.assertEqual(sriov['physnet']['value'], 'new_physnet')
 
     def test_update_readonly_sriov_properties_failed(self):
-        self.nics[0]['interface_properties']['sriov']['available'] = True
+        self.nics[0]['meta']['sriov']['available'] = True
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -909,7 +977,7 @@ class TestSriovHandlers(BaseIntegrationTest):
                 self.env.nodes[0].id, self.nics[0]['name']))
 
     def test_enable_sriov_failed_when_not_available(self):
-        self.nics[0]['interface_properties']['sriov']['enabled'] = True
+        self.nics[0]['attributes']['sriov']['enabled']['value'] = True
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -925,7 +993,7 @@ class TestSriovHandlers(BaseIntegrationTest):
                 self.env.nodes[0].id, self.nics[0]['name']))
 
     def test_set_sriov_numvfs_failed(self):
-        self.nics[0]['interface_properties']['sriov']['sriov_numvfs'] = 8
+        self.nics[0]['attributes']['sriov']['numvfs']['value'] = 8
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -941,7 +1009,7 @@ class TestSriovHandlers(BaseIntegrationTest):
                 self.env.nodes[0].id, self.nics[0]['name']))
 
     def test_set_sriov_numvfs_failed_negative_value(self):
-        self.nics[0]['interface_properties']['sriov']['sriov_numvfs'] = -40
+        self.nics[0]['attributes']['sriov']['numvfs']['value'] = -40
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -956,7 +1024,7 @@ class TestSriovHandlers(BaseIntegrationTest):
         )
 
     def test_set_sriov_numvfs_failed_float_value(self):
-        self.nics[0]['interface_properties']['sriov']['sriov_numvfs'] = 2.5
+        self.nics[0]['attributes']['sriov']['numvfs']['value'] = 2.5
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -971,7 +1039,7 @@ class TestSriovHandlers(BaseIntegrationTest):
         )
 
     def test_set_sriov_numvfs_zero_value(self):
-        self.nics[0]['interface_properties']['sriov']['sriov_numvfs'] = 0
+        self.nics[0]['attributes']['sriov']['numvfs']['value'] = 0
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -989,12 +1057,12 @@ class TestSriovHandlers(BaseIntegrationTest):
         # change NIC properties in DB as SR-IOV parameters can be set up only
         # for NICs that have hardware SR-IOV support
         nic = objects.NIC.get_by_uid(self.env.nodes[0].nic_interfaces[0].id)
-        nic.interface_properties['sriov']['available'] = True
-        nic.interface_properties['sriov']['sriov_totalvfs'] = 8
-        nic.interface_properties.changed()
+        nic.meta['sriov']['available'] = True
+        nic.meta['sriov']['totalvfs'] = 8
+        nic.meta.changed()
 
         nics = self.get_node_interfaces()
-        nics[0]['interface_properties']['sriov']['enabled'] = True
+        nics[0]['attributes']['sriov']['enabled']['value'] = True
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -1032,7 +1100,7 @@ class TestSriovHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         nics = resp.json_body
-        nics[0]['interface_properties']['sriov']['enabled'] = True
+        nics[0]['attributes']['sriov']['enabled']['value'] = True
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -1048,13 +1116,13 @@ class TestSriovHandlers(BaseIntegrationTest):
 
     def test_enable_sriov_failed_when_nic_has_networks_assigned(self):
         nic = self.env.nodes[0].nic_interfaces[0]
-        nic.interface_properties['sriov']['available'] = True
-        nic.interface_properties['sriov']['sriov_totalvfs'] = 8
-        nic.interface_properties.changed()
+        nic.meta['sriov']['available'] = True
+        nic.meta['sriov']['totalvfs'] = 8
+        nic.meta.changed()
 
         nics = self.get_node_interfaces()
-        nics[0]['interface_properties']['sriov']['enabled'] = True
-        nics[0]['interface_properties']['sriov']['sriov_numvfs'] = 8
+        nics[0]['attributes']['sriov']['enabled']['value'] = True
+        nics[0]['attributes']['sriov']['numvfs']['value'] = 8
 
         resp = self.app.put(
             reverse("NodeNICsHandler",
@@ -1068,3 +1136,181 @@ class TestSriovHandlers(BaseIntegrationTest):
             "Node '{0}' interface '{1}': SR-IOV cannot be enabled when "
             "networks are assigned to the interface".format(
                 self.env.nodes[0].id, nics[0]['name']))
+
+
+class TestNICAttributesHandlers(BaseIntegrationTest):
+
+    EXPECTED_ATTRIBUTES = {
+        'offloading': {
+            'disable': {
+                'value': False,
+                'label': 'Disable offloading',
+                'type': 'checkbox',
+                'weight': 10
+            },
+            'metadata': {
+                'label': 'Offloading',
+                'weight': 10
+            },
+            'modes': {
+                'description': 'Offloading modes',
+                'value': {},
+                'label': 'Offloading modes',
+                'type': 'offloading_modes',
+                'weight': 20
+            }
+        },
+        'mtu': {
+            'value': {
+                'value': None,
+                'label': 'MTU',
+                'type': 'number',
+                'weight': 10
+            },
+            'metadata': {
+                'label': 'MTU',
+                'weight': 20
+            }
+        },
+        'sriov': {
+            'enabled': {
+                'value': False,
+                'label': 'SR-IOV enabled',
+                'type': 'checkbox',
+                'weight': 10
+            },
+            'physnet': {
+                'value': 'physnet2',
+                'label': 'Physical network',
+                'type': 'text',
+                'weight': 30
+            },
+            'metadata': {
+                'label': 'SR-IOV',
+                'weight': 30
+            },
+            'numvfs': {
+                'value': None,
+                'label': 'Virtual functions',
+                'weight': 20,
+                'type': 'number',
+                'min': 0
+            },
+        },
+        'dpdk': {
+            'enabled': {
+                'value': False,
+                'label': 'DPDK enabled',
+                'type': 'checkbox',
+                'weight': 10
+            },
+            'metadata': {
+                'label': 'DPDK',
+                'weight': 40
+            }
+        },
+        'plugin_a_with_nic_attributes': {
+            'plugin_name_text': {
+                'value': 'value',
+                'weight': 25,
+                'type': 'text',
+                'label': 'label',
+                'description': 'Some description'
+            },
+            'metadata': {
+                'label': 'Test plugin',
+                'class': 'plugin'
+            }
+        }
+    }
+
+    OFFLOADING_MODES = {
+        'eth0': {
+            'rx-checksumming': None,
+            'tx-checksum-sctp': False,
+            'tx-checksumming': True,
+            'tx-checksum-ipv4': None,
+            'tx-checksum-ipv6': True
+        },
+        'eth1': {
+            'tx-checksum-sctp': None,
+            'rx-checksumming': None,
+            'tx-checksumming': None,
+            'tx-checksum-ipv6': False,
+            'tx-checksum-ipv4': None
+        }
+    }
+
+    def setUp(self):
+        super(TestNICAttributesHandlers, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={
+                'name': uuid.uuid4().get_hex(),
+                'version': 'mitaka-9.0',
+                'operating_system': 'Ubuntu',
+                'modes': [consts.CLUSTER_MODES.ha_compact]},
+            nodes_kwargs=[{'roles': ['controller']}])
+        self.node = self.env.nodes[0]
+        self.env.create_plugin(
+            name='plugin_a_with_nic_attributes',
+            package_version='5.0.0',
+            cluster=self.cluster,
+            nic_attributes_metadata=self.env.get_default_plugin_nic_config())
+
+    def test_get_nic_attributes(self):
+        resp = self.app.get(
+            reverse("NodeNICsHandler", kwargs={"node_id": self.node.id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        expected_attributes = deepcopy(self.EXPECTED_ATTRIBUTES)
+
+        for nic in resp.json_body:
+            expected_attributes['offloading']['modes']['value'] = \
+                self.OFFLOADING_MODES[nic['name']]
+            del nic['attributes']['plugin_a_with_nic_attributes'][
+                'metadata']['nic_plugin_id']
+            self.assertEqual(expected_attributes, nic['attributes'])
+
+    def test_put_nic_attributes(self):
+        resp = self.app.get(
+            reverse("NodeNICsHandler", kwargs={"node_id": self.node.id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        nics = deepcopy(resp.json_body)
+        expected_attributes = deepcopy(self.EXPECTED_ATTRIBUTES)
+
+        for nic in nics:
+            nic['attributes']['mtu']['value']['value'] = 1000
+            nic['attributes']['plugin_a_with_nic_attributes'][
+                'plugin_name_text']['value'] = 'test'
+
+        resp = self.app.put(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.node.id}),
+            jsonutils.dumps(nics),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        for nic in resp.json_body:
+            expected_attributes['offloading']['modes']['value'] = \
+                self.OFFLOADING_MODES[nic['name']]
+            expected_attributes['mtu']['value']['value'] = 1000
+            expected_attributes['plugin_a_with_nic_attributes'][
+                'plugin_name_text']['value'] = 'test'
+            del nic['attributes']['plugin_a_with_nic_attributes'][
+                'metadata']['nic_plugin_id']
+            self.assertEqual(expected_attributes, nic['attributes'])
+
+    def test_get_default_attributes(self):
+        resp = self.app.get(
+            reverse("NodeNICsDefaultHandler",
+                    kwargs={"node_id": self.node.id}),
+            headers=self.default_headers)
+        expected_attributes = deepcopy(self.EXPECTED_ATTRIBUTES)
+
+        for nic in resp.json_body:
+            expected_attributes['offloading']['modes']['value'] = \
+                self.OFFLOADING_MODES[nic['name']]
+            del nic['attributes']['plugin_a_with_nic_attributes'][
+                'metadata']['nic_plugin_id']
+            self.assertEqual(expected_attributes, nic['attributes'])

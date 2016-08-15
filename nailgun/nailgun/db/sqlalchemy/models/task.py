@@ -86,6 +86,8 @@ class Task(Base):
                                        nullable=True))
     network_settings = deferred(Column(MutableDict.as_mutable(JSON),
                                        nullable=True))
+    noop_run = Column(Boolean, default=False, server_default="0",
+                      nullable=False)
 
     tasks_snapshot = deferred(Column(MutableList.as_mutable(JSON),
                                      nullable=True))

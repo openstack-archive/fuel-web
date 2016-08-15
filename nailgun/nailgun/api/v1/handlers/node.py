@@ -242,6 +242,22 @@ class NodeAgentHandler(BaseHandler):
         return {"id": node.id}
 
 
+class NodeBondAttributesDefaultsHandler(BaseHandler):
+    """Bond default attributes handler"""
+
+    @handle_errors
+    @validate
+    @serialize
+    def GET(self, node_id):
+        """:returns: JSONized Bond default attributes.
+
+        :http: * 200 (OK)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(objects.Node, node_id)
+        return objects.Node.get_bond_default_attributes(node)
+
+
 class NodeNICsHandler(BaseHandler):
     """Node network interfaces handler"""
 

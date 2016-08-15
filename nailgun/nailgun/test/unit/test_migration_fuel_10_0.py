@@ -374,6 +374,20 @@ def prepare():
             }
         ]
     )
+    db.execute(
+        meta.tables['deployment_history'].insert(),
+        [
+            {
+                'uuid': 'fake_uuid_0',
+                'deployment_graph_task_name': 'fake',
+                'node_id': 'fake_node_id',
+                'task_id': 55,
+                'status': 'pending',
+                'summary': jsonutils.dumps({'fake': 'fake'}),
+            }
+        ]
+    )
+
     TestRequiredComponentTypesField.prepare(meta)
     db.commit()
 
@@ -534,3 +548,11 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestDeploymentHistoryMigration(base.BaseAlembicMigrationTest):
+
+    def test_deployment_history_summary_field_exist(self):
+        result = db.execute(sa.select([
+            self.meta.tables['deployment_history']])).first()
+        self.assertIn('summary', result)

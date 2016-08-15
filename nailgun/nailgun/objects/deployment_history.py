@@ -18,6 +18,8 @@ from datetime import datetime
 
 import six
 
+from sqlalchemy.orm import undefer
+
 from nailgun.consts import HISTORY_TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -39,7 +41,7 @@ class DeploymentHistory(NailgunObject):
 
     @classmethod
     def update_if_exist(cls, task_id, node_id, deployment_graph_task_name,
-                        status, custom):
+                        status, summary, custom):
         deployment_history = cls.find_history(task_id, node_id,
                                               deployment_graph_task_name)
 
@@ -50,6 +52,7 @@ class DeploymentHistory(NailgunObject):
             return
 
         getattr(cls, 'to_{0}'.format(status))(deployment_history)
+        deployment_history.summary = summary
 
     @classmethod
     def find_history(cls, task_id, node_id, deployment_graph_task_name):
@@ -138,7 +141,7 @@ class DeploymentHistoryCollection(NailgunCollection):
 
     @classmethod
     def get_history(cls, transaction, nodes_ids=None, statuses=None,
-                    tasks_names=None):
+                    tasks_names=None, include_summary=False):
         """Get deployment tasks history.
 
         :param transaction: task SQLAlchemy object
@@ -152,7 +155,10 @@ class DeploymentHistoryCollection(NailgunCollection):
         :returns: tasks history
         :rtype: list[dict]
         """
-        query = cls.filter_by(None, task_id=transaction.id)
+        query = None
+        if include_summary:
+            query = cls.options(undefer('summary'))
+        query = cls.filter_by(query, task_id=transaction.id)
         if nodes_ids:
             query = query.filter(cls.single.model.node_id.in_(nodes_ids))
         if statuses:
@@ -161,7 +167,10 @@ class DeploymentHistoryCollection(NailgunCollection):
             query = query.filter(
                 cls.single.model.deployment_graph_task_name.in_(tasks_names))
 
-        history = copy.deepcopy(cls.to_list(query))
+        fields = list(cls.serializer.fields)
+        if include_summary:
+            fields.append('summary')
+        history = copy.deepcopy(cls.to_list(query, fields=fields))
 
         # rename task id to conventional field
         for record in history:

@@ -81,7 +81,7 @@ class SpawnVmsHandler(BaseHandler):
                * 400 (data validation failed)
                * 404 (cluster not found in db)
         """
-        graph_type = web.input(graph_type=None).graph_type
+        graph_type = web.input(graph_type=None).graph_type or None
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         data = self.get_tasks(cluster, graph_type)
         return self.handle_task(cluster, deployment_tasks=data,

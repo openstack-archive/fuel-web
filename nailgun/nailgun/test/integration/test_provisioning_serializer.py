@@ -509,8 +509,8 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
         )
 
         sriov_nic = self.env.nodes[0].nic_interfaces[0]
-        sriov_nic.interface_properties['sriov']['available'] = True
-        sriov_nic.interface_properties['sriov']['enabled'] = True
+        sriov_nic.meta['sriov']['available'] = True
+        sriov_nic.attributes['sriov']['enabled']['value'] = True
         objects.NIC.update(sriov_nic, {})
 
         serialized_node = self.serializer.serialize(

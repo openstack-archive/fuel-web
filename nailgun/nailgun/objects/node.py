@@ -623,6 +623,7 @@ class Node(NailgunObject):
         instance.group_id = None
         instance.deployment_info = []
         cls.update_roles(instance, [])
+        cls.update_primary_roles(instance, [])
         cls.update_pending_roles(instance, roles)
         cls.remove_replaced_params(instance)
         cls.assign_group(instance)

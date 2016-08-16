@@ -165,7 +165,7 @@ class TestDeploymentAttributesSerialization90(
         self._check_dpdk_serializing(has_vlan_tag=True)
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def _check_dpdk_bond_serializing(self, bond_properties, drivers_mock):
+    def _check_dpdk_bond_serializing(self, attributes, drivers_mock):
         drivers_mock.return_value = {
             'driver_1': ['test_id:1', 'test_id:2']
         }
@@ -200,21 +200,22 @@ class TestDeploymentAttributesSerialization90(
             if net['name'] == 'private':
                 networks_for_bond.append(first_nic_networks.pop(i))
                 break
+        attributes.update(
+            {'dpdk': {'enabled': {'value': True}}})
         bond_interface = {
             'name': bond_interface_name,
             'type': consts.NETWORK_INTERFACE_TYPES.bond,
             'slaves': nics_for_bond,
             'assigned_networks': networks_for_bond,
-            'bond_properties': bond_properties,
-            'attributes': {'dpdk': {'enabled': {'value': True}}}}
+            'attributes': attributes}
         interfaces.append(bond_interface)
         self.env.node_nics_put(node.id, interfaces)
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
         self.assertEqual(len(serialised_for_astute['nodes']), 1)
-        serialised_node = serialised_for_astute['nodes'][0]
-        dpdk = serialised_node.get('dpdk')
+        serialized_node = serialised_for_astute['nodes'][0]
+        dpdk = serialized_node.get('dpdk')
 
         br_name = self._get_br_name_by_segmentation_type()
         vendor_specific = {'datapath_type': 'netdev'}
@@ -225,7 +226,7 @@ class TestDeploymentAttributesSerialization90(
 
         self.assertIsNotNone(dpdk)
         self.assertTrue(dpdk.get('enabled'))
-        transformations = serialised_node['network_scheme']['transformations']
+        transformations = serialized_node['network_scheme']['transformations']
 
         private_br = filter(lambda t: t.get('name') == br_name,
                             transformations)[0]
@@ -238,48 +239,51 @@ class TestDeploymentAttributesSerialization90(
                          vendor_specific)
         self.assertEqual(dpdk_bonds[0].get('provider'),
                          consts.NEUTRON_L23_PROVIDERS.dpdkovs)
-        self.assertEqual(dpdk_bonds[0].get('bond_properties').get('mode'),
-                         bond_interface['bond_properties'].get('mode'))
-        interfaces = serialised_node['network_scheme']['interfaces']
+        self.assertEqual(
+            dpdk_bonds[0].get('bond_properties').get('mode'),
+            attributes.get('mode', {}).get('value', {}).get('value'))
+        interfaces = serialized_node['network_scheme']['interfaces']
         for iface in nics_for_bond:
             dpdk_interface = interfaces[iface['name']]
             vendor_specific = dpdk_interface.get('vendor_specific', {})
             self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
 
     def test_serialization_with_dpdk_on_bond(self):
-        bond_properties = {
-            'mode': consts.BOND_MODES.balance_slb,
-            'type__': consts.BOND_TYPES.dpdkovs,
+        attributes = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_slb}},
+            'type__': {'value': consts.BOND_TYPES.dpdkovs}
         }
 
-        self._check_dpdk_bond_serializing(bond_properties)
+        self._check_dpdk_bond_serializing(attributes)
 
     def test_serialization_with_dpdk_on_lacp_bond(self):
-        bond_properties = {
-            'mode': consts.BOND_MODES.balance_tcp,
-            'lacp': 'active',
-            'lacp_rate': 'fast',
-            'xmit_hash_policy': 'layer2',
-            'type__': consts.BOND_TYPES.dpdkovs}
-        self._check_dpdk_bond_serializing(bond_properties)
+        attributes = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_tcp}},
+            'lacp': {'value': {'value': 'active'}},
+            'lacp_rate': {'value': {'value': 'fast'}},
+            'xmit_hash_policy': {'value': {'value': 'layer2'}},
+            'type__': {'value': consts.BOND_TYPES.dpdkovs}
+        }
+        self._check_dpdk_bond_serializing(attributes)
 
     def test_serialization_with_vxlan_dpdk_on_bond(self):
         self._create_cluster_with_vxlan()
-        bond_properties = {
-            'mode': consts.BOND_MODES.balance_slb,
-            'type__': consts.BOND_TYPES.dpdkovs,
+        attributes = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_slb}},
+            'type__': {'value': consts.BOND_TYPES.dpdkovs}
         }
-        self._check_dpdk_bond_serializing(bond_properties)
+        self._check_dpdk_bond_serializing(attributes)
 
     def test_serialization_with_vxlan_dpdk_on_lacp_bond(self):
         self._create_cluster_with_vxlan()
-        bond_properties = {
-            'mode': consts.BOND_MODES.balance_tcp,
-            'lacp': 'active',
-            'lacp_rate': 'fast',
-            'xmit_hash_policy': 'layer2',
-            'type__': consts.BOND_TYPES.dpdkovs}
-        self._check_dpdk_bond_serializing(bond_properties)
+        attributes = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_tcp}},
+            'lacp': {'value': {'value': 'active'}},
+            'lacp_rate': {'value': {'value': 'fast'}},
+            'xmit_hash_policy': {'value': {'value': 'layer2'}},
+            'type__': {'value': consts.BOND_TYPES.dpdkovs}
+        }
+        self._check_dpdk_bond_serializing(attributes)
 
     def test_attributes_cpu_pinning(self):
         numa_nodes = [

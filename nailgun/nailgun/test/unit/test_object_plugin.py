@@ -484,6 +484,135 @@ class TestNodeNICInterfaceClusterPlugin(ExtraFunctions):
 
 class TestNodeBondInterfaceClusterPlugin(ExtraFunctions):
 
+    def test_get_all_attributes_by_bond_with_enabled_plugin(self):
+        plugin_bond_config = self.env.get_default_plugin_bond_config()
+        plugin = self.env.create_plugin(
+            name='plugin_a_with_bond_attributes',
+            package_version='5.0.0',
+            bond_attributes_metadata=plugin_bond_config)
+        cluster = self._create_test_cluster()
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 2, **{"cluster_id": cluster.id})[0]
+        bond_config = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}}
+        nic_names = [iface.name for iface in node.nic_interfaces]
+        self.env.make_bond_via_api(
+            'lnx_bond', '', nic_names, node.id, attrs=bond_config)
+        bond = node.bond_interfaces[0]
+        bond_plugin_id = node.node_bond_interface_cluster_plugins[0].id
+        ClusterPlugin.set_attributes(cluster.id, plugin.id, enabled=True)
+
+        attributes = NodeBondInterfaceClusterPlugin.\
+            get_all_enabled_attributes_by_bond(bond)
+        expected_attributes = {
+            'plugin_a_with_bond_attributes': {
+                'metadata': {
+                    'label': 'Test plugin',
+                    'bond_plugin_id': bond_plugin_id,
+                    'class': 'plugin'}}}
+        expected_attributes['plugin_a_with_bond_attributes'].update(
+            plugin_bond_config)
+
+        self.assertEqual(expected_attributes, attributes)
+
+    def test_get_all_attributes_by_bond_with_disabled_plugin(self):
+        plugin_bond_config = self.env.get_default_plugin_bond_config()
+        self.env.create_plugin(
+            name='plugin_a_with_bond_attributes',
+            package_version='5.0.0',
+            bond_attributes_metadata=plugin_bond_config)
+        cluster = self._create_test_cluster()
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 2, **{"cluster_id": cluster.id})[0]
+        bond_config = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}}
+        nic_names = [iface.name for iface in node.nic_interfaces]
+        self.env.make_bond_via_api(
+            'lnx_bond', '', nic_names, node.id, attrs=bond_config)
+        bond = node.bond_interfaces[0]
+
+        attributes = NodeBondInterfaceClusterPlugin.\
+            get_all_enabled_attributes_by_bond(bond)
+
+        self.assertDictEqual({}, attributes)
+
+    def test_populate_bond_with_plugin_attributes(self):
+        meta = base.reflect_db_metadata()
+        plugin_bond_config = self.env.get_default_plugin_bond_config()
+        cluster = self._create_test_cluster(
+            nodes=[{'roles': ['controller']}, {'roles': ['compute']}])
+        bond_config = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}}
+        for node in cluster.nodes:
+            nic_names = [iface.name for iface in node.nic_interfaces]
+            self.env.make_bond_via_api(
+                'lnx_bond', '', nic_names, node.id, attrs=bond_config)
+        self.env.create_plugin(
+            name='plugin_a_with_bond_attributes',
+            package_version='5.0.0',
+            bond_attributes_metadata=plugin_bond_config)
+
+        node_bond_interface_cluster_plugins = self.db.execute(
+            meta.tables['node_bond_interface_cluster_plugins'].select()
+        ).fetchall()
+
+        self.assertEqual(2, len(node_bond_interface_cluster_plugins))
+        for item in node_bond_interface_cluster_plugins:
+            self.assertDictEqual(
+                plugin_bond_config, jsonutils.loads(item.attributes))
+
+    def test_populate_bond_with_empty_plugin_attributes(self):
+        meta = base.reflect_db_metadata()
+        cluster = self._create_test_cluster(
+            nodes=[{'roles': ['controller']}, {'roles': ['compute']}])
+        bond_config = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}}
+        for node in cluster.nodes:
+            nic_names = [iface.name for iface in node.nic_interfaces]
+            self.env.make_bond_via_api(
+                'lnx_bond', '', nic_names, node.id, attrs=bond_config)
+        self.env.create_plugin(
+            name='plugin_a_with_bond_attributes',
+            package_version='5.0.0',
+            bond_attributes_metadata={})
+
+        node_bond_interface_cluster_plugins = self.db.execute(
+            meta.tables['node_bond_interface_cluster_plugins'].select()
+        ).fetchall()
+
+        self.assertEqual(0, len(node_bond_interface_cluster_plugins))
+
+    def test_add_cluster_plugin_for_node_bond(self):
+        meta = base.reflect_db_metadata()
+        plugin_bond_config = self.env.get_default_plugin_bond_config()
+        self.env.create_plugin(
+            name='plugin_a_with_bond_attributes',
+            package_version='5.0.0',
+            bond_attributes_metadata=plugin_bond_config)
+        self.env.create_plugin(
+            bond_attributes_metadata=plugin_bond_config)
+        self.env.create_plugin(
+            name='plugin_b_with_bond_attributes',
+            package_version='5.0.0',
+            bond_attributes_metadata={})
+        cluster = self._create_test_cluster(
+            nodes=[{'roles': ['controller']}, {'roles': ['compute']}])
+        bond_config = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}}
+        for node in cluster.nodes:
+            nic_names = [iface.name for iface in node.nic_interfaces]
+            self.env.make_bond_via_api(
+                'lnx_bond', '', nic_names, node.id, attrs=bond_config)
+
+        node_bond_interface_cluster_plugins = self.db.execute(
+            meta.tables['node_bond_interface_cluster_plugins'].select()
+        ).fetchall()
+
+        self.assertEqual(2, len(node_bond_interface_cluster_plugins))
+        for item in node_bond_interface_cluster_plugins:
+            self.assertDictEqual(
+                plugin_bond_config, jsonutils.loads(item.attributes))
+
     def test_set_attributes(self):
         meta = base.reflect_db_metadata()
         bond_config = self.env.get_default_plugin_bond_config()
@@ -494,12 +623,12 @@ class TestNodeBondInterfaceClusterPlugin(ExtraFunctions):
         cluster = self._create_test_cluster(
             nodes=[{'roles': ['controller']}])
 
+        bond_config.update({
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}})
         for node in cluster.nodes:
             nic_names = [iface.name for iface in node.nic_interfaces]
             self.env.make_bond_via_api(
-                'lnx_bond', '', nic_names, node.id,
-                bond_properties={'mode': consts.BOND_MODES.balance_rr},
-                attrs=bond_config)
+                'lnx_bond', '', nic_names, node.id, attrs=bond_config)
 
         node_bond_interface_cluster_plugin = self.db.execute(
             meta.tables['node_bond_interface_cluster_plugins'].select()

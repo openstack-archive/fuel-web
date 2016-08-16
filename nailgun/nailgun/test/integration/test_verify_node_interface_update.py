@@ -180,6 +180,22 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
             'mode': "active-backup",
             'assigned_networks': nets,
             'attributes': {
+                'type__': {
+                    'type': 'hidden',
+                    'value': 'dpdkovs'
+                },
+                'mode': {
+                    'metadata': {
+                        'label': "Mode",
+                        'weight': 10
+                    },
+                    'value': {
+                        'label': "Mode",
+                        'weight': 10,
+                        'type': "select",
+                        'value': 'active-backup'
+                    }
+                },
                 'offloading': {
                     'disable': {
                         'value': True,
@@ -223,10 +239,6 @@ class TestDPDKValidation(BaseNetAssignmentValidatorTest):
                         'weight': 40
                     }
                 }
-            },
-            'bond_properties': {
-                'mode': "active-backup",
-                'type__': "dpdkovs"
             },
             'slaves': [
                 {'name': nic_2['name']},

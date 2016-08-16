@@ -461,7 +461,7 @@ class PluginManager(object):
 
         for plugin in plugins:
             metadata = plugin.pop('metadata')
-            NodeNICInterfaceClusterPlugin.\
+            NodeBondInterfaceClusterPlugin.\
                 set_attributes(
                     metadata['bond_plugin_id'],
                     plugin

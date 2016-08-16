@@ -161,20 +161,23 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         if iface_props is None:
             iface_props = {}
 
+        attributes = {
+            'mode': {'value': {'value': BOND_MODES.l_802_3ad}},
+            'xmit_hash_policy': {
+                'value': {'value': BOND_XMIT_HASH_POLICY.layer2_3}},
+            'lacp_rate': {'value': {'value': 'slow'}},
+            'type__': {'value': bond_type}
+        }
+        attributes.update(iface_props)
+
         self.data.append({
-            "name": bond_name,
-            "type": NETWORK_INTERFACE_TYPES.bond,
-            "bond_properties": {
-                "mode": BOND_MODES.l_802_3ad,
-                "xmit_hash_policy": BOND_XMIT_HASH_POLICY.layer2_3,
-                "lacp_rate": "slow",
-                "type__": bond_type
-            },
-            "attributes": iface_props,
-            "slaves": [
-                {"name": self.other_nic["name"]},
-                {"name": self.empty_nic["name"]}],
-            "assigned_networks": self.other_nic["assigned_networks"]
+            'name': bond_name,
+            'type': NETWORK_INTERFACE_TYPES.bond,
+            'attributes': attributes,
+            'slaves': [
+                {'name': self.other_nic['name']},
+                {'name': self.empty_nic['name']}],
+            'assigned_networks': self.other_nic['assigned_networks']
         })
         self.other_nic["assigned_networks"] = []
 
@@ -382,8 +385,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.append({
             "name": 'bond0',
             "type": NETWORK_INTERFACE_TYPES.bond,
-            "bond_properties": {
-                "mode": 'unknown'
+            "attributes": {
+                "mode": {'value': {'value': 'unknown'}}
             },
             "slaves": [
                 {"name": self.other_nic["name"]},
@@ -395,25 +398,6 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.node_nics_put_check_error(
             "Node '{0}': bond interface 'bond0' has unknown mode "
             "'unknown'".format(self.env.nodes[0]["id"]))
-
-    def test_nics_bond_create_failed_unknown_property(self):
-        self.data.append({
-            "name": 'bond0',
-            "type": NETWORK_INTERFACE_TYPES.bond,
-            "bond_properties": {
-                "mode": BOND_MODES.balance_xor,
-                "policy": BOND_XMIT_HASH_POLICY.layer2_3
-            },
-            "slaves": [
-                {"name": self.other_nic["name"]},
-                {"name": self.empty_nic["name"]}],
-            "assigned_networks": self.other_nic["assigned_networks"]
-        })
-        self.other_nic["assigned_networks"] = []
-
-        self.node_nics_put_check_error(
-            "Node '{0}', interface 'bond0': unknown bond property "
-            "'policy'".format(self.env.nodes[0]["id"]))
 
     def test_nics_bond_create_failed_no_slaves(self):
         self.data.append({
@@ -709,15 +693,18 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
 
     EXPECTED_ATTRIBUTES = {
+        'type__': {
+            'value': None,
+            'type': 'hidden'
+        },
         'mode': {
             'value': {
                 'weight': 10,
                 'type': 'select',
                 'value': 'balance-rr',
                 'label': 'Mode',
-                'values': [
-                    {'data': 'balance-rr', 'label': 'balance-rr'}
-                ]
+                'value': '',
+                'label': 'Mode'
             },
             'metadata': {
                 'weight': 10,
@@ -733,13 +720,13 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 'weight': 10,
                 'type': 'checkbox',
                 'value': False,
-                'label': 'Disable offloading'
+                'label': 'Disable Offloading'
             },
             'modes': {
                 'weight': 20,
                 'type': 'offloading_modes',
                 'value': {},
-                'label': 'Offloading modes',
+                'label': 'Offloading Modes',
                 'description': 'Offloading modes'
             }
         },
@@ -752,7 +739,71 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 'weight': 10,
                 'type': 'number',
                 'value': None,
-                'label': 'MTU'
+                'label': 'MTU',
+                'min': 42,
+                'max': 65536
+            }
+        },
+        'dpdk': {
+            'enabled': {
+                'value': False,
+                'label': 'Enable DPDK',
+                'description': 'The Data Plane Development Kit (DPDK) '
+                               'provides high-performance packet processing '
+                               'libraries and user space drivers.',
+                'type': 'checkbox',
+                'weight': 10,
+                'restrictions': [{
+                    "settings:common.libvirt_type.value != 'kvm'":
+                    "Only KVM hypervisor works with DPDK"
+                }]
+            },
+            'metadata': {
+                'label': 'DPDK',
+                'weight': 40
+            }
+        },
+        'lacp': {
+            'metadata': {
+                'weight': 50,
+                'label': 'Lacp'
+            },
+            'value': {
+                'weight': 10,
+                'type': 'select',
+                'value': '',
+                'label': 'Lacp'
+            }
+        },
+        'lacp_rate': {
+            'metadata': {
+                'weight': 60,
+                'value': '',
+                'label': 'Lacp'
+            }
+        },
+        'lacp_rate': {
+            'metadata': {
+                'weight': 60,
+                'label': 'Lacp rate'
+            },
+            'value': {
+                'weight': 10,
+                'type': 'select',
+                'value': '',
+                'label': 'Lacp rate'
+            }
+        },
+        'xmit_hash_policy': {
+            'metadata': {
+                'weight': 70,
+                'label': 'Xmit hash policy'
+            },
+            'value': {
+                'weight': 10,
+                'type': 'select',
+                'value': '',
+                'label': 'Xmit hash policy'
             }
         },
         'plugin_a_with_bond_attributes': {

@@ -80,9 +80,7 @@ class NodeInterfacesSerializer(BasicSerializer):
         'mac',
         'name',
         'type',
-        'interface_properties',
         'mode',
-        'bond_properties',
         'state',
         'assigned_networks',
         'offloading_modes'
@@ -105,7 +103,6 @@ class NodeInterfacesSerializer(BasicSerializer):
         'name',
         'type',
         'mode',
-        'bond_properties',
         'state',
         'assigned_networks'
     )

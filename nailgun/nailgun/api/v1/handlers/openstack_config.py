@@ -41,8 +41,12 @@ class OpenstackConfigCollectionHandler(BaseHandler):
         """
         data = self.checked_data(
             self.validator.validate_query, data=web.input())
-        return objects.OpenstackConfigCollection.to_json(
-            objects.OpenstackConfigCollection.filter_by(None, **data))
+        node_ids = data.pop('node_ids', None)
+        configs = objects.OpenstackConfigCollection.filter_by(None, **data)
+        if node_ids:
+            configs = objects.OpenstackConfigCollection.filter_by_list(
+                configs, 'node_id', node_ids)
+        return objects.OpenstackConfigCollection.to_list(configs)
 
     @content
     def POST(self):

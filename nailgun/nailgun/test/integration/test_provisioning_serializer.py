@@ -214,13 +214,10 @@ class TestProvisioningSerializer(BaseIntegrationTest):
         # get node from db
         node_db = objects.Node.get_by_uid(node['id'])
         # bond admin iface
-        self.env.make_bond_via_api('lnx_bond',
-                                   '',
-                                   ['eth1', 'eth4'],
-                                   node['id'],
-                                   bond_properties={
-                                       'mode': consts.BOND_MODES.balance_rr
-                                   })
+        self.env.make_bond_via_api(
+            'lnx_bond', '', ['eth1', 'eth4'], node['id'],
+            attrs={
+                'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}})
         # check serialized data
         serialized_node = ps.serialize(self.cluster_db, [node_db])['nodes'][0]
         out_mac = serialized_node['kernel_options']['netcfg/choose_interface']

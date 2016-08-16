@@ -88,7 +88,13 @@ class Bond(DPDKMixin, NailgunObject):
         :param data: dictionary of key-value pairs as object fields
         :returns: instance of an object (model)
         """
-        instance.update(data)
+        attributes = data.pop('attributes', None)
+        if attributes:
+            PluginManager.update_bond_attributes(attributes)
+            instance.attributes = utils.dict_merge(
+                instance.attributes, attributes)
+
+        instance = super(Bond, cls).update(instance, data)
         instance.offloading_modes = data.get('offloading_modes', {})
         return instance
 

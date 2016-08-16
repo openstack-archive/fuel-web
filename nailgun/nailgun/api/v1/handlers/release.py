@@ -19,9 +19,11 @@ Handlers dealing with releases
 """
 
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
+from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphCollectionHandler
 from nailgun.api.v1.handlers.deployment_graph import \
@@ -45,14 +47,16 @@ class ReleaseCollectionHandler(CollectionHandler):
     validator = ReleaseValidator
     collection = ReleaseCollection
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """:returns: Sorted releases' collection in JSON format
 
         :http: * 200 (OK)
         """
         q = sorted(self.collection.all(), reverse=True)
-        return self.collection.to_json(q)
+        return self.collection.to_list(q)
 
 
 class ReleaseNetworksHandler(SingleHandler):
@@ -61,7 +65,9 @@ class ReleaseNetworksHandler(SingleHandler):
     single = Release
     validator = ReleaseNetworksValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, obj_id):
         """Read release networks metadata
 
@@ -73,7 +79,9 @@ class ReleaseNetworksHandler(SingleHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         return obj['networks_metadata']
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, obj_id):
         """Updates release networks metadata
 

@@ -19,10 +19,9 @@ import urllib
 
 import web
 
-from mock import patch
-
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -99,13 +98,13 @@ class TestHandlers(BaseIntegrationTest):
 
         class FakeHandler(object):
 
-            @content
+            @serialize
             def GET(self):
                 return {}
 
-            @content(["text/plain"])
+            @serialize
             def POST(self):
-                return "Plain Text"
+                return {}
 
         web.ctx.headers = []
         web.ctx.env = {"HTTP_ACCEPT": "text/html"}
@@ -116,18 +115,7 @@ class TestHandlers(BaseIntegrationTest):
             fake_handler.GET
         )
 
-        web.ctx.env = {"HTTP_ACCEPT": "application/json"}
-
-        with patch("nailgun.api.v1.handlers.base.content_json") as cj:
-            fake_handler.GET()
-            self.assertEqual(cj.call_count, 1)
-
         web.ctx.env = {"HTTP_ACCEPT": "*/*"}
-
-        with patch("nailgun.api.v1.handlers.base.content_json") as cj:
-            fake_handler.GET()
-            self.assertEqual(cj.call_count, 1)
-
         web.ctx.headers = []
         fake_handler.GET()
         self.assertIn(
@@ -136,13 +124,27 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         web.ctx.headers = []
-        web.ctx.env = {"HTTP_ACCEPT": "text/plain"}
+        web.ctx.env = {"HTTP_ACCEPT": "application/json"}
         fake_handler.POST()
         self.assertIn(
             # we don't have plain/text serializer right now
             ('Content-Type', 'application/json'),
             web.ctx.headers
         )
+
+    def test_invalid_handler_output(self):
+
+        class FakeHandler(object):
+
+            @handle_errors
+            @serialize
+            def GET(self):
+                return {set([1, 2, 3])}
+
+        fake_handler = FakeHandler()
+        web.ctx.env = {"HTTP_ACCEPT": "*/*"}
+        web.ctx.headers = []
+        self.assertRaises(web.HTTPError, fake_handler.GET)
 
     def test_get_param_as_set(self):
         urls = ("/hello", "hello")

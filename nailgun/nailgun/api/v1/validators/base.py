@@ -76,12 +76,6 @@ class BasicValidator(object):
             raise errors.InvalidData(exc.message)
 
     @classmethod
-    def validate_response(cls, resp, resource_type,
-                          single_schema=None,
-                          collection_schema=None):
-        pass
-
-    @classmethod
     def validate(cls, data):
         return cls.validate_json(data)
 

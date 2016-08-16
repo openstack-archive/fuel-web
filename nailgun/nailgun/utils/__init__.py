@@ -347,3 +347,21 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
+
+def remove_key_from_dict(target_dict, key):
+    """Recursively remove specific key from dict
+    :param target_dict: target dict to remove key in
+    :type target_dict: dict
+    :param key: key to remove
+    :type key: string
+    "returns: dict -- target_dict without key
+    """
+    try:
+        del target_dict[key]
+    except KeyError:
+        pass
+    for v in target_dict.values():
+        if isinstance(v, dict):
+            remove_key_from_dict(v, key)
+
+    return target_dict

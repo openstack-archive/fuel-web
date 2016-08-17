@@ -23,6 +23,7 @@ from nailgun.db import db
 from nailgun import errors
 from nailgun import lcm
 from nailgun.logger import logger
+from nailgun import notifier
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun import rpc
@@ -224,7 +225,7 @@ class TransactionsManager(object):
             )
         ).all()
 
-        _update_nodes(nodes_instances, nodes_params, transaction.dry_run)
+        _update_nodes(transaction, nodes_instances, nodes_params)
         _update_history(transaction, nodes)
 
         if status:
@@ -373,9 +374,15 @@ def _get_tasks_to_run(cluster, graph_type, node_resolver, names=None):
 def _is_node_for_redeploy(node):
     if node is None:
         return False
-    return (
-        node.pending_addition or
-        node.status == consts.NODE_STATUSES.discover
+    if node.pending_addition:
+        return True
+
+    node_status = objects.Node.get_status(node)
+    return node_status in (
+        consts.NODE_STATUSES.discover,
+        consts.NODE_STATUSES.error,
+        consts.NODE_STATUSES.provisioned,
+        consts.NODE_STATUSES.stopped,
     )
 
 
@@ -438,7 +445,7 @@ def _dump_expected_state(transaction, state, tasks):
     db().flush()
 
 
-def _update_nodes(nodes_instances, nodes_params, dry_run=False):
+def _update_nodes(transaction, nodes_instances, nodes_params):
     allow_update = {
         'name',
         'status',
@@ -446,26 +453,47 @@ def _update_nodes(nodes_instances, nodes_params, dry_run=False):
         'kernel_params',
         'pending_addition',
         'pending_deletion',
-        'error_type',
         'error_msg',
         'online',
         'progress',
     }
 
     # dry-run transactions must not update nodes except progress column
-    if dry_run:
+    if transaction.dry_run:
         allow_update = {'progress'}
 
     for node in nodes_instances:
         node_params = nodes_params.pop(node.uid)
 
         for param in allow_update.intersection(node_params):
-            setattr(node, param, node_params[param])
-
-        # TODO(ikalnitsky): Ensure Astute sends progress=100 in case of error.
-        if node.status == consts.NODE_STATUSES.error:
-            node.progress = 100
-
+            if param == 'status':
+                new_status = node_params['status']
+                if new_status == 'deleted':
+                    # the deleted is special status which causes
+                    # to delete node from cluster
+                    objects.Node.remove_from_cluster(node)
+                elif new_status == 'error':
+                    # do not update status of node, only set
+                    # appropriate error type
+                    node.error_type = node_params.get(
+                        'error_type', consts.NODE_ERRORS.deploy
+                    )
+                    node.progress = 100
+                    # Notification on particular node failure
+                    notifier.notify(
+                        consts.NOTIFICATION_TOPICS.error,
+                        u"Node '{0}' failed: {1}".format(
+                            node.name,
+                            node_params.get('error_msg', "Unknown error")
+                        ),
+                        cluster_id=transaction.cluster_id,
+                        node_id=node.uid,
+                        task_uuid=transaction.uuid
+                    )
+                else:
+                    node.status = new_status
+            else:
+                setattr(node, param, node_params[param])
     db.flush()
 
     if nodes_params:

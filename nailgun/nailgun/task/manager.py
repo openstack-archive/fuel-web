@@ -179,6 +179,15 @@ class BaseDeploymentTaskManager(TaskManager):
             transaction_name = consts.TASK_NAMES.dry_run_deployment
         return transaction_name
 
+    @staticmethod
+    def reset_error_message(nodes, dry_run):
+        if dry_run:
+            return
+
+        for node in nodes:
+            node.error_msg = None
+            node.error_type = None
+
 
 class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
@@ -380,8 +389,11 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
 
         task_deletion, task_provision, task_deployment = None, None, None
 
+        dry_run = kwargs.get('dry_run', False)
+
         if nodes_to_delete:
             task_deletion = self.delete_nodes(supertask, nodes_to_delete)
+            self.reset_error_message(nodes_to_delete, dry_run)
 
         if nodes_to_provision:
             logger.debug("There are nodes to provision: %s",
@@ -415,13 +427,12 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
             if task_provision.status == consts.TASK_STATUSES.error:
                 return
 
+            self.reset_error_message(nodes_to_provision, dry_run)
             task_provision.cache = provision_message
             db().commit()
             task_messages.append(provision_message)
 
         deployment_message = None
-
-        dry_run = kwargs.get('dry_run', False)
 
         if (nodes_to_deploy or affected_nodes or
                 objects.Release.is_lcm_supported(self.cluster.release)):
@@ -469,6 +480,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
                 return
 
             task_deployment.cache = deployment_message
+            self.reset_error_message(nodes_to_deploy, dry_run)
             db().commit()
 
         if deployment_message:
@@ -687,6 +699,8 @@ class ProvisioningTaskManager(TaskManager):
             node.pending_addition = False
             node.status = consts.NODE_STATUSES.provisioning
             node.progress = 0
+            node.error_msg = None
+            node.error_type = None
 
         db().commit()
 
@@ -758,6 +772,7 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
             nodes_ids_to_deployment,
             order_by='id'
         )
+        self.reset_error_message(nodes_to_deployment, dry_run)
 
         deployment_message = self._call_silently(
             task_deployment,

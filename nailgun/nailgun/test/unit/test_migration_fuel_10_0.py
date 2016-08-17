@@ -612,3 +612,22 @@ class TestOrchestratorTaskTypesMigration(base.BaseAlembicMigrationTest):
             'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
         )).fetchall()
         self.assertTrue(expected_values.issubset((x[0] for x in result)))
+
+
+class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
+
+    def test_error_type_accepts_any_string_value(self):
+        nodes_table = self.meta.tables['nodes']
+        node_id = db.execute(sa.select([nodes_table])).scalar()
+        db.execute(
+            nodes_table.update(),
+            [{
+                'error_type': 'custom_error_type'
+            }]
+        )
+        result = db.execute(
+            sa.select([
+                nodes_table.c.error_type,
+            ]).where(nodes_table.c.id == node_id)
+        ).first()
+        self.assertEqual('custom_error_type', result[0])

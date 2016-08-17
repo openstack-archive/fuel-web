@@ -2183,3 +2183,57 @@ class TestOpenstackConfigCollection(BaseTestCase):
             self.assertEqual(config.node_id, node_id)
             self.assertEqual(configs[0].config_type,
                              consts.OPENSTACK_CONFIG_TYPES.node)
+
+
+class TestNodeStatus(BaseTestCase):
+    def setUp(self):
+        super(TestNodeStatus, self).setUp()
+        self.node = self.env.create_node()
+
+    def test_in_progress_has_high_priority(self):
+        node = self.node
+        node.error_type = consts.NODE_ERRORS.deploy
+
+        node.status = consts.NODE_STATUSES.removing
+        self.assertEqual(
+            consts.NODE_STATUSES.removing, objects.Node.get_status(node)
+        )
+        node.status = consts.NODE_STATUSES.provisioning
+        self.assertEqual(
+            consts.NODE_STATUSES.provisioning, objects.Node.get_status(node)
+        )
+        node.status = consts.NODE_STATUSES.deploying
+        self.assertEqual(
+            consts.NODE_STATUSES.deploying, objects.Node.get_status(node)
+        )
+        node.status = consts.NODE_STATUSES.provisioned
+        node.progress = 1
+        self.assertEqual(
+            consts.NODE_STATUSES.deploying, objects.Node.get_status(node)
+        )
+
+    def test_in_pgogress_status(self):
+        node = self.node
+        node.progress = 1
+        node.status = consts.NODE_STATUSES.ready
+        node.pending_addition = True
+        self.assertEqual(
+            consts.NODE_STATUSES.provisioning, objects.Node.get_status(node)
+        )
+        node.pending_addition = False
+        node.pending_deletion = True
+        self.assertEqual(
+            consts.NODE_STATUSES.removing, objects.Node.get_status(node)
+        )
+        node.pending_deletion = False
+        self.assertEqual(
+            consts.NODE_STATUSES.deploying, objects.Node.get_status(node)
+        )
+
+    def test_error_state(self):
+        node = self.node
+        node.status = consts.NODE_STATUSES.ready
+        node.error_type = consts.NODE_ERRORS.deploy
+        self.assertEqual(
+            consts.NODE_STATUSES.error, objects.Node.get_status(node)
+        )

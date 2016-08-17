@@ -71,6 +71,30 @@ class Node(NailgunObject):
     serializer = NodeSerializer
 
     @classmethod
+    def get_status(cls, instance):
+        """Get node status which is calculated from current state."""
+        # return transition statuses as is
+        if instance.status in (
+                consts.NODE_STATUSES.provisioning,
+                consts.NODE_STATUSES.deploying,
+                consts.NODE_STATUSES.removing
+        ):
+            return instance.status
+        # if progress means that node in progress state,
+        # to avoid population of new status use deploying
+        if 0 < instance.progress < 100:
+            if instance.pending_deletion:
+                return consts.NODE_STATUSES.removing
+            if instance.pending_addition:
+                return consts.NODE_STATUSES.provisioning
+            return consts.NODE_STATUSES.deploying
+
+        # error message means that node in error state
+        if instance.error_type:
+            return consts.NODE_STATUSES.error
+        return instance.status
+
+    @classmethod
     def delete(cls, instance):
         fire_callback_on_node_delete(instance)
         super(Node, cls).delete(instance)

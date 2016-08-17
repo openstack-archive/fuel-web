@@ -419,3 +419,22 @@ class TestTasksSchemaMigration(base.BaseAlembicMigrationTest):
 
         result = db.execute(sa.select([self.meta.tables['tasks']])).first()
         self.assertIn('graph_type', result)
+
+
+class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
+
+    def test_error_type_accepts_any_string_value(self):
+        nodes_table = self.meta.tables['nodes']
+        node_id = db.execute(sa.select([nodes_table])).scalar()
+        db.execute(
+            nodes_table.update(),
+            [{
+                'error_type': 'custom_error_type'
+            }]
+        )
+        result = db.execute(
+            sa.select([
+                nodes_table.c.error_type,
+            ]).where(nodes_table.c.id == node_id)
+        ).first()
+        self.assertEqual('custom_error_type', result[0])

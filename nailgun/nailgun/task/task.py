@@ -439,7 +439,8 @@ class ClusterTransaction(DeploymentTask):
         if node is None:
             return False
 
-        return node.status in cls.node_statuses_for_redeploy
+        node_state = objects.Node.get_status(node)
+        return node_state in cls.node_statuses_for_redeploy
 
     @classmethod
     def get_current_state(cls, cluster, nodes, tasks):

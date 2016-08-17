@@ -461,13 +461,14 @@ class TestDeploymentAttributesSerialization70(
 
             self.assertEqual(roles, dict(expected_roles))
 
-    def test_offloading_modes_serialize(self):
-        meta = self.env.default_metadata()
+    def test_offloading_modes_serialize_fields(self):
         changed_offloading_modes = {}
-        for interface in meta['interfaces']:
+        node = self.cluster_db.nodes[0]
+        for interface in node.nic_interfaces:
             changed_offloading_modes[interface['name']] = \
                 NetworkManager._get_modified_offloading_modes(
-                    interface.get('offloading_modes'))
+                    interface.meta.get('offloading_modes', {}),
+                    interface.attributes['offloading']['modes']['value'])
 
         for node in self.serialized_for_astute:
             interfaces = node['network_scheme']['interfaces']
@@ -482,6 +483,104 @@ class TestDeploymentAttributesSerialization70(
                     "There is no 'offload' block in deployment data")
                 self.assertDictEqual(offload_blk,
                                      changed_offloading_modes[iface_name])
+
+    def test_offloading_modes_serialize(self):
+        interface_offloading = {
+            'name': 'eth0',
+            'offloading_modes': [
+                {
+                    'name': 'tx-checksumming',
+                    'state': True,
+                    'sub': [
+                        {
+                            'name': 'tx-checksum-ipv6',
+                            'state': True,
+                            'sub': []
+                        }
+                    ]
+                },
+                {
+                    'name': 'rx-checksumming',
+                    'state': True,
+                    'sub': []
+                },
+                {
+                    'name': 'scatter-gather',
+                    'state': None,
+                    'sub': []
+                }
+            ]
+        }
+        offloading_modes_states = {
+            'tx-checksumming': False,
+            'tx-checksum-ipv6': True,
+            'rx-checksumming': None,
+            'scatter-gather': True
+        }
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'],
+            meta={'interfaces': [interface_offloading]}
+        )
+        for nic_interface in node.nic_interfaces:
+            nic_interface.attributes.update({
+                'offloading': {'modes': {'value': offloading_modes_states}}
+            })
+        self.db.flush()
+
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_node = self.serializer.serialize(
+            self.cluster_db, [node])['nodes'][0]
+        serialized_interface = \
+            serialized_node['network_scheme']['interfaces']['eth0']
+
+        self.assertDictEqual(
+            {'offload': {u'tx-checksumming': False, u'scatter-gather': True}},
+            serialized_interface.get('ethtool')
+        )
+
+    def test_empty_modified_offloading_modes_serialize(self):
+        interface_offloading = {
+            'name': 'eth0',
+            'offloading_modes': [
+                {
+                    'name': 'rx-checksumming',
+                    'state': True,
+                    'sub': []
+                },
+                {
+                    'name': 'scatter-gather',
+                    'state': False,
+                    'sub': []
+                }
+            ]
+        }
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'],
+            meta={'interfaces': [interface_offloading]}
+        )
+        node.nic_interfaces[0].attributes = {
+            'offloading': {
+                'value': {'rx-checksumming': None, 'scatter-gather': None}
+            }
+        }
+        self.db.flush()
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_node = self.serializer.serialize(
+            self.cluster_db, [node])['nodes'][0]
+        serialized_interface = \
+            serialized_node['network_scheme']['interfaces']['eth0']
+        self.assertNotIn('ethtool', serialized_interface)
+
+        node.nic_interfaces[0].attributes = {}
+        self.db.flush()
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_node = self.serializer.serialize(
+            self.cluster_db, [node])['nodes'][0]
+        serialized_interface = \
+            serialized_node['network_scheme']['interfaces']['eth0']
+        self.assertNotIn('ethtool', serialized_interface)
 
     def test_network_metadata(self):
         neutron_serializer = self.serializer.get_net_provider_serializer(

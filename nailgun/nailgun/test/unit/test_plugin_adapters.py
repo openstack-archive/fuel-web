@@ -180,6 +180,7 @@ class TestPluginBase(base.BaseTestCase):
     @mock.patch('nailgun.plugins.adapters.DeploymentGraph')
     def test_fault_tolerance_set_for_task_groups(self, deployment_graph_mock):
         deployment_graph_mock.get_for_model.return_value = True
+        deployment_graph_mock.get_metadata.return_value = {}
         deployment_graph_mock.get_tasks.return_value = [
             {
                 'id': 'role_x',

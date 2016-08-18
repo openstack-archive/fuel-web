@@ -117,7 +117,6 @@ class DeploymentGraph(NailgunObject):
         """
         data = data.copy()
         tasks = data.pop('tasks', [])
-
         deployment_graph_instance = super(DeploymentGraph, cls).create(data)
         for task in tasks:
             deployment_graph_instance.tasks.append(
@@ -306,6 +305,23 @@ class DeploymentGraph(NailgunObject):
                     'type': assoc_model.type,
                     'model': related_model})
         return result
+
+    @classmethod
+    def get_metadata(cls, instance):
+        """Gets metadata for graph."""
+        # TODO(bgaifullin) this code should be in serializer
+        fields = (
+            'node_filter',
+            'node_attributes_on_success',
+            'node_attributes_on_fail',
+            'node_attributes_on_stop'
+        )
+        metadata = {}
+        for name in fields:
+            value = getattr(instance, name)
+            if value is not None:
+                metadata[name] = value
+        return metadata
 
 
 class DeploymentGraphCollection(NailgunCollection):

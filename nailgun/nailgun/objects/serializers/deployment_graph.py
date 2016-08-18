@@ -75,6 +75,10 @@ class DeploymentGraphSerializer(BasicSerializer):
     fields = (
         "id",
         "name",
+        "node_filter",
+        "node_attributes_on_success",
+        "node_attributes_on_fail",
+        "node_attributes_on_stop",
         "tasks",
         "relations"
     )

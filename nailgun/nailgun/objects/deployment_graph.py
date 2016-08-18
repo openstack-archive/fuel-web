@@ -117,6 +117,19 @@ class DeploymentGraph(NailgunObject):
         """
         data = data.copy()
         tasks = data.pop('tasks', [])
+        # declare default behaviour for finish of graph execution
+        data.setdefault(
+            'node_attributes_on_success',
+            {'status': consts.NODE_STATUSES.ready}
+        )
+        data.setdefault(
+            'node_attributes_on_fail',
+            {'status': consts.NODE_STATUSES.error}
+        )
+        data.setdefault(
+            'node_attributes_on_stop',
+            {'status': consts.NODE_STATUSES.stopped}
+        )
 
         deployment_graph_instance = super(DeploymentGraph, cls).create(data)
         for task in tasks:

@@ -38,9 +38,11 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_deployment_graphs_attributes()
 
 
 def downgrade():
+    downgrade_deployment_graphs_attributes()
     downgrade_release_required_component_types()
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
@@ -305,3 +307,48 @@ def downgrade_node_deployment_info():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def upgrade_deployment_graphs_attributes():
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_filter',
+            sa.String(4096),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_attributes_on_success',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_attributes_on_fail',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_attributes_on_stop',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+
+def downgrade_deployment_graphs_attributes():
+    op.drop_column('deployment_graphs', 'node_filter')
+    op.drop_column('deployment_graphs', 'node_attributes_on_success')
+    op.drop_column('deployment_graphs', 'node_attributes_on_fail')
+    op.drop_column('deployment_graphs', 'node_attributes_on_stop')

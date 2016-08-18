@@ -48,6 +48,10 @@ class TestGraphHandlers(BaseIntegrationTest):
                 'id': DeploymentGraph.get_for_model(
                     self.cluster.release, graph_type='default').id,
                 'name': None,
+                'node_filter': None,
+                'node_attributes_on_success': {'status': 'ready'},
+                'node_attributes_on_fail': {'status': 'error'},
+                'node_attributes_on_stop': {'status': 'stopped'},
                 'relations': [{
                     'model_id': self.cluster.release.id,
                     'model': 'release',
@@ -57,6 +61,10 @@ class TestGraphHandlers(BaseIntegrationTest):
             {
                 'id': self.custom_graph.id,
                 'name': 'custom-graph-name',
+                'node_filter': None,
+                'node_attributes_on_success': {'status': 'ready'},
+                'node_attributes_on_fail': {'status': 'error'},
+                'node_attributes_on_stop': {'status': 'stopped'},
                 'relations': [{
                     'type': 'custom-graph',
                     'model': 'cluster',
@@ -65,6 +73,10 @@ class TestGraphHandlers(BaseIntegrationTest):
             },
             {
                 'id': default_graph.id,
+                'node_filter': None,
+                'node_attributes_on_success': {'status': 'ready'},
+                'node_attributes_on_fail': {'status': 'error'},
+                'node_attributes_on_stop': {'status': 'stopped'},
                 'relations': [
                     {
                         'model': 'cluster',
@@ -100,6 +112,10 @@ class TestGraphHandlers(BaseIntegrationTest):
             {
                 'id': self.custom_graph.id,
                 'name': 'custom-graph-name',
+                'node_filter': None,
+                'node_attributes_on_success': {'status': 'ready'},
+                'node_attributes_on_fail': {'status': 'error'},
+                'node_attributes_on_stop': {'status': 'stopped'},
                 'tasks': [{
                     'id': 'custom-task',
                     'type': 'puppet',
@@ -123,6 +139,7 @@ class TestGraphHandlers(BaseIntegrationTest):
             ),
             jsonutils.dumps({
                 'name': 'updated-graph-name',
+                'node_filter': '$.status != "new"',
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
@@ -135,6 +152,10 @@ class TestGraphHandlers(BaseIntegrationTest):
         self.assertEqual(
             {
                 'name': 'updated-graph-name',
+                'node_filter': '$.status != "new"',
+                'node_attributes_on_success': {'status': 'ready'},
+                'node_attributes_on_fail': {'status': 'error'},
+                'node_attributes_on_stop': {'status': 'stopped'},
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
@@ -157,7 +178,8 @@ class TestGraphHandlers(BaseIntegrationTest):
                 kwargs={'obj_id': self.custom_graph.id}
             ),
             jsonutils.dumps({
-                'name': 'updated-graph-name2'
+                'name': 'updated-graph-name2',
+                'node_attributes_on_stop': {}
             }),
             headers=self.default_headers
         )
@@ -165,6 +187,10 @@ class TestGraphHandlers(BaseIntegrationTest):
         self.assertEqual(
             {
                 'name': 'updated-graph-name2',
+                'node_filter': '$.status != "new"',
+                'node_attributes_on_success': {'status': 'ready'},
+                'node_attributes_on_fail': {'status': 'error'},
+                'node_attributes_on_stop': {},
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
@@ -331,6 +357,12 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                 ),
                 jsonutils.dumps({
                     'name': 'custom-graph-name',
+                    'node_filter': '$.pending_deletion',
+                    'node_attributes_on_success': {
+                        'pending_deletion': False
+                    },
+                    'node_attributes_on_fail': {'status': 'error'},
+                    'node_attributes_on_stop': {},
                     'tasks': [{
                         'id': 'test-task2',
                         'type': 'puppet'
@@ -342,6 +374,17 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
             self.assertEqual(200, resp.status_code)
             self.assertEqual(1, len(resp.json_body.get('tasks')))
             self.assertEqual('custom-graph-name', resp.json_body.get('name'))
+            self.assertEqual(
+                '$.pending_deletion', resp.json_body['node_filter']
+            )
+            self.assertEqual(
+                {'pending_deletion': False},
+                resp.json_body['node_attributes_on_success']
+            )
+            self.assertEqual(
+                {'status': 'error'}, resp.json_body['node_attributes_on_fail']
+            )
+            self.assertEqual({}, resp.json_body['node_attributes_on_stop'])
 
     def test_create_graph_fail_on_existing(self):
         for related_class, ref_graph in six.iteritems(self.custom_graphs):
@@ -431,6 +474,10 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                 {
                     'id': graph_id,
                     'name': 'updated-graph-name',
+                    'node_filter': None,
+                    'node_attributes_on_success': {'status': 'ready'},
+                    'node_attributes_on_fail': {'status': 'error'},
+                    'node_attributes_on_stop': {'status': 'stopped'},
                     'tasks': [{
                         'id': 'test-task2',
                         'type': 'puppet',
@@ -490,6 +537,10 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                     {
                         'id': ref_graph['graphs'][0].id,
                         'name': 'custom-graph-name1',
+                        'node_filter': None,
+                        'node_attributes_on_success': {'status': 'ready'},
+                        'node_attributes_on_fail': {'status': 'error'},
+                        'node_attributes_on_stop': {'status': 'stopped'},
                         'tasks': [{
                             'id': 'custom-task1',
                             'task_name': 'custom-task1',
@@ -505,6 +556,10 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                     {
                         'id': ref_graph['graphs'][1].id,
                         'name': 'custom-graph-name2',
+                        'node_filter': None,
+                        'node_attributes_on_success': {'status': 'ready'},
+                        'node_attributes_on_fail': {'status': 'error'},
+                        'node_attributes_on_stop': {'status': 'stopped'},
                         'tasks': [{
                             'id': 'custom-task2',
                             'task_name': 'custom-task2',
@@ -527,7 +582,12 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                                 'type': 'default'
                             }
                         ],
-                        'name': None
+                        'name': None,
+                        'node_filter': None,
+                        'node_attributes_on_success': {'status': 'ready'},
+                        'node_attributes_on_fail': {'status': 'error'},
+                        'node_attributes_on_stop': {'status': 'stopped'},
+
                     }
                 ],
                 resp.json_body

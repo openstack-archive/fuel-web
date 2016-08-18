@@ -534,3 +534,37 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestDeploymentGraphsMigration(base.BaseAlembicMigrationTest):
+
+    def test_new_columns_exist(self):
+        deployment_graphs_table = self.meta.tables['deployment_graphs']
+        db.execute(
+            deployment_graphs_table.insert(),
+            {
+                'name': 'test',
+                'node_filter': '$.status == ready',
+                'node_attributes_on_success': '{"status": "new"}',
+                'node_attributes_on_fail': '{"status": "error"}',
+                'node_attributes_on_stop': '{}'
+            }
+        )
+
+        result = db.execute(
+            sa.select([
+                deployment_graphs_table.c.node_filter,
+                deployment_graphs_table.c.node_attributes_on_success,
+                deployment_graphs_table.c.node_attributes_on_fail,
+                deployment_graphs_table.c.node_attributes_on_stop,
+            ]).where(deployment_graphs_table.c.name == 'test')
+        ).first()
+
+        self.assertEqual('$.status == ready', result['node_filter'])
+        self.assertEqual(
+            '{"status": "new"}', result['node_attributes_on_success']
+        )
+        self.assertEqual(
+            '{"status": "error"}', result['node_attributes_on_fail']
+        )
+        self.assertEqual('{}', result['node_attributes_on_stop'])

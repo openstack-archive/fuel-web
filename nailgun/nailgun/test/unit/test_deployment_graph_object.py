@@ -152,10 +152,44 @@ class TestDeploymentGraphModel(
 ):
 
     def test_deployment_graph_creation(self):
-        dg = deployment_graph.DeploymentGraph.create(
-            {'tasks': JSON_TASKS, 'name': 'test_graph'})
+        dg = deployment_graph.DeploymentGraph.create({
+            'tasks': JSON_TASKS,
+            'name': 'test_graph',
+            'node_filter': '$.pending_deletion',
+            'node_attributes_on_success': {'status': 'new'},
+            'node_attributes_on_fail': {'status': 'error'},
+            'node_attributes_on_stop': {}
+        })
         serialized = deployment_graph.DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
+        self.assertEqual('$.pending_deletion', serialized['node_filter'])
+        self.assertEqual(
+            {'status': 'new'}, serialized['node_attributes_on_success']
+        )
+        self.assertEqual(
+            {'status': 'error'}, serialized['node_attributes_on_fail']
+        )
+        self.assertEqual(
+            {}, serialized['node_attributes_on_stop']
+        )
+        self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
+
+    def test_create_deployment_graph_with_default_handlers(self):
+        dg = deployment_graph.DeploymentGraph.create({
+            'tasks': JSON_TASKS, 'name': 'test_graph'
+        })
+        serialized = deployment_graph.DeploymentGraph.to_dict(dg)
+        self.assertEqual(serialized['name'], 'test_graph')
+        self.assertIsNone(serialized['node_filter'])
+        self.assertEqual(
+            {'status': 'ready'}, serialized['node_attributes_on_success']
+        )
+        self.assertEqual(
+            {'status': 'error'}, serialized['node_attributes_on_fail']
+        )
+        self.assertEqual(
+            {'status': 'stopped'}, serialized['node_attributes_on_stop']
+        )
         self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
 
     def test_deployment_graph_update(self):

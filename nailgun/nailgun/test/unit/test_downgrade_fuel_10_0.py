@@ -109,3 +109,13 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
     def test_downgrade_release_required_component_types(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('required_component_types', releases_table.c)
+
+
+class TestDeploymentGraphsDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_new_columns_does_not_exist(self):
+        graphs_table = self.meta.tables['deployment_graphs']
+        self.assertNotIn('node_filter', graphs_table.c)
+        self.assertNotIn('node_attributes_on_success', graphs_table.c)
+        self.assertNotIn('node_attributes_on_fail', graphs_table.c)
+        self.assertNotIn('node_attributes_on_stop', graphs_table.c)

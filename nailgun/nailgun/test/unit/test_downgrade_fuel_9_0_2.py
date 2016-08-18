@@ -113,3 +113,13 @@ class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
             {'deploy', 'provision', 'deletion', 'discover', 'stop_deployment'},
             {x[0] for x in result},
         )
+
+
+class TestDeploymentGraphsDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_new_columns_does_not_exist(self):
+        graphs_table = self.meta.tables['deployment_graphs']
+        self.assertNotIn('node_filter', graphs_table.c)
+        self.assertNotIn('on_success', graphs_table.c)
+        self.assertNotIn('on_error', graphs_table.c)
+        self.assertNotIn('on_stop', graphs_table.c)

@@ -79,10 +79,17 @@ class DeploymentGraphSerializer(BasicSerializer):
         "relations"
     )
 
+    metadata_fields = (
+        'node_filter',
+        'on_success',
+        'on_error',
+        'on_stop'
+    )
+
     @classmethod
     def serialize(cls, instance, fields=None):
         use_fields = fields if fields else cls.fields
-        data_dict = {}
+        data_dict = cls.serialize_metadata(instance)
         for field in use_fields:
             if field == 'tasks':
                 tasks = nailgun.objects.DeploymentGraph\
@@ -115,3 +122,13 @@ class DeploymentGraphSerializer(BasicSerializer):
                     else:
                         data_dict[field] = value
         return data_dict
+
+    @classmethod
+    def serialize_metadata(cls, instance, fields=None):
+        fields = fields or cls.metadata_fields
+        metadata = {}
+        for name in fields:
+            value = getattr(instance, name)
+            if value is not None:
+                metadata[name] = value
+        return metadata

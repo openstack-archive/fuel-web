@@ -123,13 +123,15 @@ class PluginAdapterBase(object):
     def attributes_metadata(self):
         return self.get_attributes_metadata()
 
-    def get_deployment_tasks(self, graph_type=None):
+    def get_deployment_graph(self, graph_type=None):
         if graph_type is None:
             graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         deployment_tasks = []
+        graph_metadata = {}
         graph_instance = DeploymentGraph.get_for_model(self.plugin, graph_type)
         roles_metadata = self.plugin.roles_metadata
         if graph_instance:
+            graph_metadata = DeploymentGraph.get_metadata(graph_instance)
             for task in DeploymentGraph.get_tasks(graph_instance):
                 if task.get('parameters'):
                     task['parameters'].setdefault(
@@ -145,7 +147,11 @@ class PluginAdapterBase(object):
                         pass
 
                 deployment_tasks.append(task)
-        return deployment_tasks
+        graph_metadata['tasks'] = deployment_tasks
+        return graph_metadata
+
+    def get_deployment_tasks(self, graph_type=None):
+        return self.get_deployment_graph(graph_type)['tasks']
 
     def get_tasks(self):
         if self._tasks is None:

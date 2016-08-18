@@ -52,9 +52,11 @@ def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_task_model()
+    upgrade_deployment_graphs_attributes()
 
 
 def downgrade():
+    downgrade_deployment_graphs_attributes()
     downgrade_task_model()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
@@ -267,3 +269,45 @@ def upgrade_task_model():
 def downgrade_task_model():
     op.drop_column('tasks', 'dry_run')
     op.drop_column('tasks', 'graph_type')
+
+
+def upgrade_deployment_graphs_attributes():
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_filter',
+            sa.String(4096),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_success',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_error',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_stop',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+
+
+def downgrade_deployment_graphs_attributes():
+    op.drop_column('deployment_graphs', 'node_filter')
+    op.drop_column('deployment_graphs', 'on_success')
+    op.drop_column('deployment_graphs', 'on_error')
+    op.drop_column('deployment_graphs', 'on_stop')

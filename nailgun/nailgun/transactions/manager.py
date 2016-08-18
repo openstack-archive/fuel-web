@@ -38,6 +38,28 @@ def make_astute_message(transaction, context, tasks, node_resolver):
     directory, graph, metadata = lcm.TransactionSerializer.serialize(
         context, tasks, node_resolver
     )
+    node_statuses_transitions=dict()
+    if transaction.graph_type == 'provision':
+        node_statuses_transitions = {
+            'successful': {'status': consts.NODE_STATUSES.provisioned,
+                           'pending_addition': False},
+            'stopped': {'status': consts.NODE_STATUSES.discover},
+            'failed': {'status': consts.NODE_STATUSES.error, 'error_type': consts.NODE_ERRORS.provision}
+        }
+    elif transaction.graph_type == 'deployment':
+        node_statuses_transitions = {
+            'successful': {'status': consts.NODE_STATUSES.ready,
+                           'pending_addition': False},
+            'stopped': {'status': consts.NODE_STATUSES.stopped},
+            'failed': {'status': consts.NODE_STATUSES.error, 'error_type': consts.NODE_ERRORS.deploy}
+        }
+    elif transaction.graph_type == 'deletion':
+        node_statuses_transitions = {
+            'successful': {'status': consts.NODE_STATUSES.discover,
+                           'pending_deletion': False},
+            'failed': {'status': consts.NODE_STATUSES.error, 'error_type': consts.NODE_ERRORS.deletion}
+        }
+    metadata.update({'node_statuses_transitions': node_statuses_transitions})
     objects.DeploymentHistoryCollection.create(transaction, graph)
     return {
         'api_version': settings.VERSION['api'],
@@ -270,7 +292,7 @@ class TransactionsManager(object):
             return False
 
         cluster = sub_transaction.cluster
-        nodes = _get_nodes_to_run(cluster, sub_transaction.cache.get('nodes'))
+        nodes = _get_nodes_to_run(cluster, sub_transaction)
         resolver = role_resolver.RoleResolver(nodes)
         tasks = _get_tasks_to_run(
             cluster,
@@ -333,19 +355,27 @@ def _remove_obsolete_tasks(cluster):
     db().flush()
 
 
-def _get_nodes_to_run(cluster, ids=None):
+def _get_nodes_to_run(cluster, sub_transaction):
     # Trying to run tasks on offline nodes will lead to error, since most
     # probably MCollective is unreachable. In order to avoid that, we need
     # to select only online nodes.
     nodes = objects.NodeCollection.filter_by(
         None, cluster_id=cluster.id, online=True)
-
+    ids = sub_transaction.cache.get('nodes')
     if ids:
         nodes = objects.NodeCollection.filter_by_list(nodes, 'id', ids)
+        return objects.NodeCollection.lock_for_update(
+            objects.NodeCollection.order_by(nodes, 'id')
+        ).all()
+    else:
+        if sub_transaction.graph_type == 'deletion':
+            nodes = helpers.TaskHelper.nodes_to_delete(cluster)
+        elif sub_transaction.graph_type == 'deployment':
+            nodes = helpers.TaskHelper.nodes_to_deploy(cluster)
+        elif sub_transaction.graph_type == 'provision':
+            nodes = helpers.TaskHelper.nodes_to_provision(cluster)
+    return nodes
 
-    return objects.NodeCollection.lock_for_update(
-        objects.NodeCollection.order_by(nodes, 'id')
-    ).all()
 
 
 def _get_tasks_to_run(cluster, graph_type, node_resolver, names=None):

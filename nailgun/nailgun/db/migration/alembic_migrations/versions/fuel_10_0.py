@@ -39,9 +39,11 @@ def upgrade():
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
     upgrade_task_model()
+    upgrade_deployment_graphs_attributes()
 
 
 def downgrade():
+    downgrade_deployment_graphs_attributes()
     downgrade_task_model()
     downgrade_release_required_component_types()
     downgrade_node_deployment_info()
@@ -322,6 +324,51 @@ def upgrade_task_model():
     )
 
 
+def upgrade_deployment_graphs_attributes():
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_filter',
+            sa.String(4096),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_attributes_on_success',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_attributes_on_fail',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_attributes_on_stop',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+
 def downgrade_task_model():
     op.drop_column('tasks', 'dry_run')
     op.drop_column('tasks', 'graph_type')
+
+
+def downgrade_deployment_graphs_attributes():
+    op.drop_column('deployment_graphs', 'node_filter')
+    op.drop_column('deployment_graphs', 'node_attributes_on_success')
+    op.drop_column('deployment_graphs', 'node_attributes_on_fail')
+    op.drop_column('deployment_graphs', 'node_attributes_on_stop')

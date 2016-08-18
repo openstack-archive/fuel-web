@@ -29,7 +29,27 @@ class DeploymentGraph(Base):
         # not planned to used in business logic and
         # added to make work with custom graphs convenient
         sa.String(255),
-        nullable=True)
+        nullable=True
+    )
+
+    # contains YAQL expression to select nodes for applying the graph
+    node_filter = sa.Column(sa.String(4096), nullable=True)
+
+    # contains attributes which will be applied to node
+    # if execution of graph completes successfully.
+    node_attributes_on_success = sa.Column(
+        MutableDict.as_mutable(JSON), nullable=False
+    )
+    # contains attributes which will be applied to node
+    # if execution of graph fails.
+    node_attributes_on_fail = sa.Column(
+        MutableDict.as_mutable(JSON), nullable=False
+    )
+    # contains attributes which will be applied to node
+    # if execution of graph interrupts.
+    node_attributes_on_stop = sa.Column(
+        MutableDict.as_mutable(JSON), nullable=False
+    )
 
 
 class DeploymentGraphTask(Base):

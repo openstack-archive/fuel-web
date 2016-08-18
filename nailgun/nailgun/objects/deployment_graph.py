@@ -117,6 +117,19 @@ class DeploymentGraph(NailgunObject):
         """
         data = data.copy()
         tasks = data.pop('tasks', [])
+        # declare default behaviour for finish of graph execution
+        data.setdefault(
+            'node_attributes_on_success',
+            {'status': consts.NODE_STATUSES.ready}
+        )
+        data.setdefault(
+            'node_attributes_on_fail',
+            {'status': consts.NODE_STATUSES.error}
+        )
+        data.setdefault(
+            'node_attributes_on_stop',
+            {'status': consts.NODE_STATUSES.stopped}
+        )
 
         deployment_graph_instance = super(DeploymentGraph, cls).create(data)
         for task in tasks:
@@ -306,6 +319,16 @@ class DeploymentGraph(NailgunObject):
                     'type': assoc_model.type,
                     'model': related_model})
         return result
+
+    @classmethod
+    def get_metadata(cls, instance):
+        """Gets metadata for graph."""
+        return {
+            'node_filter': instance.node_filter,
+            'node_attributes_on_success': instance.node_attributes_on_success,
+            'node_attributes_on_fail': instance.node_attributes_on_fail,
+            'node_attributes_on_stop': instance.node_attributes_on_stop
+        }
 
 
 class DeploymentGraphCollection(NailgunCollection):

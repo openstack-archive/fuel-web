@@ -51,9 +51,11 @@ rule_to_pick_bootdisk = [
 def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
+    upgrade_deployment_graphs_attributes()
 
 
 def downgrade():
+    downgrade_deployment_graphs_attributes()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
 
@@ -247,3 +249,45 @@ def downgrade_plugin_with_nics_and_nodes_attributes():
     op.drop_column('plugins', 'node_attributes_metadata')
     op.drop_column('plugins', 'bond_attributes_metadata')
     op.drop_column('plugins', 'nic_attributes_metadata')
+
+
+def upgrade_deployment_graphs_attributes():
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_filter',
+            sa.String(4096),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_success',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_error',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_stop',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+
+
+def downgrade_deployment_graphs_attributes():
+    op.drop_column('deployment_graphs', 'node_filter')
+    op.drop_column('deployment_graphs', 'on_success')
+    op.drop_column('deployment_graphs', 'on_error')
+    op.drop_column('deployment_graphs', 'on_stop')

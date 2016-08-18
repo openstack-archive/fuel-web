@@ -68,3 +68,13 @@ class TestDropRulesToPickBootableDisk(base.BaseAlembicMigrationTest):
         ).fetchone()[0]
         volumes_metadata = jsonutils.loads(result)
         self.assertNotIn('rule_to_pick_boot_disk', volumes_metadata)
+
+
+class TestDeploymentGraphsDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_new_columns_does_not_exist(self):
+        graphs_table = self.meta.tables['deployment_graphs']
+        self.assertNotIn('node_filter', graphs_table.c)
+        self.assertNotIn('on_success', graphs_table.c)
+        self.assertNotIn('on_error', graphs_table.c)
+        self.assertNotIn('on_stop', graphs_table.c)

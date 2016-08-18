@@ -34,6 +34,8 @@ from nailgun.utils.role_resolver import RoleResolver
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
     VmwareDeploymentSerializerMixin
+from nailgun.orchestrator.provisioning_serializers import \
+    ProvisioningSerializer90
 
 from nailgun.extensions.network_manager.serializers import neutron_serializers
 from nailgun.extensions.network_manager.serializers import nova_serializers
@@ -649,6 +651,7 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
 
 class DeploymentLCMSerializer(DeploymentHASerializer90):
     _configs = None
+    _provision_serializer = None
     _priorities = {
         consts.OPENSTACK_CONFIG_TYPES.cluster: 0,
         consts.OPENSTACK_CONFIG_TYPES.role: 1,
@@ -663,9 +666,11 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             ),
             key=lambda x: self._priorities[x.config_type]
         )
+        self._provision_serializer = ProvisioningSerializer90()
 
     def finalize(self):
         self._configs = None
+        self._provision_serializer = None
         super(DeploymentLCMSerializer, self).finalize()
 
     def get_common_attrs(self, cluster):
@@ -674,6 +679,11 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         )
         attrs['cluster'] = objects.Cluster.to_dict(cluster)
         attrs['release'] = objects.Release.to_dict(cluster.release)
+        provision = attrs.setdefault('provision', {})
+        utils.dict_update(
+            provision,
+            self._provision_serializer.serialize_cluster_info(cluster, attrs)
+        )
         return attrs
 
     def serialize_customized(self, common_attrs, nodes):
@@ -689,6 +699,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
                 utils.dict_update(data, role_data)
             if roles:
                 data['roles'] = roles
+            self.inject_provision_info(common_attrs, node, data)
             yield data
 
     def serialize_nodes(self, common_attrs, nodes):
@@ -714,10 +725,10 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         serialized_node = base.serialize_node(common_attrs, node, roles[0])
         del serialized_node['role']
         serialized_node['roles'] = roles
-        serialized_node['fail_if_error'] = bool(
-            self.critical_roles.intersection(roles)
-        )
+        if node.pending_deletion:
+            serialized_node['deleted'] = True
         self.inject_configs(node, serialized_node)
+        self.inject_provision_info(common_attrs, node, serialized_node)
         return serialized_node
 
     @classmethod
@@ -776,6 +787,15 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:
                 if config.node_id == node.id:
                     utils.dict_update(node_config, config.configuration, 1)
+
+    def inject_provision_info(self, common_attrs, node, data):
+        if node.replaced_provisioning_info:
+            info = node.replaced_provision_info
+        else:
+            info = self._provision_serializer.serialize_node_info(
+                common_attrs, node
+            )
+        utils.dict_update(data.setdefault('provision', {}), info)
 
 
 def get_serializer_for_cluster(cluster):

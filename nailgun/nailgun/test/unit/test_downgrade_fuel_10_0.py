@@ -109,3 +109,32 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
     def test_downgrade_release_required_component_types(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('required_component_types', releases_table.c)
+
+
+class TestTasksSchemaDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_dry_run_field_does_no_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending'
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertNotIn('dry_run', result)
+
+    def test_graph_type_field_does_no_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending'
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertNotIn('graph_type', result)

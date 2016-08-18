@@ -15,8 +15,10 @@
 #    under the License.
 
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import validate
 from nailgun.extensions.network_manager.validators.network import \
     NetworkGroupValidator
 
@@ -38,7 +40,9 @@ class NetworkGroupHandler(SingleHandler):
     validator = NetworkGroupValidator
     single = objects.NetworkGroup
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, group_id):
         """:returns: JSONized Network Group object.
 
@@ -57,9 +61,10 @@ class NetworkGroupHandler(SingleHandler):
         )
         self.single.update(ng, data)
 
-        return self.single.to_json(ng)
+        return self.single.to_dict(ng)
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, group_id):
         """Remove Network Group
 
@@ -87,7 +92,8 @@ class NetworkGroupCollectionHandler(CollectionHandler):
     collection = objects.NetworkGroupCollection
     validator = NetworkGroupValidator
 
-    @content
+    @handle_errors
+    @validate
     def POST(self):
         """:returns: JSONized Network Group object.
 

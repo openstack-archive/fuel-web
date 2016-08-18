@@ -21,9 +21,10 @@ Handlers dealing with node groups
 import web
 
 from nailgun.api.v1.handlers.base import CollectionHandler
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
-
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.node_group import NodeGroupValidator
 
 from nailgun import errors
@@ -35,7 +36,8 @@ class NodeGroupHandler(SingleHandler):
     single = objects.NodeGroup
     validator = NodeGroupValidator
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, group_id):
         """:returns: {}
 
@@ -67,7 +69,9 @@ class NodeGroupCollectionHandler(CollectionHandler):
     collection = objects.NodeGroupCollection
     validator = NodeGroupValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """May receive cluster_id parameter to filter list of groups
 
@@ -78,10 +82,10 @@ class NodeGroupCollectionHandler(CollectionHandler):
         user_data = web.input(cluster_id=None)
 
         if user_data.cluster_id is not None:
-            return self.collection.to_json(
+            return self.collection.to_list(
                 self.collection.get_by_cluster_id(
                     user_data.cluster_id
                 )
             )
         else:
-            return self.collection.to_json()
+            return self.collection.to_list()

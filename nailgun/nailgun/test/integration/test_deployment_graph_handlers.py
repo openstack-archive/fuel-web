@@ -123,6 +123,7 @@ class TestGraphHandlers(BaseIntegrationTest):
             ),
             jsonutils.dumps({
                 'name': 'updated-graph-name',
+                'node_filter': '$.status != "new"',
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
@@ -135,6 +136,7 @@ class TestGraphHandlers(BaseIntegrationTest):
         self.assertEqual(
             {
                 'name': 'updated-graph-name',
+                'node_filter': '$.status != "new"',
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
@@ -157,7 +159,8 @@ class TestGraphHandlers(BaseIntegrationTest):
                 kwargs={'obj_id': self.custom_graph.id}
             ),
             jsonutils.dumps({
-                'name': 'updated-graph-name2'
+                'name': 'updated-graph-name2',
+                'on_stop': {}
             }),
             headers=self.default_headers
         )
@@ -165,6 +168,8 @@ class TestGraphHandlers(BaseIntegrationTest):
         self.assertEqual(
             {
                 'name': 'updated-graph-name2',
+                'node_filter': '$.status != "new"',
+                'on_stop': {},
                 'tasks': [{
                     'id': 'test-task2',
                     'type': 'puppet',
@@ -331,6 +336,14 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                 ),
                 jsonutils.dumps({
                     'name': 'custom-graph-name',
+                    'node_filter': '$.pending_deletion',
+                    'on_success': {
+                        'node_attributes': {
+                            'pending_deletion': False
+                        }
+                    },
+                    'on_error': {'node_attributes': {'status': 'error'}},
+                    'on_stop': {},
                     'tasks': [{
                         'id': 'test-task2',
                         'type': 'puppet'
@@ -342,6 +355,18 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
             self.assertEqual(200, resp.status_code)
             self.assertEqual(1, len(resp.json_body.get('tasks')))
             self.assertEqual('custom-graph-name', resp.json_body.get('name'))
+            self.assertEqual(
+                '$.pending_deletion', resp.json_body['node_filter']
+            )
+            self.assertEqual(
+                {'pending_deletion': False},
+                resp.json_body['on_success']['node_attributes']
+            )
+            self.assertEqual(
+                {'status': 'error'},
+                resp.json_body['on_error']['node_attributes']
+            )
+            self.assertEqual({}, resp.json_body['on_stop'])
 
     def test_create_graph_fail_on_existing(self):
         for related_class, ref_graph in six.iteritems(self.custom_graphs):
@@ -527,7 +552,7 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                                 'type': 'default'
                             }
                         ],
-                        'name': None
+                        'name': None,
                     }
                 ],
                 resp.json_body

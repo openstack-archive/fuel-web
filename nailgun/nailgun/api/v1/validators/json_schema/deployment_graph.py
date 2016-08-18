@@ -14,6 +14,28 @@
 #    under the License.
 
 from nailgun.api.v1.validators.json_schema.tasks import TASKS_SCHEMA
+from nailgun import consts
+
+
+NODE_ATTRIBUTES_SCHEMA = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'type': 'object',
+    'properties': {
+        # the status deleted are used for deletion node from cluster
+        'status': {'enum': list(consts.NODE_STATUSES) + ['deleted']},
+        'pending_addition': {'type': 'boolean'},
+        'pending_deletion': {'type': 'boolean'},
+        'error_msg': {'type': 'string'},
+        'error_type': {'enum': list(consts.NODE_ERRORS)}}
+}
+
+EVENT_CALLBACK_SCHEMA = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'type': 'object',
+    'properties': {
+        'node_attributes': NODE_ATTRIBUTES_SCHEMA
+    }
+}
 
 
 DEPLOYMENT_GRAPH_SCHEMA = {
@@ -22,9 +44,14 @@ DEPLOYMENT_GRAPH_SCHEMA = {
     'additionalProperties': False,
     'properties': {
         'name': {'type': 'string'},
+        'node_filter': {'type': 'string'},
+        'on_success': EVENT_CALLBACK_SCHEMA,
+        'on_error': EVENT_CALLBACK_SCHEMA,
+        'on_stop': EVENT_CALLBACK_SCHEMA,
         'tasks': TASKS_SCHEMA
     }
 }
+
 
 DEPLOYMENT_GRAPHS_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",

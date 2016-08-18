@@ -246,13 +246,16 @@ class PluginManager(object):
         return list(all_roles.values())
 
     @classmethod
-    def get_plugins_deployment_tasks(cls, cluster, graph_type=None):
+    def get_plugins_deployment_graph(cls, cluster, graph_type=None):
         deployment_tasks = []
         processed_tasks = {}
 
         enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
+        graph_metadata = {}
         for plugin_adapter in map(wrap_plugin, enabled_plugins):
-            depl_tasks = plugin_adapter.get_deployment_tasks(graph_type)
+            depl_graph = plugin_adapter.get_deployment_graph(graph_type)
+            depl_tasks = depl_graph.pop('tasks')
+            dict_update(graph_metadata, depl_graph)
 
             for t in depl_tasks:
                 t_id = t['id']
@@ -268,8 +271,12 @@ class PluginManager(object):
                 processed_tasks[t_id] = plugin_adapter.full_name
 
             deployment_tasks.extend(depl_tasks)
+        graph_metadata['tasks'] = deployment_tasks
+        return graph_metadata
 
-        return deployment_tasks
+    @classmethod
+    def get_plugins_deployment_tasks(cls, cluster, graph_type=None):
+        return cls.get_plugins_deployment_graph(cluster, graph_type)['tasks']
 
     @classmethod
     def get_plugins_node_roles(cls, cluster):

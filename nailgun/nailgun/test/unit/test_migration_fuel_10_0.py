@@ -563,3 +563,37 @@ class TestTasksSchemaMigration(base.BaseAlembicMigrationTest):
 
         result = db.execute(sa.select([self.meta.tables['tasks']])).first()
         self.assertIn('graph_type', result)
+
+
+class TestDeploymentGraphsMigration(base.BaseAlembicMigrationTest):
+
+    def test_new_columns_exist(self):
+        deployment_graphs_table = self.meta.tables['deployment_graphs']
+        db.execute(
+            deployment_graphs_table.insert(),
+            {
+                'name': 'test',
+                'node_filter': '$.status == ready',
+                'on_success': '{"node_attributes": {"status": "new"}}',
+                'on_error': '{"node_attributes": {"status": "error"}}',
+                'on_stop': '{}'
+            }
+        )
+
+        result = db.execute(
+            sa.select([
+                deployment_graphs_table.c.node_filter,
+                deployment_graphs_table.c.on_success,
+                deployment_graphs_table.c.on_error,
+                deployment_graphs_table.c.on_stop,
+            ]).where(deployment_graphs_table.c.name == 'test')
+        ).first()
+
+        self.assertEqual('$.status == ready', result['node_filter'])
+        self.assertEqual(
+            '{"node_attributes": {"status": "new"}}', result['on_success']
+        )
+        self.assertEqual(
+            '{"node_attributes": {"status": "error"}}', result['on_error']
+        )
+        self.assertEqual('{}', result['on_stop'])

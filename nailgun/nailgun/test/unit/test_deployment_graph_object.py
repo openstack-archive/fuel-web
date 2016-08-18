@@ -152,8 +152,32 @@ class TestDeploymentGraphModel(
 ):
 
     def test_deployment_graph_creation(self):
-        dg = deployment_graph.DeploymentGraph.create(
-            {'tasks': JSON_TASKS, 'name': 'test_graph'})
+        dg = deployment_graph.DeploymentGraph.create({
+            'tasks': JSON_TASKS,
+            'name': 'test_graph',
+            'node_filter': '$.pending_deletion',
+            'on_success': {'node_attributes': {'status': 'discover'}},
+            'on_error': {'node_attributes': {'status': 'error'}},
+            'on_stop': {}
+        })
+        serialized = deployment_graph.DeploymentGraph.to_dict(dg)
+        self.assertEqual(serialized['name'], 'test_graph')
+        self.assertEqual('$.pending_deletion', serialized['node_filter'])
+        self.assertEqual(
+            {'status': 'discover'}, serialized['on_success']['node_attributes']
+        )
+        self.assertEqual(
+            {'status': 'error'}, serialized['on_error']['node_attributes']
+        )
+        self.assertEqual(
+            {}, serialized['on_stop']
+        )
+        self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
+
+    def test_create_deployment_graph_with_default_handlers(self):
+        dg = deployment_graph.DeploymentGraph.create({
+            'tasks': JSON_TASKS, 'name': 'test_graph'
+        })
         serialized = deployment_graph.DeploymentGraph.to_dict(dg)
         self.assertEqual(serialized['name'], 'test_graph')
         self.assertItemsEqual(serialized['tasks'], EXPECTED_TASKS)
@@ -221,4 +245,21 @@ class TestDeploymentGraphModel(
         )
         self._compare_tasks(
             [task], deployment_graph.DeploymentGraph.get_tasks(graph)
+        )
+
+    def test_get_metadata(self):
+        graph = deployment_graph.DeploymentGraph.create({
+            'name': 'test_graph', 'tasks': [],
+            'node_filter': '$.deleted',
+            'on_success': {},
+            'on_error': {'node_attributes': {'error_type': 'deploy'}}
+        })
+        metadata = deployment_graph.DeploymentGraph.get_metadata(graph)
+        self.assertEqual(
+            {
+                'node_filter': '$.deleted',
+                'on_success': {},
+                'on_error': {'node_attributes': {'error_type': 'deploy'}}
+            },
+            metadata
         )

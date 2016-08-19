@@ -54,7 +54,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
         self.manager = manager.TransactionsManager(self.cluster.id)
         self.receiver = receiver.NailgunReceiver
 
-    def _sucess(self, transaction_uuid):
+    def _success(self, transaction_uuid):
         self.receiver.transaction_resp(
             task_uuid=transaction_uuid,
             nodes=[
@@ -103,7 +103,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                 'api_version': '1'
             }])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -160,7 +160,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }])
 
         # Consider we've got success from Astute.
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
 
         # It's time to send the second graph to execution.
         rpc_mock.cast.assert_called_with(
@@ -189,7 +189,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }])
 
         # Consider we've got success from Astute.
-        self._sucess(task.subtasks[1].uuid)
+        self._success(task.subtasks[1].uuid)
 
         # Ensure the top leve transaction is ready.
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
@@ -300,7 +300,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }
         ])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -335,7 +335,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                 'api_version': '1'
             }])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -368,7 +368,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                 'api_version': '1'
             }])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -408,5 +408,5 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }]
         )
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)

@@ -53,8 +53,15 @@ class TestTransactionManager(base.BaseIntegrationTest):
             graph_type='test_graph')
         self.manager = manager.TransactionsManager(self.cluster.id)
         self.receiver = receiver.NailgunReceiver
+        self.expected_metadata = {
+            'fault_tolerance_groups': [],
+            'node_statuses_transitions': {
+                'successful': {'status': consts.NODE_STATUSES.ready},
+                'failed': {'status': consts.NODE_STATUSES.error},
+                'stopped': {'status': consts.NODE_STATUSES.stopped}}
+        }
 
-    def _sucess(self, transaction_uuid):
+    def _success(self, transaction_uuid):
         self.receiver.transaction_resp(
             task_uuid=transaction_uuid,
             nodes=[
@@ -82,7 +89,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[0].uuid,
                     'tasks_graph': {
                         None: [],
@@ -103,7 +110,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                 'api_version': '1'
             }])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -138,7 +145,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[0].uuid,
                     'tasks_graph': {
                         None: [],
@@ -160,14 +167,14 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }])
 
         # Consider we've got success from Astute.
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
 
         # It's time to send the second graph to execution.
         rpc_mock.cast.assert_called_with(
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[1].uuid,
                     'tasks_graph': {
                         None: [],
@@ -189,7 +196,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }])
 
         # Consider we've got success from Astute.
-        self._sucess(task.subtasks[1].uuid)
+        self._success(task.subtasks[1].uuid)
 
         # Ensure the top leve transaction is ready.
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
@@ -226,7 +233,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[0].uuid,
                     'tasks_graph': {
                         None: [],
@@ -271,7 +278,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[0].uuid,
                     'tasks_graph': {
                         None: [],
@@ -300,7 +307,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }
         ])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -315,7 +322,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[0].uuid,
                     'tasks_graph': {
                         None: [],
@@ -335,7 +342,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                 'api_version': '1'
             }])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -347,7 +354,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[0].uuid,
                     'tasks_graph': {
                         None: [],
@@ -368,7 +375,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                 'api_version': '1'
             }])
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
@@ -386,7 +393,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': task.subtasks[0].uuid,
                     'tasks_graph': {
                         None: [],
@@ -408,5 +415,58 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }]
         )
 
-        self._sucess(task.subtasks[0].uuid)
+        self._success(task.subtasks[0].uuid)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+
+    @mock.patch('nailgun.transactions.manager.rpc')
+    def test_execute_with_node_filter(self, rpc_mock):
+        node = self.env.create_node(
+            cluster_id=self.cluster.id, pending_deletion=True,
+            roles=["compute"]
+        )
+        objects.DeploymentGraph.create_for_model(
+            {
+                'tasks': [
+                    {
+                        'id': 'delete_node',
+                        'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+                        'roles': ['/.*/']
+                    },
+                ],
+                'name': 'deletion_graph',
+                'node_filter': '$.pending_deletion'
+            },
+            instance=self.cluster,
+            graph_type='deletion_graph',
+        )
+
+        task = self.manager.execute(graphs=[{"type": "deletion_graph"}])
+        self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
+        rpc_mock.cast.assert_called_once_with(
+            'naily',
+            [{
+                'args': {
+                    'tasks_metadata': self.expected_metadata,
+                    'task_uuid': task.subtasks[0].uuid,
+                    'tasks_graph': {
+                        None: [],
+                        node.uid: [
+                            {
+                                'id': 'delete_node',
+                                'type': 'puppet',
+                                'fail_on_error': True,
+                                'parameters': {'cwd': '/'}
+                            },
+                        ]
+                    },
+                    'tasks_directory': {},
+                    'dry_run': False,
+                },
+                'respond_to': 'transaction_resp',
+                'method': 'task_deploy',
+                'api_version': '1'
+            }]
+        )
+
+        self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)

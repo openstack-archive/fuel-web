@@ -94,6 +94,47 @@ class Transaction(NailgunObject):
         if instance is not None:
             return instance.tasks_snapshot
 
+    @classmethod
+    def update(cls, instance, data, escalate=True):
+        super(Transaction, cls).update(instance, data)
+        status = data.get('status')
+        if status == consts.TASK_STATUSES.error:
+            data2 = {
+                'status': consts.TASK_STATUSES.error,
+                'progress': 100,
+                'message': 'Task aborted'
+            }
+            for task in instance.subtasks:
+                if task.status == consts.TASK_STATUSES.pending:
+                    cls.update(task, data2, False)
+
+        if escalate and instance.parent:
+            cls._escalate_update(instance, data)
+
+    @classmethod
+    def _escalate_update(cls, instance, data):
+        status = data.get('status')
+        progress = data.get('progress')
+
+        if status == consts.TASK_STATUSES.error:
+            cls.update(
+                instance.parent,
+                {
+                    'status': consts.TASK_STATUSES.error,
+                    'message': instance.message,
+                    'progress': 100
+                },
+                True
+            )
+        elif progress:
+            siblings = instance.parent.subtasks
+            total_progress = sum(x.progress for x in siblings)
+            cls.update(
+                instance.parent,
+                {'progress': total_progress // len(siblings)},
+                True
+            )
+
 
 class TransactionCollection(NailgunCollection):
 
@@ -124,7 +165,7 @@ class TransactionCollection(NailgunCollection):
         # TODO(bgaifullin) remove hardcoded name of task
         return cls.filter_by(
             None, cluster_id=cluster.id, name=consts.TASK_NAMES.deployment,
-            status=consts.TASK_STATUSES.ready
+            status=consts.TASK_STATUSES.ready, dry_run=False,
         ).order_by('-id').limit(1).first()
 
     @classmethod
@@ -148,6 +189,7 @@ class TransactionCollection(NailgunCollection):
         ).join(history).filter(
             model.cluster_id == cluster_id,
             model.name == consts.TASK_NAMES.deployment,
+            model.dry_run.is_(False),
             history.status == consts.HISTORY_TASK_STATUSES.ready,
         )
 

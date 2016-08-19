@@ -25,7 +25,9 @@ import web
 from nailgun import objects
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.task.manager import GenerateCapacityLogTaskManager
 
 
@@ -77,14 +79,17 @@ class CapacityLogHandler(BaseHandler):
         "report"
     )
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         capacity_log = objects.CapacityLog.get_latest()
         if not capacity_log:
             raise self.http(404)
         return self.render(capacity_log)
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self):
         """Starts capacity data generation.
 

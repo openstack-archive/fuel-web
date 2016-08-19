@@ -23,10 +23,12 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DeferredTaskHandler
+from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
+from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphCollectionHandler
 from nailgun.api.v1.handlers.deployment_graph import \
@@ -54,7 +56,8 @@ class ClusterHandler(SingleHandler):
     single = objects.Cluster
     validator = ClusterValidator
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, obj_id):
         """:returns: {}
 
@@ -147,7 +150,9 @@ class ClusterAttributesHandler(BaseHandler):
 
     validator = ClusterAttributesValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized Cluster attributes.
 
@@ -179,7 +184,9 @@ class ClusterAttributesHandler(BaseHandler):
         # entity and PATCH method for changing its parts.
         return self.PATCH(cluster_id)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PATCH(self, cluster_id):
         """:returns: JSONized Cluster attributes.
 
@@ -212,7 +219,9 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         "editable",
     )
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized default Cluster attributes.
 
@@ -226,7 +235,9 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
             raise self.http(500, "No attributes found!")
         return {"editable": attrs}
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster attributes.
 
@@ -263,7 +274,9 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
 class ClusterAttributesDeployedHandler(BaseHandler):
     """Cluster deployed attributes handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized deployed Cluster editable attributes with plugins
 
@@ -285,7 +298,9 @@ class ClusterAttributesDeployedHandler(BaseHandler):
 class ClusterGeneratedData(BaseHandler):
     """Cluster generated data"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized cluster generated data
 
@@ -306,7 +321,9 @@ class ClusterPluginsDeploymentTasksHandler(BaseHandler):
     """Handler for cluster plugins merged deployment tasks serialization."""
     single = objects.Cluster
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, obj_id):
         """:returns: Deployment tasks
 
@@ -324,7 +341,9 @@ class ClusterReleaseDeploymentTasksHandler(BaseHandler):
     """Handler for cluster release deployment tasks serialization."""
     single = objects.Cluster
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, obj_id):
         """:returns: Deployment tasks
 
@@ -347,7 +366,9 @@ class VmwareAttributesHandler(BaseHandler):
 
     validator = VmwareAttributesValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
 
@@ -374,7 +395,9 @@ class VmwareAttributesHandler(BaseHandler):
 
         return self.render(attributes)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, cluster_id):
         """:returns: JSONized Cluster vmware attributes.
 
@@ -415,7 +438,9 @@ class VmwareAttributesHandler(BaseHandler):
 class VmwareAttributesDefaultsHandler(BaseHandler):
     """Vmware default attributes handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: JSONized default Cluster vmware attributes.
 

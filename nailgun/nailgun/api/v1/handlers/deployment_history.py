@@ -15,7 +15,9 @@
 #    under the License.
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.deployment_history import \
     DeploymentHistoryValidator
 from nailgun.errors import errors
@@ -27,7 +29,9 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
     collection = objects.DeploymentHistoryCollection
     validator = DeploymentHistoryValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, transaction_id):
         """:returns: Collection of JSONized DeploymentHistory records.
 

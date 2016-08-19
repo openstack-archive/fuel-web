@@ -520,8 +520,8 @@ class TestNetworkManager(BaseIntegrationTest):
             ips.append(ip)
 
         self.assertEqual(len(ips), 2)
-        self.assertTrue(isinstance(ips[0].node_data, Node))
-        self.assertTrue(isinstance(ips[0].network_data, NetworkGroup))
+        self.assertIsInstance(ips[0].node_data, Node)
+        self.assertIsInstance(ips[0].network_data, NetworkGroup)
 
     def test_nets_empty_list_if_node_does_not_belong_to_cluster(self):
         node = self.env.create_node(api=False)

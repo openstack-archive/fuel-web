@@ -40,7 +40,7 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
             objects.Transaction, transaction_id)
 
         # process input parameters
-        nodes_ids = self.get_param_as_set('nodes_ids')
+        nodes_ids = self.get_param_as_set('nodes')
         statuses = self.get_param_as_set('statuses')
         tasks_names = self.get_param_as_set('tasks_names')
         try:

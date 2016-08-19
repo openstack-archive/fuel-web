@@ -24,8 +24,10 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.network import NetAssignmentValidator
 from nailgun.api.v1.validators import node as node_validators
 
@@ -50,7 +52,8 @@ class NodeHandler(SingleHandler):
     single = objects.Node
     validator = node_validators.NodeValidator
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, obj_id):
         """Deletes a node from DB and from Cobbler.
 
@@ -79,7 +82,9 @@ class NodeCollectionHandler(CollectionHandler):
     validator = node_validators.NodeValidator
     collection = objects.NodeCollection
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """May receive cluster_id parameter to filter list of nodes
 
@@ -94,9 +99,11 @@ class NodeCollectionHandler(CollectionHandler):
         elif cluster_id:
             nodes = nodes.filter_by(cluster_id=cluster_id)
 
-        return self.collection.to_json(nodes)
+        return self.collection.to_list(nodes)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
 
@@ -122,9 +129,10 @@ class NodeCollectionHandler(CollectionHandler):
             self.collection.eager_nodes_handlers(None),
             nodes_updated
         )
-        return self.collection.to_json(nodes)
+        return self.collection.to_list(nodes)
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self):
         """Deletes a batch of nodes.
 
@@ -162,7 +170,9 @@ class NodeAgentHandler(BaseHandler):
     collection = objects.NodeCollection
     validator = node_validators.NodeValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: node id.
 
@@ -205,7 +215,9 @@ class NodeNICsHandler(BaseHandler):
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: Collection of JSONized Node interfaces.
 
@@ -215,7 +227,9 @@ class NodeNICsHandler(BaseHandler):
         node = self.get_object_or_404(objects.Node, node_id)
         return map(self.render, node.interfaces)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, node_id):
         """:returns: Collection of JSONized Node objects.
 
@@ -242,7 +256,9 @@ class NodeCollectionNICsHandler(BaseHandler):
     validator = NetAssignmentValidator
     serializer = NodeInterfacesSerializer
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: Collection of JSONized Node objects.
 
@@ -270,7 +286,9 @@ class NodeCollectionNICsHandler(BaseHandler):
 class NodeNICsDefaultHandler(BaseHandler):
     """Node default network interfaces handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: Collection of default JSONized interfaces for node.
 
@@ -292,7 +310,9 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
 
     validator = NetAssignmentValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """May receive cluster_id parameter to filter list of nodes
 
@@ -313,7 +333,9 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
 class NodesAllocationStatsHandler(BaseHandler):
     """Node allocation stats handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """:returns: Total and unallocated nodes count.
 
@@ -331,7 +353,9 @@ class NodeAttributesHandler(BaseHandler):
 
     validator = node_validators.NodeAttributesValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: JSONized Node attributes.
 
@@ -342,7 +366,9 @@ class NodeAttributesHandler(BaseHandler):
 
         return objects.Node.get_attributes(node)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, node_id):
         """:returns: JSONized Node attributes.
 

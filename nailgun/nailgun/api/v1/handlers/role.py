@@ -17,7 +17,9 @@
 import six
 
 from nailgun.api.v1.handlers import base
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.role import RoleValidator
 from nailgun.errors import errors
 from nailgun import objects
@@ -37,7 +39,9 @@ class RoleHandler(base.SingleHandler):
                     release=release_id, name=role_name))
         return role
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, release_id, role_name):
         """Retrieve role
 
@@ -48,7 +52,9 @@ class RoleHandler(base.SingleHandler):
         release = self.get_object_or_404(objects.Release, release_id)
         return RoleSerializer.serialize_from_release(release, role_name)
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self, release_id, role_name):
         """Update role
 
@@ -85,7 +91,8 @@ class RoleCollectionHandler(base.CollectionHandler):
 
     validator = RoleValidator
 
-    @content
+    @handle_errors
+    @validate
     def POST(self, release_id):
         """Create role for release
 
@@ -110,7 +117,9 @@ class RoleCollectionHandler(base.CollectionHandler):
         raise self.http(
             201, RoleSerializer.serialize_from_release(release, role_name))
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, release_id):
         release = self.get_object_or_404(objects.Release, release_id)
         role_names = six.iterkeys(release.roles_metadata)
@@ -125,7 +134,9 @@ class ClusterRolesHandler(base.BaseHandler):
         if role_name not in available_roles:
             raise self.http(404, 'Role is not found for the cluster')
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id, role_name):
         """:returns: JSON-ed metadata for the role
 
@@ -140,7 +151,9 @@ class ClusterRolesHandler(base.BaseHandler):
 
 class ClusterRolesCollectionHandler(base.BaseHandler):
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, cluster_id):
         """:returns: collection of JSON-ed cluster roles metadata
 

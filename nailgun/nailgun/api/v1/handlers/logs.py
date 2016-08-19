@@ -32,7 +32,9 @@ from nailgun import consts
 from nailgun import objects
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 from nailgun.task.task import DumpTask
@@ -195,7 +197,9 @@ def read_log(
 class LogEntryCollectionHandler(BaseHandler):
     """Log entry collection handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """Receives following parameters:
 
@@ -382,7 +386,8 @@ class LogEntryCollectionHandler(BaseHandler):
 
 class LogPackageHandler(BaseHandler):
     """Log package handler"""
-    @content
+    @handle_errors
+    @validate
     def PUT(self):
         """:returns: JSONized Task object.
 
@@ -404,7 +409,9 @@ class LogPackageHandler(BaseHandler):
 
 class LogPackageDefaultConfig(BaseHandler):
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """Generates default config for snapshot
 
@@ -416,7 +423,7 @@ class LogPackageDefaultConfig(BaseHandler):
 class LogSourceCollectionHandler(BaseHandler):
     """Log source collection handler"""
 
-    @content
+    @serialize
     def GET(self):
         """:returns: Collection of log sources (from settings)
 
@@ -443,7 +450,9 @@ class SnapshotDownloadHandler(BaseHandler):
 class LogSourceByNodeCollectionHandler(BaseHandler):
     """Log source by node collection handler"""
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, node_id):
         """:returns: Collection of log sources by node (from settings)
 

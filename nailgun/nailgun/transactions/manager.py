@@ -63,16 +63,14 @@ class try_transaction(object):
       * create an action log record on start/finish;
 
     :param transaction: a transaction instance to be wrapped
-    :param suppress: do not propagate exception if True
     """
 
-    def __init__(self, transaction, suppress=False):
+    def __init__(self, transaction, on_error):
         self._transaction = transaction
-        self._suppress = suppress
+        self._on_error = on_error
 
     def __enter__(self):
         logger.debug("Transaction %s starts assembling.", self._transaction.id)
-        self._logitem = helpers.TaskHelper.create_action_log(self._transaction)
         return self._transaction
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -81,19 +79,12 @@ class try_transaction(object):
                 "Transaction %s failed.",
                 self._transaction.id, exc_info=(exc_type, exc_val, exc_tb)
             )
-            objects.Task.update(self._transaction, {
-                'status': consts.TASK_STATUSES.error,
-                'progress': 100,
-                'message': six.text_type(exc_val),
-            })
-            helpers.TaskHelper.update_action_log(
-                self._transaction, self._logitem
-            )
+            return self._on_error(self._transaction, six.text_type(exc_val))
         else:
             logger.debug(
                 "Transaction %s finish assembling.", self._transaction.id
             )
-        return self._suppress
+        return False
 
 
 class TransactionsManager(object):
@@ -150,6 +141,7 @@ class TransactionsManager(object):
             'status': consts.TASK_STATUSES.pending,
             'dry_run': dry_run,
         })
+        helpers.TaskHelper.create_action_log(transaction)
 
         for graph in graphs:
             # 'dry_run' flag is a part of transaction, so we can restore its
@@ -161,7 +153,7 @@ class TransactionsManager(object):
             cache = graph.copy()
             cache['force'] = force
 
-            transaction.create_subtask(
+            sub_transaction = transaction.create_subtask(
                 self.task_name,
                 status=consts.TASK_STATUSES.pending,
                 dry_run=dry_run,
@@ -172,6 +164,7 @@ class TransactionsManager(object):
                 # FIXME: Consider to use a separate set of columns.
                 cache=cache,
             )
+            helpers.TaskHelper.create_action_log(sub_transaction)
 
         # We need to commit transaction because asynchronous call below might
         # be executed in separate process or thread.
@@ -188,18 +181,30 @@ class TransactionsManager(object):
         transaction and send it to execution.
 
         :param transaction: a top-level transaction to continue
+        :return: True if sub transaction will be started, otherwise False
         """
-        with try_transaction(transaction, suppress=True):
+        sub_transaction = next((
+            sub_transaction
+            for sub_transaction in transaction.subtasks
+            if sub_transaction.status == consts.TASK_STATUSES.pending), None)
+
+        if sub_transaction is None:
+            # there is no sub-transaction, so we can close this transaction
+            self.success(transaction)
+            return False
+
+        with try_transaction(transaction, self.fail):
             # uWSGI mule is a separate process, and that means it won't share
             # our DB session. Hence, we can't pass fetched DB instances to the
             # function we want to be executed in mule, so let's proceed with
             # unique identifiers.
             mule.call_task_manager_async(
                 self.__class__,
-                '_continue_async',
+                '_execute_async',
                 self.cluster_id,
-                transaction.id,
+                sub_transaction.id,
             )
+        return True
 
     def process(self, transaction, report):
         """Process feedback from executor (Astute).
@@ -227,50 +232,80 @@ class TransactionsManager(object):
 
         _update_nodes(transaction, nodes_instances, nodes_params)
         _update_history(transaction, nodes)
+        _update_transaction(transaction, status, progress, error)
 
-        if status:
-            # FIXME: resolve circular dependencies by moving assemble task
-            # updates from receiver to objects layer.
-            from nailgun.rpc.receiver import NailgunReceiver
-            objects.Task.update_recursively(
-                transaction,
-                NailgunReceiver._assemble_task_update(
-                    transaction, status, progress, error, nodes_instances
-                )
-            )
+        if status in (consts.TASK_STATUSES.error, consts.TASK_STATUSES.ready):
+            helpers.TaskHelper.update_action_log(transaction)
+            if transaction.parent:
+                # if transaction is completed successfully,
+                #  we've got to initiate the next one in the chain
+                if status == consts.TASK_STATUSES.ready:
+                    self.continue_(transaction.parent)
+                else:
+                    self.fail(transaction.parent, error)
 
-        # if transaction is completed successfully, we've got to initiate
-        # the next one in the chain
-        if transaction.parent and status == consts.TASK_STATUSES.ready:
-            self.continue_(transaction.parent)
+    def success(self, transaction):
+        objects.Transaction.update(
+            transaction,
+            {'status': consts.TASK_STATUSES.ready, 'progress': 100}
+        )
+        _update_cluster_status(transaction)
+        notifier.notify(
+            consts.NOTIFICATION_TOPICS.done,
+            "Graph execution has been successfully completed."
+            "You can check deployment history for detailed information.",
+            transaction.cluster_id,
+            None,
+            task_uuid=transaction.uuid
+        )
 
-    def _continue_async(self, transaction_id):
-        transaction = objects.Transaction.get_by_uid(transaction_id)
+    def fail(self, transaction, reason):
+        data = {
+            'status': consts.TASK_STATUSES.error,
+            'message': reason,
+            'progress': 100
+        }
+        objects.Transaction.update(transaction, data)
+        helpers.TaskHelper.update_action_log(transaction)
 
-        with try_transaction(transaction, suppress=True):
-            self._continue_sync(transaction)
+        data['message'] = 'Aborted'
+        for sub_transaction in transaction.subtasks:
+            if sub_transaction.status == consts.TASK_STATUSES.pending:
+                objects.Transaction.update(sub_transaction, data)
+                helpers.TaskHelper.update_action_log(sub_transaction)
+
+        _update_cluster_status(transaction)
+        notifier.notify(
+            consts.NOTIFICATION_TOPICS.error,
+            "Graph execution failed with error: '{0}'."
+            "Please check deployment history for more details."
+            .format(reason),
+            transaction.cluster_id,
+            None,
+            task_uuid=transaction.uuid
+        )
+        return True
+
+    def _execute_async(self, sub_transaction_id):
+        sub_transaction = objects.Transaction.get_by_uid(sub_transaction_id)
+
+        with try_transaction(sub_transaction.parent, self.fail):
+            self._execute_sync(sub_transaction)
 
         # Since the whole function is executed in separate process, we must
         # commit all changes in order to do not lost them.
         db().commit()
 
-    def _continue_sync(self, transaction):
-        sub_transaction = next((
-            sub_transaction
-            for sub_transaction in transaction.subtasks
-            if sub_transaction.status == consts.TASK_STATUSES.pending), None)
-
-        if sub_transaction is None:
-            return False
-
+    def _execute_sync(self, sub_transaction):
         cluster = sub_transaction.cluster
         nodes = _get_nodes_to_run(cluster, sub_transaction.cache.get('nodes'))
 
         for node in nodes:
-            node.roles = list(set(node.roles + node.pending_roles))
-            node.pending_roles = []
-            node.error_type = None
+            # set progress to show node in progress state
             node.progress = 1
+            if not sub_transaction.dry_run:
+                node.error_type = None
+                node.error_msg = None
 
         resolver = role_resolver.RoleResolver(nodes)
         tasks = _get_tasks_to_run(
@@ -290,16 +325,15 @@ class TransactionsManager(object):
         # top of this.
         _dump_expected_state(sub_transaction, context.new, tasks)
 
-        with try_transaction(sub_transaction):
-            message = make_astute_message(
-                sub_transaction, context, tasks, resolver)
+        message = make_astute_message(
+            sub_transaction, context, tasks, resolver)
 
-            # Once rpc.cast() is called, the message is sent to Astute. By
-            # that moment all transaction instanced must exist in database,
-            # otherwise we may get wrong result due to RPC receiver won't
-            # found entry to update.
-            db().commit()
-            rpc.cast('naily', [message])
+        # Once rpc.cast() is called, the message is sent to Astute. By
+        # that moment all transaction instanced must exist in database,
+        # otherwise we may get wrong result due to RPC receiver won't
+        # found entry to update.
+        db().commit()
+        rpc.cast('naily', [message])
 
     def _acquire_cluster(self):
         cluster = objects.Cluster.get_by_uid(
@@ -497,6 +531,12 @@ def _update_nodes(transaction, nodes_instances, nodes_params):
                         node_id=node.uid,
                         task_uuid=transaction.uuid
                     )
+                elif new_status == 'ready':
+                    # TODO(bgaifullin) need to remove pengind roles concept
+                    node.roles = list(set(node.roles + node.pending_roles))
+                    node.pending_roles = []
+                    node.progress = 100
+                    node.status = new_status
                 else:
                     node.status = new_status
             else:
@@ -520,3 +560,44 @@ def _update_history(transaction, nodes):
                 node['task_status'],
                 node.get('custom'),
             )
+
+
+def _update_transaction(transaction, status, progress, message):
+    data = {}
+    if status:
+        data['status'] = status
+    if progress:
+        data['progress'] = progress
+    if message:
+        data['message'] = message
+    if data:
+        objects.Transaction.update(transaction, data)
+
+    if transaction.parent and progress:
+        siblings = transaction.parent.subtasks
+        total_progress = sum(x.progress for x in siblings)
+        objects.Transaction.update(transaction.parent, {
+            'progress': total_progress // len(siblings)
+        })
+
+
+def _update_cluster_status(transaction):
+    if transaction.dry_run:
+        return
+
+    nodes = objects.NodeCollection.filter_by(
+        None, cluster_id=transaction.cluster_id
+    )
+    failed_nodes = objects.NodeCollection.filter_by_not(nodes, error_type=None)
+    not_ready_nodes = objects.NodeCollection.filter_by_not(
+        nodes, status=consts.NODE_STATUSES.ready
+    )
+    # if all nodes are ready - cluster has operational status
+    # otherwise cluster has partially deployed status
+    if (objects.NodeCollection.count(failed_nodes) or
+            objects.NodeCollection.count(not_ready_nodes)):
+        status = consts.CLUSTER_STATUSES.partially_deployed
+    else:
+        status = consts.CLUSTER_STATUSES.operational
+
+    objects.Cluster.update(transaction.cluster, {'status': status})

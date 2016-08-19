@@ -175,7 +175,7 @@ class Release(NailgunObject):
                 >= StrictVersion(consts.FUEL_NFV_AVAILABLE_SINCE))
 
     @classmethod
-    def get_deployment_tasks(cls, instance, graph_type=None):
+    def get_deployment_graph(cls, instance, graph_type=None):
         """Get deployment graph based on release version.
 
         :param instance: Release instance
@@ -214,10 +214,21 @@ class Release(NailgunObject):
                         deployment_graph, {'tasks': deployment_tasks})
             else:
                 # create graph anyway
-                DeploymentGraph.create_for_model(
+                deployment_graph = DeploymentGraph.create_for_model(
                     {'tasks': deployment_tasks}, instance)
 
-        return deployment_tasks
+        if deployment_graph:
+            metadata = DeploymentGraph.get_metadata(deployment_graph)
+        else:
+            metadata = {}
+
+        metadata['tasks'] = deployment_tasks
+        return metadata
+
+    @classmethod
+    def get_deployment_tasks(cls, instance, graph_type=None):
+        """Gets deployment tasks from release related graph."""
+        return cls.get_deployment_graph(instance, graph_type)['tasks']
 
     @classmethod
     def get_min_controller_count(cls, instance):

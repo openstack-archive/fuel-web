@@ -24,22 +24,32 @@ from nailgun.test.base import BaseUnitTest
 
 class TestMakeAstuteMessage(BaseUnitTest):
 
+    maxDiff = None
+
     @mock.patch('nailgun.transactions.manager.objects')
     @mock.patch('nailgun.transactions.manager.lcm')
     def test_make_astute_message(self, lcm_mock, obj_mock):
         resolver = mock.MagicMock()
         context = mock.MagicMock()
         tx = mock.MagicMock(dry_run=False)
-        tasks = mock.MagicMock()
+        graph = {
+            'tasks': mock.MagicMock(),
+            'on_success': {'node_attributes': {}},
+            'on_error': {},
+        }
         tasks_directory = mock.MagicMock()
         tasks_graph = mock.MagicMock()
-        tasks_metadata = mock.MagicMock()
-
+        tasks_metadata = {
+            'node_statuses_transitions': {
+                'successful': {},
+                'failed': {'status': consts.NODE_STATUSES.error},
+                'stopped': {'status': consts.NODE_STATUSES.stopped},
+            }
+        }
         lcm_mock.TransactionSerializer.serialize.return_value = (
-            tasks_directory, tasks_graph, tasks_metadata
+            tasks_directory, tasks_graph, {}
         )
-
-        result = manager.make_astute_message(tx, context, tasks, resolver)
+        result = manager.make_astute_message(tx, context, graph, resolver)
         self.assertEqual(
             {
                 'api_version': manager.settings.VERSION['api'],
@@ -56,7 +66,7 @@ class TestMakeAstuteMessage(BaseUnitTest):
             result
         )
         lcm_mock.TransactionSerializer.serialize.assert_called_once_with(
-            context, tasks, resolver
+            context, graph['tasks'], resolver
         )
         obj_mock.DeploymentHistoryCollection.create.assert_called_once_with(
             tx, tasks_graph
@@ -121,62 +131,57 @@ class TestNodeForRedeploy(BaseUnitTest):
         )
 
 
-class TestGetTasksToRun(BaseUnitTest):
-
+class TestAdjustTasksToRun(BaseUnitTest):
     @mock.patch('nailgun.transactions.manager.objects')
-    def test_get_tasks_if_no_legacy(self, objects_mock):
+    def test_adjust_tasks_if_no_legacy(self, objects_mock):
         cluster_obj = objects_mock.Cluster
         tasks = [
-            {'id': 'tasks1', 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet},
-            {'id': 'tasks2', 'type': consts.ORCHESTRATOR_TASK_TYPES.group},
-            {'id': 'tasks3', 'type': consts.ORCHESTRATOR_TASK_TYPES.shell},
-            {'id': 'tasks4', 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped}
+            {'id': 'task1', 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet},
+            {'id': 'task2', 'type': consts.ORCHESTRATOR_TASK_TYPES.group},
+            {'id': 'task3', 'type': consts.ORCHESTRATOR_TASK_TYPES.shell},
+            {'id': 'task4', 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped}
         ]
-        cluster_obj.get_deployment_tasks.return_value = tasks
+        graph = {'tasks': tasks[:]}
         cluster_obj.is_propagate_task_deploy_enabled.return_value = False
 
         cluster = mock.MagicMock()
-        result = manager._get_tasks_to_run(cluster, 'test', None, None)
-        self.assertEqual(tasks, result)
-        cluster_obj.get_deployment_tasks.assert_called_once_with(
-            cluster, 'test'
-        )
+        manager._adjust_graph_tasks(graph, cluster, None, None)
+        self.assertEqual(tasks, graph['tasks'])
         cluster_obj.is_propagate_task_deploy_enabled.assert_called_once_with(
             cluster
         )
-
-        filtered_result = manager._get_tasks_to_run(
-            cluster, 'test', None, ['task2']
-        )
+        # filter result
+        manager._adjust_graph_tasks(graph, cluster, None, ['task1'])
         tasks[2]['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
-        self.assertEqual(tasks, filtered_result)
+        self.assertEqual(tasks, graph['tasks'])
 
     @mock.patch('nailgun.transactions.manager.objects')
     @mock.patch('nailgun.transactions.manager.legacy_tasks_adapter')
-    def test_get_tasks_with_legacy(self, adapter_mock, objects_mock):
+    def test_adjust_tasks_with_legacy(self, adapter_mock, objects_mock):
         cluster_obj = objects_mock.Cluster
         tasks = [
             {'id': 'tasks2', 'type': consts.ORCHESTRATOR_TASK_TYPES.group},
         ]
-        cluster_obj.get_deployment_tasks.return_value = tasks
+        graph = {'tasks': tasks[:], 'type': 'provision'}
         cluster_obj.is_propagate_task_deploy_enabled.return_value = True
         adapter_mock.adapt_legacy_tasks.return_value = tasks
 
         cluster = mock.MagicMock()
         resolver = mock.MagicMock()
-        result = manager._get_tasks_to_run(cluster, 'test', resolver, None)
-        self.assertEqual(tasks, result)
+        manager._adjust_graph_tasks(graph, cluster, resolver, None)
+        self.assertEqual(tasks, graph['tasks'])
 
         cluster_obj.is_propagate_task_deploy_enabled.assert_called_once_with(
             cluster
         )
         adapter_mock.adapt_legacy_tasks.assert_called_once_with(
-            tasks, None, resolver
+            graph['tasks'], None, resolver
         )
-        result2 = manager._get_tasks_to_run(
-            cluster, consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE, resolver, None,
-        )
-        self.assertEqual(tasks, result2)
+        graph2 = {
+            'tasks': tasks[:], 'type': consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
+        }
+        manager._adjust_graph_tasks(graph2, cluster, resolver, None)
+        self.assertEqual(tasks, graph2['tasks'])
 
         cluster_obj.get_legacy_plugin_tasks.assert_called_once_with(cluster)
         adapter_mock.adapt_legacy_tasks.assert_called_with(
@@ -269,3 +274,63 @@ class TestUpdateNodes(BaseUnitTest):
         node_params = {'1': {'status': consts.NODE_STATUSES.ready}}
         manager._update_nodes(transaction, nodes, node_params)
         self.assertEqual(consts.NODE_STATUSES.discover, nodes[0].status)
+
+
+class TestGetNodesToRun(BaseUnitTest):
+    @mock.patch('nailgun.transactions.manager.objects')
+    def test_get_nodes_by_ids(self, objects_mock):
+        nodes_obj_mock = objects_mock.NodeCollection
+        cluster = mock.MagicMock()
+        node_ids = [1, 2]
+        filtered_nodes = manager._get_nodes_to_run(cluster, None, node_ids)
+        nodes_obj_mock.filter_by.assert_called_once_with(
+            None, cluster_id=cluster.id, online=True
+        )
+        nodes_obj_mock.filter_by_list.assert_called_once_with(
+            mock.ANY, 'id', node_ids
+        )
+        nodes_obj_mock.order_by.assert_called_once_with(
+            mock.ANY, 'id'
+        )
+        self.assertEqual(
+            filtered_nodes, nodes_obj_mock.lock_for_update().all()
+        )
+
+    @mock.patch('nailgun.transactions.manager.objects')
+    def test_get_by_node_filter(self, obj_mock):
+        nodes_obj_mock = obj_mock.NodeCollection
+        cluster = mock.MagicMock()
+        node_filter = '$.pending_deletion'
+        nodes_list = [
+            {'id': 1, 'pending_deletion': False},
+            {'id': 2, 'pending_deletion': True}
+        ]
+        nodes_obj_mock.to_list.return_value = nodes_list
+        manager._get_nodes_to_run(cluster, node_filter)
+        nodes_obj_mock.filter_by_list.assert_called_once_with(
+            mock.ANY, 'id', [2]
+        )
+
+    @mock.patch('nailgun.transactions.manager.objects')
+    @mock.patch('nailgun.transactions.manager.yaql_ext')
+    def test_ids_has_high_priority_then_node_filter(self, yaql_mock, obj_mock):
+        nodes_obj_mock = obj_mock.NodeCollection
+        cluster = mock.MagicMock()
+        node_ids = [1, 2]
+        node_filter = '$.pending_deletion'
+        manager._get_nodes_to_run(cluster, node_filter, node_ids)
+        nodes_obj_mock.filter_by_list.assert_called_once_with(
+            mock.ANY, 'id', node_ids
+        )
+        self.assertEqual(0, yaql_mock.create_context.call_count)
+
+    @mock.patch('nailgun.transactions.manager.objects')
+    @mock.patch('nailgun.transactions.manager.yaql_ext')
+    def test_get_all_nodes_with_empty_ids(self, yaql_mock, obj_mock):
+        nodes_obj_mock = obj_mock.NodeCollection
+        cluster = mock.MagicMock()
+        node_ids = []
+        node_filter = '$.pending_deletion'
+        manager._get_nodes_to_run(cluster, node_filter, node_ids)
+        self.assertEqual(0, nodes_obj_mock.filter_by_list.call_count)
+        self.assertEqual(0, yaql_mock.create_context.call_count)

@@ -53,6 +53,13 @@ class TestGraphExecutorHandler(base.BaseIntegrationTest):
             instance=self.cluster,
             graph_type='test_graph'
         )
+        self.expected_metadata = {
+            'fault_tolerance_groups': [],
+            'node_statuses_transitions': {
+                'successful': {'status': consts.NODE_STATUSES.ready},
+                'failed': {'status': consts.NODE_STATUSES.error},
+                'stopped': {'status': consts.NODE_STATUSES.stopped}}
+        }
 
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute(self, rpc_mock):
@@ -73,7 +80,7 @@ class TestGraphExecutorHandler(base.BaseIntegrationTest):
             'naily',
             [{
                 'args': {
-                    'tasks_metadata': {'fault_tolerance_groups': []},
+                    'tasks_metadata': self.expected_metadata,
                     'task_uuid': sub_task.uuid,
                     'tasks_graph': {
                         None: [],

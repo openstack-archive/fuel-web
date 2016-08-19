@@ -1137,6 +1137,7 @@ class Cluster(NailgunObject):
         dict_update(graph_metadata, plugins_deployment_graph)
         dict_update(graph_metadata, cluster_deployment_graph)
         graph_metadata['tasks'] = tasks
+        graph_metadata['type'] = graph_type
         return graph_metadata
 
     @classmethod

@@ -30,15 +30,38 @@ from nailgun.settings import settings
 from nailgun.task import helpers
 from nailgun.task import legacy_tasks_adapter
 from nailgun.utils import dict_update
+from nailgun.utils import get_in
 from nailgun.utils import mule
 from nailgun.utils import role_resolver
+from nailgun import yaql_ext
 
 
-def make_astute_message(transaction, context, tasks, node_resolver):
-    directory, graph, metadata = lcm.TransactionSerializer.serialize(
-        context, tasks, node_resolver
+DEFAULT_NODE_ATTRIBUTES = {
+    'on_success': {'status': consts.NODE_STATUSES.ready},
+    'on_error': {'status': consts.NODE_STATUSES.error},
+    'on_stop': {'status': consts.NODE_STATUSES.stopped},
+}
+
+
+def get_node_attributes(graph, kind):
+    r = get_in(graph, kind, 'node_attributes')
+    if r is None:
+        r = DEFAULT_NODE_ATTRIBUTES[kind]
+    return r
+
+
+def make_astute_message(transaction, context, graph, node_resolver):
+    directory, tasks, metadata = lcm.TransactionSerializer.serialize(
+        context, graph['tasks'], node_resolver
     )
-    objects.DeploymentHistoryCollection.create(transaction, graph)
+
+    metadata['node_statuses_transitions'] = {
+        'successful': get_node_attributes(graph, 'on_success'),
+        'failed': get_node_attributes(graph, 'on_error'),
+        'stopped': get_node_attributes(graph, 'on_stop')
+    }
+    objects.DeploymentHistoryCollection.create(transaction, tasks)
+
     return {
         'api_version': settings.VERSION['api'],
         'method': 'task_deploy',
@@ -46,7 +69,7 @@ def make_astute_message(transaction, context, tasks, node_resolver):
         'args': {
             'task_uuid': transaction.uuid,
             'tasks_directory': directory,
-            'tasks_graph': graph,
+            'tasks_graph': tasks,
             'tasks_metadata': metadata,
             'dry_run': transaction.dry_run,
         }
@@ -263,28 +286,36 @@ class TransactionsManager(object):
             return False
 
         cluster = sub_transaction.cluster
-        nodes = _get_nodes_to_run(cluster, sub_transaction.cache.get('nodes'))
-        resolver = role_resolver.RoleResolver(nodes)
-        tasks = _get_tasks_to_run(
+        graph = objects.Cluster.get_deployment_graph(
+            cluster, sub_transaction.graph_type
+        )
+        nodes = _get_nodes_to_run(
             cluster,
-            sub_transaction.graph_type,
+            graph.get('node_filter'),
+            sub_transaction.cache.get('nodes')
+        )
+        resolver = role_resolver.RoleResolver(nodes)
+        _adjust_graph_tasks(
+            graph,
+            cluster,
             resolver,
             sub_transaction.cache.get('tasks'))
 
         context = lcm.TransactionContext(
             _get_expected_state(cluster, nodes),
             _get_current_state(
-                cluster, nodes, tasks, sub_transaction.cache.get('force')
+                cluster, nodes, graph['tasks'],
+                sub_transaction.cache.get('force')
             ))
 
         # Attach desired state to the sub transaction, so when we continue
         # our top-level transaction, the new state will be calculated on
         # top of this.
-        _dump_expected_state(sub_transaction, context.new, tasks)
+        _dump_expected_state(sub_transaction, context.new, graph['tasks'])
 
         with try_transaction(sub_transaction):
             message = make_astute_message(
-                sub_transaction, context, tasks, resolver)
+                sub_transaction, context, graph, resolver)
 
             # Once rpc.cast() is called, the message is sent to Astute. By
             # that moment all transaction instanced must exist in database,
@@ -327,12 +358,45 @@ def _remove_obsolete_tasks(cluster):
     db().flush()
 
 
-def _get_nodes_to_run(cluster, ids=None):
+def _get_nodes_to_run(cluster, node_filter, ids=None):
     # Trying to run tasks on offline nodes will lead to error, since most
     # probably MCollective is unreachable. In order to avoid that, we need
     # to select only online nodes.
     nodes = objects.NodeCollection.filter_by(
         None, cluster_id=cluster.id, online=True)
+
+    if ids is None and node_filter:
+        # TODO(bgaifullin) Need to implement adapter for YAQL
+        # to direct query data from DB instead of query all data from DB
+        yaql_exp = yaql_ext.get_default_engine()(
+            '$.where({0}).select($.id)'.format(node_filter)
+        )
+        ids = yaql_exp.evaluate(
+            data=objects.NodeCollection.to_list(
+                nodes,
+                # TODO(bgaifullin) remove hard-coded list of fields
+                # the field network_data causes fail of following
+                # cluster serialization because it modifies attributes of
+                # node and this update will be stored in DB.
+                fields=(
+                    'id',
+                    'name',
+                    'status',
+                    'pending_deletion',
+                    'pending_addition',
+                    'error_type',
+                    'roles',
+                    'pending_roles',
+                    'attributes',
+                    'meta',
+                    'hostname',
+                    'labels'
+                )
+            ),
+            context=yaql_ext.create_context(
+                add_extensions=True, yaqlized=False
+            )
+        )
 
     if ids:
         nodes = objects.NodeCollection.filter_by_list(nodes, 'id', ids)
@@ -342,23 +406,23 @@ def _get_nodes_to_run(cluster, ids=None):
     ).all()
 
 
-def _get_tasks_to_run(cluster, graph_type, node_resolver, names=None):
-    tasks = objects.Cluster.get_deployment_tasks(cluster, graph_type)
+def _adjust_graph_tasks(graph, cluster, node_resolver, names=None):
     if objects.Cluster.is_propagate_task_deploy_enabled(cluster):
         # TODO(bgaifullin) move this code into Cluster.get_deployment_tasks
         # after dependency from role_resolver will be removed
-        if graph_type == consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE:
+        if graph['type'] == consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE:
             plugin_tasks = objects.Cluster.get_legacy_plugin_tasks(cluster)
         else:
             plugin_tasks = None
 
-        tasks = list(legacy_tasks_adapter.adapt_legacy_tasks(
-            tasks, plugin_tasks, node_resolver
+        graph['tasks'] = list(legacy_tasks_adapter.adapt_legacy_tasks(
+            graph['tasks'], plugin_tasks, node_resolver
         ))
 
     if names:
         # filter task by names, mark all other task as skipped
         task_ids = set(names)
+        tasks = graph['tasks']
         for idx, task in enumerate(tasks):
             if (task['id'] not in task_ids and
                     task['type'] not in consts.INTERNAL_TASKS):
@@ -366,8 +430,6 @@ def _get_tasks_to_run(cluster, graph_type, node_resolver, names=None):
                 task = task.copy()
                 task['type'] = consts.ORCHESTRATOR_TASK_TYPES.skipped
                 tasks[idx] = task
-
-    return tasks
 
 
 def _is_node_for_redeploy(node):

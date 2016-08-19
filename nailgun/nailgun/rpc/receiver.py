@@ -246,7 +246,6 @@ class NailgunReceiver(object):
             fail_if_not_found=True,
             lock_for_update=True,
         )
-
         manager = transactions.TransactionsManager(transaction.cluster.id)
         manager.process(transaction, kwargs)
 
@@ -500,7 +499,13 @@ class NailgunReceiver(object):
         elif status == consts.TASK_STATUSES.ready:
             data = cls._success_action(task, status, progress, nodes)
         else:
-            data = {'status': status, 'progress': progress, 'message': message}
+            data = {}
+            if status:
+                data['status'] = status
+            if progress:
+                data['progress'] = progress
+            if message:
+                data['message'] = message
         return data
 
     @classmethod

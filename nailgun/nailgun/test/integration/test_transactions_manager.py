@@ -112,6 +112,9 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(
+            consts.CLUSTER_STATUSES.operational, self.cluster.status
+        )
 
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute_few_graphs(self, rpc_mock):
@@ -258,6 +261,9 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         self.assertEqual(rpc_mock.cast.call_count, 1)
         self.assertEqual(task.status, consts.TASK_STATUSES.error)
+        self.assertEqual(
+            consts.CLUSTER_STATUSES.partially_deployed, self.cluster.status
+        )
 
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute_w_task(self, rpc_mock):
@@ -347,6 +353,10 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute_dry_run(self, rpc_mock):
+        node = self.cluster.nodes[0]
+        node.pending_roles = ['compute']
+        self.cluster.status = consts.CLUSTER_STATUSES.new
+
         task = self.manager.execute(
             graphs=[{"type": "test_graph"}], dry_run=True)
 
@@ -377,6 +387,31 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(['compute'], node.pending_roles)
+        self.assertEqual(consts.CLUSTER_STATUSES.new, self.cluster.status)
+
+    @mock.patch('nailgun.transactions.manager.rpc')
+    def test_execute_graph_fails_on_some_nodes(self, rpc_mock):
+        task = self.manager.execute(graphs=[{"type": "test_graph"}])
+        self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
+        self.assertEqual(1, rpc_mock.cast.call_count)
+
+        self.receiver.transaction_resp(
+            task_uuid=task.uuid,
+            nodes=[
+                {'uid': n.uid, 'status': consts.NODE_STATUSES.error}
+                for n in self.cluster.nodes[:1]
+            ] + [
+                {'uid': n.uid, 'status': consts.NODE_STATUSES.ready}
+                for n in self.cluster.nodes[1:]
+            ],
+            progress=100,
+            status=consts.TASK_STATUSES.ready)
+        self._success(task.subtasks[0].uuid)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(
+            consts.CLUSTER_STATUSES.partially_deployed, self.cluster.status
+        )
 
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute_on_one_node(self, rpc_mock):

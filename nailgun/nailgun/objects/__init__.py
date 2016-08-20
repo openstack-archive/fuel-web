@@ -26,6 +26,7 @@ from nailgun.objects.oswl import OpenStackWorkloadStatsCollection
 
 from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.objects.deployment_graph import DeploymentGraphCollection
+from nailgun.objects.deployment_graph import DeploymentGraphTask
 
 from nailgun.objects.release import Release
 from nailgun.objects.release import ReleaseCollection

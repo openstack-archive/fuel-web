@@ -165,3 +165,19 @@ class TestOrchestratorTaskTypesDowngrade(base.BaseAlembicMigrationTest):
         self.assertFalse(
             expected_values.intersection((x[0] for x in result))
         )
+
+
+class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
+
+    def test_error_type_is_enum(self):
+        nodes_table = self.meta.tables['nodes']
+        self.assertEqual(
+            'node_error_type', nodes_table.c.error_type.type.name
+        )
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::node_error_type))'
+        )).fetchall()
+        self.assertEqual(
+            {'deploy', 'provision', 'deletion', 'discover', 'stop_deployment'},
+            {x[0] for x in result},
+        )

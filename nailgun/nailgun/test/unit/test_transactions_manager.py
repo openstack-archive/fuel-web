@@ -96,14 +96,29 @@ class TestNodeForRedeploy(BaseUnitTest):
         self.assertFalse(manager._is_node_for_redeploy(None))
 
         self.assertTrue(manager._is_node_for_redeploy(mock.MagicMock(
-            pending_addition=True, status=consts.NODE_STATUSES.discover
+            pending_addition=True, status=consts.NODE_STATUSES.discover,
+            progress=0, error_type=None
         )))
         self.assertFalse(manager._is_node_for_redeploy(mock.MagicMock(
-            pending_addition=False, status=consts.NODE_STATUSES.ready
+            pending_addition=False, status=consts.NODE_STATUSES.ready,
+            progress=0, error_type=None
         )))
         self.assertTrue(manager._is_node_for_redeploy(mock.MagicMock(
-            pending_addition=True, status=consts.NODE_STATUSES.ready
+            pending_addition=True, status=consts.NODE_STATUSES.ready,
+            progress=0, error_type=None
         )))
+        self.assertTrue(
+            manager._is_node_for_redeploy(mock.MagicMock(
+                pending_addition=False, error_type=consts.NODE_ERRORS.deploy,
+                progress=0, status=consts.NODE_STATUSES.ready
+            ))
+        )
+        self.assertTrue(
+            manager._is_node_for_redeploy(mock.MagicMock(
+                pending_addition=False, status=consts.NODE_STATUSES.stopped,
+                progress=0, error_type=None
+            ))
+        )
 
 
 class TestGetTasksToRun(BaseUnitTest):
@@ -167,3 +182,90 @@ class TestGetTasksToRun(BaseUnitTest):
         adapter_mock.adapt_legacy_tasks.assert_called_with(
             tasks, cluster_obj.get_legacy_plugin_tasks.return_value, resolver
         )
+
+
+class TestUpdateNodes(BaseUnitTest):
+    @mock.patch('nailgun.transactions.manager.objects')
+    def test_delete_node_from_cluster(self, obj_mock):
+        transaction = mock.MagicMock(dry_run=False)
+        nodes = [mock.MagicMock(uid='1')]
+        node_params = {'1': {'status': 'deleted'}}
+        manager._update_nodes(transaction, nodes, node_params)
+        obj_mock.Node.remove_from_cluster.assert_called_once_with(nodes[0])
+
+    @mock.patch('nailgun.transactions.manager.objects')
+    def test_delete_node_from_cluster_if_dry_run(self, obj_mock):
+        transaction = mock.MagicMock(dry_run=True)
+        nodes = [mock.MagicMock(uid='1')]
+        node_params = {'1': {'status': 'deleted'}}
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertEqual(0, obj_mock.Node.remove_from_cluster.call_count)
+
+    @mock.patch('nailgun.transactions.manager.notifier')
+    def test_set_error_status(self, notifier_mock):
+        transaction = mock.MagicMock(dry_run=False)
+        nodes = [mock.MagicMock(uid='1', error_type=None)]
+        node_params = {
+            '1': {
+                'status': 'error', 'error_type': consts.NODE_ERRORS.provision
+            }
+        }
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertEqual(consts.NODE_ERRORS.provision, nodes[0].error_type)
+        notifier_mock.notify.assert_called_once_with(
+            consts.NOTIFICATION_TOPICS.error,
+            "Node '{0}' failed: Unknown error".format(nodes[0].name),
+            cluster_id=transaction.cluster_id,
+            node_id=nodes[0].uid,
+            task_uuid=transaction.uuid
+        )
+
+    @mock.patch('nailgun.transactions.manager.notifier')
+    def test_set_default_error_type(self, notifier_mock):
+        transaction = mock.MagicMock(dry_run=False)
+        nodes = [mock.MagicMock(uid='1', error_type=None)]
+        node_params = {'1': {'status': 'error', 'error_msg': 'error'}}
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertEqual(consts.NODE_ERRORS.deploy, nodes[0].error_type)
+        notifier_mock.notify.assert_called_once_with(
+            consts.NOTIFICATION_TOPICS.error,
+            "Node '{0}' failed: error".format(nodes[0].name),
+            cluster_id=transaction.cluster_id,
+            node_id=nodes[0].uid,
+            task_uuid=transaction.uuid
+        )
+
+    @mock.patch('nailgun.transactions.manager.notifier')
+    def test_handle_error_status_for_node_if_dry_run(self, notifier_mock):
+        transaction = mock.MagicMock(dry_run=True)
+        nodes = [mock.MagicMock(uid='1', error_type=None)]
+        node_params = {'1': {'status': 'error'}}
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertIsNone(nodes[0].error_type)
+        self.assertEqual(0, notifier_mock.notify.call_count)
+
+    def test_update_node_progress(self):
+        transaction = mock.MagicMock(dry_run=False)
+        nodes = [mock.MagicMock(uid='1', progress=0)]
+        node_params = {'1': {'progress': 10}}
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertEqual(10, nodes[0].progress)
+
+        transaction.dry_run = True
+        node_params = {'1': {'progress': 20}}
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertEqual(20, nodes[0].progress)
+
+    def test_update_node_status(self):
+        transaction = mock.MagicMock(dry_run=False)
+        nodes = [mock.MagicMock(uid='1', status=consts.NODE_STATUSES.discover)]
+        node_params = {'1': {'status': consts.NODE_STATUSES.ready}}
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertEqual(consts.NODE_STATUSES.ready, nodes[0].status)
+
+    def test_update_node_status_if_dry_run(self):
+        transaction = mock.MagicMock(dry_run=True)
+        nodes = [mock.MagicMock(uid='1', status=consts.NODE_STATUSES.discover)]
+        node_params = {'1': {'status': consts.NODE_STATUSES.ready}}
+        manager._update_nodes(transaction, nodes, node_params)
+        self.assertEqual(consts.NODE_STATUSES.discover, nodes[0].status)

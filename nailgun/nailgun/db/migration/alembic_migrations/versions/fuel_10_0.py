@@ -26,6 +26,7 @@ import sqlalchemy as sa
 from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
 
 
@@ -42,9 +43,11 @@ def upgrade():
     upgrade_task_model()
     upgrade_deployment_graphs_attributes()
     upgrade_orchestrator_task_types()
+    upgrade_node_error_type()
 
 
 def downgrade():
+    downgrade_node_error_type()
     downgrade_orchestrator_task_types()
     downgrade_deployment_graphs_attributes()
     downgrade_task_model()
@@ -412,4 +415,27 @@ def downgrade_orchestrator_task_types():
         'deployment_graph_tasks_type',
         orchestrator_task_types_new,
         orchestrator_task_types_old
+    )
+
+
+node_error_types_old = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+    'stop_deployment'
+)
+
+
+def upgrade_node_error_type():
+    op.alter_column('nodes', 'error_type', type_=sa.String(100))
+    drop_enum('node_error_type')
+
+
+def downgrade_node_error_type():
+    enum_type = sa.Enum(*node_error_types_old, name='node_error_type')
+    enum_type.create(op.get_bind(), checkfirst=False)
+    op.execute(
+        u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
+        u' USING error_type::text::node_error_type'
     )

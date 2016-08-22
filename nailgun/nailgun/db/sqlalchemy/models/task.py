@@ -26,6 +26,7 @@ from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
+from sqlalchemy import TIMESTAMP
 from sqlalchemy.orm import relationship, backref, deferred
 
 from nailgun import consts
@@ -93,6 +94,9 @@ class Task(Base):
 
     deployment_history = relationship(
         "DeploymentHistory", backref="task", cascade="all,delete")
+
+    timestamp_start = Column(TIMESTAMP(), nullable=True)
+    timestamp_end = Column(TIMESTAMP(), nullable=True)
 
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(

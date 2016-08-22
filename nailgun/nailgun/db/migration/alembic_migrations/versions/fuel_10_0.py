@@ -42,6 +42,7 @@ def upgrade():
     upgrade_task_model()
     upgrade_deployment_graphs_attributes()
     upgrade_orchestrator_task_types()
+    upgrade_add_task_start_end_time()
 
 
 def downgrade():
@@ -52,6 +53,7 @@ def downgrade():
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
+    downgrade_add_task_start_end_time()
 
 
 def upgrade_plugin_links_constraints():
@@ -413,3 +415,28 @@ def downgrade_orchestrator_task_types():
         orchestrator_task_types_new,
         orchestrator_task_types_old
     )
+
+
+def upgrade_add_task_start_end_time():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'timestamp_start',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'timestamp_end',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+
+def downgrade_add_task_start_end_time():
+    op.drop_column('tasks', 'timestamp_start')
+    op.drop_column('tasks', 'timestamp_end')

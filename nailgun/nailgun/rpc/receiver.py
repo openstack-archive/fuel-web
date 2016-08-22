@@ -51,6 +51,10 @@ logger = logging.getLogger('receiverd')
 class NailgunReceiver(object):
 
     @classmethod
+    def _set_task_timestamp_end(cls, task):
+        task.timestamp_end = datetime.datetime.utcnow()
+
+    @classmethod
     def remove_nodes_resp(cls, **kwargs):
         logger.info(
             "RPC method remove_nodes_resp received: %s" %
@@ -72,6 +76,8 @@ class NailgunReceiver(object):
             fail_if_not_found=True,
             lock_for_update=True
         )
+
+        cls._set_task_timestamp_end(task)
 
         # locking cluster
         if task.cluster_id is not None:
@@ -169,6 +175,8 @@ class NailgunReceiver(object):
         cls.remove_nodes_resp(**kwargs)
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        cls._set_task_timestamp_end(task)
+
         cluster = task.cluster
 
         if task.status in ('ready',):
@@ -222,6 +230,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         task_uuid = kwargs['task_uuid']
         task = objects.Task.get_by_uuid(task_uuid)
+        cls._set_task_timestamp_end(task)
 
         if status == consts.TASK_STATUSES.ready:
             logger.info("IBP images from deleted cluster have been removed")
@@ -241,6 +250,7 @@ class NailgunReceiver(object):
             fail_if_not_found=True,
             lock_for_update=True,
         )
+        cls._set_task_timestamp_end(transaction)
 
         manager = transactions.TransactionsManager(transaction.cluster.id)
         manager.process(transaction, kwargs)
@@ -261,6 +271,7 @@ class NailgunReceiver(object):
             task_uuid,
             fail_if_not_found=True
         )
+        cls._set_task_timestamp_end(task)
 
         # lock cluster
         objects.Cluster.get_by_uid(
@@ -376,6 +387,7 @@ class NailgunReceiver(object):
             fail_if_not_found=True,
             lock_for_update=True
         )
+        cls._set_task_timestamp_end(task)
 
         # we should remove master node from the nodes since it requires
         # special handling and won't work with old code
@@ -431,6 +443,7 @@ class NailgunReceiver(object):
             fail_if_not_found=True,
             lock_for_update=True
         )
+        cls._set_task_timestamp_end(task)
 
         q_nodes = objects.NodeCollection.filter_by_id_list(
             None, task.cache['nodes'])
@@ -652,6 +665,7 @@ class NailgunReceiver(object):
             task_uuid,
             fail_if_not_found=True,
         )
+        cls._set_task_timestamp_end(task)
 
         stopping_task_names = [
             consts.TASK_NAMES.deploy,
@@ -806,6 +820,7 @@ class NailgunReceiver(object):
             fail_if_not_found=True,
             lock_for_update=True
         )
+        cls._set_task_timestamp_end(task)
 
         # Locking cluster
         objects.Cluster.get_by_uid(
@@ -904,6 +919,7 @@ class NailgunReceiver(object):
 
         # We simply check that each node received all vlans for cluster
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        cls._set_task_timestamp_end(task)
 
         result = []
         #  We expect that 'nodes' contains all nodes which we test.
@@ -1034,6 +1050,7 @@ class NailgunReceiver(object):
         )
         task_uuid = kwargs.get('task_uuid')
         task = objects.task.Task.get_by_uuid(uuid=task_uuid)
+        cls._set_task_timestamp_end(task)
         if kwargs.get('status'):
             task.status = kwargs['status']
         task.progress = kwargs.get('progress', 0)
@@ -1172,6 +1189,7 @@ class NailgunReceiver(object):
         logger.debug('Check dhcp message %s', error_msg)
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        cls._set_task_timestamp_end(task)
         objects.Task.update_verify_networks(task, status, progress,
                                             error_msg, result)
 
@@ -1187,6 +1205,7 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        cls._set_task_timestamp_end(task)
 
         release_info = task.cache['args']['release_info']
         release_id = release_info['release_id']
@@ -1230,6 +1249,7 @@ class NailgunReceiver(object):
         msg = kwargs.get('msg')
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        cls._set_task_timestamp_end(task)
 
         if status == 'error':
             notifier.notify('error', error)
@@ -1260,6 +1280,7 @@ class NailgunReceiver(object):
 
         task = objects.Task.get_by_uuid(
             task_uuid, fail_if_not_found=True, lock_for_update=True)
+        cls._set_task_timestamp_end(task)
 
         if status not in (consts.TASK_STATUSES.ready,
                           consts.TASK_STATUSES.error):
@@ -1312,6 +1333,7 @@ class NailgunReceiver(object):
 
         task = objects.Task.get_by_uuid(
             task_uuid, fail_if_not_found=True)
+        cls._set_task_timestamp_end(task)
 
         failed_response_nodes = {
             n['uid']: n for n in response if n['status'] != 0
@@ -1397,6 +1419,9 @@ class NailgunReceiver(object):
         try:
             task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
                                             lock_for_update=True)
+
+            task.timestamp_start = datetime.datetime.utcnow()
+
             if task.status == consts.TASK_STATUSES.pending:
                 objects.Task.update(
                     task, {'status': consts.TASK_STATUSES.running})

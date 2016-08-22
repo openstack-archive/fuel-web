@@ -14,8 +14,9 @@
 
 from oslo_serialization import jsonutils
 
-from nailgun.api.v1.handlers.base import content
 from nailgun.api.v1.handlers.base import DBSingletonHandler
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.master_node_settings \
     import MasterNodeSettingsValidator
 from nailgun.logger import logger
@@ -71,12 +72,14 @@ class MasterNodeSettingsHandler(DBSingletonHandler):
             self._handle_stats_opt_in(settings_data=jsonutils.loads(result))
         return result
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self):
         return self._perform_update(
             super(MasterNodeSettingsHandler, self).PUT)
 
-    @content
+    @handle_errors
+    @validate
     def PATCH(self):
         return self._perform_update(
             super(MasterNodeSettingsHandler, self).PATCH)

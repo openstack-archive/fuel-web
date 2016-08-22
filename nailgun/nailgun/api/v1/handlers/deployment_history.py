@@ -14,6 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import csv
+from StringIO import StringIO
+
 from nailgun.api.v1.handlers import base
 from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import serialize
@@ -31,7 +34,6 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
 
     @handle_errors
     @validate
-    @serialize
     def GET(self, transaction_id):
         """:returns: Collection of JSONized DeploymentHistory records.
 
@@ -55,7 +57,30 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
             raise self.http(400, exc.message)
 
         # fetch and serialize history
-        return self.collection.get_history(transaction=transaction,
+        data = self.collection.get_history(transaction=transaction,
                                            nodes_ids=nodes_ids,
                                            statuses=statuses,
                                            tasks_names=tasks_names)
+
+        if self.get_requested_mime() == 'text/csv':
+            return self.get_csv(data)
+        else:
+            return self.get_default(data)
+
+    @serialize
+    def get_default(self, data):
+        return data
+
+    def get_csv(self, data):
+        keys = ['task_name', 'node_id', 'status', 'time_start', 'time_end']
+
+        res = StringIO()
+        csv_writer = csv.writer(res)
+        csv_writer.writerow(keys)
+        for obj in data:
+            values = []
+            for k in keys:
+                values.append(obj.get(k))
+            csv_writer.writerow(values)
+
+        return res.getvalue()

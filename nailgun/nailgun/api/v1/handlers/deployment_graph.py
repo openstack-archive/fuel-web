@@ -224,7 +224,8 @@ class GraphsExecutorHandler(BaseHandler):
 
     validator = validators.GraphExecuteParamsValidator
 
-    @content
+    @handle_errors
+    @validate
     def POST(self):
         """:returns: JSONized Task object.
 

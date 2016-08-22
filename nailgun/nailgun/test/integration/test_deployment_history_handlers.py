@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import csv
 import mock
 import six
 
@@ -238,3 +239,40 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
         self.assertEqual("Statuses parameter could be only: pending, ready, "
                          "running, error, skipped",
                          response.json_body['message'])
+
+    @mock_rpc()
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    def test_history_collection_handler_csv(self, tasks_mock):
+        self.maxDiff = None
+        tasks_mock.return_value = self.test_tasks
+
+        cluster = self.env.create(**self.cluster_parameters)
+
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        deployment_task = next(
+            t for t in supertask.subtasks
+            if t.name == consts.TASK_NAMES.deployment
+        )
+
+        headers = self.default_headers.copy()
+        headers['accept'] = 'text/csv'
+
+        response = self.app.get(
+            reverse(
+                'DeploymentHistoryCollectionHandler',
+                kwargs={
+                    'transaction_id': deployment_task.id
+                }
+            ),
+            headers=headers
+        )
+
+        reader = csv.reader(response.body.strip().split('\n'))
+        rows = list(reader)
+
+        self.assertItemsEqual(
+            rows,
+            [['task_name', 'node_id', 'status', 'time_start', 'time_end'],
+             ['test2', cluster.nodes[0].uid, 'pending', '', ''],
+             ['test1', cluster.nodes[0].uid, 'pending', '', '']])

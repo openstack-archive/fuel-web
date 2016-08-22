@@ -18,7 +18,9 @@ import web
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
 
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.transaction import TransactionValidator
 
 from nailgun import errors
@@ -42,7 +44,9 @@ class TransactionCollectionHandler(CollectionHandler):
     collection = objects.TransactionCollection
     validator = TransactionValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """May receive cluster_id parameter to filter list of tasks
 
@@ -60,7 +64,7 @@ class TransactionCollectionHandler(CollectionHandler):
         except errors.InvalidData as exc:
             raise self.http(400, exc.message)
 
-        return self.collection.to_json(
+        return self.collection.to_list(
             self.collection.get_transactions(
                 cluster_id=cluster_id,
                 statuses=statuses,
@@ -72,7 +76,9 @@ class BaseTransactionDataHandler(TransactionHandler):
 
     get_data = None
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self, transaction_id):
         """:returns: Collection of JSONized DeploymentInfo objects.
 

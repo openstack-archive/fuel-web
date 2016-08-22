@@ -18,8 +18,10 @@ import six
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
-from nailgun.api.v1.handlers.base import content
+from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.openstack_config import OpenstackConfigValidator
 from nailgun import errors
 from nailgun.logger import logger
@@ -31,7 +33,9 @@ class OpenstackConfigCollectionHandler(BaseHandler):
 
     validator = OpenstackConfigValidator
 
-    @content
+    @handle_errors
+    @validate
+    @serialize
     def GET(self):
         """Returns list of filtered config objects.
 
@@ -48,7 +52,8 @@ class OpenstackConfigCollectionHandler(BaseHandler):
                 configs, 'node_id', node_ids)
         return objects.OpenstackConfigCollection.to_list(configs)
 
-    @content
+    @handle_errors
+    @validate
     def POST(self):
         """Creates new config object.
 
@@ -72,7 +77,8 @@ class OpenstackConfigHandler(SingleHandler):
     single = objects.OpenstackConfig
     validator = OpenstackConfigValidator
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self, obj_id):
         """Update an existing configuration is not allowed
 
@@ -80,7 +86,8 @@ class OpenstackConfigHandler(SingleHandler):
         """
         raise self.http(405)
 
-    @content
+    @handle_errors
+    @validate
     def DELETE(self, obj_id):
         """:returns: Empty string
 
@@ -111,7 +118,8 @@ class OpenstackConfigExecuteHandler(BaseHandler):
     validator = OpenstackConfigValidator
     task_manager = OpenstackConfigTaskManager
 
-    @content
+    @handle_errors
+    @validate
     def PUT(self):
         """Executes update tasks for specified resources.
 

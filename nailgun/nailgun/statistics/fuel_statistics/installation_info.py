@@ -103,6 +103,8 @@ class InstallationInfo(object):
                       'ephemeral_ceph', None),
         WhiteListRule(('storage', 'objects_ceph', 'value'),
                       'objects_ceph', None),
+        WhiteListRule(('storage', 'auth_s3_keystone_ceph', 'value'),
+                      'auth_s3_keystone_ceph', None),
         WhiteListRule(('storage', 'osd_pool_size', 'value'),
                       'osd_pool_size', None),
         WhiteListRule(('storage', 'fsid', 'value'),

@@ -32,6 +32,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import MellanoxMixin
+from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -1477,6 +1478,26 @@ class VendorSpecificMixin90(object):
             vendor_specific['provider_gateway'] = netgroup['gateway']
         return vendor_specific
 
+    @classmethod
+    def generate_driver_information(cls, node, network_scheme, nm, networks):
+        network_scheme = super(
+            VendorSpecificMixin90,
+            cls).generate_driver_information(node,
+                                             network_scheme,
+                                             nm, networks)
+        for iface in node.nic_interfaces:
+            iface_vendor_attributes = network_scheme['interfaces'][iface.name]\
+                .setdefault('vendor_specific', {})
+            for plugin_name, plugin_attributes in \
+                    six.iteritems(PluginManager.get_nic_attributes(iface)):
+                plugin_attributes.pop('metadata', None)
+                iface_vendor_attributes.update({
+                    k: v.get('value') for k, v in six.iteritems(
+                        plugin_attributes)
+                })
+
+        return network_scheme
+
 
 class SriovSerializerMixin90(object):
 
@@ -1556,6 +1577,52 @@ class NeutronNetworkDeploymentSerializer90(
                     vendor_specific=config))
 
         return transformations
+
+    @classmethod
+    def generate_transformations_by_segmentation_type(
+            cls, node, nm, transformations, prv_base_ep, nets_by_ifaces
+    ):
+        if (objects.Node.dpdk_enabled(node) and
+                objects.Cluster.is_dpdk_supported_for_segmentation(
+                    node.cluster)):
+            cls.configure_private_network_dpdk(
+                node, nm, transformations, nets_by_ifaces
+            )
+        else:
+            (super(NeutronNetworkDeploymentSerializer90, cls)
+                .generate_transformations_by_segmentation_type(
+                node, nm, transformations, prv_base_ep, nets_by_ifaces))
+
+    @classmethod
+    def generate_network_scheme(cls, node, networks):
+        schema = (
+            super(NeutronNetworkDeploymentSerializer90, cls)
+            .generate_network_scheme(node, networks))
+
+        # Add Bond specific attributes
+        for transformation in schema.get('transformations', []):
+            if cls._is_bond(transformation):
+                cls._add_plugin_attributes_for_bond(node, transformation)
+
+        return schema
+
+    @classmethod
+    def _add_plugin_attributes_for_bond(cls, node, transformation):
+        name = transformation.get('name', '')
+        bond = objects.BondCollection.filter_by(None, name=name,
+                                                node_id=node.id)[0]
+        for plugin_name, plugin_attributes in \
+                six.iteritems(PluginManager.get_bond_attributes(bond)):
+            plugin_attributes.pop('metadata', None)
+            transformation.setdefault('interface_properties', {}).\
+                setdefault('vendor_specific', {}).update({
+                    k: v.get('value') for k, v in
+                    six.iteritems(plugin_attributes)
+                })
+
+    @classmethod
+    def _is_bond(cls, transformation):
+        return transformation.get('action') == 'add-bond'
 
 
 class NeutronNetworkTemplateSerializer90(

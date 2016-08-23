@@ -188,10 +188,11 @@ class VolumeManagerExtension(VolumeObjectMethodsMixin, BaseExtension):
         :param node: Node (model) instance
         :returns: bool
         """
-        if (node.status in (consts.NODE_STATUSES.ready,
+        node_status = objects.Node.get_status(node)
+        if (node_status in (consts.NODE_STATUSES.ready,
                             consts.NODE_STATUSES.deploying,
                             consts.NODE_STATUSES.provisioned) or
-                (node.status == consts.NODE_STATUSES.error and
+                (node_status == consts.NODE_STATUSES.error and
                  node.error_type != consts.NODE_ERRORS.provision)):
             return False
 

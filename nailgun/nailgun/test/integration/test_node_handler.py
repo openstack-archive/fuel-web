@@ -327,7 +327,9 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(node.ip, ipaddress)
-        self.assertEqual(node.status, consts.NODE_STATUSES.error)
+        self.assertEqual(
+            objects.Node.get_status(node), consts.NODE_STATUSES.error
+        )
         notif = self.db.query(Notification).filter_by(
             node_id=node.id,
             topic='error'
@@ -345,7 +347,9 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(node.ip, ipaddress)
-        self.assertEqual(node.status, consts.NODE_STATUSES.discover)
+        self.assertEqual(
+            objects.Node.get_status(node), consts.NODE_STATUSES.discover
+        )
 
     def test_update_node_with_none_ip(self):
         node = self.env.create_node(api=False, ip='10.20.0.2')

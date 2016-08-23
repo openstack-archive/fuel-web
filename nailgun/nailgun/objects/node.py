@@ -344,7 +344,6 @@ class Node(NailgunObject):
         # Add interfaces for node from 'meta'.
         if new_node.meta and new_node.meta.get('interfaces'):
             cls.update_interfaces(new_node)
-            cls.update_interfaces_offloading_modes(new_node)
 
         # role cannot be assigned if cluster_id is not set
         if new_node_cluster_id:
@@ -637,9 +636,6 @@ class Node(NailgunObject):
                 instance.mac = data.pop("mac", None) or instance.mac
                 db().flush()
                 cls.update_interfaces(instance)
-                cls.update_interfaces_offloading_modes(
-                    instance,
-                    is_agent)
 
         cluster_changed = False
         add_to_cluster = False
@@ -831,27 +827,6 @@ class Node(NailgunObject):
             else:
                 data.pop('status', None)
         return cls.update(instance, data)
-
-    @classmethod
-    def update_interfaces_offloading_modes(cls, instance, keep_states=False):
-        """Update information about offloading modes for node interfaces.
-
-        :param instance: Node object
-        :param keep_states: If True, information about available modes will be
-               updated, but states configured by user will not be overwritten.
-        """
-        for interface in instance.meta["interfaces"]:
-            new_offloading_modes = interface.get('offloading_modes')
-            if new_offloading_modes:
-                NIC.update_offloading_modes(
-                    cls.get_interface_by_mac_or_name(
-                        instance,
-                        interface['mac'],
-                        interface['name']
-                    ),
-                    new_offloading_modes,
-                    keep_states
-                )
 
     @classmethod
     def update_roles(cls, instance, new_roles):

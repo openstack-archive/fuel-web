@@ -18,7 +18,6 @@ from oslo_serialization import jsonutils
 import six
 
 from nailgun.api.v1.validators.base import BasicValidator
-from nailgun.api.v1.validators.json_schema import iface_schema
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
@@ -27,6 +26,8 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun import errors
+from nailgun.extensions.network_manager.validators.json_schema import \
+    interface
 from nailgun.extensions.network_manager.validators.json_schema import \
     network_template
 from nailgun.extensions.network_manager.validators.json_schema import networks
@@ -320,7 +321,7 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
 
 
 class NetAssignmentValidator(BasicValidator):
-    single_schema = iface_schema.INTERFACES
+    single_schema = interface.INTERFACES
 
     @classmethod
     def validate(cls, node):

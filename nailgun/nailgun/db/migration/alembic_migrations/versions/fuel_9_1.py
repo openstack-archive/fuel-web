@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Fuel 9.0.2
+"""Fuel 9.1
 
 Revision ID: f2314e5d63c9
 Revises: 675105097a69

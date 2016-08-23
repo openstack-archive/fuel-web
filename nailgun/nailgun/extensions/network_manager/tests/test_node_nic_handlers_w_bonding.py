@@ -168,7 +168,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             'xmit_hash_policy': {
                 'value': {'value': BOND_XMIT_HASH_POLICY.layer2_3}},
             'lacp_rate': {'value': {'value': 'slow'}},
-            'type__': {'value': bond_type}
+            'type__': {'value': bond_type},
+            'offloading': {'modes': {'value': {'mode_common': None}}}
         }
         attributes.update(iface_props)
 
@@ -195,13 +196,9 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             resp.json_body)
         self.assertEqual(len(bonds), 1)
         self.assertEqual(bonds[0]["name"], bond_name)
-        bond_offloading_modes = bonds[0]['offloading_modes']
-        self.assertEqual(len(bond_offloading_modes), 1)
+        modes = bonds[0]['attributes']['offloading']['modes']['value']
         self.assertDictEqual(
-            bond_offloading_modes[0],
-            {'name': 'mode_common',
-             'state': None,
-             'sub': []})
+            modes, {'mode_common': None})
 
     def nics_bond_remove(self, put_func):
         resp = self.env.node_nics_get(self.env.nodes[0]["id"])
@@ -716,15 +713,14 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             body)
         self.assertEqual(1, len(bonds))
 
-        bond_offloading_modes = bonds[0]['offloading_modes']
+        bond_offloading_modes = bonds[0]['attributes'][
+            'offloading']['modes']['value']
         self.assertEqual(len(bond_offloading_modes), 1)
         slaves = bonds[0]['slaves']
 
         self.assertEqual(2, len(slaves))
-
-        self.assertIsNone(bond_offloading_modes[0]['state'])
-        bond_offloading_modes[0]['state'] = True
-        self.assertTrue(bond_offloading_modes[0]['state'])
+        self.assertIsNone(bond_offloading_modes['mode_common'])
+        bond_offloading_modes['mode_common'] = True
 
         resp = self.env.node_nics_put(
             self.env.nodes[0]["id"],
@@ -736,12 +732,13 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             body)
         self.assertEqual(1, len(bonds))
 
-        bond_offloading_modes = bonds[0]['offloading_modes']
+        bond_offloading_modes = bonds[0]['attributes'][
+            'offloading']['modes']['value']
         self.assertEqual(len(bond_offloading_modes), 1)
         slaves = bonds[0]['slaves']
 
         self.assertEqual(2, len(slaves))
-        self.assertTrue(bond_offloading_modes[0]['state'])
+        self.assertTrue(bond_offloading_modes['mode_common'])
 
     def test_nics_bond_cannot_contain_sriov_enabled_interfaces(self):
         self.data.append({

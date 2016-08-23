@@ -367,8 +367,7 @@ class Node(NailgunObject):
 
     @classmethod
     def set_error_status_and_file_notification(cls, instance, etype, emessage):
-        instance.status = consts.NODE_STATUSES.error
-        instance.error_type = etype
+        instance.error_type = etype or consts.NODE_ERRORS.deploy
         instance.error_msg = emessage
         db().flush()
         Notification.create({
@@ -487,8 +486,9 @@ class Node(NailgunObject):
                 consts.NODE_ERRORS.deploy
             )
 
-        return instance.status not in unlocked_cluster_statuses or (
-            instance.status == consts.NODE_STATUSES.error and
+        status = cls.get_status(instance)
+        return status not in unlocked_cluster_statuses or (
+            status == consts.NODE_STATUSES.error and
             instance.error_type not in unlocked_node_error_types
         )
 
@@ -499,7 +499,8 @@ class Node(NailgunObject):
         It is not allowed during provision/deployment, after
         successful provision/deployment and during node removal.
         """
-        return instance.status not in (
+        status = cls.get_status(instance)
+        return status not in (
             consts.NODE_STATUSES.discover,
             consts.NODE_STATUSES.error,
         )
@@ -805,7 +806,8 @@ class Node(NailgunObject):
                 update_status = cls.check_ip_belongs_to_any_admin_network(
                     instance, data['ip'])
             if update_status:
-                if instance.status == consts.NODE_STATUSES.error and \
+                node_status = cls.get_status(instance)
+                if node_status == consts.NODE_STATUSES.error and \
                         instance.error_type == consts.NODE_ERRORS.discover:
                     # accept the status from agent if the node had wrong IP
                     # previously
@@ -1233,9 +1235,10 @@ class Node(NailgunObject):
             consts.NODE_STATUSES.provisioned,
             consts.NODE_STATUSES.stopped
         )
+        node_status = cls.get_status(instance)
         return (
-            instance.status in already_provisioned_statuses or
-            (instance.status == consts.NODE_STATUSES.error and
+            node_status in already_provisioned_statuses or
+            (node_status == consts.NODE_STATUSES.error and
              instance.error_type == consts.NODE_ERRORS.deploy)
         )
 

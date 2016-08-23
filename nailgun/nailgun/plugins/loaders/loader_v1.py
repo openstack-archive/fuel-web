@@ -1,6 +1,6 @@
-# coding: utf-8
-
-# Copyright 2016 Mirantis, Inc.
+# -*- coding: utf-8 -*-
+#
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,16 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from .base import NailgunException
+from loader_base import PluginLoaderBase
 
 
-class PluginException(NailgunException):
-    """Base plugn exception"""
-
-
-class PackageVersionIsNotCompatible(PluginException):
-    message = "Package version is not compatible"
-
-
-class NoPluginFileFound(PluginException):
-    message = "Plugin file not found"
+class PluginLoaderV1(PluginLoaderBase):
+    paths_to_fields = {
+        'attributes_metadata': 'environment_config.yaml',
+        'tasks': 'tasks.yaml',
+    }

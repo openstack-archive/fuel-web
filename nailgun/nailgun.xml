@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?><testsuite errors="0" failures="0" name="pytest" skips="0" tests="5" time="17.885"><testcase classname="nailgun.test.integration.test_action_logs.TestActionLogs" file="/Users/justaman/projects/mirantis/fuel/fuel-web/nailgun/nailgun/test/integration/test_action_logs.py" line="28" name="test_action_log_updating_for_tasks" time="4.32477402687"><system-err>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/elements.py:3888: SAWarning: Textual column expression &apos;id&apos; should be explicitly declared with text(&apos;id&apos;), or use column(&apos;id&apos;) for more specificity (this warning may be suppressed after 10 occurrences)
+  if guess_is_literal else &quot;column&quot;
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (59:1c)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;node_nic_interfaces.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (3d:08)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;1&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;2&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;nodes.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+</system-err></testcase><testcase classname="nailgun.test.integration.test_action_logs.TestActionLogs" file="/Users/justaman/projects/mirantis/fuel/fuel-web/nailgun/nailgun/test/integration/test_action_logs.py" line="165" name="test_create_stats_user_logged_put" time="5.10824084282"><system-err>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/elements.py:3888: SAWarning: Textual column expression &apos;id&apos; should be explicitly declared with text(&apos;id&apos;), or use column(&apos;id&apos;) for more specificity (this warning may be suppressed after 10 occurrences)
+  if guess_is_literal else &quot;column&quot;
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (4e:02)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;node_nic_interfaces.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;1&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;2&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+</system-err></testcase><testcase classname="nailgun.test.integration.test_action_logs.TestActionLogs" file="nailgun/test/base.py" line="1593" name="test_all_action_logs_types_saved" time="5.18130302429"><system-err>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/elements.py:3888: SAWarning: Textual column expression &apos;id&apos; should be explicitly declared with text(&apos;id&apos;), or use column(&apos;id&apos;) for more specificity (this warning may be suppressed after 10 occurrences)
+  if guess_is_literal else &quot;column&quot;
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (6c:18)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;node_nic_interfaces.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (4f:60)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;network_groups.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;1&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;2&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;volume_manager_node_volumes.node_id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;nodes.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+</system-err></testcase><testcase classname="nailgun.test.integration.test_action_logs.TestActionLogs" file="/Users/justaman/projects/mirantis/fuel/fuel-web/nailgun/nailgun/test/integration/test_action_logs.py" line="170" name="test_create_stats_user_logged_patch" time="5.21191120148"><system-err>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/elements.py:3888: SAWarning: Textual column expression &apos;id&apos; should be explicitly declared with text(&apos;id&apos;), or use column(&apos;id&apos;) for more specificity (this warning may be suppressed after 10 occurrences)
+  if guess_is_literal else &quot;column&quot;
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/sqltypes.py:185: SAWarning: Unicode type received non-unicode bind param value &apos;Untitled (03:44)&apos;. (this warning may be suppressed after 10 occurrences)
+  (util.ellipses_string(value),))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/default_comparator.py:153: SAWarning: The IN-predicate on &quot;node_nic_interfaces.id&quot; was invoked with an empty sequence. This results in a contradiction, which nonetheless can be expensive to evaluate.  Consider alternative strategies for improved performance.
+  &apos;strategies for improved performance.&apos; % expr)
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;1&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+/Users/justaman/projects/mirantis/fuel/fuel-web/.tox/py27/lib/python2.7/site-packages/sqlalchemy/sql/compiler.py:575: SAWarning: Can&apos;t resolve label reference &apos;2&apos;; converting to text() (this warning may be suppressed after 10 occurrences)
+  util.ellipses_string(element.element))
+</system-err></testcase><testcase time="0.000241994857788"></testcase><testcase classname="nailgun.test.integration.test_api_doc_generation.TestAPIDocGeneration" file="nailgun/test/integration/test_api_doc_generation.py" line="54" name="test_url_generator" time="0.196913003922"><system-err>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+</system-err></testcase><testcase time="0.000231027603149"></testcase><testcase time="0.000243186950684"></testcase><testcase time="0.0319850444794"></testcase></testsuite>

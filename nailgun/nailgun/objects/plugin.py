@@ -27,7 +27,7 @@ from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.plugin import PluginSerializer
-from nailgun.plugins.adapters import wrap_plugin
+from nailgun import plugins
 
 
 class Plugin(NailgunObject):
@@ -43,9 +43,10 @@ class Plugin(NailgunObject):
 
         # create default graph in any case
         DeploymentGraph.create_for_model(
-            {'tasks': deployment_tasks}, new_plugin)
+            {'tasks': deployment_tasks}, new_plugin
+        )
 
-        plugin_adapter = wrap_plugin(new_plugin)
+        plugin_adapter = plugins.wrap_plugin(new_plugin)
         cls.update(new_plugin, plugin_adapter.get_metadata())
 
         ClusterPlugin.add_compatible_clusters(new_plugin)
@@ -94,8 +95,11 @@ class PluginCollection(NailgunCollection):
 
         get_name = operator.attrgetter('name')
         grouped_by_name = groupby(sorted(cls.all(), key=get_name), get_name)
-        for name, plugins in grouped_by_name:
-            newest_plugin = max(plugins, key=lambda p: LooseVersion(p.version))
+        for name, plugins_group in grouped_by_name:
+            newest_plugin = max(
+                plugins_group,
+                key=lambda p: LooseVersion(p.version)
+            )
 
             newest_plugins.append(newest_plugin)
 
@@ -147,7 +151,7 @@ class ClusterPlugin(NailgunObject):
         :return: True if compatible, False if not
         :rtype: bool
         """
-        plugin_adapter = wrap_plugin(plugin)
+        plugin_adapter = plugins.wrap_plugin(plugin)
 
         return plugin_adapter.validate_compatibility(cluster)
 

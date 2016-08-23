@@ -527,9 +527,11 @@ class EnvironmentManager(object):
         resp = self.neutron_networks_put(cluster_id, netconfig)
         return resp
 
-    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
-    def create_plugin(self, m_load_conf, sample=None, api=False, cluster=None,
-                      enabled=True, expect_errors=False, **kwargs):
+    @mock.patch('nailgun.plugins.loaders.files_manager.FilesManager.load')
+    @mock.patch('nailgun.plugins.loaders.loader_base.os.path.isdir')
+    def create_plugin(self, is_dir_m, files_manager_m, sample=None, api=False,
+                      cluster=None, enabled=True, expect_errors=False,
+                      **kwargs):
         if sample:
             plugin_data = sample
             plugin_data.update(**kwargs)
@@ -560,8 +562,11 @@ class EnvironmentManager(object):
             'node_config.yaml': node_config
         }
 
-        m_load_conf.side_effect = lambda key: copy.deepcopy(
-            mocked_metadata[key])
+        is_dir_m.return_value = True
+        # good only when everything is located in root dir
+        files_manager_m.side_effect = lambda key: copy.deepcopy(
+            mocked_metadata[os.path.basename(key)]
+        )
 
         if api:
             return self.app.post(

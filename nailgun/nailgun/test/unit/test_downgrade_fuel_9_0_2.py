@@ -68,3 +68,75 @@ class TestDropRulesToPickBootableDisk(base.BaseAlembicMigrationTest):
         ).fetchone()[0]
         volumes_metadata = jsonutils.loads(result)
         self.assertNotIn('rule_to_pick_boot_disk', volumes_metadata)
+
+
+class TestTasksSchemaDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_dry_run_field_does_no_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending'
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertNotIn('dry_run', result)
+
+    def test_graph_type_field_does_no_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending'
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertNotIn('graph_type', result)
+
+
+class TestDeploymentGraphsDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_new_columns_does_not_exist(self):
+        graphs_table = self.meta.tables['deployment_graphs']
+        self.assertNotIn('node_filter', graphs_table.c)
+        self.assertNotIn('on_success', graphs_table.c)
+        self.assertNotIn('on_error', graphs_table.c)
+        self.assertNotIn('on_stop', graphs_table.c)
+
+
+class TestOrchestratorTaskTypesDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_enum_does_not_have_new_values(self):
+        expected_values = {
+            'master_shell',
+            'move_to_bootstrap',
+            'erase_node',
+        }
+
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
+        )).fetchall()
+        self.assertFalse(
+            expected_values.intersection((x[0] for x in result))
+        )
+
+
+class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
+
+    def test_error_type_is_enum(self):
+        nodes_table = self.meta.tables['nodes']
+        self.assertEqual(
+            'node_error_type', nodes_table.c.error_type.type.name
+        )
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::node_error_type))'
+        )).fetchall()
+        self.assertEqual(
+            {'deploy', 'provision', 'deletion', 'discover', 'stop_deployment'},
+            {x[0] for x in result},
+        )

@@ -25,7 +25,7 @@ from nailgun import consts
 from nailgun import extensions
 from nailgun.logger import logger
 from nailgun import objects
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.settings import settings
 from nailgun import utils
 from nailgun.utils.role_resolver import NameMatchingPolicy
@@ -734,7 +734,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
     @classmethod
     def serialize_plugin(cls, cluster, plugin):
         os_name = cluster.release.operating_system
-        adapter = adapters.wrap_plugin(plugin)
+        adapter = plugins.wrap_plugin(plugin)
         result = {
             'name': plugin['name'],
             'scripts': [

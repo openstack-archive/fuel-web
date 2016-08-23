@@ -26,7 +26,7 @@ from nailgun.expression import Expression
 from nailgun.objects import ClusterPlugin
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import Plugin
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.settings import settings
 from nailgun.test import base
 
@@ -72,7 +72,7 @@ class TestPluginBase(base.BaseTestCase):
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
                           consts.CLUSTER_MODES.ha_compact]})
-        self.plugin_adapter = adapters.wrap_plugin(self.plugin)
+        self.plugin_adapter = plugins.wrap_plugin(self.plugin)
         self.env_config = self.env.get_default_plugin_env_config()
         self.get_config = lambda *args: mock.mock_open(
             read_data=yaml.dump(self.env_config))()
@@ -497,7 +497,7 @@ class TestClusterCompatibilityValidation(base.BaseTestCase):
                 'version': '2014.2-6.0',
                 'os': 'ubuntu',
                 'mode': ['ha']}]))
-        self.plugin_adapter = adapters.PluginAdapterV1(self.plugin)
+        self.plugin_adapter = plugins.adapters.PluginAdapterV1(self.plugin)
 
     def cluster_mock(self, os, mode, version):
         release = mock.Mock(operating_system=os, version=version)

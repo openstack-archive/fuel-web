@@ -21,12 +21,11 @@ import yaml
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun import objects
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.test import base
 
 
 class BasePluginTest(base.BaseIntegrationTest):
-
     TASKS_CONFIG = [
         {'priority': 10,
          'role': ['controller'],
@@ -127,7 +126,6 @@ class BasePluginTest(base.BaseIntegrationTest):
 
 
 class TestPluginsApi(BasePluginTest):
-
     def test_plugin_created_on_post(self):
         resp = self.env.create_plugin(api=True)
         self.assertEqual(resp.status_code, 201)
@@ -205,6 +203,102 @@ class TestPluginsApi(BasePluginTest):
         self.assertEqual(plugin_id, updated_plugin_id)
         self.assertEqual(updated_data, data)
 
+    def test_release_as_plugin(self):
+        resp = self.env.create_plugin(
+            api=True,
+            directories={'repositories/ubuntu', 'deployment_scripts/'},
+            package_version='5.0.0',
+            deployment_tasks=[
+                {
+                    'id': 'embedded-task',
+                    'type': 'puppet'
+                }
+            ],
+            releases=[
+                {
+                    "is_release": True,
+                    "name": "ExampleRelease",
+                    "description": "Example Release Description",
+                    "operating_system": "ubuntu",
+                    "version": "0.0.1",
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu",
+                    "graphs": [
+                        {
+                            "type": "custom-graph-embedded",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks": [
+                                    {
+                                        "id": "task",
+                                        "type": "shell"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "custom-graph-ref",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks_path": "deployment_tasks.yaml"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        self.assertEqual(resp.status_code, 201)
+        release_obj = objects.ReleaseCollection.filter_by(
+            None, name="ExampleRelease").first()
+        graph_obj = objects.DeploymentGraph.get_for_model(
+            release_obj, graph_type="custom-graph-embedded")
+        self.assertEqual(
+            {
+                'tasks': [
+                    {
+                        'id': 'task',
+                        'task_name': 'task',
+                        'version': '1.0.0',
+                        'type': 'shell'
+                    }
+                ],
+                'id': graph_obj.id,
+                'relations': [
+                    {
+                        'model_id': release_obj.id,
+                        'model': 'release',
+                        'type': 'custom-graph-embedded'
+                    }
+                ],
+                'name': 'deployment-graph-name'
+            },
+            objects.DeploymentGraph.to_dict(graph_obj)
+        )
+        graph_obj = objects.DeploymentGraph.get_for_model(
+            release_obj, graph_type="custom-graph-ref")
+        self.assertEqual(
+            {
+                'tasks': [
+                    {
+                        'id': 'embedded-task',
+                        'task_name': 'embedded-task',
+                        'type': 'puppet',
+                        'version': '1.0.0'
+                    }
+                ],
+                'id': graph_obj.id,
+                'relations': [
+                    {
+                        'model_id': release_obj.id,
+                        'model': 'release',
+                        'type': 'custom-graph-ref'
+                    }
+                ],
+                'name': 'deployment-graph-name'
+            },
+            objects.DeploymentGraph.to_dict(graph_obj)
+        )
+
     def test_default_attributes_after_plugin_is_created(self):
         self.env.create_plugin(api=True)
         cluster = self.create_cluster()
@@ -270,16 +364,18 @@ class TestPluginsApi(BasePluginTest):
         self.disable_plugin(cluster, 'multiversion_plugin')
         self.assertEqual(get_num_enabled(cluster.id), 0)
 
-    def test_sync_all_plugins(self):
+    @mock.patch('nailgun.plugins.manager.wrap_plugin')
+    def test_sync_all_plugins(self, wrap_m):
         self._create_new_and_old_version_plugins_for_sync()
-
+        wrap_m.get_metadata.return_value = {}
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)
 
-    def test_sync_specific_plugins(self):
+    @mock.patch('nailgun.plugins.manager.wrap_plugin')
+    def test_sync_specific_plugins(self, wrap_m):
         plugin_ids = self._create_new_and_old_version_plugins_for_sync()
         ids = plugin_ids[:1]
-
+        wrap_m.get_metadata.return_value = {}
         resp = self.sync_plugins(params={'ids': ids})
         self.assertEqual(resp.status_code, 200)
 
@@ -302,19 +398,21 @@ class TestPluginsApi(BasePluginTest):
                          'Cannot enable plugin with legacy tasks unless '
                          'propagate_task_deploy attribute is set')
 
-    @mock.patch('nailgun.plugins.adapters.open', create=True)
-    @mock.patch('nailgun.plugins.adapters.os.access')
-    def test_sync_with_invalid_yaml_files(self, maccess, mopen):
+    @mock.patch('nailgun.plugins.loaders.files_manager.open', create=True)
+    @mock.patch('nailgun.plugins.loaders.files_manager.os.access')
+    @mock.patch('nailgun.plugins.loaders.files_manager.FilesManager.'
+                '_get_files_by_mask')
+    def test_sync_with_invalid_yaml_files(self, files_list_m, maccess, mopen):
         maccess.return_value = True
-
+        files_list_m.return_value = ['metadata.yaml']
         self._create_new_and_old_version_plugins_for_sync()
-        with mock.patch.object(yaml, 'safe_load') as yaml_safe_load:
-            yaml_safe_load.side_effect = yaml.YAMLError()
+        with mock.patch.object(yaml, 'load') as yaml_load:
+            yaml_load.side_effect = yaml.YAMLError()
             resp = self.sync_plugins(expect_errors=True)
             self.assertEqual(resp.status_code, 400)
             self.assertRegexpMatches(
                 resp.json_body["message"],
-                'Problem with loading YAML file')
+                'YAMLError')
 
     def _create_new_and_old_version_plugins_for_sync(self):
         plugin_ids = []
@@ -371,7 +469,6 @@ class TestPluginsApi(BasePluginTest):
 
 
 class TestPrePostHooks(BasePluginTest):
-
     def setUp(self):
         super(TestPrePostHooks, self).setUp()
 
@@ -381,7 +478,7 @@ class TestPrePostHooks(BasePluginTest):
         self._requests_mock.start()
 
         resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
-        self.plugin = adapters.wrap_plugin(
+        self.plugin = plugins.wrap_plugin(
             objects.Plugin.get_by_uid(resp.json['id']))
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},
@@ -447,7 +544,6 @@ class TestPrePostHooks(BasePluginTest):
 
 
 class TestPluginValidation(BasePluginTest):
-
     def test_valid(self):
         sample = {
             'name': 'test_name',
@@ -526,7 +622,6 @@ class TestPluginValidation(BasePluginTest):
 
 
 class TestPluginSyncValidation(BasePluginTest):
-
     def test_valid(self):
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)

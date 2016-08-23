@@ -17,7 +17,7 @@
 import yaml
 
 from nailgun import objects
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.test import base
 
 
@@ -168,7 +168,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
                                              plugin.id,
                                              enabled=True)
         self.db.flush()
-        plugin_adapter = adapters.wrap_plugin(plugin)
+        plugin_adapter = plugins.wrap_plugin(plugin)
 
         role = self.app.get(
             url=base.reverse(

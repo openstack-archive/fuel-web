@@ -582,12 +582,10 @@ class DeferredTaskHandler(BaseHandler):
         )
 
         logger.info(self.log_message.format(env_id=cluster_id))
-
         try:
             options = self.get_options()
         except ValueError as e:
             raise self.http(400, six.text_type(e))
-
         try:
             self.validator.validate(cluster)
             task_manager = self.task_manager(cluster_id=cluster.id)
@@ -614,7 +612,6 @@ class DeferredTaskHandler(BaseHandler):
             )
             # let it be 500
             raise
-
         self.raise_task(task)
 
 
@@ -659,13 +656,11 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-        graph_type = web.input(graph_type=None).graph_type
-
+        graph_type = web.input(graph_type=None).graph_type or None
         data = self.checked_data(
             self.validator.validate_update,
             instance=obj
         )
-
         deployment_graph = objects.DeploymentGraph.get_for_model(
             obj, graph_type=graph_type)
         if deployment_graph:

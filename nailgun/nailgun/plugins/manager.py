@@ -14,22 +14,22 @@
 
 import copy
 from distutils.version import StrictVersion
+
 import six
 from six.moves import map
 
+from adapters import wrap_plugin
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
-from nailgun.plugins.adapters import wrap_plugin
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
 
 
 class PluginManager(object):
-
     @classmethod
     def contains_legacy_tasks(cls, plugin):
         if plugin.tasks:
@@ -71,14 +71,14 @@ class PluginManager(object):
                     logger.warning(
                         'Plugin with id "%s" is not found, skip it', plugin_id)
                     continue
-                enabled = container['enabled']\
+                enabled = container['enabled'] \
                     and plugin_id == container['chosen_id']
                 legacy_tasks_are_ignored = not get_in(
                     attributes, 'common', 'propagate_task_deploy', 'value')
                 if (enabled and
-                    legacy_tasks_are_ignored and
-                    cls.contains_legacy_tasks(
-                        wrap_plugin(Plugin.get_by_uid(plugin.id)))):
+                        legacy_tasks_are_ignored and
+                        cls.contains_legacy_tasks(
+                            wrap_plugin(Plugin.get_by_uid(plugin.id)))):
                     raise errors.InvalidData(
                         'Cannot enable plugin with legacy tasks unless '
                         'propagate_task_deploy attribute is set')
@@ -261,10 +261,11 @@ class PluginManager(object):
                     raise errors.AlreadyExists(
                         'Plugin {0} is overlapping with plugin {1} '
                         'by introducing the same deployment task with '
-                        'id {2}'
-                        .format(plugin_adapter.full_name,
-                                processed_tasks[t_id],
-                                t_id)
+                        'id {2}'.format(
+                            plugin_adapter.full_name,
+                            processed_tasks[t_id],
+                            t_id
+                        )
                     )
                 processed_tasks[t_id] = plugin_adapter.full_name
 
@@ -331,15 +332,19 @@ class PluginManager(object):
                 if volume_id in release_volumes_ids:
                     raise errors.AlreadyExists(
                         'Plugin {0} is overlapping with release '
-                        'by introducing the same volume with id "{1}"'
-                        .format(plugin_adapter.full_name, volume_id))
+                        'by introducing the same volume with '
+                        'id "{1}"'.format(plugin_adapter.full_name, volume_id)
+                    )
                 elif volume_id in processed_volumes:
                     raise errors.AlreadyExists(
                         'Plugin {0} is overlapping with plugin {1} '
-                        'by introducing the same volume with id "{2}"'
-                        .format(plugin_adapter.full_name,
-                                processed_volumes[volume_id],
-                                volume_id))
+                        'by introducing the same volume with '
+                        'id "{2}"'.format(
+                            plugin_adapter.full_name,
+                            processed_volumes[volume_id],
+                            volume_id
+                        )
+                    )
 
                 processed_volumes[volume_id] = plugin_adapter.full_name
 
@@ -372,10 +377,12 @@ class PluginManager(object):
                 if seen_components.get(name, plugin_name) != plugin_name:
                     raise errors.AlreadyExists(
                         'Plugin {0} is overlapping with {1} by introducing '
-                        'the same component with name "{2}"'
-                        .format(plugin_adapter.name,
-                                seen_components[name],
-                                name))
+                        'the same component with name "{2}"'.format(
+                            plugin_adapter.name,
+                            seen_components[name],
+                            name
+                        )
+                    )
 
                 if name not in seen_components:
                     seen_components[name] = plugin_adapter.name
@@ -383,6 +390,7 @@ class PluginManager(object):
 
         return components
 
+    # ENTRY POINT
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
         """Sync metadata for plugins by given IDs.
@@ -396,7 +404,6 @@ class PluginManager(object):
             plugins = PluginCollection.get_by_uids(plugin_ids)
         else:
             plugins = PluginCollection.all()
-
         for plugin in plugins:
             plugin_adapter = wrap_plugin(plugin)
             metadata = plugin_adapter.get_metadata()

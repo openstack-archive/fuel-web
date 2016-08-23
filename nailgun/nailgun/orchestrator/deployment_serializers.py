@@ -26,7 +26,7 @@ from nailgun.extensions import node_extension_call
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
 from nailgun import objects
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.settings import settings
 from nailgun import utils
 from nailgun.utils.ceph import get_pool_pg_count
@@ -785,7 +785,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
     @classmethod
     def serialize_plugin(cls, cluster, plugin):
         os_name = cluster.release.operating_system
-        adapter = adapters.wrap_plugin(plugin)
+        adapter = plugins.wrap_plugin(plugin)
         result = {
             'name': plugin['name'],
             'scripts': [

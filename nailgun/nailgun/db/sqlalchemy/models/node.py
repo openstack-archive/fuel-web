@@ -251,9 +251,6 @@ class NodeNICInterface(Base):
     ip_addr = Column(psql.INET)
     netmask = Column(psql.INET)
     state = Column(String(25))
-    interface_properties = Column(
-        MutableDict.as_mutable(JSON), default={}, nullable=False,
-        server_default='{}')
     parent_id = Column(
         Integer,
         ForeignKey('node_bond_interfaces.id', ondelete='SET NULL')
@@ -320,9 +317,6 @@ class NodeBondInterface(Base):
         secondary=NetworkBondAssignment.__table__,
         order_by="NetworkGroup.id")
     state = Column(String(25))
-    interface_properties = Column(
-        MutableDict.as_mutable(JSON), default={}, nullable=False,
-        server_default='{}')
     mode = Column(
         Enum(
             *consts.BOND_MODES,

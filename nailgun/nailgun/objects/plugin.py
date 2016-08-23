@@ -21,13 +21,14 @@ import operator
 
 import six
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.plugin import PluginSerializer
-from nailgun.plugins.adapters import wrap_plugin
+from nailgun import plugins
 
 
 class Plugin(NailgunObject):
@@ -37,20 +38,60 @@ class Plugin(NailgunObject):
 
     @classmethod
     def create(cls, data):
-        # accidental because i've seen this way of tasks creation only in tests
-        deployment_tasks = data.pop('deployment_tasks', [])
-        new_plugin = super(Plugin, cls).create(data)
 
-        # create default graph in any case
-        DeploymentGraph.create_for_model(
-            {'tasks': deployment_tasks}, new_plugin)
+        graphs = data.pop("graphs", {})
+        deployment_tasks = data.pop("deployment_tasks", [])
 
-        plugin_adapter = wrap_plugin(new_plugin)
-        cls.update(new_plugin, plugin_adapter.get_metadata())
+        if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+                {'tasks': deployment_tasks}
 
-        ClusterPlugin.add_compatible_clusters(new_plugin)
+        plugin_obj = super(Plugin, cls).create(data)
 
-        return new_plugin
+        for graph_type, graph_data in six.iteritems(graphs):
+            DeploymentGraph.create_for_model(
+                graph_data, plugin_obj, graph_type)
+
+        plugin_adapter = plugins.wrap_plugin(plugin_obj)
+
+        # todo(ikutukov): this update is a smell from the current plugins
+        # todo:           installation schema. Remove it.
+        cls.update(plugin_obj, plugin_adapter.get_metadata())
+
+        ClusterPlugin.add_compatible_clusters(plugin_obj)
+
+        return plugin_obj
+
+    # todo(ikutukov): currently plugins update is vague operation so this
+    # graphs attachment on update is commented.
+
+    # @classmethod
+    # def update(cls, instance, data):
+    #     """Update existing plugin instance with specified parameters.
+    #
+    #     :param instance: object (model) instance
+    #     :param data: dictionary of key-value pairs as object fields
+    #     :returns: instance of an object (model)
+    #     """
+    #
+    #     graphs = data.pop("graphs", {})
+    #     deployment_tasks = data.pop("deployment_tasks", [])
+    #
+    #     if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+    #         graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+    #             {'tasks': deployment_tasks}
+    #
+    #     super(Plugin, cls).update(instance, data)
+    #
+    #     for graph_type, graph_data in six.iteritems(graphs):
+    #         g = DeploymentGraph.get_for_model(instance, graph_type)
+    #         if g:
+    #             DeploymentGraph.update(g, graph_data)
+    #         else:
+    #             DeploymentGraph.create_for_model(
+    #                 graph_data, instance, graph_type)
+    #
+    #     return instance
 
     @classmethod
     def get_by_name_version(cls, name, version):
@@ -94,8 +135,11 @@ class PluginCollection(NailgunCollection):
 
         get_name = operator.attrgetter('name')
         grouped_by_name = groupby(sorted(cls.all(), key=get_name), get_name)
-        for name, plugins in grouped_by_name:
-            newest_plugin = max(plugins, key=lambda p: LooseVersion(p.version))
+        for name, plugins_group in grouped_by_name:
+            newest_plugin = max(
+                plugins_group,
+                key=lambda p: LooseVersion(p.version)
+            )
 
             newest_plugins.append(newest_plugin)
 
@@ -147,7 +191,7 @@ class ClusterPlugin(NailgunObject):
         :return: True if compatible, False if not
         :rtype: bool
         """
-        plugin_adapter = wrap_plugin(plugin)
+        plugin_adapter = plugins.wrap_plugin(plugin)
 
         return plugin_adapter.validate_compatibility(cluster)
 

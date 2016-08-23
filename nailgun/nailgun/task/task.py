@@ -1552,7 +1552,7 @@ class CheckBeforeDeploymentTask(object):
             'networking_parameters': cluster.network_config,
         }
 
-        nodes = TaskHelper.nodes_to_deploy(cluster)
+        nodes = objects.Cluster.get_nodes_not_for_deletion(cluster)
         roles_metadata = objects.Cluster.get_roles(cluster)
 
         for node in nodes:

@@ -377,6 +377,13 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
 
             self.assertEqual(check_mock.call_count, 1)
 
+    @mock.patch('nailgun.task.task.assignment.NodeAssignmentValidator')
+    def test_not_yet_provisioned_nodes_roles_are_validated(self, validator):
+        self.set_node_status(consts.NODE_STATUSES.discover)
+        task.CheckBeforeDeploymentTask._check_nodes_roles(self.task)
+        validator.check_roles_for_conflicts.assert_called_once()
+        validator.check_roles_requirement.assert_called_once()
+
     def test_check_nodes_online_raises_exception(self):
         self.node.online = False
         self.env.db.commit()

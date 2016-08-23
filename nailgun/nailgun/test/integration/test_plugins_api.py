@@ -21,7 +21,7 @@ import yaml
 from nailgun import consts
 from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun import objects
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.test import base
 
 
@@ -270,16 +270,18 @@ class TestPluginsApi(BasePluginTest):
         self.disable_plugin(cluster, 'multiversion_plugin')
         self.assertEqual(get_num_enabled(cluster.id), 0)
 
-    def test_sync_all_plugins(self):
+    @mock.patch('nailgun.plugins.manager.wrap_plugin')
+    def test_sync_all_plugins(self, wrap_m):
         self._create_new_and_old_version_plugins_for_sync()
-
+        wrap_m.get_metadata.return_value = {}
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)
 
-    def test_sync_specific_plugins(self):
+    @mock.patch('nailgun.plugins.manager.wrap_plugin')
+    def test_sync_specific_plugins(self, wrap_m):
         plugin_ids = self._create_new_and_old_version_plugins_for_sync()
         ids = plugin_ids[:1]
-
+        wrap_m.get_metadata.return_value = {}
         resp = self.sync_plugins(params={'ids': ids})
         self.assertEqual(resp.status_code, 200)
 
@@ -302,19 +304,21 @@ class TestPluginsApi(BasePluginTest):
                          'Cannot enable plugin with legacy tasks unless '
                          'propagate_task_deploy attribute is set')
 
-    @mock.patch('nailgun.plugins.adapters.open', create=True)
-    @mock.patch('nailgun.plugins.adapters.os.access')
-    def test_sync_with_invalid_yaml_files(self, maccess, mopen):
+    @mock.patch('nailgun.plugins.loaders.files_manager.open', create=True)
+    @mock.patch('nailgun.plugins.loaders.files_manager.os.access')
+    @mock.patch('nailgun.plugins.loaders.files_manager.FilesManager.'
+                '_get_files_by_mask')
+    def test_sync_with_invalid_yaml_files(self, files_list_m, maccess, mopen):
         maccess.return_value = True
-
+        files_list_m.return_value = ['metadata.yaml']
         self._create_new_and_old_version_plugins_for_sync()
-        with mock.patch.object(yaml, 'safe_load') as yaml_safe_load:
-            yaml_safe_load.side_effect = yaml.YAMLError()
+        with mock.patch.object(yaml, 'load') as yaml_load:
+            yaml_load.side_effect = yaml.YAMLError()
             resp = self.sync_plugins(expect_errors=True)
             self.assertEqual(resp.status_code, 400)
             self.assertRegexpMatches(
                 resp.json_body["message"],
-                'Problem with loading YAML file')
+                'YAMLError')
 
     def _create_new_and_old_version_plugins_for_sync(self):
         plugin_ids = []
@@ -381,7 +385,7 @@ class TestPrePostHooks(BasePluginTest):
         self._requests_mock.start()
 
         resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
-        self.plugin = adapters.wrap_plugin(
+        self.plugin = plugins.wrap_plugin(
             objects.Plugin.get_by_uid(resp.json['id']))
         self.cluster = self.create_cluster([
             {'roles': ['controller'], 'pending_addition': True},

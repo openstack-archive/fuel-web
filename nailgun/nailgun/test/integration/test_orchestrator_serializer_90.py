@@ -23,7 +23,7 @@ import unittest2
 from nailgun import consts
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.utils import reverse
 
 from nailgun.extensions.network_manager.serializers.neutron_serializers \
@@ -543,7 +543,7 @@ class TestDeploymentLCMSerialization90(
         )
 
     @mock.patch.object(
-        adapters.PluginAdapterBase, 'repo_files',
+        plugins.adapters.PluginAdapterBase, 'repo_files',
         mock.MagicMock(return_value=True)
     )
     def test_plugins_in_serialized(self):
@@ -596,7 +596,7 @@ class TestDeploymentLCMSerialization90(
                     'priority': 1100
                 }]
             }
-            for p in six.moves.map(adapters.wrap_plugin, [plugin1, plugin2])
+            for p in six.moves.map(plugins.wrap_plugin, [plugin1, plugin2])
         ]
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(

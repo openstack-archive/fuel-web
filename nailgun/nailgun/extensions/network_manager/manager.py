@@ -1395,9 +1395,7 @@ class NetworkManager(object):
                 'disable_offloading':
                 iface.attributes['offloading']['disable']['value']
             }
-
-        if iface.attributes.get('offloading', {}).get(
-                'modes', {}).get('value'):
+        if get_in(iface.attributes, 'offloading', 'modes', 'value'):
             properties['ethtool'] = {
                 'offload': iface.attributes['offloading']['modes']['value']
             }

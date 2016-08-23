@@ -14,19 +14,18 @@
 
 import abc
 import copy
+from distutils.version import StrictVersion
 import glob
 import os
-
-from distutils.version import StrictVersion
 from urlparse import urljoin
 
 import six
-import yaml
 
+import loaders
+import nailgun
 from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.settings import settings
 
 
@@ -38,57 +37,45 @@ class PluginAdapterBase(object):
     2. Uploading tasks and deployment tasks
     3. Providing repositories/deployment scripts related info to clients
     """
-    config_metadata = 'metadata.yaml'
-    config_tasks = 'tasks.yaml'
+    loader_class = loaders.PluginLoaderBase
 
     def __init__(self, plugin):
         self.plugin = plugin
-        self._attributes_metadata = None
-        self._tasks = None
         self.plugin_path = os.path.join(settings.PLUGINS_PATH, self.path_name)
-        self.db_cfg_mapping = {
-            'attributes_metadata': 'environment_config.yaml'
+        self.loader = self.loader_class(self.plugin_path)
+
+    @property
+    def attributes_processors(self):
+        return {
+            'attributes_metadata':
+                lambda data: (data or {}).get('attributes', {}),
+            'tasks':
+                lambda data: data or []
         }
 
     @abc.abstractmethod
     def path_name(self):
-        """A name which is used to create path to plugin scripts and repos"""
+        """A name which is used to create path to plugin scripts and repo"""
 
     def get_metadata(self):
-        """Get parsed plugin metadata from config yaml files.
+        """Get plugin data tree.
 
         :return: All plugin metadata
         :rtype: dict
         """
-        metadata = self._load_config(self.config_metadata) or {}
-        metadata['tasks'] = self._load_tasks()
+        data_tree, report = self.loader.load()
+        if report.is_failed():
+            logger.error(report.render())
+            logger.error('Problem with loading plugin {0}'.format(
+                self.plugin_path))
+            return data_tree
+        for field in data_tree:
+            if field in self.attributes_processors:
+                data_tree[field] = \
+                    self.attributes_processors[field](data_tree.get(field))
 
-        for attribute, config in six.iteritems(self.db_cfg_mapping):
-            attribute_data = self._load_config(config)
-            # Plugin columns have constraints for nullable data,
-            # so we need to check it
-            if attribute_data is not None:
-                if attribute == 'attributes_metadata':
-                    attribute_data = attribute_data['attributes']
-                metadata[attribute] = attribute_data
-
-        return metadata
-
-    def _load_config(self, file_name):
-        config = os.path.join(self.plugin_path, file_name)
-        if os.access(config, os.R_OK):
-            with open(config, "r") as conf:
-                try:
-                    return yaml.safe_load(conf.read())
-                except yaml.YAMLError as exc:
-                    logger.warning(exc)
-                    raise errors.ParseError(
-                        'Problem with loading YAML file {0}'.format(config))
-        else:
-            logger.warning("Config {0} is not readable.".format(config))
-
-    def _load_tasks(self):
-        return self._load_config(self.config_tasks) or []
+        data_tree = {k: v for k, v in six.iteritems(data_tree) if v}
+        return data_tree
 
     @property
     def plugin_release_versions(self):
@@ -110,43 +97,53 @@ class PluginAdapterBase(object):
             plugin_name=self.path_name)
 
     def get_attributes_metadata(self):
-        if self._attributes_metadata is None:
-            if self.plugin.attributes_metadata:
-                self._attributes_metadata = self.plugin.attributes_metadata
-            else:
-                self._attributes_metadata = self._load_config(
-                    'environment_config.yaml') or {}
-
-        return self._attributes_metadata
+        return self.plugin.attributes_metadata
 
     @property
     def attributes_metadata(self):
         return self.get_attributes_metadata()
+
+    def _add_defaults_to_task(self, task, roles_metadata):
+        """Add required fault tolerance and cwd params to tasks.
+
+        :param task: task
+        :type task: dict
+        :param roles_metadata: node roles metadata
+        :type roles_metadata: dict
+
+        :return: task
+        :rtype: dict
+        """
+        if task.get('parameters'):
+            task['parameters'].setdefault(
+                'cwd', self.slaves_scripts_path)
+
+        if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
+            try:
+                task.setdefault(
+                    'fault_tolerance',
+                    roles_metadata[task['id']]['fault_tolerance']
+                )
+            except KeyError:
+                pass
+        return task
 
     def get_deployment_graph(self, graph_type=None):
         if graph_type is None:
             graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         deployment_tasks = []
         graph_metadata = {}
-        graph_instance = DeploymentGraph.get_for_model(self.plugin, graph_type)
+        graph_instance = nailgun.objects.DeploymentGraph.get_for_model(
+            self.plugin, graph_type)
         roles_metadata = self.plugin.roles_metadata
         if graph_instance:
-            graph_metadata = DeploymentGraph.get_metadata(graph_instance)
-            for task in DeploymentGraph.get_tasks(graph_instance):
-                if task.get('parameters'):
-                    task['parameters'].setdefault(
-                        'cwd', self.slaves_scripts_path)
-
-                if task.get('type') == consts.ORCHESTRATOR_TASK_TYPES.group:
-                    try:
-                        task.setdefault(
-                            'fault_tolerance',
-                            roles_metadata[task['id']]['fault_tolerance']
-                        )
-                    except KeyError:
-                        pass
-
-                deployment_tasks.append(task)
+            graph_metadata = nailgun.objects.DeploymentGraph.get_metadata(
+                graph_instance)
+            for task in nailgun.objects.DeploymentGraph.get_tasks(
+                    graph_instance):
+                deployment_tasks.append(
+                    self._add_defaults_to_task(task, roles_metadata)
+                )
         graph_metadata['tasks'] = deployment_tasks
         return graph_metadata
 
@@ -154,20 +151,16 @@ class PluginAdapterBase(object):
         return self.get_deployment_graph(graph_type)['tasks']
 
     def get_tasks(self):
-        if self._tasks is None:
-            if self.plugin.tasks:
-                self._tasks = self.plugin.tasks
-            else:
-                self._tasks = self._load_tasks()
+        tasks = self.plugin.tasks
+        slave_path = self.slaves_scripts_path
+        for task in tasks:
+            task['roles'] = task.get('role')
 
-            slave_path = self.slaves_scripts_path
-            for task in self._tasks:
-                task['roles'] = task['role']
-                parameters = task.get('parameters')
-                if parameters is not None:
-                    parameters.setdefault('cwd', slave_path)
+            parameters = task.get('parameters')
+            if parameters is not None:
+                parameters.setdefault('cwd', slave_path)
 
-        return self._tasks
+        return tasks
 
     @property
     def tasks(self):
@@ -245,19 +238,23 @@ class PluginAdapterBase(object):
             # plugin writer should be able to specify ha in release['mode']
             # and know nothing about ha_compact
             if not any(
-                cluster.mode.startswith(mode) for mode in release['mode']
+                    cluster.mode.startswith(mode) for mode in release['mode']
             ):
                 continue
 
             if not self._is_release_version_compatible(
-                cluster.release.version, release['version']
+                    cluster.release.version, release['version']
             ):
                 continue
             return True
         return False
 
     def get_release_info(self, release):
-        """Get plugin release information which corresponds to given release"""
+        """Get plugin release information which corresponds to given release.
+
+        :returns: release info
+        :rtype: dict
+        """
         rel_os = release.operating_system.lower()
         version = release.version
 
@@ -284,7 +281,10 @@ class PluginAdapterBase(object):
             master_ip=settings.MASTER_IP,
             plugin_name=self.path_name)
 
-        return urljoin(repo_base, release_info['repository_path'])
+        return urljoin(
+            repo_base,
+            release_info['repository_path']
+        )
 
     def master_scripts_path(self, cluster):
         release_info = self.get_release_info(cluster.release)
@@ -301,6 +301,42 @@ class PluginAdapterBase(object):
 class PluginAdapterV1(PluginAdapterBase):
     """Plugins attributes class for package version 1.0.0"""
 
+    loader_class = loaders.PluginLoaderV1
+
+    @property
+    def attributes_processors(self):
+        ap = super(PluginAdapterV1, self).attributes_processors
+        ap.update({
+            'tasks': self._process_legacy_tasks
+        })
+        return ap
+
+    @staticmethod
+    def _process_legacy_tasks(tasks):
+        if tasks:
+            for task in tasks:
+                role = task['role']
+                if isinstance(role, list) and 'controller' in role:
+                    role.append('primary-controller')
+            return tasks
+
+    def get_tasks(self):
+        tasks = self.plugin.tasks
+        slave_path = self.slaves_scripts_path
+        for task in tasks:
+            task['roles'] = task.get('role')
+
+            role = task['role']
+            if isinstance(role, list) \
+                    and ('controller' in role) \
+                    and ('primary-controller' not in role):
+                role.append('primary-controller')
+
+            parameters = task.get('parameters')
+            if parameters is not None:
+                parameters.setdefault('cwd', slave_path)
+        return tasks
+
     @property
     def path_name(self):
         """Returns a name and full version
@@ -310,21 +346,11 @@ class PluginAdapterV1(PluginAdapterBase):
         """
         return self.full_name
 
-    def _load_tasks(self):
-        data = super(PluginAdapterV1, self)._load_tasks()
-        for item in data:
-            # backward compatibility for plugins added in version 6.0,
-            # and it is expected that task with role: [controller]
-            # will be executed on all controllers
-            role = item['role']
-            if (isinstance(role, list) and 'controller' in role):
-                role.append('primary-controller')
-
-        return data
-
 
 class PluginAdapterV2(PluginAdapterBase):
     """Plugins attributes class for package version 2.0.0"""
+
+    loader_class = loaders.PluginLoaderV1
 
     @property
     def path_name(self):
@@ -357,52 +383,122 @@ class PluginAdapterV2(PluginAdapterBase):
 class PluginAdapterV3(PluginAdapterV2):
     """Plugin wrapper class for package version 3.0.0"""
 
-    def __init__(self, plugin):
-        super(PluginAdapterV3, self).__init__(plugin)
-        self.db_cfg_mapping['network_roles_metadata'] = 'network_roles.yaml'
-        self.db_cfg_mapping['roles_metadata'] = 'node_roles.yaml'
-        self.db_cfg_mapping['volumes_metadata'] = 'volumes.yaml'
+    loader_class = loaders.PluginLoaderV3
 
-    def get_metadata(self, graph_type=None):
-        dg = DeploymentGraph.get_for_model(self.plugin, graph_type)
+    def _process_deployment_tasks(self, deployment_tasks):
+        dg = nailgun.objects.DeploymentGraph.get_for_model(
+            self.plugin, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE)
         if dg:
-            DeploymentGraph.update(
-                dg,
-                {'tasks': self._load_config('deployment_tasks.yaml')})
+            nailgun.objects.DeploymentGraph.update(
+                dg, {'tasks': deployment_tasks})
         else:
-            DeploymentGraph.create_for_model(
-                {'tasks': self._load_config('deployment_tasks.yaml')},
-                self.plugin,
-                graph_type)
+            nailgun.objects.DeploymentGraph.create_for_model(
+                {'tasks': deployment_tasks}, self.plugin)
+        return deployment_tasks
 
-        return super(PluginAdapterV3, self).get_metadata()
+    @property
+    def attributes_processors(self):
+        ap = super(PluginAdapterV3, self).attributes_processors
+        ap.update({
+            'deployment_tasks': self._process_deployment_tasks
+        })
+        return ap
 
 
 class PluginAdapterV4(PluginAdapterV3):
     """Plugin wrapper class for package version 4.0.0"""
 
-    def __init__(self, plugin):
-        super(PluginAdapterV4, self).__init__(plugin)
-        self.db_cfg_mapping['components_metadata'] = 'components.yaml'
+    loader_class = loaders.PluginLoaderV4
 
 
 class PluginAdapterV5(PluginAdapterV4):
     """Plugin wrapper class for package version 5.0.0"""
 
-    def __init__(self, plugin):
-        super(PluginAdapterV5, self).__init__(plugin)
-        self.db_cfg_mapping['nic_attributes_metadata'] = 'nic_config.yaml'
-        self.db_cfg_mapping['bond_attributes_metadata'] = 'bond_config.yaml'
-        self.db_cfg_mapping['node_attributes_metadata'] = 'node_config.yaml'
+    loader_class = loaders.PluginLoaderV5
+
+    @property
+    def attributes_processors(self):
+        ap = super(PluginAdapterV5, self).attributes_processors
+        ap.update({
+            'releases': self._process_releases,
+            'graphs': self._make_graphs_dict_by_type
+        })
+        return ap
+
+    def _make_graphs_dict_by_type(self, graphs_list):
+        graphs_to_create = {}
+        for graph in graphs_list:
+            self.graphs_to_create[graph.pop('type')] = graph
+        return graphs_to_create
+
+    def _create_release_from_configuration(self, configuration):
+        """Create templated release and graphs for given configuration.
+
+        :param configuration:
+        :return:
+        """
+        # deployment tasks not supposed for the release description
+        # but we fix this developer mistake automatically
+
+        # apply base template
+        base_release = configuration.pop('base_release', None)
+        if base_release:
+            base_release.update(configuration)
+            configuration = base_release
+
+        # process graphs
+        graphs_by_type = {}
+        graphs_list = configuration.pop('graphs', None)
+        for graph in graphs_list:
+            graphs_by_type[graph['type']] = graph['graph']
+        configuration['graphs'] = graphs_by_type
+        nailgun.objects.Release.create(configuration)
+
+    def _process_releases(self, releases_records):
+        """Split new release records from old-style release-deps records.
+
+        :param releases_records: list of plugins and releases data
+        :type releases_records: list
+
+        :return: configurations that are extending existing
+        :rtype: list
+        """
+        extend_releases = []
+        for release in releases_records:
+            is_basic_release = release.get('is_release', False)
+            if is_basic_release:
+                self._create_release_from_configuration(release)
+            else:
+                extend_releases.append(release)
+
+        return extend_releases
 
 
-__version_mapping = {
+__plugins_mapping = {
     '1.0.': PluginAdapterV1,
     '2.0.': PluginAdapterV2,
     '3.0.': PluginAdapterV3,
     '4.0.': PluginAdapterV4,
-    '5.0.': PluginAdapterV5,
+    '5.0.': PluginAdapterV5
 }
+
+
+def get_supported_versions():
+    return list(__plugins_mapping)
+
+
+def get_adapter_for_package_version(plugin_version):
+    """Get plugin adapter class for plugin version.
+
+    :param plugin_version: plugin version string
+    :type plugin_version: basestring|str
+
+    :return: plugin loader class
+    :rtype: loaders.PluginLoader|None
+    """
+    for plugin_version_head in __plugins_mapping:
+        if plugin_version.startswith(plugin_version_head):
+            return __plugins_mapping[plugin_version_head]
 
 
 def wrap_plugin(plugin):
@@ -413,16 +509,10 @@ def wrap_plugin(plugin):
     """
     package_version = plugin.package_version
 
-    attr_class = None
-
-    # Filter by major version
-    for version, klass in six.iteritems(__version_mapping):
-        if package_version.startswith(version):
-            attr_class = klass
-            break
+    attr_class = get_adapter_for_package_version(package_version)
 
     if not attr_class:
-        supported_versions = ', '.join(__version_mapping.keys())
+        supported_versions = ', '.join(get_supported_versions())
 
         raise errors.PackageVersionIsNotCompatible(
             'Plugin id={0} package_version={1} '

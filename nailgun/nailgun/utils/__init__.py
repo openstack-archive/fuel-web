@@ -36,6 +36,7 @@ from uuid import uuid4
 from nailgun.logger import logger
 from nailgun.settings import settings
 
+from reports import ReportNode
 
 def get_in(dictionary, *args):
     """This convenience function improves readability of the code like this:

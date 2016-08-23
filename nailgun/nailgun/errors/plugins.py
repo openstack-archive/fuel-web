@@ -1,4 +1,6 @@
-#    Copyright 2014 Mirantis, Inc.
+# coding: utf-8
+
+# Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,5 +14,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from adapters import wrap_plugin
+from .base import NailgunException
 
+
+class PluginException(NailgunException):
+    """Base plugn exception"""
+
+
+class PackageVersionIsNotCompatible(PluginException):
+    message = "Package version is not compatible"
+
+
+class NoPluginFileFound(PluginException):
+    message = "Plugin file not found"

@@ -527,9 +527,11 @@ class EnvironmentManager(object):
         resp = self.neutron_networks_put(cluster_id, netconfig)
         return resp
 
-    @mock.patch('nailgun.plugins.adapters.PluginAdapterBase._load_config')
-    def create_plugin(self, m_load_conf, sample=None, api=False, cluster=None,
-                      enabled=True, expect_errors=False, **kwargs):
+    @mock.patch('nailgun.plugins.loaders.files_manager.FilesManager.load')
+    @mock.patch('nailgun.plugins.loaders.loader_base.os.path.isdir')
+    def create_plugin(self, is_dir_m, files_manager_m, sample=None, api=False,
+                      cluster=None, enabled=True, expect_errors=False,
+                      directories=None, **kwargs):
         if sample:
             plugin_data = sample
             plugin_data.update(**kwargs)
@@ -547,6 +549,7 @@ class EnvironmentManager(object):
         node_config = plugin_data.pop('node_config', None)
 
         mocked_metadata = {
+            'metadata.*': plugin_data,
             'metadata.yaml': plugin_data,
             'environment_config.yaml': env_config,
             'node_roles.yaml': node_roles,
@@ -559,9 +562,22 @@ class EnvironmentManager(object):
             'bond_config.yaml': bond_config,
             'node_config.yaml': node_config
         }
+        # good only when everything is located in root dir
+        files_manager_m.side_effect = lambda key: copy.deepcopy(
+            mocked_metadata.get(os.path.basename(key))
+        )
 
-        m_load_conf.side_effect = lambda key: copy.deepcopy(
-            mocked_metadata[key])
+        # mock is_dir
+        directories = (set(directories) if directories else set()).union({
+            'deployment_scripts/',
+            'repositories/ubuntu',
+            'repositories/centos'
+        })
+
+        def define_dir(path):
+            return any(path.endswith(d) for d in directories)
+
+        is_dir_m.side_effect = define_dir
 
         if api:
             return self.app.post(

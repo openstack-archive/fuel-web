@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import mock
 
 from netaddr import IPNetwork
@@ -96,16 +97,19 @@ class TestBondObject(BaseTestCase):
             'name': 'bond0',
             'slaves': self.node.nic_interfaces,
             'node': self.node,
+            'attributes': {
+                'offloading': {
+                    'modes': {'value': {'test_mode': 'mode'}}}}
         }
         bond = objects.Bond.create(data)
-        offloading_modes = bond.offloading_modes
-        offloading_modes[0]['state'] = 'test'
-
-        data = {
-            'offloading_modes': offloading_modes
+        new_data = {
+            'attributes': {
+                'offloading': {
+                    'modes': {'value': {'test_mode': 'test'}}}}
         }
-        objects.Bond.update(bond, data)
-        self.assertEqual(data['offloading_modes'], bond.offloading_modes)
+
+        objects.Bond.update(bond, copy.deepcopy(new_data))
+        self.assertEqual(new_data['attributes'], bond['attributes'])
 
     def test_get_bond_interfaces_for_all_nodes(self):
         node = self.env.nodes[0]
@@ -120,12 +124,87 @@ class TestBondObject(BaseTestCase):
 
 class TestNICObject(BaseTestCase):
 
+    changed_modes = [
+        {
+            'name': 'mode_1',
+            'state': True,
+            'sub': [
+                {
+                    'name': 'sub_mode_1',
+                    'state': None,
+                    'sub': []
+                }
+            ]
+        },
+        {
+            'name': 'mode_2',
+            'state': None,
+            'sub': [
+                {
+                    'name': 'sub_mode_2',
+                    'state': False,
+                    'sub': []
+                }
+            ]
+        }
+    ]
+
+    expected_result = {
+        'mode_1': True,
+        'sub_mode_1': None,
+        'mode_2': None,
+        'sub_mode_2': False
+    }
+
+    deep_structure = [
+        {
+            'name': 'level_1',
+            'state': True,
+            'sub': [
+                {
+                    'name': 'level_2',
+                    'state': None,
+                    'sub': [
+                        {
+                            'name': 'level_3',
+                            'state': None,
+                            'sub': [
+                                {
+                                    'name': 'level_4',
+                                    'state': False,
+                                    'sub': []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+
+    expected_result_deep = {
+        'level_1': True,
+        'level_2': None,
+        'level_3': None,
+        'level_4': False
+    }
+
     def setUp(self):
         super(TestNICObject, self).setUp()
 
         self.cluster = self.env.create(
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'role': 'controller'}])
+
+    def test_offloading_modes_as_flat_dict(self):
+        self.assertDictEqual(
+            self.expected_result,
+            objects.NIC.offloading_modes_as_flat_dict(
+                self.changed_modes))
+        self.assertDictEqual(
+            self.expected_result_deep,
+            objects.NIC.offloading_modes_as_flat_dict(
+                self.deep_structure))
 
     def test_replace_assigned_networks(self):
         node = self.env.nodes[0]
@@ -165,44 +244,6 @@ class TestNICObject(BaseTestCase):
         nic_interfaces = objects.NIC.get_nic_interfaces_for_all_nodes(
             self.env.clusters[0])
         self.assertEqual(len(nic_interfaces), len(interfaces))
-
-    def test_update_offloading_modes(self):
-        node = self.env.nodes[0]
-        new_modes = [
-            {'state': True, 'name': 'tx-checksumming', 'sub': [
-                {'state': False, 'name': 'tx-checksum-sctp', 'sub': []},
-                {'state': True, 'name': 'tx-checksum-ipv6', 'sub': []},
-                {'state': None, 'name': 'tx-checksum-ipv4', 'sub': []}]},
-            {'state': None, 'name': 'rx-checksumming', 'sub': []},
-            {'state': True, 'name': 'new_offloading_mode', 'sub': []}]
-        objects.NIC.update_offloading_modes(node.interfaces[0], new_modes)
-        self.assertListEqual(node.interfaces[0].offloading_modes, new_modes)
-
-    def test_update_offloading_modes_keep_states(self):
-        node = self.env.nodes[0]
-        old_modes = [
-            {'state': True, 'name': 'tx-checksumming', 'sub': [
-                {'state': False, 'name': 'tx-checksum-sctp', 'sub': []},
-                {'state': True, 'name': 'tx-checksum-ipv6', 'sub':
-                    [{'state': None, 'name': 'tx-checksum-ipv4', 'sub': []}]}]
-             }]
-
-        node.interfaces[0].offloading_modes = old_modes
-        new_mode = {'state': True, 'name': 'new_offloading_mode', 'sub': []}
-        new_modes = [
-            {'state': True, 'name': 'tx-checksumming', 'sub': [
-                {'state': True, 'name': 'tx-checksum-sctp', 'sub': []},
-                {'state': True, 'name': 'tx-checksum-ipv6', 'sub':
-                    [{'state': False, 'name': 'tx-checksum-ipv4', 'sub': []}]}]
-             },
-            new_mode]
-
-        objects.NIC.update_offloading_modes(node.interfaces[0], new_modes,
-                                            keep_states=True)
-        old_modes.append(new_mode)
-        # States for old offloading modes should be preserved
-        self.assertListEqual(node.interfaces[0].offloading_modes,
-                             old_modes)
 
 
 class TestIPAddrObject(BaseTestCase):

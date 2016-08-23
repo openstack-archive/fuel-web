@@ -155,9 +155,6 @@ class DeploymentGraph(NailgunObject):
 
     @classmethod
     def get_tasks(cls, deployment_graph_instance):
-        if not isinstance(deployment_graph_instance, models.DeploymentGraph):
-            raise Exception('This method is allowed only for '
-                            'the deployment graph instance.')
         return DeploymentGraphTaskCollection.get_by_deployment_graph_uid(
             deployment_graph_instance.id
         )

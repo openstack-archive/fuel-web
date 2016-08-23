@@ -582,16 +582,21 @@ class DeferredTaskHandler(BaseHandler):
         )
 
         logger.info(self.log_message.format(env_id=cluster_id))
-
+        print cluster
         try:
             options = self.get_options()
         except ValueError as e:
+            print "verror", e
             raise self.http(400, six.text_type(e))
 
         try:
+            print 1, self.validator
             self.validator.validate(cluster)
+            print 2, self.validator
             task_manager = self.task_manager(cluster_id=cluster.id)
+            print "task_manager", task_manager, options
             task = task_manager.execute(**options)
+            print "TASK", task
         except (
             errors.AlreadyExists,
             errors.StopAlreadyRunning
@@ -604,8 +609,10 @@ class DeferredTaskHandler(BaseHandler):
             errors.UnavailableRelease,
             errors.CannotBeStopped,
         ) as exc:
+            print "400 EXC", exc
             raise self.http(400, exc.message)
         except Exception as exc:
+            print "UNKNOW EXC", exc
             logger.error(
                 self.log_error.format(
                     env_id=cluster_id,
@@ -614,7 +621,7 @@ class DeferredTaskHandler(BaseHandler):
             )
             # let it be 500
             raise
-
+        print "RAISING TASK", task
         self.raise_task(task)
 
 

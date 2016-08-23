@@ -32,19 +32,6 @@ INTERFACES = {
             "name": {"type": "string"},
             "driver": base_types.NULLABLE_STRING,
             "bus_info": base_types.NULLABLE_STRING,
-            "offloading_modes": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string"},
-                        "state": base_types.NULLABLE_BOOL,
-                        "sub": {
-                            "$ref": "#/items/properties/offloading_modes"
-                        }
-                    }
-                }
-            },
             "pxe": {"type": "boolean"},
             "attributes": {
                 "type": "object",

@@ -26,7 +26,6 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import stages
 from nailgun.test import base
@@ -461,28 +460,6 @@ class TestDeploymentAttributesSerialization70(
                 expected_roles += [('neutron/mesh', 'br-mesh')]
 
             self.assertEqual(roles, dict(expected_roles))
-
-    def test_offloading_modes_serialize(self):
-        meta = self.env.default_metadata()
-        changed_offloading_modes = {}
-        for interface in meta['interfaces']:
-            changed_offloading_modes[interface['name']] = \
-                NetworkManager._get_modified_offloading_modes(
-                    interface.get('offloading_modes'))
-
-        for node in self.serialized_for_astute:
-            interfaces = node['network_scheme']['interfaces']
-            for iface_name in interfaces:
-                ethtool_blk = interfaces[iface_name].get('ethtool', None)
-                self.assertIsNotNone(
-                    ethtool_blk,
-                    "There is no 'ethtool' block in deployment data")
-                offload_blk = ethtool_blk.get('offload', None)
-                self.assertIsNotNone(
-                    offload_blk,
-                    "There is no 'offload' block in deployment data")
-                self.assertDictEqual(offload_blk,
-                                     changed_offloading_modes[iface_name])
 
     def test_network_metadata(self):
         neutron_serializer = self.serializer.get_net_provider_serializer(

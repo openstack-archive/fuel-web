@@ -12,19 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+# todo(ikutukov): align this schema with plugin builder
 PLUGIN_RELEASE_SCHEMA = {
     'type': 'object',
+    'additionalProperties': True,
     'properties': {
+        'name': {'type': 'string'},
         'repository_path': {'type': 'string'},
         'version': {'type': 'string'},
+        'operating_system': {'type': 'string'},
         'os': {'type': 'string'},
         'deployment_scripts_path': {'type': 'string'},
         'mode': {
             'type': 'array',
             'items': {'type': 'string'}}
     },
-    'required': ['version', 'os', 'mode']
+    'required': ['version']
 }
 
 

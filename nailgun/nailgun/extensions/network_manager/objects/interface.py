@@ -43,7 +43,6 @@ class DPDKMixin(object):
     @classmethod
     def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
         attributes = interface.attributes
-        meta = interface.meta
         dpdk_attributes = copy.deepcopy(attributes.get('dpdk', {}))
         dpdk_available = cls.dpdk_available(interface, dpdk_drivers)
 
@@ -53,8 +52,10 @@ class DPDKMixin(object):
         # update attributes in DB only if something was changed
         if attributes.get('dpdk', {}) != dpdk_attributes:
             attributes['dpdk'] = dpdk_attributes
-        if meta.get('dpdk', {}) != {'available': dpdk_available}:
-            meta['dpdk'] = {'available': dpdk_available}
+        if 'meta' in interface:
+            meta = interface.meta
+            if meta.get('dpdk', {}) != {'available': dpdk_available}:
+                meta['dpdk'] = {'available': dpdk_available}
 
 
 class NIC(DPDKMixin, NailgunObject):
@@ -106,32 +107,6 @@ class NIC(DPDKMixin, NailgunObject):
     def is_sriov_enabled(cls, instance):
         enabled = instance.attributes.get('sriov', {}).get('enabled')
         return enabled and enabled['value']
-
-    @classmethod
-    def update_offloading_modes(cls, instance, new_modes, keep_states=False):
-        """Update information about offloading modes for the interface.
-
-        :param instance: Interface object
-        :param new_modes: New offloading modes
-        :param keep_states: If True, information about available modes will be
-               updated, but states configured by user will not be overwritten.
-        """
-        def set_old_states(modes):
-            """Set old state for offloading modes
-
-            :param modes: List of offloading modes
-            """
-            for mode in modes:
-                if mode['name'] in old_modes_states:
-                    mode['state'] = old_modes_states[mode['name']]
-                if mode.get('sub'):
-                    set_old_states(mode['sub'])
-
-        if keep_states:
-            old_modes_states = instance.offloading_modes_as_flat_dict(
-                instance.offloading_modes)
-            set_old_states(new_modes)
-        instance.offloading_modes = new_modes
 
     @classmethod
     def get_nic_interfaces_for_all_nodes(cls, cluster, networks=None):

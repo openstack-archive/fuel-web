@@ -21,6 +21,8 @@ Release object and collection
 import copy
 from distutils.version import StrictVersion
 import itertools
+
+import six
 import yaml
 
 from nailgun import consts
@@ -54,11 +56,19 @@ class Release(NailgunObject):
         # roles array. since fuel 7.0 we don't use it anymore, and
         # we don't require it even for old releases.
         data.pop("roles", None)
+
+        graphs = data.pop("graphs", {})
         deployment_tasks = data.pop("deployment_tasks", [])
+
+        if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+                {'tasks': deployment_tasks}
+
         release_obj = super(Release, cls).create(data)
 
-        DeploymentGraph.create_for_model(
-            {'tasks': deployment_tasks}, release_obj)
+        for graph_type, graph_data in six.iteritems(graphs):
+            DeploymentGraph.create_for_model(
+                graph_data, release_obj, graph_type)
         return release_obj
 
     @classmethod
@@ -73,12 +83,24 @@ class Release(NailgunObject):
         # roles array. since fuel 7.0 we don't use it anymore, and
         # we don't require it even for old releases.
         data.pop("roles", None)
-        deployment_tasks = data.pop("deployment_tasks", None)
+
+        graphs = data.pop("graphs", {})
+        deployment_tasks = data.pop("deployment_tasks", [])
+
+        if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+                {'tasks': deployment_tasks}
+
         release_obj = super(Release, cls).update(instance, data)
-        if deployment_tasks:
-            deployment_graph_instance = DeploymentGraph.get_for_model(instance)
-            DeploymentGraph.update(deployment_graph_instance,
-                                   {'tasks': deployment_tasks})
+
+        for graph_type, graph_data in six.iteritems(graphs):
+            g = DeploymentGraph.get_for_model(instance, graph_type)
+            if g:
+                DeploymentGraph.update(g, graph_data)
+            else:
+                DeploymentGraph.create_for_model(
+                    graph_data, instance, graph_type)
+
         return release_obj
 
     @classmethod

@@ -1230,7 +1230,7 @@ class TestClusterObject(BaseTestCase):
 
         default_tasks_count = len(objects.Release.get_deployment_tasks(
             cluster.release))
-        plugin_tasks_count = len(plugins.adapters.wrap_plugin(
+        plugin_tasks_count = len(plugins.wrap_plugin(
             cluster.plugins[0]).get_deployment_tasks())
 
         self.assertEqual(

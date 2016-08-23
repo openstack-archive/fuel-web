@@ -32,6 +32,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator.base_serializers import MellanoxMixin
+from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun import utils
 
@@ -1556,6 +1557,51 @@ class NeutronNetworkDeploymentSerializer90(
                     vendor_specific=config))
 
         return transformations
+
+    @classmethod
+    def generate_network_scheme(cls, node, networks):
+        schema = (
+            super(NeutronNetworkDeploymentSerializer90, cls)
+            .generate_network_scheme(node, networks))
+
+        # Add Bond specific attributes
+        for transformation in schema.get('transformations', []):
+            if cls._is_bond(transformation):
+                cls._add_plugin_attributes_for_bond(transformation)
+
+        # Add NIC specific attributes
+        for iface in node.nic_interfaces:
+            cls._add_plugin_attributes_for_interface(iface, schema)
+
+        return schema
+
+    @classmethod
+    def _add_plugin_attributes_for_bond(cls, transformation):
+        name = transformation.get('name', '')
+        bond = objects.BondCollection.filter_by(None, name=name)[0]
+        for plugin_name, plugin_attributes in \
+                six.iteritems(PluginManager.get_bond_attributes(bond)):
+            plugin_attributes.pop('metadata', None)
+            transformation.setdefault('interface_properties', {}).\
+                setdefault('vendor_specific', {}).update({
+                    k: v.get('value') for k, v in
+                    six.iteritems(plugin_attributes)
+                })
+
+    @classmethod
+    def _add_plugin_attributes_for_interface(cls, interface, schema):
+        interface_vendor_attributes = schema['interfaces'][interface.name].\
+            setdefault('vendor_specific', {})
+        for plugin_name, plugin_attributes in \
+                six.iteritems(PluginManager.get_nic_attributes(interface)):
+            plugin_attributes.pop('metadata', None)
+            interface_vendor_attributes.update({
+                k: v.get('value') for k, v in six.iteritems(plugin_attributes)
+            })
+
+    @classmethod
+    def _is_bond(cls, transformation):
+        return transformation.get('action') == 'add-bond'
 
 
 class NeutronNetworkTemplateSerializer90(

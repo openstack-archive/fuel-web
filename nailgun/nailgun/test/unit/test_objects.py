@@ -932,6 +932,60 @@ class TestTaskObject(BaseIntegrationTest):
         task_obj = objects.Task.get_by_uuid(task.uuid)
         self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
 
+    def test_parent_task_message_if_subtask_messages_similar(self):
+        parent_task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.pending,
+            cluster_id=self.cluster.id
+        )
+
+        message = 'Environment was successfully reset.'
+        parent_task.create_subtask(
+            consts.TASK_NAMES.reset_environment,
+            cluster_id=self.cluster.id,
+            parent_id=parent_task.id,
+            status=consts.TASK_STATUSES.ready,
+            message=message)
+
+        child_task = parent_task.create_subtask(
+            consts.TASK_NAMES.reset_environment,
+            cluster_id=self.cluster.id,
+            parent_id=parent_task.id)
+
+        data = {'status': consts.TASK_STATUSES.ready, 'message': message}
+        objects.Task.update(child_task, data)
+
+        self.assertEqual(consts.TASK_STATUSES.ready, parent_task.status)
+        self.assertEqual(message, parent_task.message)
+
+    def test_parent_task_message_if_subtask_messages_different(self):
+        parent_task = self.env.create_task(
+            name=consts.TASK_NAMES.deployment,
+            status=consts.TASK_STATUSES.pending,
+            cluster_id=self.cluster.id
+        )
+
+        message1 = 'Provision of environment is done.'
+        parent_task.create_subtask(
+            consts.TASK_NAMES.provision,
+            cluster_id=self.cluster.id,
+            parent_id=parent_task.id,
+            status=consts.TASK_STATUSES.ready,
+            message=message1)
+
+        child_task = parent_task.create_subtask(
+            consts.TASK_NAMES.deploy,
+            cluster_id=self.cluster.id,
+            parent_id=parent_task.id)
+
+        message2 = 'Deployment of environment is done.'
+        data = {'status': consts.TASK_STATUSES.ready, 'message': message2}
+        objects.Task.update(child_task, data)
+
+        self.assertEqual(consts.TASK_STATUSES.ready, parent_task.status)
+        self.assertEqual('{0}\n{1}'.format(message1, message2),
+                         parent_task.message)
+
 
 class TestTransactionObject(BaseIntegrationTest):
     def setUp(self):

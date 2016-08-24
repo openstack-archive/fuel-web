@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import OrderedDict
+
 import copy
 from datetime import datetime
 
@@ -128,10 +130,9 @@ class Task(NailgunObject):
                 data['status'] = consts.TASK_STATUSES.ready
                 data['progress'] = 100
                 data['time_end'] = datetime.utcnow()
-                data['message'] = u'\n'.join(map(
-                    lambda s: s.message, filter(
-                        lambda s: s.message is not None, subtasks)))
-
+                data['message'] = u'\n'.join(cls._remove_duplicates(
+                    s.message for s in subtasks if s.message is not None))
+                
                 cls.update(instance, data)
                 TaskHelper.update_action_log(instance)
 
@@ -296,6 +297,10 @@ class Task(NailgunObject):
         if result.get('status') not in consts.TASK_STATUSES:
             result.pop('status', None)
         return result
+
+    @classmethod
+    def _remove_duplicates(cls, iterable):
+        return OrderedDict.fromkeys(iterable)
 
     @classmethod
     def update(cls, instance, data):

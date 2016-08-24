@@ -16,44 +16,40 @@
 
 import datetime
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
-from nailgun.task.manager import DeploymentCheckMixin
+from nailgun.task import manager
+
 from nailgun.test.base import BaseTestCase
 
 
-class TestDeploymentCheckMixin(BaseTestCase):
+class TestTaskManagerCheckRunningTasks(BaseTestCase):
 
     def setUp(self):
-        super(TestDeploymentCheckMixin, self).setUp()
-        self.env.create()
-        self.cluster = self.env.clusters[0]
+        super(TestTaskManagerCheckRunningTasks, self).setUp()
+        self.cluster = self.env.create()
+        self.task_manager = manager.TaskManager(cluster_id=self.cluster.id)
 
     def test_fails_if_there_is_task(self):
-        for task_name in DeploymentCheckMixin.deployment_tasks:
-            task = models.Task(name=task_name, cluster_id=self.cluster.id)
-            db.add(task)
-            db.flush()
-            self.assertRaisesWithMessage(
-                errors.DeploymentAlreadyStarted,
-                'Cannot perform the actions because there are '
-                'running tasks {0}'.format([task]),
-                DeploymentCheckMixin.check_no_running_deployment,
-                self.cluster)
+        task = models.Task(
+            name=consts.TASK_NAMES.deployment, cluster_id=self.cluster.id,
+            status=consts.TASK_STATUSES.pending
+        )
+        db.add(task)
+        db.flush()
 
-            db.query(models.Task).delete()
+        self.assertRaises(
+            errors.TaskAlreadyRunning, self.task_manager.check_running_task
+        )
 
     def test_does_not_fail_if_there_is_deleted_task(self):
-        for task_name in DeploymentCheckMixin.deployment_tasks:
-            task = models.Task(name=task_name,
-                               deleted_at=datetime.datetime.now(),
-                               cluster_id=self.cluster.id)
-            db.add(task)
-            db.flush()
-            self.addCleanup(db.query(models.Task).delete)
-
-            self.assertNotRaises(
-                errors.DeploymentAlreadyStarted,
-                DeploymentCheckMixin.check_no_running_deployment,
-                self.cluster)
+        task = models.Task(name=consts.TASK_NAMES.deployment,
+                           deleted_at=datetime.datetime.now(),
+                           cluster_id=self.cluster.id)
+        db.add(task)
+        db.flush()
+        self.assertNotRaises(
+            errors.TaskAlreadyRunning, self.task_manager.check_running_task
+        )

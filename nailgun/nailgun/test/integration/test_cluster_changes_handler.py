@@ -1902,13 +1902,15 @@ class TestHandlers(BaseIntegrationTest):
             )
             self.assertEqual(resp.status_code, 202)
             self.assertEqual(
-                mcast.call_args[0][1][0]['args'][mode], True)
+                mcast.call_args[0][1][0]['args'][mode], True
+            )
 
-            task_uuid = mcast.call_args[0][1][0]['args']['task_uuid']
-            task = Task.get_by_uuid(uuid=task_uuid, fail_if_not_found=True)
+            task = Task.get_by_uid(
+                resp.json_body['id'], fail_if_not_found=True
+            )
             self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
-            if mode == 'dry_run':
-                self.assertEqual('dry_run_deployment', task.name)
+            self.assertTrue(task.dry_run)
+            Task.delete(task)
 
     @patch('nailgun.task.manager.rpc.cast')
     def test_dry_run(self, mcast):

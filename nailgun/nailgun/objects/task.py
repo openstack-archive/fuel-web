@@ -317,6 +317,11 @@ class Task(NailgunObject):
             cls.delete(t)
 
     @classmethod
+    def hard_delete(cls, instance):
+        logger.debug("Delete task: %s", instance.uuid)
+        super(Task, cls).delete(instance)
+
+    @classmethod
     def bulk_delete(cls, instance_ids):
         db().query(cls.model).filter(cls.model.id.in_(instance_ids))\
             .update({'deleted_at': datetime.utcnow()},
@@ -366,10 +371,14 @@ class TaskCollection(NailgunCollection):
         return cls.filter_by(None, deleted_at=None)
 
     @classmethod
-    def all_in_progress(cls):
+    def all_in_progress(cls, cluster_id=None):
         """Get all tasks that are executing or will be executed."""
-        return cls.all_not_deleted().filter(
+        query = cls.all_not_deleted().filter(
             cls.single.model.status.in_(
                 (consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending)
             )
         )
+        if cluster_id:
+            query = query.filter_by(cluster_id=cluster_id)
+
+        return query

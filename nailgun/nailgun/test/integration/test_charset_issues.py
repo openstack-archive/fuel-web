@@ -73,17 +73,7 @@ class TestCharsetIssues(BaseIntegrationTest):
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster.id}),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=True
         )
-        task_delete = self.db.query(models.Task).filter_by(
-            uuid=resp.json['uuid']
-        ).first()
-        NailgunReceiver.remove_cluster_resp(
-            task_uuid=task_delete.uuid,
-            status=consts.TASK_STATUSES.ready,
-            progress=100,
-        )
-
-        cluster = self.db.query(models.Cluster).filter_by(
-            id=cluster.id).first()
-        self.assertIsNone(cluster)
+        self.assertEqual(400, resp.status_code)

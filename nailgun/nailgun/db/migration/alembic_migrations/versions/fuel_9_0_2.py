@@ -54,9 +54,11 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_task_model()
     upgrade_node_error_type()
+    upgrade_deployment_graphs_attributes()
 
 
 def downgrade():
+    downgrade_deployment_graphs_attributes()
     downgrade_node_error_type()
     downgrade_task_model()
     downgrade_plugin_with_nics_and_nodes_attributes()
@@ -293,3 +295,45 @@ def downgrade_node_error_type():
         u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
         u' USING error_type::text::node_error_type'
     )
+
+
+def upgrade_deployment_graphs_attributes():
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'node_filter',
+            sa.String(4096),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_success',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_error',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'deployment_graphs',
+        sa.Column(
+            'on_stop',
+            fields.JSON(),
+            nullable=True
+        )
+    )
+
+
+def downgrade_deployment_graphs_attributes():
+    op.drop_column('deployment_graphs', 'node_filter')
+    op.drop_column('deployment_graphs', 'on_success')
+    op.drop_column('deployment_graphs', 'on_error')
+    op.drop_column('deployment_graphs', 'on_stop')

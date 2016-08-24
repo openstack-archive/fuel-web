@@ -117,7 +117,6 @@ class DeploymentGraph(NailgunObject):
         """
         data = data.copy()
         tasks = data.pop('tasks', [])
-
         deployment_graph_instance = super(DeploymentGraph, cls).create(data)
         for task in tasks:
             deployment_graph_instance.tasks.append(
@@ -306,6 +305,11 @@ class DeploymentGraph(NailgunObject):
                     'type': assoc_model.type,
                     'model': related_model})
         return result
+
+    @classmethod
+    def get_metadata(cls, instance):
+        """Gets metadata for graph."""
+        return cls.serializer.serialize_metadata(instance)
 
 
 class DeploymentGraphCollection(NailgunCollection):

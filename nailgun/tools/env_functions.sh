@@ -13,6 +13,8 @@
 #    under the License.
 
 cleanup_server() {
+    "Dump database ${NAILGUN_DB}"
+    pg_dump -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} ${NAILGUN_DB}
     echo "Stopping Nailgun and waiting $NAILGUN_START_MAX_WAIT_TIME seconds."
     local pid="$(lsof -ti :${NAILGUN_PORT} -s tcp:LISTEN)"
     local kill9=0
@@ -164,4 +166,6 @@ prepare_database() {
         echo "Creating database ${NAILGUN_DB}"
         psql -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} -c "CREATE DATABASE ${NAILGUN_DB} OWNER ${NAILGUN_DB_USER}"
     fi
+    echo "Dump database ${NAILGUN_DB}"
+    pg_dump -h ${NAILGUN_DB_HOST} -p ${NAILGUN_DB_PORT} -U ${DB_ROOT} ${NAILGUN_DB}
 }

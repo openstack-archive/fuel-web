@@ -390,3 +390,32 @@ class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
                 'node_id': node_id,
                 'attributes': jsonutils.dumps({'test_attr': 'test'})
             }])
+
+
+class TestTasksSchemaMigration(base.BaseAlembicMigrationTest):
+
+    def test_dry_run_field_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending',
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertIn('dry_run', result)
+
+    def test_graph_type_field_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [{
+                'uuid': 'fake_task_uuid_0',
+                'name': 'dump',
+                'status': 'pending',
+            }]
+        )
+
+        result = db.execute(sa.select([self.meta.tables['tasks']])).first()
+        self.assertIn('graph_type', result)

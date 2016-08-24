@@ -123,9 +123,9 @@ class Task(NailgunObject):
 
                 data['status'] = consts.TASK_STATUSES.ready
                 data['progress'] = 100
-                data['message'] = u'\n'.join(map(
+                data['message'] = u'\n'.join(set(map(
                     lambda s: s.message, filter(
-                        lambda s: s.message is not None, subtasks)))
+                        lambda s: s.message is not None, subtasks))))
 
                 cls.update(instance, data)
                 TaskHelper.update_action_log(instance)

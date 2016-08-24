@@ -15,10 +15,16 @@
 #    under the License.
 
 import mock
+from oslo_serialization import jsonutils
 
+from nailgun.api.v1.validators.extension import ExtensionValidator
 from nailgun import errors
 from nailgun.extensions import BaseExtension
 from nailgun.extensions import BasePipeline
+from nailgun.extensions import fire_callback_on_before_deployment_check
+from nailgun.extensions import fire_callback_on_before_deployment_serialization
+from nailgun.extensions import \
+    fire_callback_on_before_provisioning_serialization
 from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.extensions import fire_callback_on_node_create
@@ -29,6 +35,7 @@ from nailgun.extensions import get_extension
 from nailgun.extensions import node_extension_call
 from nailgun.extensions import setup_yaql_context
 from nailgun.test.base import BaseTestCase
+from nailgun.test.utils import make_mock_extensions
 
 
 class BaseExtensionCase(BaseTestCase):
@@ -63,20 +70,6 @@ class TestBaseExtension(BaseExtensionCase):
         self.assertEqual(
             self.extension.full_name(),
             'ext_name-1.0.0')
-
-
-def make_mock_extensions(names=('ex1', 'ex2')):
-    mocks = []
-    for name in names:
-        # NOTE(eli): since 'name' is reserved world
-        # for mock constructor, we should assign
-        # name explicitly
-        ex_m = mock.MagicMock()
-        ex_m.name = name
-        ex_m.provides = ['method_call']
-        mocks.append(ex_m)
-
-    return mocks
 
 
 class TestExtensionUtils(BaseTestCase):
@@ -201,6 +194,53 @@ class TestExtensionUtils(BaseTestCase):
 
     @mock.patch('nailgun.extensions.manager.get_all_extensions',
                 return_value=make_mock_extensions())
+    def test_fire_callback_on_before_deployment_check(self, get_m):
+        cluster = mock.MagicMock()
+        cluster.extensions = ['ex1']
+        fire_callback_on_before_deployment_check(cluster, mock.sentinel.nodes)
+
+        ex1 = get_m.return_value[0]
+        self.assertEqual('ex1', ex1.name)
+        ex1.on_before_deployment_check.assert_called_once_with(
+            cluster, mock.sentinel.nodes)
+        ex2 = get_m.return_value[1]
+        self.assertEqual('ex2', ex2.name)
+        self.assertFalse(ex2.on_before_deployment_check.called)
+
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_before_deployment_serialization(self, get_m):
+        cluster = mock.MagicMock()
+        cluster.extensions = ['ex1']
+        fire_callback_on_before_deployment_serialization(
+            cluster, mock.sentinel.nodes, mock.sentinel.ignore_customized)
+
+        ex1 = get_m.return_value[0]
+        self.assertEqual('ex1', ex1.name)
+        ex1.on_before_deployment_serialization.assert_called_once_with(
+            cluster, mock.sentinel.nodes, mock.sentinel.ignore_customized)
+        ex2 = get_m.return_value[1]
+        self.assertEqual('ex2', ex2.name)
+        self.assertFalse(ex2.on_before_deployment_serialization.called)
+
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
+                return_value=make_mock_extensions())
+    def test_fire_callback_on_before_provisioning_serialization(self, get_m):
+        cluster = mock.MagicMock()
+        cluster.extensions = ['ex1']
+        fire_callback_on_before_provisioning_serialization(
+            cluster, mock.sentinel.nodes, mock.sentinel.ignore_customized)
+
+        ex1 = get_m.return_value[0]
+        self.assertEqual('ex1', ex1.name)
+        ex1.on_before_provisioning_serialization.assert_called_once_with(
+            cluster, mock.sentinel.nodes, mock.sentinel.ignore_customized)
+        ex2 = get_m.return_value[1]
+        self.assertEqual('ex2', ex2.name)
+        self.assertFalse(ex2.on_before_provisioning_serialization.called)
+
+    @mock.patch('nailgun.extensions.manager.get_all_extensions',
+                return_value=make_mock_extensions())
     def test_setup_yaql_context(self, get_m):
         context = mock.Mock()
         setup_yaql_context(context)
@@ -242,3 +282,28 @@ class TestPipeline(BaseExtensionCase):
             @classmethod
             def process_deployment_for_node(cls, cluster, cluster_data):
                 pass
+
+
+class TestExtensionValidator(BaseTestCase):
+
+    def test_validate_extensions(self):
+        global_exts = 'volume_manager', 'bareon', 'ultralogger'
+
+        with mock.patch(
+                'nailgun.api.v1.validators.extension.get_all_extensions',
+                return_value=make_mock_extensions(global_exts)):
+
+            ExtensionValidator.validate(jsonutils.dumps(global_exts))
+
+    def test_invalid_extension(self):
+        global_exts = 'volume_manager', 'bareon', 'ultralogger'
+        data = 'volume_manager', 'baleron'
+
+        with mock.patch(
+                'nailgun.api.v1.validators.extension.get_all_extensions',
+                return_value=make_mock_extensions(global_exts)):
+
+            with self.assertRaisesRegexp(errors.CannotFindExtension,
+                                         'No such extensions: baleron'):
+
+                ExtensionValidator.validate(jsonutils.dumps(data))

@@ -825,6 +825,7 @@ class DeletionTask(object):
 
         logger.debug("Calling rpc remove_nodes method with nodes %s",
                      nodes_to_delete)
+        db().commit()
         rpc.cast('naily', msg_delete)
 
     @classmethod
@@ -870,7 +871,7 @@ class DeleteIBPImagesTask(object):
     def execute(cls, cluster, image_data):
         task = Task(name=consts.TASK_NAMES.remove_images, cluster=cluster)
         db().add(task)
-        db().flush()
+        db().commit()
         rpc.cast('naily', cls.message(task, image_data))
 
 
@@ -912,6 +913,7 @@ class StopDeploymentTask(object):
 
     @classmethod
     def execute(cls, task, deploy_task=None, provision_task=None):
+        db().commit()
         if provision_task:
             rpc.cast(
                 'naily',
@@ -1944,7 +1946,7 @@ class DumpTask(object):
                 'settings': conf or cls.conf()
             }
         )
-        db().flush()
+        db().commit()
         rpc.cast('naily', message)
 
 
@@ -2010,6 +2012,7 @@ class CheckRepoAvailability(BaseNetworkVerification):
         return rpc_message
 
     def execute(self):
+        db().commit()
         rpc.cast('naily', self.get_message())
 
     def _get_nodes_to_check(self):
@@ -2138,6 +2141,7 @@ class CreateStatsUserTask(object):
 
     @classmethod
     def execute(cls, task, primary_controller):
+        db().commit()
         rpc.cast(
             'naily',
             cls.message(task, primary_controller)
@@ -2170,6 +2174,7 @@ class RemoveStatsUserTask(object):
 
     @classmethod
     def execute(cls, task, primary_controller):
+        db().commit()
         rpc.cast(
             'naily',
             cls.message(task, primary_controller)

@@ -1401,6 +1401,23 @@
             label: "Initial parameters"
             description: "Default kernel parameters"
             type: "text"
+        mu_upgrade:
+          metadata:
+            label: "Maintenance update"
+            weight: 65
+            group: "general"
+            enabled: true
+            restrictions:
+              - condition: "settings:mu_upgrade.enabled.value == false"
+                action: "hide"
+          repos:
+            value: "mos, mos-updates, mos-security, mos-holdback"
+            type: "text"
+            label: "Repos for upgrade"
+            description: "The list of repositories to be used for cluster maintenance upgrade"
+          enabled:
+            value: false
+            type: "hidden"
         storage:
           metadata:
             label: "Storage Backends"

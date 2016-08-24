@@ -1118,13 +1118,14 @@ class EnvironmentManager(object):
                 "Nothing to stop - try creating cluster"
             )
 
-    def reset_environment(self, expect_http=None, cluster_id=None):
+    def reset_environment(self, expect_http=None, cluster_id=None, force=1):
         if self.clusters:
             cluster_id = self._get_cluster_by_id(cluster_id).id
             resp = self.app.put(
                 reverse(
                     'ClusterResetHandler',
-                    kwargs={'cluster_id': cluster_id}),
+                    kwargs={'cluster_id': cluster_id}
+                ) + '?force={0}'.format(int(force)),
                 expect_errors=True,
                 headers=self.default_headers)
             if expect_http is not None:
@@ -1143,13 +1144,14 @@ class EnvironmentManager(object):
                 "Nothing to reset - try creating cluster"
             )
 
-    def delete_environment(self, expect_http=202, cluster_id=None):
+    def delete_environment(self, expect_http=202, cluster_id=None, force=1):
         if self.clusters:
             cluster_id = self._get_cluster_by_id(cluster_id).id
             resp = self.app.delete(
                 reverse(
                     'ClusterHandler',
-                    kwargs={'obj_id': cluster_id}),
+                    kwargs={'obj_id': cluster_id}
+                ) + '?force={0}'.format(int(force)),
                 expect_errors=True,
                 headers=self.default_headers)
             self.tester.assertEqual(resp.status_code, expect_http)

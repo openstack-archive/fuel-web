@@ -90,6 +90,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
 
         task = self.env.launch_deployment()
         self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
+        objects.Task.delete(task)
 
         # Creating http_request
         self.app.delete(

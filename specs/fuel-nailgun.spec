@@ -85,7 +85,7 @@ getent group $GROUPNAME >/dev/null || groupadd -r $GROUPNAME
 getent passwd $USERNAME >/dev/null || useradd -r -g $GROUPNAME -G $GROUPNAME -r -s /sbin/nologin -c "Nailgun Daemon" $USERNAME
 
 %install
-cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT --record=%{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
+cd %{_builddir}/%{name}-%{version}/nailgun && python setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 mkdir -p %{buildroot}/opt/nailgun/bin
 mkdir -p %{buildroot}/%{_sysconfdir}/cron.d
 mkdir -p %{buildroot}/%{_sysconfdir}/fuel
@@ -106,14 +106,16 @@ install -D -m644 %{_builddir}/%{name}-%{version}/systemd/*.service %{buildroot}/
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files -f %{_builddir}/%{name}-%{version}/nailgun/INSTALLED_FILES
+%files
+%defattr(-, root, root)
+%license LICENSE
+%doc README.md
 %config(noreplace) %attr(-, nailgun, nailgun) %{_sysconfdir}/nailgun/settings.yaml
-%dir %attr(0755,nailgun,root) %{_localstatedir}/log/nailgun
-%defattr(0755,root,root)
-
-%if %{defined _unitdir}
-%attr(0644, root, root) /%{_unitdir}/*
-%endif
+%dir %attr(-, nailgun, root) %{_localstatedir}/log/nailgun
+%{_bindir}/*
+%{python2_sitelib}/nailgun
+%{python2_sitelib}/*.egg-info
+%{_unitdir}/*
 
 
 %package -n fuel-openstack-metadata
@@ -129,8 +131,8 @@ URL:       http://github.com/Mirantis
 This package currently installs just a single file openstack.yaml
 
 %files -n fuel-openstack-metadata
-%defattr(-,root,root)
-%{_datadir}/fuel-openstack-metadata/*
+%defattr(-, root, root)
+%{_datadir}/fuel-openstack-metadata
 %{_sysconfdir}/fuel_openstack_version
 
 %package -n fencing-agent
@@ -146,9 +148,9 @@ Requires:  rubygem-ohai
 Fuel fencing agent
 
 %files -n fencing-agent
+%defattr(-, root, root)
 /opt/nailgun/bin/fencing-agent.rb
 /etc/cron.d/fencing-agent
-%defattr(-,root,root)
 
 
 %package -n fuel-provisioning-scripts
@@ -169,5 +171,5 @@ This is a part of Fuel All-in-one Controle plane
 for Openstack. For more info go to http://wiki.openstack.org/Fuel
 
 %files -n fuel-provisioning-scripts
-%defattr(-,root,root)
+%defattr(-, root, root)
 %{_bindir}/download-debian-installer

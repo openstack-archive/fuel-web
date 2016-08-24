@@ -23,7 +23,6 @@ from oslo_serialization import jsonutils
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
 from nailgun import errors
 from nailgun.extensions.network_manager.objects.serializers.\
@@ -43,7 +42,9 @@ class TaskManager(object):
 
     def __init__(self, cluster_id=None):
         if cluster_id:
-            self.cluster = db().query(Cluster).get(cluster_id)
+            self.cluster = objects.Cluster.get_by_uid(
+                cluster_id, lock_for_update=True, fail_if_not_found=True
+            )
 
     def _call_silently(self, task, instance, *args, **kwargs):
         # create action_log for task
@@ -82,17 +83,26 @@ class TaskManager(object):
 
         db().commit()
 
-    def check_running_task(self, task_names):
+    def check_running_task(self, task_names, msg=None):
         if isinstance(task_names, six.string_types):
             task_names = (task_names,)
         cluster = getattr(self, 'cluster', None)
         current_tasks = objects.TaskCollection.get_cluster_tasks(
             cluster_id=cluster.id if cluster else None,
             names=task_names).all()
+
+        in_progress_status = (
+            consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending
+        )
+        finished_status = (
+            consts.TASK_STATUSES.error, consts.TASK_STATUSES.ready
+        )
         for task in current_tasks:
-            if task.status == "running":
-                raise errors.TaskAlreadyRunning()
-            elif task.status in ("ready", "error"):
+            if task.status in in_progress_status:
+                raise errors.TaskAlreadyRunning(
+                    msg or "Task already running"
+                )
+            elif task.status in finished_status:
                 objects.Task.delete(task)
 
         db().flush()
@@ -105,14 +115,14 @@ class TaskManager(object):
             allocate_vips=True
         )
 
-    def _lock_cluster_to_run_unique_task(self, task_name):
+    def _lock_cluster_to_run_unique_task(self, task_names):
         """Lock cluster for update and check for active task with given name.
 
         This method allows to resolve concurrency problems by creating cluster-
         level lock for active task of given type.
 
-        :param task_name: task name
-        :type task_name: basestring
+        :param task_names: task name
+        :type task_names: basestring
         :returns: Cluster
         :rtype: models.Cluster
         """
@@ -121,16 +131,19 @@ class TaskManager(object):
         cluster = objects.Cluster.get_by_uid(
             self.cluster.id, lock_for_update=True)
 
-        existing_active_task = objects.TaskCollection.filter_by(
-            objects.TaskCollection.all_in_progress(),
-            cluster_id=cluster.id,
-            name=task_name,
-        ).first()
+        if isinstance(task_names, six.string_types):
+            task_names = (task_names,)
 
-        if existing_active_task:
+        active_tasks = objects.TaskCollection.all_in_progress(cluster.id)
+        if task_names:
+            active_tasks = objects.TaskCollection.filter_by_list(
+                active_tasks, 'name', task_names
+            )
+        active_task = active_tasks.first()
+        if active_task:
             raise errors.TaskAlreadyRunning(
-                "{0} task is already {1}".format(
-                    task_name, existing_active_task.status)
+                "{0} task is already {1}"
+                .format(active_task.name, active_task.status)
             )
 
 
@@ -144,6 +157,7 @@ class DeploymentCheckMixin(object):
         consts.TASK_NAMES.provision,
         consts.TASK_NAMES.stop_deployment,
         consts.TASK_NAMES.reset_environment,
+        consts.TASK_NAMES.cluster_deletion,
         # NOTE(eli): Node deletion may require nodes redeployment
         # so it's required to preventing parallel deployment
         consts.TASK_NAMES.node_deletion)
@@ -155,10 +169,14 @@ class DeploymentCheckMixin(object):
         :param cluster: cluster model instance
         :type cluster: models.Cluster
         """
-        tasks_q = objects.TaskCollection.get_by_name_and_cluster(
-            cluster, cls.deployment_tasks).filter_by(
-            status=consts.TASK_STATUSES.running)
 
+        tasks_q = objects.TaskCollection.filter_by_list(
+            objects.TaskCollection.get_by_name_and_cluster(
+                cluster, cls.deployment_tasks
+            ),
+            'status',
+            [consts.TASK_STATUSES.pending, consts.TASK_STATUSES.running]
+        )
         tasks_exists = db.query(tasks_q.exists()).scalar()
         if tasks_exists:
             raise errors.DeploymentAlreadyStarted(
@@ -235,8 +253,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager, DeploymentCheckMixin):
         obsolete_tasks = objects.TaskCollection.filter_by_list(
             cluster_tasks,
             'name',
-            (consts.TASK_NAMES.stop_deployment,
-             consts.TASK_NAMES.reset_environment)
+            self.deployment_tasks
         )
         for task in obsolete_tasks:
             objects.Task.delete(task)
@@ -637,6 +654,13 @@ class ProvisioningTaskManager(TaskManager):
             ' '.join([objects.Node.get_node_fqdn(n)
                       for n in nodes_to_provision])))
 
+        self._lock_cluster_to_run_unique_task([
+            consts.TASK_NAMES.cluster_deletion,
+            consts.TASK_NAMES.provision,
+            consts.TASK_NAMES.deployment,
+            consts.TASK_NAMES.reset_environment,
+        ])
+
         task_provision = Task(name=consts.TASK_NAMES.provision,
                               status=consts.TASK_STATUSES.pending,
                               cluster=self.cluster)
@@ -714,7 +738,13 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
                 graph_type=None, force=False, dry_run=False,
                 **kwargs):
         deployment_tasks = deployment_tasks or []
-        self._lock_cluster_to_run_unique_task(consts.TASK_NAMES.deployment)
+
+        self._lock_cluster_to_run_unique_task([
+            consts.TASK_NAMES.cluster_deletion,
+            consts.TASK_NAMES.provision,
+            consts.TASK_NAMES.deployment,
+            consts.TASK_NAMES.reset_environment,
+        ])
 
         logger.debug('Nodes to deploy: {0}'.format(
             ' '.join([objects.Node.get_node_fqdn(n)
@@ -805,26 +835,11 @@ class DeploymentTaskManager(BaseDeploymentTaskManager):
 class StopDeploymentTaskManager(TaskManager):
 
     def execute(self, **kwargs):
-        stop_running = objects.TaskCollection.filter_by(
-            None,
-            cluster_id=self.cluster.id,
-            name=consts.TASK_NAMES.stop_deployment
-        )
-        stop_running = objects.TaskCollection.order_by(
-            stop_running, 'id'
-        ).first()
-
-        if stop_running:
-            if stop_running.status in (
-                    consts.TASK_STATUSES.running,
-                    consts.TASK_STATUSES.pending):
-                raise errors.StopAlreadyRunning(
-                    "Stopping deployment task "
-                    "is already launched"
-                )
-            else:
-                db().delete(stop_running)
-                db().commit()
+        self.check_running_task([
+            consts.TASK_NAMES.stop_deployment,
+            consts.TASK_NAMES.reset_environment,
+            consts.TASK_NAMES.cluster_deletion,
+        ],  msg="Stopping deployment task is already launched")
 
         deployment_task = objects.TaskCollection.filter_by(
             None,
@@ -889,19 +904,13 @@ class StopDeploymentTaskManager(TaskManager):
 class ResetEnvironmentTaskManager(TaskManager):
 
     def execute(self, **kwargs):
-
-        # FIXME(aroma): remove updating of 'deployed_before'
-        # when stop action is reworked. 'deployed_before'
-        # flag identifies whether stop action is allowed for the
-        # cluster. Please, refer to [1] for more details.
-        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
-
-        deploy_running = db().query(Task).filter_by(
-            cluster=self.cluster,
-            name=consts.TASK_NAMES.deploy,
-            status='running'
+        deploy_running = db().query(Task).filter(
+            Task.cluster == self.cluster,
+            Task.status.in_(
+                [consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending]
+            )
         ).first()
+
         if deploy_running:
             raise errors.DeploymentAlreadyStarted(
                 u"Can't reset environment '{0}' when "
@@ -910,22 +919,26 @@ class ResetEnvironmentTaskManager(TaskManager):
                 )
             )
 
-        obsolete_tasks = db().query(Task).filter_by(
-            cluster_id=self.cluster.id,
-        ).filter(
-            Task.name.in_([
-                consts.TASK_NAMES.deploy,
-                consts.TASK_NAMES.deployment,
-                consts.TASK_NAMES.dry_run_deployment,
-                consts.TASK_NAMES.stop_deployment
-            ])
-        )
+        # FIXME(aroma): remove updating of 'deployed_before'
+        # when stop action is reworked. 'deployed_before'
+        # flag identifies whether stop action is allowed for the
+        # cluster. Please, refer to [1] for more details.
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
 
+        # Drop all tasks associated with cluster
+        obsolete_tasks = objects.TaskCollection.get_by_cluster_id(
+            self.cluster.id
+        )
+        # we cannot use bulk delete because it does not process strategy
+        # cascade on delete
         for task in obsolete_tasks:
             db().delete(task)
+        db().flush()
 
         nodes = objects.Cluster.get_nodes_by_role(
-            self.cluster, consts.VIRTUAL_NODE_TYPES.virt)
+            self.cluster, consts.VIRTUAL_NODE_TYPES.virt
+        )
         for node in nodes:
             objects.Node.reset_vms_created_state(node)
 
@@ -1454,8 +1467,11 @@ class OpenstackConfigTaskManager(TaskManager):
     def execute(self, filters, force=False, graph_type=None, **kwargs):
         self.check_running_task(
             (
+                consts.TASK_NAMES.cluster_deletion,
                 consts.TASK_NAMES.deployment,
-                consts.TASK_NAMES.dry_run_deployment
+                consts.TASK_NAMES.dry_run_deployment,
+                consts.TASK_NAMES.provision,
+                consts.TASK_NAMES.reset_environment,
             )
         )
 

@@ -366,10 +366,14 @@ class TaskCollection(NailgunCollection):
         return cls.filter_by(None, deleted_at=None)
 
     @classmethod
-    def all_in_progress(cls):
+    def all_in_progress(cls, cluster_id=None):
         """Get all tasks that are executing or will be executed."""
-        return cls.all_not_deleted().filter(
+        query = cls.all_not_deleted().filter(
             cls.single.model.status.in_(
                 (consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending)
             )
         )
+        if cluster_id:
+            query = query.filter_by(cluster_id=cluster_id)
+
+        return query

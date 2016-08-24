@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import OrderedDict
+
 import copy
 from datetime import datetime
 
@@ -123,9 +125,8 @@ class Task(NailgunObject):
 
                 data['status'] = consts.TASK_STATUSES.ready
                 data['progress'] = 100
-                data['message'] = u'\n'.join(map(
-                    lambda s: s.message, filter(
-                        lambda s: s.message is not None, subtasks)))
+                data['message'] = u'\n'.join(OrderedDict.fromkeys(
+                    s.message for s in subtasks if s.message is not None))
 
                 cls.update(instance, data)
                 TaskHelper.update_action_log(instance)

@@ -74,10 +74,11 @@ class TestStopDeploymentPre90(BaseIntegrationTest):
         # If we don't send 'ready' for main task, then redeploy can't be
         # started - as we still have deployment running
         # TODO(mihgen): investigate why DeploymentAlreadyStarted is unhandled
-        NailgunReceiver.deploy_resp(
-            task_uuid=task.uuid,
-            status=consts.TASK_STATUSES.ready,
-        )
+        for sub_task in task.subtasks:
+            NailgunReceiver.deploy_resp(
+                task_uuid=sub_task.uuid,
+                status=consts.TASK_STATUSES.ready,
+            )
 
         # changes to deploy
         self.env.create_node(

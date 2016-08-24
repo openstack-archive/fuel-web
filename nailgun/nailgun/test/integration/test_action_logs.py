@@ -89,7 +89,8 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         )
 
         task = self.env.launch_deployment()
-        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
+        objects.Task.delete(task)
 
         # Creating http_request
         cluster = self.env.clusters[0]

@@ -370,20 +370,11 @@ class TransactionsManager(object):
         cluster = objects.Cluster.get_by_uid(
             self.cluster_id, fail_if_not_found=True, lock_for_update=True
         )
-        cluster_tasks = objects.TaskCollection.get_by_cluster_id(
+        running_tasks = objects.TaskCollection.all_in_progress(
             cluster_id=cluster.id
         )
-        cluster_tasks = objects.TaskCollection.filter_by(
-            cluster_tasks, name=self.task_name
-        )
-        cluster_tasks = objects.TaskCollection.filter_by_list(
-            cluster_tasks,
-            'status',
-            [consts.TASK_STATUSES.pending, consts.TASK_STATUSES.running]
-        )
-
         # TODO(bgaifullin) need new lock approach for cluster
-        if objects.TaskCollection.count(cluster_tasks):
+        if objects.TaskCollection.count(running_tasks):
             raise errors.DeploymentAlreadyStarted()
         return cluster
 

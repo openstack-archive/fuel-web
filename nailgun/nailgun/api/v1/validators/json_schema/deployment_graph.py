@@ -95,6 +95,9 @@ GRAPH_EXECUTE_PARAMS_SCHEMA = {
         "dry_run": {
             "type": "boolean"
         },
+        "noop_run": {
+            "type": "boolean"
+        },
         "force": {
             "type": "boolean"
         }

@@ -68,6 +68,7 @@ class RoleHandler(base.SingleHandler):
         objects.Release.update_role(release, data)
         return RoleSerializer.serialize_from_release(release, role_name)
 
+    @handle_errors
     def DELETE(self, release_id, role_name):
         """Remove role
 

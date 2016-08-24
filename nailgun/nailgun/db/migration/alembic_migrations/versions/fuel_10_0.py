@@ -21,13 +21,10 @@ Create Date: 2016-04-08 15:20:43.989472
 """
 
 from alembic import op
+from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
-from oslo_serialization import jsonutils
-
 from nailgun.db.sqlalchemy.models import fields
-from nailgun.utils.migration import drop_enum
-from nailgun.utils.migration import upgrade_enum
 
 
 # revision identifiers, used by Alembic.
@@ -40,17 +37,9 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
-    upgrade_task_model()
-    upgrade_deployment_graphs_attributes()
-    upgrade_orchestrator_task_types()
-    upgrade_node_error_type()
 
 
 def downgrade():
-    downgrade_node_error_type()
-    downgrade_orchestrator_task_types()
-    downgrade_deployment_graphs_attributes()
-    downgrade_task_model()
     downgrade_release_required_component_types()
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
@@ -315,127 +304,3 @@ def downgrade_node_deployment_info():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
-
-
-def upgrade_task_model():
-    op.add_column(
-        'tasks',
-        sa.Column('graph_type', sa.String(255), nullable=True)
-    )
-    op.add_column(
-        'tasks',
-        sa.Column(
-            'dry_run', sa.Boolean(), nullable=False, server_default='false'
-        )
-    )
-
-
-def upgrade_deployment_graphs_attributes():
-    op.add_column(
-        'deployment_graphs',
-        sa.Column(
-            'node_filter',
-            sa.String(4096),
-            nullable=True
-        )
-    )
-    op.add_column(
-        'deployment_graphs',
-        sa.Column(
-            'on_success',
-            fields.JSON(),
-            nullable=True
-        )
-    )
-    op.add_column(
-        'deployment_graphs',
-        sa.Column(
-            'on_error',
-            fields.JSON(),
-            nullable=True
-        )
-    )
-    op.add_column(
-        'deployment_graphs',
-        sa.Column(
-            'on_stop',
-            fields.JSON(),
-            nullable=True
-        )
-    )
-
-
-def downgrade_task_model():
-    op.drop_column('tasks', 'dry_run')
-    op.drop_column('tasks', 'graph_type')
-
-
-def downgrade_deployment_graphs_attributes():
-    op.drop_column('deployment_graphs', 'node_filter')
-    op.drop_column('deployment_graphs', 'on_success')
-    op.drop_column('deployment_graphs', 'on_error')
-    op.drop_column('deployment_graphs', 'on_stop')
-
-
-orchestrator_task_types_old = (
-    'puppet',
-    'shell',
-    'sync',
-    'upload_file',
-    'group',
-    'stage',
-    'skipped',
-    'reboot',
-    'copy_files',
-    'role'
-)
-
-
-orchestrator_task_types_new = orchestrator_task_types_old + (
-    'master_shell',
-    'move_to_bootstrap',
-    'erase_node'
-)
-
-
-def upgrade_orchestrator_task_types():
-    upgrade_enum(
-        'deployment_graph_tasks',
-        'type',
-        'deployment_graph_tasks_type',
-        orchestrator_task_types_old,
-        orchestrator_task_types_new
-    )
-
-
-def downgrade_orchestrator_task_types():
-    upgrade_enum(
-        'deployment_graph_tasks',
-        'type',
-        'deployment_graph_tasks_type',
-        orchestrator_task_types_new,
-        orchestrator_task_types_old
-    )
-
-
-node_error_types_old = (
-    'deploy',
-    'provision',
-    'deletion',
-    'discover',
-    'stop_deployment'
-)
-
-
-def upgrade_node_error_type():
-    op.alter_column('nodes', 'error_type', type_=sa.String(100))
-    drop_enum('node_error_type')
-
-
-def downgrade_node_error_type():
-    enum_type = sa.Enum(*node_error_types_old, name='node_error_type')
-    enum_type.create(op.get_bind(), checkfirst=False)
-    op.execute(
-        u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
-        u' USING error_type::text::node_error_type'
-    )

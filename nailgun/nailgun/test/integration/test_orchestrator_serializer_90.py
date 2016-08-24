@@ -627,6 +627,27 @@ class TestDeploymentLCMSerialization90(
                 item['cluster']['is_customized'] = True
                 self.assertIn(item, cust_serialized)
 
+    def test_provision_info_serialized(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        node_info = next(x for x in serialized if x['uid'] == self.node.uid)
+        self.assertIn('provision', node_info)
+        provision_info = node_info['provision']
+        # check that key options present in provision section
+        self.assertIn('ks_meta', provision_info)
+        self.assertIn('engine', provision_info)
+
+    def test_deleted_field_present_only_for_deleted_nodes(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        self.node.pending_deletion = True
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        node_info = next(x for x in serialized if x['uid'] == self.node.uid)
+        self.assertTrue(node_info['deleted'])
+        self.node.pending_deletion = False
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        node_info = next(x for x in serialized if x['uid'] == self.node.uid)
+        self.assertNotIn('deleted', node_info)
+
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,

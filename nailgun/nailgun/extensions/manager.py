@@ -18,6 +18,7 @@ from itertools import chain
 
 from stevedore.extension import ExtensionManager
 
+from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.extensions import consts
 
@@ -56,6 +57,11 @@ def get_extension(name):
 
     raise errors.CannotFindExtension(
         "Cannot find extension with name '{0}'".format(name))
+
+
+def set_extensions_for_object(obj, extensions_names):
+    obj.extensions = extensions_names
+    db().flush()
 
 
 def _get_extension_by_node(call_name, node):
@@ -114,9 +120,12 @@ def fire_callback_on_cluster_delete(cluster):
 
 
 def _collect_data_pipelines_for_cluster(cluster):
-    extensions = set(cluster.extensions)
-    return chain.from_iterable(e.data_pipelines for e in get_all_extensions()
-                               if e.name in extensions)
+    return chain.from_iterable(
+        e.data_pipelines for e in _collect_extensions_for_cluster(cluster))
+
+
+def _collect_extensions_for_cluster(cluster):
+    return [get_extension(e) for e in set(cluster.extensions)]
 
 
 def fire_callback_on_deployment_data_serialization(data, cluster, nodes,

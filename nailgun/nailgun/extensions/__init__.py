@@ -29,4 +29,5 @@ from nailgun.extensions.manager import \
     fire_callback_on_deployment_data_serialization
 from nailgun.extensions.manager import \
     fire_callback_on_provisioning_data_serialization
+from nailgun.extensions.manager import set_extensions_for_object
 from nailgun.extensions.manager import setup_yaql_context

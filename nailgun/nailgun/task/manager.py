@@ -43,7 +43,9 @@ class TaskManager(object):
 
     def __init__(self, cluster_id=None):
         if cluster_id:
-            self.cluster = db().query(Cluster).get(cluster_id)
+            self.cluster = objects.Cluster.get_by_uid(
+                lock_for_update=Task, fail_if_not_found=True
+            )
 
     def _call_silently(self, task, instance, *args, **kwargs):
         # create action_log for task
@@ -889,19 +891,13 @@ class StopDeploymentTaskManager(TaskManager):
 class ResetEnvironmentTaskManager(TaskManager):
 
     def execute(self, **kwargs):
-
-        # FIXME(aroma): remove updating of 'deployed_before'
-        # when stop action is reworked. 'deployed_before'
-        # flag identifies whether stop action is allowed for the
-        # cluster. Please, refer to [1] for more details.
-        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
-        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
-
-        deploy_running = db().query(Task).filter_by(
-            cluster=self.cluster,
-            name=consts.TASK_NAMES.deploy,
-            status='running'
+        deploy_running = db().query(Task).filter(
+            Task.cluster == self.cluster,
+            Task.status.in_(
+                [consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending]
+            )
         ).first()
+
         if deploy_running:
             raise errors.DeploymentAlreadyStarted(
                 u"Can't reset environment '{0}' when "
@@ -910,22 +906,26 @@ class ResetEnvironmentTaskManager(TaskManager):
                 )
             )
 
-        obsolete_tasks = db().query(Task).filter_by(
-            cluster_id=self.cluster.id,
-        ).filter(
-            Task.name.in_([
-                consts.TASK_NAMES.deploy,
-                consts.TASK_NAMES.deployment,
-                consts.TASK_NAMES.dry_run_deployment,
-                consts.TASK_NAMES.stop_deployment
-            ])
-        )
+        # FIXME(aroma): remove updating of 'deployed_before'
+        # when stop action is reworked. 'deployed_before'
+        # flag identifies whether stop action is allowed for the
+        # cluster. Please, refer to [1] for more details.
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        objects.Cluster.set_deployed_before_flag(self.cluster, value=False)
 
+        # Drop all tasks associated with cluster
+        obsolete_tasks = objects.TaskCollection.get_by_cluster_id(
+            self.cluster.id
+        )
+        # we cannot use bulk delete because it does not process strategy
+        # cascade on delete
         for task in obsolete_tasks:
             db().delete(task)
+        db().flush()
 
         nodes = objects.Cluster.get_nodes_by_role(
-            self.cluster, consts.VIRTUAL_NODE_TYPES.virt)
+            self.cluster, consts.VIRTUAL_NODE_TYPES.virt
+        )
         for node in nodes:
             objects.Node.reset_vms_created_state(node)
 

@@ -1149,7 +1149,7 @@ class EnvironmentManager(object):
             resp = self.app.delete(
                 reverse(
                     'ClusterHandler',
-                    kwargs={'obj_id': cluster_id}),
+                    kwargs={'obj_id': cluster_id}) + '?force=1',
                 expect_errors=True,
                 headers=self.default_headers)
             self.tester.assertEqual(resp.status_code, expect_http)

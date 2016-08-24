@@ -691,6 +691,15 @@ class TestTaskManagers(BaseIntegrationTest):
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster.id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+
+        resp = self.app.delete(
+            reverse(
+                'ClusterHandler',
+                kwargs={'obj_id': cluster.id}) + '?force=1',
             headers=self.default_headers
         )
         task_delete = self.db.query(models.Task).filter_by(

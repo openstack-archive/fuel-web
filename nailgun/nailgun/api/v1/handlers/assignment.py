@@ -58,6 +58,8 @@ class NodeAssignmentHandler(BaseHandler):
             objects.Node.update(node, {"cluster_id": cluster_id,
                                        "pending_roles": data[node.id],
                                        "pending_addition": True})
+        # fuel-client expects valid json for all put and post request
+        raise self.http(200, None)
 
 
 class NodeUnassignmentHandler(BaseHandler):
@@ -83,3 +85,5 @@ class NodeUnassignmentHandler(BaseHandler):
                 objects.Node.remove_from_cluster(node)
             else:
                 objects.Node.update(node, {"pending_deletion": True})
+
+        raise self.http(200, None)

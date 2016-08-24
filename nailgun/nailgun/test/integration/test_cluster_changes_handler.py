@@ -1888,8 +1888,7 @@ class TestHandlers(BaseIntegrationTest):
             [node['uid'] for node in deployment_info]
         )
 
-    @patch('nailgun.task.manager.rpc.cast')
-    def test_dry_run(self, mcast):
+    def _test_run(self, mcast, mode='dry_run'):
         self.env.create(
             release_kwargs={
                 'operating_system': consts.RELEASE_OS.ubuntu,
@@ -1911,18 +1910,27 @@ class TestHandlers(BaseIntegrationTest):
                 reverse(
                     handler,
                     kwargs={'cluster_id': self.env.clusters[0].id}
-                ) + '?dry_run=1',
+                ) + '?%s=1' % mode,
                 headers=self.default_headers,
                 expect_errors=True
             )
             self.assertEqual(resp.status_code, 202)
             self.assertEqual(
-                mcast.call_args[0][1][0]['args']['dry_run'], True)
+                mcast.call_args[0][1][0]['args'][mode], True)
 
             task_uuid = mcast.call_args[0][1][0]['args']['task_uuid']
             task = Task.get_by_uuid(uuid=task_uuid, fail_if_not_found=True)
             self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
-            self.assertEqual('dry_run_deployment', task.name)
+            if mode == 'dry_run':
+                self.assertEqual('dry_run_deployment', task.name)
+
+    @patch('nailgun.task.manager.rpc.cast')
+    def test_dry_run(self, mcast):
+        self._test_run(mcast, mode='dry_run')
+
+    @patch('nailgun.task.manager.rpc.cast')
+    def test_noop_run(self, mcast):
+        self._test_run(mcast, mode='noop_run')
 
     @patch('nailgun.rpc.cast')
     def test_occurs_error_not_enough_memory_for_hugepages(self, *_):

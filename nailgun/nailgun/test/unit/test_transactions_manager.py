@@ -29,7 +29,8 @@ class TestMakeAstuteMessage(BaseUnitTest):
     def test_make_astute_message(self, lcm_mock, obj_mock):
         resolver = mock.MagicMock()
         context = mock.MagicMock()
-        tx = mock.MagicMock(dry_run=False)
+        tx = mock.MagicMock(dry_run=False, noop_run=False,
+                            cache={'dry_run': False, 'noop_run': False})
         tasks = mock.MagicMock()
         tasks_directory = mock.MagicMock()
         tasks_graph = mock.MagicMock()
@@ -51,6 +52,7 @@ class TestMakeAstuteMessage(BaseUnitTest):
                     'tasks_graph': tasks_graph,
                     'tasks_metadata': tasks_metadata,
                     'dry_run': False,
+                    'noop_run': False,
                 }
             },
             result
@@ -187,7 +189,7 @@ class TestGetTasksToRun(BaseUnitTest):
 class TestUpdateNodes(BaseUnitTest):
     @mock.patch('nailgun.transactions.manager.objects')
     def test_delete_node_from_cluster(self, obj_mock):
-        transaction = mock.MagicMock(dry_run=False)
+        transaction = mock.MagicMock(dry_run=False, noop_run=False)
         nodes = [mock.MagicMock(uid='1')]
         node_params = {'1': {'status': 'deleted'}}
         manager._update_nodes(transaction, nodes, node_params)
@@ -195,7 +197,7 @@ class TestUpdateNodes(BaseUnitTest):
 
     @mock.patch('nailgun.transactions.manager.objects')
     def test_delete_node_from_cluster_if_dry_run(self, obj_mock):
-        transaction = mock.MagicMock(dry_run=True)
+        transaction = mock.MagicMock(dry_run=True, noop_run=False)
         nodes = [mock.MagicMock(uid='1')]
         node_params = {'1': {'status': 'deleted'}}
         manager._update_nodes(transaction, nodes, node_params)
@@ -203,7 +205,7 @@ class TestUpdateNodes(BaseUnitTest):
 
     @mock.patch('nailgun.transactions.manager.notifier')
     def test_set_error_status(self, notifier_mock):
-        transaction = mock.MagicMock(dry_run=False)
+        transaction = mock.MagicMock(dry_run=False, noop_run=False)
         nodes = [mock.MagicMock(uid='1', error_type=None)]
         node_params = {
             '1': {
@@ -222,7 +224,7 @@ class TestUpdateNodes(BaseUnitTest):
 
     @mock.patch('nailgun.transactions.manager.notifier')
     def test_set_default_error_type(self, notifier_mock):
-        transaction = mock.MagicMock(dry_run=False)
+        transaction = mock.MagicMock(dry_run=False, noop_run=False)
         nodes = [mock.MagicMock(uid='1', error_type=None)]
         node_params = {'1': {'status': 'error', 'error_msg': 'error'}}
         manager._update_nodes(transaction, nodes, node_params)
@@ -237,7 +239,7 @@ class TestUpdateNodes(BaseUnitTest):
 
     @mock.patch('nailgun.transactions.manager.notifier')
     def test_handle_error_status_for_node_if_dry_run(self, notifier_mock):
-        transaction = mock.MagicMock(dry_run=True)
+        transaction = mock.MagicMock(dry_run=True, noop_run=False)
         nodes = [mock.MagicMock(uid='1', error_type=None)]
         node_params = {'1': {'status': 'error'}}
         manager._update_nodes(transaction, nodes, node_params)
@@ -245,26 +247,27 @@ class TestUpdateNodes(BaseUnitTest):
         self.assertEqual(0, notifier_mock.notify.call_count)
 
     def test_update_node_progress(self):
-        transaction = mock.MagicMock(dry_run=False)
+        transaction = mock.MagicMock(dry_run=True, noop_run=False)
         nodes = [mock.MagicMock(uid='1', progress=0)]
         node_params = {'1': {'progress': 10}}
         manager._update_nodes(transaction, nodes, node_params)
         self.assertEqual(10, nodes[0].progress)
 
         transaction.dry_run = True
+        transaction.noop_run = False
         node_params = {'1': {'progress': 20}}
         manager._update_nodes(transaction, nodes, node_params)
         self.assertEqual(20, nodes[0].progress)
 
     def test_update_node_status(self):
-        transaction = mock.MagicMock(dry_run=False)
+        transaction = mock.MagicMock(dry_run=False, noop_run=False)
         nodes = [mock.MagicMock(uid='1', status=consts.NODE_STATUSES.discover)]
         node_params = {'1': {'status': consts.NODE_STATUSES.ready}}
         manager._update_nodes(transaction, nodes, node_params)
         self.assertEqual(consts.NODE_STATUSES.ready, nodes[0].status)
 
     def test_update_node_status_if_dry_run(self):
-        transaction = mock.MagicMock(dry_run=True)
+        transaction = mock.MagicMock(dry_run=True, noop_run=False)
         nodes = [mock.MagicMock(uid='1', status=consts.NODE_STATUSES.discover)]
         node_params = {'1': {'status': consts.NODE_STATUSES.ready}}
         manager._update_nodes(transaction, nodes, node_params)

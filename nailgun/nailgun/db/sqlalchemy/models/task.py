@@ -76,7 +76,6 @@ class Task(Base):
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
     deleted_at = Column(DateTime)
-
     deployment_info = deferred(Column(MutableDict.as_mutable(JSON),
                                       nullable=True))
     cluster_settings = deferred(Column(MutableDict.as_mutable(JSON),

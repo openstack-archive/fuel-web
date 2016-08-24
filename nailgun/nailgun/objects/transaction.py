@@ -20,6 +20,8 @@ from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects.node_deployment_info import NodeDeploymentInfo
+from nailgun.objects.node_deployment_info import NodeDeploymentInfoCollection
 from nailgun.objects.serializers.transaction import TransactionSerializer
 
 
@@ -45,12 +47,25 @@ class Transaction(NailgunObject):
 
     @classmethod
     def attach_deployment_info(cls, instance, deployment_info):
-        instance.deployment_info = deployment_info
+        for node_uid, node_di in deployment_info.items():
+            NodeDeploymentInfo.create({'task_id': instance.id,
+                                       'node_uid': node_uid,
+                                       'deployment_info': node_di})
 
     @classmethod
-    def get_deployment_info(cls, instance):
-        if instance is not None:
-            return instance.deployment_info
+    def get_deployment_info(cls, instance, node_uids=None):
+        if instance is None:
+            return {}
+
+        node_di_list = NodeDeploymentInfoCollection.filter_by(
+            None, task_id=instance.id)
+        if node_uids:
+            node_di_list = NodeDeploymentInfoCollection.filter_by_list(
+                node_di_list, "node_uid", node_uids)
+
+        deployment_info = {node_di.node_uid: node_di.deployment_info
+                           for node_di in node_di_list}
+        return deployment_info
 
     @classmethod
     def attach_network_settings(cls, instance, settings):

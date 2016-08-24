@@ -30,6 +30,7 @@ from nailgun.errors import errors as nailgun_errors
 from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings
+from nailgun import transactions
 
 from nailgun.consts import TASK_STATUSES
 from nailgun.db import db
@@ -233,6 +234,21 @@ class NailgunReceiver(object):
             logger.error("Removing IBP images failed: task_uuid %s", task_uuid)
 
         objects.Task.update(task, {'status': status})
+
+    @classmethod
+    def transaction_resp(cls, **kwargs):
+        logger.info(
+            "RPC method transaction_resp received: %s", jsonutils.dumps(kwargs)
+        )
+
+        transaction = objects.Task.get_by_uuid(
+            kwargs.pop('task_uuid', None),
+            fail_if_not_found=True,
+            lock_for_update=True,
+        )
+
+        manager = transactions.TransactionsManager(transaction.cluster.id)
+        manager.process(transaction, kwargs)
 
     @classmethod
     def deploy_resp(cls, **kwargs):
@@ -469,6 +485,25 @@ class NailgunReceiver(object):
         )
 
     @classmethod
+    def _assemble_task_update(cls, task, status, progress, message, nodes):
+        """Assemble arguments to update task.
+
+        :param task: objects.Task object
+        :param status: consts.TASK_STATUSES value
+        :param progress: progress number value
+        :param message: message text
+        :param nodes: the modified nodes list
+        """
+
+        if status == consts.TASK_STATUSES.error:
+            data = cls._error_action(task, status, progress, message)
+        elif status == consts.TASK_STATUSES.ready:
+            data = cls._success_action(task, status, progress, nodes)
+        else:
+            data = {'status': status, 'progress': progress, 'message': message}
+        return data
+
+    @classmethod
     def _update_task_status(cls, task, status, progress, message, nodes):
         """Do update task status actions.
 
@@ -478,14 +513,10 @@ class NailgunReceiver(object):
         :param message: message text
         :param nodes: the modified nodes list
         """
-        # Let's check the whole task status
-        if status == consts.TASK_STATUSES.error:
-            cls._error_action(task, status, progress, message)
-        elif status == consts.TASK_STATUSES.ready:
-            cls._success_action(task, status, progress, nodes)
-        else:
-            data = {'status': status, 'progress': progress, 'message': message}
-            objects.Task.update(task, data)
+        objects.Task.update(
+            task,
+            cls._assemble_task_update(task, status, progress, message, nodes)
+        )
 
     @classmethod
     def _update_action_log_entry(cls, task_status, task_name, task_uuid,
@@ -567,15 +598,14 @@ class NailgunReceiver(object):
             notify_message = message if error_message is not None else None
 
         cls._notify(task, consts.NOTIFICATION_TOPICS.error, notify_message)
-        data = {'status': status, 'progress': progress, 'message': message}
-        objects.Task.update(task, data)
+        return {'status': status, 'progress': progress, 'message': message}
 
     @classmethod
     def _success_action(cls, task, status, progress, nodes):
-        # check if all nodes are ready
+        # we shouldn't report success if there's at least one node in
+        # error state
         if any(n.status == consts.NODE_STATUSES.error for n in nodes):
-            cls._error_action(task, 'error', 100)
-            return
+            return cls._error_action(task, 'error', 100)
 
         task_name = task.name.title()
         if nodes:
@@ -608,8 +638,7 @@ class NailgunReceiver(object):
             message = '{0}\n\n{1}'.format(message, plugins_msg)
 
         cls._notify(task, consts.NOTIFICATION_TOPICS.done, message)
-        data = {'status': status, 'progress': progress, 'message': message}
-        objects.Task.update(task, data)
+        return {'status': status, 'progress': progress, 'message': message}
 
     @classmethod
     def _make_plugins_success_message(cls, plugins):

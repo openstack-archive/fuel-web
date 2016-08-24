@@ -184,11 +184,10 @@ class Task(NailgunObject):
                 n.error_type = error_type
 
     @classmethod
-    def __update_cluster_status(cls, cluster, status, expected_node_status):
+    def _update_cluster_status(cls, cluster, status, expected_node_status):
         logger.debug(
             "Updating cluster (%s) status: from %s to %s",
             cluster.full_name, cluster.status, status)
-
         if expected_node_status is not None:
             remaining = Cluster.get_nodes_count_unmet_status(
                 cluster, expected_node_status
@@ -222,7 +221,7 @@ class Task(NailgunObject):
                         n.status = consts.NODE_STATUSES.ready
                         n.progress = 100
 
-                cls.__update_cluster_status(
+                cls._update_cluster_status(
                     cluster,
                     consts.CLUSTER_STATUSES.operational,
                     consts.NODE_STATUSES.ready
@@ -231,7 +230,7 @@ class Task(NailgunObject):
                 Cluster.clear_pending_changes(cluster)
 
             elif instance.status == consts.TASK_STATUSES.error:
-                cls.__update_cluster_status(
+                cls._update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.error, None
                 )
                 q_nodes_to_error = TaskHelper.get_nodes_to_deployment_error(
@@ -245,7 +244,7 @@ class Task(NailgunObject):
                 Cluster.set_vms_created_state(cluster)
             elif (instance.status == consts.TASK_STATUSES.error and
                   not TaskHelper.before_deployment_error(instance)):
-                cls.__update_cluster_status(
+                cls._update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.error, None
                 )
         elif instance.name == consts.TASK_NAMES.deploy and \
@@ -255,17 +254,17 @@ class Task(NailgunObject):
             # error because we don't want to lock
             # settings if cluster wasn't deployed
 
-            cls.__update_cluster_status(
+            cls._update_cluster_status(
                 cluster, consts.CLUSTER_STATUSES.error, None
             )
 
         elif instance.name == consts.TASK_NAMES.provision:
             if instance.status == consts.TASK_STATUSES.ready:
-                cls.__update_cluster_status(
+                cls._update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.partially_deployed, None
                 )
             elif instance.status == consts.TASK_STATUSES.error:
-                cls.__update_cluster_status(
+                cls._update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.error, None
                 )
                 q_nodes_to_error = \
@@ -275,11 +274,11 @@ class Task(NailgunObject):
                     q_nodes_to_error, error_type=consts.NODE_ERRORS.provision)
         elif instance.name == consts.TASK_NAMES.stop_deployment:
             if instance.status == consts.TASK_STATUSES.error:
-                cls.__update_cluster_status(
+                cls._update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.error, None
                 )
             else:
-                cls.__update_cluster_status(
+                cls._update_cluster_status(
                     cluster, consts.CLUSTER_STATUSES.stopped, None
                 )
 
@@ -289,6 +288,60 @@ class Task(NailgunObject):
         if result.get('status') not in consts.TASK_STATUSES:
             result.pop('status', None)
         return result
+
+    @classmethod
+    def update_recursively(cls, instance, data):
+        logger.debug("Updating task: %s", instance.uuid)
+        clean_data = cls._clean_data(data)
+        super(Task, cls).update(instance, data)
+        if instance.parent:
+            parent = instance.parent
+            siblings = parent.subtasks
+            status = clean_data.get('status')
+            if status == consts.TASK_STATUSES.ready:
+                clean_data['progress'] = 100
+                instance.progress = 100
+                ready_siblings_count = sum(
+                    x.status == consts.TASK_STATUSES.ready for x in siblings
+                )
+                if ready_siblings_count == len(siblings):
+                    parent.status = consts.TASK_STATUSES.ready
+            elif status == consts.TASK_STATUSES.error:
+                parent.status = consts.TASK_STATUSES.error
+                for s in siblings:
+                    if s.status != consts.TASK_STATUSES.ready:
+                        s.status = consts.TASK_STATUSES.error
+                        s.progress = 100
+                        s.message = "Task aborted"
+                        clean_data['progress'] = 100
+                        instance.progress = 100
+                TaskHelper.update_action_log(parent)
+            elif status == consts.TASK_STATUSES.running:
+                parent.status = consts.TASK_STATUSES.running
+
+            if 'progress' in clean_data:
+                total_progress = sum(x.progress for x in siblings)
+                parent.progress = total_progress // len(siblings)
+
+            task_status = parent.status
+        else:
+            task_status = instance.status
+
+        if not instance.dry_run:
+            if task_status == consts.TASK_STATUSES.ready:
+                cls._update_cluster_status(
+                    instance.cluster,
+                    consts.CLUSTER_STATUSES.operational,
+                    consts.NODE_STATUSES.ready
+                )
+            elif task_status == consts.TASK_STATUSES.error:
+                cls._update_cluster_status(
+                    instance.cluster,
+                    consts.CLUSTER_STATUSES.error,
+                    None
+                )
+
+        db().flush()
 
     @classmethod
     def update(cls, instance, data):

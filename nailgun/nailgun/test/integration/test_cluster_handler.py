@@ -408,6 +408,25 @@ class TestClusterExtension(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertItemsEqual(resp.json_body, enabled_extensions)
 
+    def test_enabling_duplicated_extensions(self):
+        extensions = 'bareon', 'volume_manager'
+        requested_extensions = 2 * extensions
+
+        with mock.patch(
+                'nailgun.api.v1.validators.extension.get_all_extensions',
+                return_value=make_mock_extensions(extensions)):
+            resp = self.app.put(
+                reverse(
+                    'ClusterExtensionsHandler',
+                    kwargs={'cluster_id': self.cluster.id}),
+                jsonutils.dumps(requested_extensions),
+                headers=self.default_headers,
+            )
+        self.assertEqual(resp.status_code, 200)
+
+        self.db.refresh(self.cluster)
+        self.assertItemsEqual(self.cluster.extensions, extensions)
+
     def test_enabling_extensions(self):
         extensions = 'bareon', 'volume_manager'
 

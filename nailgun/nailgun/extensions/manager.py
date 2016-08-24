@@ -125,7 +125,8 @@ def _collect_data_pipelines_for_cluster(cluster):
 
 
 def _collect_extensions_for_cluster(cluster):
-    return [get_extension(e) for e in set(cluster.extensions)]
+    for e in cluster.extensions:
+        yield get_extension(e)
 
 
 def fire_callback_on_deployment_data_serialization(data, cluster, nodes,

@@ -518,6 +518,6 @@ class ClusterExtensionsHandler(BaseHandler):
                * 404 (cluster not found in db)
         """
         cluster = self._get_cluster_obj(cluster_id)
-        data = self.checked_data()
+        data = set(self.checked_data())
         set_extensions_for_object(cluster, data)
         return cluster.extensions

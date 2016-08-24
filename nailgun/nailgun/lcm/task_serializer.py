@@ -20,7 +20,6 @@ import re
 import six
 
 from nailgun import consts
-from nailgun.errors import errors
 from nailgun.expression import Expression
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -214,23 +213,10 @@ class DefaultTaskSerializer(NoopTaskSerializer):
         return task
 
 
-def handle_unsupported(_, task_template):
-    raise errors.SerializerNotSupported(
-        'The task with type {0} is not supported.'
-        .format(task_template['type'])
-    )
-
-
 class TasksSerializersFactory(object):
     known_types = {
         consts.ORCHESTRATOR_TASK_TYPES.skipped: NoopTaskSerializer,
         consts.ORCHESTRATOR_TASK_TYPES.stage: NoopTaskSerializer,
-        consts.ORCHESTRATOR_TASK_TYPES.copy_files: DefaultTaskSerializer,
-        consts.ORCHESTRATOR_TASK_TYPES.puppet: DefaultTaskSerializer,
-        consts.ORCHESTRATOR_TASK_TYPES.reboot: DefaultTaskSerializer,
-        consts.ORCHESTRATOR_TASK_TYPES.shell: DefaultTaskSerializer,
-        consts.ORCHESTRATOR_TASK_TYPES.sync: DefaultTaskSerializer,
-        consts.ORCHESTRATOR_TASK_TYPES.upload_file: DefaultTaskSerializer,
     }
 
     def __init__(self, transaction):
@@ -238,6 +224,6 @@ class TasksSerializersFactory(object):
 
     def create_serializer(self, task_template):
         serializer_class = self.known_types.get(
-            task_template['type'], handle_unsupported
+            task_template['type'], DefaultTaskSerializer
         )
         return serializer_class(self.context, task_template)

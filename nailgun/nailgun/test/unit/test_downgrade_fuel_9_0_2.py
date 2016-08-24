@@ -123,3 +123,20 @@ class TestDeploymentGraphsDowngrade(base.BaseAlembicMigrationTest):
         self.assertNotIn('on_success', graphs_table.c)
         self.assertNotIn('on_error', graphs_table.c)
         self.assertNotIn('on_stop', graphs_table.c)
+
+
+class TestOrchestratorTaskTypesDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_enum_does_not_have_new_values(self):
+        expected_values = {
+            'master_shell',
+            'move_to_bootstrap',
+            'erase_node',
+        }
+
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::deployment_graph_tasks_type))'
+        )).fetchall()
+        self.assertFalse(
+            expected_values.intersection((x[0] for x in result))
+        )

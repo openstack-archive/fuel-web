@@ -93,7 +93,7 @@ class Node(Base):
     pending_addition = Column(Boolean, default=False)
     pending_deletion = Column(Boolean, default=False)
     changes = relationship("ClusterChanges", backref="node")
-    error_type = Column(Enum(*consts.NODE_ERRORS, name='node_error_type'))
+    error_type = Column(String(100))
     error_msg = Column(Text)
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)

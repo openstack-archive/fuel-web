@@ -25,6 +25,7 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import drop_enum
 
 
 # revision identifiers, used by Alembic.
@@ -52,9 +53,11 @@ def upgrade():
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_task_model()
+    upgrade_node_error_type()
 
 
 def downgrade():
+    downgrade_node_error_type()
     downgrade_task_model()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
@@ -267,3 +270,26 @@ def upgrade_task_model():
 def downgrade_task_model():
     op.drop_column('tasks', 'dry_run')
     op.drop_column('tasks', 'graph_type')
+
+
+node_error_types_old = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+    'stop_deployment'
+)
+
+
+def upgrade_node_error_type():
+    op.alter_column('nodes', 'error_type', type_=sa.String(100))
+    drop_enum('node_error_type')
+
+
+def downgrade_node_error_type():
+    enum_type = sa.Enum(*node_error_types_old, name='node_error_type')
+    enum_type.create(op.get_bind(), checkfirst=False)
+    op.execute(
+        u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
+        u' USING error_type::text::node_error_type'
+    )

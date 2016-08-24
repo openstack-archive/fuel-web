@@ -51,6 +51,11 @@ logger = logging.getLogger('receiverd')
 class NailgunReceiver(object):
 
     @classmethod
+    def _set_task_time_end(cls, task, new_status):
+        if new_status != consts.TASK_STATUSES.running:
+            task.time_end = datetime.datetime.utcnow()
+
+    @classmethod
     def remove_nodes_resp(cls, **kwargs):
         logger.info(
             "RPC method remove_nodes_resp received: %s" %
@@ -169,6 +174,7 @@ class NailgunReceiver(object):
         cls.remove_nodes_resp(**kwargs)
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+
         cluster = task.cluster
 
         if task.status in ('ready',):
@@ -260,6 +266,7 @@ class NailgunReceiver(object):
             task_uuid,
             fail_if_not_found=True
         )
+        cls._set_task_time_end(task, status)
 
         # lock cluster
         objects.Cluster.get_by_uid(
@@ -1402,6 +1409,9 @@ class NailgunReceiver(object):
         try:
             task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
                                             lock_for_update=True)
+
+            task.time_start = datetime.datetime.utcnow()
+
             if task.status == consts.TASK_STATUSES.pending:
                 objects.Task.update(
                     task, {'status': consts.TASK_STATUSES.running})

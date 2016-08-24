@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
 import itertools
 
 import six
@@ -270,7 +271,9 @@ class TransactionsManager(object):
     def success(self, transaction):
         objects.Transaction.update(
             transaction,
-            {'status': consts.TASK_STATUSES.ready, 'progress': 100}
+            {'status': consts.TASK_STATUSES.ready,
+             'progress': 100,
+             'time_end': datetime.utcnow()}
         )
         _update_cluster_status(transaction)
         notifier.notify(
@@ -286,7 +289,8 @@ class TransactionsManager(object):
         data = {
             'status': consts.TASK_STATUSES.error,
             'message': reason,
-            'progress': 100
+            'progress': 100,
+            'time_end': datetime.utcnow()
         }
         objects.Transaction.update(transaction, data)
         helpers.TaskHelper.update_action_log(transaction)

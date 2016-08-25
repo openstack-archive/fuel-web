@@ -97,8 +97,8 @@ class TestDeploymentAttributesSerialization90(
 
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        self.assertEqual(len(serialised_for_astute), 1)
-        node = serialised_for_astute[0]
+        self.assertEqual(len(serialised_for_astute['nodes']), 1)
+        node = serialised_for_astute['nodes'][0]
         dpdk = node.get('dpdk')
         self.assertIsNotNone(dpdk)
         self.assertTrue(dpdk.get('enabled'))
@@ -176,8 +176,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        self.assertEqual(len(serialised_for_astute), 1)
-        node = serialised_for_astute[0]
+        self.assertEqual(len(serialised_for_astute['nodes']), 1)
+        node = serialised_for_astute['nodes'][0]
         dpdk = node.get('dpdk')
         self.assertIsNotNone(dpdk)
         self.assertTrue(dpdk.get('enabled'))
@@ -246,14 +246,14 @@ class TestDeploymentAttributesSerialization90(
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
 
-        serialized_node = serialized_for_astute[0]
+        serialized_node = serialized_for_astute['nodes'][0]
 
         self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
         self.assertEqual(serialized_node['dpdk']['ovs_pmd_core_mask'], '0x4')
         self.assertEqual(serialized_node['nova']['cpu_pinning'], [5, 6])
         node_name = objects.Node.get_slave_name(node)
-        node_common_attrs = \
-            serialized_node['network_metadata']['nodes'][node_name]
+        network_data = serialized_for_astute['common']['network_metadata']
+        node_common_attrs = network_data['nodes'][node_name]
         self.assertTrue(node_common_attrs['nova_cpu_pinning_enabled'])
 
     def test_pinning_cpu_for_dpdk(self):
@@ -281,15 +281,15 @@ class TestDeploymentAttributesSerialization90(
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
 
-        serialized_node = serialized_for_astute[0]
+        serialized_node = serialized_for_astute['nodes'][0]
 
         self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
         self.assertEqual(serialized_node['dpdk']['ovs_pmd_core_mask'], '0x4')
         self.assertNotIn('cpu_pinning', serialized_node['nova'])
 
         node_name = objects.Node.get_slave_name(node)
-        node_common_attrs = \
-            serialized_node['network_metadata']['nodes'][node_name]
+        network_data = serialized_for_astute['common']['network_metadata']
+        node_common_attrs = network_data['nodes'][node_name]
         self.assertFalse(node_common_attrs['nova_cpu_pinning_enabled'])
 
     def test_dpdk_hugepages(self):
@@ -323,7 +323,7 @@ class TestDeploymentAttributesSerialization90(
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
 
-        serialized_node = serialized_for_astute[0]
+        serialized_node = serialized_for_astute['nodes'][0]
 
         self.assertEquals(
             [128, 128, 128],
@@ -362,7 +362,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        serialized_node = serialized_for_astute[0]
+
+        serialized_node = serialized_for_astute['nodes'][0]
 
         self.assertNotIn('hugepages', serialized_node)
 
@@ -397,7 +398,8 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        serialized_node = serialized_for_astute[0]
+
+        serialized_node = serialized_for_astute['nodes'][0]
 
         expected = [
             {'numa_id': 0, 'size': 2048, 'count': 512},
@@ -417,7 +419,7 @@ class TestDeploymentAttributesSerialization90(
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
 
-        for serialized_node in serialized_for_astute:
+        for serialized_node in serialized_for_astute['nodes']:
             nova = serialized_node.get('nova', {})
             self.assertNotIn('cpu_pinning', nova)
 
@@ -425,9 +427,9 @@ class TestDeploymentAttributesSerialization90(
             self.assertNotIn('ovs_core_mask', dpdk)
             self.assertNotIn('ovs_pmd_core_mask', dpdk)
 
-            nodes_attrs = serialized_node['network_metadata']['nodes']
-            for node_attrs in six.itervalues(nodes_attrs):
-                self.assertFalse(node_attrs['nova_cpu_pinning_enabled'])
+        network_data = serialized_for_astute['common']['network_metadata']
+        for node_attrs in six.itervalues(network_data['nodes']):
+            self.assertFalse(node_attrs['nova_cpu_pinning_enabled'])
 
     def test_hugepages_disabled(self):
         nodes_roles = [['compute'], ['controller']]
@@ -440,7 +442,7 @@ class TestDeploymentAttributesSerialization90(
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
 
-        for serialized_node in serialized_for_astute:
+        for serialized_node in serialized_for_astute['nodes']:
             nova = serialized_node.get('nova', {})
             self.assertFalse(nova.get('enable_hugepages', False))
 
@@ -449,9 +451,9 @@ class TestDeploymentAttributesSerialization90(
 
             self.assertNotIn('hugepages', serialized_node)
 
-            nodes_attrs = serialized_node['network_metadata']['nodes']
-            for node_attrs in six.itervalues(nodes_attrs):
-                self.assertFalse(node_attrs['nova_hugepages_enabled'])
+        network_data = serialized_for_astute['common']['network_metadata']
+        for node_attrs in six.itervalues(network_data['nodes']):
+            self.assertFalse(node_attrs['nova_hugepages_enabled'])
 
     def test_immutable_metadata_key(self):
         node = self.env.create_node(
@@ -468,10 +470,11 @@ class TestDeploymentAttributesSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        for node_data in serialized_for_astute:
-            for k, v in six.iteritems(node_data['network_metadata']['nodes']):
-                node = objects.Node.get_by_uid(v['uid'])
-                self.assertEqual(objects.Node.permanent_id(node), k)
+
+        network_data = serialized_for_astute['common']['network_metadata']
+        for k, v in six.iteritems(network_data['nodes']):
+            node = objects.Node.get_by_uid(v['uid'])
+            self.assertEqual(objects.Node.permanent_id(node), k)
 
 
 class TestDeploymentLCMSerialization90(
@@ -519,11 +522,12 @@ class TestDeploymentLCMSerialization90(
         )
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
+
         self.assertEqual(
             {'glance_config': 'value1',
              'nova_config': 'value3',
              'ceph_config': 'value2'},
-            serialized[0]['configuration']
+            serialized['nodes'][0]['configuration']
         )
 
     def test_cluster_attributes_in_serialized(self):
@@ -542,12 +546,13 @@ class TestDeploymentLCMSerialization90(
             "status": self.cluster_db.status,
             "mode": self.cluster_db.mode
         }
-        for node_info in serialized:
-            self.assertEqual(cluster_info, node_info['cluster'])
-            self.assertEqual(release_info, node_info['release'])
+        self.assertEqual(cluster_info, serialized['common']['cluster'])
+        self.assertEqual(release_info, serialized['common']['release'])
 
-        self.assertEqual(['compute'], serialized[0]['roles'])
-        self.assertEqual([consts.TASK_ROLES.master], serialized[1]['roles'])
+        self.assertEqual(['compute'], serialized['nodes'][0]['roles'])
+        self.assertEqual(
+            [consts.TASK_ROLES.master], serialized['nodes'][1]['roles']
+        )
 
     @mock.patch.object(
         plugins.adapters.PluginAdapterBase, 'repo_files',
@@ -608,9 +613,10 @@ class TestDeploymentLCMSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        for node in serialized:
-            self.assertIn('plugins', node)
-            self.datadiff(plugins_data, node['plugins'], compare_sorted=True)
+
+        self.assertIn('plugins', serialized['common'])
+        self.datadiff(plugins_data, serialized['common']['plugins'],
+                      compare_sorted=True)
 
     def test_serialize_with_customized(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)
@@ -620,32 +626,31 @@ class TestDeploymentLCMSerialization90(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         cust_serialized = self.serializer.serialize(
             self.cluster_db, [self.node])
-
-        for item in serialized:
-            if item['uid'] != consts.MASTER_NODE_UID:
-                self.assertIn(item, cust_serialized)
-            else:
-                self.assertIn(item, cust_serialized)
+        self.assertEqual(serialized['common'], cust_serialized['common'])
+        self.assertItemsEqual(serialized['nodes'], cust_serialized['nodes'])
 
     def test_provision_info_serialized(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
-        node_info = next(x for x in serialized if x['uid'] == self.node.uid)
+        node_info = next(x for x in serialized['nodes']
+                         if x['uid'] == self.node.uid)
         self.assertIn('provision', node_info)
         provision_info = node_info['provision']
         # check that key options present in provision section
         self.assertIn('ks_meta', provision_info)
-        self.assertIn('engine', provision_info)
+        self.assertIn('engine', serialized['common']['provision'])
 
     def test_deleted_field_present_only_for_deleted_nodes(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         self.node.pending_deletion = True
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
-        node_info = next(x for x in serialized if x['uid'] == self.node.uid)
+        node_info = next(x for x in serialized['nodes']
+                         if x['uid'] == self.node.uid)
         self.assertTrue(node_info['deleted'])
         self.node.pending_deletion = False
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
-        node_info = next(x for x in serialized if x['uid'] == self.node.uid)
+        node_info = next(x for x in serialized['nodes']
+                         if x['uid'] == self.node.uid)
         self.assertNotIn('deleted', node_info)
 
 
@@ -672,14 +677,12 @@ class TestDeploymentHASerializer90(
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)
-
         objects.Cluster.replace_deployment_info(cluster, serialized)
         objects.Cluster.prepare_for_deployment(cluster)
-        cust_serialized = serializer.serialize(
-            cluster, cluster.nodes)
+        cust_serialized = serializer.serialize(cluster, cluster.nodes)
 
-        for item in serialized:
-            self.assertIn(item, cust_serialized)
+        self.assertEqual(serialized['common'], cust_serialized['common'])
+        self.assertItemsEqual(serialized['nodes'], cust_serialized['nodes'])
 
 
 class TestDeploymentTasksSerialization90(
@@ -848,9 +851,11 @@ class TestSriovSerialization90(
         else:
             self.fail('NIC without assigned networks was not found')
 
-        node0 = self.serialize()[0]
+        serialized = self.serialize()
+        node0 = serialized['nodes'][0]
+        common_attrs = serialized['common']
         self.assertEqual(
-            node0['quantum_settings']['supported_pci_vendor_devs'],
+            common_attrs['quantum_settings']['supported_pci_vendor_devs'],
             ['1234:5678']
         )
         for trans in node0['network_scheme']['transformations']:

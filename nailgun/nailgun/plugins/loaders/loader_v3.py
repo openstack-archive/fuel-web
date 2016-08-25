@@ -1,4 +1,6 @@
-#    Copyright 2014 Mirantis, Inc.
+# -*- coding: utf-8 -*-
+#
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,5 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from adapters import wrap_plugin
+from loader_base import PluginLoaderBase
 
+
+class PluginLoaderV3(PluginLoaderBase):
+
+    paths_to_fields = {
+        'attributes_metadata': 'environment_config.yaml',
+        'tasks': 'tasks.yaml',
+
+        'deployment_tasks': 'deployment_tasks.yaml',
+
+        'network_roles_metadata': 'network_roles.yaml',
+        'roles_metadata': 'node_roles.yaml',
+        'volumes_metadata': 'volumes.yaml',
+    }

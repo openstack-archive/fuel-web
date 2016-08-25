@@ -122,7 +122,9 @@ default_messages = {
     "TaskBaseDeploymentNotAllowed": "The task-based deployment is not allowed",
     "NoChanges": "There is no changes to apply.",
 
-    "ValidationException": "Base validation exception"
+    "ValidationException": "Base validation exception",
+
+    "NoPluginFileFound": "No plugin file found"
 }
 
 

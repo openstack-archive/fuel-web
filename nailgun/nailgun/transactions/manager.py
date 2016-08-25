@@ -20,7 +20,7 @@ import six
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun import errors
+from nailgun.errors import errors
 from nailgun import lcm
 from nailgun.logger import logger
 from nailgun import notifier

@@ -340,3 +340,72 @@ class TestGetNodesToRun(BaseUnitTest):
         manager._get_nodes_to_run(cluster, node_filter, node_ids)
         self.assertEqual(0, nodes_obj_mock.filter_by_list.call_count)
         self.assertEqual(0, yaql_mock.create_context.call_count)
+
+
+class TestGetCurrentState(BaseUnitTest):
+    def setUp(self):
+        super(TestGetCurrentState, self).setUp()
+        self.cluster = mock.MagicMock()
+        self.nodes = [
+            mock.MagicMock(uid='1', pending_addition=False, status='ready'),
+            mock.MagicMock(uid='2', pending_addition=False, status='ready')
+        ]
+        self.tasks = [
+            {'id': 'task1', 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet},
+            {'id': 'task2', 'type': consts.ORCHESTRATOR_TASK_TYPES.shell},
+            {'id': 'task3', 'type': consts.ORCHESTRATOR_TASK_TYPES.group}
+        ]
+
+    def test_get_current_state_with_force(self):
+        current_state = manager._get_current_state(
+            self.cluster, self.nodes, self.tasks, force=True
+        )
+        self.assertEqual({}, current_state)
+
+    @mock.patch('nailgun.transactions.manager.objects')
+    def test_get_current_state_if_there_is_no_deployment(self, objects_mock):
+        txs_mock = objects_mock.TransactionCollection
+        txs_mock.get_successful_transactions_per_task.return_value = []
+        nodes = {'1': self.nodes[0], '2': self.nodes[1], 'master': None}
+        current_state = manager._get_current_state(
+            self.cluster, self.nodes, self.tasks
+        )
+        self.assertEqual({}, current_state)
+        txs_mock.get_successful_transactions_per_task.assert_called_once_with(
+            self.cluster.id, ['task1', 'task2'], nodes
+        )
+
+    @mock.patch('nailgun.transactions.manager.objects')
+    def test_assemble_current_state(self, objects_mock):
+        txs_mock = objects_mock.TransactionCollection
+        transactions = [
+            (1, '1', 'task1'), (2, '1', 'task2'), (2, '2', 'task2')
+        ]
+        txs_mock.get_successful_transactions_per_task.return_value = \
+            transactions
+
+        objects_mock.Transaction.get_deployment_info.side_effect = [
+            {'common': {'key1': 'value1'},
+             'nodes': {'1': {'key11': 'value11'}}},
+            {'common': {'key2': 'value2'},
+             'nodes': {'1': {'key21': 'value21'}, '2': {'key22': 'value22'}}},
+        ]
+
+        current_state = manager._get_current_state(
+            self.cluster, self.nodes, self.tasks
+        )
+        expected_state = {
+            'task1': {
+                'common': {'key1': 'value1'},
+                'nodes': {'1': {'key11': 'value11'}}
+            },
+            'task2': {
+                'common': {'key2': 'value2'},
+                'nodes': {
+                    '1': {'key21': 'value21'},
+                    '2': {'key22': 'value22'}
+                },
+            }
+        }
+
+        self.assertEqual(expected_state, current_state)

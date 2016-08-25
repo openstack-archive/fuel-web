@@ -513,27 +513,27 @@ def _get_current_state(cluster, nodes, tasks, force=False):
     for tx, data in itertools.groupby(txs, lambda x: x[0]):
         node_ids = []
         deferred_state = {}
+        deployment_info = objects.Transaction.get_deployment_info(
+            tx, node_uids=node_uid)
+
         for _, node_id, task_name in data:
             t_state = state.setdefault(task_name, {})
             if _is_node_for_redeploy(nodes.get(node_id)):
-                t_state[node_id] = {}
+                t_state['nodes'][node_id] = {}
             else:
-                t_state[node_id] = deferred_state.setdefault(node_id, {})
+                t_state['nodes'][node_id] = deferred_state.setdefault(node_id, {})
                 node_ids.append(node_id)
+            t_state.setdefault('common_attrs', deployment_info['common_attrs'])
 
-        dict_update(
-            deferred_state,
-            objects.Transaction.get_deployment_info(tx, node_uids=node_ids),
-            level=2
-        )
+        dict_update(deferred_state, deployment_info['nodes'], level=2)
     return state
 
 
 def _get_expected_state(cluster, nodes):
     info = deployment_serializers.serialize_for_lcm(cluster, nodes)
-    info = {n['uid']: n for n in info}
+    info['nodes'] = {n['uid']: n for n in info['nodes']}
     # Added cluster state
-    info[None] = {}
+    info['nodes'][None] = {}
     return info
 
 

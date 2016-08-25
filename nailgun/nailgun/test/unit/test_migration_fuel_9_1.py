@@ -588,3 +588,12 @@ class TestSplitDeploymentInfo(base.BaseAlembicMigrationTest):
         res = db.execute(sa.select([tasks_table]))
         for data in res:
             self.assertIsNone(data.deployment_info)
+
+
+class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
+    def test_deployment_info_migration(self):
+        clusters_table = self.meta.tables['clusters']
+        deployment_info = db.execute(
+            sa.select([clusters_table.c.replaced_deployment_info])
+        ).fetchone()[0]
+        self.assertEqual('{}', deployment_info)

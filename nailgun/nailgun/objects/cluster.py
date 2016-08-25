@@ -638,8 +638,8 @@ class Cluster(NailgunObject):
             net_manager.clear_assigned_networks(node)
             net_manager.clear_bond_configuration(node)
 
-        cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
-        cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
+        cls.replace_provisioning_info_on_nodes(instance, {}, nodes_to_remove)
+        cls.replace_deployment_info_on_nodes(instance, {}, nodes_to_remove)
 
         objects.NodeCollection.reset_network_template(nodes_to_remove)
         objects.NodeCollection.reset_attributes(nodes_to_remove)
@@ -688,15 +688,22 @@ class Cluster(NailgunObject):
 
     @classmethod
     def replace_provisioning_info_on_nodes(cls, instance, data, nodes):
+        if isinstance(data, list):
+            data = {n.get('uid'): n for n in data}
+
         for node in nodes:
-            node_data = next((n for n in data if node.uid == n.get('uid')), {})
-            node.replaced_provisioning_info = node_data
+            node.replaced_provisioning_info = data.get(node.uid, {})
 
     @classmethod
     def replace_deployment_info_on_nodes(cls, instance, data, nodes):
-        for node in instance.nodes:
-            node_data = [n for n in data if node.uid == n.get('uid')]
-            node.replaced_deployment_info = node_data
+        if isinstance(data, list):
+            data = {n.get('uid'): n for n in data}
+
+        for node in nodes:
+            node_data = data.get(node.uid, [])
+            if isinstance(node_data, dict):
+                node_data = [node_data]
+            node.replaced_deployment_info = data.get(node.uid, [])
 
     @classmethod
     def replace_provisioning_info(cls, instance, data):
@@ -710,7 +717,10 @@ class Cluster(NailgunObject):
     @classmethod
     def replace_deployment_info(cls, instance, data):
         instance.is_customized = True
-        cls.replace_deployment_info_on_nodes(instance, data, instance.nodes)
+        instance.replaced_deployment_info = data.get('common', {})
+        cls.replace_deployment_info_on_nodes(
+            instance, data.get('nodes', {}), instance.nodes
+        )
         return cls.get_deployment_info(instance)
 
     @classmethod
@@ -728,10 +738,14 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_deployment_info(cls, instance):
-        data = []
+        nodes = []
         for node in instance.nodes:
             if node.replaced_deployment_info:
-                data.extend(node.replaced_deployment_info)
+                nodes.extend(node.replaced_deployment_info)
+
+        data = {'nodes': nodes}
+        if instance.replaced_deployment_info:
+            data['common'] = instance.replaced_deployment_info
         return data
 
     @classmethod

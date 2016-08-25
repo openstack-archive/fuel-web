@@ -26,12 +26,16 @@ class TestTaskSerializerContext(BaseUnitTest):
     def setUpClass(cls):
         cls.transaction = TransactionContext(
             {
-                '1': {
+                'common': {
                     'cluster': {'id': 1},
                     'release': {'version': 'liberty-9.0'},
                     'openstack_version': 'liberty-9.0',
                     'public_ssl': {'hostname': 'localhost'},
-                    'attribute': '1'
+                },
+                'nodes': {
+                    '1': {
+                        'attribute': '1'
+                    }
                 }
             }
         )
@@ -100,24 +104,26 @@ class TestTaskSerializer(BaseUnitTest):
     @classmethod
     def setUpClass(cls):
         cls.context = task_serializer.Context(TransactionContext({
-            '1': {
+            'common': {
                 'cluster': {'id': 1},
                 'release': {'version': 'liberty-9.0'},
                 'openstack_version': 'liberty-9.0',
                 'public_ssl': {'hostname': 'localhost'},
-                'attributes': {
-                    'a_str': 'text1',
-                    'a_int': 1
-                }
             },
-            '2': {
-                'cluster': {'id': 2},
-                'release': {'version': 'liberty-9.0'},
-                'openstack_version': 'liberty-9.0',
-                'public_ssl': {'hostname': 'localhost'},
-                'attributes': {
-                    'a_str': 'text2',
-                    'a_int': 2
+            'nodes': {
+                '1': {
+                    'cluster': {'id': 1},
+                    'attributes': {
+                        'a_str': 'text1',
+                        'a_int': 1
+                    }
+                },
+                '2': {
+                    'cluster': {'id': 2},
+                    'attributes': {
+                        'a_str': 'text2',
+                        'a_int': 2
+                    }
                 }
             }
         }))

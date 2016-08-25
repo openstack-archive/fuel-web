@@ -108,7 +108,8 @@ class Cluster(Base):
         cascade="delete"
     )
     replaced_deployment_info = Column(
-        MutableList.as_mutable(JSON), default=[])
+        MutableDict.as_mutable(JSON), default={}
+    )
     replaced_provisioning_info = Column(
         MutableDict.as_mutable(JSON), default={})
     is_customized = Column(Boolean, default=False)

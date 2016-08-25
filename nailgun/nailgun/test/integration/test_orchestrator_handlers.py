@@ -24,7 +24,6 @@ from nailgun import objects
 from nailgun.objects import DeploymentGraph
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
 
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -48,13 +47,12 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
     def setUp(self):
         super(TestDefaultOrchestratorInfoHandlers, self).setUp()
 
-        cluster = self.env.create(
+        self.cluster = self.env.create(
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True},
-                {'roles': ['cinder'], 'pending_addition': True}])
-
-        self.cluster = self.db.query(Cluster).get(cluster['id'])
+                {'roles': ['cinder'], 'pending_addition': True}]
+        )
 
     def customization_handler_helper(self, handler_name, get_info, facts):
         resp = self.app.put(
@@ -88,6 +86,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         # and we check only that nodes are included to result
         expected_node_uids = {n.uid for n in cluster.nodes}
         actual_node_uids = {n['uid'] for n in resp.json_body}
+        self.assertIn('common', actual_node_uids)
         self.assertTrue(expected_node_uids.issubset(actual_node_uids))
 
     def test_default_deployment_handler(self):
@@ -126,8 +125,8 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(2, len(resp.json_body))
         actual_uids = [node['uid'] for node in resp.json_body]
+        node_ids.append('common')
         self.assertItemsEqual(actual_uids, node_ids)
 
     def test_cluster_provisioning_customization(self):
@@ -143,12 +142,13 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         )
 
     def test_cluster_deployment_customization(self):
+        cluster = self.cluster
         facts = []
         for node in self.env.nodes:
             facts.append({"key": "value", "uid": node.uid})
         self.customization_handler_helper(
             'DeploymentInfo',
-            lambda: objects.Cluster.get_deployment_info(self.cluster),
+            lambda: objects.Cluster.get_deployment_info(cluster)['nodes'],
             facts
         )
 

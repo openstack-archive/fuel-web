@@ -26,6 +26,8 @@ from nailgun import objects
 from nailgun import rpc
 
 from nailgun.orchestrator.deployment_serializers import \
+    deployment_info_to_legacy
+from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer80
@@ -53,6 +55,8 @@ class TestSerializer80Mixin(object):
         objects.Cluster.prepare_for_deployment(cluster)
         serialized_for_astute = self.serializer.serialize(
             cluster, cluster.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             expected_network = {
                 "network_type": "flat",
@@ -318,6 +322,8 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             self.assertEqual(
                 {
@@ -339,6 +345,8 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             transformations = node['network_scheme']['transformations']
             baremetal_brs = filter(lambda t: t.get('name') ==
@@ -453,7 +461,7 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        for node in serialized_for_astute:
+        for node in serialized_for_astute['nodes']:
             self.assertIn("node_volumes", node)
             self.assertItemsEqual(
                 expected_node_volumes_hash, node["node_volumes"])
@@ -487,6 +495,8 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             self.assertIn('plugins', node)
             self.assertItemsEqual(
@@ -570,6 +580,7 @@ class TestMultiNodeGroupsSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         facts = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        facts = deployment_info_to_legacy(facts)
 
         for node in facts:
             endpoints = node['network_scheme']['endpoints']
@@ -624,7 +635,7 @@ class TestBlockDeviceDevicesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        for node in serialized_for_astute:
+        for node in serialized_for_astute['nodes']:
             self.assertIn("node_volumes", node)
             for node_volume in node["node_volumes"]:
                 if node_volume["id"] == "cinder-block-device":

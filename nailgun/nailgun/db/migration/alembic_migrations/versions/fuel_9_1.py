@@ -61,9 +61,11 @@ def upgrade():
     upgrade_node_deployment_info()
     upgrade_add_task_start_end_time()
     fix_deployment_history_constraint()
+    upgrade_cluster_attributes()
 
 
 def downgrade():
+    downgrade_cluster_attributes()
     downgrade_add_task_start_end_time()
     downgrade_node_deployment_info()
     downgrade_deployment_history_summary()
@@ -486,3 +488,56 @@ def fix_deployment_history_constraint():
         "deployment_history", "tasks",
         ["task_id"], ["id"], ondelete="CASCADE"
     )
+
+
+def upgrade_cluster_attributes():
+    select_query = sa.sql.text(
+        "SELECT id, replaced_deployment_info FROM clusters"
+        " WHERE replaced_deployment_info IS NOT NULL"
+    )
+
+    update_query = sa.sql.text(
+        "UPDATE clusters SET replaced_deployment_info = :info "
+        "WHERE id = :id"
+    )
+
+    connection = op.get_bind()
+
+    for cluster_id, info in connection.execute(select_query):
+        info = jsonutils.loads(info)
+        if isinstance(info, dict):
+            continue
+
+        # replaced_deployment_info does not contain value since 5.1
+        # replaced_deployment_info was moved from cluster to nodes table
+        connection.execute(
+            update_query,
+            id=cluster_id,
+            info=jsonutils.dumps({}),
+        )
+
+
+def downgrade_cluster_attributes():
+    select_query = sa.sql.text(
+        "SELECT id, replaced_deployment_info FROM clusters"
+        " WHERE replaced_deployment_info IS NOT NULL"
+    )
+
+    update_query = sa.sql.text(
+        "UPDATE clusters SET replaced_deployment_info = :info "
+        "WHERE id = :id"
+    )
+
+    connection = op.get_bind()
+
+    for cluster_id, info in connection.execute(select_query):
+        info = jsonutils.loads(info)
+
+        if isinstance(info, list):
+            continue
+
+        connection.execute(
+            update_query,
+            id=cluster_id,
+            info=jsonutils.dumps([]),
+        )

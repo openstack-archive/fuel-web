@@ -74,44 +74,36 @@ class TestTransactionSerializer(BaseUnitTest):
         ]
 
         cls.context = lcm.TransactionContext({
-            '1': {
+            'common': {
                 'cluster': {'id': 1},
                 'release': {'version': 'liberty-9.0'},
                 'openstack_version': 'liberty-9.0',
                 'public_ssl': {'hostname': 'localhost'},
-                'attributes': {
-                    'a_str': 'text1',
-                    'a_int': 1
-                }
             },
-            '2': {
-                'cluster': {'id': 1},
-                'release': {'version': 'liberty-9.0'},
-                'openstack_version': 'liberty-9.0',
-                'public_ssl': {'hostname': 'localhost'},
-                'attributes': {
-                    'a_str': 'text2',
-                    'a_int': 2
-                }
-            },
-            '3': {
-                'cluster': {'id': 1},
-                'release': {'version': 'liberty-9.0'},
-                'openstack_version': 'liberty-9.0',
-                'public_ssl': {'hostname': 'localhost'},
-                'attributes': {
-                    'a_str': 'text3',
-                    'a_int': 3
-                }
-            },
-            '4': {
-                'cluster': {'id': 1},
-                'release': {'version': 'liberty-9.0'},
-                'openstack_version': 'liberty-9.0',
-                'public_ssl': {'hostname': 'localhost'},
-                'attributes': {
-                    'a_str': 'text3',
-                    'a_int': 3
+            'nodes': {
+                '1': {
+                    'attributes': {
+                        'a_str': 'text1',
+                        'a_int': 1
+                    }
+                },
+                '2': {
+                    'attributes': {
+                        'a_str': 'text2',
+                        'a_int': 2
+                    }
+                },
+                '3': {
+                    'attributes': {
+                        'a_str': 'text3',
+                        'a_int': 3
+                    }
+                },
+                '4': {
+                    'attributes': {
+                        'a_str': 'text3',
+                        'a_int': 3
+                    }
                 }
             }
         })

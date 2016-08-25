@@ -26,9 +26,10 @@ from nailgun.expression import Expression
 from nailgun.objects import ClusterPlugin
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import Plugin
-from nailgun.plugins import adapters
+from nailgun import plugins
 from nailgun.settings import settings
 from nailgun.test import base
+from nailgun.utils import ReportNode
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -37,7 +38,7 @@ class TestPluginBase(base.BaseTestCase):
     # Prevent running tests in base class
     __test__ = False
     # Should be overridden in child
-    package_version = None
+    package_version = '1.0.0'
 
     def setUp(self):
         super(TestPluginBase, self).setUp()
@@ -72,7 +73,7 @@ class TestPluginBase(base.BaseTestCase):
                 'operating_system': 'Ubuntu',
                 'modes': [consts.CLUSTER_MODES.multinode,
                           consts.CLUSTER_MODES.ha_compact]})
-        self.plugin_adapter = adapters.wrap_plugin(self.plugin)
+        self.plugin_adapter = plugins.wrap_plugin(self.plugin)
         self.env_config = self.env.get_default_plugin_env_config()
         self.get_config = lambda *args: mock.mock_open(
             read_data=yaml.dump(self.env_config))()
@@ -146,18 +147,14 @@ class TestPluginBase(base.BaseTestCase):
 
     def test_get_metadata(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
-        attributes_metadata = self.env.get_default_plugin_env_config()
-        tasks = self.env.get_default_plugin_tasks()
+        plugin_metadata['environment_config'] = \
+            self.env.get_default_plugin_env_config()
 
-        mocked_metadata = {
-            self._find_path('metadata'): plugin_metadata,
-            self._find_path('environment_config'): attributes_metadata,
-            self._find_path('tasks'): tasks
-        }
+        plugin_metadata['tasks'] = self.env.get_default_plugin_tasks()
 
         with mock.patch.object(
-                self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.side_effect = lambda key: mocked_metadata[key]
+                self.plugin_adapter, 'loader') as loader:
+            loader.load.return_value = plugin_metadata, ReportNode()
             Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
@@ -177,7 +174,7 @@ class TestPluginBase(base.BaseTestCase):
         self.assertEqual(depl_task['parameters'].get('cwd'),
                          self.plugin_adapter.slaves_scripts_path)
 
-    @mock.patch('nailgun.plugins.adapters.DeploymentGraph')
+    @mock.patch('nailgun.plugins.adapters.nailgun.objects.DeploymentGraph')
     def test_fault_tolerance_set_for_task_groups(self, deployment_graph_mock):
         deployment_graph_mock.get_for_model.return_value = True
         deployment_graph_mock.get_metadata.return_value = {}
@@ -253,13 +250,10 @@ class TestPluginV1(TestPluginBase):
     package_version = '1.0.0'
 
     def test_primary_added_for_version(self):
-        with mock.patch.object(
-                self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.return_value = [{'role': ['controller']}]
-
-            tasks = self.plugin_adapter._load_tasks()
-            self.assertItemsEqual(
-                tasks[0]['role'], ['primary-controller', 'controller'])
+        self.plugin.tasks = [{'role': ['controller']}]
+        tasks = self.plugin_adapter.get_tasks()
+        self.assertItemsEqual(
+            tasks[0]['role'], ['primary-controller', 'controller'])
 
     def test_path_name(self):
         self.assertEqual(
@@ -273,13 +267,10 @@ class TestPluginV2(TestPluginBase):
     package_version = '2.0.0'
 
     def test_role_not_changed_for_version(self):
-        with mock.patch.object(
-                self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.return_value = [{'role': ['controller']}]
-
-            tasks = self.plugin_adapter._load_tasks()
-            self.assertItemsEqual(
-                tasks[0]['role'], ['controller'])
+        self.plugin.tasks = [{'role': ['controller']}]
+        tasks = self.plugin_adapter.get_tasks()
+        self.assertItemsEqual(
+            tasks[0]['role'], ['controller'])
 
     def test_path_name(self):
         self.assertEqual(
@@ -302,19 +293,18 @@ class TestPluginV3(TestPluginBase):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks()
         tasks = self.env.get_default_plugin_tasks()
 
-        mocked_metadata = {
-            self._find_path('metadata'): plugin_metadata,
-            self._find_path('environment_config'): attributes_metadata,
-            self._find_path('node_roles'): roles_metadata,
-            self._find_path('volumes'): volumes_metadata,
-            self._find_path('network_roles'): network_roles_metadata,
-            self._find_path('deployment_tasks'): deployment_tasks,
-            self._find_path('tasks'): tasks,
-        }
+        plugin_metadata.update({
+            'attributes_metadata': attributes_metadata,
+            'roles_metadata': roles_metadata,
+            'volumes_metadata': volumes_metadata,
+            'network_roles_metadata': network_roles_metadata,
+            'deployment_tasks': deployment_tasks,
+            'tasks': tasks,
+        })
 
         with mock.patch.object(
-                self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.side_effect = lambda key: mocked_metadata[key]
+                self.plugin_adapter, 'loader') as loader:
+            loader.load.return_value = (plugin_metadata, ReportNode())
             Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
@@ -358,20 +348,19 @@ class TestPluginV4(TestPluginBase):
         tasks = self.env.get_default_plugin_tasks()
         components_metadata = self.env.get_default_components()
 
-        mocked_metadata = {
-            self._find_path('metadata'): plugin_metadata,
-            self._find_path('environment_config'): attributes_metadata,
-            self._find_path('node_roles'): roles_metadata,
-            self._find_path('volumes'): volumes_metadata,
-            self._find_path('network_roles'): network_roles_metadata,
-            self._find_path('deployment_tasks'): deployment_tasks,
-            self._find_path('tasks'): tasks,
-            self._find_path('components'): components_metadata
-        }
+        plugin_metadata.update({
+            'attributes_metadata': attributes_metadata,
+            'roles_metadata': roles_metadata,
+            'volumes_metadata': volumes_metadata,
+            'network_roles_metadata': network_roles_metadata,
+            'deployment_tasks': deployment_tasks,
+            'tasks': tasks,
+            'components_metadata': components_metadata
+        })
 
         with mock.patch.object(
-                self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.side_effect = lambda key: mocked_metadata[key]
+                self.plugin_adapter, 'loader') as loader:
+            loader.load.return_value = (plugin_metadata, ReportNode())
             Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
@@ -403,15 +392,6 @@ class TestPluginV4(TestPluginBase):
                     self.plugin_adapter.get_deployment_tasks()[0][k],
                     v)
 
-    def test_empty_task_file_not_failing(self):
-        with mock.patch.object(
-                self.plugin_adapter, '_load_config') as load_conf:
-            with mock.patch('nailgun.plugins.adapters.os') as os:
-                os.path.exists.return_value = True
-                load_conf.return_value = None
-                self.assertNotRaises(
-                    ValueError, self.plugin_adapter._load_tasks)
-
 
 class TestPluginV5(TestPluginBase):
 
@@ -421,9 +401,6 @@ class TestPluginV5(TestPluginBase):
     def test_get_metadata(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
         attributes_metadata = self.env.get_default_plugin_env_config()
-        nic_attributes_metadata = self.env.get_default_plugin_nic_config()
-        bond_attributes_metadata = self.env.get_default_plugin_bond_config()
-        node_attributes_metadata = self.env.get_default_plugin_node_config()
         roles_metadata = self.env.get_default_plugin_node_roles_config()
         volumes_metadata = self.env.get_default_plugin_volumes_config()
         network_roles_metadata = self.env.get_default_network_roles_config()
@@ -431,23 +408,26 @@ class TestPluginV5(TestPluginBase):
         tasks = self.env.get_default_plugin_tasks()
         components_metadata = self.env.get_default_components()
 
-        mocked_metadata = {
-            self._find_path('metadata'): plugin_metadata,
-            self._find_path('environment_config'): attributes_metadata,
-            self._find_path('node_roles'): roles_metadata,
-            self._find_path('volumes'): volumes_metadata,
-            self._find_path('network_roles'): network_roles_metadata,
-            self._find_path('deployment_tasks'): deployment_tasks,
-            self._find_path('tasks'): tasks,
-            self._find_path('components'): components_metadata,
-            self._find_path('nic_config'): nic_attributes_metadata,
-            self._find_path('bond_config'): bond_attributes_metadata,
-            self._find_path('node_config'): node_attributes_metadata
-        }
+        nic_attributes_metadata = self.env.get_default_plugin_nic_config()
+        bond_attributes_metadata = self.env.get_default_plugin_bond_config()
+        node_attributes_metadata = self.env.get_default_plugin_node_config()
+
+        plugin_metadata.update({
+            'attributes_metadata': attributes_metadata,
+            'roles_metadata': roles_metadata,
+            'volumes_metadata': volumes_metadata,
+            'network_roles_metadata': network_roles_metadata,
+            'deployment_tasks': deployment_tasks,
+            'tasks': tasks,
+            'components_metadata': components_metadata,
+            'nic_attributes_metadata': nic_attributes_metadata,
+            'bond_attributes_metadata': bond_attributes_metadata,
+            'node_attributes_metadata': node_attributes_metadata
+        })
 
         with mock.patch.object(
-                self.plugin_adapter, '_load_config') as load_conf:
-            load_conf.side_effect = lambda key: mocked_metadata[key]
+                self.plugin_adapter, 'loader') as loader:
+            loader.load.return_value = (plugin_metadata, ReportNode())
             Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
 
             for key, val in six.iteritems(plugin_metadata):
@@ -475,6 +455,8 @@ class TestPluginV5(TestPluginBase):
                 self.plugin.node_attributes_metadata,
                 bond_attributes_metadata)
 
+            # deployment tasks returning all non-defined fields, so check
+            # should differ from JSON-stored fields
             plugin_tasks = self.env.get_default_plugin_deployment_tasks()
             self.assertGreater(len(plugin_tasks), 0)
             for k, v in six.iteritems(plugin_tasks[0]):
@@ -497,7 +479,7 @@ class TestClusterCompatibilityValidation(base.BaseTestCase):
                 'version': '2014.2-6.0',
                 'os': 'ubuntu',
                 'mode': ['ha']}]))
-        self.plugin_adapter = adapters.PluginAdapterV1(self.plugin)
+        self.plugin_adapter = plugins.adapters.PluginAdapterV1(self.plugin)
 
     def cluster_mock(self, os, mode, version):
         release = mock.Mock(operating_system=os, version=version)

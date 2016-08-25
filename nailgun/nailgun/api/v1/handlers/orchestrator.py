@@ -170,12 +170,15 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     def _serialize(self, cluster, nodes):
         if objects.Release.is_lcm_supported(cluster.release):
-            return deployment_serializers.serialize_for_lcm(
+            serialized = deployment_serializers.serialize_for_lcm(
                 cluster, nodes, ignore_customized=True
             )
-        graph = orchestrator_graph.AstuteGraph(cluster)
-        return deployment_serializers.serialize(
-            graph, cluster, nodes, ignore_customized=True)
+        else:
+            graph = orchestrator_graph.AstuteGraph(cluster)
+            serialized = deployment_serializers.serialize(
+                graph, cluster, nodes, ignore_customized=True)
+
+        return _deployment_info_in_compatible_format(serialized)
 
 
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
@@ -212,10 +215,25 @@ class ProvisioningInfo(OrchestratorInfo):
 class DeploymentInfo(OrchestratorInfo):
 
     def get_orchestrator_info(self, cluster):
-        return objects.Cluster.get_deployment_info(cluster)
+        return _deployment_info_in_compatible_format(
+            objects.Cluster.get_deployment_info(cluster)
+        )
 
     def update_orchestrator_info(self, cluster, data):
-        return objects.Cluster.replace_deployment_info(cluster, data)
+        if isinstance(data, list):
+            # FIXME(bgaifullin) need to update fuelclient
+            # use uid common to determine cluster attributes
+            nodes = {n['uid']: n for n in data if 'uid' in n}
+            custom_info = {
+                'common': nodes.pop('common', {}),
+                'nodes': nodes
+            }
+        else:
+            custom_info = data
+
+        return _deployment_info_in_compatible_format(
+            objects.Cluster.replace_deployment_info(cluster, custom_info)
+        )
 
 
 class RunMixin(object):
@@ -474,3 +492,14 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
 
         except errors.TaskBaseDeploymentNotAllowed as exc:
             raise self.http(400, msg=six.text_type(exc))
+
+
+def _deployment_info_in_compatible_format(depoyment_info):
+    # FIXME(bgaifullin) need to update fuelclient
+    # uid 'common' because fuelclient expects list of dicts, where
+    # each dict contains field 'uid', which will be used as name of file
+    data = depoyment_info.get('nodes', [])
+    common = depoyment_info.get('common')
+    if common:
+        data.append(dict(common, uid='common'))
+    return data

@@ -89,7 +89,9 @@ class TestMellanox(OrchestratorSerializerTestBase):
                                        mellanox=True)
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
-        for data in serialized_data:
+        common_attrs = serialized_data['common']
+
+        for data in serialized_data['nodes']:
             # Check plugin parameters
             self.assertIn('physical_port', data['neutron_mellanox'])
             self.assertIn('ml2_eswitch', data['neutron_mellanox'])
@@ -101,21 +103,21 @@ class TestMellanox(OrchestratorSerializerTestBase):
             self.assertIn('apply_profile_patch', eswitch_dict)
             self.assertEqual(True, eswitch_dict['apply_profile_patch'])
 
-            # Check L2 settings
-            quantum_settings_l2 = data['quantum_settings']['L2']
-            self.assertIn('mechanism_drivers', quantum_settings_l2)
-            self.assertIn('mlnx', quantum_settings_l2['mechanism_drivers'])
-            self.assertIn('type_drivers', quantum_settings_l2)
-            seg_type = self.cluster.network_config.segmentation_type
-            self.assertEquals(
-                quantum_settings_l2['type_drivers'],
-                '{0},flat,local'.format(seg_type)
-            )
-            self.assertIn(self.segment_type,
-                          quantum_settings_l2['type_drivers'])
-            self.assertIn('tenant_network_types', quantum_settings_l2)
-            self.assertIn(self.segment_type,
-                          quantum_settings_l2['tenant_network_types'])
+        # Check L2 settings
+        quantum_settings_l2 = common_attrs['quantum_settings']['L2']
+        self.assertIn('mechanism_drivers', quantum_settings_l2)
+        self.assertIn('mlnx', quantum_settings_l2['mechanism_drivers'])
+        self.assertIn('type_drivers', quantum_settings_l2)
+        seg_type = self.cluster.network_config.segmentation_type
+        self.assertEquals(
+            quantum_settings_l2['type_drivers'],
+            '{0},flat,local'.format(seg_type)
+        )
+        self.assertIn(self.segment_type,
+                      quantum_settings_l2['type_drivers'])
+        self.assertIn('tenant_network_types', quantum_settings_l2)
+        self.assertIn(self.segment_type,
+                      quantum_settings_l2['tenant_network_types'])
 
     def test_serialize_mellanox_iser_enabled_untagged(self):
         # Serialize cluster
@@ -125,7 +127,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
 
-        for data in serialized_data:
+        for data in serialized_data['nodes']:
             # Check Mellanox iSER values
             self.assertIn('storage_parent', data['neutron_mellanox'])
             self.assertIn('iser_interface_name', data['neutron_mellanox'])
@@ -155,7 +157,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
 
-        for data in serialized_data:
+        for data in serialized_data['nodes']:
             # Check Mellanox iSER values
             self.assertIn('storage_parent', data['neutron_mellanox'])
             self.assertIn('iser_interface_name', data['neutron_mellanox'])

@@ -52,7 +52,7 @@ def setup_module():
 
 def prepare():
     meta = base.reflect_db_metadata()
-    db.execute(
+    result = db.execute(
         meta.tables['releases'].insert(),
         [{
             'name': 'test_name',
@@ -67,6 +67,8 @@ def prepare():
             }),
             'volumes_metadata': jsonutils.dumps({})
         }])
+
+    TestClusterAttributesMigration.prepare(result.inserted_primary_key[0])
 
     db.execute(
         meta.tables['nodes'].insert(),
@@ -227,3 +229,30 @@ class TestDeploymentHistoryMigration(base.BaseAlembicMigrationTest):
         result = db.execute(sa.select([
             self.meta.tables['deployment_history']])).first()
         self.assertIn('summary', result)
+
+
+class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
+    @classmethod
+    def prepare(cls, release_id):
+        meta = base.reflect_db_metadata()
+        db.execute(
+            meta.tables['clusters'].insert(),
+            [{
+                'name': 'test_cluster',
+                'release_id': release_id,
+                'mode': 'ha_compact',
+                'status': 'new',
+                'net_provider': 'neutron',
+                'grouping': 'roles',
+                'fuel_version': '10.0',
+                'deployment_tasks': '[]',
+                'replaced_deployment_info': '[]'
+            }]
+        )
+
+    def test_deployment_info(self):
+        clusters_table = self.meta.tables['clusters']
+        deployment_info = db.execute(
+            sa.select([clusters_table.c.replaced_deployment_info])
+        ).fetchone()[0]
+        self.assertEqual('{}', deployment_info)

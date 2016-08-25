@@ -576,8 +576,8 @@ def _update_nodes(transaction, nodes_instances, nodes_params):
                     # to delete node from cluster
                     objects.Node.remove_from_cluster(node)
                 elif new_status == 'error':
-                    # do not update status of node, only set
-                    # appropriate error type
+                    # TODO(bgaifullin) do not persist status in DB
+                    node.status = new_status
                     node.error_type = node_params.get(
                         'error_type', consts.NODE_ERRORS.deploy
                     )

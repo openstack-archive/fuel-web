@@ -33,6 +33,8 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 
+from nailgun.orchestrator.deployment_serializers import \
+    deployment_info_to_legacy
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers import\
@@ -170,9 +172,9 @@ class TestReplacedDeploymentInfoSerialization(OrchestratorSerializerTestBase):
         )
         serialized_data = self.serializer.serialize(self.cluster, [node])
         # verify that task list is not empty
-        self.assertTrue(serialized_data[0]['tasks'])
+        self.assertTrue(serialized_data['nodes'][0]['tasks'])
         # verify that priority is preserved
-        self.assertEqual(serialized_data[0]['priority'], 'XXX')
+        self.assertEqual(serialized_data['nodes'][0]['priority'], 'XXX')
 
 
 # TODO(awoodward): multinode deprecation: probably has duplicates
@@ -332,14 +334,14 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_flatdhcp_manager(self):
         facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
-        for fact in facts:
-            self.assertEqual(
-                fact['novanetwork_parameters']['network_manager'],
-                'FlatDHCPManager')
-            self.assertEqual(
-                fact['novanetwork_parameters']['num_networks'], 1)
-            self.assertEqual(
-                fact['novanetwork_parameters']['network_size'], 65536)
+        common = facts['common']
+        self.assertEqual(
+            common['novanetwork_parameters']['network_manager'],
+            'FlatDHCPManager')
+        self.assertEqual(
+            common['novanetwork_parameters']['num_networks'], 1)
+        self.assertEqual(
+            common['novanetwork_parameters']['network_size'], 65536)
 
     def test_vlan_manager(self):
         data = {'networking_parameters': {'net_manager': 'VlanManager'}}
@@ -349,19 +351,22 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                      headers=self.default_headers,
                      expect_errors=False)
         facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
+        common = facts['common']
+        facts = facts['nodes']
 
         for fact in facts:
             self.assertEqual(fact['vlan_interface'], 'eth0')
             self.assertEqual(fact['fixed_interface'], 'eth0')
-            self.assertEqual(
-                fact['novanetwork_parameters']['network_manager'],
-                'VlanManager')
-            self.assertEqual(
-                fact['novanetwork_parameters']['num_networks'], 1)
-            self.assertEqual(
-                fact['novanetwork_parameters']['vlan_start'], 103)
-            self.assertEqual(
-                fact['novanetwork_parameters']['network_size'], 256)
+
+        self.assertEqual(
+            common['novanetwork_parameters']['network_manager'],
+            'VlanManager')
+        self.assertEqual(
+            common['novanetwork_parameters']['num_networks'], 1)
+        self.assertEqual(
+            common['novanetwork_parameters']['vlan_start'], 103)
+        self.assertEqual(
+            common['novanetwork_parameters']['network_size'], 256)
 
     def test_floating_ranges_generation(self):
         # Set ip ranges for floating ips
@@ -373,6 +378,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.db.commit()
 
         facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
+        facts = deployment_info_to_legacy(facts)
         for fact in facts:
             self.assertEqual(
                 fact['floating_network_range'],
@@ -501,7 +507,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
         )
 
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             scheme = node['network_scheme']
             self.assertEqual(
@@ -562,7 +568,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
             manager=consts.NOVA_NET_MANAGERS.VlanManager
         )
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             scheme = node['network_scheme']
             self.assertEqual(
@@ -632,7 +638,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                            'mode': consts.BOND_MODES.balance_rr
                                        })
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             self.assertEqual(
                 node['network_scheme']['transformations'],
@@ -682,7 +688,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                            'mode': consts.BOND_MODES.balance_rr
                                        })
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             self.assertEqual(
                 node['network_scheme']['roles'],
@@ -849,7 +855,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         cluster = self.create_env(segment_type='vlan')
         self.add_nics_properties(cluster)
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
 
         self.check_vlan_schema(facts, [
             {'action': 'add-br',
@@ -906,7 +912,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         self.db.flush()
 
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         self.check_vlan_schema(facts, [
             {'action': 'add-br',
              'name': 'br-fw-admin'},
@@ -965,7 +971,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                                            'mtu': 9000
                                        })
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             transformations = [
                 {'action': 'add-br',
@@ -1016,7 +1022,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
         cluster = self.create_env(segment_type='gre')
         self.add_nics_properties(cluster)
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             node_db = objects.Node.get_by_uid(node['uid'])
             is_public = objects.Node.should_have_public(node_db)
@@ -1116,7 +1122,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                     'mtu': 9000
                 })
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             transformations = [
                 {'action': 'add-br',
@@ -1209,7 +1215,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
 
         objects.Cluster.prepare_for_deployment(cluster)
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
         for node in facts:
             node_db = objects.Node.get_by_uid(node['uid'])
             is_public = objects.Node.should_have_public(node_db)
@@ -1356,7 +1362,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             controllers, key=attrgetter('id'), reverse=True)
 
         result_nodes = self.serializer.serialize(
-            self.cluster, reverse_sorted_controllers)
+            self.cluster, reverse_sorted_controllers)['nodes']
 
         high_priority = sorted(result_nodes, key=itemgetter('priority'))[0]
         self.assertEqual(high_priority['role'], 'primary-controller')
@@ -1549,28 +1555,27 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertEqual(serialized_node, expected_node)
 
     def test_neutron_vlan_ids_tag_present_on_6_0_env(self):
-        serialized_nodes = self.serialize_env_w_version('2014.2-6.0')
-        for node in serialized_nodes:
+        serialized = self.serialize_env_w_version('2014.2-6.0')
+        for node in serialized['nodes']:
             for item in node['network_scheme']['transformations']:
                 if 'tags' in item:
                     self.assertEqual(item['tags'], item['vlan_ids'])
 
     def check_5x_60_neutron_attrs(self, version):
-        serialized_nodes = self.serialize_env_w_version(version)
-        for node in serialized_nodes:
-            self.assertEqual(
-                {
-                    "network_type": "local",
-                    "segment_id": None,
-                    "router_ext": True,
-                    "physnet": None
-                },
-                node['quantum_settings']['predefined_networks'][
-                    'admin_floating_net']['L2']
-            )
-            self.assertFalse(
-                'physnet1' in node['quantum_settings']['L2']['phys_nets']
-            )
+        common_attrs = self.serialize_env_w_version(version)['common']
+        self.assertEqual(
+            {
+                "network_type": "local",
+                "segment_id": None,
+                "router_ext": True,
+                "physnet": None
+            },
+            common_attrs['quantum_settings']['predefined_networks'][
+                'admin_floating_net']['L2']
+        )
+        self.assertFalse(
+            'physnet1' in common_attrs['quantum_settings']['L2']['phys_nets']
+        )
 
     def test_serialize_neutron_attrs_on_6_0_env(self):
         self.check_5x_60_neutron_attrs("2014.2-6.0")
@@ -1579,25 +1584,24 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.check_5x_60_neutron_attrs("2014.1.1-5.1")
 
     def check_50x_neutron_attrs(self, version):
-        serialized_nodes = self.serialize_env_w_version(version)
-        for node in serialized_nodes:
-            self.assertEqual(
-                {
-                    "network_type": "flat",
-                    "segment_id": None,
-                    "router_ext": True,
-                    "physnet": "physnet1"
-                },
-                node['quantum_settings']['predefined_networks'][
-                    'admin_floating_net']['L2']
-            )
-            self.assertEqual(
-                {
-                    "bridge": "br-ex",
-                    "vlan_range": None
-                },
-                node['quantum_settings']['L2']['phys_nets']['physnet1']
-            )
+        common_attrs = self.serialize_env_w_version(version)['common']
+        self.assertEqual(
+            {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": True,
+                "physnet": "physnet1"
+            },
+            common_attrs['quantum_settings']['predefined_networks'][
+                'admin_floating_net']['L2']
+        )
+        self.assertEqual(
+            {
+                "bridge": "br-ex",
+                "vlan_range": None
+            },
+            common_attrs['quantum_settings']['L2']['phys_nets']['physnet1']
+        )
 
     def test_serialize_neutron_attrs_on_5_0_2_env(self):
         self.check_50x_neutron_attrs("2014.1.1-5.0.2")
@@ -1722,10 +1726,20 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.set_assign_public_to_all_nodes(self.cluster, assign)
 
             objects.Cluster.prepare_for_deployment(self.cluster)
-            serialized_nodes = self.serializer.serialize(self.cluster,
-                                                         self.cluster.nodes)
+            serialized = self.serializer.serialize(self.cluster,
+                                                   self.cluster.nodes)
+
+            for node_attrs in serialized['common']['nodes']:
+                is_public_for_role = objects.Node.should_have_public(
+                    objects.Node.get_by_mac_or_uid(
+                        node_uid=int(node_attrs['uid'])))
+                self.assertEqual('public_address' in node_attrs,
+                                 is_public_for_role)
+                self.assertEqual('public_netmask' in node_attrs,
+                                 is_public_for_role)
+
             need_public_nodes_count = set()
-            for node in serialized_nodes:
+            for node in serialized['nodes']:
                 node_db = self.db.query(Node).get(int(node['uid']))
                 is_public = objects.Node.should_have_public(node_db)
                 if is_public:
@@ -1737,15 +1751,6 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                         node_db, 'public') is not None,
                     is_public
                 )
-
-                for node_attrs in node['nodes']:
-                    is_public_for_role = objects.Node.should_have_public(
-                        objects.Node.get_by_mac_or_uid(
-                            node_uid=int(node_attrs['uid'])))
-                    self.assertEqual('public_address' in node_attrs,
-                                     is_public_for_role)
-                    self.assertEqual('public_netmask' in node_attrs,
-                                     is_public_for_role)
 
                 self.assertEqual(
                     {
@@ -1786,9 +1791,10 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.db.add(public_ng)
         self.db.commit()
 
-        facts = self.serializer.serialize(cluster, cluster.nodes)
+        serialized = self.serializer.serialize(cluster, cluster.nodes)
+        common_attrs = serialized['common']
 
-        pd_nets = facts[0]["quantum_settings"]["predefined_networks"]
+        pd_nets = common_attrs["quantum_settings"]["predefined_networks"]
         self.assertEqual(
             pd_nets["admin_floating_net"]["L3"]["gateway"],
             test_gateway
@@ -1832,9 +1838,10 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEqual(resp.status_code, 200)
 
         objects.Cluster.prepare_for_deployment(cluster)
-        facts = self.serializer.serialize(cluster, cluster.nodes)
+        serialized = self.serializer.serialize(cluster, cluster.nodes)
+        common_attrs = serialized['common']
 
-        pd_nets = facts[0]["quantum_settings"]["predefined_networks"]
+        pd_nets = common_attrs["quantum_settings"]["predefined_networks"]
         self.assertEqual(
             pd_nets["admin_floating_net"]["L3"]["subnet"],
             ng2_networks['public']['cidr']
@@ -1850,11 +1857,13 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_gre_segmentation(self):
         cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'gre')
-        facts = self.serializer.serialize(cluster, cluster.nodes)
+        serialized = self.serializer.serialize(cluster, cluster.nodes)
+        common_attrs = serialized['common']
 
-        for fact in facts:
-            self.assertEqual(
-                fact['quantum_settings']['L2']['segmentation_type'], 'gre')
+        self.assertEqual(
+            common_attrs['quantum_settings']['L2']['segmentation_type'], 'gre')
+
+        for fact in serialized['nodes']:
             self.assertEqual(
                 'br-prv' in fact['network_scheme']['endpoints'], False)
             self.assertEqual(
@@ -1863,11 +1872,13 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_tun_segmentation(self):
         self.new_env_release_version = 'liberty-8.0'
         cluster = self.create_env(consts.CLUSTER_MODES.ha_compact, 'tun')
-        facts = self.serializer.serialize(cluster, cluster.nodes)
+        serialized = self.serializer.serialize(cluster, cluster.nodes)
+        common_attrs = serialized['common']
+        facts = serialized['nodes']
 
+        self.assertEqual(
+            common_attrs['quantum_settings']['L2']['segmentation_type'], 'tun')
         for fact in facts:
-            self.assertEqual(
-                fact['quantum_settings']['L2']['segmentation_type'], 'tun')
             self.assertNotIn(
                 'br-prv', fact['network_scheme']['endpoints'])
             self.assertNotIn(
@@ -1883,7 +1894,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         objects.Cluster.prepare_for_deployment(cluster)
         serializer = self.create_serializer(cluster)
-        facts = serializer.serialize(cluster, cluster.nodes)
+        facts = serializer.serialize(cluster, cluster.nodes)['nodes']
 
         for fact in facts:
             ep = fact['network_scheme']['endpoints']
@@ -1986,7 +1997,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         cluster = self.db.query(Cluster).get(cluster_id)
         self.assertNotIn('vlan_splinters', editable_attrs)
 
-        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]
         interfaces = node['network_scheme']['interfaces']
         for iface_attrs in interfaces.itervalues():
             self.assertIn('L2', iface_attrs)
@@ -2008,7 +2019,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         self.assertEqual(editable_attrs['vlan_splinters']['vswitch']['value'],
                          'some_text')
 
-        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]
         interfaces = node['network_scheme']['interfaces']
         for iface_attrs in interfaces.itervalues():
             self.assertIn('L2', iface_attrs)
@@ -2029,7 +2040,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
             False
         )
 
-        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]
         interfaces = node['network_scheme']['interfaces']
         for iface_attrs in interfaces.itervalues():
             self.assertIn('L2', iface_attrs)
@@ -2054,7 +2065,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         self.assertEqual(editable_attrs['vlan_splinters']['vswitch']['value'],
                          'kernel_lt')
 
-        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]
         interfaces = node['network_scheme']['interfaces']
         for iface_attrs in interfaces.itervalues():
             self.assertIn('L2', iface_attrs)
@@ -2075,7 +2086,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         vlan_set = set(
             [ng.vlan_start for ng in cluster.network_groups if ng.vlan_start]
         )
-        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]
         interfaces = node['network_scheme']['interfaces']
         for iface_attrs in interfaces.itervalues():
             self.assertIn('L2', iface_attrs)
@@ -2106,7 +2117,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         vlan_set.update(xrange(*private_vlan_range))
         vlan_set.add(private_vlan_range[1])
 
-        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]
         interfaces = node['network_scheme']['interfaces']
         for iface_attrs in interfaces.itervalues():
             self.assertIn('L2', iface_attrs)
@@ -2130,7 +2141,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
-        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]
         interfaces = node['network_scheme']['interfaces']
         for iface_attrs in interfaces.itervalues():
             self.assertIn('L2', iface_attrs)
@@ -2262,7 +2273,7 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
                                        ['eth1', 'eth2'],
                                        node.id)
         facts = self.serialize(cluster)
-        for node in facts:
+        for node in facts['nodes']:
             transforms = node['network_scheme']['transformations']
             bonds = filter(lambda t: t['action'] == 'add-bond',
                            transforms)
@@ -2304,11 +2315,12 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
 
     def test_glance_image_cache_max_size(self):
         data = self.serialize(self.cluster)
-        self.assertEqual(len(data), 2)
+        nodes = data['nodes']
+        self.assertEqual(len(nodes), 2)
         # one node - 2 roles
-        self.assertEqual(data[0]['uid'], data[1]['uid'])
-        self.assertEqual(data[0]['glance']['image_cache_max_size'], '0')
-        self.assertEqual(data[1]['glance']['image_cache_max_size'], '0')
+        self.assertEqual(nodes[0]['uid'], nodes[1]['uid'])
+        self.assertEqual(nodes[0]['glance']['image_cache_max_size'], '0')
+        self.assertEqual(nodes[0]['glance']['image_cache_max_size'], '0')
 
 
 class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
@@ -2338,29 +2350,29 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
     def test_pg_num_no_osd_nodes(self):
         cluster = self.create_env([
             {'roles': ['controller']}])
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 128)
+        data = self.serialize(cluster)['common']
+        self.assertEqual(data['storage']['pg_num'], 128)
 
     def test_pg_num_1_osd_node(self):
         cluster = self.create_env([
             {'roles': ['controller', 'ceph-osd']}])
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 256)
+        data = self.serialize(cluster)['common']
+        self.assertEqual(data['storage']['pg_num'], 256)
 
     def test_pg_num_1_osd_node_repl_4(self):
         cluster = self.create_env(
             [{'roles': ['controller', 'ceph-osd']}],
             '4')
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 128)
+        data = self.serialize(cluster)['common']
+        self.assertEqual(data['storage']['pg_num'], 128)
 
     def test_pg_num_3_osd_nodes(self):
         cluster = self.create_env([
             {'roles': ['controller', 'ceph-osd']},
             {'roles': ['compute', 'ceph-osd']},
             {'roles': ['compute', 'ceph-osd']}])
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 512)
+        data = self.serialize(cluster)['common']
+        self.assertEqual(data['storage']['pg_num'], 512)
 
 
 class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
@@ -2440,9 +2452,9 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_serialize_node(self):
         serialized_data = self.serializer.serialize(self.cluster,
-                                                    self.cluster.nodes)[0]
+                                                    self.cluster.nodes)
 
-        q_settings = serialized_data['quantum_settings']
+        q_settings = serialized_data['common']['quantum_settings']
         self.assertIn('L2', q_settings)
         self.assertIn('provider', q_settings['L2'])
         self.assertEqual(q_settings['L2']['provider'], 'nsx')
@@ -2923,5 +2935,5 @@ class TestDeploymentGraphlessSerializers(OrchestratorSerializerTestBase):
     def test_serialize_cluster(self):
         serialized_data = self.serialize(self.cluster)
         self.assertGreater(len(serialized_data), 0)
-        self.assertNotIn('tasks', serialized_data[0])
-        self.assertGreater(len(serialized_data[0]['nodes']), 0)
+        self.assertNotIn('tasks', serialized_data['nodes'][0])
+        self.assertGreater(len(serialized_data['common']['nodes']), 0)

@@ -70,7 +70,8 @@ class TestTransactionObject(BaseTestCase):
             objects.Transaction.get_deployment_info(transaction),
             {}
         )
-        info = {'test': {'test': 'test'}}
+        info = {'common': {'a': 'b'},
+                'nodes': {'7': {'test': {'test': 'test'}}}}
         objects.Transaction.attach_deployment_info(transaction, info)
         self.assertEqual(
             info, objects.Transaction.get_deployment_info(transaction)
@@ -166,7 +167,7 @@ class TestTransactionObject(BaseTestCase):
 
         # filter out node 2
         transactions = get_succeed(self.cluster.id,
-                                   ['dns-client', 'test'], [uid1]).all()
+                                   ['dns-client', 'test'], {uid1: {}}).all()
         self.assertEqual(
             transactions,
             [(task3, uid1, 'dns-client'),

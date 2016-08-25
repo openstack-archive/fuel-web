@@ -57,6 +57,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         ]
         resp = self._assign_roles(assignment_data)
         self.assertEqual(200, resp.status_code)
+        self.assertEqual(None, resp.json_body)
         self.assertEqual(node.cluster, self.cluster)
         self.datadiff(
             node.pending_roles,
@@ -82,6 +83,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
+        self.assertEqual(None, resp.json_body)
         self.assertEqual(node.cluster, None)
         self.assertEqual(node.pending_roles, [])
 

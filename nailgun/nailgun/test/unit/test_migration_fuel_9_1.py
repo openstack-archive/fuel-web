@@ -617,3 +617,12 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
         self.assertEquals(
             "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset",
             attrs['editable']['kernel_params']['kernel']['value'])
+
+
+class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
+    def test_deployment_info_migration(self):
+        clusters_table = self.meta.tables['clusters']
+        deployment_info = db.execute(
+            sa.select([clusters_table.c.replaced_deployment_info])
+        ).fetchone()[0]
+        self.assertNotIsInstance(deployment_info, list)

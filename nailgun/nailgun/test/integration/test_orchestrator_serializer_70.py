@@ -34,6 +34,8 @@ from nailgun.test.base import DeploymentTasksTestMixin
 from nailgun.utils import reverse
 
 from nailgun.orchestrator.deployment_serializers import \
+    deployment_info_to_legacy
+from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkDeploymentSerializer70
@@ -262,6 +264,8 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer,
         self.serializer = serializer_type(AstuteGraph(self.cluster_db))
         self.serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        self.serialized_for_astute = deployment_info_to_legacy(
+            self.serialized_for_astute)
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def create_env(self, mode):
@@ -400,6 +404,8 @@ class TestDeploymentAttributesSerialization70(
         serialized_for_astute = serializer.serialize(
             self.cluster_db, self.cluster_db.nodes
         )
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             vips = node['network_metadata']['vips']
             roles = node['network_scheme']['roles']
@@ -826,6 +832,7 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
+        serialized = deployment_info_to_legacy(serialized)
 
         serialized_tasks = serialized[0]['tasks']
 
@@ -870,6 +877,7 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
+        serialized = deployment_info_to_legacy(serialized)
 
         serialized_tasks = serialized[0]['tasks']
 
@@ -1022,6 +1030,7 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
         serializer = \
             get_serializer_for_cluster(self.cluster)(graph)
         serialized = serializer.serialize(self.cluster, self.cluster.nodes)
+        serialized = deployment_info_to_legacy(serialized)
 
         tasks = serialized[0]['tasks']
         release_depl_tasks_ids = ('first-fake-depl-task',
@@ -1124,6 +1133,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
             self.cluster, self.cluster.nodes)
+        serialized_data = deployment_info_to_legacy(serialized_data)
         self.assertItemsEqual(serialized_data[0]['tasks'], [{
             'parameters': {
                 'cwd': '/etc/fuel/plugins/testing_plugin-0.1/',
@@ -1158,6 +1168,7 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         serializer = self._get_serializer(self.cluster)
         serialized_data = serializer.serialize(
             self.cluster, self.cluster.nodes)
+        serialized_data = deployment_info_to_legacy(serialized_data)
         self.maxDiff = None
 
         self._compare_tasks([
@@ -1221,6 +1232,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         serializer = get_serializer_for_cluster(self.cluster)
         self.serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        self.serialized_for_astute = deployment_info_to_legacy(
+            self.serialized_for_astute)
 
     def create_env(self, segment_type):
         release = self.patch_net_roles_for_release()
@@ -1302,6 +1315,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         serializer = get_serializer_for_cluster(self.cluster)
         serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
 
         # 7 node roles on 5 nodes
         self.assertEqual(len(serialized_for_astute), 7)
@@ -1411,6 +1426,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         serializer = get_serializer_for_cluster(self.cluster)
         serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
 
         for node_data in serialized_for_astute:
             node = objects.Node.get_by_uid(node_data['uid'])
@@ -1498,6 +1515,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         serializer = get_serializer_for_cluster(self.cluster)
         facts = serializer(AstuteGraph(self.cluster)).serialize(
             self.cluster, self.cluster.nodes)
+        facts = deployment_info_to_legacy(facts)
 
         for node in facts:
             node_db = objects.Node.get_by_uid(node['uid'])
@@ -1700,6 +1718,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         serializer = get_serializer_for_cluster(cluster_db)
         self.serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(cluster_db, cluster_db.nodes)
+        self.serialized_for_astute = deployment_info_to_legacy(
+            self.serialized_for_astute)
 
         network_roles = [
             'management',
@@ -1762,6 +1782,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         serializer = get_serializer_for_cluster(self.cluster)
         self.serialized_for_astute = serializer(
             AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        self.serialized_for_astute = deployment_info_to_legacy(
+            self.serialized_for_astute)
         for node_data in self.serialized_for_astute:
             node = objects.Node.get_by_uid(node_data['uid'])
             # check nodes with assigned public ip

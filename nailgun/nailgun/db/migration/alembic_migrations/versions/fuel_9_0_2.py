@@ -51,6 +51,7 @@ rule_to_pick_bootdisk = [
 
 
 def upgrade():
+    upgrade_cluster_attributes()
     upgrade_release_with_rules_to_pick_bootable_disk()
     upgrade_task_model()
     upgrade_deployment_graphs_attributes()
@@ -60,6 +61,7 @@ def upgrade():
 
 
 def downgrade():
+    downgrade_cluster_attributes()
     downgrade_deployment_history_summary()
     downgrade_node_error_type()
     downgrade_orchestrator_task_types()
@@ -247,3 +249,57 @@ def downgrade_node_error_type():
 
 def downgrade_deployment_history_summary():
     op.drop_column('deployment_history', 'summary')
+
+
+def upgrade_cluster_attributes():
+    select_query = sa.sql.text(
+        "SELECT id, replaced_deployment_info FROM clusters"
+    )
+
+    update_query = sa.sql.text(
+        "UPDATE clusters SET replaced_deployment_info = :info "
+        "WHERE id = :id"
+    )
+
+    connection = op.get_bind()
+
+    for cluster_id, info in connection.execute(select_query):
+        info = jsonutils.loads(info)
+        if isinstance(info, dict):
+            continue
+
+        if isinstance(info, list):
+            new_info = {}
+            for item in info:
+                if isinstance(item, dict):
+                    new_info.update(item)
+        else:
+            new_info = {}
+
+        connection.execute(
+            update_query,
+            id=cluster_id,
+            info=jsonutils.dumps(new_info),
+        )
+
+
+def downgrade_cluster_attributes():
+    select_query = sa.sql.text(
+        "SELECT id, replaced_deployment_info FROM clusters"
+    )
+
+    update_query = sa.sql.text(
+        "UPDATE clusters SET replaced_deployment_info = :info "
+        "WHERE id = :id"
+    )
+
+    connection = op.get_bind()
+
+    for cluster_id, info in connection.execute(select_query):
+        info = jsonutils.loads(info)
+        new_info = [info] if info else []
+        connection.execute(
+            update_query,
+            id=cluster_id,
+            info=jsonutils.dumps(new_info),
+        )

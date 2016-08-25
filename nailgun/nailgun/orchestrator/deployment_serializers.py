@@ -73,7 +73,11 @@ class DeploymentMultinodeSerializer(object):
         """Method generates facts which are passed to puppet."""
         try:
             self.initialize(cluster)
-            common_attrs = self.get_common_attrs(cluster)
+            if not ignore_customized and cluster.replaced_deployment_info:
+                common_attrs = self.get_common_attrs_customized(cluster)
+            else:
+                common_attrs = self.get_common_attrs(cluster)
+
             extensions.fire_callback_on_cluster_serialization_for_deployment(
                 cluster, common_attrs
             )
@@ -103,10 +107,13 @@ class DeploymentMultinodeSerializer(object):
             #  changes in tasks introduced during granular deployment,
             #  and that mech should be used
             self.set_tasks(serialized_nodes)
+
+            deployment_info = {'common': common_attrs,
+                               'nodes': serialized_nodes}
         finally:
             self.finalize()
 
-        return serialized_nodes
+        return deployment_info
 
     def serialize_generated(self, common_attrs, nodes):
         serialized_nodes = self.serialize_nodes(common_attrs, nodes)
@@ -120,19 +127,23 @@ class DeploymentMultinodeSerializer(object):
                 extensions.fire_callback_on_node_serialization_for_deployment(
                     nodes_map[node_data['uid']], node_data
                 )
-            yield utils.dict_merge(common_attrs, node_data)
+            yield node_data
 
     def serialize_customized(self, common_attrs, nodes):
         for node in nodes:
             for role_data in node.replaced_deployment_info:
                 yield role_data
 
-    def get_common_attrs(self, cluster):
+    def get_common_attrs(self, cluster, ignore_customized=True):
         """Cluster attributes."""
 
         # tests call this method directly.
         # and we need this workaround to avoid refactoring a lot of tests.
         self._ensure_initialized_for(cluster)
+
+        if cluster.replaced_deployment_info:
+            return cluster.replaced_deployment_info
+
         attrs = objects.Cluster.get_attributes(cluster)
         attrs = objects.Attributes.merged_attrs_values(attrs)
 
@@ -160,6 +171,10 @@ class DeploymentMultinodeSerializer(object):
         self.inject_list_of_plugins(attrs, cluster)
 
         return attrs
+
+    def get_common_attrs_customized(self, cluster):
+        """Gets customized deployment info for cluster."""
+        return cluster.replaced_deployment_info
 
     @classmethod
     def node_list(cls, nodes):
@@ -679,11 +694,14 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         )
         attrs['cluster'] = objects.Cluster.to_dict(cluster)
         attrs['release'] = objects.Release.to_dict(cluster.release)
-        provision = attrs.setdefault('provision', {})
-        utils.dict_update(
-            provision,
-            self._provision_serializer.serialize_cluster_info(cluster, attrs)
-        )
+        self.inject_common_provision_info(cluster, attrs)
+        return attrs
+
+    def get_common_attrs_customized(self, cluster):
+        """Gets customized deployment info for cluster."""
+        base = super(DeploymentLCMSerializer, self)
+        attrs = base.get_common_attrs_customized(cluster)
+        self.inject_common_provision_info(cluster, attrs)
         return attrs
 
     def serialize_customized(self, common_attrs, nodes):
@@ -797,6 +815,15 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             )
         utils.dict_update(data.setdefault('provision', {}), info)
 
+    def inject_common_provision_info(self, cluster, common_attrs):
+        provision = common_attrs.setdefault('provision', {})
+        utils.dict_update(
+            provision,
+            self._provision_serializer.serialize_cluster_info(
+                cluster, common_attrs
+            )
+        )
+
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
@@ -857,13 +884,21 @@ def _invoke_serializer(serializer, cluster, nodes, ignore_customized):
 
 def serialize(orchestrator_graph, cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode."""
-    return _invoke_serializer(
+    serialized = _invoke_serializer(
         get_serializer_for_cluster(cluster)(orchestrator_graph),
         cluster, nodes, ignore_customized
     )
+    return serialized
 
 
 def serialize_for_lcm(cluster, nodes, ignore_customized=False):
     return _invoke_serializer(
         DeploymentLCMSerializer(), cluster, nodes, ignore_customized
     )
+
+
+def deployment_info_to_legacy(deployment_info):
+    common_attrs = deployment_info['common']
+    nodes = [utils.dict_merge(common_attrs, n)
+             for n in deployment_info['nodes']]
+    return nodes

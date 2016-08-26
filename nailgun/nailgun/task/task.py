@@ -1656,8 +1656,10 @@ class CheckBeforeDeploymentTask(object):
 
             models = {
                 'settings': attributes,
-                'default': vmware_attributes.editable,
+                'vmware_settings': vmware_attributes.editable['value'],
                 'cluster': task.cluster,
+                'current_vcenter': vmware_attributes.editable['value'].get(
+                    'availability_zones')[0],
                 'version': settings.VERSION,
                 'networking_parameters': task.cluster.network_config
             }

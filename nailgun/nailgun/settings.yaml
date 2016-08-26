@@ -903,6 +903,9 @@ DUMP:
       - type: command
         command: "ls -la /var/lib/mysql/ /var/run/mysqld/"
         to_file: mysql_resources.txt
+      - type: command
+        command: "/usr/bin/haproxy-status.sh"
+        to_file: haproxy_status.txt
 
     slave:
       hosts: []

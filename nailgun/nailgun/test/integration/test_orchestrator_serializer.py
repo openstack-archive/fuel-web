@@ -2511,7 +2511,7 @@ class BaseDeploymentSerializer(BaseSerializerTest):
         self.assertEqual(
             result['vcenter']['computes'][0]['vc_password'],
             "secret")
-        self.assertTrue(result['vcenter']['computes'][0]['vc_insecure'])
+        self.assertTrue(result['vcenter']['computes'][0]['vc_unsecure'])
         self.assertEqual(
             result['vcenter']['computes'][0]['vc_ca_file'],
             "file_blob")
@@ -2547,7 +2547,7 @@ class BaseDeploymentSerializer(BaseSerializerTest):
         self.assertEqual(
             result['cinder']['instances'][0]['vc_password'],
             "secret")
-        self.assertTrue(result['cinder']['instances'][0]['vc_insecure'])
+        self.assertTrue(result['cinder']['instances'][0]['vc_unsecure'])
         self.assertEqual(
             result['cinder']['instances'][0]['vc_ca_file'],
             "file_blob")
@@ -2557,7 +2557,7 @@ class BaseDeploymentSerializer(BaseSerializerTest):
         self.assertEqual(result['glance']['vc_password'], "secret")
         self.assertEqual(result['glance']['vc_datacenter'], "test_datacenter")
         self.assertEqual(result['glance']['vc_datastore'], "test_datastore")
-        self.assertTrue(result['glance']['vc_insecure'])
+        self.assertTrue(result['glance']['vc_unsecure'])
         self.assertEqual(result['glance']['vc_ca_file'], "file_blob")
 
     def check_no_murano_data(self):

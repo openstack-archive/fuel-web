@@ -98,6 +98,7 @@ class TestRoleApi(BaseRoleTest):
         self.assertIn('Wrong data in volumes_roles_mapping', resp.body)
 
     def test_update_role_w_invalid_volumes_id(self):
+        self.env.create_role(self.release.id, self.role_data)
         self.role_data['volumes_roles_mapping'][0]['id'] = 'some_string'
         resp = self.env.update_role(
             self.release.id,
@@ -107,6 +108,17 @@ class TestRoleApi(BaseRoleTest):
         self.assertEqual(400, resp.status_code)
         self.assertIn('Wrong data in volumes_roles_mapping', resp.body)
 
+    def test_update_role_not_present(self):
+        self.env.create_role(self.release.id, self.role_data)
+        role_name = 'blah_role'
+        resp = self.env.update_role(
+            self.release.id,
+            role_name,
+            self.role_data,
+            expect_errors=True)
+        self.assertEqual(404, resp.status_code)
+        self.assertIn('is not found for the release', resp.body)
+
     def test_delete_role(self):
 
         self.env.create_role(self.release.id, self.role_data)
@@ -114,6 +126,16 @@ class TestRoleApi(BaseRoleTest):
             self.release.id, self.role_data['name'])
 
         self.assertEqual(delete_resp.status_code, 204)
+
+    def test_delete_role_not_present(self):
+        self.env.create_role(self.release.id, self.role_data)
+        role_name = 'blah_role'
+        delete_resp = self.env.delete_role(
+            self.release.id,
+            role_name,
+            expect_errors=True)
+        self.assertEqual(delete_resp.status_code, 404)
+        self.assertIn('is not found for the release', delete_resp.body)
 
     def test_delete_assigned_role(self):
         role = self.env.create_role(self.release.id, self.role_data).json
@@ -162,6 +184,16 @@ class TestRoleApi(BaseRoleTest):
 
         self.assertEqual(role.status_code, 200)
         self.assertEqual(role.json['name'], self.role_data['name'])
+
+    def test_get_role_not_present(self):
+        self.env.create_role(self.release.id, self.role_data)
+        role_name = 'blah_role'
+        resp = self.env.get_role(
+            self.release.id,
+            role_name,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 404)
+        self.assertIn('is not found for the release', resp.body)
 
     def test_create_role_with_special_symbols(self):
         self.role_data['name'] = '@#$%^&*()'

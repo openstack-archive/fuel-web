@@ -30,14 +30,12 @@ class RoleHandler(base.SingleHandler):
 
     validator = RoleValidator
 
-    def get_role_or_404(self, release_id, role_name):
-        role = self.single.get_by_release_id_role_name(release_id, role_name)
-        if role is None:
+    def _check_role(self, release, role_name):
+        if role_name not in release.roles_metadata:
             raise self.http(
                 404,
-                u'Role {name} for release {release} is not found'.format(
-                    release=release_id, name=role_name))
-        return role
+                "Role '{role}' is not found for the release {id}".format(
+                    role=role_name, id=release.id))
 
     @handle_errors
     @validate
@@ -50,6 +48,7 @@ class RoleHandler(base.SingleHandler):
             * 404 (no such object found)
         """
         release = self.get_object_or_404(objects.Release, release_id)
+        self._check_role(release, role_name)
         return RoleSerializer.serialize_from_release(release, role_name)
 
     @handle_errors
@@ -63,6 +62,7 @@ class RoleHandler(base.SingleHandler):
             * 404 (no such object found)
         """
         release = self.get_object_or_404(objects.Release, release_id)
+        self._check_role(release, role_name)
         data = self.checked_data(
             self.validator.validate_update, instance=release)
         objects.Release.update_role(release, data)
@@ -78,6 +78,7 @@ class RoleHandler(base.SingleHandler):
             * 404 (no such object found)
         """
         release = self.get_object_or_404(objects.Release, release_id)
+        self._check_role(release, role_name)
 
         try:
             self.validator.validate_delete(release, role_name)

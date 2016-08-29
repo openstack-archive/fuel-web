@@ -540,6 +540,7 @@ class Node(NailgunObject):
             ip = IPAddress(instance.ip)
 
             for ng in admin_ngs:
+                # Only node group of the same cluster can be selected.
                 if ip in IPNetwork(ng.cidr):
                     instance.group_id = ng.group_id
                     break

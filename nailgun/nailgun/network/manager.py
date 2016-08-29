@@ -321,20 +321,23 @@ class NetworkManager(object):
         return result
 
     @classmethod
-    def get_assigned_vips(cls, cluster):
-        """Return assigned VIPs mapped to names of network groups.
+    def get_assigned_vips(cls, cluster, network_names=None):
+        """Return assigned VIPs mapped to IDs of network groups.
 
-        :param cluster: Is an instance of :class:`objects.Cluster`.
-        :returns: A dict of VIPs mapped to names of network groups and
-                  they are grouped by the type.
+        :param cluster: Is an instance of :class:`models.Cluster`.
+        :param network_names: Filter return VIPs by names of networks if it is
+                              not None.
+        :returns: A dict of VIPs mapped to IDs of network groups and
+                  they are grouped by the name.
         """
         cluster_vips = \
             objects.IPAddrCollection.get_vips_by_cluster_id(cluster.id)
         vips = defaultdict(dict)
         for vip in cluster_vips:
-            vips[vip.network_data.name][vip.vip_name] = objects.IPAddr.to_dict(
-                vip
-            )
+            if network_names is not None and \
+                    vip.network_data.name not in network_names:
+                continue
+            vips[vip.network][vip.vip_name] = objects.IPAddr.to_dict(vip)
 
         return vips
 
@@ -347,8 +350,8 @@ class NetworkManager(object):
         used for the upgrading procedure of clusters to copy VIPs from
         one cluster to the other.
 
-        :param cluster: Is an instance of :class:`objects.Cluster`.
-        :param vips: A dict of VIPs mapped to names of network groups
+        :param cluster: Is an instance of :class:`models.Cluster`.
+        :param vips: A dict of VIPs mapped to IDs of network groups
                      that are grouped by the type.
         :raises: errors.AssignIPError
         """
@@ -356,43 +359,41 @@ class NetworkManager(object):
             objects.IPAddrCollection.get_vips_by_cluster_id(cluster.id)
         assigned_vips = defaultdict(dict)
         for vip in cluster_vips:
-            assigned_vips[vip.network_data.name][vip.vip_name] = vip
+            assigned_vips[vip.network][vip.vip_name] = vip
         for net_group in cluster.network_groups:
-            if net_group.name not in vips:
+            if net_group.id not in vips:
                 continue
-            assigned_vips_by_type = assigned_vips.get(net_group.name, {})
-            for vip_name, vip_dict in six.iteritems(vips[net_group.name]):
-                if not cls.check_ip_belongs_to_net(
-                        vip_dict['ip_addr'], net_group):
+            assigned_vips_for_net = assigned_vips.get(net_group.id, {})
+            for vip_name, vip in six.iteritems(vips[net_group.id]):
+                if not cls.check_ip_belongs_to_net(vip['ip_addr'], net_group):
                     ranges = [(rng.first, rng.last)
                               for rng in net_group.ip_ranges]
                     raise errors.AssignIPError(
-                        "Cannot assign VIP with the address '{ip_addr}' "
-                        "because it does not belong to the network {net_id} - "
-                        "'{net_name}' with ranges {net_ranges} of the cluster "
-                        "'{cluster_id}'."
-                        .format(
-                            ip_addr=vip_dict['ip_addr'],
+                        ("Cannot assign VIP with the address '{ip_addr}' "
+                         "because it does not belong to the network {net_id} "
+                         "- '{net_name}' with ranges {net_ranges} and CIDR "
+                         "{net_cidr} of the cluster '{cluster_id}'.").format(
+                            ip_addr=vip['ip_addr'],
                             net_id=net_group.id,
                             net_name=net_group.name,
                             net_ranges=ranges,
-                            cluster_id=cluster.id,
-                        )
+                            net_cidr=net_group.cidr,
+                            cluster_id=cluster.id)
                     )
-                if vip_name in assigned_vips_by_type:
-                    assigned_vip = assigned_vips_by_type[vip_name]
+                if vip_name in assigned_vips_for_net:
+                    assigned_vip = assigned_vips_for_net[vip_name]
                     objects.IPAddr.update(assigned_vip, {
-                        'ip_addr': vip_dict['ip_addr'],
-                        'vip_namespace': vip_dict['vip_namespace'],
-                        'is_user_defined': vip_dict['is_user_defined'],
+                        'ip_addr': vip['ip_addr'],
+                        'vip_namespace': vip['vip_namespace'],
+                        'is_user_defined': vip['is_user_defined'],
                     })
                 else:
                     objects.IPAddr.create({
                         'network': net_group.id,
-                        'ip_addr': vip_dict['ip_addr'],
+                        'ip_addr': vip['ip_addr'],
                         'vip_name': vip_name,
-                        'vip_namespace': vip_dict['vip_namespace'],
-                        'is_user_defined': vip_dict['is_user_defined'],
+                        'vip_namespace': vip['vip_namespace'],
+                        'is_user_defined': vip['is_user_defined'],
                     })
 
     @classmethod

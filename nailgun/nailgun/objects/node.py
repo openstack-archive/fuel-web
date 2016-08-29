@@ -535,10 +535,16 @@ class Node(NailgunObject):
     @classmethod
     def assign_group(cls, instance):
         if instance.group_id is None and instance.ip:
-            admin_ngs = db().query(models.NetworkGroup).filter_by(
-                name="fuelweb_admin")
+            admin_ngs = db().query(models.NetworkGroup).join(
+                (models.NodeGroup.networks,
+                 models.NetworkGroup)
+            ).filter(
+                models.NetworkGroup.name == "fuelweb_admin",
+                models.NetworkGroup.group_id is not None,
+                # Only node group of the same cluster can be selected.
+                models.NodeGroup.cluster_id == instance.cluster_id
+            )
             ip = IPAddress(instance.ip)
-
             for ng in admin_ngs:
                 if ip in IPNetwork(ng.cidr):
                     instance.group_id = ng.group_id

@@ -21,6 +21,9 @@ import mock
 
 from itertools import cycle
 from itertools import ifilter
+
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 import uuid
 
 from sqlalchemy import inspect as sqlalchemy_inspect
@@ -209,6 +212,31 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual([], node.primary_roles)
         self.assertItemsEqual(roles, node.pending_roles)
         self.assertEqual(node.attributes, cluster.release.node_attributes)
+
+    def test_assign_group(self):
+        cluster = self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}] * 3)
+        new_cluster = self.env.create_cluster(api=False)
+        data = {
+            'name': 'custom',
+            'cluster_id': new_cluster.id
+        }
+        new_group = objects.NodeGroup.create(data)
+        admin_group_id = db().query(
+            models.NetworkGroup.id
+        ).join(
+            models.NetworkGroup.nodegroup
+        ).filter(
+            models.NodeGroup.cluster_id == new_group.cluster_id,
+            models.NetworkGroup.name == consts.NETWORKS.fuelweb_admin
+        ).first()
+        admin_group = objects.NetworkGroup.get_by_uid(admin_group_id)
+        admin_group.cidr = '10.20.0.0/24'
+        node = cluster.nodes[0]
+        roles = node.roles
+        objects.Node.update_cluster_assignment(node, new_cluster, [], roles)
+        self.assertEqual(new_group.id, node.group_id)
 
     def test_update_cluster_assignment_with_templates_80(self):
         cluster = self.env.create(

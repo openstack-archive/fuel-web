@@ -727,8 +727,15 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         attrs = super(DeploymentLCMSerializer, self).get_common_attrs(
             cluster
         )
-        attrs['cluster'] = objects.Cluster.to_dict(cluster)
-        attrs['release'] = objects.Release.to_dict(cluster.release)
+        attrs['cluster'] = objects.Cluster.to_dict(
+            cluster, fields=("id", "name", "fuel_version", "status", "mode")
+        )
+        attrs['release'] = objects.Release.to_dict(
+            cluster.release, fields=('name', 'version', 'operating_system')
+        )
+        # the ReleaseSerializer adds this attribute certainly
+        attrs['release'].pop('is_deployable', None)
+
         provision = attrs.setdefault('provision', {})
         utils.dict_update(
             provision,

@@ -529,24 +529,25 @@ class TestDeploymentLCMSerialization90(
     def test_cluster_attributes_in_serialized(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        release = self.cluster_db.release
+        release_info = {
+            'name': release.name,
+            'version': release.version,
+            'operating_system': release.operating_system,
+        }
+        cluster_info = {
+            "id": self.cluster_db.id,
+            "name": self.cluster_db.name,
+            "fuel_version": self.cluster_db.fuel_version,
+            "status": self.cluster_db.status,
+            "mode": self.cluster_db.mode
+        }
         for node_info in serialized:
-            self.assertEqual(
-                objects.Cluster.to_dict(self.cluster_db),
-                node_info['cluster']
-            )
-            self.assertEqual(
-                objects.Release.to_dict(self.cluster_db.release),
-                node_info['release']
-            )
+            self.assertEqual(cluster_info, node_info['cluster'])
+            self.assertEqual(release_info, node_info['release'])
 
-        self.assertEqual(
-            ['compute'],
-            serialized[0]['roles']
-        )
-        self.assertEqual(
-            [consts.TASK_ROLES.master],
-            serialized[1]['roles']
-        )
+        self.assertEqual(['compute'], serialized[0]['roles'])
+        self.assertEqual([consts.TASK_ROLES.master], serialized[1]['roles'])
 
     @mock.patch.object(
         plugins.adapters.PluginAdapterBase, 'repo_files',
@@ -624,7 +625,6 @@ class TestDeploymentLCMSerialization90(
             if item['uid'] != consts.MASTER_NODE_UID:
                 self.assertIn(item, cust_serialized)
             else:
-                item['cluster']['is_customized'] = True
                 self.assertIn(item, cust_serialized)
 
     def test_provision_info_serialized(self):

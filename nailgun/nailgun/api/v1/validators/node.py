@@ -453,7 +453,7 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
         data = cls.validate_json(data)
         full_data = utils.dict_merge(objects.Node.get_attributes(node), data)
 
-        models = objects.Cluster.get_restrictions_models(cluster)
+        models = objects.Node.get_restrictions_models(node)
 
         attrs = cls.validate_attributes(full_data, models=models)
 

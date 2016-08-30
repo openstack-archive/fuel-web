@@ -162,9 +162,9 @@ class TransactionsManager(object):
         _remove_obsolete_tasks(cluster)
 
         transaction = objects.Transaction.create({
-            'name': self.task_name,
+            'name': consts.TASK_NAMES.deploy,
             'cluster_id': self.cluster_id,
-            'status': consts.TASK_STATUSES.pending,
+            'status': consts.TASK_STATUSES.running,
             'dry_run': dry_run or noop_run,
         })
         helpers.TaskHelper.create_action_log(transaction)

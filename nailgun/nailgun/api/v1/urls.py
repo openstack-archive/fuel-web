@@ -64,10 +64,12 @@ from nailgun.api.v1.handlers.logs import LogPackageHandler
 from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
 from nailgun.api.v1.handlers.logs import SnapshotDownloadHandler
+
 from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
 from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
 from nailgun.api.v1.handlers.node import NodeAgentHandler
+from nailgun.api.v1.handlers.node import NodeAttributesDefaultsHandler
 from nailgun.api.v1.handlers.node import NodeAttributesHandler
 from nailgun.api.v1.handlers.node import NodeCollectionHandler
 from nailgun.api.v1.handlers.node import NodeHandler
@@ -79,6 +81,7 @@ from nailgun.api.v1.handlers.plugin import \
 from nailgun.api.v1.handlers.plugin import PluginDeploymentGraphHandler
 from nailgun.api.v1.handlers.plugin import PluginHandler
 from nailgun.api.v1.handlers.plugin import PluginSyncHandler
+
 from nailgun.api.v1.handlers.plugin_link import PluginLinkCollectionHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkHandler
 
@@ -114,12 +117,12 @@ from nailgun.api.v1.handlers.tag import TagHandler
 
 from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
+
 from nailgun.api.v1.handlers.transactions import TransactionClusterSettings
 from nailgun.api.v1.handlers.transactions import TransactionCollectionHandler
 from nailgun.api.v1.handlers.transactions import TransactionDeploymentInfo
 from nailgun.api.v1.handlers.transactions import TransactionHandler
 from nailgun.api.v1.handlers.transactions import TransactionNetworkSettings
-
 
 from nailgun.api.v1.handlers.version import VersionHandler
 
@@ -290,6 +293,8 @@ urls = (
     NodeHandler,
     r'/nodes/(?P<node_id>\d+)/attributes/?$',
     NodeAttributesHandler,
+    r'/nodes/(?P<node_id>\d+)/attributes/defaults/?$',
+    NodeAttributesDefaultsHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',

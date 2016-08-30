@@ -28,6 +28,7 @@ from nailgun import consts
 from nailgun import errors
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
+from nailgun.objects.plugin import NodeClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
@@ -433,6 +434,69 @@ class PluginManager(object):
                     components.append(component)
 
         return components
+
+    @classmethod
+    def get_plugins_node_default_attributes(cls, cluster):
+        """Get node attributes metadata for enabled plugins of the cluster.
+
+        :param cluster: A cluster instance
+        :type cluster: models.Cluster
+        :returns: dict -- Object with node attributes
+        """
+        plugins_node_metadata = {}
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
+        for plugin_adapter in map(wrap_plugin, enabled_plugins):
+            metadata = plugin_adapter.node_attributes_metadata
+            # TODO(ekosareva): resolve conflicts of same attribute names
+            #                  for different plugins
+            plugins_node_metadata.update(metadata)
+
+        return plugins_node_metadata
+
+    @classmethod
+    def get_plugin_node_attributes(cls, node):
+        """Return plugin related attributes for Node.
+
+        :param node: A Node instance
+        :type node: models.Node
+        :returns: dict object with plugin Node attributes
+        """
+        return NodeClusterPlugin.get_all_enabled_attributes_by_node(node)
+
+    @classmethod
+    def update_plugin_node_attributes(cls, attributes):
+        """Update plugin related node attributes.
+
+        :param attributes: new attributes data
+        :type attributes: dict
+        :returns: None
+        """
+        plugins_attributes = {}
+        for k in list(attributes):
+            if cls.is_plugin_data(attributes[k]):
+                attribute_data = attributes.pop(k)
+                attribute_data['metadata'].pop('class')
+                node_plugin_id = \
+                    attribute_data['metadata'].pop('node_plugin_id')
+                plugins_attributes.setdefault(
+                    node_plugin_id, {}).update({k: attribute_data})
+
+        # TODO(ekosareva): think about changed metadata or sections set
+        for plugin_id, plugin_attributes in six.iteritems(plugins_attributes):
+            NodeClusterPlugin.set_attributes(
+                plugin_id,
+                plugin_attributes
+            )
+
+    @classmethod
+    def add_plugin_attributes_for_node(cls, node):
+        """Add plugin related attributes for Node.
+
+        :param node: A Node instance
+        :type node: models.Node
+        :returns: None
+        """
+        NodeClusterPlugin.add_cluster_plugins_for_node(node)
 
     # ENTRY POINT
     @classmethod

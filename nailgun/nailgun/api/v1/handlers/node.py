@@ -292,3 +292,20 @@ class NodeAttributesHandler(BaseHandler):
         objects.Node.update_attributes(node, data)
 
         return objects.Node.get_attributes(node)
+
+
+class NodeAttributesDefaultsHandler(BaseHandler):
+    """Node default attributes handler"""
+
+    @handle_errors
+    @validate
+    @serialize
+    def GET(self, node_id):
+        """:returns: JSONized Node default attributes.
+
+        :http: * 200 (OK)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(objects.Node, node_id)
+
+        return objects.Node.get_default_attributes(node)

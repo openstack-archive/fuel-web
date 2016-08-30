@@ -601,3 +601,148 @@ class TestClusterPluginIntegration(base.BaseTestCase):
 
         enabled_plugins = ClusterPlugin.get_enabled(self.cluster.id)
         self.assertItemsEqual(enabled_plugins, [plugin_a])
+
+
+class TestNodeClusterPluginIntegration(base.BaseTestCase):
+    def setUp(self):
+        super(TestNodeClusterPluginIntegration, self).setUp()
+
+        self.cluster = self.env.create(
+            release_kwargs={
+                'version': 'newton-10.0',
+                'operating_system': 'Ubuntu',
+            },
+            nodes_kwargs=[
+                {'role': 'controller'}
+            ]
+        )
+        self.node = self.env.nodes[0]
+        self.plugin = self.env.create_plugin(
+            name='plugin_a',
+            cluster=self.cluster,
+            package_version='5.0.0',
+            enabled=True,
+            title='Plugin A Title',
+            node_attributes_metadata={
+                'plugin_a_section_1': {
+                    'metadata': {'label': 'Section 1 of Plugin A'},
+                    'attr_1': {'value': 'test_1'}
+                },
+                'plugin_a_section_2': {
+                    'attr_2': {'value': 'test_2'}
+                }
+            })
+
+    def test_get_node_default_attributes(self):
+        self.env.create_plugin(
+            name='plugin_b',
+            cluster=self.cluster,
+            enabled=True,
+            package_version='5.0.0',
+            node_attributes_metadata={
+                'section_plugin_b': {
+                    'attr_b': {'value': 'test_b'}
+                }
+            })
+
+        self.env.create_plugin(
+            name='plugin_c',
+            cluster=self.cluster,
+            enabled=False,
+            package_version='5.0.0',
+            node_attributes_metadata={
+                'plugin_c_section': {
+                    'attr_c': {'value': 'test_c'}
+                }
+            })
+
+        for node_cluster_plugin in self.cluster.nodes[0].node_cluster_plugins:
+            node_cluster_plugin.attributes = {}
+        self.db.flush()
+
+        default_attributes = PluginManager.get_plugins_node_default_attributes(
+            self.cluster)
+        self.assertDictEqual(
+            {
+                'plugin_a_section_1': {
+                    'metadata': {'label': 'Section 1 of Plugin A'},
+                    'attr_1': {'value': 'test_1'}},
+                'plugin_a_section_2': {
+                    'attr_2': {'value': 'test_2'}},
+                'section_plugin_b': {
+                    'attr_b': {'value': 'test_b'}}
+            },
+            default_attributes
+        )
+
+    def test_get_plugin_node_attributes(self):
+        attributes = PluginManager.get_plugin_node_attributes(self.node)
+        del attributes['plugin_a_section_1']['metadata']['node_plugin_id']
+        del attributes['plugin_a_section_2']['metadata']['node_plugin_id']
+        self.assertDictEqual(
+            {
+                'plugin_a_section_1': {
+                    'metadata': {'label': 'Section 1 of Plugin A',
+                                 'class': 'plugin'},
+                    'attr_1': {'value': 'test_1'}},
+                'plugin_a_section_2': {
+                    'metadata': {'class': 'plugin'},
+                    'attr_2': {'value': 'test_2'}}
+            },
+            attributes
+        )
+
+    def test_update_plugin_node_attributes(self):
+        self.env.create_plugin(
+            name='plugin_b',
+            cluster=self.cluster,
+            enabled=True,
+            package_version='5.0.0',
+            node_attributes_metadata={
+                'section_plugin_b': {
+                    'attr_b': {'value': 'test_b'}
+                }
+            })
+        new_attrs = PluginManager.get_plugin_node_attributes(self.node)
+        new_attrs['plugin_a_section_1']['attr_1']['value'] = 'new_test_1'
+        new_attrs['section_plugin_b']['attr_b']['value'] = 'new_test_b'
+        PluginManager.update_plugin_node_attributes(new_attrs)
+        attributes = PluginManager.get_plugin_node_attributes(self.node)
+        for attribute in attributes:
+            del attributes[attribute]['metadata']['node_plugin_id']
+        self.assertDictEqual(
+            {
+                'plugin_a_section_1': {
+                    'metadata': {'label': 'Section 1 of Plugin A',
+                                 'class': 'plugin'},
+                    'attr_1': {'value': 'new_test_1'}},
+                'plugin_a_section_2': {
+                    'metadata': {'class': 'plugin'},
+                    'attr_2': {'value': 'test_2'}},
+                'section_plugin_b': {
+                    'metadata': {'class': 'plugin'},
+
+                    'attr_b': {'value': 'new_test_b'}}
+            },
+            attributes
+        )
+
+    def test_add_plugin_attributes_for_node(self):
+        new_cluster_node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller']
+        )
+        PluginManager.add_plugin_attributes_for_node(new_cluster_node)
+        node_cluster_plugins = new_cluster_node.node_cluster_plugins
+        self.assertEqual(len(node_cluster_plugins), 1)
+        attributes = node_cluster_plugins[0].attributes
+        self.assertDictEqual(
+            {
+                'plugin_a_section_1': {
+                    'metadata': {'label': 'Section 1 of Plugin A'},
+                    'attr_1': {'value': 'test_1'}},
+                'plugin_a_section_2': {
+                    'attr_2': {'value': 'test_2'}}
+            },
+            attributes
+        )

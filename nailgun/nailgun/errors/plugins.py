@@ -18,7 +18,7 @@ from .base import NailgunException
 
 
 class PluginException(NailgunException):
-    """Base plugn exception"""
+    """Base plugin exception"""
 
 
 class PackageVersionIsNotCompatible(PluginException):
@@ -27,3 +27,19 @@ class PackageVersionIsNotCompatible(PluginException):
 
 class NoPluginFileFound(PluginException):
     message = "Plugin file not found"
+
+
+class InvalidFileFormat(PluginException):
+    message = "Invalid file format: {}, supported formats are:"
+
+    def __init__(self, path, supported_formats, *args, **kwargs):
+        super(InvalidFileFormat, self).__init__(*args, **kwargs)
+        self.message = self.message.format(path, supported_formats.join(', '))
+
+
+class CantReadFile(PluginException):
+    message = "Can't read file: {}"
+
+    def __init__(self, path, *args, **kwargs):
+        super(CantReadFile, self).__init__(*args, **kwargs)
+        self.message = self.message.format(path)

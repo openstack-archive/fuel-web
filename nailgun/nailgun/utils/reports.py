@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import traceback
 
 import six
@@ -22,6 +23,32 @@ REPORT_INDENT_SIZE = 4
 
 # Symbol to mark error nodes when rendering report
 REPORT_FAILURE_POINTER = '> '
+
+
+class DataWithReport(object):
+    """Incapsulates result list/dict and report as property."""
+
+    def __init__(self, seq=None, report=None, **kwargs):
+        """Initialize DataWithReport.
+
+        :param seq:
+        :type seq: iterable|None
+        :param report: report node
+        :param report: ReportNode|None
+
+        :returns: extended list or dict
+        :rtype: DictResultWithReport|ListResultWithReport
+        """
+        super(DataWithReport, self).__init__(seq, **kwargs)
+        self.report = report or ReportNode(u'No report provided')
+
+
+class DictResultWithReport(DataWithReport, dict):
+    pass
+
+
+class ListResultWithReport(DataWithReport, list):
+    pass
 
 
 class ReportNode(object):
@@ -212,3 +239,15 @@ class ReportNode(object):
         :rtype: boolean
         """
         return bool(self.count_failures())
+
+    def mix_to_data(self, data):
+        """Replace data with reported data with .report attribute
+
+        :param data: list|dict
+        :return: data with report
+        :rtype: DataWithReport|ListResultWithReport|DictResultWithReport
+        """
+        if isinstance(data, list):
+            return ListResultWithReport(data, self)
+        else:
+            return DictResultWithReport(data, self)

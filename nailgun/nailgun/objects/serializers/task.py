@@ -28,5 +28,7 @@ class TaskSerializer(BasicSerializer):
         "message",
         "status",
         "progress",
-        "parent_id"
+        "parent_id",
+        "dry_run",
+        "graph_type",
     )

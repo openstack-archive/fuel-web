@@ -624,6 +624,7 @@ def _update_history(transaction, nodes):
                 node.get('summary'),
                 node.get('custom'),
             )
+    db.flush()
 
 
 def _update_transaction(transaction, status, progress, message):

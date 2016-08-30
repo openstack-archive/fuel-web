@@ -100,10 +100,11 @@ class ClusterHandler(SingleHandler):
         """
         cluster = self.get_object_or_404(self.single, obj_id)
         task_manager = ClusterDeletionManager(cluster_id=cluster.id)
-        task = None
         try:
             logger.debug('Trying to execute cluster deletion task')
-            task = task_manager.execute()
+            task = task_manager.execute(
+                force=utils.parse_bool(web.input(force='0').force)
+            )
         except Exception as e:
             logger.warn('Error while execution '
                         'cluster deletion task: %s' % str(e))
@@ -174,6 +175,12 @@ class ClusterResetHandler(DeferredTaskHandler):
     log_error = u"Error during execution of resetting task " \
                 u"on environment '{env_id}': {error}"
     task_manager = ResetEnvironmentTaskManager
+
+    @classmethod
+    def get_options(cls):
+        return {
+            'force': utils.parse_bool(web.input(force='0').force)
+        }
 
 
 class ClusterAttributesHandler(BaseHandler):

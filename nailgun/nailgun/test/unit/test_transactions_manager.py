@@ -91,8 +91,8 @@ class TestRemoveObsoleteTasks(BaseUnitTest):
         manager._remove_obsolete_tasks(cluster)
 
         db_mock().flush.assert_called_once_with()
-        objects_mock.TaskCollection.get_cluster_tasks.assert_called_once_with(
-            cluster.id
+        objects_mock.TaskCollection.filter_by.assert_called_once_with(
+            mock.ANY, cluster_id=cluster.id
         )
         objects_mock.TaskCollection.order_by(
             objects_mock.TaskCollection.get_cluster_tasks.return_value, 'id'

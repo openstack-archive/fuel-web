@@ -1,6 +1,7 @@
 import yaml
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun import objects
 from nailgun.orchestrator import provisioning_serializers
 import nailgun.rpc as rpc
@@ -51,6 +52,7 @@ class UpdateDnsmasqTask(object):
 
     @classmethod
     def execute(cls, task):
+        db().commit()
         rpc.cast(
             'naily',
             cls.message(task)

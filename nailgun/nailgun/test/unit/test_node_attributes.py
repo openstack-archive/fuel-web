@@ -53,14 +53,15 @@ class TestNodeAttributes(base.BaseUnitTest):
             fake_numa_nodes, comp_entity, [0, 1])
 
     def test_node_cpu_pinning_info(self):
-        node = mock.Mock(attributes={
-            'cpu_pinning': {
-                'meta': {
-                    'some': 'info'},
-                'comp1': {
-                    'value': 1},
-                'comp2': {
-                    'value': 3}}})
+        node = mock.Mock(
+            id=1,
+            attributes={
+                'cpu_pinning': {
+                    'meta': {'some': 'info'},
+                    'comp1': {'value': 1},
+                    'comp2': {'value': 3}}
+            }
+        )
         self.assertEquals(
             {'total_required_cpus': 4,
              'components': {
@@ -72,6 +73,7 @@ class TestNodeAttributes(base.BaseUnitTest):
 
     def test_total_hugepages(self):
         node = mock.Mock(
+            id=1,
             attributes={
                 'hugepages': {
                     'comp1': {
@@ -92,6 +94,7 @@ class TestNodeAttributes(base.BaseUnitTest):
 
     def test_hugepages_kernel_opts(self):
         node = mock.Mock(
+            id=1,
             attributes={
                 'hugepages': {
                     'comp1': {
@@ -109,6 +112,7 @@ class TestNodeAttributes(base.BaseUnitTest):
 
     def _make_hugepages_node(self):
         return mock.Mock(
+            id=1,
             attributes={
                 'hugepages': {
                     'comp1': {
@@ -164,6 +168,7 @@ class TestNodeAttributes(base.BaseUnitTest):
     def test_set_default_hugepages(self):
         hugepages = ['2048', '1048576']
         node = mock.Mock(
+            id=1,
             attributes={
                 'hugepages': {
                     'nova': {

@@ -286,12 +286,15 @@ class ClusterPlugin(NailgunObject):
         plugin_attributes = dict(plugin.attributes_metadata)
         plugin_attributes.pop('metadata', None)
         for cluster in cls.get_compatible_clusters(plugin):
-            cls.create({
+            cluster_plugin = cls.create({
                 'cluster_id': cluster.id,
                 'plugin_id': plugin.id,
                 'enabled': False,
                 'attributes': plugin_attributes
             })
+            NodeClusterPlugin.add_nodes_for_cluster_plugin(cluster_plugin)
+
+        db().flush()
 
     @classmethod
     def set_attributes(cls, cluster_id, plugin_id, enabled=None, attrs=None):
@@ -405,3 +408,105 @@ class ClusterPlugin(NailgunObject):
             .filter(cls.model.enabled.is_(True))
 
         return db().query(q.exists()).scalar()
+
+
+class BasicNodeClusterPlugin(NailgunObject):
+
+    @classmethod
+    def set_attributes(cls, instance_id, attrs=None):
+        """Update plugin NIC|Bond|Node attributes
+
+        :param instance_id: NIC|Bond|Node instance id
+        :type instance: int
+        :returns: None
+        """
+        if attrs:
+            db().query(cls.model) \
+                .filter_by(
+                    id=instance_id) \
+                .update({'attributes': attrs}, synchronize_session='fetch')
+
+            db().flush()
+
+
+class NodeClusterPlugin(BasicNodeClusterPlugin):
+
+    model = models.NodeClusterPlugin
+
+    @classmethod
+    def get_all_enabled_attributes_by_node(cls, node):
+        """Returns node attributes from enabled plugins
+
+        :param node: target node instance
+        :type node: models.Node
+        :returns: object with plugin Node attributes
+        :rtype: dict
+        """
+        node_attributes = {}
+        node_plugin_attributes_query = db().query(
+            cls.model.id,
+            cls.model.attributes
+        ).join(
+            models.ClusterPlugin,
+            models.Plugin
+        ).filter(
+            cls.model.node_id == node.id,
+            models.ClusterPlugin.enabled.is_(True)
+        )
+
+        for node_plugin_id, attributes in node_plugin_attributes_query:
+            for section_name, section_attributes in six.iteritems(attributes):
+                # TODO(apopovych): resolve conflicts of same attribute names
+                # for different plugins
+                section_attributes.setdefault('metadata', {}).update({
+                    'node_plugin_id': node_plugin_id,
+                    'class': 'plugin'
+                })
+                node_attributes[section_name] = section_attributes
+
+        return node_attributes
+
+    @classmethod
+    def add_nodes_for_cluster_plugin(cls, cluster_plugin):
+        """Populates 'node_cluster_plugins' table with nodes.
+
+        :param cluster_plugin: ClusterPlugin instance
+        :type cluster_plugin: models.ClusterPlugin
+        :returns: None
+        """
+        node_attributes = dict(
+            cluster_plugin.plugin.node_attributes_metadata)
+        for node in cluster_plugin.cluster.nodes:
+            if node_attributes:
+                cls.create({
+                    'cluster_plugin_id': cluster_plugin.id,
+                    'node_id': node.id,
+                    'attributes': node_attributes
+                })
+
+        db().flush()
+
+    @classmethod
+    def add_cluster_plugins_for_node(cls, node):
+        """Populates 'node_cluster_plugins' table.
+
+        :param node: target node instance
+        :type node: models.Node
+        """
+        node_cluster_plugin_ids = set(
+            item.id for item in node.node_cluster_plugins)
+        # TODO(ekosareva): rethink, move it in another place
+        # remove old relations for nodes
+        cls.bulk_delete(node_cluster_plugin_ids)
+
+        for cluster_plugin in node.cluster.cluster_plugins:
+            node_attributes = dict(
+                cluster_plugin.plugin.node_attributes_metadata)
+            if node_attributes:
+                cls.create({
+                    'cluster_plugin_id': cluster_plugin.id,
+                    'node_id': node.id,
+                    'attributes': node_attributes
+                })
+
+        db().flush()

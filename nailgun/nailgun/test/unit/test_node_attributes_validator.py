@@ -82,7 +82,7 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
                 }
             }
         }
-        self.node = mock.Mock(meta=meta, attributes=attributes)
+        self.node = mock.Mock(id=1, meta=meta, attributes=attributes)
         self.cluster = mock.Mock()
 
 

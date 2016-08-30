@@ -84,7 +84,7 @@ class TestPluginBase(base.BaseTestCase):
         """Should return set of all versions this plugin is applicable to"""
         self.assertEqual(
             self.plugin_adapter.plugin_release_versions,
-            set(['2014.2-6.0', '2015.1-8.0'])
+            set(['2014.2-6.0', '2015.1-8.0', 'mitaka-9.0', 'newton-10.0'])
         )
 
     def test_full_name(self):
@@ -453,7 +453,7 @@ class TestPluginV5(TestPluginBase):
                 bond_attributes_metadata)
             self.assertEqual(
                 self.plugin.node_attributes_metadata,
-                bond_attributes_metadata)
+                node_attributes_metadata)
 
             # deployment tasks returning all non-defined fields, so check
             # should differ from JSON-stored fields

@@ -328,9 +328,11 @@ class DeploySelectedNodes(BaseDeploySelectedNodes, RunMixin):
                * 404 (cluster or nodes not found in db)
         """
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
+        force = utils.parse_bool(web.input(force='0').force)
         return self.handle_task(
             cluster=cluster,
             graph_type=self.get_graph_type(),
+            force=force,
             dry_run=self.get_dry_run(),
             noop_run=self.get_noop_run()
         )

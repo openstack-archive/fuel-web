@@ -17,8 +17,6 @@ from datetime import datetime
 
 import six
 
-from sqlalchemy.orm import undefer
-
 from nailgun.consts import HISTORY_TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -41,6 +39,10 @@ class DeploymentHistory(NailgunObject):
     @classmethod
     def update_if_exist(cls, task_id, node_id, deployment_graph_task_name,
                         status, summary, custom):
+
+        logger.warn("Find_history: %s", (task_id, node_id,
+                                         deployment_graph_task_name))
+        logger.warn("To update with: %s", (status, summary, custom))
         deployment_history = cls.find_history(task_id, node_id,
                                               deployment_graph_task_name)
 
@@ -52,7 +54,9 @@ class DeploymentHistory(NailgunObject):
 
         getattr(cls, 'to_{0}'.format(status))(deployment_history)
 
+        logger.warn("Custom: %s", custom)
         deployment_history.custom.update(custom or {})
+        logger.warn("Summary: %s", summary)
         deployment_history.summary.update(summary or {})
 
     @classmethod
@@ -177,10 +181,7 @@ class DeploymentHistoryCollection(NailgunCollection):
             logger.warning('No tasks snapshot is defined in given '
                            'transaction, probably it is a legacy '
                            '(Fuel<10.0) or malformed.')
-        query = None
-        if include_summary:
-            query = cls.options(undefer('summary'))
-        history_records = cls.filter_by(query, task_id=transaction.id)
+        history_records = cls.filter_by(None, task_id=transaction.id)
         if tasks_names:
             history_records = cls.filter_by_list(
                 history_records, 'deployment_graph_task_name', tasks_names

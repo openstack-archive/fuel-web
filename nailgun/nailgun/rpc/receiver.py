@@ -343,6 +343,7 @@ class NailgunReceiver(object):
                                ",".join(sorted(nodes_by_id)))
 
         for node in nodes:
+            logger.warning('Update DeploymentHistory for Node: %s', node)
             if node.get('deployment_graph_task_name') \
                     and node.get('task_status'):
                 objects.DeploymentHistory.update_if_exist(
@@ -350,8 +351,8 @@ class NailgunReceiver(object):
                     node['uid'],
                     node['deployment_graph_task_name'],
                     node['task_status'],
-                    node.get('summary'),
-                    node.get('custom'),
+                    node.get('summary', {}),
+                    node.get('custom', {})
                 )
         db().flush()
 

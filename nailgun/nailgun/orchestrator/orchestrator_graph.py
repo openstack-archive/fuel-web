@@ -517,3 +517,18 @@ class AstuteGraph(object):
                         str(x) for x in sorted(non_existing_tasks)),
                     invalid_tasks=', '.join(
                         str(x) for x in sorted(set(invalid_tasks)))))
+
+    def filter_reexecutable_tasks(self, serialized,
+                                  affected_nodes, task_filter):
+        if not task_filter:
+            return
+
+        tasks_dict = {t['id']: t for t in self.tasks}
+        task_filter = set(task_filter)
+        affected_nodes_set = set([n['uid'] for n in affected_nodes])
+        for task in serialized:
+            task_template = tasks_dict.get(task['id'], {})
+            reexecute_on = task_template.get('reexecute_on')
+
+            if reexecute_on is None or not task_filter.issubset(reexecute_on):
+                task['uids'] = list(set(task['uids']) - affected_nodes_set)

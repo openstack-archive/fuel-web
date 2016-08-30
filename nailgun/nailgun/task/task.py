@@ -327,18 +327,23 @@ class DeploymentTask(BaseDeploymentTask):
 
         cls._save_deployment_info(transaction, serialized_cluster)
 
+        pre_deployment = stages.pre_deployment_serialize(
+            graph, transaction.cluster, nodes + affected_nodes,
+            role_resolver=role_resolver)
+        post_deployment = stages.post_deployment_serialize(
+            graph, transaction.cluster, nodes + affected_nodes,
+            role_resolver=role_resolver)
+
         if affected_nodes:
             graph.reexecutable_tasks(events)
             serialized_cluster.extend(deployment_serializers.serialize(
                 graph, transaction.cluster, affected_nodes
             ))
-            nodes = nodes + affected_nodes
-        pre_deployment = stages.pre_deployment_serialize(
-            graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
-        post_deployment = stages.post_deployment_serialize(
-            graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
+
+        graph.filter_reexecutable_tasks(
+            pre_deployment, affected_nodes, events)
+        graph.filter_reexecutable_tasks(
+            post_deployment, affected_nodes, events)
 
         return {
             'deployment_info': serialized_cluster,

@@ -1976,3 +1976,249 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(mock_granular_deploy.call_count, 1)
         # Check we didn't serialize cluster in task_deploy
         self.assertEqual(mock_serialize.call_count, 0)
+
+
+class TestGranularDeployment(BaseIntegrationTest):
+
+    env_version = "liberty-8.0"
+
+    def setUp(self):
+        super(TestGranularDeployment, self).setUp()
+
+        self.cluster = self.env.create(
+            release_kwargs={
+                'version': self.env_version,
+                'operating_system': consts.RELEASE_OS.ubuntu
+            },
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
+                'status': 'operational'},
+            nodes_kwargs=[]
+        )
+        self.env.disable_task_deploy(self.cluster)
+
+    @mock_rpc(pass_mock=True)
+    @patch('objects.Cluster.get_deployment_tasks')
+    def test_granular_deployment(self, rpc_mock, tasks_mock):
+        """Complex test of granular deployment.
+
+        Run a set of tasks on operational cluster, which has
+        one deployed controlled and new node, added as compute.
+        In this case all tasks should be executed on the new node
+        and only tasks, which have 'reexecute_on' key should be
+        executed on old controller node.
+        """
+        tasks_mock.return_value = [
+            {
+                'id': 'deploy_start',
+                'requires': ['pre_deployment_end'],
+                'type': 'stage'
+            },
+            {
+                'id': 'deploy_end',
+                'requires': ['deploy_start'],
+                'type': 'stage'
+            },
+            {
+                'id': 'pre_deployment_start',
+                'type': 'stage'
+            },
+            {
+                'id': 'pre_deployment_end',
+                'requires': ['pre_deployment_start'],
+                'type': 'stage'
+            },
+            {
+                'id': 'post_deployment_start',
+                'requires': ['deploy_end'],
+                'type': 'stage'
+            },
+            {
+                'id': 'post_deployment_end',
+                'type': 'stage',
+                'requires': ['post_deployment_start']
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'primary-controller',
+                'parameters': {'strategy': {'type': 'one_by_one'}},
+                'required_for': ['deploy_end'],
+                'requires': ['deploy_start'],
+                'roles': ['primary-controller'],
+                'role': 'primary-controller',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'controller',
+                'parameters': {'strategy': {'amount': 6, 'type': 'parallel'}},
+                'required_for': ['deploy_end'],
+                'requires': ['primary-controller'],
+                'roles': ['controller'],
+                'role': 'controller',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': '2%',
+                'id': 'compute',
+                'parameters': {'strategy': {'type': 'parallel'}},
+                'required_for': ['deploy_end'],
+                'requires': ['controller'],
+                'roles': ['compute'],
+                'role': 'compute',
+                'type': 'group'
+            },
+            {
+                'id': 'pre_task1',
+                'parameters': {
+                    'timeout': 3600,
+                    'path': '/nodes.yaml'},
+                'type': 'upload_file',
+                'role': ['/.*/'],
+                'version': '2.0.0',
+                'requires': ['pre_deployment_start'],
+                'required_for': ['pre_deployment_end'],
+            },
+            {
+                'id': 'pre_task2',
+                'parameters': {
+                    'timeout': 3600,
+                    'path': '/nodes.yaml'},
+                'type': 'upload_file',
+                'role': ['/.*/'],
+                'version': '2.0.0',
+                'requires': ['pre_deployment_start'],
+                'required_for': ['pre_deployment_end'],
+                'reexecute_on': ['deploy_changes'],
+            },
+            {
+                'id': 'task1',
+                'parameters': {
+                    'puppet_manifest': '/tmp.txt',
+                    'puppet_modules': '/tmp',
+                    'timeout': 3600,
+                    'cwd': '/'},
+                'type': 'puppet',
+                'groups': ['controller', 'primary-controller', 'compute'],
+                'version': '2.0.0',
+                'requires': ['deploy_start'],
+                'required_for': ['deploy_end'],
+            },
+            {
+                'id': 'task2',
+                'parameters': {
+                    'puppet_manifest': '/tmp.txt',
+                    'puppet_modules': '/tmp',
+                    'timeout': 3600,
+                    'cwd': '/'},
+                'type': 'puppet',
+                'groups': ['controller', 'primary-controller', 'compute'],
+                'version': '2.0.0',
+                'requires': ['deploy_start'],
+                'required_for': ['deploy_end'],
+                'reexecute_on': ['deploy_changes'],
+            },
+            {
+                'id': 'post_task1',
+                'parameters': {
+                    'timeout': 3600,
+                    'path': '/nodes.yaml'},
+                'type': 'upload_file',
+                'role': ['/.*/'],
+                'version': '2.0.0',
+                'requires': ['post_deployment_start'],
+                'required_for': ['post_deployment_end'],
+            },
+            {
+                'id': 'post_task2',
+                'parameters': {
+                    'timeout': 3600,
+                    'path': '/nodes.yaml'},
+                'type': 'upload_file',
+                'role': ['/.*/'],
+                'version': '2.0.0',
+                'requires': ['post_deployment_start'],
+                'required_for': ['post_deployment_end'],
+                'reexecute_on': ['deploy_changes'],
+            },
+        ]
+
+        n1 = self.env.create_node(
+            cluster_id=self.cluster.id,
+            status='ready',
+            pending_addition=False,
+            roles=["controller"]
+        )
+
+        n2 = self.env.create_node(
+            cluster_id=self.cluster.id,
+            status='discover',
+            pending_addition=True,
+            pending_roles=["compute"]
+        )
+
+        self.emulate_nodes_provisioning([n2])
+
+        self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers,
+            expect_errors=True)
+
+        args = rpc_mock.call_args[0][1][0]['args']
+
+        tmpl = {
+            'parameters': {
+                'cwd': '/',
+                'puppet_manifest': '/tmp.txt',
+                'puppet_modules': '/tmp',
+                'retries': None,
+                'timeout': 3600
+            },
+            'priority': 100,
+            'type': 'puppet',
+        }
+        self.datadiff(
+            [x['tasks'] for x in args['deployment_info']],
+            [[dict(tmpl.items() + [('id', 'task1'), ('uids', [n2.uid])]),
+              dict(tmpl.items() + [('id', 'task2'), ('uids', [n2.uid])])],
+             [dict(tmpl.items() + [('id', 'task2'), ('uids', [n1.uid])])]],
+            compare_sorted=True,
+            ignore_keys='priority')
+
+        tmpl = {
+            'fail_on_error': True,
+            'parameters': {'cwd': '/', 'path': '/nodes.yaml', 'timeout': 3600},
+            'priority': 100,
+            'task_name': None,
+            'type': 'upload_file'
+        }
+
+        self.datadiff(
+            args['pre_deployment'],
+            [
+                dict(
+                    tmpl.items() +
+                    [('id', 'pre_task1'), ('uids', [n2.uid])]),
+                dict(
+                    tmpl.items() +
+                    [('id', 'pre_task2'), ('uids', [n1.uid, n2.uid])])
+            ],
+            compare_sorted=True,
+            ignore_keys='priority')
+
+        self.datadiff(
+            args['post_deployment'],
+            [
+                dict(
+                    tmpl.items() +
+                    [('id', 'post_task1'), ('uids', [n2.uid])]),
+                dict(
+                    tmpl.items() +
+                    [('id', 'post_task2'), ('uids', [n1.uid, n2.uid])])
+            ],
+            compare_sorted=True,
+            ignore_keys='priority')

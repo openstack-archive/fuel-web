@@ -345,8 +345,8 @@ class NailgunReceiver(object):
                     node['uid'],
                     node['deployment_graph_task_name'],
                     node['task_status'],
-                    node.get('summary'),
-                    node.get('custom'),
+                    node.get('summary', {}),
+                    node.get('custom', {})
                 )
         db().flush()
 

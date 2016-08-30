@@ -118,7 +118,7 @@ class TestPluginBase(base.BaseTestCase):
             plugin_name=self.plugin_adapter.path_name)
         self.assertEqual(expected, self.plugin_adapter.slaves_scripts_path)
 
-    @mock.patch('nailgun.plugins.adapters.glob')
+    @mock.patch('nailgun.plugins.adapters.adapter_base.glob')
     def test_repo_files(self, glob_mock):
         self.plugin_adapter.repo_files(self.cluster)
         expected_call = os.path.join(
@@ -128,7 +128,7 @@ class TestPluginBase(base.BaseTestCase):
             '*')
         glob_mock.glob.assert_called_once_with(expected_call)
 
-    @mock.patch('nailgun.plugins.adapters.urljoin')
+    @mock.patch('nailgun.plugins.adapters.adapter_base.urljoin')
     def test_repo_url(self, murljoin):
         self.plugin_adapter.repo_url(self.cluster)
         repo_base = settings.PLUGINS_REPO_URL.format(
@@ -174,7 +174,8 @@ class TestPluginBase(base.BaseTestCase):
         self.assertEqual(depl_task['parameters'].get('cwd'),
                          self.plugin_adapter.slaves_scripts_path)
 
-    @mock.patch('nailgun.plugins.adapters.nailgun.objects.DeploymentGraph')
+    @mock.patch('nailgun.plugins.adapters.adapter_base'
+                '.nailgun.objects.DeploymentGraph')
     def test_fault_tolerance_set_for_task_groups(self, deployment_graph_mock):
         deployment_graph_mock.get_for_model.return_value = True
         deployment_graph_mock.get_metadata.return_value = {}

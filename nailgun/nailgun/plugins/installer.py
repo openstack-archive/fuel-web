@@ -15,8 +15,7 @@ import os
 
 import yaml
 
-import mapping
-
+import adapters
 from nailgun import errors
 from nailgun.logger import logger
 
@@ -24,8 +23,6 @@ PLUGIN_ROOT_FILE = 'metadata.yaml'
 
 PLUGIN_PACKAGE_VERSION_FIELD = 'package_version'
 
-
-# self.plugin_path = os.path.join(settings.PLUGINS_PATH, self.path_name)
 
 def _get_package_version_from_path(plugin_path):
     config = os.path.join(plugin_path, PLUGIN_ROOT_FILE)
@@ -48,28 +45,23 @@ def sync(plugin_path):
     :param plugin_path: plugin folder path
     :type plugin_path: str|basestring
 
-    :return:
-    :rtype:
+    :return: plugin object
+    :rtype: models.Plugin
     """
 
     plugin_package_version = _get_package_version_from_path(plugin_path)
 
-    loader_class = mapping.get_loader_for_package_version(
+    adapter_class = adapters.get_adapter_for_package_version(
         plugin_package_version)
-    adapter_class = mapping.get_adapter_for_package_version(
-        plugin_package_version)
-
-    if not loader_class or adapter_class:
+    if not adapter_class:
         raise Exception('No such plugin package version: {}'.format(
             plugin_package_version))
-
-    loader = loader_class(plugin_path)
-    data, report = loader.load()
+    adapter = adapter_class(plugin_path)
+    data, report = adapter.load()
     if report.is_failed():
         raise Exception(report.render())
     else:
         pass
-    # adapter = adapter_class()
 
     plugin_object = None
     return plugin_object

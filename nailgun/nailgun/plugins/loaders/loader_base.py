@@ -18,7 +18,6 @@ import os
 
 import six
 
-from files_manager import FilesManager
 from nailgun import errors
 from nailgun import utils
 
@@ -35,11 +34,11 @@ class PluginLoaderBase(object):
     _path_suffix = "_path"
     _dont_resolve_path_keys = {'repository_path', 'deployment_scripts_path'}
 
-    def __init__(self, plugin_path=None):
-        self.files_manager = FilesManager()
-        self.plugin_path = plugin_path
-
     paths_to_fields = {}
+
+    def __init__(self, plugin_path=None):
+        self.files_manager = utils.FilesManager()
+        self.plugin_path = plugin_path
 
     def _get_absolute_path(self, path):
         """Get absolute path from the relative to the plugins folder.
@@ -127,21 +126,22 @@ class PluginLoaderBase(object):
         """Get plugin root data (usually, it's metadata.yaml).
 
         :return: data
-        :rtype: list|dict
+        :rtype: DictResultWithReport|ListResultWithReport
         """
         report = utils.ReportNode(u"Loading root metadata file:{}".format(
             self._root_metadata_path
         ))
         # todo(ikutukov): current loading schema and testing relies on case
         # when no metadata.yaml file is possible. So we are skipping all
-        # exeptions.
+        # exceptions.
+        data = {}
         try:
             data = self.files_manager.load(self._root_metadata_path)
+            data = self._recursive_process_paths(data, report)
         except Exception as exc:
             report.warning(exc)
-            return {}, report
-        data = self._recursive_process_paths(data, report)
-        return data, report
+        finally:
+            return report.mix_to_data(data)
 
     def load(self, plugin_path=None):
         """Loads data from the given plugin path and producing data tree.
@@ -155,8 +155,9 @@ class PluginLoaderBase(object):
         plugin_path = plugin_path or self.plugin_path
         report = utils.ReportNode(
             u"File structure validation: {}".format(plugin_path))
-        data, root_report = self._load_root_metadata_file()
-        report.add_nodes(root_report)
+        data = self._load_root_metadata_file()
+
+        report.add_nodes(data.report)
 
         # load files with fixed location
         for key, file_path in six.iteritems(self.paths_to_fields):
@@ -165,7 +166,7 @@ class PluginLoaderBase(object):
                 data[key] = self.files_manager.load(
                     self._get_absolute_path(file_path)
                 )
-            except errors.NoPluginFileFound as exc:
+            except errors.NoPluginFileFound as exc:  # not found files are OK
                 file_report.warning(exc)
             except Exception as exc:
                 file_report.error(exc)
@@ -174,4 +175,5 @@ class PluginLoaderBase(object):
 
         if report.is_failed():
             raise errors.ParseError(report.render())
-        return data, report
+
+        return report.mix_to_data(data)

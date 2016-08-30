@@ -38,58 +38,55 @@ class Plugin(NailgunObject):
 
     @classmethod
     def create(cls, data):
-        graphs = data.pop("graphs", {})
-        deployment_tasks = data.pop("deployment_tasks", [])
-
-        if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
-            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
-                {'tasks': deployment_tasks}
-        plugin_obj = super(Plugin, cls).create(data)
-
-        for graph_type, graph_data in six.iteritems(graphs):
-            DeploymentGraph.create_for_model(
-                graph_data, plugin_obj, graph_type)
-
-        plugin_adapter = plugins.wrap_plugin(plugin_obj)
-
-        # todo(ikutukov): this update is a smell from the current plugins
-        # todo:           installation schema. Remove it.
-        cls.update(plugin_obj, plugin_adapter.get_metadata())
-
+        mandatory_fields_data = {
+            'name': data.get('name'),
+            'title': data.get('title'),
+            'version': data.get('version'),
+            'package_version': data.get('package_version'),
+            'tasks': data.get('tasks', [])
+        }
+        plugin_obj = super(Plugin, cls).create(mandatory_fields_data)
+        # TODO(ikutukov): get rid of this
+        cls.update(plugin_obj, data)
         ClusterPlugin.add_compatible_clusters(plugin_obj)
 
         return plugin_obj
 
-    # todo(ikutukov): currently plugins update is vague operation so this
-    # graphs attachment on update is commented.
+    @classmethod
+    def update(cls, instance, data):
+        """Update existing plugin instance with specified parameters.
 
-    # @classmethod
-    # def update(cls, instance, data):
-    #     """Update existing plugin instance with specified parameters.
-    #
-    #     :param instance: object (model) instance
-    #     :param data: dictionary of key-value pairs as object fields
-    #     :returns: instance of an object (model)
-    #     """
-    #
-    #     graphs = data.pop("graphs", {})
-    #     deployment_tasks = data.pop("deployment_tasks", [])
-    #
-    #     if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
-    #         graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
-    #             {'tasks': deployment_tasks}
-    #
-    #     super(Plugin, cls).update(instance, data)
-    #
-    #     for graph_type, graph_data in six.iteritems(graphs):
-    #         g = DeploymentGraph.get_for_model(instance, graph_type)
-    #         if g:
-    #             DeploymentGraph.update(g, graph_data)
-    #         else:
-    #             DeploymentGraph.create_for_model(
-    #                 graph_data, instance, graph_type)
-    #
-    #     return instance
+        :param instance: object (model) instance
+        :param data: dictionary of key-value pairs as object fields
+        :returns: instance of an object (model)
+        """
+
+        graphs = data.pop("graphs", {})
+        deployment_tasks = data.pop("deployment_tasks", None)
+
+        default_graph_record = graphs.get(
+            consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE, None)
+        existing_default_graph = DeploymentGraph.get_for_model(
+            instance, consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE)
+
+        if (deployment_tasks is not None) and (not default_graph_record):
+            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+                {'tasks': deployment_tasks}
+        elif not existing_default_graph:
+            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+                {'tasks': []}
+
+        super(Plugin, cls).update(instance, data)
+
+        for graph_type, graph_data in six.iteritems(graphs):
+            g = DeploymentGraph.get_for_model(instance, graph_type)
+            if g:
+                DeploymentGraph.update(g, graph_data)
+            else:
+                DeploymentGraph.create_for_model(
+                    graph_data, instance, graph_type)
+
+        return instance
 
     @classmethod
     def get_by_name_version(cls, name, version):
@@ -318,7 +315,6 @@ class ClusterPlugin(NailgunObject):
 
         if plugin_ids:
             plugins = plugins.filter(cls.model.plugin_id.in_(plugin_ids))
-
         return plugins
 
     @classmethod

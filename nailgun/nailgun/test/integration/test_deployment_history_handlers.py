@@ -242,6 +242,33 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
 
     @mock_rpc()
     @mock.patch('objects.Cluster.get_deployment_tasks')
+    def test_history_task_with_empty_statuses(self, tasks_mock):
+        tasks_mock.return_value = self.test_tasks
+
+        cluster = self.env.create(**self.cluster_parameters)
+
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
+        deployment_task = next(
+            t for t in supertask.subtasks
+            if t.name == consts.TASK_NAMES.deployment
+        )
+
+        response = self.app.get(
+            reverse(
+                'DeploymentHistoryCollectionHandler',
+                kwargs={
+                    'transaction_id': deployment_task.id
+                }
+            ) + '?statuses=',
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(200, response.status_code)
+
+    @mock_rpc()
+    @mock.patch('objects.Cluster.get_deployment_tasks')
     def test_history_collection_handler_csv(self, tasks_mock):
         self.maxDiff = None
         tasks_mock.return_value = self.test_tasks

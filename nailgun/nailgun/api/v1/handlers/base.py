@@ -264,7 +264,8 @@ class BaseHandler(object):
         :returns: list of items
         :rtype: set of str or None
         """
-        if param_name in web.input():
+        if param_name in web.input() \
+                and getattr(web.input(), param_name) != '':
             return set(six.moves.map(
                 six.text_type.strip,
                 getattr(web.input(), param_name).split(delimiter))

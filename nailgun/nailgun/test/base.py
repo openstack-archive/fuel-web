@@ -527,7 +527,7 @@ class EnvironmentManager(object):
         resp = self.neutron_networks_put(cluster_id, netconfig)
         return resp
 
-    @mock.patch('nailgun.plugins.loaders.files_manager.FilesManager.load')
+    @mock.patch('nailgun.utils.files_manager.FilesManager.load')
     @mock.patch('nailgun.plugins.loaders.loader_base.os.path.isdir')
     def create_plugin(self, is_dir_m, files_manager_m, sample=None, api=False,
                       cluster=None, enabled=True, expect_errors=False,
@@ -537,16 +537,17 @@ class EnvironmentManager(object):
             plugin_data.update(**kwargs)
         else:
             plugin_data = self.get_default_plugin_metadata(**kwargs)
-        env_config = plugin_data.pop('attributes_metadata', None)
-        node_roles = plugin_data.pop('roles_metadata', None)
-        volumes = plugin_data.pop('volumes_metadata', None)
-        network_roles = plugin_data.pop('network_roles_metadata', None)
-        deployment_tasks = plugin_data.pop('deployment_tasks', None)
-        tasks = plugin_data.pop('tasks', None)
-        components = plugin_data.pop('components', None)
-        nic_config = plugin_data.pop('nic_config', None)
-        bond_config = plugin_data.pop('bond_config', None)
-        node_config = plugin_data.pop('node_config', None)
+
+        env_config = plugin_data.get('attributes_metadata', None)
+        node_roles = plugin_data.get('roles_metadata', None)
+        volumes = plugin_data.get('volumes_metadata', None)
+        network_roles = plugin_data.get('network_roles_metadata', None)
+        deployment_tasks = plugin_data.get('deployment_tasks', None)
+        tasks = plugin_data.get('tasks', None)
+        components = plugin_data.get('components', None)
+        nic_config = plugin_data.get('nic_config', None)
+        bond_config = plugin_data.get('bond_config', None)
+        node_config = plugin_data.get('node_config', None)
 
         mocked_metadata = {
             'metadata.*': plugin_data,

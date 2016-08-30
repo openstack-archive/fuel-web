@@ -37,6 +37,8 @@ from nailgun.logger import logger
 from nailgun.settings import settings
 
 from reports import ReportNode
+from files_manager import FilesManager
+
 
 def get_in(dictionary, *args):
     """This convenience function improves readability of the code like this:

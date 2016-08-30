@@ -1,4 +1,4 @@
-#    Copyright 2016 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,5 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from adapters import wrap_plugin
-from installer import sync
+from nailgun.plugins.adapters import PluginAdapterV3
+from nailgun.plugins import loaders
+
+
+class PluginAdapterV4(PluginAdapterV3):
+    """Plugin wrapper class for package version 4.0.0."""
+
+    loader_class = loaders.PluginLoaderV4

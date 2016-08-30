@@ -107,25 +107,33 @@ class TaskManager(object):
         if delete_obsolete is None:
             delete_obsolete = objects.Task.delete
 
+        all_tasks = objects.TaskCollection.all_not_deleted()
+
         if hasattr(self, 'cluster'):
             cluster = objects.Cluster.get_by_uid(
                 self.cluster.id, lock_for_update=True, fail_if_not_found=True
             )
-            cluster_tasks = objects.TaskCollection.get_cluster_tasks(
-                cluster.id, task_names
+            all_tasks = objects.TaskCollection.filter_by(
+                all_tasks, cluster_id=cluster.id
             )
-        else:
+        elif not task_names:
             # TODO(bgaifullin) there should not be tasks which is not linked
             # to cluster
-            cluster_tasks = objects.TaskCollection.all_not_deleted()
-            cluster_tasks = objects.TaskCollection.filter_by_list(
-                cluster_tasks, 'name', task_names
+            raise ValueError(
+                "Either cluster or task_names should be specified."
             )
+
+        if task_names:
+            all_tasks = objects.TaskCollection.filter_by_list(
+                all_tasks, 'name', task_names
+            )
+
+        all_tasks = objects.TaskCollection.order_by(all_tasks, 'id')
 
         in_progress_status = (
             consts.TASK_STATUSES.running, consts.TASK_STATUSES.pending
         )
-        for task in cluster_tasks:
+        for task in all_tasks:
             if task.status in in_progress_status:
                 raise errors.TaskAlreadyRunning()
             elif delete_obsolete:

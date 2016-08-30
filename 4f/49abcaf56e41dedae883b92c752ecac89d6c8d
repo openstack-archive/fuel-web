@@ -1,0 +1,9 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Ilya Kutukov <ikutukov@mirantis.com>
+Workflow+1: Bulat Gaifullin <bgaifullin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 30 Aug 2016 14:52:26 +0000
+Reviewed-on: https://review.openstack.org/360958
+Project: openstack/fuel-web
+Branch: refs/heads/master

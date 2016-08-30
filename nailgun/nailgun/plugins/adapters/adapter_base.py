@@ -1,4 +1,4 @@
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,18 +14,16 @@
 
 import abc
 import copy
-from distutils.version import StrictVersion
 import glob
 import os
 from urlparse import urljoin
 
 import six
 
-import loaders
 import nailgun
 from nailgun import consts
-from nailgun import errors
 from nailgun.logger import logger
+from nailgun.plugins import loaders
 from nailgun.settings import settings
 
 
@@ -55,7 +53,7 @@ class PluginAdapterBase(object):
 
     @abc.abstractmethod
     def path_name(self):
-        """A name which is used to create path to plugin scripts and repo"""
+        """A name which is used to create path to plugin scripts and repo."""
 
     def get_metadata(self):
         """Get plugin data tree.
@@ -63,19 +61,16 @@ class PluginAdapterBase(object):
         :return: All plugin metadata
         :rtype: dict
         """
-        data_tree, report = self.loader.load()
+        data, report = self.loader.load()
         if report.is_failed():
             logger.error(report.render())
             logger.error('Problem with loading plugin {0}'.format(
                 self.plugin_path))
-            return data_tree
-        for field in data_tree:
-            if field in self.attributes_processors:
-                data_tree[field] = \
-                    self.attributes_processors[field](data_tree.get(field))
+            return data
 
-        data_tree = {k: v for k, v in six.iteritems(data_tree) if v}
-        return data_tree
+        for field, processor in six.iteritems(self.attributes_processors):
+            data[field] = processor(data.get(field))
+        return data
 
     @property
     def plugin_release_versions(self):
@@ -154,7 +149,7 @@ class PluginAdapterBase(object):
         tasks = self.plugin.tasks
         slave_path = self.slaves_scripts_path
         for task in tasks:
-            task['roles'] = task.get('role')
+            task['roles'] = task.get('role', [])
 
             parameters = task.get('parameters')
             if parameters is not None:
@@ -296,228 +291,3 @@ class PluginAdapterBase(object):
         return '{0}{1}'.format(
             base_url,
             release_info['deployment_scripts_path'])
-
-
-class PluginAdapterV1(PluginAdapterBase):
-    """Plugins attributes class for package version 1.0.0"""
-
-    loader_class = loaders.PluginLoaderV1
-
-    @property
-    def attributes_processors(self):
-        ap = super(PluginAdapterV1, self).attributes_processors
-        ap.update({
-            'tasks': self._process_legacy_tasks
-        })
-        return ap
-
-    @staticmethod
-    def _process_legacy_tasks(tasks):
-        if tasks:
-            for task in tasks:
-                role = task['role']
-                if isinstance(role, list) and 'controller' in role:
-                    role.append('primary-controller')
-            return tasks
-
-    def get_tasks(self):
-        tasks = self.plugin.tasks
-        slave_path = self.slaves_scripts_path
-        for task in tasks:
-            task['roles'] = task.get('role')
-
-            role = task['role']
-            if isinstance(role, list) \
-                    and ('controller' in role) \
-                    and ('primary-controller' not in role):
-                role.append('primary-controller')
-
-            parameters = task.get('parameters')
-            if parameters is not None:
-                parameters.setdefault('cwd', slave_path)
-        return tasks
-
-    @property
-    def path_name(self):
-        """Returns a name and full version
-
-        e.g. if there is a plugin with name "plugin_name" and version
-        is "1.0.0", the method returns "plugin_name-1.0.0"
-        """
-        return self.full_name
-
-
-class PluginAdapterV2(PluginAdapterBase):
-    """Plugins attributes class for package version 2.0.0"""
-
-    loader_class = loaders.PluginLoaderV1
-
-    @property
-    def path_name(self):
-        """Returns a name and major version of the plugin
-
-        e.g. if there is a plugin with name "plugin_name" and version
-        is "1.0.0", the method returns "plugin_name-1.0".
-
-        It's different from previous version because in previous
-        version we did not have plugin updates, in 2.0.0 version
-        we should expect different plugin path.
-
-        See blueprint: https://blueprints.launchpad.net/fuel/+spec
-                              /plugins-security-fixes-delivery
-        """
-        return u'{0}-{1}'.format(self.plugin.name, self._major_version)
-
-    @property
-    def _major_version(self):
-        """Returns major version of plugin's version
-
-        e.g. if plugin has 1.2.3 version, the method returns 1.2
-        """
-        version_tuple = StrictVersion(self.plugin.version).version
-        major = '.'.join(map(str, version_tuple[:2]))
-
-        return major
-
-
-class PluginAdapterV3(PluginAdapterV2):
-    """Plugin wrapper class for package version 3.0.0"""
-
-    loader_class = loaders.PluginLoaderV3
-
-    def _process_deployment_tasks(self, deployment_tasks):
-        dg = nailgun.objects.DeploymentGraph.get_for_model(
-            self.plugin, graph_type=consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE)
-        if dg:
-            nailgun.objects.DeploymentGraph.update(
-                dg, {'tasks': deployment_tasks})
-        else:
-            nailgun.objects.DeploymentGraph.create_for_model(
-                {'tasks': deployment_tasks}, self.plugin)
-        return deployment_tasks
-
-    @property
-    def attributes_processors(self):
-        ap = super(PluginAdapterV3, self).attributes_processors
-        ap.update({
-            'deployment_tasks': self._process_deployment_tasks
-        })
-        return ap
-
-
-class PluginAdapterV4(PluginAdapterV3):
-    """Plugin wrapper class for package version 4.0.0"""
-
-    loader_class = loaders.PluginLoaderV4
-
-
-class PluginAdapterV5(PluginAdapterV4):
-    """Plugin wrapper class for package version 5.0.0"""
-
-    loader_class = loaders.PluginLoaderV5
-
-    @property
-    def attributes_processors(self):
-        ap = super(PluginAdapterV5, self).attributes_processors
-        ap.update({
-            'releases': self._process_releases,
-            'graphs': self._make_graphs_dict_by_type
-        })
-        return ap
-
-    def _make_graphs_dict_by_type(self, graphs_list):
-        graphs_to_create = {}
-        for graph in graphs_list:
-            self.graphs_to_create[graph.pop('type')] = graph
-        return graphs_to_create
-
-    def _create_release_from_configuration(self, configuration):
-        """Create templated release and graphs for given configuration.
-
-        :param configuration:
-        :return:
-        """
-        # deployment tasks not supposed for the release description
-        # but we fix this developer mistake automatically
-
-        # apply base template
-        base_release = configuration.pop('base_release', None)
-        if base_release:
-            base_release.update(configuration)
-            configuration = base_release
-
-        # process graphs
-        graphs_by_type = {}
-        graphs_list = configuration.pop('graphs', None)
-        for graph in graphs_list:
-            graphs_by_type[graph['type']] = graph['graph']
-        configuration['graphs'] = graphs_by_type
-        nailgun.objects.Release.create(configuration)
-
-    def _process_releases(self, releases_records):
-        """Split new release records from old-style release-deps records.
-
-        :param releases_records: list of plugins and releases data
-        :type releases_records: list
-
-        :return: configurations that are extending existing
-        :rtype: list
-        """
-        extend_releases = []
-        for release in releases_records:
-            is_basic_release = release.get('is_release', False)
-            if is_basic_release:
-                self._create_release_from_configuration(release)
-            else:
-                extend_releases.append(release)
-
-        return extend_releases
-
-
-__plugins_mapping = {
-    '1.0.': PluginAdapterV1,
-    '2.0.': PluginAdapterV2,
-    '3.0.': PluginAdapterV3,
-    '4.0.': PluginAdapterV4,
-    '5.0.': PluginAdapterV5
-}
-
-
-def get_supported_versions():
-    return list(__plugins_mapping)
-
-
-def get_adapter_for_package_version(plugin_version):
-    """Get plugin adapter class for plugin version.
-
-    :param plugin_version: plugin version string
-    :type plugin_version: basestring|str
-
-    :return: plugin loader class
-    :rtype: loaders.PluginLoader|None
-    """
-    for plugin_version_head in __plugins_mapping:
-        if plugin_version.startswith(plugin_version_head):
-            return __plugins_mapping[plugin_version_head]
-
-
-def wrap_plugin(plugin):
-    """Creates plugin object with specific class version
-
-    :param plugin: plugin db object
-    :returns: cluster attribute object
-    """
-    package_version = plugin.package_version
-
-    attr_class = get_adapter_for_package_version(package_version)
-
-    if not attr_class:
-        supported_versions = ', '.join(get_supported_versions())
-
-        raise errors.PackageVersionIsNotCompatible(
-            'Plugin id={0} package_version={1} '
-            'is not supported by Nailgun, currently '
-            'supported versions {2}'.format(
-                plugin.id, package_version, supported_versions))
-
-    return attr_class(plugin)

@@ -84,15 +84,20 @@ class Release(NailgunObject):
         data.pop("roles", None)
 
         graphs = data.pop("graphs", {})
-        deployment_tasks = data.pop("deployment_tasks", [])
+        deployment_tasks = data.pop("deployment_tasks", None)
 
+        default_graph_record = graphs.get(
+            consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE, None)
         existing_default_graph = DeploymentGraph.get_for_model(
             instance, consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE)
 
-        if (existing_default_graph and len(deployment_tasks)) \
-                or not existing_default_graph:
+        if (deployment_tasks is not None) and (not default_graph_record):
             graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
                 {'tasks': deployment_tasks}
+        elif not existing_default_graph:
+            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+                {'tasks': []}
+
         release_obj = super(Release, cls).update(instance, data)
 
         for graph_type, graph_data in six.iteritems(graphs):

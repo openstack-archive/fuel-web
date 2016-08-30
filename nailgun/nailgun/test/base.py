@@ -527,7 +527,7 @@ class EnvironmentManager(object):
         resp = self.neutron_networks_put(cluster_id, netconfig)
         return resp
 
-    @mock.patch('nailgun.plugins.loaders.files_manager.FilesManager.load')
+    @mock.patch('nailgun.utils.files_manager.FilesManager.load')
     @mock.patch('nailgun.plugins.loaders.loader_base.os.path.isdir')
     def create_plugin(self, is_dir_m, files_manager_m, sample=None, api=False,
                       cluster=None, enabled=True, expect_errors=False,

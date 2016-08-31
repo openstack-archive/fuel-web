@@ -263,7 +263,8 @@ class NailgunReceiver(object):
 
         task = objects.Task.get_by_uuid(
             task_uuid,
-            fail_if_not_found=True
+            fail_if_not_found=True,
+            lock_for_update=True
         )
 
         # lock cluster
@@ -295,7 +296,6 @@ class NailgunReceiver(object):
         else:
             db_nodes = []
 
-        task = objects.Task.get_by_uuid(task_uuid)
         # Dry run deployments should not actually lead to update of
         # nodes' statuses
         if task.name != consts.TASK_NAMES.dry_run_deployment and \

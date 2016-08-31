@@ -83,7 +83,7 @@ class TestTaskDeploy80(BaseIntegrationTest):
         self.assertEqual("task_deploy", message["method"])
         self.assertItemsEqual(
             ["task_uuid", "deployment_info",
-             "tasks_directory", "tasks_graph"],
+             "tasks_directory", "tasks_graph", "debug"],
             message["args"]
         )
 
@@ -110,7 +110,7 @@ class TestTaskDeploy80(BaseIntegrationTest):
         self.assertEqual("granular_deploy", message["method"])
         self.assertItemsEqual(
             ["task_uuid", "deployment_info",
-             "pre_deployment", "post_deployment"],
+             "pre_deployment", "post_deployment", "debug"],
             message["args"]
         )
         ensure_allowed.assert_called_once_with(mock.ANY)
@@ -121,7 +121,7 @@ class TestTaskDeploy80(BaseIntegrationTest):
         self.assertEqual("granular_deploy", message["method"])
         self.assertItemsEqual(
             ["task_uuid", "deployment_info",
-             "pre_deployment", "post_deployment"],
+             "pre_deployment", "post_deployment", "debug"],
             message["args"]
         )
 

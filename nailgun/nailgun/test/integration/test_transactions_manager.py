@@ -105,6 +105,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False,
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -165,6 +166,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -195,6 +197,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -255,6 +258,8 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
+
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -297,6 +302,8 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
+
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -348,6 +355,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -386,6 +394,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': True,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -426,6 +435,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': True,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -491,6 +501,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -545,6 +556,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',

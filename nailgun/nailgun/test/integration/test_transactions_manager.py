@@ -105,6 +105,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False,
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -165,6 +166,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -195,6 +197,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -255,6 +258,8 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
+
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -297,6 +302,8 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
+
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -348,6 +355,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -386,6 +394,48 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': True,
                     'noop_run': False,
+                    'debug': False
+                },
+                'respond_to': 'transaction_resp',
+                'method': 'task_deploy',
+                'api_version': '1'
+            }])
+
+        self._success(task.subtasks[0].uuid)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(['compute'], node.pending_roles)
+        self.assertEqual(consts.CLUSTER_STATUSES.new, self.cluster.status)
+
+    @mock.patch('nailgun.transactions.manager.rpc')
+    def test_execute_noop_run(self, rpc_mock):
+        node = self.cluster.nodes[0]
+        node.pending_roles = ['compute']
+        self.cluster.status = consts.CLUSTER_STATUSES.new
+
+        task = self.manager.execute(
+            graphs=[{"type": "test_graph"}], noop_run=True)
+
+        rpc_mock.cast.assert_called_once_with(
+            'naily',
+            [{
+                'args': {
+                    'tasks_metadata': self.expected_metadata,
+                    'task_uuid': task.subtasks[0].uuid,
+                    'tasks_graph': {
+                        None: [],
+                        self.cluster.nodes[0].uid: [
+                            {
+                                'id': 'test_task',
+                                'type': 'puppet',
+                                'fail_on_error': True,
+                                'parameters': {'cwd': '/'}
+                            },
+                        ]
+                    },
+                    'tasks_directory': {},
+                    'dry_run': False,
+                    'noop_run': True,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -451,6 +501,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',
@@ -505,6 +556,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                     'tasks_directory': {},
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',

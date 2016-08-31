@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 
-#    Copyright 2013 Mirantis, Inc.
+# Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -16,16 +16,17 @@
 
 from .base import NailgunException
 
-from .api import *
-from .deployment import *
-from .disk import *
-from .extension import *
-from .files import *
-from .mongodb import *
-from .network import *
-from .network_template import *
-from .node import *
-from .parses import *
-from .plugins import *
-from .rpc import *
-from .validation import *
+class InvalidFileFormat(NailgunException):
+    message = "Invalid file format: {}, supported formats are:"
+
+    def __init__(self, path, supported_formats, *args, **kwargs):
+        super(InvalidFileFormat, self).__init__(*args, **kwargs)
+        self.message = self.message.format(path, supported_formats.join(', '))
+
+
+class CantReadFile(NailgunException):
+    message = "Can't read file: {}"
+
+    def __init__(self, path, *args, **kwargs):
+        super(CantReadFile, self).__init__(*args, **kwargs)
+        self.message = self.message.format(path)

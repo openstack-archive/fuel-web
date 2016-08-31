@@ -17,8 +17,8 @@
 from .base import NailgunException
 
 
-class PluginException(NailgunException):
-    """Base plugn exception"""
+class PlugnException(NailgunException):
+    """Base plugin exception"""
 
 
 class PackageVersionIsNotCompatible(PluginException):

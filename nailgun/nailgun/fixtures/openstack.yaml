@@ -1007,6 +1007,13 @@
             description: "Debug puppet logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
+          cadf_audit:
+            value: true
+            label: "Enable CADF audit"
+            group: "logging"
+            description: "CADF notifications, audit, bla-bla-bla"
+            weight: 25
+            type: "checkbox"
           nova_quota:
             value: false
             label: "Nova quotas"

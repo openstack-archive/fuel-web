@@ -15,6 +15,7 @@
 #    under the License.
 
 import copy
+from datetime import datetime
 from distutils.version import StrictVersion
 import six
 
@@ -72,7 +73,10 @@ class TaskManager(object):
             self._finish_task(task, al, consts.TASK_STATUSES.error, str(exc))
 
     def _finish_task(self, task, log_item, status, message):
-        data = {'status': status, 'progress': 100, 'message': message}
+        data = {'status': status,
+                'progress': 100,
+                'message': message,
+                'time_end': datetime.utcnow()}
         # update task entity with given data
         objects.Task.update(task, data)
         # NOTE(romcheg): Flushing the data is required to unlock

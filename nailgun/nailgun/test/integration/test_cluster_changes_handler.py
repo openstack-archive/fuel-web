@@ -240,6 +240,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
         deployment_msg['args']['tasks_directory'] = {}
         deployment_msg['args']['tasks_graph'] = {}
+        deployment_msg['args']['debug'] = True
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -387,7 +388,8 @@ class TestHandlers(BaseIntegrationTest):
                          'vms_conf',
                          'storage',
                          'tasks_directory',
-                         'tasks_graph'])
+                         'tasks_graph',
+                         'debug'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -703,6 +705,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
         deployment_msg['args']['pre_deployment'] = []
         deployment_msg['args']['post_deployment'] = []
+        deployment_msg['args']['debug'] = True
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -848,7 +851,8 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks',
                          'priority',
                          'workloads_collector',
-                         'storage'])
+                         'storage',
+                         'debug'])
 
     def check_pg_count(self, deployment_info):
         pools = ['volumes', 'compute', 'backups', '.rgw',
@@ -1207,6 +1211,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
         deployment_msg['args']['pre_deployment'] = []
         deployment_msg['args']['post_deployment'] = []
+        deployment_msg['args']['debug'] = True
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -1353,7 +1358,8 @@ class TestHandlers(BaseIntegrationTest):
                          'priority',
                          'workloads_collector',
                          'vms_conf',
-                         'storage'])
+                         'storage',
+                         'debug'])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

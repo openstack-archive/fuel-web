@@ -80,9 +80,18 @@ class TestTaskManagers(BaseIntegrationTest):
         # deployment
         self.assertEqual(len(supertask.subtasks), 3)
         # provisioning task has less weight then deployment
-        provision_task = filter(
-            lambda t: t.name == TASK_NAMES.provision, supertask.subtasks)[0]
+        provision_task = next(
+            t for t in supertask.subtasks
+            if t.name == consts.TASK_NAMES.provision
+        )
         self.assertEqual(provision_task.weight, 0.4)
+        deployment_task = next(
+            t for t in supertask.subtasks
+            if t.name == consts.TASK_NAMES.deployment
+        )
+        self.assertEqual(
+            consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE, deployment_task.graph_type
+        )
 
         cluster_name = cluster['name']
         self.assertIn(

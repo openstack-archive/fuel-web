@@ -248,6 +248,7 @@ class DeploymentTask(BaseDeploymentTask):
         deployment_tasks = objects.Cluster.get_deployment_tasks(
             task.cluster, graph_type
         )
+        task.graph_type = graph_type or consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         objects.Transaction.attach_tasks_snapshot(
             task,
             deployment_tasks

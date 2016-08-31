@@ -48,11 +48,8 @@ class PluginAdapterBase(object):
     def attributes_processors(self):
         return {
             'attributes_metadata':
-                lambda data:
-                    (data.get('attributes', None) or {})
-                    if data else data,
-            'tasks':
-                lambda data: data or []
+                lambda data: (data or {}).get('attributes', {}),
+            'tasks': lambda data: data or []
         }
 
     @abc.abstractmethod
@@ -66,17 +63,24 @@ class PluginAdapterBase(object):
         :rtype: dict
         """
         data_tree, report = self.loader.load()
+
         if report.is_failed():
             logger.error(report.render())
             logger.error('Problem with loading plugin {0}'.format(
                 self.plugin_path))
             return data_tree
+
         for field in data_tree:
             if field in self.attributes_processors:
                 data_tree[field] = \
                     self.attributes_processors[field](data_tree.get(field))
 
-        data_tree = {k: v for k, v in six.iteritems(data_tree) if v}
+        data_tree = {
+            k: v
+            for k, v in six.iteritems(data_tree)
+            if v is not None
+        }
+
         return data_tree
 
     @property
@@ -321,6 +325,7 @@ class PluginAdapterV1(PluginAdapterBase):
                 if isinstance(role, list) and 'controller' in role:
                     role.append('primary-controller')
             return tasks
+        return []
 
     def get_tasks(self):
         tasks = self.plugin.tasks

@@ -49,8 +49,14 @@ class PluginAdapterBase(object):
         return {
             'attributes_metadata':
                 lambda data: (data or {}).get('attributes', {}),
-            'tasks':
-                lambda data: data or []
+            'volumes_metadata': lambda data: data or {},
+            'roles_metadata': lambda data: data or {},
+            'network_roles_metadata': lambda data: data or [],
+            'nic_attributes_metadata': lambda data: data or {},
+            'bond_attributes_metadata': lambda data: data or {},
+            'node_attributes_metadata': lambda data: data or {},
+            'components_metadata': lambda data: data or [],
+            'tasks': lambda data: data or []
         }
 
     @abc.abstractmethod
@@ -74,7 +80,6 @@ class PluginAdapterBase(object):
                 data_tree[field] = \
                     self.attributes_processors[field](data_tree.get(field))
 
-        data_tree = {k: v for k, v in six.iteritems(data_tree) if v}
         return data_tree
 
     @property
@@ -319,6 +324,8 @@ class PluginAdapterV1(PluginAdapterBase):
                 if isinstance(role, list) and 'controller' in role:
                     role.append('primary-controller')
             return tasks
+        else:
+            return []
 
     def get_tasks(self):
         tasks = self.plugin.tasks

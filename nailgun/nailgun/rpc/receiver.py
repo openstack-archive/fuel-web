@@ -266,6 +266,8 @@ class NailgunReceiver(object):
             fail_if_not_found=True
         )
 
+        objects.Task.set_time_end(task, status)
+
         # lock cluster
         objects.Cluster.get_by_uid(
             task.cluster_id,
@@ -1368,6 +1370,7 @@ class NailgunReceiver(object):
         try:
             task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
                                             lock_for_update=True)
+            objects.Task.set_time_start(task)
             if task.status == consts.TASK_STATUSES.pending:
                 objects.Task.update(
                     task, {'status': consts.TASK_STATUSES.running})

@@ -20,6 +20,7 @@ from .api import *
 from .deployment import *
 from .disk import *
 from .extension import *
+from .files import *
 from .mongodb import *
 from .network import *
 from .network_template import *

@@ -1064,6 +1064,16 @@
             description: "Debug puppet logging mode provides more information, but requires more disk space."
             weight: 20
             type: "checkbox"
+          cadf_event:
+            value: false
+            label: "CADF notifications"
+            group: "logging"
+            description: "CADF provides auditing capabilities for compliance with security, operational and business processes."
+            restrictions:
+              - condition: "settings:additional_components.ceilometer.value == false"
+                message: "Ceilometer should be enabled in the environment settings."
+            weight: 25
+            type: "checkbox"
           nova_quota:
             value: false
             label: "Nova quotas"

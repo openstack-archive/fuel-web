@@ -31,8 +31,10 @@ class TestMakeAstuteMessage(BaseUnitTest):
     def test_make_astute_message(self, lcm_mock, obj_mock):
         resolver = mock.MagicMock()
         context = mock.MagicMock()
-        tx = mock.MagicMock(dry_run=False, noop_run=False,
-                            cache={'dry_run': False, 'noop_run': False})
+        tx = mock.MagicMock(
+            dry_run=False,
+            cache={'dry_run': False, 'noop_run': False, 'debug': False}
+        )
         graph = {
             'tasks': mock.MagicMock(),
             'on_success': {'node_attributes': {}},
@@ -63,6 +65,7 @@ class TestMakeAstuteMessage(BaseUnitTest):
                     'tasks_metadata': tasks_metadata,
                     'dry_run': False,
                     'noop_run': False,
+                    'debug': False
                 }
             },
             result

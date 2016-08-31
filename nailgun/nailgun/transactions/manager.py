@@ -74,6 +74,7 @@ def make_astute_message(transaction, context, graph, node_resolver):
             'tasks_metadata': metadata,
             'dry_run': transaction.cache.get('dry_run'),
             'noop_run': transaction.cache.get('noop_run'),
+            'debug': transaction.cache.get('debug'),
         }
     }
 
@@ -123,7 +124,8 @@ class TransactionsManager(object):
     def __init__(self, cluster_id):
         self.cluster_id = cluster_id
 
-    def execute(self, graphs, dry_run=False, noop_run=False, force=False):
+    def execute(self, graphs, dry_run=False, noop_run=False, force=False,
+                debug=False):
         """Start a new transaction with a given parameters.
 
         Under the hood starting a new transaction means serialize a lot of
@@ -135,6 +137,7 @@ class TransactionsManager(object):
         :param dry_run: run a new transaction in dry run mode
         :param noop_run: run a new transaction in noop run mode
         :param force: re-evaluate tasks's conditions as it's a first run
+        :param debug: enable debug mode for tasks executor
         """
         logger.debug(
             'Start new transaction: '
@@ -180,6 +183,7 @@ class TransactionsManager(object):
             cache['force'] = force
             cache['noop_run'] = noop_run
             cache['dry_run'] = dry_run
+            cache['debug'] = debug
 
             sub_transaction = transaction.create_subtask(
                 self.task_name,

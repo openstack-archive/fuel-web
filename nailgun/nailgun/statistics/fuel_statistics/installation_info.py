@@ -58,6 +58,8 @@ class InstallationInfo(object):
                       'security_groups', None),
         WhiteListRule(('corosync', 'verified', 'value'),
                       'corosync_verified', None),
+        WhiteListRule(('common', 'cadf_event', 'value'),
+                      'cadf_event', None),
 
         WhiteListRule(('public_network_assignment', 'assign_to_all_nodes',
                        'value'), 'assign_public_to_all_nodes', None),

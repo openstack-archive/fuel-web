@@ -74,7 +74,6 @@ class PluginAdapterBase(object):
                 data_tree[field] = \
                     self.attributes_processors[field](data_tree.get(field))
 
-        data_tree = {k: v for k, v in six.iteritems(data_tree) if v}
         return data_tree
 
     @property
@@ -319,6 +318,8 @@ class PluginAdapterV1(PluginAdapterBase):
                 if isinstance(role, list) and 'controller' in role:
                     role.append('primary-controller')
             return tasks
+        else:
+            return []
 
     def get_tasks(self):
         tasks = self.plugin.tasks

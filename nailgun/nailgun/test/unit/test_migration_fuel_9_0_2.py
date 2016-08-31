@@ -65,7 +65,8 @@ def prepare():
                     'config': {}
                 }
             }),
-            'volumes_metadata': jsonutils.dumps({})
+            'volumes_metadata': jsonutils.dumps({}),
+            'attributes_metadata': jsonutils.dumps({})
         }])
 
     db.execute(
@@ -227,3 +228,14 @@ class TestDeploymentHistoryMigration(base.BaseAlembicMigrationTest):
         result = db.execute(sa.select([
             self.meta.tables['deployment_history']])).first()
         self.assertIn('summary', result)
+
+
+class TestReleasesUpdateFromFixture(base.BaseAlembicMigrationTest):
+
+    def test_releases_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        attrs = jsonutils.loads(result['attributes_metadata'])
+        self.assertIn('editable', attrs)
+        self.assertIn('storage', attrs['editable'])
+        self.assertIn('auth_s3_keystone_ceph', attrs['editable']['storage'])

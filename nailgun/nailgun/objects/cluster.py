@@ -1127,6 +1127,9 @@ class Cluster(NailgunObject):
         :return: deployment graph which includes metadata and tasks
         :rtype: dict
         """
+        if graph_type is None:
+            graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
+
         release_deployment_graph = cls.get_release_deployment_graph(
             instance, graph_type=graph_type)
 

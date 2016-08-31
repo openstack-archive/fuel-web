@@ -248,6 +248,7 @@ class DeploymentTask(BaseDeploymentTask):
         deployment_tasks = objects.Cluster.get_deployment_tasks(
             task.cluster, graph_type
         )
+        task.graph_type = graph_type or consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
         objects.Transaction.attach_tasks_snapshot(
             task,
             deployment_tasks
@@ -525,11 +526,13 @@ class ClusterTransaction(DeploymentTask):
 
         if objects.Cluster.is_propagate_task_deploy_enabled(cluster):
             logger.info("The legacy tasks adaptation is used.")
-            tasks = adapt_legacy_tasks(
-                tasks,
-                objects.Cluster.get_legacy_plugin_tasks(cluster),
-                role_resolver,
-            )
+            if transaction.graph_type == consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE:
+                plugin_tasks = objects.Cluster.get_legacy_plugin_tasks(
+                    cluster
+                )
+            else:
+                plugin_tasks = None
+            tasks = adapt_legacy_tasks(tasks, plugin_tasks, role_resolver)
 
         directory, graph, metadata = lcm.TransactionSerializer.serialize(
             context,

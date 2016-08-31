@@ -57,9 +57,11 @@ def upgrade():
     upgrade_orchestrator_task_types()
     upgrade_node_error_type()
     upgrade_deployment_history_summary()
+    upgrade_add_task_start_end_time()
 
 
 def downgrade():
+    downgrade_add_task_start_end_time()
     downgrade_deployment_history_summary()
     downgrade_node_error_type()
     downgrade_orchestrator_task_types()
@@ -247,3 +249,28 @@ def downgrade_node_error_type():
 
 def downgrade_deployment_history_summary():
     op.drop_column('deployment_history', 'summary')
+
+
+def upgrade_add_task_start_end_time():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'time_start',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'time_end',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+
+def downgrade_add_task_start_end_time():
+    op.drop_column('tasks', 'time_start')
+    op.drop_column('tasks', 'time_end')

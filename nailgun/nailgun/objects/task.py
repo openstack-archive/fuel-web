@@ -327,6 +327,15 @@ class Task(NailgunObject):
             .update({'deleted_at': datetime.utcnow()},
                     synchronize_session='fetch')
 
+    @classmethod
+    def set_time_start(cls, task):
+        task.time_start = datetime.utcnow()
+
+    @classmethod
+    def set_time_end(cls, task, new_status):
+        if new_status != consts.TASK_STATUSES.running:
+            task.time_end = datetime.utcnow()
+
 
 class TaskCollection(NailgunCollection):
 

@@ -27,5 +27,7 @@ class TransactionSerializer(BasicSerializer):
         "result",
         "message",
         "status",
-        "progress"
+        "progress",
+        "dry_run",
+        "graph_type",
     )

@@ -235,6 +235,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
         deployment_msg['args']['tasks_directory'] = {}
         deployment_msg['args']['tasks_graph'] = {}
+        deployment_msg['args']['debug'] = True
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -384,7 +385,8 @@ class TestHandlers(BaseIntegrationTest):
                          'tasks_directory',
                          'tasks_graph',
                          'storage',
-                         'glance'])
+                         'glance',
+                         'debug'])
 
     @mock_rpc(pass_mock=True)
     def test_neutron_deploy_cast_with_right_args_for_5_1_1(self, mocked_rpc):
@@ -701,6 +703,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
         deployment_msg['args']['pre_deployment'] = []
         deployment_msg['args']['post_deployment'] = []
+        deployment_msg['args']['debug'] = True
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -847,7 +850,8 @@ class TestHandlers(BaseIntegrationTest):
                          'priority',
                          'workloads_collector',
                          'storage',
-                         'glance'])
+                         'glance',
+                         'debug'])
 
     def check_pg_count(self, deployment_info):
         pools = ['volumes', 'compute', 'backups', '.rgw',
@@ -1207,6 +1211,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
         deployment_msg['args']['pre_deployment'] = []
         deployment_msg['args']['post_deployment'] = []
+        deployment_msg['args']['debug'] = True
 
         provision_nodes = []
         admin_net = objects.NetworkGroup.get_admin_network_group()
@@ -1354,7 +1359,8 @@ class TestHandlers(BaseIntegrationTest):
                          'workloads_collector',
                          'vms_conf',
                          'storage',
-                         'glance'])
+                         'glance',
+                         'debug'])
 
     @mock_rpc(pass_mock=True)
     def test_deploy_and_remove_correct_nodes_and_statuses(self, mocked_rpc):

@@ -100,6 +100,9 @@ GRAPH_EXECUTE_PARAMS_SCHEMA = {
         },
         "force": {
             "type": "boolean"
+        },
+        "debug": {
+            "type": "boolean"
         }
     }
 }

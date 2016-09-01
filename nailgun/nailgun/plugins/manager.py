@@ -37,7 +37,8 @@ class PluginManager(object):
         min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
         for task in plugin.get_deployment_tasks():
             task_version = StrictVersion(task.get('version', '0.0.0'))
-            if task_version < min_task_version:
+            if (task.get('type') not in consts.INTERNAL_TASKS and
+                task_version < min_task_version):
                 return True
         return False
 

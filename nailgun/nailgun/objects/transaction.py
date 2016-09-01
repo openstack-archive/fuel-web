@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -93,6 +95,26 @@ class Transaction(NailgunObject):
     def get_tasks_snapshot(cls, instance):
         if instance is not None:
             return instance.tasks_snapshot
+
+    @classmethod
+    def on_start(cls, instance):
+        cls.update(instance, {
+            'time_start': datetime.utcnow(),
+            'status': consts.TASK_STATUSES.running
+        })
+
+    @classmethod
+    def on_finish(cls, instance, status, message=None):
+        data = {
+            'progress': 100,
+            'status': status,
+            'time_end': datetime.utcnow(),
+        }
+        if message is not None:
+            data['message'] = message
+
+        # set time start the same time of there is no time start
+        cls.update(instance, data)
 
 
 class TransactionCollection(NailgunCollection):

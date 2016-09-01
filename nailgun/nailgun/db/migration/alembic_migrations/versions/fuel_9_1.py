@@ -59,9 +59,11 @@ def upgrade():
     upgrade_deployment_graphs_attributes()
     upgrade_deployment_history_summary()
     upgrade_node_deployment_info()
+    upgrade_add_task_start_end_time()
 
 
 def downgrade():
+    downgrade_add_task_start_end_time()
     downgrade_node_deployment_info()
     downgrade_deployment_history_summary()
     downgrade_deployment_graphs_attributes()
@@ -443,3 +445,28 @@ def upgrade_node_deployment_info():
 
 def downgrade_node_deployment_info():
     op.drop_table('node_deployment_info')
+
+
+def upgrade_add_task_start_end_time():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'time_start',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'time_end',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+
+def downgrade_add_task_start_end_time():
+    op.drop_column('tasks', 'time_start')
+    op.drop_column('tasks', 'time_end')

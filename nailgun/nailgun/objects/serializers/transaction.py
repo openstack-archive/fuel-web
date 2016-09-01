@@ -30,4 +30,6 @@ class TransactionSerializer(BasicSerializer):
         "progress",
         "dry_run",
         "graph_type",
+        "time_start",
+        "time_end"
     )

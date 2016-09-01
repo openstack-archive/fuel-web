@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
+
 from mock import ANY
 from mock import patch
 
@@ -95,6 +97,26 @@ class TestNailgunReceiver(base.BaseTestCase):
             task_uuid=None,
             node_id=None
         )
+
+    def test_deploy_resp_time_end(self):
+        task_resp = {
+            "status": "error",
+            "task_uuid": self.task.uuid,
+            "error": "Method granular_deploy.\n\n Something Something"}
+        t1 = datetime.utcnow()
+        NailgunReceiver.deploy_resp(**task_resp)
+        t2 = datetime.utcnow()
+        self.assertTrue(t1 < self.task.time_end)
+        self.assertTrue(self.task.time_end < t2)
+
+        task_resp = {
+            "status": "ready",
+            "task_uuid": self.task.uuid}
+        t1 = datetime.utcnow()
+        NailgunReceiver.deploy_resp(**task_resp)
+        t2 = datetime.utcnow()
+        self.assertTrue(t1 < self.task.time_end)
+        self.assertTrue(self.task.time_end < t2)
 
     @patch('nailgun.objects.Task.update_verify_networks')
     def test_check_repositories_resp_success(self, update_verify_networks):
@@ -181,8 +203,12 @@ class TestNailgunReceiver(base.BaseTestCase):
         resp = {'task_uuid': self.task.uuid}
         self.task.status = consts.TASK_STATUSES.pending
         self.db.flush()
+        t1 = datetime.utcnow()
         NailgunReceiver.task_in_orchestrator(**resp)
+        t2 = datetime.utcnow()
         self.assertEqual(consts.TASK_STATUSES.running, self.task.status)
+        self.assertTrue(t1 < self.task.time_start)
+        self.assertTrue(self.task.time_start < t2)
 
     def test_task_in_orchestrator_status_not_changed(self):
         resp = {'task_uuid': self.task.uuid}

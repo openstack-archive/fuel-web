@@ -118,18 +118,6 @@ class TestProvisioningSerializer(BaseIntegrationTest):
         self.serialized_cluster = ps.serialize(
             self.cluster_db, self.cluster_db.nodes)
 
-    def test_cloud_init_templates_serialization(self):
-        release = self.env.create_release(api=False, version='2014.2-6.1.1')
-        cluster = self.env.create_cluster(api=False, release_id=release.id)
-        serializer = ps.get_serializer_for_cluster(cluster)
-        self.assertEqual(
-            serializer.serialize_cloud_init_templates(release), {
-                'boothook': 'boothook_fuel_6.1.1_centos.jinja2',
-                'cloud_config': 'cloud_config_fuel_6.1.1_centos.jinja2',
-                'meta_data': 'meta_data_fuel_6.1.1_centos.jinja2'
-            }
-        )
-
     def test_cluster_info_serialization(self):
         engine = self.serialized_cluster['engine']
         self.assertDictEqual(engine, {

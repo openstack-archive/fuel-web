@@ -65,7 +65,8 @@ def prepare():
                     'config': {}
                 }
             }),
-            'volumes_metadata': jsonutils.dumps({})
+            'volumes_metadata': jsonutils.dumps({}),
+            'attributes_metadata': jsonutils.dumps({})
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -253,3 +254,14 @@ class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
             sa.select([clusters_table.c.replaced_deployment_info])
         ).fetchone()[0]
         self.assertEqual('{}', deployment_info)
+
+
+class TestReleasesUpdateFromFixture(base.BaseAlembicMigrationTest):
+
+    def test_releases_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        attrs = jsonutils.loads(result['attributes_metadata'])
+        self.assertIn('editable', attrs)
+        self.assertIn('storage', attrs['editable'])
+        self.assertIn('auth_s3_keystone_ceph', attrs['editable']['storage'])

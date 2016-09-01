@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
+
 from mock import ANY
 from mock import patch
 
@@ -181,8 +183,12 @@ class TestNailgunReceiver(base.BaseTestCase):
         resp = {'task_uuid': self.task.uuid}
         self.task.status = consts.TASK_STATUSES.pending
         self.db.flush()
+        t1 = datetime.utcnow()
         NailgunReceiver.task_in_orchestrator(**resp)
+        t2 = datetime.utcnow()
         self.assertEqual(consts.TASK_STATUSES.running, self.task.status)
+        self.assertTrue(t1 < self.task.time_start)
+        self.assertTrue(self.task.time_start < t2)
 
     def test_task_in_orchestrator_status_not_changed(self):
         resp = {'task_uuid': self.task.uuid}

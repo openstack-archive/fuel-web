@@ -13,6 +13,7 @@
 #    under the License.
 
 from nailgun import utils
+from nailgun.utils.uniondict import UnionDict
 
 
 class TransactionContext(object):
@@ -29,11 +30,11 @@ class TransactionContext(object):
         self.options = kwargs
 
     def get_new_data(self, node_id):
-        return utils.dict_merge(self.new['common'],
-                                self.new['nodes'][node_id])
+        return UnionDict(self.new['common'],
+                         self.new['nodes'][node_id])
 
     def get_old_data(self, node_id, task_id):
         node_info = utils.get_in(self.old, task_id, 'nodes', node_id)
         if not node_info:
             return {}
-        return utils.dict_merge(self.old[task_id]['common'], node_info)
+        return UnionDict(self.old[task_id]['common'], node_info)

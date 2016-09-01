@@ -122,7 +122,7 @@ class TestNodeForRedeploy(BaseUnitTest):
         self.assertTrue(
             manager._is_node_for_redeploy(mock.MagicMock(
                 pending_addition=False, error_type=consts.NODE_ERRORS.deploy,
-                progress=0, status=consts.NODE_STATUSES.ready
+                progress=0, status=consts.NODE_STATUSES.error
             ))
         )
         self.assertTrue(

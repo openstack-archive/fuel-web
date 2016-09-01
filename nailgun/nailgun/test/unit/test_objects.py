@@ -2286,7 +2286,7 @@ class TestNodeStatus(BaseTestCase):
 
     def test_error_state(self):
         node = self.node
-        node.status = consts.NODE_STATUSES.ready
+        node.status = consts.NODE_STATUSES.error
         node.error_type = consts.NODE_ERRORS.deploy
         self.assertEqual(
             consts.NODE_STATUSES.error, objects.Node.get_status(node)

@@ -89,9 +89,6 @@ class Node(NailgunObject):
                 return consts.NODE_STATUSES.provisioning
             return consts.NODE_STATUSES.deploying
 
-        # if error_type is set, the node is treated as in error state
-        if instance.error_type:
-            return consts.NODE_STATUSES.error
         return instance.status
 
     @classmethod
@@ -917,6 +914,9 @@ class Node(NailgunObject):
                         instance.status = data_status
                     else:
                         instance.status = consts.NODE_STATUSES.discover
+
+                    if data_status != consts.NODE_STATUSES.error:
+                        instance.error_type = None
             else:
                 data.pop('status', None)
         return cls.update(instance, data)

@@ -170,6 +170,7 @@ class TransactionsManager(object):
             'status': consts.TASK_STATUSES.running,
             'dry_run': dry_run or noop_run,
         })
+        objects.Transaction.on_start(transaction)
         helpers.TaskHelper.create_action_log(transaction)
 
         for graph in graphs:
@@ -185,7 +186,7 @@ class TransactionsManager(object):
             cache['dry_run'] = dry_run
             cache['debug'] = debug
 
-            sub_transaction = transaction.create_subtask(
+            transaction.create_subtask(
                 self.task_name,
                 status=consts.TASK_STATUSES.pending,
                 dry_run=dry_run or noop_run,
@@ -196,7 +197,6 @@ class TransactionsManager(object):
                 # FIXME: Consider to use a separate set of columns.
                 cache=cache,
             )
-            helpers.TaskHelper.create_action_log(sub_transaction)
 
         # We need to commit transaction because asynchronous call below might
         # be executed in separate process or thread.
@@ -267,6 +267,7 @@ class TransactionsManager(object):
         _update_transaction(transaction, status, progress, error)
 
         if status in (consts.TASK_STATUSES.error, consts.TASK_STATUSES.ready):
+            objects.Transaction.on_finish(transaction, status)
             helpers.TaskHelper.update_action_log(transaction)
             if transaction.parent:
                 # if transaction is completed successfully,
@@ -277,10 +278,8 @@ class TransactionsManager(object):
                     self.fail(transaction.parent, error)
 
     def success(self, transaction):
-        objects.Transaction.update(
-            transaction,
-            {'status': consts.TASK_STATUSES.ready, 'progress': 100}
-        )
+        objects.Transaction.on_finish(transaction, consts.TASK_STATUSES.ready)
+        helpers.TaskHelper.update_action_log(transaction)
         _update_cluster_status(transaction)
         notifier.notify(
             consts.NOTIFICATION_TOPICS.done,
@@ -292,19 +291,18 @@ class TransactionsManager(object):
         )
 
     def fail(self, transaction, reason):
-        data = {
-            'status': consts.TASK_STATUSES.error,
-            'message': reason,
-            'progress': 100
-        }
-        objects.Transaction.update(transaction, data)
+        objects.Transaction.on_finish(
+            transaction, consts.TASK_STATUSES.error, message=reason
+        )
         helpers.TaskHelper.update_action_log(transaction)
-
-        data['message'] = 'Aborted'
         for sub_transaction in transaction.subtasks:
             if sub_transaction.status == consts.TASK_STATUSES.pending:
-                objects.Transaction.update(sub_transaction, data)
-                helpers.TaskHelper.update_action_log(sub_transaction)
+                # on_start and on_finish called to properly handle
+                # status transition
+                objects.Transaction.on_start(sub_transaction)
+                objects.Transaction.on_finish(
+                    sub_transaction, consts.TASK_STATUSES.error, "Aborted"
+                )
 
         _update_cluster_status(transaction)
         notifier.notify(
@@ -367,6 +365,8 @@ class TransactionsManager(object):
         message = make_astute_message(
             sub_transaction, context, graph, resolver
         )
+        objects.Transaction.on_start(sub_transaction)
+        helpers.TaskHelper.create_action_log(sub_transaction)
 
         # Once rpc.cast() is called, the message is sent to Astute. By
         # that moment all transaction instanced must exist in database,

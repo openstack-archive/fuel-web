@@ -81,6 +81,11 @@ class TestTransactionManager(base.BaseIntegrationTest):
             progress=100,
             status=consts.TASK_STATUSES.error)
 
+    def _check_timing(self, task):
+        self.assertIsNotNone(task.time_start)
+        self.assertIsNotNone(task.time_end)
+        self.assertLessEqual(task.time_start, task.time_end)
+
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute_graph(self, rpc_mock):
         task = self.manager.execute(graphs=[{"type": "test_graph"}])
@@ -114,6 +119,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+        self._check_timing(task)
         self.assertEqual(
             consts.CLUSTER_STATUSES.operational, self.cluster.status
         )
@@ -206,7 +212,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         # Consider we've got success from Astute.
         self._success(task.subtasks[1].uuid)
-
+        self._check_timing(task.subtasks[1])
         # Ensure the top leve transaction is ready.
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
@@ -270,6 +276,8 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         self.assertEqual(rpc_mock.cast.call_count, 1)
         self.assertEqual(task.status, consts.TASK_STATUSES.error)
+        self._check_timing(task.subtasks[0])
+        self._check_timing(task.subtasks[1])
         self.assertEqual(
             consts.CLUSTER_STATUSES.partially_deployed, self.cluster.status
         )

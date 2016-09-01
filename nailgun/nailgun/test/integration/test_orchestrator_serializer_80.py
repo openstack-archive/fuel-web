@@ -26,6 +26,8 @@ from nailgun import objects
 from nailgun import rpc
 
 from nailgun.orchestrator.deployment_serializers import \
+    deployment_info_to_legacy
+from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
 from nailgun.orchestrator.orchestrator_graph import AstuteGraph
 from nailgun.test.integration.test_orchestrator_serializer import \
@@ -54,6 +56,8 @@ class TestSerializer80Mixin(object):
         objects.Cluster.prepare_for_deployment(cluster)
         serialized_for_astute = self.serializer.serialize(
             cluster, cluster.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             expected_network = {
                 "network_type": "flat",
@@ -317,6 +321,8 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             self.assertEqual(
                 {
@@ -338,6 +344,8 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             transformations = node['network_scheme']['transformations']
             baremetal_brs = filter(lambda t: t.get('name') ==
@@ -385,6 +393,8 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = deployment_info_to_legacy(
+            serialized_for_astute)
         for node in serialized_for_astute:
             self.assertIn('plugins', node)
             self.assertItemsEqual(
@@ -468,6 +478,7 @@ class TestMultiNodeGroupsSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         facts = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
+        facts = deployment_info_to_legacy(facts)
 
         for node in facts:
             endpoints = node['network_scheme']['endpoints']

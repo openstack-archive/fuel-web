@@ -181,7 +181,7 @@ class TestTaskManagers(BaseIntegrationTest):
             nodes_ids.append(consts.MASTER_NODE_UID)
         # check that deployment info contains information about all nodes
         # that are not deleted
-        self.assertItemsEqual(nodes_ids, info)
+        self.assertItemsEqual(nodes_ids, info['nodes'])
 
     @mock.patch('nailgun.task.task.rpc.cast')
     @mock.patch('objects.Cluster.get_deployment_tasks')

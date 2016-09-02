@@ -468,8 +468,11 @@ class ClusterTransaction(DeploymentTask):
 
         state = {}
         for transaction, data in groupby(transactions, lambda x: x[0]):
+            data = list(data)
+            transaction_nodes = [d[1] for d in data]
+
             deployment_info = objects.Transaction.get_deployment_info(
-                transaction)
+                transaction, node_uids=transaction_nodes)
 
             for _, node_uid, task_name in data:
                 task_state = state.setdefault(task_name, {})

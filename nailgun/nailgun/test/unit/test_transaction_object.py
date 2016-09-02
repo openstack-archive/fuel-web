@@ -66,15 +66,16 @@ class TestTransactionObject(BaseTestCase):
             'name': consts.TASK_NAMES.deployment,
             'status': consts.TASK_STATUSES.ready
         })
-        self.assertIsNone(
-            objects.Transaction.get_deployment_info(transaction)
+        self.assertEqual(
+            objects.Transaction.get_deployment_info(transaction),
+            {}
         )
-        info = {'test': 'test'}
+        info = {'test': {'test': 'test'}}
         objects.Transaction.attach_deployment_info(transaction, info)
         self.assertEqual(
             info, objects.Transaction.get_deployment_info(transaction)
         )
-        self.assertIsNone(objects.Transaction.get_deployment_info(None))
+        self.assertEqual(objects.Transaction.get_deployment_info(None), {})
 
     def test_get_cluster_settings(self):
         transaction = objects.Transaction.create({

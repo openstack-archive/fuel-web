@@ -225,7 +225,7 @@ class GraphSolver(nx.DiGraph):
             else:
                 task['skipped'] = False
 
-    def reexecutable_tasks(self, task_filter):
+    def mark_non_reexecutable_tasks(self, task_filter):
         """Keep only reexecutable tasks which match the filter.
 
         Filter is the list of values. If task has reexecute_on key and its
@@ -238,10 +238,21 @@ class GraphSolver(nx.DiGraph):
         task_filter = set(task_filter)
         for task in six.itervalues(self.node):
             reexecute_on = task.get('reexecute_on')
-            if reexecute_on is not None and task_filter.issubset(reexecute_on):
-                task['skipped'] = False
-            else:
+            if reexecute_on is None or not task_filter.issubset(reexecute_on):
+                task['skip_on_resetup'] = True
+
+    def exclude_non_reexecutable_tasks(self):
+        """Keep only reexecutable tasks which match the filter.
+
+        Filter is the list of values. If task has reexecute_on key and its
+        value matches the value from filter then task is not skipped.
+        :param task_filter: filter (list)
+        """
+        for task in six.itervalues(self.node):
+            if task.get('skip_on_resetup'):
                 self.make_skipped_task(task)
+            else:
+                task['skipped'] = False
 
     def find_subgraph(self, start=None, end=None):
         """Find subgraph by provided start and end endpoints
@@ -299,7 +310,7 @@ class GraphSolver(nx.DiGraph):
 class AstuteGraph(object):
     """This object stores logic that required for working with astute"""
 
-    def __init__(self, cluster, tasks=None):
+    def __init__(self, cluster, tasks=None, task_filter=None):
         self.cluster = cluster
         self.tasks = tasks or \
             objects.Cluster.get_deployment_tasks(cluster)
@@ -310,8 +321,11 @@ class AstuteGraph(object):
     def only_tasks(self, task_ids):
         self.graph.only_tasks(task_ids)
 
-    def reexecutable_tasks(self, task_filter):
-        self.graph.reexecutable_tasks(task_filter)
+    def mark_non_reexecutable_tasks(self, task_filter):
+        return self.graph.mark_non_reexecutable_tasks(task_filter)
+
+    def exclude_non_reexecutable_tasks(self):
+        self.graph.exclude_non_reexecutable_tasks()
 
     def group_nodes_by_roles(self, nodes):
         """Group nodes by roles

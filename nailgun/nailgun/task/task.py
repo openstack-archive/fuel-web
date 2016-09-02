@@ -335,21 +335,27 @@ class DeploymentTask(BaseDeploymentTask):
         serialized_cluster = deployment_info_to_legacy(serialized_cluster)
 
         if affected_nodes:
-            graph.reexecutable_tasks(events)
-            serialized_affected_nodes = deployment_serializers.serialize(
-                graph, transaction.cluster, affected_nodes
-            )
-            serialized_affected_nodes = deployment_info_to_legacy(
-                serialized_affected_nodes)
-            serialized_cluster.extend(serialized_affected_nodes)
-
+            for node in affected_nodes:
+                node.is_node_for_resetup = True
             nodes = nodes + affected_nodes
+
+        graph.mark_non_reexecutable_tasks(events)
+
         pre_deployment = stages.pre_deployment_serialize(
             graph, transaction.cluster, nodes,
             role_resolver=role_resolver)
         post_deployment = stages.post_deployment_serialize(
             graph, transaction.cluster, nodes,
             role_resolver=role_resolver)
+
+        if affected_nodes:
+            graph.exclude_non_reexecutable_tasks()
+            serialized_affected_nodes = deployment_serializers.serialize(
+                graph, transaction.cluster, affected_nodes
+            )
+            serialized_affected_nodes = deployment_info_to_legacy(
+                serialized_affected_nodes)
+            serialized_cluster.extend(serialized_affected_nodes)
 
         return {
             'deployment_info': serialized_cluster,

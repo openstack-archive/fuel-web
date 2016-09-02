@@ -92,12 +92,18 @@ class StandardConfigRolesHook(ExpressionBasedTask):
     def __init__(self, task, cluster, nodes, role_resolver=None):
         super(StandardConfigRolesHook, self).__init__(task, cluster)
         self.nodes = nodes
+        self.resetup_uids = [n.uid for n in nodes
+                             if hasattr(n, 'is_node_for_resetup')]
         self.role_resolver = role_resolver or RoleResolver(nodes)
 
     def get_uids(self):
-        return list(self.role_resolver.resolve(
+        uids = list(self.role_resolver.resolve(
             self.task.get('role', self.task.get('groups'))
         ))
+        if self.resetup_uids and self.task.get('skip_on_resetup'):
+            return [u for u in uids if u not in self.resetup_uids]
+        else:
+            return uids
 
     def serialize(self):
         uids = self.get_uids()
@@ -110,12 +116,20 @@ class GenericRolesHook(StandardConfigRolesHook):
     identity = abc.abstractproperty
 
 
-class UploadMOSRepo(GenericRolesHook):
-
-    identity = 'upload_core_repos'
+class GenericAllRolesHook(GenericRolesHook):
 
     def get_uids(self):
-        return list(self.role_resolver.resolve(consts.TASK_ROLES.all))
+        uids = list(self.role_resolver.resolve(consts.TASK_ROLES.all))
+
+        if self.resetup_uids and self.task.get('skip_on_resetup'):
+            return [u for u in uids if u not in self.resetup_uids]
+        else:
+            return uids
+
+
+class UploadMOSRepo(GenericAllRolesHook):
+
+    identity = 'upload_core_repos'
 
     def serialize(self):
         uids = self.get_uids()
@@ -154,12 +168,9 @@ class UploadMOSRepo(GenericRolesHook):
             yield templates.make_apt_update_task(uids)
 
 
-class RsyncPuppet(GenericRolesHook):
+class RsyncPuppet(GenericAllRolesHook):
 
     identity = 'rsync_core_puppet'
-
-    def get_uids(self):
-        return list(self.role_resolver.resolve(consts.TASK_ROLES.all))
 
     def serialize(self):
         src_path = self.task['parameters']['src'].format(

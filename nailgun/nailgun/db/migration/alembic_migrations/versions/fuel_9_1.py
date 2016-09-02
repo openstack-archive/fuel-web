@@ -60,6 +60,7 @@ def upgrade():
     upgrade_deployment_history_summary()
     upgrade_node_deployment_info()
     upgrade_add_task_start_end_time()
+    fix_deployment_history_constraint()
 
 
 def downgrade():
@@ -470,3 +471,18 @@ def upgrade_add_task_start_end_time():
 def downgrade_add_task_start_end_time():
     op.drop_column('tasks', 'time_start')
     op.drop_column('tasks', 'time_end')
+
+
+def fix_deployment_history_constraint():
+    # only recreate deployment_history_task_id_fkey with valid properties
+    op.drop_constraint(
+        'deployment_history_task_id_fkey',
+        'deployment_history',
+        type_='foreignkey'
+    )
+
+    op.create_foreign_key(
+        "deployment_history_task_id_fkey",
+        "deployment_history", "tasks",
+        ["task_id"], ["id"], ondelete="CASCADE"
+    )

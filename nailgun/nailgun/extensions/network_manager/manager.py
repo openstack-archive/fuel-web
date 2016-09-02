@@ -339,7 +339,9 @@ class NetworkManager(object):
             objects.IPAddrCollection.get_vips_by_cluster_id(cluster.id)
         vips = defaultdict(dict)
         for vip in cluster_vips:
-            vips[vip.network_data.name][vip.vip_name] = dict(vip)
+            vips[vip.network_data.name][vip.vip_name] = objects.IPAddr.to_dict(
+                vip
+            )
 
         return vips
 

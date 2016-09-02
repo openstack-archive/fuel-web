@@ -59,6 +59,7 @@ def upgrade():
     upgrade_deployment_graphs_attributes()
     upgrade_deployment_history_summary()
     upgrade_node_deployment_info()
+    fix_deployment_history_constraint()
 
 
 def downgrade():
@@ -443,3 +444,18 @@ def upgrade_node_deployment_info():
 
 def downgrade_node_deployment_info():
     op.drop_table('node_deployment_info')
+
+
+def fix_deployment_history_constraint():
+    # only recreate deployment_history_task_id_fkey with valid properties
+    op.drop_constraint(
+        'deployment_history_task_id_fkey',
+        'deployment_history',
+        type_='foreignkey'
+    )
+
+    op.create_foreign_key(
+        "deployment_history_task_id_fkey",
+        "deployment_history", "tasks",
+        ["task_id"], ["id"], ondelete="CASCADE"
+    )

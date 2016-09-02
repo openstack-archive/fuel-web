@@ -42,8 +42,11 @@ class Task(NailgunObject):
 
     @classmethod
     def get_by_uid(cls, uid, fail_if_not_found=False, lock_for_update=False):
-        return cls.get_by_uid_excluding_deleted(uid, fail_if_not_found=False,
-                                                lock_for_update=False)
+        return cls.get_by_uid_excluding_deleted(
+            uid,
+            fail_if_not_found=fail_if_not_found,
+            lock_for_update=lock_for_update
+        )
 
     @classmethod
     def create_subtask(cls, instance, name):

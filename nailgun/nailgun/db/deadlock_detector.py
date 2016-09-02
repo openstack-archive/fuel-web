@@ -17,22 +17,53 @@
 import threading
 import traceback
 
+import networkx
+
 from nailgun.logger import logger
 from nailgun.settings import settings
 
-ALLOWED_LOCKS_CHAINS = [
-    ('attributes', 'clusters'),
-    ('attributes', 'clusters', 'ip_addr_ranges'),
-    ('attributes', 'ip_addr_ranges'),
-    ('attributes', 'ip_addrs'),
-    ('attributes', 'ip_addrs', 'network_groups'),
-    ('attributes', 'ip_addr_ranges', 'node_nic_interfaces'),
-    ('clusters', 'nodes'),
-    ('tasks', 'clusters'),
-    ('tasks', 'clusters', 'nodes'),
-    ('tasks', 'nodes'),
-    ('nodes', 'node_nic_interfaces'),
-]
+
+class LockChains(object):
+    def __init__(self):
+        self.chains = networkx.DiGraph()
+        self.cache = {}
+        self.lock = threading.Lock()
+
+    def register(self, transition):
+        # because the number of possible combinations is limited
+        # eventually all of them will be added to cache
+        # and this method does not affect performance
+        tmp = self.chains.copy()
+        tmp.add_path(transition)
+        # if after add transition graph contains cycles
+        # transition has wrong order
+        if networkx.is_directed_acyclic_graph(tmp):
+            result = self.cache[transition] = True
+            self.chains = tmp
+        else:
+            result = self.cache[transition] = False
+        return result
+
+    def valid(self, transition):
+        try:
+            return self.cache[transition]
+        except KeyError:
+            pass
+
+        with self.lock:
+            try:
+                # try again with lock
+                return self.cache[transition]
+            except KeyError:
+                return self.register(transition)
+
+
+_LOCK_CHAINS_REGISTRY = LockChains()
+
+# well known chains
+_LOCK_CHAINS_REGISTRY.register(('attributes', 'clusters'))
+_LOCK_CHAINS_REGISTRY.register(('clusters', 'tasks'))
+_LOCK_CHAINS_REGISTRY.register(('clusters', 'nodes'))
 
 
 class Lock(object):
@@ -131,8 +162,8 @@ class ObjectsLockingOrderViolation(DeadlockDetectorError):
 class LockTransitionNotAllowedError(DeadlockDetectorError):
     def __init__(self):
         msg = "Possible deadlock found while attempting " \
-              "to lock table: '{0}'. Lock transition is not allowed: {1}. " \
-              "Traceback info: {2}".format(
+              "to lock table: '{0}'. Lock transition is not allowed: {1}.\n" \
+              "Traceback info: {2}\n".format(
                   context.locks[-1].table,
                   ', '.join(lock.table for lock in context.locks),
                   self._get_locks_trace()
@@ -182,9 +213,9 @@ def register_lock(table):
     if len(context.locks) == 1:
         return lock
 
-    # Checking lock transition is allowed
+    # Checking lock transition is same as in previous visit
     transition = tuple(l.table for l in context.locks)
-    if transition not in ALLOWED_LOCKS_CHAINS:
+    if not _LOCK_CHAINS_REGISTRY.valid(transition):
         Lock.propagate_exception(LockTransitionNotAllowedError())
 
     return lock

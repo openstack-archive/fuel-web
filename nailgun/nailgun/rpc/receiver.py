@@ -51,6 +51,31 @@ logger = logging.getLogger('receiverd')
 class NailgunReceiver(object):
 
     @classmethod
+    def acquire_lock(cls, task_uuid):
+        # use transaction object to get removed by UI tasks
+        task = objects.Transaction.get_by_uuid(task_uuid)
+        if not task:
+            logger.error(
+                "Received update for not existed task '%s'.", task_uuid
+            )
+            return
+
+        # the lock order is following: cluster, task
+        if task.cluster:
+            objects.Cluster.get_by_uid(
+                task.cluster_id, fail_if_not_found=True, lock_for_update=True
+            )
+
+        # read task again to ensure that it was not removed in other session
+        task = objects.Transaction.get_by_uid(task_uuid, lock_for_update=True)
+        if not task:
+            logger.error(
+                "Race condition detected, task '%s' was removed.", task_uuid
+            )
+            return
+        return task
+
+    @classmethod
     def remove_nodes_resp(cls, **kwargs):
         logger.info(
             "RPC method remove_nodes_resp received: %s" %
@@ -67,19 +92,9 @@ class NailgunReceiver(object):
             progress = 100
 
         # locking task
-        task = objects.Task.get_by_uuid(
-            task_uuid,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
-
-        # locking cluster
-        if task.cluster_id is not None:
-            objects.Cluster.get_by_uid(
-                task.cluster_id,
-                fail_if_not_found=True,
-                lock_for_update=True
-            )
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return False
 
         # locking nodes
         all_nodes = itertools.chain(nodes, error_nodes, inaccessible_nodes)
@@ -221,7 +236,9 @@ class NailgunReceiver(object):
         )
         status = kwargs.get('status')
         task_uuid = kwargs['task_uuid']
-        task = objects.Task.get_by_uuid(task_uuid)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         if status == consts.TASK_STATUSES.ready:
             logger.info("IBP images from deleted cluster have been removed")
@@ -236,11 +253,10 @@ class NailgunReceiver(object):
             "RPC method transaction_resp received: %s", jsonutils.dumps(kwargs)
         )
 
-        transaction = objects.Task.get_by_uuid(
-            kwargs.pop('task_uuid', None),
-            fail_if_not_found=True,
-            lock_for_update=True,
-        )
+        # TODO(bgaifullin) move lock to transaction manager
+        transaction = cls.acquire_lock(kwargs.pop('task_uuid', None))
+        if not transaction:
+            return
         manager = transactions.TransactionsManager(transaction.cluster.id)
         manager.process(transaction, kwargs)
 
@@ -256,18 +272,9 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = objects.Task.get_by_uuid(
-            task_uuid,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
-
-        # lock cluster
-        objects.Cluster.get_by_uid(
-            task.cluster_id,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         if not status:
             status = task.status
@@ -372,11 +379,9 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
         nodes = kwargs.get('nodes', [])
 
-        task = objects.Task.get_by_uuid(
-            task_uuid,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         # we should remove master node from the nodes since it requires
         # special handling and won't work with old code
@@ -427,11 +432,9 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = objects.Task.get_by_uuid(
-            task_uuid,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         q_nodes = objects.NodeCollection.filter_by_id_list(
             None, task.cache['nodes'])
@@ -655,10 +658,9 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = objects.Task.get_by_uuid(
-            task_uuid,
-            fail_if_not_found=True,
-        )
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         stopping_task_names = [
             consts.TASK_NAMES.deploy,
@@ -680,13 +682,6 @@ class NailgunReceiver(object):
             q_stop_tasks,
             'id'
         ).all()
-
-        # Locking cluster
-        objects.Cluster.get_by_uid(
-            task.cluster_id,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
 
         if not stop_tasks:
             logger.warning("stop_deployment_resp: deployment tasks \
@@ -808,18 +803,9 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = objects.Task.get_by_uuid(
-            task_uuid,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
-
-        # Locking cluster
-        objects.Cluster.get_by_uid(
-            task.cluster_id,
-            fail_if_not_found=True,
-            lock_for_update=True
-        )
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         if status == consts.TASK_STATUSES.ready:
             # restoring pending changes
@@ -909,8 +895,9 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        # We simply check that each node received all vlans for cluster
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         result = []
         #  We expect that 'nodes' contains all nodes which we test.
@@ -1040,7 +1027,10 @@ class NailgunReceiver(object):
                 jsonutils.dumps(kwargs))
         )
         task_uuid = kwargs.get('task_uuid')
-        task = objects.task.Task.get_by_uuid(uuid=task_uuid)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
+
         if kwargs.get('status'):
             task.status = kwargs['status']
         task.progress = kwargs.get('progress', 0)
@@ -1106,6 +1096,10 @@ class NailgunReceiver(object):
         error_msg = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
+
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         nodes_uids = [node['uid'] for node in nodes]
         nodes_db = db().query(Node).filter(Node.id.in_(nodes_uids)).all()
@@ -1178,7 +1172,6 @@ class NailgunReceiver(object):
         error_msg = '\n'.join(messages) if messages else error_msg
         logger.debug('Check dhcp message %s', error_msg)
 
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
         objects.Task.update_verify_networks(task, status, progress,
                                             error_msg, result)
 
@@ -1193,7 +1186,9 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         release_info = task.cache['args']['release_info']
         release_id = release_info['release_id']
@@ -1236,7 +1231,9 @@ class NailgunReceiver(object):
         error = kwargs.get('error')
         msg = kwargs.get('msg')
 
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         if status == 'error':
             notifier.notify('error', error)
@@ -1265,8 +1262,9 @@ class NailgunReceiver(object):
         error = kwargs.get('error')
         message = kwargs.get('msg')
 
-        task = objects.Task.get_by_uuid(
-            task_uuid, fail_if_not_found=True, lock_for_update=True)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         if status not in (consts.TASK_STATUSES.ready,
                           consts.TASK_STATUSES.error):
@@ -1317,8 +1315,9 @@ class NailgunReceiver(object):
         status = consts.TASK_STATUSES.ready
         progress = 100
 
-        task = objects.Task.get_by_uuid(
-            task_uuid, fail_if_not_found=True)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         failed_response_nodes = {
             n['uid']: n for n in response if n['status'] != 0
@@ -1400,22 +1399,19 @@ class NailgunReceiver(object):
                     jsonutils.dumps(kwargs))
 
         task_uuid = kwargs.get('task_uuid')
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
-        try:
-            task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True,
-                                            lock_for_update=True)
-            if task.status == consts.TASK_STATUSES.pending:
-                objects.Task.update(
-                    task, {'status': consts.TASK_STATUSES.running})
-                logger.debug("Task '%s' is acknowledged as running",
-                             task_uuid)
-            else:
-                logger.debug("Task '%s' in status '%s' can not "
-                             "be acknowledged as running", task_uuid,
-                             task.status)
-        except nailgun_errors.ObjectNotFound:
-            logger.warning("Task '%s' acknowledgement as running failed "
-                           "due to task doesn't exist in DB", task_uuid)
+        if task.status == consts.TASK_STATUSES.pending:
+            objects.Task.update(
+                task, {'status': consts.TASK_STATUSES.running})
+            logger.debug("Task '%s' is acknowledged as running",
+                         task_uuid)
+        else:
+            logger.debug("Task '%s' in status '%s' can not "
+                         "be acknowledged as running", task_uuid,
+                         task.status)
 
     @classmethod
     def base_resp(cls, **kwargs):
@@ -1427,8 +1423,9 @@ class NailgunReceiver(object):
         error = kwargs.get('error', '')
         message = kwargs.get('msg', '')
 
-        task = objects.Task.get_by_uuid(
-            task_uuid, fail_if_not_found=True, lock_for_update=True)
+        task = cls.acquire_lock(task_uuid)
+        if not task:
+            return
 
         data = {'status': status, 'progress': 100, 'message': message}
         if status == consts.TASK_STATUSES.error:

@@ -91,16 +91,23 @@ class TestDeadlockDetector(BaseTestCase):
         db().rollback()
         self.assertEquals(0, len(dd.context.locks))
 
-    def test_unknown_locks_chain_failed(self):
+    def test_different_order_in_chains_detected(self):
         db().query(models.Release).with_lockmode('update').all()
+        db().query(models.Node).with_lockmode('update').all()
+        db().rollback()
+
+        db().query(models.Node).with_lockmode('update').all()
         self.assertRaises(
             dd.LockTransitionNotAllowedError,
-            db().query(models.Node).with_lockmode, 'update'
+            db().query(models.Release).with_lockmode, 'update'
         )
         db().rollback()
 
-        db().query(models.Task).with_lockmode('update').all()
         db().query(models.Cluster).with_lockmode('update').all()
+        db().query(models.Task).with_lockmode('update').all()
+        db().query(models.Node).with_lockmode('update').all()
+        db().rollback()
+
         db().query(models.Node).with_lockmode('update').all()
         self.assertRaises(
             dd.LockTransitionNotAllowedError,

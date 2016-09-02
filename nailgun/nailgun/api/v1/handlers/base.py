@@ -265,10 +265,14 @@ class BaseHandler(object):
         :rtype: set of str or None
         """
         if param_name in web.input():
-            return set(six.moves.map(
-                six.text_type.strip,
-                getattr(web.input(), param_name).split(delimiter))
-            )
+            param = getattr(web.input(), param_name)
+            if param == '':
+                return set()
+            else:
+                return set(six.moves.map(
+                    six.text_type.strip,
+                    param.split(delimiter))
+                )
         else:
             return default
 

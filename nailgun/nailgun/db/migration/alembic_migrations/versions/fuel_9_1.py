@@ -58,6 +58,7 @@ def upgrade():
     upgrade_orchestrator_task_types()
     upgrade_node_error_type()
     upgrade_deployment_history_summary()
+    fix_deployment_history_constraint()
 
 
 def downgrade():
@@ -302,3 +303,18 @@ def downgrade_cluster_attributes():
             id=cluster_id,
             info=jsonutils.dumps([]),
         )
+
+
+def fix_deployment_history_constraint():
+    # only recreate deployment_history_task_id_fkey with valid properties
+    op.drop_constraint(
+        'deployment_history_task_id_fkey',
+        'deployment_history',
+        type_='foreignkey'
+    )
+
+    op.create_foreign_key(
+        "deployment_history_task_id_fkey",
+        "deployment_history", "tasks",
+        ["task_id"], ["id"], ondelete="CASCADE"
+    )

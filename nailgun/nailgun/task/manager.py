@@ -842,28 +842,43 @@ class StopDeploymentTaskManager(TaskManager):
         return task
 
 
-class ResetEnvironmentTaskManager(TaskManager):
+class ClearTaskHistory(TaskManager):
+    def clear_tasks_history(self, force=False):
+        try:
+            self.check_running_task(delete_obsolete=False)
+        except errors.TaskAlreadyRunning:
+            if not force:
+                raise
+
+            logger.error(
+                u"Force stop running tasks for cluster %s", self.cluster.name
+            )
+            running_tasks = objects.TaskCollection.all_in_progress(
+                self.cluster.id
+            )
+            for task in running_tasks:
+                # Force set task to finished state and update action log
+                TaskHelper.set_ready_if_not_finished(task)
+
+        # clear tasks history
+        cluster_tasks = objects.TaskCollection.get_cluster_tasks(
+            self.cluster.id
+        )
+        cluster_tasks.delete(synchronize_session='fetch')
+
+
+class ResetEnvironmentTaskManager(ClearTaskHistory):
 
     def execute(self, force=False, **kwargs):
         try:
-            self.check_running_task(
-                delete_obsolete=objects.Task.hard_delete
-            )
+            self.clear_tasks_history(force=force)
         except errors.TaskAlreadyRunning:
-            if force:
-                logger.error(
-                    u"Reset cluster '{0}' "
-                    u"while deployment is still running."
-                    .format(self.cluster.name)
+            raise errors.DeploymentAlreadyStarted(
+                "Can't reset environment '{0}' when "
+                "running deployment task exists.".format(
+                    self.cluster.id
                 )
-
-            else:
-                raise errors.DeploymentAlreadyStarted(
-                    "Can't reset environment '{0}' when "
-                    "running deployment task exists.".format(
-                        self.cluster.id
-                    )
-                )
+            )
 
         # FIXME(aroma): remove updating of 'deployed_before'
         # when stop action is reworked. 'deployed_before'
@@ -1109,33 +1124,17 @@ class VerifyNetworksTaskManager(TaskManager):
         return task
 
 
-class ClusterDeletionManager(TaskManager):
-
+class ClusterDeletionManager(ClearTaskHistory):
     def execute(self, force=False, **kwargs):
         try:
-            self.check_running_task(
-                delete_obsolete=objects.Task.hard_delete
-            )
+            self.clear_tasks_history(force=force)
         except errors.TaskAlreadyRunning:
-            if force:
-                logger.warning(
-                    u"Deletion cluster '{0}' "
-                    u"while deployment is still running."
-                    .format(self.cluster.name)
-                )
-                running_tasks = objects.TaskCollection.all_in_progress(
+            raise errors.DeploymentAlreadyStarted(
+                u"Can't delete environment '{0}' when "
+                u"running deployment task exists.".format(
                     self.cluster.id
                 )
-                for task in running_tasks:
-                    # Force set task to finished state and update action log
-                    TaskHelper.set_ready_if_not_finished(task)
-            else:
-                raise errors.DeploymentAlreadyStarted(
-                    u"Can't delete environment '{0}' when "
-                    u"running deployment task exists.".format(
-                        self.cluster.id
-                    )
-                )
+            )
         # locking nodes
         nodes = objects.NodeCollection.filter_by(
             None,

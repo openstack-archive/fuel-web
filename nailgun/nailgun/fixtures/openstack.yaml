@@ -2118,7 +2118,7 @@
       editable:
         kernel_params:
           kernel:
-            value: "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset"
+            value: "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset"
         repo_setup:
           metadata:
             label: "Repositories"

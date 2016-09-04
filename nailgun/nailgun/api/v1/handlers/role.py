@@ -102,18 +102,14 @@ class RoleCollectionHandler(base.CollectionHandler):
             * 400 (invalid object data specified)
             * 409 (object with such parameters already exists)
         """
-        data = self.checked_data()
+        release = self.get_object_or_404(objects.Release, release_id)
+        try:
+            data = self.checked_data(
+                self.validator.validate_create, instance=release)
+        except errors.AlreadyExists as exc:
+            raise self.http(409, exc.message)
 
         role_name = data['name']
-        release = self.get_object_or_404(objects.Release, release_id)
-
-        if role_name in release.roles_metadata:
-            raise self.http(
-                409,
-                'Role with name {name} already '
-                'exists for release {release}'.format(
-                    name=role_name, release=release_id))
-
         objects.Release.update_role(release, data)
         raise self.http(
             201, RoleSerializer.serialize_from_release(release, role_name))

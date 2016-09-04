@@ -63,5 +63,14 @@ class RoleValidator(BasicValidator):
         return parsed
 
     @classmethod
-    def validate_create(cls, data):
-        return cls.validate(data)
+    def validate_create(cls, data, instance):
+        parsed = cls.validate_update(data, instance)
+
+        role_name = parsed['name']
+        if role_name in instance.roles_metadata:
+            raise errors.AlreadyExists(
+                "Role with name {name} already "
+                "exists for release {release}".format(
+                    name=role_name, release=instance.id))
+
+        return parsed

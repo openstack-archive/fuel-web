@@ -25,7 +25,7 @@ from nailgun.test import base
 from nailgun.utils import reverse
 
 
-@mock.patch("nailgun.api.v1.handlers.deployment_graph.TransactionsManager")
+@mock.patch("nailgun.api.v1.handlers.base.transactions.TransactionsManager")
 class TestGraphExecutorHandler(base.BaseTestCase):
 
     def setUp(self):

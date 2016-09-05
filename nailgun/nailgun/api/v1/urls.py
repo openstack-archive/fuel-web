@@ -164,6 +164,11 @@ from nailgun.api.v1.handlers.deployment_graph import \
     DeploymentGraphHandler
 from nailgun.api.v1.handlers.deployment_graph import GraphsExecutorHandler
 
+from nailgun.api.v1.handlers.deployment_sequence import \
+    SequenceCollectionHandler
+from nailgun.api.v1.handlers.deployment_sequence import SequenceExecutorHandler
+from nailgun.api.v1.handlers.deployment_sequence import SequenceHandler
+
 from nailgun.settings import settings
 
 urls = (
@@ -275,6 +280,13 @@ urls = (
     DeploymentGraphHandler,
     r'/graphs/execute/?$',
     GraphsExecutorHandler,
+
+    r'/sequences/?$',
+    SequenceCollectionHandler,
+    r'/sequences/(?P<obj_id>\d+)/?$',
+    SequenceHandler,
+    r'/sequences/(?P<obj_id>\d+)/execute/?$',
+    SequenceExecutorHandler,
 
     r'/networks/?$',
     NetworkGroupCollectionHandler,

@@ -174,3 +174,8 @@ class TestClusterAttributesDowngrade(base.BaseAlembicMigrationTest):
             sa.select([clusters_table.c.replaced_deployment_info])
         ).fetchone()[0]
         self.assertEqual('[]', deployment_info)
+
+
+class TestDeploymentSequencesDowngrade(base.BaseAlembicMigrationTest):
+    def test_deployment_sequences_table_removed(self):
+        self.assertNotIn('deployment_sequences', self.meta.tables)

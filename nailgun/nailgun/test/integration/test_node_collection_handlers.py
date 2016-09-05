@@ -173,14 +173,9 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
         self.assertIn(
-            "schema['properties']['mac']",
+            "$[mac]: None is not of type 'string'",
             resp.json_body["message"]
         )
-        self.assertIn(
-            "None is not of type 'string'",
-            resp.json_body["message"]
-        )
-
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
             jsonutils.dumps([{'mac': node.mac,
@@ -589,12 +584,14 @@ class TestHandlers(BaseIntegrationTest):
                                  'contains duplicates')
 
     def test_pending_role_not_list(self):
-        self.check_pending_roles({'pending_roles': 'cinder'},
-                                 "Failed validating 'type'")
+        self.check_pending_roles(
+            {'pending_roles': 'cinder'}, "'cinder' is not of type 'array'"
+        )
 
     def test_pending_role_not_strings(self):
-        self.check_pending_roles({'pending_roles': ['cinder', 1]},
-                                 "Failed validating 'type'")
+        self.check_pending_roles(
+            {'pending_roles': ['cinder', 1]}, "1 is not of type 'string'"
+        )
 
     def test_role_non_existing(self):
         cluster = self.env.create()
@@ -607,12 +604,14 @@ class TestHandlers(BaseIntegrationTest):
                                  'contains duplicates')
 
     def test_roles_not_list(self):
-        self.check_pending_roles({'roles': 'cinder'},
-                                 'Failed validating')
+        self.check_pending_roles(
+            {'roles': 'cinder'}, "'cinder' is not of type 'array'"
+        )
 
     def test_roles_not_strings(self):
-        self.check_pending_roles({'roles': ['cinder', 1]},
-                                 'Failed validating')
+        self.check_pending_roles(
+            {'roles': ['cinder', 1]}, "1 is not of type 'string'"
+        )
 
     def check_update_role_no_cluster_id(self, data_to_check):
         self.env.create()

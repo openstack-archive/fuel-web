@@ -1879,24 +1879,13 @@ class BaseValidatorTest(BaseTestCase):
 
         """
         context = self.get_invalid_data_context(passed_data, *args)
-        self.assertIn(
-            "Failed validating 'oneOf' in schema",
-            context.exception.message)
-
         err_msg = "{0} is not valid under any of the given schemas"
         self.assertIn(
             err_msg.format(incorrect),
             context.exception.message)
 
-        self.assertIn(
-            "On instance{0}".format(data_label),
-            context.exception.message)
-
     def assertRaisesInvalidEnum(self, obj, value, expected_value):
         context = self.get_invalid_data_context(obj)
-        self.assertIn(
-            "Failed validating 'enum' in schema",
-            context.exception.message)
         self.assertIn(
             "{0} is not one of {1}".format(value, expected_value),
             context.exception.message)
@@ -1933,9 +1922,6 @@ class BaseValidatorTest(BaseTestCase):
 
     def assertRaisesNotMatchPattern(self, obj, stringified_values):
         context = self.get_invalid_data_context(obj)
-        self.assertIn(
-            "Failed validating 'pattern' in schema",
-            context.exception.message)
         self.assertIn(
             "{0} does not match".format(stringified_values),
             context.exception.message)

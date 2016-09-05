@@ -87,8 +87,8 @@ class TestRoleApi(BaseRoleTest):
         resp = self.env.create_role(
             self.release.id, self.role_data, expect_errors=True)
         self.assertEqual(400, resp.status_code)
-        self.assertIn('Failed validating', resp.body)
-        self.assertIn('volumes_roles_mapping', resp.body)
+        self.assertIn('$[volumes_roles_mapping][0][allocate_size]', resp.body)
+        self.assertIn("'some_string' is not one of", resp.body)
 
     def test_update_role_w_invalid_volumes_id(self):
         self.role_data['volumes_roles_mapping'][0]['id'] = 'some_string'

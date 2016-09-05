@@ -17,6 +17,7 @@ import datetime
 import alembic
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
+import sqlalchemy.exc as sa_exc
 
 from nailgun.db import db
 from nailgun.db import dropdb
@@ -253,3 +254,32 @@ class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
             sa.select([clusters_table.c.replaced_deployment_info])
         ).fetchone()[0]
         self.assertEqual('{}', deployment_info)
+
+
+class TestDeploymentSequencesMigration(base.BaseAlembicMigrationTest):
+    def test_deployment_sequences_table_exists(self):
+        deployment_sequences = self.meta.tables['deployment_sequences']
+        release_id = db.execute(
+            sa.select([self.meta.tables['releases'].c.id])
+        ).fetchone()[0]
+        db.execute(
+            deployment_sequences.insert(),
+            [{
+                'release_id': release_id,
+                'name': 'test',
+                'graphs': '["test_graph"]',
+            }]
+        )
+        result = db.execute(sa.select([
+            deployment_sequences.c.name, deployment_sequences.c.graphs
+        ]).where(deployment_sequences.c.name == 'test')).fetchone()
+        self.assertEqual('test', result[0])
+        self.assertEqual('["test_graph"]', result[1])
+        with self.assertRaises(sa_exc.IntegrityError):
+            db.execute(
+                deployment_sequences.insert(),
+                [{
+                    'name': 'test',
+                    'graphs': '["test_graph2"]',
+                }]
+            )

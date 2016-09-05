@@ -37,6 +37,7 @@ from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.settings import settings
+from nailgun import transactions
 from nailgun import utils
 
 
@@ -394,7 +395,6 @@ class SingleHandler(BaseHandler):
     validator = BasicValidator
 
     @handle_errors
-    @validate
     @serialize
     def GET(self, obj_id):
         """:returns: JSONized REST object.
@@ -701,3 +701,22 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         :http: * 405 (method not supported)
         """
         raise self.http(405, 'Delete not supported for this entity')
+
+
+class TransactionExecutorHandler(BaseHandler):
+    def start_transaction(self, cluster, options):
+        """Starts new transaction.
+
+        :param cluster: the cluster object
+        :param options: the transaction parameters
+        :return: JSONized task object
+        """
+        try:
+            manager = transactions.TransactionsManager(cluster.id)
+            self.raise_task(manager.execute(**options))
+        except errors.ObjectNotFound as e:
+            raise self.http(404, e.message)
+        except errors.DeploymentAlreadyStarted as e:
+            raise self.http(409, e.message)
+        except errors.InvalidData as e:
+            raise self.http(400, e.message)

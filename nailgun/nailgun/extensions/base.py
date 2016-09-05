@@ -127,3 +127,11 @@ class BaseExtension(object):
     @classmethod
     def on_cluster_delete(cls, cluster):
         """Callback which gets executed when cluster is deleted"""
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "version": self.version,
+            "description": self.description,
+            "provides": self.provides,
+        }

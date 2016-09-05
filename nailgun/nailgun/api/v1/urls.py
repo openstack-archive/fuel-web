@@ -55,6 +55,8 @@ from nailgun.api.v1.handlers.cluster_plugin_link \
 from nailgun.api.v1.handlers.deployment_history \
     import DeploymentHistoryCollectionHandler
 
+from nailgun.api.v1.handlers.extension import ExtensionHandler
+
 from nailgun.api.v1.handlers.vip import ClusterVIPCollectionHandler
 from nailgun.api.v1.handlers.vip import ClusterVIPHandler
 
@@ -301,6 +303,8 @@ urls = (
     r'/ips/(?P<ip_addr_id>\d+)/vips/?$',
     ClusterVIPHandler,
 
+    r'/extensions/?$',
+    ExtensionHandler,
     r'/clusters/(?P<cluster_id>\d+)/extensions/?$',
     ClusterExtensionsHandler,
 

@@ -55,6 +55,8 @@ class PluginManager(object):
         :param attributes: Cluster attributes
         :type attributes: dict
         """
+        from nailgun.objects import Release
+
         plugins = {}
 
         # Detach plugins data
@@ -77,6 +79,7 @@ class PluginManager(object):
                 legacy_tasks_are_ignored = not get_in(
                     attributes, 'common', 'propagate_task_deploy', 'value')
                 if (enabled and
+                        Release.is_lcm_supported(cluster.release) and
                         legacy_tasks_are_ignored and
                         cls.contains_legacy_tasks(
                             wrap_plugin(Plugin.get_by_uid(plugin.id)))):

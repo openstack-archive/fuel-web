@@ -67,10 +67,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertIn(
-            "Failed validating 'enum' in "
-            "schema['properties']['meta']['properties']['notation']",
-            resp.json_body["message"])
+        self.assertIn("'new' is not one of", resp.json_body["message"])
 
         resp = self.env._create_network_group(
             meta={"notation": consts.NETWORK_NOTATION.ip_ranges},

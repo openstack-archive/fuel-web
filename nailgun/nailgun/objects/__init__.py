@@ -45,6 +45,9 @@ from nailgun.objects.transaction import TransactionCollection
 from nailgun.objects.deployment_history import DeploymentHistory
 from nailgun.objects.deployment_history import DeploymentHistoryCollection
 
+from nailgun.objects.deployment_sequence import DeploymentSequence
+from nailgun.objects.deployment_sequence import DeploymentSequenceCollection
+
 from nailgun.objects.notification import Notification
 from nailgun.objects.notification import NotificationCollection
 

@@ -60,6 +60,30 @@ DEPLOYMENT_GRAPHS_SCHEMA = {
 }
 
 
+SEQUENCE_OF_GRAPHS_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "array",
+    "minItems": 1,
+    "items": {
+        "type": "object",
+        "required": ["type"],
+        "parameters": {
+            "type": {
+                "type": "string"
+            },
+            "nodes": {
+                "type": "array",
+                "items": {"type": "integer"}
+            },
+            "tasks": {
+                "type": "array",
+                "items": {"type": "string"}
+            }
+        }
+    }
+}
+
+
 GRAPH_EXECUTE_PARAMS_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
@@ -71,27 +95,7 @@ GRAPH_EXECUTE_PARAMS_SCHEMA = {
         "cluster": {
             "type": "integer",
         },
-        "graphs": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-                "type": "object",
-                "required": ["type"],
-                "parameters": {
-                    "type": {
-                        "type": "string"
-                    },
-                    "nodes": {
-                        "type": "array",
-                        "items": {"type": "integer"}
-                    },
-                    "tasks": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    }
-                }
-            }
-        },
+        "graphs": SEQUENCE_OF_GRAPHS_SCHEMA,
         "dry_run": {
             "type": "boolean"
         },

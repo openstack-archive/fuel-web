@@ -389,7 +389,10 @@ class TestPluginsApi(BasePluginTest):
     def test_enable_plugin_without_propagate_task_deploy(self):
         resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
         plugin = objects.Plugin.get_by_uid(resp.json['id'])
-        cluster = self.create_cluster()
+        cluster = self.env.create(
+            release_kwargs={'version': 'mitaka-9.0',
+                            'operating_system': 'Ubuntu',
+                            'deployment_tasks': []})
         resp = self.modify_plugin(cluster, plugin.name, plugin.id, True,
                                   propagate_task_deploy=False,
                                   expect_errors=True)

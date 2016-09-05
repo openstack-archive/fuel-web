@@ -26,6 +26,7 @@ from sqlalchemy import func
 from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import object_mapper
+import web
 
 from nailgun.api.v1.validators import assignment
 from nailgun import consts
@@ -1879,7 +1880,7 @@ class CheckBeforeDeploymentTask(object):
 
 class DumpTask(object):
     @classmethod
-    def conf(cls):
+    def conf(cls, auth_token=None):
         logger.debug("Preparing config for snapshot")
         nodes = db().query(Node).filter(
             Node.status.in_(['ready', 'provisioned', 'deploying',
@@ -1887,6 +1888,7 @@ class DumpTask(object):
         ).all()
 
         dump_conf = deepcopy(settings.DUMP)
+        dump_conf['auth-token'] = auth_token
         for node in nodes:
             if node.cluster is None:
                 logger.info("Node {id} is not assigned to an environment, "
@@ -1951,14 +1953,14 @@ class DumpTask(object):
         return dump_conf
 
     @classmethod
-    def execute(cls, task, conf=None):
+    def execute(cls, task, conf=None, auth_token=None):
         logger.debug("DumpTask: task={0}".format(task.uuid))
         message = make_astute_message(
             task,
             'dump_environment',
             'dump_environment_resp',
             {
-                'settings': conf or cls.conf()
+                'settings': conf or cls.conf(auth_token)
             }
         )
         db().commit()

@@ -39,7 +39,7 @@ class GraphExecuteParamsValidator(BasicValidator):
     single_schema = schema.GRAPH_EXECUTE_PARAMS_SCHEMA
 
     @classmethod
-    def validate_params(cls, data):
+    def validate(cls, data):
         parsed = cls.validate_json(data)
         cls.validate_schema(parsed, cls.single_schema)
 

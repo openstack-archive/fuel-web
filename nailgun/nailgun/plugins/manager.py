@@ -21,6 +21,7 @@ from six.moves import map
 from adapters import wrap_plugin
 from nailgun import consts
 from nailgun import errors
+from nailgun import objects
 from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import Plugin
@@ -62,6 +63,7 @@ class PluginManager(object):
             if cls.is_plugin_data(attributes[k]):
                 plugins[k] = attributes.pop(k)['metadata']
 
+        from nailgun.objects import Release
         for container in six.itervalues(plugins):
             default = container.get('default', False)
             for attrs in container.get('versions', []):
@@ -77,6 +79,7 @@ class PluginManager(object):
                 legacy_tasks_are_ignored = not get_in(
                     attributes, 'common', 'propagate_task_deploy', 'value')
                 if (enabled and
+                        Release.is_lcm_supported(cluster.release) and
                         legacy_tasks_are_ignored and
                         cls.contains_legacy_tasks(
                             wrap_plugin(Plugin.get_by_uid(plugin.id)))):

@@ -60,9 +60,11 @@ def upgrade():
     upgrade_deployment_history_summary()
     upgrade_add_task_start_end_time()
     fix_deployment_history_constraint()
+    upgrade_release_state()
 
 
 def downgrade():
+    downgrade_release_state()
     downgrade_add_task_start_end_time()
     downgrade_cluster_attributes()
     downgrade_deployment_history_summary()
@@ -324,6 +326,20 @@ def upgrade_add_task_start_end_time():
             sa.TIMESTAMP(),
             nullable=True,
         )
+    )
+
+
+def upgrade_release_state():
+    connection = op.get_bind()
+    connection.execute(sa.sql.text(
+        "UPDATE releases SET state='manageonly' WHERE state='available'")
+    )
+
+
+def downgrade_release_state():
+    connection = op.get_bind()
+    connection.execute(sa.sql.text(
+        "UPDATE releases SET state='available' WHERE state='manageonly'")
     )
 
 

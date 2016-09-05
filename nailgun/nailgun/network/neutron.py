@@ -51,7 +51,7 @@ class NeutronManager(NetworkManager):
             neutron_config.segmentation_type = segmentation_type
 
         meta = cluster.release.networks_metadata["neutron"]["config"]
-        for key, value in meta.iteritems():
+        for key, value in six.iteritems(meta):
             if hasattr(neutron_config, key):
                 setattr(neutron_config, key, value)
 

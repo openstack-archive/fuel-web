@@ -20,6 +20,7 @@ import csv
 from hashlib import md5
 import tempfile
 
+import six
 import web
 
 from nailgun import objects
@@ -133,7 +134,7 @@ class CapacityLogCsvHandler(BaseHandler):
         csv_file.writerow([])
         csv_file.writerow(['Node role(s)',
                            'Number of nodes with this configuration'])
-        for roles, count in report['roles_stat'].iteritems():
+        for roles, count in six.iteritems(report['roles_stat']):
             csv_file.writerow([roles, count])
 
         f.seek(0)

@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from nailgun.errors.base import NailgunException
 
 default_messages = {
@@ -131,7 +133,7 @@ default_messages = {
 class ErrorFactory(object):
 
     def __init__(self):
-        for name, msg in default_messages.iteritems():
+        for name, msg in six.iteritems(default_messages):
             setattr(self, name, self._build_exc(name, msg))
 
     def _build_exc(self, name, msg):

@@ -402,7 +402,7 @@ class EnvironmentManager(object):
             notif_data.update(kwargs)
         notification = Notification()
         notification.cluster_id = notif_data.get("cluster_id")
-        for f, v in notif_data.iteritems():
+        for f, v in six.iteritems(notif_data):
             setattr(notification, f, v)
         self.db.add(notification)
         self.db.commit()

@@ -382,71 +382,12 @@ class TestLogs(BaseIntegrationTest):
                 f.write(self._format_log_entry(log_entry))
                 f.flush()
 
-    @mock.patch.dict('nailgun.task.task.settings.DUMP', {
-        'dump': {
-            'local': {
-                'hosts': [],
-                'objects': [],
-            },
-            'master': {
-                'hosts': [],
-                'objects': [{
-                    'type': 'dir',
-                    'path': '/var/log/remote',
-                }],
-            },
-            'slave': {
-                'hosts': [],
-                'objects': [],
-            }
-        },
-        'target': '/path/to/save',
-        'lastdump': '/path/to/latest',
-        'timestamp': True,
-        'compression_level': 3,
-        'timeout': 60})
-    def test_snapshot_conf(self):
-        self.env.create_node(
-            status='ready',
-            hostname='node111',
-            ip='10.109.0.2',
-        )
-        conf = {
-            'dump': {
-                'local': {
-                    'hosts': [],
-                    'objects': [],
-                },
-                'master': {
-                    'hosts': [],
-                    'objects': [{
-                        'type': 'dir',
-                        'path': '/var/log/remote',
-                    }],
-                },
-                'slave': {
-                    'hosts': [{
-                        'hostname': 'node111',
-                        'address': '10.109.0.2',
-                        'ssh-key': '/root/.ssh/id_rsa',
-                        'ssh-user': 'root',
-                    }],
-                    'objects': [],
-                },
-            },
-            'target': '/path/to/save',
-            'lastdump': '/path/to/latest',
-            'timestamp': True,
-            'compression_level': 3,
-            'timeout': 60,
-        }
-        self.datadiff(DumpTask.conf(), conf)
-
     @mock.patch.dict('nailgun.task.task.settings.DUMP',
                      {'lastdump': 'LASTDUMP'})
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @mock.patch('nailgun.rpc.cast')
-    def test_snapshot_cast(self, mocked_rpc):
+    @mock.patch('web.ctx')
+    def test_snapshot_cast(self, mocked_rpc, _):
         task = self.env.create_task(name='dump')
         DumpTask.execute(task)
         message = {
@@ -467,7 +408,7 @@ class TestLogs(BaseIntegrationTest):
         m = mock.Mock(return_value=None)
         tm._call_silently = m
         task = tm.execute()
-        m.assert_called_once_with(task, DumpTask, conf=None)
+        m.assert_called_once_with(task, DumpTask, conf=None, auth_token=None)
 
     def test_snapshot_task_manager_already_running(self):
         self.env.create_task(name="dump")

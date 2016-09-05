@@ -298,6 +298,27 @@ class DeploymentTask(BaseDeploymentTask):
         return rpc_message
 
     @classmethod
+    def merge_stage(cls, tasks_on_modified, tasks_on_affected):
+        # both pre- and post- deployment sections are plain and
+        # contain tasks with an array of node uids. we need to
+        # populate those uids if some task is already exist in
+        # deployment_message output.
+        tasks_on_modified = {task['id']: task for task in tasks_on_modified
+                             if 'id' in task}
+        tasks_on_affected = [task for task in tasks_on_affected
+                             if 'id' in task]
+
+        for task in tasks_on_affected:
+            if task['id'] not in tasks_on_modified:
+                continue
+
+            task['uids'].extend(tasks_on_modified[task['id']]['uids'])
+            tasks_on_modified.pop(task['id'])
+
+        tasks_on_affected.extend(tasks_on_modified.values())
+        return tasks_on_affected
+
+    @classmethod
     def granular_deploy(cls, transaction, tasks, nodes,
                         affected_nodes, selected_task_ids, events,
                         dry_run=False, **kwargs):
@@ -330,6 +351,13 @@ class DeploymentTask(BaseDeploymentTask):
         cls._save_deployment_info(transaction, serialized_cluster)
         serialized_cluster = deployment_info_to_legacy(serialized_cluster)
 
+        pre_deployment = stages.pre_deployment_serialize(
+            graph, transaction.cluster, nodes,
+            role_resolver=role_resolver)
+        post_deployment = stages.post_deployment_serialize(
+            graph, transaction.cluster, nodes,
+            role_resolver=role_resolver)
+
         if affected_nodes:
             graph.reexecutable_tasks(events)
             serialized_affected_nodes = deployment_serializers.serialize(
@@ -339,13 +367,17 @@ class DeploymentTask(BaseDeploymentTask):
                 serialized_affected_nodes)
             serialized_cluster.extend(serialized_affected_nodes)
 
-            nodes = nodes + affected_nodes
-        pre_deployment = stages.pre_deployment_serialize(
-            graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
-        post_deployment = stages.post_deployment_serialize(
-            graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
+            pre_deployment_affected = stages.pre_deployment_serialize(
+                graph, transaction.cluster, affected_nodes,
+                role_resolver=role_resolver)
+            post_deployment_affected = stages.post_deployment_serialize(
+                graph, transaction.cluster, affected_nodes,
+                role_resolver=role_resolver)
+
+            pre_deployment = cls.merge_stage(pre_deployment,
+                                             pre_deployment_affected)
+            post_deployment = cls.merge_stage(post_deployment,
+                                              post_deployment_affected)
 
         return {
             'deployment_info': serialized_cluster,

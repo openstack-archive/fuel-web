@@ -19,6 +19,7 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -735,3 +736,13 @@ class TestDeploymentSequencesMigration(base.BaseAlembicMigrationTest):
                     'graphs': '["test_graph2"]',
                 }]
             )
+
+
+class TestReleaseStateMigration(base.BaseAlembicMigrationTest):
+    def test_state_transition(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases'].c.state,
+        ])).fetchall()
+
+        for res in result:
+            self.assertEqual(res[0], consts.RELEASE_STATES.manageonly)

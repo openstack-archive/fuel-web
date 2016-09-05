@@ -37,6 +37,7 @@ from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.settings import settings
+from nailgun import transactions
 from nailgun import utils
 
 
@@ -394,7 +395,6 @@ class SingleHandler(BaseHandler):
     validator = BasicValidator
 
     @handle_errors
-    @validate
     @serialize
     def GET(self, obj_id):
         """:returns: JSONized REST object.
@@ -406,7 +406,6 @@ class SingleHandler(BaseHandler):
         return self.single.to_dict(obj)
 
     @handle_errors
-    @validate
     @serialize
     def PUT(self, obj_id):
         """:returns: JSONized REST object.
@@ -424,7 +423,6 @@ class SingleHandler(BaseHandler):
         return self.single.to_dict(obj)
 
     @handle_errors
-    @validate
     def DELETE(self, obj_id):
         """:returns: Empty string
 
@@ -701,3 +699,31 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         :http: * 405 (method not supported)
         """
         raise self.http(405, 'Delete not supported for this entity')
+
+
+class TransactionExecutorHandler(BaseHandler):
+    @handle_errors
+    @serialize
+    def POST(self):
+        """Execute transaction.
+
+        :returns: JSONized Task object
+
+        :http: * 200 (task successfully executed)
+               * 202 (task scheduled for execution)
+               * 400 (data validation failed)
+               * 404 (cluster or sequence not found in db)
+               * 409 (graph execution is in progress)
+        """
+        data = self.checked_data()
+        cluster_id = self.get_object_or_404(
+            objects.Cluster, data.pop('cluster')).id
+        try:
+            manager = transactions.TransactionsManager(cluster_id)
+            self.raise_task(manager.execute(**data))
+        except errors.ObjectNotFound as e:
+            raise self.http(404, e.message)
+        except errors.DeploymentAlreadyStarted as e:
+            raise self.http(409, e.message)
+        except errors.InvalidData as e:
+            raise self.http(400, e.message)

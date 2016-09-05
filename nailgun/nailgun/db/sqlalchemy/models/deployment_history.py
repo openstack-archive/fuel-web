@@ -16,13 +16,13 @@
 
 import sqlalchemy as sa
 
-from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import deferred
 
 from nailgun import consts
 
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.mutable import MutableDict
 
 
 class DeploymentHistory(Base):

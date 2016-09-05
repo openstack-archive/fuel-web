@@ -61,19 +61,7 @@ class BasicValidator(object):
             "collection": collection_schema or cls.collection_schema
         }.get(resource_type)
 
-        try:
-            jsonschema.validate(json_req, use_schema)
-        except exceptions.ValidationError as exc:
-            if len(exc.path) > 0:
-                raise errors.JsonValidationError(
-                    # NOTE(ikutukov): here was a exc.path.pop(). It was buggy
-                    # because JSONSchema error path could contain integers
-                    # and joining integers as string is not a good idea in
-                    # python. So some schema error messages were not working
-                    # properly and give 500 error code except 400.
-                    ": ".join([six.text_type(exc.path), exc.message])
-                )
-            raise errors.JsonValidationError(exc.message)
+        cls.validate_schema(json_req, use_schema)
 
     @classmethod
     def validate(cls, data):
@@ -88,14 +76,18 @@ class BasicValidator(object):
                        must be in JSON Schema Draft 4 format.
         """
         try:
-            checker = jsonschema.FormatChecker()
-            jsonschema.validate(data, schema, format_checker=checker)
-        except Exception as exc:
-            # We need to cast a given exception to the string since it's the
-            # only way to print readable validation error. Unfortunately,
-            # jsonschema has no base class for exceptions, so we don't know
-            # about internal attributes with error description.
-            raise errors.InvalidData(str(exc))
+            jsonschema.validate(data, schema)
+        except exceptions.ValidationError as exc:
+            if len(exc.path) > 0:
+                raise errors.JsonValidationError(
+                    # NOTE(ikutukov): here was a exc.path.pop(). It was buggy
+                    # because JSONSchema error path could contain integers
+                    # and joining integers as string is not a good idea in
+                    # python. So some schema error messages were not working
+                    # properly and give 500 error code except 400.
+                    ": ".join([six.text_type(exc.path), exc.message])
+                )
+            raise errors.JsonValidationError(exc.message)
 
     @classmethod
     def validate_release(cls, data=None, cluster=None, graph_type=None):

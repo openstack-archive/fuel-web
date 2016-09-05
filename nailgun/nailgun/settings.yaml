@@ -541,7 +541,7 @@ LOGS:
     <<: *remote_openstack_log_format
     <<: *os_log_group
     path: "glance-cache-pruner.log"
-  - id: 'os/glace-glare'
+  - id: 'os/glance-glare'
     name: "glance-glare"
     <<: *remote_openstack_log_type
     <<: *remote_openstack_log_format

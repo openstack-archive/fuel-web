@@ -2111,8 +2111,8 @@
               i40e-dkms
               linux-firmware
               linux-firmware-nonfree
-              linux-headers-generic-lts-trusty
-              linux-image-generic-lts-trusty
+              linux-headers-generic-lts-xenial
+              linux-image-generic-lts-xenial
               lvm2
               mcollective
               mdadm

@@ -26,6 +26,7 @@ from sqlalchemy import func
 from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import object_mapper
+import web
 
 from nailgun.api.v1.validators import assignment
 from nailgun import consts
@@ -1887,6 +1888,7 @@ class DumpTask(object):
         ).all()
 
         dump_conf = deepcopy(settings.DUMP)
+        dump_conf['auth-token'] = web.ctx.env.get('HTTP_X_AUTH_TOKEN')
         for node in nodes:
             if node.cluster is None:
                 logger.info("Node {id} is not assigned to an environment, "

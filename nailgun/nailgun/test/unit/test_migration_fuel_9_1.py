@@ -15,10 +15,12 @@
 import datetime
 
 import alembic
+from distutils.version import StrictVersion
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -230,6 +232,21 @@ def prepare():
         }])
 
     release_id = result.inserted_primary_key[0]
+
+    db.execute(
+        meta.tables['releases'].insert(),
+        [{
+            'name': 'test_old',
+            'version': '2015.1-8.0',
+            'operating_system': 'ubuntu',
+            'state': 'available',
+            'deployment_tasks': jsonutils.dumps(JSON_TASKS),
+            'roles': '[]',
+            'roles_metadata': '{}',
+            'is_deployable': True,
+            'networks_metadata': '{}',
+        }]
+    )
 
     cluster_ids = []
     for cluster_name in ['test_env1', 'test_env2']:
@@ -735,3 +752,15 @@ class TestDeploymentSequencesMigration(base.BaseAlembicMigrationTest):
                     'graphs': '["test_graph2"]',
                 }]
             )
+
+
+class TestReleaseStateMigration(base.BaseAlembicMigrationTest):
+    def test_state_transition(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases'].c.state,
+            self.meta.tables['releases'].c.version,
+        ])).fetchall()
+
+        for res, version in result:
+            if StrictVersion(version.split('-')[1]) < StrictVersion('9.0'):
+                self.assertEqual(res, consts.RELEASE_STATES.manageonly)

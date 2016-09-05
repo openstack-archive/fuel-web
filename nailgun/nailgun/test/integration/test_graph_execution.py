@@ -69,6 +69,9 @@ class TestGraphExecutorHandler(base.BaseIntegrationTest):
                 {
                     "cluster": self.cluster.id,
                     "graphs": [{"type": "test_graph"}],
+                    "debug": True,
+                    "noop_run": True,
+                    "dry_run": True,
                 }
             ),
             headers=self.default_headers
@@ -94,8 +97,9 @@ class TestGraphExecutorHandler(base.BaseIntegrationTest):
                         ]
                     },
                     'tasks_directory': {},
-                    'dry_run': False,
-                    'noop_run': False,
+                    'dry_run': True,
+                    'noop_run': True,
+                    'debug': True
                 },
                 'respond_to': 'transaction_resp',
                 'method': 'task_deploy',

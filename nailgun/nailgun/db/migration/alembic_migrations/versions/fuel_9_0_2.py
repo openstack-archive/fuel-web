@@ -58,9 +58,11 @@ def upgrade():
     upgrade_node_error_type()
     upgrade_deployment_graphs_attributes()
     upgrade_deployment_history_summary()
+    upgrade_node_deployment_info()
 
 
 def downgrade():
+    downgrade_node_deployment_info()
     downgrade_deployment_history_summary()
     downgrade_deployment_graphs_attributes()
     downgrade_node_error_type()
@@ -398,3 +400,46 @@ def downgrade_orchestrator_task_types():
 
 def downgrade_deployment_history_summary():
     op.drop_column('deployment_history', 'summary')
+
+
+def upgrade_node_deployment_info():
+    op.create_table(
+        'node_deployment_info',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_uid', sa.String(20), nullable=True),
+        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('deployment_info', fields.JSON(), nullable=True),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['task_id'], ['tasks.id'], ondelete='CASCADE')
+    )
+    op.create_index('node_deployment_info_task_id_and_node_uid',
+                    'node_deployment_info', ['task_id', 'node_uid'])
+
+    connection = op.get_bind()
+    select_query = sa.sql.text("""
+        SELECT id, deployment_info
+        FROM tasks
+        WHERE deployment_info IS NOT NULL""")
+
+    insert_query = sa.sql.text("""
+        INSERT INTO node_deployment_info
+            (task_id, node_uid, deployment_info)
+        VALUES
+            (:task_id, :node_uid, :deployment_info)""")
+
+    for (task_id, deployment_info_str) in connection.execute(select_query):
+        deployment_info = jsonutils.loads(deployment_info_str)
+        for node_uid, node_deployment_info in deployment_info.iteritems():
+            connection.execute(
+                insert_query,
+                task_id=task_id,
+                node_uid=node_uid,
+                deployment_info=jsonutils.dumps(node_deployment_info))
+
+    update_query = sa.sql.text("UPDATE tasks SET deployment_info=NULL")
+    connection.execute(update_query)
+
+
+def downgrade_node_deployment_info():
+    op.drop_table('node_deployment_info')

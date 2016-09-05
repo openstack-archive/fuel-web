@@ -21,6 +21,7 @@ Create Date: 2016-06-24 13:23:33.235613
 """
 
 from alembic import op
+from distutils.version import StrictVersion
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
@@ -61,6 +62,7 @@ def upgrade():
     upgrade_add_task_start_end_time()
     fix_deployment_history_constraint()
     upgrade_deployment_sequences()
+    upgrade_release_state()
 
 
 def downgrade():
@@ -364,3 +366,28 @@ def upgrade_deployment_sequences():
 
 def downgrade_deployment_sequences():
     op.drop_table('deployment_sequences')
+
+
+def upgrade_release_state():
+    select_query = sa.sql.text(
+        "SELECT id, version FROM releases WHERE state='available'"
+    )
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET state='manageonly' WHERE id IN :ids"
+    )
+
+    connection = op.get_bind()
+
+    ids = []
+    for id_, version in connection.execute(select_query):
+        try:
+            version = version.split('-')[1]
+        except IndexError:
+            continue
+
+        if StrictVersion(version) < StrictVersion('9.0'):
+            ids.append(id_)
+
+    if ids:
+        connection.execute(update_query, ids=tuple(ids))

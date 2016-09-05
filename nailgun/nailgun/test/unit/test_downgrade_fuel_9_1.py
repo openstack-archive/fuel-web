@@ -16,6 +16,7 @@
 
 import alembic
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
@@ -74,6 +75,17 @@ def prepare():
             'replaced_deployment_info': '[]'
         }]
     )
+
+    db.execute(
+        meta.tables['releases'].insert(),
+        [{
+            'name': 'test_manageonly',
+            'version': 'liberty-8.0',
+            'operating_system': 'ubuntu',
+            'state': 'manageonly',
+            'networks_metadata': '{}',
+            'volumes_metadata': '{}'
+        }])
 
     db.commit()
 
@@ -174,3 +186,13 @@ class TestClusterAttributesDowngrade(base.BaseAlembicMigrationTest):
             sa.select([clusters_table.c.replaced_deployment_info])
         ).fetchone()[0]
         self.assertEqual('[]', deployment_info)
+
+
+class TestReleaseStateDowngrade(base.BaseAlembicMigrationTest):
+    def test_state_transition(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases'].c.state,
+        ])).fetchall()
+
+        for res in result:
+            self.assertEqual(res[0], consts.RELEASE_STATES.available)

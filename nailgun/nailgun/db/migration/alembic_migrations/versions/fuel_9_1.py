@@ -59,9 +59,11 @@ def upgrade():
     upgrade_node_error_type()
     upgrade_deployment_history_summary()
     upgrade_add_task_start_end_time()
+    upgrade_release_state()
 
 
 def downgrade():
+    downgrade_release_state()
     downgrade_add_task_start_end_time()
     downgrade_cluster_attributes()
     downgrade_deployment_history_summary()
@@ -326,6 +328,20 @@ def upgrade_add_task_start_end_time():
     )
 
 
+def upgrade_release_state():
+    connection = op.get_bind()
+    connection.execute(sa.sql.text(
+        "UPDATE releases SET state='manageonly' WHERE state='available'")
+    )
+
+
 def downgrade_add_task_start_end_time():
     op.drop_column('tasks', 'time_start')
     op.drop_column('tasks', 'time_end')
+
+
+def downgrade_release_state():
+    connection = op.get_bind()
+    connection.execute(sa.sql.text(
+        "UPDATE releases SET state='available' WHERE state='manageonly'")
+    )

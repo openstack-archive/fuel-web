@@ -374,8 +374,56 @@ def prepare():
             }
         ]
     )
+
+    result = db.execute(
+        meta.tables['nodes'].insert(),
+        [{
+            'uuid': 'fcd49872-3917-4a18-98f9-3f5acfe3fdec',
+            'cluster_id': cluster_ids[0],
+            'group_id': None,
+            'status': 'ready',
+            'roles': ['controller', 'ceph-osd'],
+            'meta': '{}',
+            'mac': 'bb:aa:aa:aa:aa:aa',
+            'timestamp': datetime.datetime.utcnow(),
+        }]
+    )
+    node_id = result.inserted_primary_key[0]
+
     TestRequiredComponentTypesField.prepare(meta)
     db.commit()
+
+
+class TestTagExistingNodes(base.BaseAlembicMigrationTest):
+    def test_tags_created_on_upgrade(self):
+        tags_count = db.execute(
+            sa.select(
+                [sa.func.count(self.meta.tables['tags'].c.id)]
+            )).fetchone()[0]
+
+        self.assertEqual(tags_count, 11)
+
+    def test_nodes_assigned_tags(self):
+        #tags = db.execute(
+        #    sa.select([self.meta.tables['node_tags'].c.tag_id]).
+        #    where(releases_table.c.name == self.release_name).
+        #    where(releases_table.c.version == self.version)
+        #).fetchone()
+        tags = self.meta.tables['tags']
+        node_tags = self.meta.tables['node_tags']
+
+        query = sa.select([tags.c.tag]).select_from(
+            sa.join(
+                tags, node_tags,
+                tags.c.id == node_tags.c.tag_id
+            )
+        ).where(
+            node_tags.c.node_id == 2
+        )
+
+        res = db.execute(query)
+        tags = [t[0] for t in res]
+        self.assertItemsEqual(tags, ['controller', 'ceph-osd'])
 
 
 class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):

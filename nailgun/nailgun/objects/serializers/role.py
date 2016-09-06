@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 #    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,19 +13,107 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.serializers.base import BasicSerializer
+from nailgun import consts
+
+from nailgun.api.v1.validators.json_schema import base_types
+
+VOLUME_ALLOCATION = {
+    'type': 'object',
+    'description': 'Volume allocations for role',
+    'required': ['allocate_size', 'id'],
+    'properties': {
+        'allocate_size': {'type': 'string',
+                          'enum': ['all', 'min', 'full-disk']},
+        'id': {'type': 'string'}}}
 
 
-class RoleSerializer(BasicSerializer):
+VOLUME_ALLOCATIONS = {
+    'type': 'array',
+    "minItems": 1,
+    'items': VOLUME_ALLOCATION}
 
-    @classmethod
-    def serialize_from_obj(cls, obj_cls, obj, role_name):
-        role_meta = obj_cls.get_roles(obj)[role_name]
-        volumes_metadata = obj_cls.get_volumes_metadata(obj)
-        role_mapping = volumes_metadata.get('volumes_roles_mapping').get(
-            role_name, [])
 
-        return {
-            'name': role_name,
-            'meta': role_meta,
-            'volumes_roles_mapping': role_mapping}
+# rule can be either integer value, like 1,2,3, or reference to
+# another field in the context
+# will be used to specify min/max/recommended rules for roles
+RULE = {
+    "type": ["string", "integer"]
+}
+
+
+OVERRIDE = {
+    "type": "object",
+    "required": ["condition"],
+    "properties": {
+        "condition": {"type": "string"},
+        "max": RULE,
+        "recommended": RULE,
+        "min": RULE,
+        "message": {"type": "string"}}}
+
+
+OVERRIDES = {
+    "type": "array",
+    "minItems": 1,
+    "items": OVERRIDE}
+
+
+LIMITS = {
+    "type": "object",
+    "properties": {
+        "condition": {"type": "string"},
+        "max": RULE,
+        "recommended": RULE,
+        "min": RULE,
+        "overrides": OVERRIDES}}
+
+
+ROLE_META_INFO = {
+    "type": "object",
+    "required": ["name", "description"],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Name that will be shown on UI"},
+        "description": {
+            "type": "string",
+            "description": "Short description of role functionality"},
+        "conflicts": {
+            "type": ["array", "string"],
+            "description": "Specify which roles conflict this one."},
+        "has_primary": {
+            "type": "boolean",
+            "description": ("During orchestration this role"
+                            " will be splitted into primary-role and role.")},
+        "public_ip_required": {
+            "type": "boolean",
+            "description": "Specify if role needs public IP address."},
+
+        "update_required": {
+            "type": "array",
+            "description": ("Specified roles will be selected for deployment,"
+                            " when a current role is selected.")},
+        "update_once": {
+            "type": "array",
+            "description": ("Specified roles will be updated if current role"
+                            " added to cluster first time.")},
+        "group": {
+            "type": "string",
+            "enum": list(consts.NODE_ROLE_GROUPS),
+            "description": ("Name of a role group which reflects the role"
+                            " purpose in cloud or deployment process")},
+        "limits": LIMITS,
+        "restrictions": base_types.RESTRICTIONS,
+        "tags": base_types.STRINGS_ARRAY}}
+
+
+SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Role",
+    "description": "Serialized Role object",
+    "type": "object",
+    "required": ['name', 'meta', 'volumes_roles_mapping'],
+    "properties": {
+        "name": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$"},
+        "meta": ROLE_META_INFO,
+        "volumes_roles_mapping": VOLUME_ALLOCATIONS}}

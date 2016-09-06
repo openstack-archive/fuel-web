@@ -74,6 +74,7 @@ class Release(NailgunObject):
         for graph_type, graph_data in six.iteritems(graphs):
             DeploymentGraph.create_for_model(
                 graph_data, release_obj, graph_type)
+
         return release_obj
 
     @classmethod

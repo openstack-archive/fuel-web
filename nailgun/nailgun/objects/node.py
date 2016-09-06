@@ -329,7 +329,7 @@ class Node(NailgunObject):
 
         roles = data.pop("roles", None)
         pending_roles = data.pop("pending_roles", None)
-        primary_roles = data.pop("primary_roles", None)
+        primary_tags = data.pop("primary_tags", None)
 
         new_node_meta = data.pop("meta", {})
         new_node_cluster_id = data.pop("cluster_id", None)
@@ -354,8 +354,8 @@ class Node(NailgunObject):
             cls.update_roles(new_node, roles)
         if pending_roles is not None:
             cls.update_pending_roles(new_node, pending_roles)
-        if primary_roles is not None:
-            cls.update_primary_roles(new_node, primary_roles)
+        if primary_tags is not None:
+            cls.update_primary_tags(new_node, primary_tags)
 
         # adding node into cluster
         if new_node_cluster_id:
@@ -759,7 +759,7 @@ class Node(NailgunObject):
         instance.group_id = None
         instance.kernel_params = None
         cls.update_roles(instance, roles)
-        cls.update_primary_roles(instance, [])
+        cls.update_primary_tags(instance, [])
         cls.update_pending_roles(instance, pending_roles)
         cls.remove_replaced_params(instance)
         cls.assign_group(instance)
@@ -911,38 +911,38 @@ class Node(NailgunObject):
         db().flush()
 
     @classmethod
-    def update_primary_roles(cls, instance, new_primary_roles):
-        """Update primary_roles for Node instance.
+    def update_primary_tags(cls, instance, new_primary_tags):
+        """Update primary_tags for Node instance.
 
         Logs an error if node doesn't belong to Cluster
 
         :param instance: Node instance
-        :param new_primary_roles: list of new pending role names
+        :param new_primary_tags: list of new primary tag names
         :returns: None
         """
         if not instance.cluster_id:
             logger.warning(
-                u"Attempting to assign pending roles to node "
+                u"Attempting to assign peimary tags to node "
                 u"'{0}' which isn't added to cluster".format(
                     instance.full_name))
             return
 
-        assigned_roles = set(instance.roles + instance.pending_roles)
-        for role in new_primary_roles:
-            if role not in assigned_roles:
-                logger.warning(
-                    u"Could not mark node {0} as primary for {1} role, "
-                    u"because there's no assigned {1} role.".format(
-                        instance.full_name, role)
-                )
-                return
+        assigned_tags = set(cls.get_tags(instance))
+        missed_tags = set(new_primary_tags) - set(assigned_tags)
+        if missed_tags:
+            logger.warning(
+                u"Could not mark node {0} as primary for {1} tags, "
+                u"because corresponding roles are not assigned.".format(
+                    instance.full_name, missed_tags)
+            )
+            return
 
         logger.debug(
-            u"Updating primary roles for node {0}: {1}".format(
+            u"Updating primary tags for node {0}: {1}".format(
                 instance.full_name,
-                new_primary_roles))
+                new_primary_tags))
 
-        instance.primary_roles = new_primary_roles
+        instance.primary_tags = new_primary_tags
         db().flush()
 
     @classmethod
@@ -1029,7 +1029,7 @@ class Node(NailgunObject):
         instance.cluster_id = None
         instance.group_id = None
         instance.kernel_params = None
-        instance.primary_roles = []
+        instance.primary_tags = []
         instance.hostname = cls.default_slave_name(instance)
         instance.attributes = {}
 
@@ -1044,7 +1044,7 @@ class Node(NailgunObject):
         """Move roles to pending_roles"""
         instance.pending_roles = instance.pending_roles + instance.roles
         instance.roles = []
-        instance.primary_roles = []
+        instance.primary_tags = []
         db().flush()
 
     @classmethod
@@ -1113,14 +1113,21 @@ class Node(NailgunObject):
         instance.network_template = None
 
     @classmethod
-    def all_roles(cls, instance):
+    def get_tags(cls, instance):
         roles = set(instance.roles + instance.pending_roles)
-        roles -= set(instance.primary_roles)
+        roles_meta = Cluster.get_roles(instance.cluster)
+        tags = []
+        for role in roles:
+            tags = itertools.chain(tags, roles_meta[role].get('tags', [role]))
+        return tags
 
-        primary_roles = set([
-            'primary-{0}'.format(role) for role in instance.primary_roles])
+    @classmethod
+    def all_tags(cls, instance):
+        tags = cls.get_tags(instance)
+        primary_tags = set([
+            'primary-{0}'.format(tag) for tag in instance.primary_tags])
 
-        return sorted(roles | primary_roles)
+        return sorted(tags | primary_tags)
 
     @classmethod
     def apply_network_template(cls, instance, template):

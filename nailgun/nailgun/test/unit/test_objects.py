@@ -45,6 +45,7 @@ from nailgun import consts
 from nailgun import plugins
 
 from nailgun.db.sqlalchemy.models import NodeGroup
+from nailgun.db.sqlalchemy.models import NodeTag
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.extensions.network_manager.manager import NetworkManager
@@ -209,7 +210,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(new_cluster.id, node.cluster_id)
         self.assertEqual(new_group.id, node.group_id)
         self.assertEqual([], node.roles)
-        self.assertEqual([], node.primary_roles)
+        self.assertEqual([], node.primary_tags)
         self.assertItemsEqual(roles, node.pending_roles)
         self.assertEqual(node.attributes, cluster.release.node_attributes)
 
@@ -257,7 +258,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(new_cluster.id, node.cluster_id)
         self.assertEqual(new_group.id, node.group_id)
         self.assertEqual([], node.roles)
-        self.assertEqual([], node.primary_roles)
+        self.assertEqual([], node.primary_tags)
         self.assertItemsEqual(roles, node.pending_roles)
         self.assertIsNotNone(node.network_template)
         endpoints = node.network_template['templates']['common']['endpoints']
@@ -782,6 +783,35 @@ class TestNodeObject(BaseIntegrationTest):
         expected_attributes = copy.deepcopy(plugin_node_attributes)
         expected_attributes.update(release_node_attributes)
         self.assertDictEqual(expected_attributes, default_attributes)
+
+    def test_update_tags(self):
+        self.env.create(
+            cluster_kwargs={'api': False},
+            nodes_kwargs=[{'role': 'controller'}])
+        node = self.env.nodes[0]
+        self.assertEqual(['controller'], objects.Node.all_tags(node))
+
+        objects.Node.update_roles(node, ['controller', 'cinder'])
+        self.assertItemsEqual(
+            ['controller', 'cinder'], objects.Node.all_tags(node)
+        )
+
+        t = objects.Tag.create({
+            'tag': 'test',
+            'owner_id': node.cluster.id,
+            'owner_type': 'cluster'
+        })
+        node_tag = NodeTag(tag=t)
+
+        node.tags.append(node_tag)
+        self.db.add(node_tag)
+        self.db.flush()
+        self.assertItemsEqual(
+            ['controller', 'cinder', 'test'], objects.Node.all_tags(node)
+        )
+
+        objects.Node.update_roles(node, [])
+        self.assertEquals(['test'], objects.Node.all_tags(node))
 
 
 class TestTaskObject(BaseIntegrationTest):

@@ -50,4 +50,5 @@ class NodeSerializer(BasicSerializer):
         data_dict = super(NodeSerializer, cls).serialize(instance, fields)
         data_dict['fqdn'] = Node.get_node_fqdn(instance)
         data_dict['status'] = Node.get_status(instance)
+        data_dict['all_tags'] = [t.tag.tag for t in instance.tags]
         return data_dict

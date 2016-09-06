@@ -45,4 +45,15 @@ class Tag(NailgunObject):
 
 class TagCollection(NailgunCollection):
 
+    @classmethod
+    def get_has_primary_tags(cls, cluster):
+        return db().query(models.Tag).filter_by(
+            has_primary=True
+        ).filter(
+            ((models.Tag.owner_id == cluster.release.id) &
+             (models.Tag.owner_type == 'release')) |
+            ((models.Tag.owner_id == cluster.id) &
+             (models.Tag.owner_type == 'cluster'))
+        )
+
     single = Tag

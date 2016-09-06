@@ -215,6 +215,22 @@ def get_all_fixtures_paths():
     ]
 
 
+def find_fixture(orig_path):
+    if os.path.isabs(orig_path):
+        return orig_path
+
+    fixtures_paths = get_all_fixtures_paths()
+    for fixtures_path in fixtures_paths:
+        path = os.path.abspath(
+            os.path.join(
+                fixtures_path,
+                orig_path
+            )
+        )
+        if os.access(path, os.R_OK):
+            return path
+
+
 def upload_fixtures():
     # TODO(akislitsky): Temporary workaround for preventing uploading
     # fixtures on Fuel upgrade and container restart. We should remove
@@ -224,21 +240,9 @@ def upload_fixtures():
         logger.info("Fixtures are already uploaded. Skipping")
         return
 
-    fixtures_paths = get_all_fixtures_paths()
     for orig_path in settings.FIXTURES_TO_UPLOAD:
-        if os.path.isabs(orig_path):
-            path = orig_path
-        else:
-            for fixtures_path in fixtures_paths:
-                path = os.path.abspath(
-                    os.path.join(
-                        fixtures_path,
-                        orig_path
-                    )
-                )
-                if os.access(path, os.R_OK):
-                    break
-        if os.access(path, os.R_OK):
+        path = find_fixture(orig_path)
+        if path:
             with open(path, "r") as fileobj:
                 upload_fixture(fileobj)
             logger.info("Fixture has been uploaded from file: %s", path)

@@ -24,6 +24,7 @@ from alembic import op
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
+from nailgun.db.sqlalchemy import fixman
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
@@ -60,6 +61,7 @@ def upgrade():
     upgrade_deployment_history_summary()
     upgrade_add_task_start_end_time()
     fix_deployment_history_constraint()
+    upgrade_releases()
 
 
 def downgrade():
@@ -345,3 +347,31 @@ def fix_deployment_history_constraint():
         "deployment_history", "tasks",
         ["task_id"], ["id"], ondelete="CASCADE"
     )
+
+
+def upgrade_releases():
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, attributes_metadata FROM releases "
+        "WHERE attributes_metadata IS NOT NULL")
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET attributes_metadata = :attributes_metadata "
+        "WHERE id = :id")
+
+    with open(fixman.find_fixture('openstack.yaml')) as fileobj:
+        fixture = fixman.load_fixture(fileobj)
+    fixture = {f['pk']: f['fields']['attributes_metadata']
+               for f in fixture if f['model'] == 'nailgun.release'}
+
+    for id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        auth_s3 = fixture[id]['editable']['storage']['auth_s3_keystone_ceph']
+        editable = attrs.setdefault('editable', {})
+        storage = editable.setdefault('storage', {})
+        storage.setdefault('auth_s3_keystone_ceph', auth_s3)
+
+        connection.execute(
+            update_query,
+            id=id,
+            attributes_metadata=jsonutils.dumps(attrs))

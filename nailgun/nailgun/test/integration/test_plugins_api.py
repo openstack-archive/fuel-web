@@ -15,13 +15,13 @@
 #    under the License.
 
 import mock
-from oslo_serialization import jsonutils
 import yaml
+from oslo_serialization import jsonutils
 
 from nailgun import consts
-from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun import objects
 from nailgun import plugins
+from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun.test import base
 
 
@@ -204,7 +204,7 @@ class TestPluginsApi(BasePluginTest):
         self.assertEqual(updated_data, data)
 
     def test_release_as_plugin(self):
-        resp = self.env.create_plugin(
+        plugin_config = dict(
             api=True,
             directories={'repositories/ubuntu', 'deployment_scripts/'},
             package_version='5.0.0',
@@ -220,6 +220,55 @@ class TestPluginsApi(BasePluginTest):
                     "name": "ExampleRelease",
                     "description": "Example Release Description",
                     "operating_system": "ubuntu",
+                    "version": "0.0.1",
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu",
+                    "volumes": {
+                        'volumes_roles_mapping': {
+                            'fuel_plugin_example_v5_release_role': [
+                                {'id': 'os', 'allocate_size': 'min'}
+                            ]
+                        },
+                        'volumes': []
+                    },
+                    'components': [
+                        {
+                            'compatible': [],
+                            'description': 'Component description (optional)',
+                            'name': 'additional_service:'
+                                    'fuel_plugin_example_v5_release',
+                            'incompatible': [],
+                            'requires': [],
+                            'label': 'Plugin label, that will be shown on UI'
+                        }
+                    ],
+                    "graphs": [
+                        {
+                            "type": "custom-graph-embedded",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks": [
+                                    {
+                                        "id": "task",
+                                        "type": "shell"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "custom-graph-ref",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks_path": "deployment_tasks.yaml"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "is_release": True,
+                    "name": "ExampleRelease2",
+                    "description": "Example Release Description",
+                    "os": "ubuntu",
                     "version": "0.0.1",
                     "deployment_scripts_path": "deployment_scripts/",
                     "repository_path": "repositories/ubuntu",
@@ -247,9 +296,19 @@ class TestPluginsApi(BasePluginTest):
                 }
             ]
         )
+        resp = self.env.create_plugin(**plugin_config)
         self.assertEqual(resp.status_code, 201)
         release_obj = objects.ReleaseCollection.filter_by(
             None, name="ExampleRelease").first()
+        self.assertEqual('available', release_obj.state)
+        self.assertEqual(
+            plugin_config['releases'][0]['volumes'],
+            release_obj.volumes_metadata
+        )
+        self.assertEqual(
+            plugin_config['releases'][0]['components'],
+            release_obj.components_metadata
+        )
         graph_obj = objects.DeploymentGraph.get_for_model(
             release_obj, graph_type="custom-graph-embedded")
         self.assertEqual(
@@ -298,6 +357,9 @@ class TestPluginsApi(BasePluginTest):
             },
             objects.DeploymentGraph.to_dict(graph_obj)
         )
+        release_obj2 = objects.ReleaseCollection.filter_by(
+            None, name="ExampleRelease2").first()
+        self.assertEqual('ubuntu', release_obj2.operating_system)
 
     def test_default_attributes_after_plugin_is_created(self):
         self.env.create_plugin(api=True)

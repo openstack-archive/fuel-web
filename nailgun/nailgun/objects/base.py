@@ -449,3 +449,18 @@ class NailgunCollection(object):
         :returns: instance of an object (model)
         """
         return cls.single.create(data)
+
+    @classmethod
+    def options(cls, iterable, *args):
+        """Apply the given list of mapper options.
+
+        In case if iterable=None applies to all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param options: list of sqlalchemy mapper options
+        :returns: iterable (SQLAlchemy query)
+        """
+        use_iterable = iterable or cls.all()
+        if args:
+            return use_iterable.options(*args)
+        return use_iterable

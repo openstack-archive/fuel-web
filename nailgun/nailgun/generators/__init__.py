@@ -1,0 +1,1 @@
+from .release import get_default_release_settings

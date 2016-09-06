@@ -362,7 +362,7 @@ class NovaNetworkDeploymentSerializer70(NovaNetworkDeploymentSerializer61):
 
         for n in Cluster.get_nodes_not_for_deletion(cluster):
             name = Node.get_slave_name(n)
-            node_roles = Node.all_roles(n)
+            node_roles = Node.all_tags(n)
             # Use permanent identifier as a node key
             key = Node.permanent_id(n)
 

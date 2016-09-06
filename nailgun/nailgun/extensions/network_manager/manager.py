@@ -1278,6 +1278,7 @@ class NetworkManager(object):
         :returns: None
         """
         networks_metadata = cluster.release.networks_metadata
+        print cluster.net_provider
         networks_list = networks_metadata[cluster.net_provider]["networks"]
 
         for net in networks_list:

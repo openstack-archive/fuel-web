@@ -33,6 +33,7 @@ from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
+from nailgun.objects import Tag
 from nailgun.orchestrator import graph_configuration
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
@@ -75,6 +76,7 @@ class Release(NailgunObject):
         for graph_type, graph_data in six.iteritems(graphs):
             DeploymentGraph.create_for_model(
                 graph_data, release_obj, graph_type)
+
         return release_obj
 
     @classmethod

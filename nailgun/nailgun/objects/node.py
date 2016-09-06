@@ -1290,6 +1290,17 @@ class Node(NailgunObject):
         nm = Cluster.get_network_manager(instance.cluster)
         return nm.dpdk_nics(instance)
 
+    @classmethod
+    def all_tags(cls, instance):
+        tags = set(t.tag.tag for t in instance.tags)
+
+        for assoc in instance.tags:
+            if assoc.is_primary:
+                tags.remove(assoc.tag.tag)
+                tags.add('primary-{}'.format(assoc.tag.tag))
+
+        return sorted(tags)
+
 
 class NodeCollection(NailgunCollection):
     """Node collection"""

@@ -45,6 +45,7 @@ from nailgun.objects import NailgunObject
 from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects import Release
 from nailgun.objects.serializers.cluster import ClusterSerializer
+from nailgun.objects import TagCollection
 from nailgun.plugins.manager import PluginManager
 from nailgun.policy.merge import NetworkRoleMergePolicy
 from nailgun.settings import settings
@@ -60,8 +61,8 @@ class Attributes(NailgunObject):
 
     #: SQLAlchemy model for Cluster attributes
     model = models.Attributes
-
-    @classmethod
+@classmethoy
+    
     def generate_fields(cls, instance):
         """Generate field values for Cluster attributes using generators.
 
@@ -259,9 +260,19 @@ class Cluster(NailgunObject):
             db().query(models.Node.id).
             filter_by(cluster_id=instance.id).
             order_by(models.Node.id)]
+        cls.delete_tags(instance)
         fire_callback_on_node_collection_delete(node_ids)
         fire_callback_on_cluster_delete(instance)
         super(Cluster, cls).delete(instance)
+
+    @classmethod
+    def delete_tags(cls, instance):
+        TagCollection.filter_by(
+            None,
+            owner_id=instance.id,
+            owner_type='cluster'
+        ).delete()
+        db().flush()
 
     @classmethod
     def get_default_kernel_params(cls, instance):
@@ -825,22 +836,12 @@ class Cluster(NailgunObject):
         return instance.roles_metadata
 
     @classmethod
-    def set_primary_role(cls, instance, nodes, role_name):
-        """Method for assigning primary attribute for specific role.
-
-        - verify that there is no primary attribute of specific role
-          assigned to cluster nodes with this role in role list
-          or pending role list, and this node is not marked for deletion
-        - if there is no primary role assigned, filter nodes which have current
-          role in roles or pending_roles
-        - if there is nodes with ready state - they should have higher priority
-        - if role was in primary_role_list - change primary attribute
-          for that association, same for role_list, this is required
-          because deployment_serializer used by cli to generate deployment info
+    def set_primary_tag(cls, instance, nodes, role_name):
+        """Method for assigning primary attribute for specific tag.
 
         :param instance: Cluster db objects
         :param nodes: list of Node db objects
-        :param role_name: string with known role name
+        :param role_name: string with known tag name
         """
         if role_name not in cls.get_roles(instance):
             logger.warning(
@@ -870,20 +871,24 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def set_primary_roles(cls, instance, nodes):
-        """Assignment of all primary attribute for all roles that requires it.
+    def set_primary_tags(cls, instance, nodes):
+        """Assignment of all primary attribute for all tags that requires it.
 
         This method is idempotent
-        To mark role as primary add has_primary: true attribute to release
+        To mark tag as primary add has_primary: true attribute to release
 
         :param instance: Cluster db object
         :param nodes: list of Node db objects
         """
-        if not instance.is_ha_mode:
-            return
-        roles_metadata = cls.get_roles(instance)
-        for role, meta in six.iteritems(roles_metadata):
-            if meta.get('has_primary'):
+        tags_meta = cls.get_tags(instance)
+        for role, meta in six.iteritems(cls.get_roles(instance)):
+            tags = role.get('tags')
+            if tags:
+                for tag in tags:
+                    tag_meta = tags_meta[tag]
+                    if tag_meta.get('has_primary'):
+                        cls.set_primary_role(instance, nodes, tag)
+            elif meta.get('has_primary'):
                 cls.set_primary_role(instance, nodes, role)
 
     @classmethod

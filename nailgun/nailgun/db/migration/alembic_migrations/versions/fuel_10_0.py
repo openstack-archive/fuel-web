@@ -22,9 +22,12 @@ Create Date: 2016-04-08 15:20:43.989472
 
 from alembic import op
 from oslo_serialization import jsonutils
+
 import sqlalchemy as sa
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import drop_enum
 
 
 # revision identifiers, used by Alembic.
@@ -37,6 +40,7 @@ def upgrade():
     upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_node_deployment_info()
     upgrade_release_required_component_types()
+    upgrade_node_tagging()
 
 
 def downgrade():
@@ -44,6 +48,53 @@ def downgrade():
     downgrade_node_deployment_info()
     downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
+    downgrade_node_tagging()
+
+
+def upgrade_node_tagging():
+    op.create_table(
+        'tags',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('tag', sa.String(64), nullable=False),
+        sa.Column('owner_id', sa.Integer(), nullable=False),
+        sa.Column(
+            'owner_type',
+            sa.Enum(
+                *consts.TAG_OWNER_TYPES,
+                name='tag_owner_type'),
+            nullable=False),
+        sa.Column('has_primary', sa.Boolean),
+        sa.Column('read_only', sa.Boolean),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint(
+            'tag', 'owner_id', 'owner_type',
+            name='__tag_owner_uc'),
+    )
+
+    op.create_table(
+        'node_tags',
+        sa.Column('id', sa.Integer()),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.Column('tag_id', sa.Integer(), nullable=False),
+        sa.Column('is_primary', sa.Boolean, default=False),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE'
+        ),
+        sa.ForeignKeyConstraint(
+            ['tag_id'], ['tags.id'], ondelete='CASCADE'
+        )
+    )
+    op.add_column(
+        'releases',
+        sa.Column('tags_metadata', fields.JSON(), nullable=True),
+    )
+
+
+def downgrade_node_tagging():
+    op.drop_table('node_tags')
+    op.drop_table('tags')
+    drop_enum('tag_owner_type')
+    op.drop_column('releases', 'tags_metadata')
 
 
 def upgrade_plugin_links_constraints():

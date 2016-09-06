@@ -151,8 +151,10 @@ class TestPluginManager(base.BaseIntegrationTest):
                                      expected_message):
             PluginManager.get_volumes_metadata(self.cluster)
 
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
     @mock.patch.object(PluginAdapterV3, 'get_metadata')
-    def test_sync_metadata_for_all_plugins(self, sync_mock):
+    def test_sync_metadata_for_all_plugins(self, sync_mock, list_fs_m):
+        list_fs_m.return_value = ['test_plugin_1-3.0', 'test_plugin_2-3.0']
         PluginManager.sync_plugins_metadata()
         self.assertEqual(sync_mock.call_count, 2)
 

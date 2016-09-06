@@ -38,13 +38,21 @@ class Plugin(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        mandatory_fields_data = {
+            'name': data.get('name'),
+            'title': data.get('title'),
+            'version': data.get('version'),
+            'package_version': data.get('package_version'),
+            'tasks': data.get('tasks', [])
+        }
+        plugin_obj = super(Plugin, cls).create(mandatory_fields_data)
+
         graphs = data.pop("graphs", {})
         deployment_tasks = data.pop("deployment_tasks", [])
 
         if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
             graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
                 {'tasks': deployment_tasks}
-        plugin_obj = super(Plugin, cls).create(data)
 
         for graph_type, graph_data in six.iteritems(graphs):
             DeploymentGraph.create_for_model(
@@ -59,37 +67,6 @@ class Plugin(NailgunObject):
         ClusterPlugin.add_compatible_clusters(plugin_obj)
 
         return plugin_obj
-
-    # todo(ikutukov): currently plugins update is vague operation so this
-    # graphs attachment on update is commented.
-
-    # @classmethod
-    # def update(cls, instance, data):
-    #     """Update existing plugin instance with specified parameters.
-    #
-    #     :param instance: object (model) instance
-    #     :param data: dictionary of key-value pairs as object fields
-    #     :returns: instance of an object (model)
-    #     """
-    #
-    #     graphs = data.pop("graphs", {})
-    #     deployment_tasks = data.pop("deployment_tasks", [])
-    #
-    #     if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
-    #         graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
-    #             {'tasks': deployment_tasks}
-    #
-    #     super(Plugin, cls).update(instance, data)
-    #
-    #     for graph_type, graph_data in six.iteritems(graphs):
-    #         g = DeploymentGraph.get_for_model(instance, graph_type)
-    #         if g:
-    #             DeploymentGraph.update(g, graph_data)
-    #         else:
-    #             DeploymentGraph.create_for_model(
-    #                 graph_data, instance, graph_type)
-    #
-    #     return instance
 
     @classmethod
     def get_by_name_version(cls, name, version):

@@ -1025,6 +1025,24 @@ class Node(NailgunObject):
         db().refresh(instance)
 
     @classmethod
+    def assign_tags(cls, instance, tags):
+        node_tags = set(t.tag for t in instance.tags)
+        tags_to_assign = set(tags) - node_tags
+        for tag in tags_to_assign:
+            t = models.NodeTag(tag=tag, node_id=instance.id)
+            db().add(t)
+            instance.tags.append(t)
+
+    @classmethod
+    def unassign_tags(cls, instance, tags):
+        node_tags = set(t.tag for t in instance.tags)
+        tags_to_remove = set(tags) & node_tags
+        tags = copy.copy(instance.tags)
+        for assoc in tags:
+            if assoc.tag in tags_to_remove:
+                instance.tags.remove(assoc)
+
+    @classmethod
     def move_roles_to_pending_roles(cls, instance):
         """Move roles to pending_roles"""
         instance.pending_roles = instance.pending_roles + instance.roles

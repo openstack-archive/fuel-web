@@ -802,7 +802,7 @@ class TestNetworkTemplateSerializer90CompatibleWith80(
     def check_vendor_specific_is_not_set(self, use_net_template=False):
         node = self.env.create_node(
             cluster_id=self.cluster.id,
-            roles=['controller'], primary_roles=['controller']
+            roles=['controller'], primary_tags=['controller']
         )
         objects.Cluster.set_network_template(
             self.cluster,
@@ -863,7 +863,7 @@ class TestNetworkTemplateSerializer90(
     def check_selective_gateway(self, use_net_template=False):
         node = self.env.create_node(
             cluster_id=self.cluster.id,
-            roles=['controller'], primary_roles=['controller']
+            roles=['controller'], primary_tags=['controller']
         )
         objects.Cluster.set_network_template(
             self.cluster,

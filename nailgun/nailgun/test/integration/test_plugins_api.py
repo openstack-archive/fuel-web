@@ -22,6 +22,7 @@ from nailgun import consts
 from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun import objects
 from nailgun import plugins
+from nailgun.plugins.manager import PluginManager
 from nailgun.test import base
 
 
@@ -364,10 +365,13 @@ class TestPluginsApi(BasePluginTest):
         self.disable_plugin(cluster, 'multiversion_plugin')
         self.assertEqual(get_num_enabled(cluster.id), 0)
 
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
     @mock.patch('nailgun.plugins.manager.wrap_plugin')
-    def test_sync_all_plugins(self, wrap_m):
+    def test_sync_all_plugins(self, wrap_m, list_fs_m):
         self._create_new_and_old_version_plugins_for_sync()
         wrap_m.get_metadata.return_value = {}
+        list_fs_m.return_value = ['test_name_0', 'test_name_2-0.1',
+                                  'test_name_1-0.1']
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)
 
@@ -403,21 +407,23 @@ class TestPluginsApi(BasePluginTest):
                          'Ensure tasks.yaml is empty and all tasks '
                          'has version >= 2.0.0.')
 
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
     @mock.patch('nailgun.plugins.loaders.files_manager.open', create=True)
     @mock.patch('nailgun.plugins.loaders.files_manager.os.access')
     @mock.patch('nailgun.plugins.loaders.files_manager.FilesManager.'
                 '_get_files_by_mask')
-    def test_sync_with_invalid_yaml_files(self, files_list_m, maccess, mopen):
+    def test_sync_with_invalid_yaml_files(self, files_list_m, maccess, mopen,
+                                          list_fs_m):
         maccess.return_value = True
         files_list_m.return_value = ['metadata.yaml']
         self._create_new_and_old_version_plugins_for_sync()
+        list_fs_m.return_value = ['test_name_0', 'test_name_2-0.1',
+                                  'test_name_1-0.1']
+
         with mock.patch.object(yaml, 'load') as yaml_load:
             yaml_load.side_effect = yaml.YAMLError()
-            resp = self.sync_plugins(expect_errors=True)
-            self.assertEqual(resp.status_code, 400)
-            self.assertRegexpMatches(
-                resp.json_body["message"],
-                'YAMLError')
+            resp = self.sync_plugins(expect_errors=False)
+            self.assertEqual(resp.status_code, 200)
 
     def _create_new_and_old_version_plugins_for_sync(self):
         plugin_ids = []
@@ -627,7 +633,10 @@ class TestPluginValidation(BasePluginTest):
 
 
 class TestPluginSyncValidation(BasePluginTest):
-    def test_valid(self):
+
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
+    def test_valid(self, list_fs_m):
+        list_fs_m.return_value = []
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)
 

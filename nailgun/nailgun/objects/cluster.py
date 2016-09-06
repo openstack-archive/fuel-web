@@ -825,36 +825,22 @@ class Cluster(NailgunObject):
         return instance.roles_metadata
 
     @classmethod
-    def set_primary_role(cls, instance, nodes, role_name):
-        """Method for assigning primary attribute for specific role.
-
-        - verify that there is no primary attribute of specific role
-          assigned to cluster nodes with this role in role list
-          or pending role list, and this node is not marked for deletion
-        - if there is no primary role assigned, filter nodes which have current
-          role in roles or pending_roles
-        - if there is nodes with ready state - they should have higher priority
-        - if role was in primary_role_list - change primary attribute
-          for that association, same for role_list, this is required
-          because deployment_serializer used by cli to generate deployment info
+    def set_primary_tag(cls, instance, nodes, tag):
+        """Method for assigning primary attribute for specific tag.
 
         :param instance: Cluster db objects
         :param nodes: list of Node db objects
-        :param role_name: string with known role name
+        :param tag: string with known tag name
         """
-        if role_name not in cls.get_roles(instance):
-            logger.warning(
-                'Trying to assign primary for non-existing role %s', role_name)
-            return
-
-        node = cls.get_primary_node(instance, role_name)
+        from objects import Node
+        node = cls.get_primary_node(instance, tag)
         if not node:
             # get nodes with a given role name which are not going to be
             # removed
             filtered_nodes = []
             for node in nodes:
                 if (not node.pending_deletion and (
-                        role_name in set(node.roles + node.pending_roles))):
+                        tag in Node.get_tags(node))):
                     filtered_nodes.append(node)
             filtered_nodes = sorted(filtered_nodes, key=lambda node: node.id)
 
@@ -864,27 +850,29 @@ class Cluster(NailgunObject):
                     if node.status == consts.NODE_STATUSES.ready),
                     filtered_nodes[0])
 
-                primary_node.primary_roles = list(primary_node.primary_roles)
-                primary_node.primary_roles.append(role_name)
+                primary_node.primary_tags = list(primary_node.primary_tags)
+                primary_node.primary_tags.append(tag)
 
         db().flush()
 
     @classmethod
-    def set_primary_roles(cls, instance, nodes):
-        """Assignment of all primary attribute for all roles that requires it.
+    def set_primary_tags(cls, instance, nodes):
+        """Assignment of all primary attribute for all tags that requires it.
 
         This method is idempotent
-        To mark role as primary add has_primary: true attribute to release
+        To mark tag as primary add "has_primary: true" attribute to tag meta
 
         :param instance: Cluster db object
         :param nodes: list of Node db objects
         """
         if not instance.is_ha_mode:
             return
-        roles_metadata = cls.get_roles(instance)
-        for role, meta in six.iteritems(roles_metadata):
-            if meta.get('has_primary'):
-                cls.set_primary_role(instance, nodes, role)
+
+        tags_meta = cls.get_tags_metadata(instance)
+        for role, meta in six.iteritems(cls.get_roles(instance)):
+            for tag in meta.get('tags', []):
+                if tags_meta[tag].get('has_primary'):
+                    cls.set_primary_tag(instance, nodes, tag)
 
     @classmethod
     def get_nodes_by_role(cls, instance, role_name):
@@ -925,36 +913,31 @@ class Cluster(NailgunObject):
         return query
 
     @classmethod
-    def get_primary_node(cls, instance, role_name):
-        """Get primary node for role_name
+    def get_primary_node(cls, instance, tag):
+        """Get primary node for tag
 
         If primary node is not found None will be returned
-        Pending roles and roles are used in search
 
         :param instance: cluster db object
         :type: python object
-        :param role_name: node role name
+        :param tag: node tag name
         :type: string
         :returns: node db object or None
         """
-        logger.debug("Getting primary node for role: %s", role_name)
-
-        if role_name not in cls.get_roles(instance):
-            logger.debug("Role not found: %s", role_name)
-            return None
+        logger.debug("Getting primary node for tag: %s", tag)
 
         primary_node = db().query(models.Node).filter_by(
             pending_deletion=False,
             cluster_id=instance.id
         ).filter(
-            models.Node.primary_roles.any(role_name)
+            models.Node.primary_tags.any(tag)
         ).first()
 
         if primary_node is None:
-            logger.debug("Not found primary node for role: %s", role_name)
+            logger.debug("Not found primary node for tag: %s", tag)
         else:
-            logger.debug("Found primary node: %s for role: %s",
-                         primary_node.id, role_name)
+            logger.debug("Found primary node: %s for tag: %s",
+                         primary_node.id, tag)
         return primary_node
 
     @classmethod
@@ -1233,6 +1216,26 @@ class Cluster(NailgunObject):
                      or filter_by_configs.intersection(set(refresh_on)))):
                 tasks.append(task)
         return tasks
+
+    @classmethod
+    def get_tags_metadata(cls, instance):
+        """Return proper tags metadata for cluster
+
+        Metadata consists of general tags metadata from release,
+        tags metadata from cluster and tags metadata from
+        plugins which are enabled for this cluster.
+
+        :param instance: Cluster DB instance
+        :returns: dict -- object with merged tags metadata
+        """
+        tags_meta = dict(instance.release.tags_metadata)
+        cluster_tags_meta = instance.tags_metadata
+        tags_meta.update(cluster_tags_meta)
+
+        plugins_tags_meta = PluginManager.get_tags_metadata(instance)
+        tags_meta.update(plugins_tags_meta)
+
+        return tags_meta
 
     @classmethod
     def get_volumes_metadata(cls, instance):

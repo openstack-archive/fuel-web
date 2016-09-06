@@ -22,6 +22,7 @@ Create Date: 2016-10-11 16:33:57.247855
 
 from alembic import op
 from oslo_serialization import jsonutils
+import six
 
 import sqlalchemy as sa
 
@@ -35,9 +36,13 @@ down_revision = 'f2314e5d63c9'
 def upgrade():
     upgrade_vmware_attributes_metadata()
     upgrade_cluster_roles()
+    upgrade_tags_meta()
+    upgrade_primary_unit()
 
 
 def downgrade():
+    downgrade_primary_unit()
+    downgrade_tags_meta()
     downgrade_cluster_roles()
     downgrade_vmware_attributes_metadata()
 
@@ -196,3 +201,80 @@ def upgrade_cluster_roles():
 def downgrade_cluster_roles():
     op.drop_column('clusters', 'volumes_metadata')
     op.drop_column('clusters', 'roles_metadata')
+
+
+def upgrade_tags_meta():
+    connection = op.get_bind()
+    op.add_column(
+        'releases',
+        sa.Column('tags_metadata',
+                  fields.JSON(),
+                  server_default='{}',
+                  nullable=False),
+    )
+    op.add_column(
+        'clusters',
+        sa.Column('tags_metadata',
+                  fields.JSON(),
+                  server_default='{}',
+                  nullable=False),
+    )
+    op.add_column(
+        'plugins',
+        sa.Column('tags_metadata',
+                  fields.JSON(),
+                  server_default='{}',
+                  nullable=False),
+    )
+
+    q_get_role_meta = "SELECT id, roles_metadata FROM {}"
+    q_update_role_tags_meta = """
+        UPDATE {}
+        SET tags_metadata = :tags_meta, roles_metadata = :roles_meta
+        WHERE id = :obj_id
+    """
+
+    for table in ['releases', 'plugins']:
+        for obj_id, roles_meta in connection.execute(
+                sa.text(q_get_role_meta.format(table))):
+            tags_meta = {}
+            roles_meta = jsonutils.loads(roles_meta or '{}')
+            for role_name, meta in six.iteritems(roles_meta):
+                meta['tags'] = [role_name]
+                tags_meta[role_name] = {'has_primary': meta.get('has_primary',
+                                                                False)}
+            connection.execute(sa.text(q_update_role_tags_meta.format(table)),
+                               roles_meta=jsonutils.dumps(roles_meta),
+                               tags_meta=jsonutils.dumps(tags_meta),
+                               obj_id=obj_id)
+
+
+def downgrade_tags_meta():
+    op.drop_column('plugins', 'tags_metadata')
+    op.drop_column('clusters', 'tags_metadata')
+    op.drop_column('releases', 'tags_metadata')
+
+
+def upgrade_primary_unit():
+    op.alter_column('nodes', 'primary_roles', new_column_name='primary_tags')
+
+
+def downgrade_primary_unit():
+    connection = op.get_bind()
+    q_get_roles = sa.text('''
+        SELECT id, roles, pending_roles, primary_tags
+        FROM nodes
+    ''')
+    q_update_primary_tags = sa.text('''
+        UPDATE nodes
+        SET primary_tags = :primary_tags
+        WHERE id = :node_id
+    ''')
+    for node_id, roles, p_roles, pr_tags in connection.execute(q_get_roles):
+        primary_tags = list(set(roles + p_roles) & set(pr_tags))
+        connection.execute(
+            q_update_primary_tags,
+            node_id=node_id,
+            primary_tags=primary_tags
+        )
+    op.alter_column('nodes', 'primary_tags', new_column_name='primary_roles')

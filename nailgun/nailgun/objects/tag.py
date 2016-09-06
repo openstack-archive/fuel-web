@@ -45,4 +45,8 @@ class Tag(NailgunObject):
 
 class TagCollection(NailgunCollection):
 
+    @classmethod
+    def get_has_primary_tags(cls):
+        return db().query(models.Tag).filter_by(has_primary=True)
+
     single = Tag

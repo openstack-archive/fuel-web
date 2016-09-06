@@ -19,7 +19,7 @@ from nailgun.extensions import get_all_extensions
 
 
 class ExtensionHandler(BaseHandler):
-    """Exception Handler"""
+    """Extension Handler"""
 
     @serialize
     def GET(self):

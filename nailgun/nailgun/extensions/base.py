@@ -249,10 +249,11 @@ class BaseExtension(object):
                                              ignore_customized):
         """Callback which gets executed before provisioning serialization"""
 
-    def to_dict(self):
+    @classmethod
+    def to_dict(cls):
         return {
-            "name": self.name,
-            "version": self.version,
-            "description": self.description,
-            "provides": self.provides,
+            "name": cls.name,
+            "version": cls.version,
+            "description": cls.description,
+            "provides": cls.provides,
         }

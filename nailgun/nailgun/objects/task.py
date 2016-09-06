@@ -99,14 +99,18 @@ class Task(NailgunObject):
         messages.append(msg)
         statuses.append(status)
         if any(st == 'error' for st in statuses):
-            instance.status = 'error'
+            status = consts.TASK_STATUSES.error
         else:
-            instance.status = status or instance.status
+            status = status or previous_status
+
         instance.progress = progress or instance.progress
         instance.result = result or instance.result
         # join messages if not None or ""
         instance.message = '\n'.join([m for m in messages if m])
-        if previous_status != instance.status and instance.cluster_id:
+
+        cls.update_status(instance, status)
+
+        if previous_status != status and instance.cluster_id:
             logger.debug("Updating cluster status: "
                          "cluster_id: %s status: %s",
                          instance.cluster_id, status)
@@ -123,6 +127,7 @@ class Task(NailgunObject):
 
                 data['status'] = consts.TASK_STATUSES.ready
                 data['progress'] = 100
+                data['time_end'] = datetime.utcnow()
                 data['message'] = u'\n'.join(map(
                     lambda s: s.message, filter(
                         lambda s: s.message is not None, subtasks)))
@@ -137,10 +142,12 @@ class Task(NailgunObject):
                                               consts.TASK_STATUSES.ready):
                         subtask.status = consts.TASK_STATUSES.error
                         subtask.progress = 100
+                        subtasks.time_end = datetime.utcnow()
                         subtask.message = "Task aborted"
 
                 data['status'] = consts.TASK_STATUSES.error
                 data['progress'] = 100
+                data['time_end'] = datetime.utcnow()
                 data['message'] = u'\n'.join(list(set(map(
                     lambda s: (s.message or ""), filter(
                         lambda s: (
@@ -156,6 +163,7 @@ class Task(NailgunObject):
                     map(lambda s: s.status in (consts.TASK_STATUSES.running,
                                                consts.TASK_STATUSES.ready),
                         subtasks)):
+                instance.time_start = datetime.utcnow()
                 instance.status = consts.TASK_STATUSES.running
 
             else:
@@ -293,19 +301,21 @@ class Task(NailgunObject):
     def update(cls, instance, data):
         logger.debug("Updating task: %s", instance.uuid)
         clean_data = cls._clean_data(data)
+        status = clean_data.pop('status', None)
         super(Task, cls).update(instance, clean_data)
-        db().flush()
+        if status:
+            cls.update_status(instance, status)
 
         # update cluster only if task status was updated
-        if instance.cluster_id and 'status' in clean_data:
-            logger.debug("Updating cluster status: %s "
-                         "cluster_id: %s status: %s",
-                         instance.uuid, instance.cluster_id,
-                         data.get('status'))
+        if instance.cluster_id and status:
+            logger.debug(
+                "Updating cluster status: %s cluster_id: %s status: %s",
+                instance.uuid, instance.cluster_id, status)
             cls._update_cluster_data(instance)
 
-        if instance.parent and \
-                {'status', 'message', 'progress'}.intersection(clean_data):
+        message = clean_data.get('message')
+        progress = clean_data.get('progress')
+        if instance.parent and (status or message or progress):
             logger.debug("Updating parent task: %s.", instance.parent.uuid)
             cls._update_parent_instance(instance.parent)
 
@@ -326,6 +336,31 @@ class Task(NailgunObject):
         db().query(cls.model).filter(cls.model.id.in_(instance_ids))\
             .update({'deleted_at': datetime.utcnow()},
                     synchronize_session='fetch')
+
+    @classmethod
+    def update_status(cls, instance, new_status):
+        if instance.status == new_status:
+            return
+
+        finish_status = (
+            consts.TASK_STATUSES.ready, consts.TASK_STATUSES.error
+        )
+        data = {'status': new_status}
+        if instance.status == consts.TASK_STATUSES.pending:
+            data['time_start'] = datetime.utcnow()
+
+        if new_status in finish_status:
+            data['time_end'] = datetime.utcnow()
+
+        super(Task, cls).update(instance, data)
+
+    @classmethod
+    def on_start(cls, instance):
+        instance.time_start = datetime.utcnow()
+
+    @classmethod
+    def on_finish(cls, instance):
+        instance.time_end = datetime.utcnow()
 
 
 class TaskCollection(NailgunCollection):

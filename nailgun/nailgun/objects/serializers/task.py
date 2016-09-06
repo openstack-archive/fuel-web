@@ -31,4 +31,6 @@ class TaskSerializer(BasicSerializer):
         "parent_id",
         "dry_run",
         "graph_type",
+        "time_start",
+        "time_end"
     )

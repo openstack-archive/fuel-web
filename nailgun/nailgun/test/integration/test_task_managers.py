@@ -56,6 +56,11 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(task_.cluster_id, None)
         self.assertNotEqual(task_.deleted_at, None)
 
+    def _check_timing(self, task):
+        self.assertIsNotNone(task.time_start)
+        self.assertIsNotNone(task.time_end)
+        self.assertLessEqual(task.time_start, task.time_end)
+
     def set_history_ready(self):
         objects.DeploymentHistoryCollection.all().update(
             {'status': consts.HISTORY_TASK_STATUSES.ready})
@@ -77,6 +82,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.refresh_nodes()
         self.assertEqual(supertask.name, TASK_NAMES.deploy)
         self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
+        self._check_timing(supertask)
         # we have three subtasks here
         # deletion
         # provision
@@ -87,11 +93,13 @@ class TestTaskManagers(BaseIntegrationTest):
             t for t in supertask.subtasks
             if t.name == consts.TASK_NAMES.provision
         )
+        self._check_timing(provision_task)
         self.assertEqual(provision_task.weight, 0.4)
         deployment_task = next(
             t for t in supertask.subtasks
             if t.name == consts.TASK_NAMES.deployment
         )
+        self._check_timing(deployment_task)
         self.assertEqual(
             consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE, deployment_task.graph_type
         )

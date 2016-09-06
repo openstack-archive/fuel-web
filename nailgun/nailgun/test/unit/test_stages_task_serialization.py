@@ -50,6 +50,7 @@ class BaseTaskSerializationTest(base.BaseTestCase):
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
+        objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
 
         # imitate behaviour of old-style tasks merge where cluster-level
         # deployment graph is overriding all other graphs.
@@ -80,7 +81,7 @@ class BaseTaskSerializationTestUbuntu(base.BaseTestCase):
             self.env.create_node(
                 roles=['controller'], cluster_id=self.cluster.id),
             self.env.create_node(
-                roles=['primary-controller'], cluster_id=self.cluster.id),
+                roles=['controller'], cluster_id=self.cluster.id),
             self.env.create_node(
                 roles=['cinder', 'compute'], cluster_id=self.cluster.id)]
         self.all_uids = [n.uid for n in self.nodes]
@@ -187,7 +188,7 @@ class TestHooksSerializers(BaseTaskSerializationTest):
         self.assertFalse(task.should_execute())
 
     @mock.patch.object(NetworkDeploymentSerializer, 'update_nodes_net_info')
-    @mock.patch.object(objects.Node, 'all_roles')
+    @mock.patch.object(objects.Node, 'all_tags')
     def test_upload_nodes_info(self, m_roles, m_update_nodes):
         # mark one node as ready so we can test for duplicates
         self.env.nodes[0].status = consts.NODE_STATUSES.ready

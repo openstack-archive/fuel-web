@@ -327,8 +327,22 @@ class PluginManager(object):
         return result
 
     @classmethod
+    def get_tags_metadata(cls, cluster):
+        """Get tags metadata for all plugins enabled for the cluster
+
+        :param cluster: A cluster instance
+        :type cluster: Cluster model
+        :return: dict -- Object with merged tags data from plugins
+        """
+        tags_metadata = {}
+        enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
+        for plugin in enabled_plugins:
+            tags_metadata.update(plugin.tags_metadata)
+        return tags_metadata
+
+    @classmethod
     def get_volumes_metadata(cls, cluster):
-        """Get volumes metadata for cluster from all plugins which enabled it.
+        """Get volumes metadata for all plugins enabled for the cluster
 
         :param cluster: A cluster instance
         :type cluster: Cluster model

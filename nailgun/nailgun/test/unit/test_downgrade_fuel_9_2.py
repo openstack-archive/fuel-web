@@ -83,6 +83,7 @@ def prepare():
             'group_id': None,
             'status': 'ready',
             'roles': ['controller', 'ceph-osd'],
+            'primary_tags': ['controller', 'role_y'],
             'meta': '{}',
             'mac': 'bb:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
@@ -298,3 +299,12 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
         )
         self.assertEqual(result['offloading_modes'], "[]")
         self.assertEqual(result['attributes'], "{}")
+
+
+class TestPluginTags(base.BaseAlembicMigrationTest):
+    def test_primary_tags_downgrade(self):
+        nodes = self.meta.tables['nodes']
+        query = sa.select([nodes.c.primary_roles]).where(
+            nodes.c.uuid == 'fcd49872-3917-4a18-98f9-3f5acfe3fdec')
+        primary_roles = db.execute(query).fetchone()[0]
+        self.assertItemsEqual(primary_roles, ['controller'])

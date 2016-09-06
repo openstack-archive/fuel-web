@@ -364,10 +364,14 @@ class TestPluginsApi(BasePluginTest):
         self.disable_plugin(cluster, 'multiversion_plugin')
         self.assertEqual(get_num_enabled(cluster.id), 0)
 
+    @mock.patch('nailgun.plugins.manager.PluginManager.'
+                '_list_plugins_on_fs')
     @mock.patch('nailgun.plugins.manager.wrap_plugin')
-    def test_sync_all_plugins(self, wrap_m):
+    def test_sync_all_plugins(self, wrap_m, list_fs_m):
         self._create_new_and_old_version_plugins_for_sync()
         wrap_m.get_metadata.return_value = {}
+        list_fs_m.ret.return_value = ['test_name_0', 'test_name_2-0.1',
+                                      'test_name_1-0.1']
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)
 

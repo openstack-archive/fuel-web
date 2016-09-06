@@ -19,7 +19,7 @@ from nailgun.extensions import get_all_extensions
 
 
 class ExtensionHandler(BaseHandler):
-    """Exception Handler"""
+    """Extension Handler"""
 
     @serialize
     def GET(self):
@@ -27,4 +27,4 @@ class ExtensionHandler(BaseHandler):
 
         :http: * 200 (OK)
         """
-        return [ext.to_dict() for ext in get_all_extensions()]
+        return [ext().to_dict() for ext in get_all_extensions()]

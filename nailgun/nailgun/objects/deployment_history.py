@@ -178,7 +178,7 @@ class DeploymentHistoryCollection(NailgunCollection):
                            '(Fuel<10.0) or malformed.')
         query = None
         if include_summary:
-            query = cls.options(undefer('summary'))
+            query = cls.options(query, undefer('summary'))
         history_records = cls.filter_by(query, task_id=transaction.id)
         if tasks_names:
             history_records = cls.filter_by_list(

@@ -13,6 +13,11 @@
 #    under the License.
 
 import copy
+import io
+import os
+import yaml
+
+
 from distutils.version import StrictVersion
 
 import six
@@ -25,6 +30,7 @@ from nailgun.logger import logger
 from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
+from nailgun.settings import settings
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
 
@@ -399,21 +405,111 @@ class PluginManager(object):
     # ENTRY POINT
     @classmethod
     def sync_plugins_metadata(cls, plugin_ids=None):
-        """Sync metadata for plugins by given IDs.
+        """Sync or install metadata for plugins by given IDs.
 
-        If there are no IDs, all newest plugins will be synced.
+        If there are no IDs, all plugins will be synced.
 
         :param plugin_ids: list of plugin IDs
         :type plugin_ids: list
         """
         if plugin_ids:
-            plugins = PluginCollection.get_by_uids(plugin_ids)
+            for plugin in PluginCollection.get_by_uids(plugin_ids):
+                cls._plugin_update(plugin)
         else:
-            plugins = PluginCollection.all()
-        for plugin in plugins:
+            cls._install_or_update_or_delete_plugins()
+
+    @classmethod
+    def _install_or_update_or_delete_plugins(cls):
+        """Sync plugins using FS and DB.
+
+        If plugin:
+            in DB and present on filesystem, it will be updated;
+            in DB and not present on filesystem, it will be removed;
+            not in DB, but present on filesystem, it will be installed
+        """
+        installed_plugins = {}
+        for plugin in PluginCollection.all():
+            plugin_adapter = wrap_plugin(plugin)
+            installed_plugins[plugin_adapter.path_name] = plugin
+
+        for plugin_dir in cls._list_plugins_on_fs():
+            if plugin_dir in installed_plugins:
+                cls._plugin_update(installed_plugins.pop(plugin_dir))
+            else:
+                cls._plugin_create(plugin_dir)
+        for deleted_plugin in installed_plugins.values():
+            cls._plugin_delete(deleted_plugin)
+
+    @classmethod
+    def _plugin_update(cls, plugin):
+        """Update plugin metadata.
+
+        :param plugin: A plugin instance
+        :type plugin: plugin model
+        """
+        try:
             plugin_adapter = wrap_plugin(plugin)
             metadata = plugin_adapter.get_metadata()
             Plugin.update(plugin, metadata)
+        except Exception as e:
+            logger.error("cannot update plugin {0} in DB. Reason: {1}"
+                         .format(plugin.name, str(e)))
+
+    @classmethod
+    def _plugin_delete(cls, plugin):
+        """Delete plugin
+
+        :param plugin: A plugin instance
+        :type plugin: plugin model
+        """
+        if cls._is_plugin_deletable(plugin):
+            try:
+                Plugin.delete(plugin)
+            except Exception as e:
+                logger.error("cannot delete plugin {0} from DB. Reason: {1}"
+                             .format(plugin.name, str(e)))
+        else:
+            logger.error("cannot delete plugin {0} from DB. The one of "
+                         "possible reasons: is still used at least in "
+                         "one cluster, but it is already deleted on "
+                         "filesystem. Please reinstall it using package "
+                         "or disable it in every cluster".format(plugin.name))
+
+    @classmethod
+    def _plugin_create(cls, plugin_dir):
+        """Create plugin using metadata.
+
+        :param plugin_dir: a plugin directory name on FS
+        :type plugin_dir: str
+        """
+        plugin_path = os.path.join(settings.PLUGINS_PATH, plugin_dir,
+                                   'metadata.yaml')
+        try:
+            plugin_metadata = cls._parse_yaml_file(plugin_path)
+            Plugin.create(plugin_metadata)
+        except Exception as e:
+            logger.error("cannot create plugin {0} from FS. Reason: {1}"
+                         .format(plugin_dir, str(e)))
+
+    @classmethod
+    def _parse_yaml_file(cls, path):
+        """Parses yaml
+
+        :param str path: path to yaml file
+        :returns: deserialized file
+        """
+        with io.open(path, encoding='utf-8') as f:
+            data = yaml.load(f)
+
+        return data
+
+    @classmethod
+    def _list_plugins_on_fs(cls):
+        """Return list of plugins on FS
+
+        :returns: list containing the names of the plugins in the directory
+        """
+        return os.listdir(settings.PLUGINS_PATH)
 
     @classmethod
     def enable_plugins_by_components(cls, cluster):
@@ -447,6 +543,16 @@ class PluginManager(object):
         for plugin in cls.get_enabled_plugins(cluster):
             tasks.extend(plugin.tasks)
         return tasks
+
+    @classmethod
+    def _is_plugin_deletable(cls, plugin):
+        """Check if plugin deletion is enable
+
+        :param plugin: the plugin instance
+        :type plugin: plugin model
+        :returns: boolean
+        """
+        return ClusterPlugin.is_plugin_used(plugin.id)
 
     @classmethod
     def _get_specific_version(cls, versions, plugin_id):

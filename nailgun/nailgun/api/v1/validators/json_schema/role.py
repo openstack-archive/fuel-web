@@ -103,7 +103,8 @@ ROLE_META_INFO = {
             "description": ("Name of a role group which reflects the role"
                             " purpose in cloud or deployment process")},
         "limits": LIMITS,
-        "restrictions": base_types.RESTRICTIONS}}
+        "restrictions": base_types.RESTRICTIONS,
+        "tags": base_types.STRINGS_ARRAY}}
 
 
 SCHEMA = {

@@ -316,7 +316,7 @@ class TestDeploymentAttributesSerialization80(
     def test_neutron_attrs(self):
         self.env.create_node(
             cluster_id=self.cluster_db.id,
-            roles=['controller'], primary_roles=['controller']
+            roles=['controller'], primary_tags=['controller']
         )
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
@@ -340,7 +340,7 @@ class TestDeploymentAttributesSerialization80(
     def test_baremetal_transformations(self):
         self.env._set_additional_component(self.cluster_db, 'ironic', True)
         self.env.create_node(cluster_id=self.cluster_db.id,
-                             roles=['primary-controller'])
+                             roles=['controller'])
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)

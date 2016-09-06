@@ -34,7 +34,7 @@ from nailgun.task import legacy_tasks_adapter
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
 from nailgun.utils import mule
-from nailgun.utils import role_resolver
+from nailgun.utils import resolvers
 from nailgun import yaql_ext
 
 
@@ -359,8 +359,8 @@ class TransactionsManager(object):
 
         # we should initialize primary roles for cluster before
         # role resolve has been created
-        objects.Cluster.set_primary_roles(cluster, nodes)
-        resolver = role_resolver.RoleResolver(nodes)
+        objects.Cluster.set_primary_tags(cluster, nodes)
+        resolver = resolvers.TagResolver(nodes)
         _adjust_graph_tasks(
             graph,
             cluster,

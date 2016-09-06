@@ -316,7 +316,7 @@ class TestDeploymentAttributesSerialization80(
     def test_neutron_attrs(self):
         self.env.create_node(
             cluster_id=self.cluster_db.id,
-            roles=['controller'], primary_roles=['controller']
+            roles=['controller'], primary_tags=['controller']
         )
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(

@@ -11,6 +11,7 @@ License: Apache
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Prefix: %{_prefix}
+BuildRequires:  python-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-yaml
 BuildRequires:  git

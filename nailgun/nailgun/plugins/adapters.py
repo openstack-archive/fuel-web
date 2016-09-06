@@ -452,6 +452,11 @@ class PluginAdapterV5(PluginAdapterV4):
         for graph in graphs_list:
             graphs_by_type[graph['type']] = graph['graph']
         configuration['graphs'] = graphs_by_type
+        configuration['state'] = consts.RELEASE_STATES.available
+        if configuration.get('os', None):
+            if not configuration.get('operating_system', None):
+                configuration['operating_system'] = configuration['os']
+            del configuration['os']
         nailgun.objects.Release.create(configuration)
 
     def _process_releases(self, releases_records):

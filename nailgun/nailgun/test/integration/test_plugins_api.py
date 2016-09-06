@@ -244,12 +244,44 @@ class TestPluginsApi(BasePluginTest):
                             }
                         }
                     ]
+                },
+                {
+                    "is_release": True,
+                    "name": "ExampleRelease2",
+                    "description": "Example Release Description",
+                    "os": "ubuntu",
+                    "version": "0.0.1",
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu",
+                    "graphs": [
+                        {
+                            "type": "custom-graph-embedded",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks": [
+                                    {
+                                        "id": "task",
+                                        "type": "shell"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "custom-graph-ref",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks_path": "deployment_tasks.yaml"
+                            }
+                        }
+                    ]
                 }
             ]
         )
         self.assertEqual(resp.status_code, 201)
         release_obj = objects.ReleaseCollection.filter_by(
             None, name="ExampleRelease").first()
+        self.assertEqual('available', release_obj.state)
+
         graph_obj = objects.DeploymentGraph.get_for_model(
             release_obj, graph_type="custom-graph-embedded")
         self.assertEqual(
@@ -298,6 +330,9 @@ class TestPluginsApi(BasePluginTest):
             },
             objects.DeploymentGraph.to_dict(graph_obj)
         )
+        release_obj2 = objects.ReleaseCollection.filter_by(
+            None, name="ExampleRelease2").first()
+        self.assertEqual('ubuntu', release_obj2.operating_system)
 
     def test_default_attributes_after_plugin_is_created(self):
         self.env.create_plugin(api=True)

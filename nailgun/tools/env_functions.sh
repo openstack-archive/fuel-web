@@ -36,9 +36,6 @@ cleanup_server() {
 }
 
 cleanup_nailgun_env() {
-    rm -f "$NAILGUN_LOGS/nailgun.log"
-    rm -f "$NAILGUN_LOGS/app.log"
-    rm -f "$NAILGUN_LOGS/api.log"
     rm -f "${NAILGUN_CONFIG}"
 }
 

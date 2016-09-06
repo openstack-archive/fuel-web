@@ -93,12 +93,12 @@ def _add_cross_depends(task, depends):
     return task
 
 
-def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, role_resolver):
+def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, resolver):
     """Adapt the legacy tasks to execute with Task Based Engine.
 
     :param deployment_tasks: the list of deployment tasks
     :param legacy_plugin_tasks: the pre/post tasks from tasks.yaml
-    :param role_resolver: the RoleResolver instance
+    :param resolver: the TagResolver instance
     """
     min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
 
@@ -135,7 +135,7 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, role_resolver):
             elif task['id'] in post_deployment_graph.node:
                 required_for.add(TASK_END_TEMPLATE.format('post_deployment'))
             else:
-                for role in role_resolver.get_all_roles(_get_role(task)):
+                for role in resolver.get_all_roles(_get_role(task)):
                     required_for.add(TASK_END_TEMPLATE.format(role))
             task['required_for'] = list(required_for)
             if task_version < min_task_version:
@@ -168,7 +168,7 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, role_resolver):
             logger.info("Added cross_depends for legacy task: %s", task['id'])
             task_depends = [
                 {'name': TASK_START_TEMPLATE.format(g), 'role': 'self'}
-                for g in role_resolver.get_all_roles(_get_role(task))
+                for g in resolver.get_all_roles(_get_role(task))
             ]
 
         yield _add_cross_depends(task, task_depends)

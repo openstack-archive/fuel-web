@@ -1072,7 +1072,7 @@ class NeutronNetworkDeploymentSerializer70(
 
         for node in objects.Cluster.get_nodes_not_for_deletion(cluster):
             name = objects.Node.get_slave_name(node)
-            node_roles = objects.Node.all_roles(node)
+            node_roles = objects.Node.all_tags(node)
             network_roles = cls.get_network_role_mapping_to_ip(node)
             # Use permanent identifier as a node key
             key = objects.Node.permanent_id(node)

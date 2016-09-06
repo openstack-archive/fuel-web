@@ -33,7 +33,7 @@ from nailgun.task import legacy_tasks_adapter
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
 from nailgun.utils import mule
-from nailgun.utils import role_resolver
+from nailgun.utils import resolvers
 from nailgun import yaql_ext
 
 
@@ -343,7 +343,7 @@ class TransactionsManager(object):
                 node.error_type = None
                 node.error_msg = None
 
-        resolver = role_resolver.RoleResolver(nodes)
+        resolver = resolvers.TagResolver(nodes)
         _adjust_graph_tasks(
             graph,
             cluster,

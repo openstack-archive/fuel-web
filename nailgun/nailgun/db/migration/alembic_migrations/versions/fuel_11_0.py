@@ -34,9 +34,11 @@ down_revision = 'c6edea552f1e'
 
 def upgrade():
     upgrade_cluster_roles()
+    upgrade_tags_meta()
 
 
 def downgrade():
+    downgrade_tags_meta()
     downgrade_cluster_roles()
 
 
@@ -60,3 +62,33 @@ def upgrade_cluster_roles():
 def downgrade_cluster_roles():
     op.drop_column('clusters', 'roles_metadata')
     op.drop_column('clusters', 'volumes_metadata')
+
+
+def upgrade_tags_meta():
+    op.add_column(
+        'releases',
+        sa.Column('tags_metadata',
+                  fields.JSON(),
+                  server_default='{}',
+                  nullable=False),
+    )
+    op.add_column(
+        'clusters',
+        sa.Column('tags_metadata',
+                  fields.JSON(),
+                  server_default='{}',
+                  nullable=False),
+    )
+    op.add_column(
+        'plugins',
+        sa.Column('tags_metadata',
+                  fields.JSON(),
+                  server_default='{}',
+                  nullable=False),
+    )
+
+
+def downgrade_tags_meta():
+    op.drop_column('releases', 'tags_metadata')
+    op.drop_column('clusters', 'tags_metadata')
+    op.drop_column('plugins', 'tags_metadata')

@@ -923,6 +923,10 @@ class EnvironmentManager(object):
                  'version': '2015.1-8.0', 'os': 'ubuntu',
                  'mode': ['ha', 'multinode'],
                  'deployment_scripts_path': 'deployment_scripts/'},
+                {'repository_path': 'repositories/ubuntu',
+                 'version': 'mitaka-9.0', 'os': 'ubuntu',
+                 'mode': ['ha', 'multinode'],
+                 'deployment_scripts_path': 'deployment_scripts/'},
             ]
         }
 

@@ -1187,16 +1187,16 @@ class TestTaskManagers(BaseIntegrationTest):
             nodes_kwargs=[{'roles': ['controller'],
                            'status': consts.NODE_STATUSES.ready}] * 3)
         task_manager = manager.NodeDeletionTaskManager(cluster_id=cluster.id)
-        objects.Cluster.set_primary_roles(cluster, self.env.nodes)
+        objects.Cluster.set_primary_tags(cluster, self.env.nodes)
         primary_node = filter(
-            lambda n: 'controller' in n.primary_roles,
+            lambda n: 'primary-controller' in objects.Node.all_tags(n),
             self.env.nodes)[0]
 
         task_manager.execute([primary_node])
         self.env.refresh_nodes()
 
         new_primary = filter(
-            lambda n: ('controller' in n.primary_roles and
+            lambda n: ('primary-controller' in objects.Node.all_tags(n) and
                        n.pending_deletion is False),
             self.env.nodes)[0]
 

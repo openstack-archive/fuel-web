@@ -96,13 +96,14 @@ class Release(Base):
         """
         # unfortunately, Fuel 5.0 didn't have an env version in release_version
         # so we need to handle that special case
+        version = self.version
         if self.version == '2014.1':
             version = '5.0'
         else:
             try:
                 version = self.version.split('-')[1]
             except IndexError:
-                version = ''
+                pass
 
         return version
 

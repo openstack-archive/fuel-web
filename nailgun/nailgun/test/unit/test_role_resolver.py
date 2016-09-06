@@ -19,10 +19,10 @@ import six
 
 from nailgun import consts
 from nailgun.test.base import BaseUnitTest
-from nailgun.utils import role_resolver
+from nailgun.utils import resolvers
 
 
-class TestPatternBasedRoleResolver(BaseUnitTest):
+class TestPatternBasedTagResolver(BaseUnitTest):
     @classmethod
     def setUpClass(cls):
         cls.roles_of_nodes = [
@@ -38,12 +38,12 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
         ]
 
     def setUp(self):
-        objs_mock = mock.patch('nailgun.utils.role_resolver.objects')
+        objs_mock = mock.patch('nailgun.utils.resolvers.objects')
         self.addCleanup(objs_mock.stop)
-        objs_mock.start().Node.all_roles.side_effect = self.roles_of_nodes
+        objs_mock.start().Node.all_tags.side_effect = self.roles_of_nodes
 
     def test_resolve_by_pattern(self):
-        resolver = role_resolver.RoleResolver(self.nodes)
+        resolver = resolvers.TagResolver(self.nodes)
         self.assertItemsEqual(
             ["0", "2", "3"],
             resolver.resolve(["/.*controller/"])
@@ -58,14 +58,14 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
         )
 
     def test_resolve_all(self):
-        resolver = role_resolver.RoleResolver(self.nodes)
+        resolver = resolvers.TagResolver(self.nodes)
         self.assertItemsEqual(
             (x.uid for x in self.nodes),
             resolver.resolve("*")
         )
 
     def test_resolve_master(self):
-        resolver = role_resolver.RoleResolver(self.nodes)
+        resolver = resolvers.TagResolver(self.nodes)
         self.assertItemsEqual(
             [consts.MASTER_NODE_UID],
             resolver.resolve(consts.TASK_ROLES.master)
@@ -76,7 +76,7 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
         )
 
     def test_resolve_any(self):
-        resolver = role_resolver.RoleResolver(self.nodes)
+        resolver = resolvers.TagResolver(self.nodes)
         all_nodes = resolver.resolve("*", consts.NODE_RESOLVE_POLICY.all)
         self.assertItemsEqual(
             all_nodes,
@@ -87,7 +87,7 @@ class TestPatternBasedRoleResolver(BaseUnitTest):
         self.assertTrue(any_node.issubset(all_nodes))
 
     def test_get_all_roles(self):
-        resolver = role_resolver.RoleResolver(self.nodes)
+        resolver = resolvers.TagResolver(self.nodes)
         all_roles = {r for roles in self.roles_of_nodes for r in roles}
         self.assertEqual(all_roles, resolver.get_all_roles())
         self.assertEqual(all_roles, resolver.get_all_roles(
@@ -108,5 +108,5 @@ class TestNullResolver(BaseUnitTest):
         node_ids = ['1', '2', '3']
         self.assertIs(
             node_ids,
-            role_resolver.NullResolver(node_ids).resolve("controller")
+            resolvers.NullResolver(node_ids).resolve("controller")
         )

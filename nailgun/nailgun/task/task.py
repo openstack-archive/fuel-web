@@ -56,8 +56,8 @@ from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 from nailgun.utils import logs as logs_utils
+from nailgun.utils.resolvers import TagResolver
 from nailgun.utils.restrictions import VmwareAttributesRestriction
-from nailgun.utils.role_resolver import RoleResolver
 
 
 def make_astute_message(task, method, respond_to, args):
@@ -337,7 +337,7 @@ class DeploymentTask(BaseDeploymentTask):
         # NOTE(dshulyak) At this point parts of the orchestration can be empty,
         # it should not cause any issues with deployment/progress and was
         # done by design
-        role_resolver = RoleResolver(nodes)
+        resolver = TagResolver(nodes)
         serialized_cluster = deployment_serializers.serialize(
             graph, transaction.cluster, nodes)
 
@@ -346,10 +346,10 @@ class DeploymentTask(BaseDeploymentTask):
 
         pre_deployment = stages.pre_deployment_serialize(
             graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
+            resolver=resolver)
         post_deployment = stages.post_deployment_serialize(
             graph, transaction.cluster, nodes,
-            role_resolver=role_resolver)
+            resolver=resolver)
 
         if affected_nodes:
             graph.reexecutable_tasks(events)
@@ -362,10 +362,10 @@ class DeploymentTask(BaseDeploymentTask):
 
             pre_deployment_affected = stages.pre_deployment_serialize(
                 graph, transaction.cluster, affected_nodes,
-                role_resolver=role_resolver)
+                resolver=resolver)
             post_deployment_affected = stages.post_deployment_serialize(
                 graph, transaction.cluster, affected_nodes,
-                role_resolver=role_resolver)
+                resolver=resolver)
 
             cls._extend_tasks_list(pre_deployment, pre_deployment_affected)
             cls._extend_tasks_list(post_deployment, post_deployment_affected)
@@ -555,7 +555,7 @@ class ClusterTransaction(DeploymentTask):
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer
         # also role resolver should be created after serialization completed
-        role_resolver = RoleResolver(nodes)
+        resolver = TagResolver(nodes)
         cluster = transaction.cluster
 
         if objects.Cluster.is_propagate_task_deploy_enabled(cluster):
@@ -566,12 +566,12 @@ class ClusterTransaction(DeploymentTask):
                 )
             else:
                 plugin_tasks = None
-            tasks = adapt_legacy_tasks(tasks, plugin_tasks, role_resolver)
+            tasks = adapt_legacy_tasks(tasks, plugin_tasks, resolver)
 
         directory, graph, metadata = lcm.TransactionSerializer.serialize(
             context,
             tasks,
-            role_resolver,
+            resolver,
         )
 
         logger.info("tasks serialization is finished.")

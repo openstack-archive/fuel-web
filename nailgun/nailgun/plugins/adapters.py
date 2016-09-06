@@ -416,6 +416,21 @@ class PluginAdapterV5(PluginAdapterV4):
 
     loader_class = loaders.PluginLoaderV5
 
+    _release_fields_to_db_fields = {
+        "attributes": "attributes_metadata",
+
+        "networks": "networks_metadata",
+        "network_roles": "network_roles_metadata",
+        "volumes": "volumes_metadata",
+        "roles": "roles_metadata",
+
+        "components": "components_metadata",
+
+        "vmware_attributes": "vmware_attributes_metadata",
+
+        "os": "operating_system"
+    }
+
     @property
     def attributes_processors(self):
         ap = super(PluginAdapterV5, self).attributes_processors
@@ -452,6 +467,14 @@ class PluginAdapterV5(PluginAdapterV4):
         for graph in graphs_list:
             graphs_by_type[graph['type']] = graph['graph']
         configuration['graphs'] = graphs_by_type
+        configuration['state'] = consts.RELEASE_STATES.available
+
+        #  remap fields
+        for alias, name in six.iteritems(self._release_fields_to_db_fields):
+            value = configuration.pop(alias, None)
+            if value is not None:
+                configuration[name] = value
+
         nailgun.objects.Release.create(configuration)
 
     def _process_releases(self, releases_records):

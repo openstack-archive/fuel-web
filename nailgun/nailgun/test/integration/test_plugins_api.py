@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+
 from oslo_serialization import jsonutils
 import yaml
 
@@ -202,102 +203,6 @@ class TestPluginsApi(BasePluginTest):
         updated_plugin_id = updated_data.pop('id')
         self.assertEqual(plugin_id, updated_plugin_id)
         self.assertEqual(updated_data, data)
-
-    def test_release_as_plugin(self):
-        resp = self.env.create_plugin(
-            api=True,
-            directories={'repositories/ubuntu', 'deployment_scripts/'},
-            package_version='5.0.0',
-            deployment_tasks=[
-                {
-                    'id': 'embedded-task',
-                    'type': 'puppet'
-                }
-            ],
-            releases=[
-                {
-                    "is_release": True,
-                    "name": "ExampleRelease",
-                    "description": "Example Release Description",
-                    "operating_system": "ubuntu",
-                    "version": "0.0.1",
-                    "deployment_scripts_path": "deployment_scripts/",
-                    "repository_path": "repositories/ubuntu",
-                    "graphs": [
-                        {
-                            "type": "custom-graph-embedded",
-                            "graph": {
-                                "name": "deployment-graph-name",
-                                "tasks": [
-                                    {
-                                        "id": "task",
-                                        "type": "shell"
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "type": "custom-graph-ref",
-                            "graph": {
-                                "name": "deployment-graph-name",
-                                "tasks_path": "deployment_tasks.yaml"
-                            }
-                        }
-                    ]
-                }
-            ]
-        )
-        self.assertEqual(resp.status_code, 201)
-        release_obj = objects.ReleaseCollection.filter_by(
-            None, name="ExampleRelease").first()
-        graph_obj = objects.DeploymentGraph.get_for_model(
-            release_obj, graph_type="custom-graph-embedded")
-        self.assertEqual(
-            {
-                'tasks': [
-                    {
-                        'id': 'task',
-                        'task_name': 'task',
-                        'version': '1.0.0',
-                        'type': 'shell'
-                    }
-                ],
-                'id': graph_obj.id,
-                'relations': [
-                    {
-                        'model_id': release_obj.id,
-                        'model': 'release',
-                        'type': 'custom-graph-embedded'
-                    }
-                ],
-                'name': 'deployment-graph-name'
-            },
-            objects.DeploymentGraph.to_dict(graph_obj)
-        )
-        graph_obj = objects.DeploymentGraph.get_for_model(
-            release_obj, graph_type="custom-graph-ref")
-        self.assertEqual(
-            {
-                'tasks': [
-                    {
-                        'id': 'embedded-task',
-                        'task_name': 'embedded-task',
-                        'type': 'puppet',
-                        'version': '1.0.0'
-                    }
-                ],
-                'id': graph_obj.id,
-                'relations': [
-                    {
-                        'model_id': release_obj.id,
-                        'model': 'release',
-                        'type': 'custom-graph-ref'
-                    }
-                ],
-                'name': 'deployment-graph-name'
-            },
-            objects.DeploymentGraph.to_dict(graph_obj)
-        )
 
     def test_default_attributes_after_plugin_is_created(self):
         self.env.create_plugin(api=True)
@@ -638,3 +543,190 @@ class TestPluginSyncValidation(BasePluginTest):
         sample = {'ids': {}}
         resp = self.sync_plugins(params=sample, expect_errors=True)
         self.assertEqual(resp.status_code, 400)
+
+
+class TestReleaseAsPlugin(BasePluginTest):
+    def setUp(self):
+        super(TestReleaseAsPlugin, self).setUp()
+        self.plugin_config = dict(
+            api=True,
+            directories={'repositories/ubuntu', 'deployment_scripts/'},
+            package_version='5.0.0',
+            deployment_tasks=[
+                {
+                    'id': 'embedded-task',
+                    'type': 'puppet'
+                }
+            ],
+            releases=[
+                {
+                    "is_release": True,
+                    "name": "ExampleRelease",
+                    "description": "Example Release Description",
+                    "operating_system": "ubuntu",
+                    "version": "test-0.0.1",
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu",
+                    "volumes": {
+                        'volumes_roles_mapping': {
+                            'fuel_plugin_example_v5_release_role': [
+                                {'id': 'os', 'allocate_size': 'min'}
+                            ]
+                        },
+                        'volumes': []
+                    },
+                    'components': [
+                        {
+                            'compatible': [],
+                            'description': 'Component description (optional)',
+                            'name': 'additional_service:'
+                                    'fuel_plugin_example_v5_release',
+                            'incompatible': [],
+                            'requires': [],
+                            'label': 'Plugin label, that will be shown on UI'
+                        }
+                    ],
+                    "graphs": [
+                        {
+                            "type": "custom-graph-embedded",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks": [
+                                    {
+                                        "id": "task",
+                                        "type": "shell"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "custom-graph-ref",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks_path": "deployment_tasks.yaml"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "is_release": True,
+                    "name": "ExampleRelease2",
+                    "description": "Example Release Description",
+                    "os": "ubuntu",
+                    "version": "test-0.0.1",
+                    "deployment_scripts_path": "deployment_scripts/",
+                    "repository_path": "repositories/ubuntu",
+                    "graphs": [
+                        {
+                            "type": "custom-graph-embedded",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks": [
+                                    {
+                                        "id": "task",
+                                        "type": "shell"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "custom-graph-ref",
+                            "graph": {
+                                "name": "deployment-graph-name",
+                                "tasks_path": "deployment_tasks.yaml"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        resp = self.env.create_plugin(**self.plugin_config)
+        self.assertEqual(resp.status_code, 201)
+
+        self.plugin = objects.PluginCollection.get_by_uids([
+            resp.json_body['id']
+        ]).first()
+
+    def test_release_as_plugin(self):
+
+        self.assertEqual([], self.plugin.releases)
+
+        release_obj = objects.ReleaseCollection.filter_by(
+            None, name="ExampleRelease").first()
+        self.assertEqual(consts.RELEASE_STATES.available, release_obj.state)
+        self.assertEqual(
+            self.plugin_config['releases'][0]['volumes'],
+            release_obj.volumes_metadata
+        )
+        graph_obj = objects.DeploymentGraph.get_for_model(
+            release_obj, graph_type="custom-graph-embedded")
+        self.assertEqual(
+            {
+                'tasks': [
+                    {
+                        'id': 'task',
+                        'task_name': 'task',
+                        'version': '1.0.0',
+                        'type': 'shell'
+                    }
+                ],
+                'id': graph_obj.id,
+                'relations': [
+                    {
+                        'model_id': release_obj.id,
+                        'model': 'release',
+                        'type': 'custom-graph-embedded'
+                    }
+                ],
+                'name': 'deployment-graph-name'
+            },
+            objects.DeploymentGraph.to_dict(graph_obj)
+        )
+        graph_obj = objects.DeploymentGraph.get_for_model(
+            release_obj, graph_type="custom-graph-ref")
+        self.assertEqual(
+            {
+                'tasks': [
+                    {
+                        'id': 'embedded-task',
+                        'task_name': 'embedded-task',
+                        'type': 'puppet',
+                        'version': '1.0.0'
+                    }
+                ],
+                'id': graph_obj.id,
+                'relations': [
+                    {
+                        'model_id': release_obj.id,
+                        'model': 'release',
+                        'type': 'custom-graph-ref'
+                    }
+                ],
+                'name': 'deployment-graph-name'
+            },
+            objects.DeploymentGraph.to_dict(graph_obj)
+        )
+        release_obj2 = objects.ReleaseCollection.filter_by(
+            None, name="ExampleRelease2").first()
+        self.assertEqual('ubuntu', release_obj2.operating_system)
+
+    def test_cluster_creation(self):
+        release_obj = objects.ReleaseCollection.filter_by(
+            None, name="ExampleRelease").first()
+        cluster = self.env.create(
+            api=True,
+            cluster_kwargs={
+                'release_id': release_obj.id,
+                'nodes': []
+            }
+        )
+        self.assertTrue(cluster.name)
+        self.assertEqual(cluster.release_id, release_obj.id)
+        self.assertEqual(
+            self.plugin_config['releases'][0]['components'],
+            release_obj.components_metadata
+        )
+        attributes = objects.Cluster.get_attributes(cluster)
+
+        self.assertEqual(attributes.editable, {})
+        self.assertEqual(attributes.generated, {})

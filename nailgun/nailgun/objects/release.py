@@ -27,6 +27,7 @@ import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
+from nailgun import generators
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -58,6 +59,10 @@ class Release(NailgunObject):
         data.pop("roles", None)
         graphs = data.pop("graphs", {})
         deployment_tasks = data.pop("deployment_tasks", [])
+
+        default_release = generators.get_default_release_settings()
+        default_release.update(data)
+        data = default_release
 
         if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
             graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
@@ -93,6 +98,11 @@ class Release(NailgunObject):
                 or not existing_default_graph:
             graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
                 {'tasks': deployment_tasks}
+
+        if data.get('attributes_metadata', None) is not None:
+            if data['attributes_metadata'].get('editable', None) is None:
+                data['attributes_metadata']['editable'] = {}
+
         release_obj = super(Release, cls).update(instance, data)
 
         for graph_type, graph_data in six.iteritems(graphs):

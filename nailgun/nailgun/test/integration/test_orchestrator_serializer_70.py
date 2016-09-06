@@ -771,6 +771,7 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
             ]
         )
 
+        objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
         self.plugin_data = {
             'package_version': '3.0.0',
             'releases': [

@@ -105,6 +105,17 @@ DEPLOYMENT_INFO = {
 }
 
 
+ATTRIBUTES_METADATA = {
+    'editable': {
+        'kernel_params': {
+            'kernel': {
+                'value': ("console=tty0 net.ifnames=0 biosdevname=0 "
+                          "rootdelay=90 nomodeset"),
+            }
+        }
+    }
+}
+
 def setup_module():
     dropdb()
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
@@ -177,7 +188,8 @@ def prepare():
                     'config': {}
                 }
             }),
-            'volumes_metadata': jsonutils.dumps({})
+            'volumes_metadata': jsonutils.dumps({}),
+            'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA)
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -588,3 +600,19 @@ class TestSplitDeploymentInfo(base.BaseAlembicMigrationTest):
         res = db.execute(sa.select([tasks_table]))
         for data in res:
             self.assertIsNone(data.deployment_info)
+
+
+class TestReleasesUpdateFromFixture(base.BaseAlembicMigrationTest):
+
+    def test_releases_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        attrs = jsonutils.loads(result['attributes_metadata'])
+        self.assertIn('editable', attrs)
+        self.assertIn('storage', attrs['editable'])
+        self.assertIn('auth_s3_keystone_ceph', attrs['editable']['storage'])
+        self.assertIn('common', attrs['editable'])
+        self.assertIn('run_ping_checker', attrs['editable']['common'])
+        self.assertEquals(
+            "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset",
+            attrs['editable']['kernel_params']['kernel']['value'])

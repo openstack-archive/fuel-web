@@ -1166,7 +1166,7 @@ class ClusterDeletionManager(ClearTaskHistory):
 
 class DumpTaskManager(TaskManager):
 
-    def execute(self, conf=None, **kwargs):
+    def execute(self, conf=None, auth_token=None, **kwargs):
         logger.info("Trying to start dump_environment task")
         self.check_running_task(consts.TASK_NAMES.dump)
 
@@ -1176,7 +1176,8 @@ class DumpTaskManager(TaskManager):
         self._call_silently(
             task,
             tasks.DumpTask,
-            conf=conf
+            conf=conf,
+            auth_token=auth_token
         )
         return task
 

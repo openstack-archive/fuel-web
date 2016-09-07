@@ -70,6 +70,12 @@ class Context(object):
         context = self._yaql_context.create_child_context()
         context['$%new'] = self._transaction.get_new_data(node_id)
         context['$%old'] = self._transaction.get_old_data(node_id, task_id)
+        context['$%new_node'] = self._transaction.get_new_node_data(node_id)
+        context['$%old_node'] = self._transaction.get_old_node_data(
+            node_id, task_id)
+        context['$%new_common'] = self._transaction.get_new_common_data()
+        context['$%old_common'] = self._transaction.get_old_common_data(
+            task_id)
         cache = self._yaql_expressions_cache
 
         def evaluate(expression):

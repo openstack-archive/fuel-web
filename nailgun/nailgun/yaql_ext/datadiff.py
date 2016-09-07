@@ -41,6 +41,29 @@ def get_old(expression, context):
         logger.debug('Cannot evaluate expression on old data: %s', e)
         return _UNDEFINED
 
+@specs.parameter('expression', yaqltypes.Lambda())
+def get_new_node(expression, context):
+    return expression(context['$%new_node'])
+
+@specs.parameter('expression', yaqltypes.Lambda())
+def get_old_node(expression, context):
+    try:
+        return expression(context['$%old_node'])
+    except Exception as e:
+        logger.debug('Cannot evaluate expression on old node data: %s', e)
+        return _UNDEFINED
+
+@specs.parameter('expression', yaqltypes.Lambda())
+def get_new_common(expression, context):
+    return expression(context['$%new_common'])
+
+@specs.parameter('expression', yaqltypes.Lambda())
+def get_old_common(expression, context):
+    try:
+        return expression(context['$%old_common'])
+    except Exception as e:
+        logger.debug('Cannot evaluate expression on old common data: %s', e)
+        return _UNDEFINED
 
 @specs.parameter('expression', yaqltypes.Lambda())
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
@@ -95,6 +118,10 @@ def is_undef(finalizer, receiver):
 def register(context):
     context.register_function(get_new, name='new')
     context.register_function(get_old, name='old')
+    context.register_function(get_new_node, name='new_node')
+    context.register_function(get_old_node, name='old_node')
+    context.register_function(get_new_common, name='new_common')
+    context.register_function(get_old_common, name='old_common')
     context.register_function(changed)
     context.register_function(changed_all)
     context.register_function(changed_any)

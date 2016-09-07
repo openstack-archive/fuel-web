@@ -144,14 +144,10 @@
       type: parallel
 
 - id: upload_nodes_info
-  version: 2.0.0
-  type: upload_file
+  type: skipped
+  version: 2.1.0
   roles: ['/.*/']
   requires: [post_deployment_start]
-  parameters:
-    path: /etc/hiera/nodes.yaml
-    data:
-      yaql_exp: '$.network_metadata.nodes.values().toYaml()'
 
 - id: update_hosts
   version: 2.0.0
@@ -188,7 +184,7 @@
     puppet_modules: /etc/puppet/modules
     timeout: 3600
 
-- id: upload_configuration
+- id: upload_node_configuration
   type: upload_file
   version: 2.1.0
   roles: [master, '/.*/']
@@ -196,7 +192,33 @@
   required_for: [pre_deployment_end]
   parameters:
     timeout: 180
-    path: /etc/openstack/config.yml
+    path: /etc/openstack/node.yml
     data:
-      yaql_exp: '$.toYaml()'
+      yaql_exp: 'new_node($).toYaml()'
   refresh_on: ['*']
+
+- id: upload_common_configuration
+  type: upload_file
+  version: 2.1.0
+  roles: [master]
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment_end]
+  parameters:
+    timeout: 180
+    path: /var/lib/fuel/configs/{CLUSTER_ID}/config.yml
+    data:
+      yaql_exp: 'new_common($).toYaml()'
+  refresh_on: ['*']
+
+- id: copy_common_configuration
+  type: copy_files
+  version: 2.0.0
+  roles: [master, '/.*/']
+  required_for: [pre_deployment_end]
+  requires: [upload_common_configuration]
+  parameters:
+    files:
+      - src: /var/lib/fuel/configs/{CLUSTER_ID}/config.yml
+        dst: /etc/openstack/common.yml
+    permissions: '0644'
+    dir_permissions: '0755'

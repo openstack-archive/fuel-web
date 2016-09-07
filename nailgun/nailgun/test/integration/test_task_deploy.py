@@ -69,12 +69,13 @@ class TestTaskDeploy80(BaseIntegrationTest):
         )
         self.db.flush()
 
+    # idx=1 because we need to skip [0] - provision
     @fake_tasks(mock_rpc=True, fake_rpc=False)
-    def get_deploy_message(self, rpc_cast):
-        task = self.env.launch_deployment(self.cluster.id)
+    def get_deploy_message(self, rpc_cast, idx=1, **kwargs):
+        task = self.env.launch_deployment(self.cluster.id, **kwargs)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
         args, kwargs = rpc_cast.call_args
-        return args[1][1]
+        return args[1][idx]
 
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     @mock.patch.object(objects.Release, "is_lcm_supported", return_value=False)
@@ -90,14 +91,16 @@ class TestTaskDeploy80(BaseIntegrationTest):
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     @mock.patch.object(objects.Release, "is_lcm_supported", return_value=True)
     def test_task_deploy_dry_run(self, _, lcm_mock):
-        message = self.get_deploy_message()
+        # idx=0 because dry run skips provision subtask
+        message = self.get_deploy_message(idx=0, dry_run=True)
         self.assertEqual("task_deploy", message["method"])
         self.assertIn('dry_run', message["args"])
 
     @mock.patch.object(TaskProcessor, "ensure_task_based_deploy_allowed")
     @mock.patch.object(objects.Release, "is_lcm_supported", return_value=True)
     def test_task_deploy_noop_run(self, _, lcm_mock):
-        message = self.get_deploy_message()
+        # idx=0 because noop run skips provision subtask
+        message = self.get_deploy_message(idx=0, noop_run=True)
         self.assertEqual("task_deploy", message["method"])
         self.assertIn('noop_run', message['args'])
 

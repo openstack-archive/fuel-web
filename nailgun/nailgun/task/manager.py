@@ -212,6 +212,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
             )
 
         supertask = Task(name=self.deployment_type, cluster=self.cluster,
+                         dry_run=is_dry_run(kwargs),
                          status=consts.TASK_STATUSES.pending)
         db().add(supertask)
 
@@ -231,8 +232,6 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
         # update cluster status
         if not is_dry_run(kwargs):
             self.cluster.status = consts.CLUSTER_STATUSES.deployment
-        else:
-            supertask.dry_run = True
 
         # we should have task committed for processing in other threads
         db().commit()
@@ -349,13 +348,13 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
 
         task_deletion, task_provision, task_deployment = None, None, None
 
-        dry_run = kwargs.get('dry_run', False)
+        dry_run = is_dry_run(kwargs)
 
-        if nodes_to_delete:
+        if nodes_to_delete and not dry_run:
             task_deletion = self.delete_nodes(supertask, nodes_to_delete)
             self.reset_error_message(nodes_to_delete, dry_run)
 
-        if nodes_to_provision:
+        if nodes_to_provision and not dry_run:
             logger.debug("There are nodes to provision: %s",
                          " ".join([objects.Node.get_node_fqdn(n)
                                    for n in nodes_to_provision]))
@@ -407,12 +406,11 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
 
             deployment_task_provider = self.get_deployment_task()
 
-            transaction_name = self.get_deployment_transaction_name(
-                is_dry_run(kwargs))
+            transaction_name = self.get_deployment_transaction_name(dry_run)
 
             task_deployment = supertask.create_subtask(
                 name=transaction_name,
-                dry_run=is_dry_run(kwargs),
+                dry_run=dry_run,
                 status=consts.TASK_STATUSES.pending
             )
             # we should have task committed for processing in other threads
@@ -454,6 +452,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
         # those two tasks, let's create stripped version of
         # deployment.
         if (nodes_to_delete and not nodes_to_deploy and
+                not dry_run and
                 not objects.Release.is_lcm_supported(self.cluster.release)):
             logger.debug(
                 "No nodes to deploy, just update nodes.yaml everywhere.")
@@ -467,7 +466,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
             task_messages.append(task_message)
             db().commit()
 
-        if nodes_to_provision:
+        if nodes_to_provision and not dry_run:
             nodes_to_provision = objects.NodeCollection.lock_nodes(
                 nodes_to_provision
             )
@@ -475,7 +474,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
                 node.status = consts.NODE_STATUSES.provisioning
             db().commit()
 
-        if not is_dry_run(kwargs):
+        if not dry_run:
             objects.Cluster.get_by_uid(
                 self.cluster.id,
                 fail_if_not_found=True
@@ -492,7 +491,7 @@ class ApplyChangesTaskManager(BaseDeploymentTaskManager):
         # In order to avoid that wrong behavior, let's send
         # deletion task to execution only when others subtasks in
         # the database.
-        if task_deletion:
+        if task_deletion and not dry_run:
             self._call_silently(
                 task_deletion,
                 tasks.DeletionTask,

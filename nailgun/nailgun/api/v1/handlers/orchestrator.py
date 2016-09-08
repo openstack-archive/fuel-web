@@ -294,7 +294,7 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
         return TaskHelper.nodes_to_deploy(cluster)
 
     def get_graph_type(self):
-        return web.input(graph_type=None).graph_type
+        return web.input(graph_type=None).graph_type or None
 
     def get_nodes(self, cluster):
         nodes_to_deploy = super(
@@ -379,7 +379,7 @@ class TaskDeployGraph(BaseHandler):
                * 400 (failed to get graph)
         """
         web.header('Content-Type', 'text/vnd.graphviz', unique=True)
-        graph_type = web.input(graph_type=None).graph_type
+        graph_type = web.input(graph_type=None).graph_type or None
 
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         tasks = objects.Cluster.get_deployment_tasks(cluster, graph_type)
@@ -441,7 +441,7 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
         nodes = self.get_nodes(cluster)
         self.checked_data(self.validator.validate_placement,
                           data=nodes, cluster=cluster)
-        graph_type = web.input(graph_type=None).graph_type
+        graph_type = web.input(graph_type=None).graph_type or None
         task_ids = self.get_param_as_set('tasks')
 
         try:

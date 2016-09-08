@@ -128,7 +128,7 @@ class OpenstackConfigExecuteHandler(BaseHandler):
                * 400 (Invalid data)
                * 404 (Object dependencies not found)
         """
-        graph_type = web.input(graph_type=None).graph_type
+        graph_type = web.input(graph_type=None).graph_type or None
         filters = self.checked_data(self.validator.validate_execute)
 
         cluster = self.get_object_or_404(

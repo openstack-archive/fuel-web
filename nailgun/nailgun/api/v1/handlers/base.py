@@ -636,7 +636,7 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
         obj = self.get_object_or_404(self.single, obj_id)
         end = web.input(end=None).end
         start = web.input(start=None).start
-        graph_type = web.input(graph_type=None).graph_type
+        graph_type = web.input(graph_type=None).graph_type or None
         # web.py depends on [] to understand that there will be multiple inputs
         include = web.input(include=[]).include
 

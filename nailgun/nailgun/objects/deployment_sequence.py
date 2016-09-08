@@ -59,3 +59,8 @@ class DeploymentSequence(NailgunObject):
 class DeploymentSequenceCollection(NailgunCollection):
 
     single = DeploymentSequence
+
+    @classmethod
+    def get_for_release(cls, release):
+        """Get all sequences are associated with release."""
+        return cls.filter_by(None, release_id=release.id)

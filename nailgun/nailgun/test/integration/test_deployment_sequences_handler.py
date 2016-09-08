@@ -91,6 +91,38 @@ class TestSequencesHandler(base.BaseIntegrationTest):
         )
         self.assertIsNone(sequence)
 
+    def test_get_list_of_sequences_by_release(self):
+        self._create_sequence('test')
+        resp = self.app.get(
+            reverse('SequenceCollectionHandler') +
+            "?release={0}".format(self.release.id),
+            headers=self.default_headers
+        )
+        sequences = resp.json_body
+        self.assertEqual('test', sequences[0]['name'])
+
+    def test_get_list_of_sequences_by_cluster(self):
+        cluster = self.env.create(
+            cluster_kwargs={'release_id': self.release.id}
+        )
+        self._create_sequence('test')
+        resp = self.app.get(
+            reverse('SequenceCollectionHandler') +
+            "?cluster={0}".format(cluster.id),
+            headers=self.default_headers
+        )
+        sequences = resp.json_body
+        self.assertEqual('test', sequences[0]['name'])
+
+    def test_get_list_of_all_sequences(self):
+        self._create_sequence('test')
+        resp = self.app.get(
+            reverse('SequenceCollectionHandler'),
+            headers=self.default_headers
+        )
+        sequences = resp.json_body
+        self.assertEqual('test', sequences[0]['name'])
+
 
 class TestSequenceExecutorHandler(base.BaseIntegrationTest):
 

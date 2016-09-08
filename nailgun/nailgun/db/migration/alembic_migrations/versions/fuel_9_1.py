@@ -61,6 +61,7 @@ def upgrade():
     upgrade_node_deployment_info()
     upgrade_add_task_start_end_time()
     fix_deployment_history_constraint()
+    upgrade_attributes_metadata()
 
 
 def downgrade():
@@ -486,3 +487,73 @@ def fix_deployment_history_constraint():
         "deployment_history", "tasks",
         ["task_id"], ["id"], ondelete="CASCADE"
     )
+
+
+ATTRIBUTES_S3 = {
+    'description': ('Uncheck this box if the public gateway will not be '
+                    'available or will not respond to ICMP requests to '
+                    'the deployed cluster. If unchecked, the controllers '
+                    'will not take public gateway availability into account '
+                    'as part of the cluster health.  If the cluster will not '
+                    'have internet access, you will need to make sure to '
+                    'provide proper offline mirrors for the deployment to '
+                    'succeed.'),
+    'group': 'network',
+    'label': 'Public Gateway is Available',
+    'type': 'checkbox',
+    'value': True,
+    'weight': 50
+}
+
+ATTRIBUTES_PING = {
+    'description': ('This allows to authenticate S3 requests basing on '
+                    'EC2/S3 credentials managed by Keystone. Please note '
+                    'that enabling the integration will increase the '
+                    'latency of S3 requests as well as load on Keystone '
+                    'service. Please consult with Mirantis Technical '
+                    'Bulletin 27 and Mirantis Support on mitigating the '
+                    'risks related with load.'),
+    'label': 'Enable S3 API Authentication via Keystone in Ceph RadosGW',
+    'restrictions': [{
+        'action': 'hide',
+        'condition': 'settings:storage.objects_ceph.value == false'
+    }],
+    'type': 'checkbox',
+    'value': False,
+    'weight': 82
+}
+
+KERNEL_CMDLINE1 = ("console=tty0 net.ifnames=0 biosdevname=0 "
+                   "rootdelay=90 nomodeset")
+KERNEL_CMDLINE2 = ("console=tty0 net.ifnames=1 biosdevname=0 "
+                   "rootdelay=90 nomodeset")
+
+
+def upgrade_attributes_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, attributes_metadata FROM releases "
+        "WHERE attributes_metadata IS NOT NULL")
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET attributes_metadata = :attributes_metadata "
+        "WHERE id = :id")
+
+    for id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        editable = attrs.setdefault('editable', {})
+        storage = editable.setdefault('storage', {})
+        storage.setdefault('auth_s3_keystone_ceph', ATTRIBUTES_S3)
+
+        common = editable.setdefault('common', {})
+        common.setdefault('run_ping_checker', ATTRIBUTES_PING)
+
+        kernel_params = editable.setdefault('kernel_params', {})
+        kernel = kernel_params.setdefault('kernel', {})
+        if kernel.get('value') == KERNEL_CMDLINE1:
+            kernel['value'] = KERNEL_CMDLINE2
+
+        connection.execute(
+            update_query,
+            id=id,
+            attributes_metadata=jsonutils.dumps(attrs))

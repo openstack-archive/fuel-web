@@ -398,7 +398,9 @@ class LogPackageHandler(BaseHandler):
         try:
             conf = jsonutils.loads(web.data()) if web.data() else None
             task_manager = DumpTaskManager()
-            task = task_manager.execute(conf=conf)
+            task = task_manager.execute(
+                conf=conf,
+                auth_token=web.ctx.env.get('HTTP_X_AUTH_TOKEN'))
         except Exception as exc:
             logger.warn(u'DumpTask: error while execution '
                         'dump environment task: {0}'.format(str(exc)))

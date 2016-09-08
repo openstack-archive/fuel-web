@@ -64,6 +64,7 @@ def upgrade():
     upgrade_attributes_metadata()
     upgrade_networks_metadata()
     upgrade_vmware_attributes_metadata()
+    upgrade_releases_versions()
 
 
 def downgrade():
@@ -654,3 +655,11 @@ def upgrade_vmware_attributes_metadata():
             update_query,
             id=id,
             vmware_attributes_metadata=jsonutils.dumps(attrs))
+
+
+def upgrade_releases_versions():
+    connection = op.get_bind()
+    update_query = sa.sql.text(
+        "UPDATE releases SET version = 'mitaka-9.1' "
+        "WHERE version = 'mitaka-9.0'")
+    connection.execute(update_query)

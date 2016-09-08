@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import TransactionExecutorHandler
 import web
 
 from nailgun.api.v1.handlers.base import CollectionHandler
@@ -24,11 +24,9 @@ from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators import deployment_graph as validators
 
-from nailgun import errors
 from nailgun import objects
 from nailgun.objects.serializers.deployment_graph import \
     DeploymentGraphSerializer
-from nailgun.transactions import TransactionsManager
 from nailgun import utils
 
 
@@ -300,31 +298,23 @@ class DeploymentGraphCollectionHandler(CollectionHandler):
         return self.collection.to_list(result)
 
 
-class GraphsExecutorHandler(BaseHandler):
+class GraphsExecutorHandler(TransactionExecutorHandler):
+    """Handler to execute sequence of deployment graphs."""
 
     validator = validators.GraphExecuteParamsValidator
 
     @handle_errors
-    @validate
     def POST(self):
-        """:returns: JSONized Task object.
+        """Execute graph(s) as single transaction.
+
+        :returns: JSONized Task object
 
         :http: * 200 (task successfully executed)
                * 202 (task scheduled for execution)
                * 400 (data validation failed)
-               * 404 (cluster or nodes not found in db)
+               * 404 (cluster or sequence not found in db)
                * 409 (graph execution is in progress)
         """
-        data = self.checked_data(self.validator.validate_params)
-        cluster_id = self.get_object_or_404(
-            objects.Cluster, data.pop('cluster')).id
-
-        try:
-            manager = TransactionsManager(cluster_id)
-            self.raise_task(manager.execute(**data))
-        except errors.ObjectNotFound as e:
-            raise self.http(404, e.message)
-        except errors.DeploymentAlreadyStarted as e:
-            raise self.http(409, e.message)
-        except errors.InvalidData as e:
-            raise self.http(400, e.message)
+        data = self.checked_data()
+        cluster = self.get_object_or_404(objects.Cluster, data.pop('cluster'))
+        return self.start_transaction(cluster, data)

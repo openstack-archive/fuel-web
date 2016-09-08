@@ -60,9 +60,11 @@ def upgrade():
     upgrade_deployment_history_summary()
     upgrade_add_task_start_end_time()
     fix_deployment_history_constraint()
+    upgrade_deployment_sequences()
 
 
 def downgrade():
+    downgrade_deployment_sequences()
     downgrade_add_task_start_end_time()
     downgrade_cluster_attributes()
     downgrade_deployment_history_summary()
@@ -345,3 +347,20 @@ def fix_deployment_history_constraint():
         "deployment_history", "tasks",
         ["task_id"], ["id"], ondelete="CASCADE"
     )
+
+
+def upgrade_deployment_sequences():
+    op.create_table(
+        'deployment_sequences',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('release_id', sa.Integer(), nullable=False),
+        sa.Column('name', sa.String(255), nullable=False),
+        sa.Column('graphs', fields.JSON(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(['release_id'], ['releases.id']),
+        sa.UniqueConstraint('release_id', 'name')
+    )
+
+
+def downgrade_deployment_sequences():
+    op.drop_table('deployment_sequences')

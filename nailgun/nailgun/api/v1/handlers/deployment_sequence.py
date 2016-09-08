@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import web
+
 from nailgun.api.v1.handlers.base import TransactionExecutorHandler
 
 from nailgun.api.v1.handlers.base import CollectionHandler
@@ -66,6 +68,31 @@ class SequenceCollectionHandler(CollectionHandler):
 
     validator = validators.SequenceValidator
     collection = objects.DeploymentSequenceCollection
+
+    @handle_errors
+    @serialize
+    def GET(self):
+        """:returns: Collection of JSONized Sequence objects by release.
+
+        :http: * 200 (OK)
+        :http: * 404 (Release or Cluster is not found)
+        """
+
+        release = self._get_release()
+        if release:
+            return self.collection.get_for_release(release)
+        return self.collection.all()
+
+    def _get_release(self):
+        params = web.input(release=None, cluster=None)
+        if params.cluster:
+            return self.get_object_or_404(
+                objects.Cluster, id=params.cluster
+            ).release
+        if params.release:
+            return self.get_object_or_404(
+                objects.Release, id=params.release
+            )
 
 
 class SequenceExecutorHandler(TransactionExecutorHandler):

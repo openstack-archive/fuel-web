@@ -879,8 +879,9 @@ class VolumeManager(object):
         generators['calc_min_os_size'] = generators['calc_os_size']
 
         if generator not in generators:
-            raise errors.CannotFindGenerator(
-                u'Cannot find generator %s' % generator)
+            raise ValueError(
+                'Cannot find generator {}'.format(generator)
+            )
 
         result = generators[generator](*args)
         self.__logger('Generator %s with args %s returned result: %s' %

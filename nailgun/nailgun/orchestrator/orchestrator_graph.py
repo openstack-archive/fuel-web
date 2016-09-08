@@ -351,7 +351,7 @@ class AstuteGraph(object):
             added_uids = []
             for node in current_nodes:
                 if 'uid' not in node or 'role' not in node:
-                    raise errors.InvalidSerializedNode(
+                    raise errors.DeploymentException(
                         'uid and role are mandatory fields. Node: {0}'.format(
                             node))
                 if node['uid'] not in added_uids:
@@ -452,7 +452,7 @@ class AstuteGraph(object):
         if 'deploy_end' in self.graph:
             subgraph = self.graph.find_subgraph(start='deploy_end')
         else:
-            errors.NotEnoughInformation(
+            errors.DeploymentException(
                 '*deploy_end* stage must be provided')
         return self.stage_tasks_serialize(subgraph.topology, nodes)
 
@@ -464,7 +464,7 @@ class AstuteGraph(object):
         if 'deploy_start' in self.graph:
             subgraph = self.graph.find_subgraph(end='deploy_start')
         else:
-            raise errors.NotEnoughInformation(
+            raise errors.DeploymentException(
                 '*deploy_start* stage must be provided')
         return self.stage_tasks_serialize(subgraph.topology, nodes)
 

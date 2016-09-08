@@ -43,6 +43,8 @@ from nailgun.network.checker import NetworkCheck
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
+from nailgun.orchestrator.deployment_serializers import \
+    deployment_info_to_legacy
 from nailgun.orchestrator import orchestrator_graph
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.orchestrator import stages
@@ -163,10 +165,13 @@ class BaseDeploymentTask(object):
 
     @classmethod
     def _save_deployment_info(cls, transaction, deployment_info):
-        # TODO(bgaifullin) need to rework serializers, it should return dict
-        # instead of list
-        normalized = {node['uid']: node for node in deployment_info}
-        objects.Transaction.attach_deployment_info(transaction, normalized)
+        normalized = {
+            'common': deployment_info['common'],
+            'nodes': {n['uid']: n for n in deployment_info['nodes']}
+        }
+
+        objects.Transaction.attach_deployment_info(
+            transaction, normalized)
         return normalized
 
 
@@ -349,6 +354,7 @@ class DeploymentTask(BaseDeploymentTask):
             graph, transaction.cluster, nodes)
 
         cls._save_deployment_info(transaction, serialized_cluster)
+        serialized_cluster = deployment_info_to_legacy(serialized_cluster)
 
         pre_deployment = stages.pre_deployment_serialize(
             graph, transaction.cluster, nodes,
@@ -359,8 +365,11 @@ class DeploymentTask(BaseDeploymentTask):
 
         if affected_nodes:
             graph.reexecutable_tasks(events)
-            serialized_cluster.extend(deployment_serializers.serialize(
+            serialized_affected_nodes = deployment_serializers.serialize(
                 graph, transaction.cluster, affected_nodes
+            )
+            serialized_cluster.extend(deployment_info_to_legacy(
+                serialized_affected_nodes
             ))
 
             pre_deployment_affected = stages.pre_deployment_serialize(
@@ -406,6 +415,8 @@ class DeploymentTask(BaseDeploymentTask):
             None, transaction.cluster, nodes
         )
         cls._save_deployment_info(transaction, serialized_cluster)
+        serialized_cluster = deployment_info_to_legacy(serialized_cluster)
+
         logger.info("cluster serialization is finished.")
         tasks_events = events and \
             task_based_deployment.TaskEvents('reexecute_on', events)
@@ -506,12 +517,14 @@ class ClusterTransaction(DeploymentTask):
 
             for _, node_uid, task_name in data:
                 task_state = state.setdefault(task_name, {})
-                task_state.setdefault(node_uid, {})
 
+                task_state.setdefault('nodes', {})
                 if cls.is_node_for_redeploy(nodes.get(node_uid)):
-                    task_state[node_uid] = {}
+                    task_state['nodes'][node_uid] = {}
                 else:
-                    task_state[node_uid] = deployment_info.get(node_uid, {})
+                    node_info = deployment_info['nodes'].get(node_uid, {})
+                    task_state['nodes'][node_uid] = node_info
+                task_state['common'] = deployment_info['common']
 
         return state
 
@@ -533,7 +546,7 @@ class ClusterTransaction(DeploymentTask):
             tasks = list(cls.mark_skipped(tasks, selected_task_ids))
 
         if force:
-            current_state = {}
+            current_state = {'common': {}, 'nodes': {}}
         else:
             current_state = cls.get_current_state(
                 transaction.cluster, nodes, tasks)
@@ -541,8 +554,9 @@ class ClusterTransaction(DeploymentTask):
         expected_state = cls._save_deployment_info(
             transaction, deployment_info
         )
+
         # Added cluster state
-        expected_state[None] = {}
+        expected_state['nodes'][None] = {}
 
         context = lcm.TransactionContext(expected_state, current_state)
         logger.debug("tasks serialization is started.")
@@ -567,6 +581,7 @@ class ClusterTransaction(DeploymentTask):
             tasks,
             role_resolver,
         )
+
         logger.info("tasks serialization is finished.")
         return {
             "tasks_directory": directory,

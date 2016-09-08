@@ -22,27 +22,20 @@ from nailgun.utils import reverse
 class TestExtensionHandler(BaseTestCase):
 
     def test_get_extensions_list(self):
-        class FakeExtension(extensions.BaseExtension):
-            @property
-            def name(self):
-                return self._name
 
-            @property
-            def version(self):
-                return self._version
+        class FakeExtension1(extensions.BaseExtension):
+            name = 'ex1'
+            version = '1.0.1'
+            description = 'descr #1'
+            provides = ['method_call_1']
 
-            @property
-            def description(self):
-                return self._description
+        class FakeExtension2(extensions.BaseExtension):
+            name = 'ex2'
+            version = '1.2.3'
+            description = 'descr #2'
+            provides = ['method_call_2']
 
-            def __init__(self, name, version, description, provides):
-                self._name = name
-                self._version = version
-                self._description = description
-                self.provides = provides
-
-        exts = [FakeExtension('ex1', '1.0.1', 'descr #1', ['method_call_1']),
-                FakeExtension('ex2', '1.2.3', 'descr #2', ['method_call_2'])]
+        exts = [FakeExtension1, FakeExtension2]
 
         with mock.patch('nailgun.api.v1.handlers.extension.get_all_extensions',
                         return_value=exts):

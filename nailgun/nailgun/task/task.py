@@ -294,6 +294,30 @@ class DeploymentTask(BaseDeploymentTask):
         db().flush()
         return rpc_message
 
+    @staticmethod
+    def _extend_tasks_list(dst, src):
+        """Append tasks from src to dst with joining same ones.
+
+        Append tasks from the list 'src' to the list 'dst' and
+        join tasks with the same id (concatenate lists of
+        node uids).
+
+        :param dst: list of serialized tasks
+        :param src: list of serialized tasks
+        :return: None
+        """
+        src_dict = {t['id']: t for t in src if 'id' in t}
+
+        for t in dst:
+            if 'id' not in t or t['id'] not in src_dict:
+                continue
+
+            t['uids'].extend(src_dict[t['id']]['uids'])
+            src_dict.pop(t['id'])
+
+        dst.extend(src_dict.values())
+        dst.extend(t for t in src if 'id' not in t)
+
     @classmethod
     def granular_deploy(cls, transaction, tasks, nodes,
                         affected_nodes, selected_task_ids, events,
@@ -326,18 +350,28 @@ class DeploymentTask(BaseDeploymentTask):
 
         cls._save_deployment_info(transaction, serialized_cluster)
 
-        if affected_nodes:
-            graph.reexecutable_tasks(events)
-            serialized_cluster.extend(deployment_serializers.serialize(
-                graph, transaction.cluster, affected_nodes
-            ))
-            nodes = nodes + affected_nodes
         pre_deployment = stages.pre_deployment_serialize(
             graph, transaction.cluster, nodes,
             role_resolver=role_resolver)
         post_deployment = stages.post_deployment_serialize(
             graph, transaction.cluster, nodes,
             role_resolver=role_resolver)
+
+        if affected_nodes:
+            graph.reexecutable_tasks(events)
+            serialized_cluster.extend(deployment_serializers.serialize(
+                graph, transaction.cluster, affected_nodes
+            ))
+
+            pre_deployment_affected = stages.pre_deployment_serialize(
+                graph, transaction.cluster, affected_nodes,
+                role_resolver=role_resolver)
+            post_deployment_affected = stages.post_deployment_serialize(
+                graph, transaction.cluster, affected_nodes,
+                role_resolver=role_resolver)
+
+            cls._extend_tasks_list(pre_deployment, pre_deployment_affected)
+            cls._extend_tasks_list(post_deployment, post_deployment_affected)
 
         return {
             'deployment_info': serialized_cluster,

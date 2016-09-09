@@ -614,6 +614,7 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
         self.assertIn('auth_s3_keystone_ceph', attrs['editable']['storage'])
         self.assertIn('common', attrs['editable'])
         self.assertIn('run_ping_checker', attrs['editable']['common'])
+        self.assertNotIn('propagate_task_deploy', attrs['editable']['common'])
         self.assertEquals(
             "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset",
             attrs['editable']['kernel_params']['kernel']['value'])

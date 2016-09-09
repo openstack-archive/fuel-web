@@ -60,8 +60,13 @@ def get_extension(name):
         "Cannot find extension with name '{0}'".format(name))
 
 
-def set_extensions_for_object(obj, extensions_names):
-    obj.extensions = extensions_names
+def remove_extensions_from_object(obj, extensions_names):
+    obj.extensions = list(set(obj.extensions) - set(extensions_names))
+    db().flush()
+
+
+def update_extensions_for_object(obj, extensions_names):
+    obj.extensions = list(set(obj.extensions + extensions_names))
     db().flush()
 
 

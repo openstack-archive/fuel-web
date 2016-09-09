@@ -105,7 +105,7 @@ class TestTaskSerializerContext(BaseUnitTest):
 class TestTaskSerializer(BaseUnitTest):
     @classmethod
     def setUpClass(cls):
-        cls.context = task_serializer.Context(TransactionContext({
+        cls.transaction_context = TransactionContext({
             'common': {
                 'cluster': {'id': 1},
                 'release': {'version': 'liberty-9.0'},
@@ -128,7 +128,9 @@ class TestTaskSerializer(BaseUnitTest):
                     }
                 }
             }
-        }))
+        })
+
+        cls.context = task_serializer.Context(cls.transaction_context)
 
 
 class TestDefaultTaskSerializer(TestTaskSerializer):
@@ -251,6 +253,32 @@ class TestDefaultTaskSerializer(TestTaskSerializer):
             },
             serialized
         )
+
+    def test_serialize_context_components(self):
+        task_template = {
+            'id': 'test',
+            'roles': ['controller'],
+            'type': 'upload_file',
+            'parameters': {
+                'data': {
+                    'yaql_exp': '$node',
+                },
+                'data2': {
+                    'yaql_exp': '$common',
+                },
+                'path': '/etc/{CLUSTER_ID}/astute.yaml'
+            },
+            'requires': ['deploy_start'],
+            'required_for': ['deploy_end'],
+            'cross_depends': [],
+            'cross_depended_by': [],
+        }
+        serializer = self.serializer_class(self.context, task_template)
+        serialized = serializer.serialize('1')
+        self.assertEqual(serialized['parameters']['data'],
+                         self.transaction_context.get_new_node_data('1'))
+        self.assertEqual(serialized['parameters']['data2'],
+                         self.transaction_context.get_new_common_data())
 
 
 class TestNoopTaskSerialzer(TestTaskSerializer):

@@ -293,6 +293,23 @@ class TestPipeline(BaseExtensionCase):
 
 class TestExtensionValidator(BaseTestCase):
 
+    def test_validate_delete_extensions(self):
+        global_exts = 'volume_manager', 'bareon', 'ultralogger'
+        cluster = mock.Mock()
+        cluster.extensions = global_exts
+
+        ExtensionValidator.validate_delete(global_exts[:2], cluster)
+
+    def test_invalid_delete_extensions(self):
+        global_exts = 'volume_manager', 'bareon', 'ultralogger'
+        data = 'volume_manager', 'bareon', 'invalid'
+        cluster = mock.Mock()
+        cluster.extensions = global_exts
+
+        with self.assertRaisesRegexp(errors.CannotFindExtension,
+                                     'No such extensions to disable: invalid'):
+                ExtensionValidator.validate_delete(data, cluster)
+
     def test_validate_extensions(self):
         global_exts = 'volume_manager', 'bareon', 'ultralogger'
 

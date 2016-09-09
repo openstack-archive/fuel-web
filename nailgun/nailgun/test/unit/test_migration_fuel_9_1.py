@@ -13,6 +13,7 @@
 #    under the License.
 
 import datetime
+import json
 
 import alembic
 from oslo_serialization import jsonutils
@@ -111,6 +112,11 @@ ATTRIBUTES_METADATA = {
             'kernel': {
                 'value': ("console=tty0 net.ifnames=0 biosdevname=0 "
                           "rootdelay=90 nomodeset"),
+            }
+        },
+        'common': {
+            'propagate_task_deploy': {
+                'type': 'hidden'
             }
         }
     }
@@ -614,6 +620,10 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
         self.assertIn('auth_s3_keystone_ceph', attrs['editable']['storage'])
         self.assertIn('common', attrs['editable'])
         self.assertIn('run_ping_checker', attrs['editable']['common'])
+        self.assertIn('propagate_task_deploy', attrs['editable']['common'])
+        self.assertEqual(
+            attrs['editable']['common']['propagate_task_deploy']['type'],
+            'checkbox')
         self.assertEquals(
             "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset",
             attrs['editable']['kernel_params']['kernel']['value'])

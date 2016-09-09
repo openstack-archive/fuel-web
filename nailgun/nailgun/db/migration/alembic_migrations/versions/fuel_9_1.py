@@ -65,6 +65,7 @@ def upgrade():
     upgrade_cluster_attributes()
     upgrade_deployment_sequences()
     upgrade_networks_metadata()
+    upgrade_vmware_attributes_metadata()
 
 
 def downgrade():
@@ -655,3 +656,75 @@ def upgrade_networks_metadata():
             update_query,
             id=id,
             networks_metadata=jsonutils.dumps(nets))
+
+
+VCENTER_INSECURE = {
+    'name': "vcenter_insecure",
+    'type': "checkbox",
+    'label': "Bypass vCenter certificate verification"
+}
+
+VCENTER_CA_FILE = {
+    'name': "vc_ca_file",
+    'type': 'file',
+    'label': "CA file",
+    'description': ('File containing the trusted CA bundle that emitted '
+                    'vCenter server certificate. Even if CA bundle is not '
+                    'uploaded, certificate verification is turned on.')
+}
+
+
+def upgrade_vmware_attributes_metadata():
+    def update_availability_zones(fields, values):
+        names = [f['name'] for f in fields]
+        if 'vcenter_insecure' not in names:
+            fields.append(VCENTER_INSECURE)
+            for value in values:
+                value['vcenter_insecure'] = True
+        if 'vc_ca_file' not in names:
+            fields.append(VCENTER_CA_FILE)
+            for value in values:
+                value['vc_ca_file'] = {}
+
+    def update_glance(fields, values):
+        names = [f['name'] for f in fields]
+        if 'vcenter_insecure' not in names:
+            fields.append(VCENTER_INSECURE)
+            values['vcenter_insecure'] = True
+
+        for field in fields:
+            if field['name'] == 'ca_file':
+                field['description'] = VCENTER_CA_FILE['description']
+        values.setdefault('ca_file', {})
+
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, vmware_attributes_metadata FROM releases "
+        "WHERE vmware_attributes_metadata IS NOT NULL")
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET vmware_attributes_metadata = "
+        ":vmware_attributes_metadata WHERE id = :id")
+
+    for id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        editable = attrs.setdefault('editable', {})
+        metadata = editable.setdefault('metadata', [])
+        value = editable.setdefault('value', {})
+
+        for m in metadata:
+            if not isinstance(m, dict):
+                continue
+            if m.get('name') == 'availability_zones':
+                fields = m.setdefault('fields', [])
+                availability_zones = value.setdefault('availability_zones', {})
+                update_availability_zones(fields, availability_zones)
+            elif m.get('name') == 'glance':
+                fields = m.setdefault('fields', [])
+                glance = value.setdefault('glance', {})
+                update_glance(fields, glance)
+
+        connection.execute(
+            update_query,
+            id=id,
+            vmware_attributes_metadata=jsonutils.dumps(attrs))

@@ -188,6 +188,10 @@ def prepare():
                     'networks': [],
                     'config': {}
                 }
+                },
+                'dpdk_drivers': {
+                    'igb_uio': ['qwe']
+                },
             }),
             'volumes_metadata': jsonutils.dumps({}),
             'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA)
@@ -626,3 +630,9 @@ class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
             sa.select([clusters_table.c.replaced_deployment_info])
         ).fetchone()[0]
         self.assertNotIsInstance(deployment_info, list)
+
+    def test_networks_metadata_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        nets = jsonutils.loads(result['networks_metadata'])
+        self.assertIn('8086:10f8', nets['dpdk_drivers']['igb_uio'])

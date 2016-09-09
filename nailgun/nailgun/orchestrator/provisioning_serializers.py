@@ -416,46 +416,48 @@ class ProvisioningSerializer80(ProvisioningSerializer70):
 
 
 class ProvisioningSerializer90(ProvisioningSerializer80):
-
     @classmethod
     def serialize_node(cls, cluster_attrs, node):
         serialized_node = super(ProvisioningSerializer90, cls).serialize_node(
             cluster_attrs, node)
 
-        operator_user = cluster_attrs['operator_user']
-        service_user = cluster_attrs['service_user']
-
+        operator_user = cluster_attrs.get('operator_user')
+        service_user = cluster_attrs.get('service_user')
+        serialized_node['ks_meta']['user_accounts'] = []
         # Make sure that there are no empty strings as this might mess up
         # cloud init templates
-        operator_user_sudo = utils.get_lines(operator_user['sudo'])
-        operator_user_authkeys = utils.get_lines(operator_user['authkeys'])
-        service_user_sudo = utils.get_lines(service_user['sudo'])
+        if operator_user:
+            operator_user_sudo = utils.get_lines(operator_user['sudo'])
+            operator_user_authkeys = utils.get_lines(operator_user['authkeys'])
+            operator_user_dict = {
+                'name': operator_user['name'],
+                'password': operator_user['password'],
+                'homedir': operator_user['homedir'],
+                'sudo': operator_user_sudo,
+                'ssh_keys': operator_user_authkeys + settings.AUTHORIZED_KEYS,
+            }
+            serialized_node['ks_meta']['user_accounts'].append(
+                operator_user_dict)
 
-        root_password = service_user['root_password']
+        if service_user:
+            service_user_sudo = utils.get_lines(service_user['sudo'])
+            root_password = service_user['root_password']
 
-        operator_user_dict = {
-            'name': operator_user['name'],
-            'password': operator_user['password'],
-            'homedir': operator_user['homedir'],
-            'sudo': operator_user_sudo,
-            'ssh_keys': operator_user_authkeys + settings.AUTHORIZED_KEYS,
-        }
-        service_user_dict = {
-            'name': service_user['name'],
-            'homedir': service_user['homedir'],
-            'sudo': service_user_sudo,
-            'password': service_user['password'],
-            'ssh_keys': settings.AUTHORIZED_KEYS
-        }
-        root_user_dict = {
-            'name': 'root',
-            'homedir': '/root',
-            'password': root_password,
-            'ssh_keys': settings.AUTHORIZED_KEYS
-        }
-
-        serialized_node['ks_meta']['user_accounts'] = [operator_user_dict,
-                                                       service_user_dict,
-                                                       root_user_dict]
+            service_user_dict = {
+                'name': service_user['name'],
+                'homedir': service_user['homedir'],
+                'sudo': service_user_sudo,
+                'password': service_user['password'],
+                'ssh_keys': settings.AUTHORIZED_KEYS
+            }
+            root_user_dict = {
+                'name': 'root',
+                'homedir': '/root',
+                'password': root_password,
+                'ssh_keys': settings.AUTHORIZED_KEYS
+            }
+            serialized_node['ks_meta']['user_accounts'].append(
+                service_user_dict)
+            serialized_node['ks_meta']['user_accounts'].append(root_user_dict)
 
         return serialized_node

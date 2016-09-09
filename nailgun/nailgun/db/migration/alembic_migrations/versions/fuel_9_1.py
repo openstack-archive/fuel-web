@@ -525,6 +525,14 @@ ATTRIBUTES_PING = {
     'weight': 82
 }
 
+ATTRIBUTES_PROPAGATE = {
+    'label': 'Propagate task based deployment.',
+    'description': 'Enables adaptation of granular tasks for task deployment.',
+    'type': 'checkbox',
+    'weight': 12,
+    'value': False
+}
+
 KERNEL_CMDLINE1 = ("console=tty0 net.ifnames=0 biosdevname=0 "
                    "rootdelay=90 nomodeset")
 KERNEL_CMDLINE2 = ("console=tty0 net.ifnames=1 biosdevname=0 "
@@ -534,14 +542,14 @@ KERNEL_CMDLINE2 = ("console=tty0 net.ifnames=1 biosdevname=0 "
 def upgrade_attributes_metadata():
     connection = op.get_bind()
     select_query = sa.sql.text(
-        "SELECT id, attributes_metadata FROM releases "
+        "SELECT id, attributes_metadata, version FROM releases "
         "WHERE attributes_metadata IS NOT NULL")
 
     update_query = sa.sql.text(
         "UPDATE releases SET attributes_metadata = :attributes_metadata "
         "WHERE id = :id")
 
-    for id, attrs in connection.execute(select_query):
+    for id, attrs, version in connection.execute(select_query):
         attrs = jsonutils.loads(attrs)
         editable = attrs.setdefault('editable', {})
         storage = editable.setdefault('storage', {})
@@ -549,6 +557,9 @@ def upgrade_attributes_metadata():
 
         common = editable.setdefault('common', {})
         common.setdefault('run_ping_checker', ATTRIBUTES_PING)
+        if common.get('propagate_task_deploy'):
+            # turn propagate_task_deploy on
+            common['propagate_task_deploy'] = ATTRIBUTES_PROPAGATE
 
         kernel_params = editable.setdefault('kernel_params', {})
         kernel = kernel_params.setdefault('kernel', {})

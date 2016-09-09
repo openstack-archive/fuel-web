@@ -1938,7 +1938,7 @@
   fields:
     name: "Mitaka on CentOS 6.5"
     state: "unavailable"
-    version: "mitaka-9.0"
+    version: "mitaka-9.1"
     operating_system: "CentOS"
     description: "This option will install the OpenStack Mitaka packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
@@ -2011,7 +2011,7 @@
   extend: *base_release
   fields:
     name: "Mitaka on Ubuntu 14.04"
-    version: "mitaka-9.0"
+    version: "mitaka-9.1"
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Mitaka packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
@@ -2251,7 +2251,7 @@
   extend: *ubuntu_release
   fields:
     name: "Mitaka on Ubuntu+UCA 14.04"
-    version: "mitaka-9.0"
+    version: "mitaka-9.1"
     description: "This option will install the OpenStack Mitaka packages using Ubuntu as a base operating system, including Ubuntu Cloud Archive OpenStack packages. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
       editable:

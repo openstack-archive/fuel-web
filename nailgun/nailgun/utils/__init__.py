@@ -38,21 +38,6 @@ from nailgun.settings import settings
 
 from reports import ReportNode
 
-def get_in(dictionary, *args):
-    """This convenience function improves readability of the code like this:
-    dictionary.get('field', {}).get('nested', {}).get('value')
-    The name is taken from the similar function in Clojure
-    :param dictionary: the dictionary to extract a value from
-    :param args: a list of field names representing a path to a value
-    :returns: a value or None in case any element in the path doesn't exist
-    """
-    for arg in args:
-        dictionary = dictionary.get(arg)
-        if dictionary is None:
-            break
-    return dictionary
-
-
 def reverse(name, kwargs=None):
     from nailgun.api.v1.urls import get_all_urls
     urls = get_all_urls()[0]

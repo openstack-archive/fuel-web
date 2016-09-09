@@ -43,7 +43,8 @@ from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 from nailgun.api.v1.validators.extension import ExtensionValidator
 from nailgun import errors
 
-from nailgun.extensions import set_extensions_for_object
+from nailgun.extensions import remove_extensions_from_object
+from nailgun.extensions import update_extensions_for_object
 
 from nailgun.logger import logger
 from nailgun import objects
@@ -557,6 +558,25 @@ class ClusterExtensionsHandler(BaseHandler):
                * 404 (cluster not found in db)
         """
         cluster = self._get_cluster_obj(cluster_id)
-        data = set(self.checked_data())
-        set_extensions_for_object(cluster, data)
+        data = self.checked_data()
+        update_extensions_for_object(cluster, data)
         return cluster.extensions
+
+    @handle_errors
+    @validate
+    def DELETE(self, cluster_id):
+        """Disable the extensions for specified cluster
+
+        :http: * 200 (OK)
+               * 400 (there is no such extension enabled)
+               * 404 (cluster not found in db)
+        """
+        cluster = self._get_cluster_obj(cluster_id)
+
+        try:
+            data = self.checked_data(self.validator.validate_delete,
+                                     instance=cluster)
+        except errors.CannotFindExtension as exc:
+            raise self.http(400, exc.message)
+
+        remove_extensions_from_object(cluster, data)

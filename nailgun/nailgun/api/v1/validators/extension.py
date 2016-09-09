@@ -36,3 +36,14 @@ class ExtensionValidator(BasicValidator):
                     ", ".join(sorted(not_found_extensions))))
 
         return data
+
+    @classmethod
+    def validate_delete(cls, data, instance):
+        data = cls.validate(data)
+        not_found_extensions = data - set(instance.extensions)
+        if not_found_extensions:
+            raise errors.CannotFindExtension(
+                "No such extensions to disable: {0}".format(
+                    ", ".join(sorted(not_found_extensions))))
+
+        return data

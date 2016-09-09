@@ -117,6 +117,31 @@ ATTRIBUTES_METADATA = {
 }
 
 
+VMWARE_ATTRIBUTES_METADATA = {
+    'editable': {
+        'metadata': [
+            {
+                'name': 'availability_zones',
+                'fields': []
+            },
+            {
+                'name': 'glance',
+                'fields': [
+                    {
+                        'name': 'ca_file',
+                        'description': 'xxx',
+                    }
+                ]
+            },
+        ],
+        'value': {
+            'availability_zones': [{}, {}],
+            'glance': {},
+        }
+    }
+}
+
+
 def setup_module():
     dropdb()
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
@@ -194,7 +219,9 @@ def prepare():
                 },
             }),
             'volumes_metadata': jsonutils.dumps({}),
-            'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA)
+            'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA),
+            'vmware_attributes_metadata':
+                jsonutils.dumps(VMWARE_ATTRIBUTES_METADATA)
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -636,3 +663,37 @@ class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
             self.meta.tables['releases']])).first()
         nets = jsonutils.loads(result['networks_metadata'])
         self.assertIn('8086:10f8', nets['dpdk_drivers']['igb_uio'])
+
+    def test_vmware_attributes_metadata_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        attrs = jsonutils.loads(result['vmware_attributes_metadata'])
+
+        fields = attrs['editable']['metadata'][0]['fields']
+        self.assertItemsEqual(['vcenter_insecure', 'vc_ca_file'],
+                              [f['name'] for f in fields])
+
+        fields = attrs['editable']['metadata'][1]['fields']
+        self.assertItemsEqual(['vcenter_insecure', 'ca_file'],
+                              [f['name'] for f in fields])
+
+        self.assertEqual(
+            attrs['editable']['value'],
+            {
+                'availability_zones':
+                    [
+                        {
+                            'vc_ca_file': {},
+                            'vcenter_insecure': True,
+                        },
+                        {
+                            'vc_ca_file': {},
+                            'vcenter_insecure': True
+                        }
+                    ],
+                'glance':
+                    {
+                        'ca_file': {},
+                        'vcenter_insecure': True
+                    }
+            })

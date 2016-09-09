@@ -66,12 +66,9 @@ class BasePluginTest(base.BaseIntegrationTest):
             headers=self.default_headers)
         return resp
 
-    def modify_plugin(self, cluster, plugin_name, plugin_id, enabled,
-                      propagate_task_deploy=True, expect_errors=False):
+    def modify_plugin(self, cluster, plugin_name, plugin_id, enabled):
         editable_attrs = objects.Cluster.get_editable_attributes(
             cluster, all_plugins_versions=True)
-        editable_attrs['common']['propagate_task_deploy']['value'] = \
-            propagate_task_deploy
         editable_attrs[plugin_name]['metadata']['enabled'] = enabled
         editable_attrs[plugin_name]['metadata']['chosen_id'] = plugin_id
 
@@ -79,8 +76,7 @@ class BasePluginTest(base.BaseIntegrationTest):
             base.reverse('ClusterAttributesHandler',
                          {'cluster_id': cluster.id}),
             jsonutils.dumps({'editable': editable_attrs}),
-            headers=self.default_headers,
-            expect_errors=expect_errors)
+            headers=self.default_headers)
 
         return resp
 
@@ -385,21 +381,6 @@ class TestPluginsApi(BasePluginTest):
 
         resp = self.sync_plugins(params={'ids': ids}, expect_errors=True)
         self.assertEqual(resp.status_code, 404)
-
-    def test_enable_plugin_without_propagate_task_deploy(self):
-        resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
-        plugin = objects.Plugin.get_by_uid(resp.json['id'])
-        cluster = self.env.create(
-            release_kwargs={'version': 'mitaka-9.0',
-                            'operating_system': 'Ubuntu',
-                            'deployment_tasks': []})
-        resp = self.modify_plugin(cluster, plugin.name, plugin.id, True,
-                                  propagate_task_deploy=False,
-                                  expect_errors=True)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body,
-                         'Cannot enable plugin with legacy tasks unless '
-                         'propagate_task_deploy attribute is set')
 
     @mock.patch('nailgun.plugins.loaders.files_manager.open', create=True)
     @mock.patch('nailgun.plugins.loaders.files_manager.os.access')

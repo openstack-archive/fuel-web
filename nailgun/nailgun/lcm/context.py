@@ -38,3 +38,9 @@ class TransactionContext(object):
         if not node_info:
             return {}
         return UnionDict(self.old[task_id]['common'], node_info)
+
+    def get_new_node_data(self, node_id):
+        return self.new['nodes'][node_id]
+
+    def get_new_common_data(self):
+        return self.new['common']

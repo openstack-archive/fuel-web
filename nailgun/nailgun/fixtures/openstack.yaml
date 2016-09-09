@@ -1134,10 +1134,10 @@
             type: "hidden"
           propagate_task_deploy:
             value: false
-            # label: "Propagate task based deployment."
-            # description: "Enables adaptation of granular tasks for task deployment."
+            label: "Propagate task based deployment."
+            description: "Enables adaptation of granular tasks for task deployment."
             weight: 12
-            type: "hidden"
+            type: "checkbox"
           security_groups:
             value: "iptables_hybrid"
             values:

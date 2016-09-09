@@ -259,7 +259,10 @@ class ClusterAttributesHandler(BaseHandler):
         force = utils.parse_bool(web.input(force='0').force)
 
         data = self.checked_data(cluster=cluster, force=force)
-        objects.Cluster.patch_attributes(cluster, data)
+        try:
+            objects.Cluster.patch_attributes(cluster, data)
+        except errors.NailgunException as exc:
+            raise self.http(400, exc.message)
 
         return {
             'editable': objects.Cluster.get_editable_attributes(

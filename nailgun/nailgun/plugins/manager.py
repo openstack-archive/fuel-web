@@ -83,7 +83,12 @@ class PluginManager(object):
                 enabled = container['enabled'] \
                     and plugin_id == container['chosen_id']
                 legacy_tasks_are_ignored = not get_in(
+                    cluster.attributes.editable,
+                    'common', 'propagate_task_deploy', 'value')
+                new_value = not get_in(
                     attributes, 'common', 'propagate_task_deploy', 'value')
+                if new_value is not None:
+                    legacy_tasks_are_ignored = new_value
                 if (enabled and
                         Release.is_lcm_supported(cluster.release) and
                         legacy_tasks_are_ignored and
@@ -91,7 +96,9 @@ class PluginManager(object):
                             wrap_plugin(Plugin.get_by_uid(plugin.id)))):
                     raise errors.InvalidData(
                         'Cannot enable plugin with legacy tasks unless '
-                        'propagate_task_deploy attribute is set')
+                        'propagate_task_deploy attribute is set. '
+                        'Ensure tasks.yaml is empty and all tasks '
+                        'has version >= 2.0.0.')
                 ClusterPlugin.set_attributes(
                     cluster.id, plugin.id, enabled=enabled,
                     attrs=attrs if enabled or default else None

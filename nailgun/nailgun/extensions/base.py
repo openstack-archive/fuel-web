@@ -81,8 +81,8 @@ class BasePipeline(object):
     def process_deployment_for_node(cls, node, node_data):
         """Extend or modify deployment data for node.
 
-        :param node_data: serialized data for node
         :param node: the instance of Node
+        :param node_data: serialized data for node
         """
 
     @classmethod

@@ -155,7 +155,7 @@ def prepare():
         meta.tables['releases'].insert(),
         [{
             'name': 'test_name',
-            'version': '2015.1-9.0',
+            'version': 'mitaka-9.0',
             'operating_system': 'ubuntu',
             'state': 'available',
             'deployment_tasks': jsonutils.dumps(JSON_TASKS),
@@ -696,3 +696,8 @@ class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):
                         'vcenter_insecure': True
                     }
             })
+
+    def test_release_version_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        self.assertEqual(result['version'], 'mitaka-9.1')

@@ -188,7 +188,10 @@ def prepare():
                 'neutron': {
                     'networks': [],
                     'config': {}
-                }
+                },
+                'dpdk_drivers': {
+                    'igb_uio': ['qwe']
+                },
             }),
             'volumes_metadata': jsonutils.dumps({}),
             'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA)
@@ -618,6 +621,12 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
         self.assertEquals(
             "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset",
             attrs['editable']['kernel_params']['kernel']['value'])
+
+    def test_networks_metadata_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        nets = jsonutils.loads(result['networks_metadata'])
+        self.assertIn('8086:10f8', nets['dpdk_drivers']['igb_uio'])
 
 
 class TestClusterAttributesMigration(base.BaseAlembicMigrationTest):

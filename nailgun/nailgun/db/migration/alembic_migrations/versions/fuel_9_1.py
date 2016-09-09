@@ -64,6 +64,7 @@ def upgrade():
     upgrade_attributes_metadata()
     upgrade_cluster_attributes()
     upgrade_deployment_sequences()
+    upgrade_networks_metadata()
 
 
 def downgrade():
@@ -631,3 +632,26 @@ def upgrade_deployment_sequences():
 
 def downgrade_deployment_sequences():
     op.drop_table('deployment_sequences')
+
+
+def upgrade_networks_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, networks_metadata FROM releases "
+        "WHERE networks_metadata IS NOT NULL")
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET networks_metadata = :networks_metadata "
+        "WHERE id = :id")
+
+    for id, nets in connection.execute(select_query):
+        nets = jsonutils.loads(nets)
+        if 'dpdk_drivers' in nets and 'igb_uio' in nets['dpdk_drivers']:
+            igb_uio = nets['dpdk_drivers']['igb_uio']
+            if igb_uio and '8086:10f8' not in igb_uio:
+                igb_uio.append('8086:10f8')
+
+        connection.execute(
+            update_query,
+            id=id,
+            networks_metadata=jsonutils.dumps(nets))

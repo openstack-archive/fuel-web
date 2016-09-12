@@ -485,8 +485,7 @@ def _is_node_for_redeploy(node):
     if node.pending_addition:
         return True
 
-    node_status = objects.Node.get_status(node)
-    return node_status in (
+    return node.error_type or node.status in (
         consts.NODE_STATUSES.discover,
         consts.NODE_STATUSES.error,
         consts.NODE_STATUSES.provisioned,

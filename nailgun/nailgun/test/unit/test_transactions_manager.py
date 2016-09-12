@@ -364,8 +364,14 @@ class TestGetCurrentState(BaseUnitTest):
         super(TestGetCurrentState, self).setUp()
         self.cluster = mock.MagicMock()
         self.nodes = [
-            mock.MagicMock(uid='1', pending_addition=False, status='ready'),
-            mock.MagicMock(uid='2', pending_addition=False, status='ready')
+            mock.MagicMock(
+                uid='1', pending_addition=False, status='ready',
+                error_type=None,
+            ),
+            mock.MagicMock(
+                uid='2', pending_addition=False, status='ready',
+                error_type=None,
+            )
         ]
         self.tasks = [
             {'id': 'task1', 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet},

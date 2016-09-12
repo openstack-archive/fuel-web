@@ -496,7 +496,7 @@ class TestTaskDeploy90AfterDeployment(BaseIntegrationTest):
                 uuid=resp.json_body['uuid'], fail_if_not_found=True
             ).status)
 
-        graph = rpc_cast.call_args[0][1]['args']['tasks_graph']
+        graph = rpc_cast.call_args[0][1][0]['args']['tasks_graph']
 
         # LCM: no changes - no tasks
         self.assertItemsEqual(
@@ -523,7 +523,7 @@ class TestTaskDeploy90AfterDeployment(BaseIntegrationTest):
                 uuid=resp.json_body['uuid'], fail_if_not_found=True
             ).status)
 
-        graph = rpc_cast.call_args[0][1]['args']['tasks_graph']
+        graph = rpc_cast.call_args[0][1][0]['args']['tasks_graph']
 
         # due to 'force', task must be run anyway
         self.assertItemsEqual(

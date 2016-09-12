@@ -318,6 +318,21 @@ class TestGetNodesToRun(BaseUnitTest):
         )
 
     @mock.patch('nailgun.transactions.manager.objects')
+    def test_get_no_nodes_if_filter_returns_empty_list(self, obj_mock):
+        nodes_obj_mock = obj_mock.NodeCollection
+        cluster = mock.MagicMock()
+        node_filter = '$.pending_deletion'
+        nodes_list = [
+            {'id': 1, 'pending_deletion': False},
+            {'id': 2, 'pending_deletion': False}
+        ]
+        nodes_obj_mock.to_list.return_value = nodes_list
+        manager._get_nodes_to_run(cluster, node_filter)
+        nodes_obj_mock.filter_by_list.assert_called_once_with(
+            mock.ANY, 'id', []
+        )
+
+    @mock.patch('nailgun.transactions.manager.objects')
     @mock.patch('nailgun.transactions.manager.yaql_ext')
     def test_ids_has_high_priority_then_node_filter(self, yaql_mock, obj_mock):
         nodes_obj_mock = obj_mock.NodeCollection
@@ -338,8 +353,11 @@ class TestGetNodesToRun(BaseUnitTest):
         node_ids = []
         node_filter = '$.pending_deletion'
         manager._get_nodes_to_run(cluster, node_filter, node_ids)
-        self.assertEqual(0, nodes_obj_mock.filter_by_list.call_count)
         self.assertEqual(0, yaql_mock.create_context.call_count)
+        nodes_obj_mock.filter_by_list.assert_called_once_with(
+            mock.ANY, 'id', []
+        )
+
 
 
 class TestGetCurrentState(BaseUnitTest):

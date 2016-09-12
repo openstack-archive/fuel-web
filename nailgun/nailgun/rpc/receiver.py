@@ -1409,8 +1409,6 @@ class NailgunReceiver(object):
             return
 
         if task.status == consts.TASK_STATUSES.pending:
-            objects.Task.update(
-                task, {'status': consts.TASK_STATUSES.running})
             logger.debug("Task '%s' is acknowledged as running",
                          task_uuid)
         else:

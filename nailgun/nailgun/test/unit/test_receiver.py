@@ -177,16 +177,10 @@ class TestNailgunReceiver(base.BaseTestCase):
         self.db.flush()
         self.assertEqual(old_status, self.task.status)
 
-    def test_task_in_orchestrator(self):
-        resp = {'task_uuid': self.task.uuid}
-        self.task.status = consts.TASK_STATUSES.pending
-        self.db.flush()
-        NailgunReceiver.task_in_orchestrator(**resp)
-        self.assertEqual(consts.TASK_STATUSES.running, self.task.status)
-
     def test_task_in_orchestrator_status_not_changed(self):
         resp = {'task_uuid': self.task.uuid}
-        for status in (consts.TASK_STATUSES.error,
+        for status in (consts.TASK_STATUSES.pending,
+                       consts.TASK_STATUSES.error,
                        consts.TASK_STATUSES.running,
                        consts.TASK_STATUSES.ready):
             self.task.status = status

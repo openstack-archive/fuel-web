@@ -22,6 +22,7 @@ import web
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import TransactionExecutorHandler
 from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
@@ -246,12 +247,44 @@ class RunMixin(object):
         return utils.parse_bool(web.input(noop_run='0').noop_run)
 
 
-class SelectedNodesBase(NodesFilterMixin, BaseHandler):
+class SelectedNodesBase(NodesFilterMixin, TransactionExecutorHandler):
     """Base class for running task manager on selected nodes."""
+
+    graph_type = None
+
+    @classmethod
+    def get_transaction_options(cls, cluster, nodes, options):
+        if not objects.Release.is_lcm_supported(cluster.release):
+            # this code is actual only for lcm
+            return
+
+        graph_type = options.get('graph_type') or cls.graph_type
+        graph = graph_type and objects.Cluster.get_deployment_graph(
+            cluster, cls.graph_type
+        )
+
+        if graph:
+            return {
+                'noop_run': options.get('noop_run'),
+                'dry_run': options.get('dry_run'),
+                'force': options.get('force'),
+                'graphs': [{
+                    'type': graph['type'],
+                    'nodes': [n.id for n in nodes],
+                    # data is tasks, legacy reasons
+                    'tasks': options.get('data')
+                }]
+            }
 
     def handle_task(self, cluster, **kwargs):
 
         nodes = self.get_nodes(cluster)
+
+        transaction_options = self.get_transaction_options(
+            cluster, nodes, kwargs
+        )
+        if transaction_options:
+            return self.start_transaction(cluster, transaction_options)
 
         try:
             task_manager = self.task_manager(
@@ -285,6 +318,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
     validator = ProvisionSelectedNodesValidator
     task_manager = manager.ProvisioningTaskManager
 
+    graph_type = 'provision'
+
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_provision(cluster)
 
@@ -311,6 +346,8 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
 
     validator = DeploySelectedNodesValidator
     task_manager = manager.DeploymentTaskManager
+
+    graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

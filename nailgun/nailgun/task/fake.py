@@ -33,6 +33,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun import objects
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
+from nailgun.utils import get_in
 
 
 def _is_slave(node):
@@ -325,6 +326,26 @@ class FakeAmpqThread(FakeThread):
 
 
 class FakeDeploymentThread(FakeAmpqThread):
+    def inject_node_status_transition(self, kwargs):
+        if kwargs['status'] == consts.TASK_STATUSES.ready:
+            selector = 'successful'
+        elif kwargs['status'] == consts.TASK_STATUSES.error:
+            selector = 'failed'
+        elif kwargs['status'] == consts.TASK_STATUSES.stopped:
+            selector = 'stopped'
+        else:
+            return
+
+        node_statuses_transition = get_in(
+            self.data['args'],
+            'tasks_metadata', 'node_statuses_transitions', selector
+        )
+        if node_statuses_transition:
+            kwargs['nodes'] = [
+                dict(uid=uid, **node_statuses_transition)
+                for uid in self.data['args']['tasks_graph']
+            ]
+
     def message_gen(self):
         # TEST: we can fail only in deployment stage here:
         error = self.params.get("error")
@@ -399,6 +420,7 @@ class FakeDeploymentThread(FakeAmpqThread):
         if error_msg:
             kwargs['error'] = error_msg
 
+        self.inject_node_status_transition(kwargs)
         yield kwargs
 
 

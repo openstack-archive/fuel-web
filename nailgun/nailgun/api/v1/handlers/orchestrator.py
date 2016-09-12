@@ -22,6 +22,7 @@ import web
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import TransactionExecutorHandler
 from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.cluster import ProvisionSelectedNodesValidator
 from nailgun.api.v1.validators.node import DeploySelectedNodesValidator
@@ -246,21 +247,60 @@ class RunMixin(object):
         return utils.parse_bool(web.input(noop_run='0').noop_run)
 
 
-class SelectedNodesBase(NodesFilterMixin, BaseHandler):
+class SelectedNodesBase(NodesFilterMixin, TransactionExecutorHandler):
     """Base class for running task manager on selected nodes."""
 
+    graph_type = None
+
+    def get_transaction_options(self, cluster, options):
+        if not objects.Release.is_lcm_supported(cluster.release):
+            # this code is actual only for lcm
+            return
+
+        graph_type = options.get('graph_type') or self.graph_type
+        graph = graph_type and objects.Cluster.get_deployment_graph(
+            cluster, graph_type
+        )
+
+        nodes = self.get_param_as_set('nodes', default=None)
+        if nodes is not None:
+            nodes = self.get_objects_list_or_404(objects.NodeCollection, nodes)
+
+        if graph:
+            return {
+                'noop_run': options.get('noop_run'),
+                'dry_run': options.get('dry_run'),
+                'force': options.get('force'),
+                'graphs': [{
+                    'type': graph['type'],
+                    'nodes': [n.id for n in nodes],
+                    'tasks': options.get('deployment_tasks')
+                }]
+            }
+
     def handle_task(self, cluster, **kwargs):
+        if objects.Release.is_lcm_supported(cluster.release):
+            # this code is actual only if cluster is LCM ready
+            try:
+                transaction_options = self.get_transaction_options(
+                    cluster, kwargs
+                )
+            except errors.NailgunException as e:
+                logger.exception("Failed to get transaction options.")
+                raise self.http(400, six.text_type(e))
+
+            if transaction_options:
+                return self.start_transaction(cluster, transaction_options)
 
         nodes = self.get_nodes(cluster)
-
         try:
-            task_manager = self.task_manager(
-                cluster_id=cluster.id)
+            task_manager = self.task_manager(cluster_id=cluster.id)
             task = task_manager.execute(nodes, **kwargs)
         except Exception as exc:
-            logger.warn(
+            logger.exception(
                 u'Cannot execute %s task nodes: %s',
-                task_manager.__class__.__name__, traceback.format_exc())
+                self.task_manager.__name__, ','.join(n.uid for n in nodes)
+            )
             raise self.http(400, msg=six.text_type(exc))
 
         self.raise_task(task)
@@ -284,6 +324,8 @@ class ProvisionSelectedNodes(SelectedNodesBase):
 
     validator = ProvisionSelectedNodesValidator
     task_manager = manager.ProvisioningTaskManager
+
+    graph_type = 'provision'
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_provision(cluster)
@@ -311,6 +353,8 @@ class BaseDeploySelectedNodes(SelectedNodesBase):
 
     validator = DeploySelectedNodesValidator
     task_manager = manager.DeploymentTaskManager
+
+    graph_type = consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE
 
     def get_default_nodes(self, cluster):
         return TaskHelper.nodes_to_deploy(cluster)

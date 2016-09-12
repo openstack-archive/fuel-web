@@ -549,76 +549,6 @@ class DBSingletonHandler(BaseHandler):
         return self.single.to_dict(instance)
 
 
-# TODO(enchantner): rewrite more handlers to inherit from this
-# and move more common code here
-class DeferredTaskHandler(BaseHandler):
-    """Abstract Deferred Task Handler"""
-
-    validator = BaseDefferedTaskValidator
-    single = objects.Task
-    log_message = u"Starting deferred task on environment '{env_id}'"
-    log_error = u"Error during execution of deferred task " \
-                u"on environment '{env_id}': {error}"
-    task_manager = None
-
-    @classmethod
-    def get_options(cls):
-        return {}
-
-    @handle_errors
-    @validate
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-
-        :http: * 202 (task successfully executed)
-               * 400 (invalid object data specified)
-               * 404 (environment is not found)
-               * 409 (task with such parameters already exists)
-        """
-        cluster = self.get_object_or_404(
-            objects.Cluster,
-            cluster_id,
-            log_404=(
-                u"warning",
-                u"Error: there is no cluster "
-                u"with id '{0}' in DB.".format(cluster_id)
-            )
-        )
-
-        logger.info(self.log_message.format(env_id=cluster_id))
-        try:
-            options = self.get_options()
-        except ValueError as e:
-            raise self.http(400, six.text_type(e))
-        try:
-            self.validator.validate(cluster)
-            task_manager = self.task_manager(cluster_id=cluster.id)
-            task = task_manager.execute(**options)
-        except (
-            errors.AlreadyExists,
-            errors.StopAlreadyRunning
-        ) as exc:
-            raise self.http(409, exc.message)
-        except (
-            errors.DeploymentNotRunning,
-            errors.NoDeploymentTasks,
-            errors.WrongNodeStatus,
-            errors.UnavailableRelease,
-            errors.CannotBeStopped,
-        ) as exc:
-            raise self.http(400, exc.message)
-        except Exception as exc:
-            logger.error(
-                self.log_error.format(
-                    env_id=cluster_id,
-                    error=str(exc)
-                )
-            )
-            # let it be 500
-            raise
-        self.raise_task(task)
-
-
 class OrchestratorDeploymentTasksHandler(SingleHandler):
     """Handler for deployment graph serialization."""
 
@@ -720,3 +650,86 @@ class TransactionExecutorHandler(BaseHandler):
             raise self.http(409, e.message)
         except errors.InvalidData as e:
             raise self.http(400, e.message)
+
+
+# TODO(enchantner): rewrite more handlers to inherit from this
+# and move more common code here, this is deprecated handler
+class DeferredTaskHandler(TransactionExecutorHandler):
+    """Abstract Deferred Task Handler"""
+
+    validator = BaseDefferedTaskValidator
+    single = objects.Task
+    log_message = u"Starting deferred task on environment '{env_id}'"
+    log_error = u"Error during execution of deferred task " \
+                u"on environment '{env_id}': {error}"
+    task_manager = None
+
+    @classmethod
+    def get_options(cls):
+        return {}
+
+    @classmethod
+    def get_transaction_options(cls, cluster, options):
+        """Finds graph for this action."""
+        return None
+
+    @handle_errors
+    @validate
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+
+        :http: * 202 (task successfully executed)
+               * 400 (invalid object data specified)
+               * 404 (environment is not found)
+               * 409 (task with such parameters already exists)
+        """
+        cluster = self.get_object_or_404(
+            objects.Cluster,
+            cluster_id,
+            log_404=(
+                u"warning",
+                u"Error: there is no cluster "
+                u"with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+
+        logger.info(self.log_message.format(env_id=cluster_id))
+        try:
+            options = self.get_options()
+        except ValueError as e:
+            raise self.http(400, six.text_type(e))
+
+        self.validator.validate(cluster)
+
+        # try to get new graph to run transaction manager
+        transaction_options = self.get_transaction_options(cluster, options)
+        if transaction_options:
+            return self.start_transaction(cluster, transaction_options)
+
+        try:
+
+            task_manager = self.task_manager(cluster_id=cluster.id)
+            task = task_manager.execute(**options)
+        except (
+            errors.AlreadyExists,
+            errors.StopAlreadyRunning
+        ) as exc:
+            raise self.http(409, exc.message)
+        except (
+            errors.DeploymentNotRunning,
+            errors.NoDeploymentTasks,
+            errors.WrongNodeStatus,
+            errors.UnavailableRelease,
+            errors.CannotBeStopped,
+        ) as exc:
+            raise self.http(400, exc.message)
+        except Exception as exc:
+            logger.error(
+                self.log_error.format(
+                    env_id=cluster_id,
+                    error=str(exc)
+                )
+            )
+            # let it be 500
+            raise
+        self.raise_task(task)

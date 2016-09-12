@@ -102,6 +102,20 @@ class ClusterChangesHandler(DeferredTaskHandler):
     validator = ClusterChangesValidator
 
     @classmethod
+    def get_transaction_options(cls, cluster, options):
+        """Find sequence 'default' to use for deploy-changes handler."""
+        sequence = objects.DeploymentSequence.get_by_name_for_release(
+            cluster.release, 'deploy-changes'
+        )
+        if sequence:
+            return {
+                'dry_run': options['dry_run'],
+                'noop_run': options['noop_run'],
+                'force': options['force'],
+                'graphs': sequence.graphs,
+            }
+
+    @classmethod
     def get_options(cls):
         data = web.input(graph_type=None, dry_run="0", noop_run="0")
 
@@ -113,13 +127,11 @@ class ClusterChangesHandler(DeferredTaskHandler):
         }
 
 
-class ClusterChangesForceRedeployHandler(DeferredTaskHandler):
+class ClusterChangesForceRedeployHandler(ClusterChangesHandler):
 
     log_message = u"Trying to force deployment of the environment '{env_id}'"
     log_error = u"Error during execution of a forced deployment task " \
                 u"on environment '{env_id}': {error}"
-    task_manager = ApplyChangesTaskManager
-    validator = ClusterChangesValidator
 
     @classmethod
     def get_options(cls):

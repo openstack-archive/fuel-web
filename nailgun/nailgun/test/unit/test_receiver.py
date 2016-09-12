@@ -18,7 +18,6 @@ from mock import ANY
 from mock import patch
 
 from nailgun import consts
-from nailgun import errors
 from nailgun.objects import ClusterPlugin
 from nailgun.objects import Plugin
 from nailgun.rpc.receiver import NailgunReceiver
@@ -169,31 +168,6 @@ class TestNailgunReceiver(base.BaseTestCase):
                 expected_err_msg[resp_method],
                 actual_msg,
             )
-
-    def test_task_in_orchestrator_task_not_found(self):
-        resp = {'task_uuid': 'fake_uuid'}
-        old_status = self.task.status
-        self.assertNotRaises(errors.ObjectNotFound,
-                             NailgunReceiver.task_in_orchestrator, **resp)
-        self.db.flush()
-        self.assertEqual(old_status, self.task.status)
-
-    def test_task_in_orchestrator(self):
-        resp = {'task_uuid': self.task.uuid}
-        self.task.status = consts.TASK_STATUSES.pending
-        self.db.flush()
-        NailgunReceiver.task_in_orchestrator(**resp)
-        self.assertEqual(consts.TASK_STATUSES.running, self.task.status)
-
-    def test_task_in_orchestrator_status_not_changed(self):
-        resp = {'task_uuid': self.task.uuid}
-        for status in (consts.TASK_STATUSES.error,
-                       consts.TASK_STATUSES.running,
-                       consts.TASK_STATUSES.ready):
-            self.task.status = status
-            self.db.flush()
-            NailgunReceiver.task_in_orchestrator(**resp)
-            self.assertEqual(status, self.task.status)
 
     @patch('nailgun.rpc.receiver.notifier.notify')
     def test_notify_provision(self, notify_checker):

@@ -63,7 +63,7 @@ class TestTaskManagers(BaseIntegrationTest):
             {'status': consts.HISTORY_TASK_STATUSES.ready})
 
     def set_tasks_ready(self):
-        objects.TaskCollection.all().update(
+        objects.TransactionCollection.all().update(
             {'status': consts.TASK_STATUSES.ready})
 
     @fake_tasks(override_state={"progress": 100, "status": "ready"})
@@ -1366,7 +1366,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.db.refresh(node3)
         self.assertEqual(consts.NODE_STATUSES.discover, node3.status)
         self.assertTrue(node3.pending_addition)
-        tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
         self.assertItemsEqual(
             [consts.MASTER_NODE_UID, None] + nodes_uids, tasks_graph
         )
@@ -1405,7 +1405,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
 
-        tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
         for task in tasks_graph['master']:
             if task['id'] in task_ids:
                 self.assertEqual(task['type'], 'puppet')
@@ -1431,7 +1431,7 @@ class TestTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertIn(resp.status_code, [200, 202])
-        tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
         # check that all nodes present in message
         self.assertItemsEqual(
             [n.uid for n in cluster.nodes] + [consts.MASTER_NODE_UID, None],
@@ -1439,11 +1439,9 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
     @mock.patch('nailgun.task.task.rpc.cast')
-    @mock.patch('nailgun.objects.Cluster.get_deployment_tasks')
-    @mock.patch('nailgun.objects.TransactionCollection'
-                '.get_successful_transactions_per_task')
+    @mock.patch('nailgun.objects.Cluster.get_deployment_graph')
     def check_correct_state_calculation(self, node_status, is_skip_expected,
-                                        state_mock, tasks_mock, rpc_mock):
+                                        get_graph_mock, rpc_mock):
         cluster = self.env.create(
             nodes_kwargs=[{'roles': ['controller'],
                            'status': consts.NODE_STATUSES.ready}],
@@ -1456,28 +1454,33 @@ class TestTaskManagers(BaseIntegrationTest):
 
         task = {
             'parameters': {}, 'type': 'puppet',
-            'roles': ['primary-controller'], 'version': '2.1.0',
+            'roles': ['/.*/'], 'version': '2.1.0',
             'condition': {'yaql_exp': 'changed($.uid)'},
         }
 
-        tasks_mock.return_value = [
-            dict(task, id='test1'), dict(task, id='test2')
-        ]
-        state_mock.return_value = []
-
+        get_graph_mock.return_value = {
+            'type': 'custom',
+            'tasks': [dict(task, id='test1'), dict(task, id='test2')]
+        }
+        # reset progress
+        node.progress = 0
         # deploy cluster at first time and create history
         supertask = self.env.launch_deployment_selected([node.uid], cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, supertask.status)
 
         self.set_history_ready()
         self.set_tasks_ready()
+        # mark test2 as skipped to ensure that it will run in next deploy
+        objects.DeploymentHistoryCollection.filter_by(
+            None, deployment_graph_task_name='test2'
+        ).update({'status': consts.HISTORY_TASK_STATUSES.skipped})
 
         node.status = node_status
+        node.progress = 0
 
-        state_mock.return_value = [(supertask, node.uid, 'test1')]
         task = self.env.launch_deployment_selected([node.uid], cluster.id)
         self.assertNotEqual(consts.TASK_STATUSES.error, task.status)
-        tasks_graph = rpc_mock.call_args[0][1]['args']['tasks_graph']
+        tasks_graph = rpc_mock.call_args[0][1][0]['args']['tasks_graph']
 
         for task in tasks_graph[node.uid]:
             if task['id'] == 'test1':
@@ -1491,7 +1494,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertNotEqual(
                     task['type'], consts.ORCHESTRATOR_TASK_TYPES.skipped)
             else:
-                self.fail('Unexpected task in graph')
+                self.fail('Unexpected task in graph {0}'.format(task['id']))
 
     def test_correct_state_calculation(self):
         self.check_correct_state_calculation(

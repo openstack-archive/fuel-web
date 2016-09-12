@@ -291,7 +291,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             make_query(nodes=[n.uid for n in controller_nodes], dry_run='1')
 
         self.send_put(deploy_action_url)
-        self.assertTrue(mcast.call_args[0][1]['args']['dry_run'])
+        self.assertTrue(mcast.call_args[0][1][0]['args']['dry_run'])
 
     @mock_rpc(pass_mock=True)
     @patch("objects.Release.is_lcm_supported")
@@ -310,7 +310,7 @@ class TestSelectedNodesAction(BaseSelectedNodesTest):
             make_query(nodes=[n.uid for n in controller_nodes], noop_run='1')
 
         self.send_put(deploy_action_url)
-        self.assertTrue(mcast.call_args[0][1]['args']['noop_run'])
+        self.assertTrue(mcast.call_args[0][1][0]['args']['noop_run'])
 
     @mock_rpc(pass_mock=True)
     @patch('nailgun.task.task.rpc.cast')

@@ -1395,28 +1395,8 @@ class NailgunReceiver(object):
                                       suggestion_msg)
 
     @classmethod
-    def task_in_orchestrator(cls, **kwargs):
-        logger.info("RPC method task_in_orchestrator received: %s",
-                    jsonutils.dumps(kwargs))
-
-        task_uuid = kwargs.get('task_uuid')
-        task = cls.acquire_lock(task_uuid)
-        if not task:
-            return
-
-        if task.status == consts.TASK_STATUSES.pending:
-            objects.Task.update(
-                task, {'status': consts.TASK_STATUSES.running})
-            logger.debug("Task '%s' is acknowledged as running",
-                         task_uuid)
-        else:
-            logger.debug("Task '%s' in status '%s' can not "
-                         "be acknowledged as running", task_uuid,
-                         task.status)
-
-    @classmethod
-    def update_dnsmasq_resp(cls, **kwargs):
-        logger.info("RPC method update_dnsmasq_resp received: %s",
+    def base_resp(cls, **kwargs):
+        logger.info("RPC method base_resp received: %s",
                     jsonutils.dumps(kwargs))
 
         task_uuid = kwargs.get('task_uuid')

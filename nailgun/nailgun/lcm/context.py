@@ -38,3 +38,20 @@ class TransactionContext(object):
         if not node_info:
             return {}
         return UnionDict(self.old[task_id]['common'], node_info)
+
+    def get_new_node_data(self, node_id):
+        """Return part of transaction context, related to node.
+
+        This part of the context contain only small amount of
+        node attributes.
+        """
+        return self.new['nodes'][node_id]
+
+    def get_new_common_data(self):
+        """Return common part of transaction context.
+
+        This part of context doesn't contain any attributes,
+        related to selected node and it's the same for all
+        nodes in the cluster.
+        """
+        return self.new['common']

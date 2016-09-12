@@ -41,6 +41,7 @@ from nailgun.api.v1.validators.cluster import ClusterValidator
 from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 from nailgun.api.v1.validators.extension import ExtensionValidator
 
+from nailgun import errors
 from nailgun.extensions import set_extensions_for_object
 
 from nailgun.logger import logger
@@ -216,7 +217,10 @@ class ClusterAttributesHandler(BaseHandler):
         force = utils.parse_bool(web.input(force='0').force)
 
         data = self.checked_data(cluster=cluster, force=force)
-        objects.Cluster.patch_attributes(cluster, data)
+        try:
+            objects.Cluster.patch_attributes(cluster, data)
+        except errors.NailgunException as exc:
+            raise self.http(400, exc.message)
 
         return {
             'editable': objects.Cluster.get_editable_attributes(

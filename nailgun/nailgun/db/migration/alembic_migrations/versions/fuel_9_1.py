@@ -529,6 +529,14 @@ ATTRIBUTES_PING = {
     'weight': 82
 }
 
+ATTRIBUTES_PROPAGATE = {
+    'label': 'Propagate task based deployment.',
+    'description': 'Enables adaptation of granular tasks for task deployment.',
+    'type': 'checkbox',
+    'weight': 12,
+    'value': False
+}
+
 KERNEL_CMDLINE1 = ("console=tty0 net.ifnames=0 biosdevname=0 "
                    "rootdelay=90 nomodeset")
 KERNEL_CMDLINE2 = ("console=tty0 net.ifnames=1 biosdevname=0 "
@@ -553,6 +561,9 @@ def upgrade_attributes_metadata():
 
         common = editable.setdefault('common', {})
         common.setdefault('run_ping_checker', ATTRIBUTES_PING)
+        if common.get('propagate_task_deploy'):
+            # turn propagate_task_deploy on
+            common['propagate_task_deploy'] = ATTRIBUTES_PROPAGATE
 
         kernel_params = editable.setdefault('kernel_params', {})
         kernel = kernel_params.setdefault('kernel', {})

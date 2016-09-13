@@ -460,6 +460,63 @@ class TestClusterGraphHandler(BaseGraphTasksTests, DeploymentTasksTestMixin):
         self.assertEqual(resp.status_code, 405)
 
 
+class TestClusterOwnDeploymentTasksHandler(BaseGraphTasksTests,
+                                           DeploymentTasksTestMixin):
+    deployment_tasks = [
+        {'id': 'test-task', 'type': 'puppet'}
+    ]
+
+    def setUp(self):
+        super(TestClusterOwnDeploymentTasksHandler, self).setUp()
+        objects.DeploymentGraph.create_for_model(
+            {
+                'tasks': self.deployment_tasks
+            },
+            self.cluster,
+            'custom-graph'
+        )
+
+    def test_get_own_deployment_tasks(self):
+        resp = self.app.get(
+            reverse(
+                'ClusterOwnDeploymentTasksHandler',
+                kwargs={
+                    'obj_id': self.cluster.id
+                }
+            ) + '?graph_type=custom-graph',
+            headers=self.default_headers,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_tasks(self.deployment_tasks, resp.json)
+
+    def test_get_own_deployment_tasks_wrong_type_empty(self):
+        resp = self.app.get(
+            reverse(
+                'ClusterOwnDeploymentTasksHandler',
+                kwargs={
+                    'obj_id': self.cluster.id
+                }
+            ) + '?graph_type=not-existing-type',
+            headers=self.default_headers,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self._compare_tasks([], resp.json)
+
+    def test_get_own_deployment_tasks_ne_cluster(self):
+        not_existing_id = 0
+        resp = self.app.get(
+            reverse(
+                'ClusterOwnDeploymentTasksHandler',
+                kwargs={
+                    'obj_id': not_existing_id
+                }
+            ) + '?graph_type=custom-graph',
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 404)
+
+
 class TestClusterPluginsGraphHandler(BaseGraphTasksTests,
                                      DeploymentTasksTestMixin):
     deployment_tasks = [

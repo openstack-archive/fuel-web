@@ -533,7 +533,7 @@ class TestDeploymentAttributesSerialization70(
         self.check_generate_vmware_attributes_data()
 
         result = self.serializer.serialize_node(
-            self.common_attrs, self.env.nodes[0], 'compute-vmware'
+            self.env.nodes[0], 'compute-vmware'
         )
 
         self.assertEqual(
@@ -696,7 +696,7 @@ class TestDeploymentSerializationForNovaNetwork70(
         self.check_generate_vmware_attributes_data()
 
         result = self.serializer.serialize_node(
-            self.common_attrs, self.env.nodes[0], 'compute-vmware'
+            self.env.nodes[0], 'compute-vmware'
         )
 
         self.assertEqual(

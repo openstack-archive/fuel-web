@@ -73,7 +73,7 @@ class BasePluginDeploymentHooksSerializer(object):
                             'not supported', task)
 
             if make_task:
-                yield self._serialize_task(make_task(uids, task), task)
+                yield self._serialize_task(make_task(list(uids), task), task)
 
     def _set_tasks_defaults(self, plugin, tasks):
         for task in tasks:

@@ -435,7 +435,8 @@ class TestClusterExtension(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(self.cluster)
-        self.assertItemsEqual(self.cluster.extensions, extensions)
+        for ext in extensions:
+            self.assertIn(ext, self.cluster.extensions)
 
     def test_enabling_extensions(self):
         extensions = 'bareon', 'volume_manager'
@@ -453,7 +454,8 @@ class TestClusterExtension(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(self.cluster)
-        self.assertItemsEqual(self.cluster.extensions, extensions)
+        for ext in extensions:
+            self.assertIn(ext, self.cluster.extensions)
 
     def test_enabling_invalid_extensions(self):
         existed_extensions = 'bareon', 'volume_manager'
@@ -474,3 +476,64 @@ class TestClusterExtension(BaseIntegrationTest):
         self.assertIn(u"No such extensions:", resp.json_body['message'])
         self.assertIn(requested_extensions[0], resp.json_body['message'])
         self.assertNotIn(requested_extensions[1], resp.json_body['message'])
+
+    def test_disabling_invalid_extensions(self):
+        requested_extensions = 'network_manager', 'bareon'
+
+        self.cluster.extensions = 'volume_manager', 'bareon'
+        self.db.commit()
+        url = reverse('ClusterExtensionsHandler',
+                      kwargs={'cluster_id': self.cluster.id})
+        query_str = 'extension_names={0}'.format(
+            ','.join(requested_extensions))
+
+        resp = self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers,
+            expect_errors=True,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(u"No such extensions to disable:",
+                      resp.json_body['message'])
+        self.assertIn(requested_extensions[0], resp.json_body['message'])
+        self.assertNotIn(requested_extensions[1], resp.json_body['message'])
+
+    def test_disabling_extensions(self):
+        existed_extensions = 'network_manager', 'volume_manager', 'bareon'
+        requested_extensions = 'network_manager', 'bareon'
+
+        self.cluster.extensions = existed_extensions
+        self.db.commit()
+        url = reverse('ClusterExtensionsHandler',
+                      kwargs={'cluster_id': self.cluster.id})
+        query_str = 'extension_names={0}'.format(
+            ','.join(requested_extensions))
+
+        self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers,
+        )
+
+        self.db.refresh(self.cluster)
+        for ext in requested_extensions:
+            self.assertNotIn(ext, self.cluster.extensions)
+
+    def test_disabling_dublicated_extensions(self):
+        existed_extensions = 'network_manager', 'volume_manager', 'bareon'
+        requested_extensions = 'network_manager', 'bareon'
+
+        self.cluster.extensions = existed_extensions
+        self.db.commit()
+        url = reverse('ClusterExtensionsHandler',
+                      kwargs={'cluster_id': self.cluster.id})
+        query_str = 'extension_names={0}'.format(
+            ','.join(2 * requested_extensions))
+
+        self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers,
+        )
+
+        self.db.refresh(self.cluster)
+        for ext in requested_extensions:
+            self.assertNotIn(ext, self.cluster.extensions)

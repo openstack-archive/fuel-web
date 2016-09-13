@@ -596,8 +596,7 @@ class ClusterExtensionsHandler(BaseHandler):
         cluster = self._get_cluster_obj(cluster_id)
         # TODO(agordeev): web.py does not support parsing of array arguments
         # in the queryset so we specify the input as comma-separated list
-        extension_names = list(self.get_param_as_set('extension_names',
-                                                     default=[]))
+        extension_names = self.get_param_as_set('extension_names', default=[])
 
         try:
             data = self.validator.validate_delete(extension_names,

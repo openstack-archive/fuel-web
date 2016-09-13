@@ -39,7 +39,7 @@ class ExtensionValidator(BasicValidator):
 
     @classmethod
     def validate_delete(cls, extension_names, cluster):
-        not_found_extensions = set(extension_names) - set(cluster.extensions)
+        not_found_extensions = extension_names - set(cluster.extensions)
         if not_found_extensions:
             raise errors.CannotFindExtension(
                 "No such extensions to disable: {0}".format(

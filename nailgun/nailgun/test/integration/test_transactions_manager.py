@@ -574,3 +574,62 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+
+    @mock.patch('nailgun.transactions.manager.rpc')
+    def test_execute_for_primary_roles(self, rpc_mock):
+        self.graph.tasks.append(objects.DeploymentGraphTask.create(
+            {
+                'id': 'test_task_2',
+                'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
+                'roles': ['primary-controller']
+            }))
+
+        node = self.env.create_node(
+            cluster_id=self.cluster.id, roles=["controller"]
+        )
+
+        task = self.manager.execute(graphs=[
+            {
+                "type": "test_graph",
+                "tasks": ["test_task_2"],
+                "nodes": [node.id]
+            }])
+
+        rpc_mock.cast.assert_called_once_with(
+            'naily',
+            [{
+                'args': {
+                    'tasks_metadata': self.expected_metadata,
+                    'task_uuid': task.subtasks[0].uuid,
+                    'tasks_graph': {
+                        None: [],
+                        node.uid: mock.ANY,
+                    },
+                    'tasks_directory': {},
+                    'dry_run': False,
+                    'noop_run': False,
+                    'debug': False
+
+                },
+                'respond_to': 'transaction_resp',
+                'method': 'task_deploy',
+                'api_version': '1'
+            }])
+
+        tasks_graph = rpc_mock.cast.call_args[0][1][0]['args']['tasks_graph']
+        self.assertItemsEqual(tasks_graph[node.uid], [
+            {
+                'id': 'test_task_2',
+                'type': 'puppet',
+                'fail_on_error': True,
+                'parameters': {'cwd': '/'}
+            },
+            {
+                'id': 'test_task',
+                'type': 'skipped',
+                'fail_on_error': False,
+            }
+        ])
+
+        self._success(task.subtasks[0].uuid)
+        self.assertEqual(task.status, consts.TASK_STATUSES.ready)

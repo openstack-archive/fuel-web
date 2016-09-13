@@ -382,8 +382,8 @@
       bonding:
         availability:
           - dpdkovs: "'experimental' in version:feature_groups and interface:pxe == false and
-                   interface:attributes.dpdk.enabled.value and not interface:attributes.sriov.enabled.value"
-          - linux: "not interface:attributes.sriov.enabled.value"
+                   attributes:dpdk.enabled.value and not attributes:sriov.enabled.value"
+          - linux: "not attributes:sriov.enabled.value"
         properties:
           linux:
             mode:
@@ -2055,35 +2055,62 @@
           weight: 10
           type: "number"
           value: null
+          min: 42
+          max: 65536
       sriov:
         metadata:
           label: "SR-IOV"
           weight: 30
+        info:
+          weight: 5
+          type: "hidden"
+          value: False
+          description: 'Single-root I/O Virtualization (SR-IOV) is a specification that, when implemented by a physical PCIe device, enables it to appear as multiple separate PCIe devices. This enables multiple virtualized guests to share direct access to the physical device, offering improved performance over an equivalent virtual device.'
         enabled:
           label: "SR-IOV enabled"
           weight: 10
           type: "checkbox"
           value: False
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              message: "Only KVM hypervisor works with SR-IOV"
         numvfs:
           label: "Virtual functions"
           weight: 20
           type: "number"
           min: 0
           value: null
+          restrictions:
+            - condition: "attributes:sriov.enabled.value == false"
+              action: "hide"
         physnet:
           label: "Physical network"
           weight: 30
           type: "text"
           value: ''
+          regex:
+            source: "^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$"
+            error: "Invalid physical network"
+          restrictions:
+            - condition: "attributes:sriov.enabled.value == false"
+              action: "hide"
       dpdk:
         metadata:
           label: "DPDK"
           weight: 40
+        info:
+          weight: 5
+          type: "hidden"
+          value: False
+          description: 'The Data Plane Development Kit (DPDK) provides high-performance packet processing libraries and user space drivers.'
         enabled:
           label: "DPDK enabled"
           weight: 10
           type: "checkbox"
           value: False
+          restrictions:
+            - condition: "settings:common.libvirt_type.value != 'kvm'"
+              message: "Only KVM hypervisor works with DPDK"
     bond_attributes:
       type__:
         type: 'hidden'

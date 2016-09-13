@@ -343,6 +343,9 @@ class TransactionsManager(object):
                 node.error_type = None
                 node.error_msg = None
 
+        # we should initialize primary roles for cluster before
+        # role resolve has been created
+        objects.Cluster.set_primary_roles(cluster, nodes)
         resolver = role_resolver.RoleResolver(nodes)
         _adjust_graph_tasks(
             graph,

@@ -445,7 +445,7 @@ def _get_nodes_to_run(cluster, node_filter, ids=None):
             )
         )
 
-    if ids:
+    if ids is not None:
         nodes = objects.NodeCollection.filter_by_list(nodes, 'id', ids)
 
     return objects.NodeCollection.lock_for_update(

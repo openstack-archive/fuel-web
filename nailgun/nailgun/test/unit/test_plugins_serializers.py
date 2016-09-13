@@ -15,6 +15,7 @@
 #    under the License.
 
 import copy
+import json
 import mock
 
 from nailgun import consts
@@ -41,8 +42,22 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
         self.hook = BasePluginDeploymentHooksSerializer(
             self.nodes,
             self.cluster,
-            resolver=NullResolver([x['id'] for x in self.nodes])
+            resolver=NullResolver({x['id'] for x in self.nodes})
         )
+
+    def test_tasks_are_serializable(self):
+        stage = 'pre_deployment'
+        role = 'controller'
+
+        plugin = mock.Mock()
+        plugin.full_name = 'plugin_name'
+        plugin.tasks = [
+            {'type': 'shell', 'role': role, 'id': '1', 'stage': stage,
+             'parameters': {'cmd': 'test1', 'cwd': '/', 'timeout': 15}},
+        ]
+
+        raw_result = list(self.hook.deployment_tasks([plugin], stage))
+        json.dumps(raw_result)
 
     def test_original_order_of_deployment_tasks(self):
         stage = 'pre_deployment'

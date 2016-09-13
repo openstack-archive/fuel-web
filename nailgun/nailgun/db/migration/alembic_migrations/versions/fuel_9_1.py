@@ -497,7 +497,7 @@ def fix_deployment_history_constraint():
     )
 
 
-ATTRIBUTES_S3 = {
+ATTRIBUTES_PING = {
     'description': ('Uncheck this box if the public gateway will not be '
                     'available or will not respond to ICMP requests to '
                     'the deployed cluster. If unchecked, the controllers '
@@ -513,7 +513,7 @@ ATTRIBUTES_S3 = {
     'weight': 50
 }
 
-ATTRIBUTES_PING = {
+ATTRIBUTES_S3 = {
     'description': ('This allows to authenticate S3 requests basing on '
                     'EC2/S3 credentials managed by Keystone. Please note '
                     'that enabling the integration will increase the '

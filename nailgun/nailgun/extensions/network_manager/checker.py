@@ -366,11 +366,8 @@ class NetworkCheck(object):
                 # considered as one shared network if they have equal CIDRs
                 # and gateways
                 if (ng1['group_id'] != ng2['group_id'] and
-                        ng1['group_id'] is not None and
-                        ng2['group_id'] is not None and
                         ng1['name'] == ng2['name'] and
                         ng1['gateway'] is not None and
-                        ng1['gateway'] == ng2['gateway'] and
                         ng1['cidr'] == ng2['cidr']):
                     continue
                 cidr1 = netaddr.IPNetwork(ng1['cidr'])

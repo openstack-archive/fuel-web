@@ -382,8 +382,8 @@
       bonding:
         availability:
           - dpdkovs: "'experimental' in version:feature_groups and interface:pxe == false and
-                   interface:attributes.dpdk.enabled.value and not interface:attributes.sriov.enabled.value"
-          - linux: "not interface:attributes.sriov.enabled.value"
+                   attributes:dpdk.enabled.value and not attributes:sriov.enabled.value"
+          - linux: "not attributes:sriov.enabled.value"
         properties:
           linux:
             mode:

@@ -382,8 +382,8 @@
       bonding:
         availability:
           - dpdkovs: "'experimental' in version:feature_groups and interface:pxe == false and
-                   interface:attributes.dpdk.enabled.value and not interface:attributes.sriov.enabled.value"
-          - linux: "not interface:attributes.sriov.enabled.value"
+                   attributes:dpdk.enabled.value and not attributes:sriov.enabled.value"
+          - linux: "not attributes:sriov.enabled.value"
         properties:
           linux:
             mode:
@@ -2042,14 +2042,13 @@
           label: "Offloading"
           weight: 10
         disable:
-          label: "Disable offloading"
+          label: "Disable Offloading"
           weight: 10
           type: "checkbox"
           value: False
         modes:
-          label: "Offloading modes"
+          label: "Offloading Modes"
           weight: 20
-          description: "Offloading modes"
           type: "offloading_modes"
           value: {}
       mtu:
@@ -2061,35 +2060,53 @@
           weight: 10
           type: "number"
           value: null
+          min: 42
+          max: 65536
       sriov:
         metadata:
           label: "SR-IOV"
           weight: 30
         enabled:
-          label: "SR-IOV enabled"
+          label: "Enable SR-IOV"
+          description: 'Single-root I/O Virtualization (SR-IOV) is a specification that, when implemented by a physical PCIe device, enables it to appear as multiple separate PCIe devices. This enables multiple virtualized guests to share direct access to the physical device, offering improved performance over an equivalent virtual device.'
           weight: 10
           type: "checkbox"
           value: False
+          restrictions:
+            - "settings:common.libvirt_type.value != 'kvm'": "Only KVM hypervisor works with SR-IOV"
         numvfs:
-          label: "Virtual functions"
+          label: "Number of Virtual Functions"
           weight: 20
           type: "number"
           min: 0
           value: null
+          restrictions:
+            - "attributes:sriov.enabled.value == false"
         physnet:
-          label: "Physical network"
+          label: "Physical Network Name"
           weight: 30
           type: "text"
-          value: ''
+          value: ""
+          regex:
+            source: "^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$"
+            error: "Invalid physical network name"
+          restrictions:
+            - "attributes:sriov.enabled.value == false"
+            - condition: "attributes:sriov.physnet.value != 'physnet2'"
+              message: "Only \"physnet2\" will be configured by Fuel in Neutron. Configuration of other physical networks is up to Operator or plugin. Fuel will just configure appropriate pci_passthrough_whitelist option in nova.conf for such interface and physical networks."
+              action: "none"
       dpdk:
         metadata:
           label: "DPDK"
           weight: 40
         enabled:
-          label: "DPDK enabled"
+          label: "Enable DPDK"
+          description: 'The Data Plane Development Kit (DPDK) provides high-performance packet processing libraries and user space drivers.'
           weight: 10
           type: "checkbox"
           value: False
+          restrictions:
+            - "settings:common.libvirt_type.value != 'kvm'": "Only KVM hypervisor works with DPDK"
     bond_attributes:
       type__:
         type: 'hidden'
@@ -2108,12 +2125,12 @@
           label: "Offloading"
           weight: 20
         disable:
-          label: "Disable offloading"
+          label: "Disable Offloading"
           weight: 10
           type: "checkbox"
           value: False
         modes:
-          label: "Offloading modes"
+          label: "Offloading Modes"
           weight: 20
           description: "Offloading modes"
           type: "offloading_modes"
@@ -2127,15 +2144,20 @@
           weight: 10
           type: "number"
           value: null
+          min: 42
+          max: 65536
       dpdk:
         metadata:
           label: "DPDK"
           weight: 40
         enabled:
-          label: "DPDK enabled"
+          label: "Enable DPDK"
+          description: 'The Data Plane Development Kit (DPDK) provides high-performance packet processing libraries and user space drivers.'
           weight: 10
           type: "checkbox"
           value: False
+          restrictions:
+            - "settings:common.libvirt_type.value != 'kvm'": "Only KVM hypervisor works with DPDK"
       lacp:
         metadata:
           label: "Lacp"

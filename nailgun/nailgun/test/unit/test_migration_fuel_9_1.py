@@ -44,6 +44,17 @@ rule_to_pick_bootdisk = [
                     'grub-install otherwise.'}
 ]
 
+ATTRIBUTES_METADATA = {
+    'editable': {
+        'kernel_params': {
+            'kernel': {
+                'value': ("console=tty0 net.ifnames=0 biosdevname=0 "
+                          "rootdelay=90 nomodeset"),
+            }
+        }
+    }
+}
+
 
 def setup_module():
     dropdb()
@@ -67,7 +78,8 @@ def prepare():
                     'config': {}
                 }
             }),
-            'volumes_metadata': jsonutils.dumps({})
+            'volumes_metadata': jsonutils.dumps({}),
+            'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA)
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -294,3 +306,19 @@ class TestReleaseStateMigration(base.BaseAlembicMigrationTest):
 
         for res in result:
             self.assertEqual(res[0], consts.RELEASE_STATES.manageonly)
+
+
+class TestReleasesUpdate(base.BaseAlembicMigrationTest):
+
+    def test_attributes_metadata_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        attrs = jsonutils.loads(result['attributes_metadata'])
+        self.assertIn('editable', attrs)
+        self.assertIn('storage', attrs['editable'])
+        self.assertIn('auth_s3_keystone_ceph', attrs['editable']['storage'])
+        self.assertIn('common', attrs['editable'])
+        self.assertIn('run_ping_checker', attrs['editable']['common'])
+        self.assertEquals(
+            "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset",
+            attrs['editable']['kernel_params']['kernel']['value'])

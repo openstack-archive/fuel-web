@@ -607,22 +607,18 @@ class TestReleaseAsPlugin(BasePluginTest):
                     "graphs": [
                         {
                             "type": "custom-graph-embedded",
-                            "graph": {
-                                "name": "deployment-graph-name",
-                                "tasks": [
-                                    {
-                                        "id": "task",
-                                        "type": "shell"
-                                    }
-                                ]
-                            }
+                            "name": "deployment-graph-name",
+                            "tasks": [
+                                {
+                                    "id": "task",
+                                    "type": "shell"
+                                }
+                            ]
                         },
                         {
                             "type": "custom-graph-ref",
-                            "graph": {
-                                "name": "deployment-graph-name",
-                                "tasks_path": "deployment_tasks.yaml"
-                            }
+                            "name": "deployment-graph-name",
+                            "tasks_path": "deployment_tasks.yaml"
                         }
                     ]
                 } for i in [1, 2]

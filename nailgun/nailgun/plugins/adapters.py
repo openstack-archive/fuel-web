@@ -435,16 +435,9 @@ class PluginAdapterV5(PluginAdapterV4):
     def attributes_processors(self):
         ap = super(PluginAdapterV5, self).attributes_processors
         ap.update({
-            'releases': self._process_releases,
-            'graphs': self._make_graphs_dict_by_type
+            'releases': self._process_releases
         })
         return ap
-
-    def _make_graphs_dict_by_type(self, graphs_list):
-        graphs_to_create = {}
-        for graph in graphs_list:
-            self.graphs_to_create[graph.pop('type')] = graph
-        return graphs_to_create
 
     def _create_release_from_configuration(self, configuration):
         """Create templated release and graphs for given configuration.
@@ -461,12 +454,6 @@ class PluginAdapterV5(PluginAdapterV4):
             base_release.update(configuration)
             configuration = base_release
 
-        # process graphs
-        graphs_by_type = {}
-        graphs_list = configuration.pop('graphs', None)
-        for graph in graphs_list:
-            graphs_by_type[graph['type']] = graph['graph']
-        configuration['graphs'] = graphs_by_type
         configuration['state'] = consts.RELEASE_STATES.available
 
         #  remap fields

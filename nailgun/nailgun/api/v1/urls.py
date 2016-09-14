@@ -120,6 +120,7 @@ from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 from nailgun.api.v1.handlers.orchestrator import SerializedTasksHandler
 from nailgun.api.v1.handlers.orchestrator import TaskDeployGraph
 
+from nailgun.api.v1.handlers.release import ReleaseAttributesMetadataHandler
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import \
     ReleaseDeploymentGraphCollectionHandler
@@ -175,6 +176,8 @@ from nailgun.settings import settings
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
+    r'/releases/(?P<obj_id>\d+)/attributes_metadata/?$',
+    ReleaseAttributesMetadataHandler,
     r'/releases/(?P<obj_id>\d+)/?$',
     ReleaseHandler,
     r'/releases/(?P<obj_id>\d+)/networks/?$',

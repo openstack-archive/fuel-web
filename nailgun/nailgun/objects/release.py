@@ -56,7 +56,12 @@ class Release(NailgunObject):
         # roles array. since fuel 7.0 we don't use it anymore, and
         # we don't require it even for old releases.
         data.pop("roles", None)
-        graphs = data.pop("graphs", {})
+        # process graphs
+        graphs = {}
+        graphs_list = data.pop('graphs', [])
+        for graph in graphs_list:
+            graphs[graph.pop('type')] = graph
+
         deployment_tasks = data.pop("deployment_tasks", [])
 
         if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
@@ -83,7 +88,10 @@ class Release(NailgunObject):
         # we don't require it even for old releases.
         data.pop("roles", None)
 
-        graphs = data.pop("graphs", {})
+        graphs = {}
+        graphs_list = data.pop('graphs', [])
+        for graph in graphs_list:
+            graphs[graph.pop('type')] = graph
         deployment_tasks = data.pop("deployment_tasks", [])
 
         existing_default_graph = DeploymentGraph.get_for_model(

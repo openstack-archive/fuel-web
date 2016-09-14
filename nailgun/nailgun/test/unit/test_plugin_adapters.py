@@ -34,7 +34,6 @@ from nailgun.utils import ReportNode
 
 @six.add_metaclass(abc.ABCMeta)
 class TestPluginBase(base.BaseTestCase):
-
     # Prevent running tests in base class
     __test__ = False
     # Should be overridden in child
@@ -245,7 +244,6 @@ class TestPluginBase(base.BaseTestCase):
 
 
 class TestPluginV1(TestPluginBase):
-
     __test__ = True
     package_version = '1.0.0'
 
@@ -262,7 +260,6 @@ class TestPluginV1(TestPluginBase):
 
 
 class TestPluginV2(TestPluginBase):
-
     __test__ = True
     package_version = '2.0.0'
 
@@ -279,7 +276,6 @@ class TestPluginV2(TestPluginBase):
 
 
 class TestPluginV3(TestPluginBase):
-
     __test__ = True
     package_version = '3.0.0'
 
@@ -334,7 +330,6 @@ class TestPluginV3(TestPluginBase):
 
 
 class TestPluginV4(TestPluginBase):
-
     __test__ = True
     package_version = '4.0.0'
 
@@ -394,9 +389,65 @@ class TestPluginV4(TestPluginBase):
 
 
 class TestPluginV5(TestPluginBase):
-
     __test__ = True
     package_version = '5.0.0'
+
+    def test_graphs_creation(self):
+        metadata_update = {
+            'name': 'graphs_plugin',
+            'description': 'testing graphs',
+            'package_version': '5.0.0',
+            'graphs': [
+                {
+                    'type': 'default',
+                    'name': 'default',
+                    'tasks': [
+                        {'id': 'default', 'type': 'puppet'}
+                    ]
+                },
+                {
+                    'type': 'custom',
+                    'name': 'custom',
+                    'tasks': [
+                        {'id': 'custom', 'type': 'puppet'}
+                    ]
+                }
+            ]}
+        metadata = self.env.get_default_plugin_metadata()
+        metadata.update(metadata_update)
+        plugin = Plugin.create(metadata)
+
+        def_graph = DeploymentGraph.get_for_model(
+            plugin, graph_type='default'
+        )
+        self.assertEqual(def_graph.name, 'default')
+        self.assertEqual(
+            DeploymentGraph.get_tasks(def_graph),
+            [
+                {
+                    'id': 'default',
+                    'task_name': 'default',
+                    'type': 'puppet',
+                    'version': '1.0.0'
+                }
+            ]
+        )
+
+        custom_graph = DeploymentGraph.get_for_model(
+            plugin, graph_type='custom'
+        )
+        self.assertEqual(custom_graph.name, 'custom')
+        self.assertEqual(
+            DeploymentGraph.get_tasks(custom_graph),
+            [
+                {
+                    'id': 'custom',
+                    'task_name': 'custom',
+                    'type': 'puppet',
+                    'version': '1.0.0'
+                }
+            ]
+        )
 
     def test_get_metadata(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
@@ -471,7 +522,6 @@ class TestPluginV5(TestPluginBase):
 
 
 class TestClusterCompatibilityValidation(base.BaseTestCase):
-
     def setUp(self):
         super(TestClusterCompatibilityValidation, self).setUp()
         self.plugin = Plugin.create(self.env.get_default_plugin_metadata(

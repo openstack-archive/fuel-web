@@ -38,13 +38,16 @@ class Plugin(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        graphs = {}
+        for graph in data.pop("graphs", {}):
+            graphs[graph.pop('type')] = graph['graph']
 
-        graphs = data.pop("graphs", {})
         deployment_tasks = data.pop("deployment_tasks", [])
         releases_relations = [
             r for r in data.pop("releases", [])
             if not r.get('is_release', False)
         ]
+
         data['releases'] = releases_relations
         plugin_obj = super(Plugin, cls).create(data)
 

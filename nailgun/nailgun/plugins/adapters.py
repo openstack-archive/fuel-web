@@ -48,7 +48,9 @@ class PluginAdapterBase(object):
     def attributes_processors(self):
         return {
             'attributes_metadata':
-                lambda data: (data or {}).get('attributes', {}),
+                lambda data:
+                    (data.get('attributes', None) or {})
+                    if data else data,
             'tasks':
                 lambda data: data or []
         }

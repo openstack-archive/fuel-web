@@ -450,6 +450,40 @@ class TestPluginV5(TestPluginBase):
             ]
         )
 
+        Plugin.update(plugin, metadata)
+
+        def_graph = DeploymentGraph.get_for_model(
+            plugin, graph_type='default'
+        )
+        self.assertEqual(def_graph.name, 'default')
+        self.assertEqual(
+            DeploymentGraph.get_tasks(def_graph),
+            [
+                {
+                    'id': 'default',
+                    'task_name': 'default',
+                    'type': 'puppet',
+                    'version': '1.0.0'
+                }
+            ]
+        )
+
+        custom_graph = DeploymentGraph.get_for_model(
+            plugin, graph_type='custom'
+        )
+        self.assertEqual(custom_graph.name, 'custom')
+        self.assertEqual(
+            DeploymentGraph.get_tasks(custom_graph),
+            [
+                {
+                    'id': 'custom',
+                    'task_name': 'custom',
+                    'type': 'puppet',
+                    'version': '1.0.0'
+                }
+            ]
+        )
+
     def test_get_metadata(self):
         plugin_metadata = self.env.get_default_plugin_metadata()
         attributes_metadata = self.env.get_default_plugin_env_config()
@@ -474,21 +508,30 @@ class TestPluginV5(TestPluginBase):
             'components_metadata': components_metadata,
             'nic_attributes_metadata': nic_attributes_metadata,
             'bond_attributes_metadata': bond_attributes_metadata,
-            'node_attributes_metadata': node_attributes_metadata
+            'node_attributes_metadata': node_attributes_metadata,
+            'graphs': [{
+                'type': 'custom',
+                'name': 'custom',
+                'tasks': [
+                    {'id': 'task{}'.format(n), 'type': 'puppet'}
+                    for n in range(2)
+                ]
+            }]
         })
 
         with mock.patch.object(
                 self.plugin_adapter, 'loader') as loader:
             loader.load.return_value = (plugin_metadata, ReportNode())
             Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
-
-            for key, val in six.iteritems(plugin_metadata):
+            for key, val in six.iteritems(
+                {
+                    k: v for (k, v) in six.iteritems(plugin_metadata)
+                    if k not in ('deployment_tasks', 'graphs')
+                }
+            ):
                 self.assertEqual(
                     getattr(self.plugin, key), val)
 
-            self.assertEqual(
-                self.plugin.attributes_metadata,
-                attributes_metadata['attributes'])
             self.assertEqual(
                 self.plugin.roles_metadata, roles_metadata)
             self.assertEqual(
@@ -506,7 +549,27 @@ class TestPluginV5(TestPluginBase):
             self.assertEqual(
                 self.plugin.node_attributes_metadata,
                 bond_attributes_metadata)
+            self.assertEqual(
+                self.plugin.attributes_metadata,
+                attributes_metadata)
 
+            # check custom graph
+            dg = DeploymentGraph.get_for_model(
+                self.plugin, graph_type='custom'
+            )
+            self.assertEqual(dg.name, 'custom')
+            self.assertItemsEqual(
+                DeploymentGraph.get_tasks(dg),
+                [
+                    {
+                        'id': 'task{}'.format(i),
+                        'task_name':
+                        'task{}'.format(i),
+                        'type': 'puppet',
+                        'version': '1.0.0'
+                    } for i in range(2)
+                ]
+            )
             # deployment tasks returning all non-defined fields, so check
             # should differ from JSON-stored fields
             plugin_tasks = self.env.get_default_plugin_deployment_tasks()

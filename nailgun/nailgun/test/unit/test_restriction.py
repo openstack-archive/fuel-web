@@ -333,6 +333,8 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
                     "vcenter_host": "",
                     "vcenter_username": "",
                     "vcenter_password": "",
+                    "vcenter_insecure": "",
+                    "vcenter_ca_file": {},
                     "nova_computes": [
                         {
                             "vsphere_cluster": "",

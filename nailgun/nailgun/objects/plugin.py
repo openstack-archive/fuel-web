@@ -43,12 +43,11 @@ class Plugin(NailgunObject):
             graphs[graph.pop('type')] = graph
 
         deployment_tasks = data.pop("deployment_tasks", [])
-        releases_relations = [
+        data['releases'] = [
             r for r in data.pop("releases", [])
             if not r.get('is_release', False)
         ]
 
-        data['releases'] = releases_relations
         plugin_obj = super(Plugin, cls).create(data)
 
         if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
@@ -69,6 +68,36 @@ class Plugin(NailgunObject):
         ClusterPlugin.add_compatible_clusters(plugin_obj)
 
         return plugin_obj
+
+    @classmethod
+    def update(cls, instance, data):
+        graphs = {}
+        ggg = data.pop("graphs", [])
+        for graph in ggg:
+            graphs[graph.pop('type')] = graph
+
+        deployment_tasks = data.pop("deployment_tasks", [])
+        data['releases'] = [
+            r for r in data.pop("releases", [])
+            if not r.get('is_release', False)
+        ]
+
+        super(Plugin, cls).update(instance, data)
+
+        if not graphs.get(consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE):
+            graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
+                {'tasks': deployment_tasks}
+
+        for graph_type, graph_data in six.iteritems(graphs):
+            existing_graph = DeploymentGraph.get_for_model(
+                instance, graph_type=graph_type)
+            if existing_graph:
+                DeploymentGraph.update(existing_graph, graph_data)
+            else:
+                DeploymentGraph.create_for_model(
+                    graph_data, instance, graph_type)
+
+        ClusterPlugin.add_compatible_clusters(instance)
 
     @classmethod
     def get_by_name_version(cls, name, version):

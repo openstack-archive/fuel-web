@@ -48,7 +48,7 @@ class PluginAdapterBase(object):
     def attributes_processors(self):
         return {
             'attributes_metadata':
-                lambda data: (data or {}).get('attributes', {}),
+                lambda data: (data or {}),
             'tasks':
                 lambda data: data or []
         }
@@ -75,6 +75,7 @@ class PluginAdapterBase(object):
                     self.attributes_processors[field](data_tree.get(field))
 
         data_tree = {k: v for k, v in six.iteritems(data_tree) if v}
+        print "DATA TREE", data_tree
         return data_tree
 
     @property

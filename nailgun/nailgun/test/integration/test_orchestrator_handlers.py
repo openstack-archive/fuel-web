@@ -78,9 +78,8 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         cluster = self.env.clusters[-1]
         resp = self.app.get(
             reverse('DefaultDeploymentInfo',
-                    kwargs={'cluster_id': cluster.id}),
+                    kwargs={'cluster_id': cluster.id}) + '?split=1',
             headers=self.default_headers)
-
         self.assertEqual(resp.status_code, 200)
         # for lcm the deployment info will contain master node too
         # and we check only that nodes are included to result
@@ -92,6 +91,28 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
     def test_default_deployment_handler(self):
         for release_ver in ('newton-10.0', 'mitaka-9.0', 'liberty-8.0'):
             self.check_default_deployment_handler(release_ver)
+
+    def test_get_default_deployment_info_in_new_format(self):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['cinder'], 'pending_addition': True}],
+            release_kwargs={
+                'version': 'mitaka-9.0',
+                'operating_system': consts.RELEASE_OS.ubuntu
+            }
+        )
+        # by default result should not be split
+        resp = self.app.get(
+            reverse('DefaultDeploymentInfo',
+                    kwargs={'cluster_id': cluster.id}),
+            headers=self.default_headers)
+        info = resp.json_body
+        self.assertIsNone(
+            next((n for n in info if n.get('uid') == 'common'), None)
+        )
+
 
     def test_default_provisioning_handler(self):
         resp = self.app.get(
@@ -138,7 +159,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         url = reverse(
             'DefaultDeploymentInfo',
             kwargs={'cluster_id': self.cluster.id}) + \
-            make_query(nodes=node_ids)
+            make_query(nodes=node_ids) + '&split=1'
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)

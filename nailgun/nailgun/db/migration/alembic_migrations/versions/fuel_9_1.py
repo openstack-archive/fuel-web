@@ -678,7 +678,7 @@ VCENTER_INSECURE = {
 }
 
 VCENTER_CA_FILE = {
-    'name': "vc_ca_file",
+    'name': "vcenter_ca_file",
     'type': 'file',
     'label': "CA file",
     'description': ('File containing the trusted CA bundle that emitted '
@@ -694,10 +694,10 @@ def upgrade_vmware_attributes_metadata():
             fields.append(VCENTER_INSECURE)
             for value in values:
                 value['vcenter_insecure'] = True
-        if 'vc_ca_file' not in names:
+        if 'vcenter_ca_file' not in names:
             fields.append(VCENTER_CA_FILE)
             for value in values:
-                value['vc_ca_file'] = {}
+                value['vcenter_ca_file'] = {}
 
     def update_glance(fields, values):
         names = [f['name'] for f in fields]

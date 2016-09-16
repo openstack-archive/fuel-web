@@ -510,7 +510,8 @@ IRONIC_BOOTSTRAP_PKGS = ('openssh-server',
                          'msmtp-mta',
                          'i40e-dkms',
                          'xz-utils',
-                         'linux-headers-generic')
+                         'linux-headers-generic',
+                         'ironic-fa-bootstrap-configs')
 
 DEPLOYMENT_TASK_DEFAULT_VERSION = '1.0.0'
 DEFAULT_DEPLOYMENT_GRAPH_TYPE = 'default'

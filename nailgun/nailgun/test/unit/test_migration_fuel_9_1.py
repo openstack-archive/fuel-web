@@ -687,7 +687,7 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
         attrs = jsonutils.loads(result['vmware_attributes_metadata'])
 
         fields = attrs['editable']['metadata'][0]['fields']
-        self.assertItemsEqual(['vcenter_insecure', 'vc_ca_file'],
+        self.assertItemsEqual(['vcenter_insecure', 'vcenter_ca_file'],
                               [f['name'] for f in fields])
 
         fields = attrs['editable']['metadata'][1]['fields']
@@ -700,11 +700,11 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
                 'availability_zones':
                     [
                         {
-                            'vc_ca_file': {},
+                            'vcenter_ca_file': {},
                             'vcenter_insecure': True,
                         },
                         {
-                            'vc_ca_file': {},
+                            'vcenter_ca_file': {},
                             'vcenter_insecure': True
                         }
                     ],

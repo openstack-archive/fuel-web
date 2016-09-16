@@ -1,0 +1,14 @@
+Code-Review+2: Bulat Gaifullin <bgaifullin@mirantis.com>
+Code-Review+1: Nikita Zubkov <nzubkov@mirantis.com>
+Code-Review+1: Georgy Kibardin <gkibardin@mirantis.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Andrew Maksimov <amaksimov@mirantis.com>
+Code-Review+2: Ilya Kutukov <ikutukov@mirantis.com>
+Workflow+1: Ilya Kutukov <ikutukov@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 16 Sep 2016 14:55:59 +0000
+Reviewed-on: https://review.openstack.org/371482
+Project: openstack/fuel-web
+Branch: refs/heads/stable/mitaka

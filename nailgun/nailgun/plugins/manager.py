@@ -70,6 +70,15 @@ class PluginManager(object):
             if cls.is_plugin_data(attributes[k]):
                 plugins[k] = attributes.pop(k)['metadata']
 
+        propagate_task_deploy = get_in(
+            attributes, 'common', 'propagate_task_deploy', 'value')
+        if propagate_task_deploy is not None:
+            legacy_tasks_are_ignored = not propagate_task_deploy
+        else:
+            legacy_tasks_are_ignored = not get_in(
+                cluster.attributes.editable,
+                'common', 'propagate_task_deploy', 'value')
+
         for container in six.itervalues(plugins):
             default = container.get('default', False)
             for attrs in container.get('versions', []):
@@ -82,13 +91,6 @@ class PluginManager(object):
                     continue
                 enabled = container['enabled'] \
                     and plugin_id == container['chosen_id']
-                legacy_tasks_are_ignored = not get_in(
-                    cluster.attributes.editable,
-                    'common', 'propagate_task_deploy', 'value')
-                new_value = not get_in(
-                    attributes, 'common', 'propagate_task_deploy', 'value')
-                if new_value is not None:
-                    legacy_tasks_are_ignored = new_value
                 if (enabled and
                         Release.is_lcm_supported(cluster.release) and
                         legacy_tasks_are_ignored and

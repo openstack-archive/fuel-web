@@ -989,7 +989,10 @@ class NeutronNetworkDeploymentSerializer70(
             })
 
         # Add gateway.
-        if objects.Node.should_have_public_with_ip(node):
+        if (
+                objects.Node.should_have_public_with_ip(node) and
+                netgroups['public'].get('gateway')
+        ):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:

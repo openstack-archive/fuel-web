@@ -178,7 +178,9 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
             serialized = deployment_serializers.serialize(
                 graph, cluster, nodes, ignore_customized=True)
 
-        return _deployment_info_in_compatible_format(serialized)
+        return _deployment_info_in_compatible_format(
+            serialized, utils.parse_bool(web.input(split='0').split)
+        )
 
 
 class DefaultPrePluginsHooksInfo(DefaultOrchestratorInfo):
@@ -216,7 +218,8 @@ class DeploymentInfo(OrchestratorInfo):
 
     def get_orchestrator_info(self, cluster):
         return _deployment_info_in_compatible_format(
-            objects.Cluster.get_deployment_info(cluster)
+            objects.Cluster.get_deployment_info(cluster),
+            utils.parse_bool(web.input(split='0').split)
         )
 
     def update_orchestrator_info(self, cluster, data):
@@ -228,11 +231,14 @@ class DeploymentInfo(OrchestratorInfo):
                 'common': nodes.pop('common', {}),
                 'nodes': nodes
             }
+            new_format = False
         else:
             custom_info = data
+            new_format = True
 
         return _deployment_info_in_compatible_format(
-            objects.Cluster.replace_deployment_info(cluster, custom_info)
+            objects.Cluster.replace_deployment_info(cluster, custom_info),
+            new_format
         )
 
 
@@ -494,12 +500,16 @@ class SerializedTasksHandler(NodesFilterMixin, BaseHandler):
             raise self.http(400, msg=six.text_type(exc))
 
 
-def _deployment_info_in_compatible_format(depoyment_info):
+def _deployment_info_in_compatible_format(depoyment_info, separate):
     # FIXME(bgaifullin) need to update fuelclient
     # uid 'common' because fuelclient expects list of dicts, where
     # each dict contains field 'uid', which will be used as name of file
     data = depoyment_info.get('nodes', [])
     common = depoyment_info.get('common')
     if common:
-        data.append(dict(common, uid='common'))
+        if separate:
+            data.append(dict(common, uid='common'))
+        else:
+            for i, node_info in enumerate(data):
+                data[i] = utils.dict_merge(common, node_info)
     return data

@@ -85,10 +85,10 @@ class PluginManager(object):
                 legacy_tasks_are_ignored = not get_in(
                     cluster.attributes.editable,
                     'common', 'propagate_task_deploy', 'value')
-                new_value = not get_in(
+                new_value = get_in(
                     attributes, 'common', 'propagate_task_deploy', 'value')
                 if new_value is not None:
-                    legacy_tasks_are_ignored = new_value
+                    legacy_tasks_are_ignored = not new_value
                 if (enabled and
                         Release.is_lcm_supported(cluster.release) and
                         legacy_tasks_are_ignored and

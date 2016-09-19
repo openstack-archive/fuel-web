@@ -45,7 +45,7 @@ class GraphExecuteParamsValidator(BasicValidator):
 
         nodes_to_check = set()
         for graph in parsed['graphs']:
-            nodes_to_check.update(graph.get('nodes', []))
+            nodes_to_check.update(graph.get('nodes') or [])
 
         cls.validate_nodes(nodes_to_check, parsed['cluster'])
         return parsed

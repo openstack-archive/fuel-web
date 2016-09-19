@@ -35,6 +35,10 @@ class NailgunClusterAdapter(object):
         return self.cluster.name
 
     @property
+    def node_groups(self):
+        return self.cluster.node_groups
+
+    @property
     def net_provider(self):
         return self.cluster.net_provider
 
@@ -57,6 +61,10 @@ class NailgunClusterAdapter(object):
     @property
     def network_template(self):
         return self.cluster.network_config.configuration_template
+
+    @network_template.setter
+    def network_template(self, template):
+        self.cluster.network_config.configuration_template = template
 
     @editable_attrs.setter
     def editable_attrs(self, attrs):
@@ -104,6 +112,10 @@ class NailgunReleaseAdapter(object):
     @property
     def environment_version(self):
         return self.release.environment_version
+
+    @property
+    def id(self):
+        return self.release.id
 
     def __cmp__(self, other):
         if isinstance(other, NailgunReleaseAdapter):
@@ -198,6 +210,21 @@ class NailgunNetworkGroupAdapter(object):
     def __init__(self, network_group):
         self.network_group = network_group
 
+    @classmethod
+    def create(cls, data):
+        network_group = objects.NetworkGroup.create(data)
+        return cls(network_group)
+
+    @classmethod
+    def update(cls, net_group, data):
+        network_group = objects.NetworkGroup.update(net_group.network_group,
+                                                    data)
+        return cls(network_group)
+
+    @classmethod
+    def delete(cls, network_group):
+        objects.NetworkGroup.delete(network_group)
+
     @property
     def id(self):
         return self.network_group.id
@@ -205,3 +232,22 @@ class NailgunNetworkGroupAdapter(object):
     @property
     def name(self):
         return self.network_group.name
+
+    @property
+    def nodegroup(self):
+        return self.network_group.nodegroup
+
+    @classmethod
+    def get_by_uid(cls, ng_id):
+        return objects.NetworkGroup.get_by_uid(ng_id)
+
+
+class NailgunNodeGroupAdapter(object):
+
+    def __init__(self, node_group):
+        self.node_group = node_group
+
+    @classmethod
+    def create(cls, data):
+        node_group = objects.NodeGroup.create(data)
+        return cls(node_group)

@@ -121,7 +121,7 @@ class TestResetEnvironment(BaseIntegrationTest):
         )
 
         # reset environment
-        reset_task = self.env.reset_environment()
+        reset_task = self.env.reset_environment(expect_http=[200, 202])
         self.env.wait_ready(reset_task, 60)
 
         # check node statuses

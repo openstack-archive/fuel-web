@@ -592,8 +592,8 @@ class NailgunReceiver(object):
         task_name = task.name.title()
         if message:
             message = u"{0} has failed. {1}".format(task_name, message)
-            # in case we are sending faild task message from astute
-            # we should not create a notification with it, because its add
+            # in case we are sending failed task message from astute
+            # we should not create a notification with it, because it adds
             # a lot of clutter for user
             notify_message = message.split('\n\n')[0]
         else:

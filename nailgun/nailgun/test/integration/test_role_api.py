@@ -163,8 +163,8 @@ class TestRoleApi(BaseRoleTest):
         self.assertEqual(role.status_code, 200)
         self.assertEqual(role.json['name'], self.role_data['name'])
 
-    def test_create_role_with_numbers(self):
-        self.role_data['name'] = '1234'
+    def test_create_role_with_special_symbols(self):
+        self.role_data['name'] = '@#$%^&*()'
         resp = self.env.create_role(
             self.release.id, self.role_data, expect_errors=True)
 

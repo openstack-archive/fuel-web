@@ -1929,7 +1929,7 @@ class AssignIPs70Mixin(object):
         nodes_by_id = dict((n.id, n) for n in nodes)
 
         query = objects.NetworkGroup.get_network_groups_and_node_ids(
-            cluster.id
+            cluster.id, node_ids=list(nodes_by_id),
         )
 
         # Group by NetworkGroup.id

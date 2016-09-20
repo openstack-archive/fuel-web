@@ -346,7 +346,7 @@ class NetworkGroup(NailgunObject):
         return network
 
     @classmethod
-    def get_network_groups_and_node_ids(cls, cluster_id):
+    def get_network_groups_and_node_ids(cls, cluster_id, node_ids=None):
         """Get network group information for the given cluster
 
         The admin network group will not be included.
@@ -365,6 +365,8 @@ class NetworkGroup(NailgunObject):
             .filter(models.NodeGroup.cluster_id == cluster_id,
                     models.NetworkGroup.name != consts.NETWORKS.fuelweb_admin)
         )
+        if node_ids is not None:
+            query = query.filter(models.Node.id.in_(node_ids))
 
         return query
 

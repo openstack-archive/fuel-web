@@ -1933,7 +1933,9 @@ class AssignIPs70Mixin(object):
 
         nodes_by_id = dict((n.id, n) for n in nodes)
 
-        query = objects.Cluster.get_network_groups_and_node_ids(cluster.id)
+        query = objects.Cluster.get_network_groups_and_node_ids(
+            cluster.id, node_ids=list(nodes_by_id),
+        )
 
         # Group by NetworkGroup.id
         for key, items in groupby(query, lambda x: x[1]):

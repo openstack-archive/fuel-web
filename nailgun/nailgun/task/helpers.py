@@ -268,7 +268,7 @@ class TaskHelper(object):
 
         # if list contain at least one controller
         if cls.__has_controller_nodes(nodes):
-            # retrive all controllers from cluster
+            # retrieve all controllers from a cluster
             controller_nodes = db().query(Node).filter_by(
                 cluster_id=cluster.id,
                 pending_deletion=False

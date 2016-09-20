@@ -116,7 +116,7 @@ class NailgunObject(object):
     def save(cls, instance=None):
         """Save current changes for instance in DB.
 
-        Current transaction will be commited
+        Current transaction will be committed
         (in case of SQLAlchemy).
 
         :param instance: object (model) instance

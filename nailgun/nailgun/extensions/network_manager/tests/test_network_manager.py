@@ -1285,7 +1285,10 @@ class TestNeutronManager70(BaseIntegrationTest):
                 'release_id': release.id,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
             },
-            nodes_kwargs=[{'roles': ['controller']}]
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+            ]
         )
 
     def _prepare_release(self):
@@ -1620,6 +1623,29 @@ class TestNeutronManager70(BaseIntegrationTest):
         vips = self.net_manager.get_assigned_vips(self.cluster)
         self.assertEqual(_convert_vips(vips_to_assign), _convert_vips(vips))
 
+    def test_prepare_for_deploymet_respect_empty_nodes_param(self):
+        self.assertNotRaises(
+            Exception,
+            objects.Cluster.prepare_for_deployment,
+            self.cluster, [],
+        )
+
+    def test_prepare_for_deploymet_respect_nodes_param(self):
+        node1 = self.cluster.nodes[0]
+        node2 = self.cluster.nodes[1]
+
+        objects.Cluster.prepare_for_deployment(self.cluster, [node1])
+
+        self.assertNotEqual(
+            objects.IPAddr.get_ips_except_admin(node1),
+            []
+        )
+
+        self.assertEqual(
+            objects.IPAddr.get_ips_except_admin(node2),
+            []
+        )
+
 
 class TestNovaNetworkManager70(TestNeutronManager70):
 
@@ -1635,7 +1661,7 @@ class TestNovaNetworkManager70(TestNeutronManager70):
                 'api': False,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.nova_network
             },
-            nodes_kwargs=[{'roles': ['controller']}]
+            nodes_kwargs=[{'roles': ['controller']}, {'roles': ['controller']}]
         )
 
     def test_get_network_manager(self):

@@ -545,8 +545,13 @@ class TestFakeNodeGenerator(base.BaseUnitTest):
                 'interfaces': [],
                 'disks': [],
                 'system': {},
-                'memory': []
-            }
+                'memory': [],
+                'numa_topology': {
+                    'distances': [],
+                    'numa_nodes': [],
+                    'supported_hugepages': [],
+                },
+            },
         }
         generated_node = self.generator.generate_fake_node(pk)
         self.assertEqual(generated_node.get('pk'), pk)
@@ -556,6 +561,10 @@ class TestFakeNodeGenerator(base.BaseUnitTest):
                               generated_node_fields.keys())
         self.assertItemsEqual(sample_node_fields['meta'].keys(),
                               generated_node_fields.get('meta', {}).keys())
+        self.assertItemsEqual(
+            sample_node_fields['meta']['numa_topology'],
+            generated_node_fields.get('meta', {}).get('numa_topology', {})
+        )
         self.assertFalse(generated_node_fields.get('pending_deletion'))
         self.assertFalse(generated_node_fields.get('pending_addition'))
         self.assertEqual(generated_node_fields.get('progress'), 0)

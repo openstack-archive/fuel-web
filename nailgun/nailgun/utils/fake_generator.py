@@ -307,6 +307,40 @@ class FakeNodesGenerator(object):
             'devices': devices
         }
 
+    @staticmethod
+    def _generate_numa_topology(memory, amount=2):
+        dist = []
+        for i in range(amount):
+            row = []
+            for j in range(amount):
+                row.append('1.0' if i == j else '2.1')
+
+            dist.append(row)
+
+        cpus_count = random.choice([8, 16, 32]) * amount
+        all_cpus = {i for i in range(cpus_count)}
+
+        def gen_numa(id_):
+            if id_ + 1 == cpus_count:
+                cpus = all_cpus
+            else:
+                remain = list(all_cpus)
+                random.shuffle(remain)
+                cpus = remain[:cpus_count / amount]
+                all_cpus.difference_update(cpus)
+
+            return {
+                'id': id_,
+                'cpus': sorted(cpus),
+                'memory': memory // amount
+            }
+
+        return {
+            'distances': dist,
+            'numa_nodes': [gen_numa(i) for i in range(amount)],
+            'supported_hugepages': [2048, 1048576]
+        }
+
     def generate_fake_node(self, pk, is_online=True, is_error=False,
                            use_offload_iface=False, min_ifaces_num=1):
         """Generate one fake node
@@ -327,6 +361,7 @@ class FakeNodesGenerator(object):
         mac = self._generate_mac()
         net = random.choice(['net1', 'net2'])
         ip, netmask = self._get_network_data(net)
+        memory_meta = self._generate_memory_meta(random.randint(1, 8))
 
         return {
             'pk': pk,
@@ -355,8 +390,12 @@ class FakeNodesGenerator(object):
                     'disks': self._generate_disks_meta(random.randint(1, 7)),
                     'system': self._generate_systems_meta(
                         hostname, manufacture, platform_name),
-                    'memory': self._generate_memory_meta(random.randint(1, 8))
-                }
+                    'memory': memory_meta,
+                    'numa_topology': self._generate_numa_topology(
+                        memory_meta['total'],
+                        random.randint(1, 3)
+                    ),
+                },
             }
         }
 

@@ -139,9 +139,9 @@ class TransactionsManager(object):
         :param force: re-evaluate tasks's conditions as it's a first run
         :param debug: enable debug mode for tasks executor
         """
-        logger.debug(
+        logger.info(
             'Start new transaction: '
-            'cluster=%d graphs=%s dry_run=%d noop_run=%s force=%d',
+            'cluster=%d graphs=%s dry_run=%d noop_run=%s force=%d ',
             self.cluster_id, graphs, dry_run, noop_run, force
         )
 
@@ -336,6 +336,10 @@ class TransactionsManager(object):
             graph.get('node_filter'),
             sub_transaction.cache.get('nodes')
         )
+        logger.debug(
+            "execute graph %s on nodes %s",
+            sub_transaction.graph_type, [n.id for n in nodes]
+        )
         for node in nodes:
             # set progress to show that node is in progress state
             node.progress = 1
@@ -416,6 +420,7 @@ def _get_nodes_to_run(cluster, node_filter, ids=None):
         None, cluster_id=cluster.id, online=True)
 
     if ids is None and node_filter:
+        logger.debug("applying nodes filter: %s", node_filter)
         # TODO(bgaifullin) Need to implement adapter for YAQL
         # to direct query data from DB instead of query all data from DB
         yaql_exp = yaql_ext.get_default_engine()(
@@ -449,6 +454,7 @@ def _get_nodes_to_run(cluster, node_filter, ids=None):
         )
 
     if ids is not None:
+        logger.debug("filter by node_ids: %s", ids)
         nodes = objects.NodeCollection.filter_by_list(nodes, 'id', ids)
 
     return objects.NodeCollection.lock_for_update(

@@ -94,23 +94,24 @@ class ReleaseValidator(BasicValidator):
             )
 
         if 'roles_metadata' in d:
-            new_roles = set(d['roles_metadata'])
+            deleted_roles = (set(instance.roles_metadata) -
+                             set(d['roles_metadata']))
             clusters = [cluster.id for cluster in instance.clusters]
 
-            new_roles_array = sa.cast(
-                psql.array(new_roles),
+            deleted_roles_array = sa.cast(
+                psql.array(deleted_roles),
                 psql.ARRAY(sa.String(consts.ROLE_NAME_MAX_SIZE)))
 
             node = db().query(models.Node).filter(
                 models.Node.cluster_id.in_(clusters)
-            ).filter(sa.not_(sa.and_(
-                models.Node.roles.contained_by(new_roles_array),
-                models.Node.pending_roles.contained_by(new_roles_array)
-            ))).first()
+            ).filter(sa.or_(
+                models.Node.roles.overlap(deleted_roles_array),
+                models.Node.pending_roles.overlap(deleted_roles_array)
+            )).first()
 
             if node:
                 used_role = set(node.roles + node.pending_roles)
-                used_role -= new_roles
+                used_role = used_role.intersection(deleted_roles)
 
                 raise errors.CannotDelete(
                     "Cannot delete roles already assigned "

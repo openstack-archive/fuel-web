@@ -16,6 +16,7 @@ from oslo_serialization import jsonutils
 from nailgun.api.v1.validators.release import ReleaseValidator
 from nailgun import errors
 from nailgun.test.base import BaseTestCase
+from nailgun.utils import reverse
 
 
 class TestReleaseValidator(BaseTestCase):
@@ -62,3 +63,40 @@ class TestReleaseValidator(BaseTestCase):
 
     def test_default_are_good(self):
         self.validator.validate(self.get_release(self.release))
+
+    def test_release_delete_role(self):
+        cluster = self.env.create(
+            nodes_kwargs=[{
+                "roles": ['test_plugin_role_1'],
+                "pending_roles": ['cinder', 'test_plugin_role_2'],
+            }])
+
+        resp = self.app.get(
+            reverse('ReleaseHandler',
+                    kwargs={'obj_id': cluster.release.id}),
+            headers=self.default_headers
+        )
+
+        data = dict(resp.json_body)
+        resp = self.app.put(
+            reverse('ReleaseHandler',
+                    kwargs={'obj_id': cluster.release.id}),
+            params=jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=False
+        )
+
+        data['roles_metadata'].pop('cinder')
+        resp = self.app.put(
+            reverse('ReleaseHandler',
+                    kwargs={'obj_id': cluster.release.id}),
+            params=jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn(
+            "The following roles: [cinder] cannot be deleted",
+            resp.json_body["message"],
+        )

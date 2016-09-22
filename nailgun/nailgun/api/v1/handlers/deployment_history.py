@@ -77,15 +77,17 @@ class DeploymentHistoryCollectionHandler(base.CollectionHandler):
         return data
 
     def get_csv(self, data):
-        keys = ['task_name', 'node_id', 'status', 'time_start', 'time_end']
+        keys = ['task_name',
+                'type',
+                'node_id',
+                'status',
+                'time_start',
+                'time_end']
 
         res = StringIO()
         csv_writer = csv.writer(res)
         csv_writer.writerow(keys)
         for obj in data:
-            values = []
-            for k in keys:
-                values.append(obj.get(k))
-            csv_writer.writerow(values)
+            csv_writer.writerow([obj.get(k) for k in keys])
 
         return res.getvalue()

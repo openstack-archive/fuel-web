@@ -89,7 +89,6 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
                     'status': 'pending',
                     'time_start': None,
                     'time_end': None,
-                    'custom': {}
                 }
                 for node in cluster.nodes
                 for task_no in six.moves.range(1, 1 + self.tasks_amt)
@@ -134,7 +133,6 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
                 'status': 'pending',
                 'time_start': None,
                 'time_end': None,
-                'custom': {}
             } for node in cluster.nodes],
             response.json_body
         )
@@ -205,7 +203,6 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
                 'status': 'pending',
                 'time_start': None,
                 'time_end': None,
-                'custom': {}
             } for node in cluster.nodes],
             response.json_body
         )

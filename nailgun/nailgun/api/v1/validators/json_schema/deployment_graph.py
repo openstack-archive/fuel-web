@@ -107,6 +107,20 @@ GRAPH_EXECUTE_PARAMS_SCHEMA = {
         },
         "debug": {
             "type": "boolean"
+        },
+        "subgraphs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "parameters": {
+                    "start": {
+                        "type": "string"
+                    },
+                    "end": {
+                        "type:": "string"
+                    }
+                }
+            }
         }
     }
 }

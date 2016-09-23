@@ -83,7 +83,16 @@ def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
                          "Trying to remove", l)
             shutil.rmtree(l)
         logger.debug("Creating symlink %s -> %s", l, new)
-        os.symlink(objects.Node.get_node_fqdn(node), l)
+        while not os.path.islink(l):
+            try:
+                os.symlink(objects.Node.get_node_fqdn(node), l)
+            except OSError as exc:
+                if exc.errno == os.errno.EEXIST:
+                    logger.debug("%s was created again. "
+                                 "Trying to remove", l)
+                    shutil.rmtree(l)
+                else:
+                    raise
 
     os.system("/usr/bin/pkill -HUP rsyslog")
 

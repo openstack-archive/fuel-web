@@ -322,22 +322,22 @@ class TestPluginsApi(BasePluginTest):
         resp = self.sync_plugins(params={'ids': ids}, expect_errors=True)
         self.assertEqual(resp.status_code, 404)
 
-    def test_enable_plugin_without_propagate_task_deploy(self):
-        resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
-        plugin = objects.Plugin.get_by_uid(resp.json['id'])
-        cluster = self.env.create(
-            release_kwargs={'version': 'mitaka-9.0',
-                            'operating_system': 'Ubuntu',
-                            'deployment_tasks': []})
-        resp = self.modify_plugin(cluster, plugin.name, plugin.id, True,
-                                  propagate_task_deploy=False,
-                                  expect_errors=True)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json_body['message'],
-                         'Cannot enable plugin with legacy tasks unless '
-                         'propagate_task_deploy attribute is set. '
-                         'Ensure tasks.yaml is empty and all tasks '
-                         'has version >= 2.0.0.')
+    # def test_enable_plugin_without_propagate_task_deploy(self):
+    #     resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
+    #     plugin = objects.Plugin.get_by_uid(resp.json['id'])
+    #     cluster = self.env.create(
+    #         release_kwargs={'version': 'mitaka-9.0',
+    #                         'operating_system': 'Ubuntu',
+    #                         'deployment_tasks': []})
+    #     resp = self.modify_plugin(cluster, plugin.name, plugin.id, True,
+    #                               propagate_task_deploy=False,
+    #                               expect_errors=True)
+    #     self.assertEqual(resp.status_code, 400)
+    #     self.assertEqual(resp.json_body['message'],
+    #                      'Cannot enable plugin with legacy tasks unless '
+    #                      'propagate_task_deploy attribute is set. '
+    #                      'Ensure tasks.yaml is empty and all tasks '
+    #                      'has version >= 2.0.0.')
 
     def test_enable_plugin_with_only_plugin_attributes(self):
         resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)

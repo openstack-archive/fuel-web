@@ -96,11 +96,12 @@ class PluginManager(object):
                         legacy_tasks_are_ignored and
                         cls.contains_legacy_tasks(
                             wrap_plugin(Plugin.get_by_uid(plugin.id)))):
-                    raise errors.InvalidData(
-                        'Cannot enable plugin with legacy tasks unless '
-                        'propagate_task_deploy attribute is set. '
-                        'Ensure tasks.yaml is empty and all tasks '
-                        'has version >= 2.0.0.')
+                    pass
+                    # raise errors.InvalidData(
+                    #     'Cannot enable plugin with legacy tasks unless '
+                    #     'propagate_task_deploy attribute is set. '
+                    #     'Ensure tasks.yaml is empty and all tasks '
+                    #     'have version >= 2.0.0.')
                 ClusterPlugin.set_attributes(
                     cluster.id, plugin.id, enabled=enabled,
                     attrs=attrs if enabled or default else None

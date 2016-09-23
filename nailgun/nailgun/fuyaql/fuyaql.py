@@ -29,7 +29,9 @@ from nailgun.fuyaql import completion
 from nailgun.logger import logger
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
+from nailgun.utils import uniondict
 from nailgun import yaql_ext
+
 
 logger.disabled = True
 
@@ -44,7 +46,7 @@ class FuYaqlController(object):
         self._tasks = [None, None]
         self._infos = [None, None]
         self._yaql_context = yaql_ext.create_context(
-            add_serializers=True, add_datadiff=True
+            add_serializers=True, add_datadiff=True, add_extensions=True
         )
         self._yaql_engine = yaql_ext.create_engine()
 
@@ -159,14 +161,22 @@ class FuYaqlController(object):
     def _set_info(self, state, info):
         if state == self.EXPECTED:
             self._node_id = None
-            if info is None:
-                serialized = deployment_serializers.serialize_for_lcm(
+            if not info:
+                info = deployment_serializers.serialize_for_lcm(
                     self._cluster,
                     objects.Cluster.get_nodes_not_for_deletion(self._cluster)
                 )
-                info = {node['uid']: node for node in serialized}
+                # TODO(bgaifullin) serializer should return nodes as dict
+                info['nodes'] = {n['uid']: n for n in info['nodes']}
 
-        self._infos[state] = info or {}
+        if info:
+            common = info['common']
+            nodes = info['nodes']
+            info = {n: uniondict.UnionDict(common, nodes[n]) for n in nodes}
+        else:
+            info = {}
+
+        self._infos[state] = info
 
     def _get_info(self, state):
         return self._infos[state]
@@ -230,7 +240,7 @@ class FuyaqlInterpreter(object):
         if self._check_cluster():
             self.print_list(
                 ('uid', 'status', 'roles'), self.controller.get_nodes(),
-                lambda x: node_ids.index(x['uid'])
+                lambda x: node_ids.index(x.get('uid'))
             )
 
     def show_cluster(self):

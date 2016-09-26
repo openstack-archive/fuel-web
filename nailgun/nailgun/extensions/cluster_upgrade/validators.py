@@ -91,17 +91,32 @@ class NodeReassignValidator(base.BasicValidator):
         "description": "Serialized parameters to assign node",
         "type": "object",
         "properties": {
-            "node_id": {"type": "number"},
+            "node_ids": {
+                "type": "array",
+                "items": {"type": "number"},
+                "uniqueItems": True,
+                "minItems": 1,
+            },
         },
-        "required": ["node_id"],
+        "required": ["node_ids"],
     }
 
     @classmethod
     def validate(cls, data, cluster):
         data = super(NodeReassignValidator, cls).validate(data)
         cls.validate_schema(data, cls.schema)
-        node = cls.validate_node(data['node_id'])
-        cls.validate_node_cluster(node, cluster)
+        nodes = []
+        roles = set([])
+        for node_id in data['nodes_ids']:
+            node = cls.validate_node(node_id)
+            cls.validate_node_cluster(node, cluster)
+            nodes.append(node)
+            roles.add(' '.join(sorted(node.roles)))
+
+        if len(roles) != 1:
+            raise errors.InvalidData(
+                "All sending nodes should have the same roles",
+                log_message=True)
         return data
 
     @classmethod

@@ -88,7 +88,7 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         resp = self.app.post(
             reverse('NodeReassignHandler',
                     kwargs={'cluster_id': seed_cluster['id']}),
-            jsonutils.dumps({'node_id': node_id}),
+            jsonutils.dumps({'nodes_ids': [node_id, ]}),
             headers=self.default_headers)
         self.assertEqual(202, resp.status_code)
 
@@ -105,7 +105,7 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         resp = self.app.post(
             reverse('NodeReassignHandler',
                     kwargs={'cluster_id': cluster['id']}),
-            jsonutils.dumps({'node_id': 42}),
+            jsonutils.dumps({'nodes_ids': [42]}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(404, resp.status_code)
@@ -121,7 +121,7 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         resp = self.app.post(
             reverse('NodeReassignHandler',
                     kwargs={'cluster_id': cluster['id']}),
-            jsonutils.dumps({'node_id': cluster.nodes[0]['id']}),
+            jsonutils.dumps({'nodes_ids': [cluster.nodes[0]['id']]}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(400, resp.status_code)
@@ -138,7 +138,7 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         resp = self.app.post(
             reverse('NodeReassignHandler',
                     kwargs={'cluster_id': cluster['id']}),
-            jsonutils.dumps({'node_id': cluster.nodes[0]['id']}),
+            jsonutils.dumps({'nodes_ids': [cluster.nodes[0]['id']]}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(400, resp.status_code)
@@ -156,7 +156,7 @@ class TestNodeReassignHandler(base.BaseIntegrationTest):
         resp = self.app.post(
             reverse('NodeReassignHandler',
                     kwargs={'cluster_id': cluster_id}),
-            jsonutils.dumps({'node_id': node_id}),
+            jsonutils.dumps({'nodes_ids': [node_id]}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(400, resp.status_code)

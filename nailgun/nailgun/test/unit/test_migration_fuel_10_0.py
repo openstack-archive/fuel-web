@@ -187,7 +187,6 @@ def prepare():
             'timestamp': datetime.datetime.utcnow(),
         }]
     )
-    node_id = result.inserted_primary_key[0]
 
     result = db.execute(
         meta.tables['plugins'].insert(),
@@ -325,55 +324,6 @@ def prepare():
         ]
     )
 
-    db.execute(
-        meta.tables['node_nic_interfaces'].insert(),
-        [{
-            'id': 1,
-            'node_id': node_id,
-            'name': 'test_interface',
-            'mac': '00:00:00:00:00:01',
-            'max_speed': 200,
-            'current_speed': 100,
-            'ip_addr': '10.20.0.2',
-            'netmask': '255.255.255.0',
-            'state': 'test_state',
-            'interface_properties': jsonutils.dumps(
-                {'test_property': 'test_value'}),
-            'driver': 'test_driver',
-            'bus_info': 'some_test_info'
-        }]
-    )
-
-    db.execute(
-        meta.tables['node_bond_interfaces'].insert(),
-        [{
-            'node_id': node_id,
-            'name': 'test_bond_interface',
-            'mode': 'active-backup',
-            'bond_properties': jsonutils.dumps(
-                {'test_property': 'test_value'})
-        }]
-    )
-
-    result = db.execute(
-        meta.tables['tasks'].insert(),
-        [
-            {
-                'id': 55,
-                'uuid': '219eaafe-01a1-4f26-8edc-b9d9b0df06b3',
-                'name': 'deployment',
-                'status': 'running',
-                'deployment_info': jsonutils.dumps(DEPLOYMENT_INFO[55])
-            },
-            {
-                'id': 56,
-                'uuid': 'a45fbbcd-792c-4245-a619-f4fb2f094d38',
-                'name': 'deployment',
-                'status': 'running',
-                'deployment_info': jsonutils.dumps(DEPLOYMENT_INFO[56])
-            }
-        ]
-    )
     TestRequiredComponentTypesField.prepare(meta)
     db.commit()
 
@@ -393,101 +343,6 @@ class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):
                 [sa.func.count(self.meta.tables['cluster_plugin_links'].c.id)]
             )).fetchone()[0]
         self.assertEqual(links_count, 2)
-
-
-class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
-
-    def test_new_attributes_fields_exist(self):
-        node_bond_interfaces_table = self.meta.tables['node_bond_interfaces']
-        node_nic_interfaces_table = self.meta.tables['node_nic_interfaces']
-        plugins_table = self.meta.tables['plugins']
-        releases_table = self.meta.tables['releases']
-        columns = [
-            plugins_table.c.nic_attributes_metadata,
-            plugins_table.c.bond_attributes_metadata,
-            plugins_table.c.node_attributes_metadata,
-            node_bond_interfaces_table.c.attributes,
-            node_nic_interfaces_table.c.attributes,
-            node_nic_interfaces_table.c.meta,
-            releases_table.c.nic_attributes,
-            releases_table.c.bond_attributes
-        ]
-
-        for column in columns:
-            db_values = db.execute(sa.select([column])).fetchone()
-            for db_value in db_values:
-                self.assertEqual(db_value, '{}')
-
-    def test_node_nic_interface_cluster_plugins_creation(self):
-        node_nic_interface_cluster_plugins = \
-            self.meta.tables['node_nic_interface_cluster_plugins']
-        cluster_plugins = self.meta.tables['cluster_plugins']
-        node_nic_interfaces = self.meta.tables['node_nic_interfaces']
-        nodes = self.meta.tables['nodes']
-
-        cluster_plugin_id = db.execute(sa.select([cluster_plugins])).scalar()
-        interface_id = db.execute(sa.select([node_nic_interfaces])).scalar()
-        node_id = db.execute(sa.select([nodes])).scalar()
-
-        db.execute(
-            node_nic_interface_cluster_plugins.insert(),
-            [{
-                'cluster_plugin_id': cluster_plugin_id,
-                'interface_id': interface_id,
-                'node_id': node_id,
-                'attributes': jsonutils.dumps({'test_attr': 'test'})
-            }])
-
-    def test_node_bond_interface_cluster_plugins_creation(self):
-        node_bond_interface_cluster_plugins = \
-            self.meta.tables['node_bond_interface_cluster_plugins']
-        cluster_plugins = self.meta.tables['cluster_plugins']
-        node_bond_interfaces = self.meta.tables['node_bond_interfaces']
-        nodes = self.meta.tables['nodes']
-
-        cluster_plugin_id = db.execute(sa.select([cluster_plugins])).scalar()
-        bond_id = db.execute(sa.select([node_bond_interfaces])).scalar()
-        node_id = db.execute(sa.select([nodes])).scalar()
-
-        db.execute(
-            node_bond_interface_cluster_plugins.insert(),
-            [{
-                'cluster_plugin_id': cluster_plugin_id,
-                'bond_id': bond_id,
-                'node_id': node_id,
-                'attributes': jsonutils.dumps({'test_attr': 'test'})
-            }])
-
-    def test_node_cluster_plugins_creation(self):
-        node_cluster_plugins = self.meta.tables['node_cluster_plugins']
-        cluster_plugins = self.meta.tables['cluster_plugins']
-        nodes = self.meta.tables['nodes']
-
-        cluster_plugin_id = db.execute(sa.select([cluster_plugins])).scalar()
-        node_id = db.execute(sa.select([nodes])).scalar()
-
-        db.execute(
-            node_cluster_plugins.insert(),
-            [{
-                'cluster_plugin_id': cluster_plugin_id,
-                'node_id': node_id,
-                'attributes': jsonutils.dumps({'test_attr': 'test'})
-            }])
-
-
-class TestSplitDeploymentInfo(base.BaseAlembicMigrationTest):
-
-    def test_split_deployment_info(self):
-        node_di_table = self.meta.tables['node_deployment_info']
-        res = db.execute(sa.select([node_di_table]))
-        for data in res:
-            self.assertEqual(jsonutils.loads(data.deployment_info),
-                             DEPLOYMENT_INFO[data.task_id][data.node_uid])
-
-        tasks_table = self.meta.tables['tasks']
-        res = db.execute(sa.select([tasks_table]))
-        for data in res:
-            self.assertIsNone(data.deployment_info)
 
 
 class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):

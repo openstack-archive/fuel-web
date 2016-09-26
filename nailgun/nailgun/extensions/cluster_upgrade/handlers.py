@@ -82,9 +82,10 @@ class NodeReassignHandler(base.BaseHandler):
             self.get_object_or_404(self.single, cluster_id))
 
         data = self.checked_data(cluster=cluster)
-        node = adapters.NailgunNodeAdapter(
-            self.get_object_or_404(objects.Node, data['node_id']))
-
-        upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
-
-        self.handle_task(cluster_id, [node.node, ])
+        nodes_to_provision = []
+        for node_id in data['nodes_ids']:
+            node = adapters.NailgunNodeAdapter(
+                self.get_object_or_404(objects.Node, node_id))
+            nodes_to_provision.append(node.node)
+            upgrade.UpgradeHelper.assign_node_to_cluster(node, cluster)
+        self.handle_task(cluster_id, nodes_to_provision)

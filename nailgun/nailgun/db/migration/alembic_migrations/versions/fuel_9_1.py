@@ -52,28 +52,35 @@ rule_to_pick_bootdisk = [
 
 
 def upgrade():
-    upgrade_cluster_attributes()
     upgrade_release_with_rules_to_pick_bootable_disk()
-    upgrade_task_model()
-    upgrade_deployment_graphs_attributes()
+    upgrade_plugin_with_nics_and_nodes_attributes()
     upgrade_orchestrator_task_types()
+    upgrade_task_model()
     upgrade_node_error_type()
+    upgrade_deployment_graphs_attributes()
     upgrade_deployment_history_summary()
+    upgrade_node_deployment_info()
     upgrade_add_task_start_end_time()
     fix_deployment_history_constraint()
+    upgrade_attributes_metadata()
+    upgrade_cluster_attributes()
     upgrade_deployment_sequences()
+    upgrade_networks_metadata()
+    upgrade_vmware_attributes_metadata()
     upgrade_release_state()
 
 
 def downgrade():
     downgrade_deployment_sequences()
-    downgrade_add_task_start_end_time()
     downgrade_cluster_attributes()
+    downgrade_add_task_start_end_time()
+    downgrade_node_deployment_info()
     downgrade_deployment_history_summary()
-    downgrade_node_error_type()
-    downgrade_orchestrator_task_types()
     downgrade_deployment_graphs_attributes()
+    downgrade_node_error_type()
     downgrade_task_model()
+    downgrade_orchestrator_task_types()
+    downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_release_with_rules_to_pick_bootable_disk()
 
 
@@ -130,6 +137,156 @@ def downgrade_release_with_rules_to_pick_bootable_disk():
             )
 
 
+def upgrade_plugin_with_nics_and_nodes_attributes():
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'nic_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'bond_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'plugins',
+        sa.Column(
+            'node_attributes_metadata',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column(
+            'attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column(
+            'meta',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'node_bond_interfaces',
+        sa.Column(
+            'attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'releases',
+        sa.Column(
+            'nic_attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.add_column(
+        'releases',
+        sa.Column(
+            'bond_attributes',
+            fields.JSON(),
+            nullable=False,
+            server_default='{}'
+        )
+    )
+
+    op.create_table(
+        'node_nic_interface_cluster_plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'attributes', fields.JSON(), nullable=False, server_default='{}'),
+        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
+        sa.Column('interface_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['cluster_plugin_id'],
+            ['cluster_plugins.id'],
+            ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['interface_id'], ['node_nic_interfaces.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE')
+    )
+
+    op.create_table(
+        'node_bond_interface_cluster_plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'attributes', fields.JSON(), nullable=False, server_default='{}'),
+        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
+        sa.Column('bond_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['cluster_plugin_id'],
+            ['cluster_plugins.id'],
+            ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['bond_id'], ['node_bond_interfaces.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE')
+    )
+
+    op.create_table(
+        'node_cluster_plugins',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column(
+            'attributes', fields.JSON(), nullable=False, server_default='{}'),
+        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['cluster_plugin_id'],
+            ['cluster_plugins.id'],
+            ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(
+            ['node_id'], ['nodes.id'], ondelete='CASCADE')
+    )
+
+
+def downgrade_plugin_with_nics_and_nodes_attributes():
+    op.drop_table('node_cluster_plugins')
+    op.drop_table('node_bond_interface_cluster_plugins')
+    op.drop_table('node_nic_interface_cluster_plugins')
+    op.drop_column('releases', 'bond_attributes')
+    op.drop_column('releases', 'nic_attributes')
+    op.drop_column('node_bond_interfaces', 'attributes')
+    op.drop_column('node_nic_interfaces', 'meta')
+    op.drop_column('node_nic_interfaces', 'attributes')
+    op.drop_column('plugins', 'node_attributes_metadata')
+    op.drop_column('plugins', 'bond_attributes_metadata')
+    op.drop_column('plugins', 'nic_attributes_metadata')
+
+
 def upgrade_task_model():
     op.add_column(
         'tasks',
@@ -146,6 +303,29 @@ def upgrade_task_model():
 def downgrade_task_model():
     op.drop_column('tasks', 'dry_run')
     op.drop_column('tasks', 'graph_type')
+
+
+node_error_types_old = (
+    'deploy',
+    'provision',
+    'deletion',
+    'discover',
+    'stop_deployment'
+)
+
+
+def upgrade_node_error_type():
+    op.alter_column('nodes', 'error_type', type_=sa.String(100))
+    drop_enum('node_error_type')
+
+
+def downgrade_node_error_type():
+    enum_type = sa.Enum(*node_error_types_old, name='node_error_type')
+    enum_type.create(op.get_bind(), checkfirst=False)
+    op.execute(
+        u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
+        u' USING error_type::text::node_error_type'
+    )
 
 
 def upgrade_deployment_graphs_attributes():
@@ -189,7 +369,6 @@ def downgrade_deployment_graphs_attributes():
     op.drop_column('deployment_graphs', 'on_error')
     op.drop_column('deployment_graphs', 'on_stop')
 
-
 orchestrator_task_types_old = (
     'puppet',
     'shell',
@@ -231,31 +410,172 @@ def downgrade_orchestrator_task_types():
     )
 
 
-node_error_types_old = (
-    'deploy',
-    'provision',
-    'deletion',
-    'discover',
-    'stop_deployment'
-)
+def downgrade_deployment_history_summary():
+    op.drop_column('deployment_history', 'summary')
 
 
-def upgrade_node_error_type():
-    op.alter_column('nodes', 'error_type', type_=sa.String(100))
-    drop_enum('node_error_type')
+def upgrade_node_deployment_info():
+    op.create_table(
+        'node_deployment_info',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_uid', sa.String(20), nullable=True),
+        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('deployment_info', fields.JSON(), nullable=True),
+        sa.PrimaryKeyConstraint('id'),
+        sa.ForeignKeyConstraint(
+            ['task_id'], ['tasks.id'], ondelete='CASCADE')
+    )
+    op.create_index('node_deployment_info_task_id_and_node_uid',
+                    'node_deployment_info', ['task_id', 'node_uid'])
+
+    connection = op.get_bind()
+    select_query = sa.sql.text("""
+        SELECT id, deployment_info
+        FROM tasks
+        WHERE deployment_info IS NOT NULL""")
+
+    insert_query = sa.sql.text("""
+        INSERT INTO node_deployment_info
+            (task_id, node_uid, deployment_info)
+        VALUES
+            (:task_id, :node_uid, :deployment_info)""")
+
+    for (task_id, deployment_info_str) in connection.execute(select_query):
+        deployment_info = jsonutils.loads(deployment_info_str)
+        for node_uid, node_deployment_info in deployment_info.iteritems():
+            connection.execute(
+                insert_query,
+                task_id=task_id,
+                node_uid=node_uid,
+                deployment_info=jsonutils.dumps(node_deployment_info))
+
+    update_query = sa.sql.text("UPDATE tasks SET deployment_info=NULL")
+    connection.execute(update_query)
 
 
-def downgrade_node_error_type():
-    enum_type = sa.Enum(*node_error_types_old, name='node_error_type')
-    enum_type.create(op.get_bind(), checkfirst=False)
-    op.execute(
-        u'ALTER TABLE nodes ALTER COLUMN error_type TYPE  node_error_type'
-        u' USING error_type::text::node_error_type'
+def downgrade_node_deployment_info():
+    op.drop_table('node_deployment_info')
+
+
+def upgrade_add_task_start_end_time():
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'time_start',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
+    )
+
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'time_end',
+            sa.TIMESTAMP(),
+            nullable=True,
+        )
     )
 
 
-def downgrade_deployment_history_summary():
-    op.drop_column('deployment_history', 'summary')
+def downgrade_add_task_start_end_time():
+    op.drop_column('tasks', 'time_start')
+    op.drop_column('tasks', 'time_end')
+
+
+def fix_deployment_history_constraint():
+    # only recreate deployment_history_task_id_fkey with valid properties
+    op.drop_constraint(
+        'deployment_history_task_id_fkey',
+        'deployment_history',
+        type_='foreignkey'
+    )
+
+    op.create_foreign_key(
+        "deployment_history_task_id_fkey",
+        "deployment_history", "tasks",
+        ["task_id"], ["id"], ondelete="CASCADE"
+    )
+
+
+ATTRIBUTES_PING = {
+    'description': ('Uncheck this box if the public gateway will not be '
+                    'available or will not respond to ICMP requests to '
+                    'the deployed cluster. If unchecked, the controllers '
+                    'will not take public gateway availability into account '
+                    'as part of the cluster health.  If the cluster will not '
+                    'have internet access, you will need to make sure to '
+                    'provide proper offline mirrors for the deployment to '
+                    'succeed.'),
+    'group': 'network',
+    'label': 'Public Gateway is Available',
+    'type': 'checkbox',
+    'value': True,
+    'weight': 50
+}
+
+ATTRIBUTES_S3 = {
+    'description': ('This allows to authenticate S3 requests basing on '
+                    'EC2/S3 credentials managed by Keystone. Please note '
+                    'that enabling the integration will increase the '
+                    'latency of S3 requests as well as load on Keystone '
+                    'service. Please consult with Mirantis Technical '
+                    'Bulletin 27 and Mirantis Support on mitigating the '
+                    'risks related with load.'),
+    'label': 'Enable S3 API Authentication via Keystone in Ceph RadosGW',
+    'restrictions': [{
+        'action': 'hide',
+        'condition': 'settings:storage.objects_ceph.value == false'
+    }],
+    'type': 'checkbox',
+    'value': False,
+    'weight': 82
+}
+
+ATTRIBUTES_PROPAGATE = {
+    'label': 'Propagate task based deployment.',
+    'description': 'Enables adaptation of granular tasks for task deployment.',
+    'type': 'checkbox',
+    'weight': 12,
+    'value': False
+}
+
+KERNEL_CMDLINE1 = ("console=tty0 net.ifnames=0 biosdevname=0 "
+                   "rootdelay=90 nomodeset")
+KERNEL_CMDLINE2 = ("console=tty0 net.ifnames=1 biosdevname=0 "
+                   "rootdelay=90 nomodeset")
+
+
+def upgrade_attributes_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, attributes_metadata FROM releases "
+        "WHERE attributes_metadata IS NOT NULL")
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET attributes_metadata = :attributes_metadata "
+        "WHERE id = :id")
+
+    for id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        editable = attrs.setdefault('editable', {})
+        storage = editable.setdefault('storage', {})
+        storage.setdefault('auth_s3_keystone_ceph', ATTRIBUTES_S3)
+
+        common = editable.setdefault('common', {})
+        common.setdefault('run_ping_checker', ATTRIBUTES_PING)
+        if common.get('propagate_task_deploy'):
+            # turn propagate_task_deploy on
+            common['propagate_task_deploy'] = ATTRIBUTES_PROPAGATE
+
+        kernel_params = editable.setdefault('kernel_params', {})
+        kernel = kernel_params.setdefault('kernel', {})
+        if kernel.get('value') == KERNEL_CMDLINE1:
+            kernel['value'] = KERNEL_CMDLINE2
+
+        connection.execute(
+            update_query,
+            id=id,
+            attributes_metadata=jsonutils.dumps(attrs))
 
 
 def upgrade_cluster_attributes():
@@ -311,46 +631,6 @@ def downgrade_cluster_attributes():
         )
 
 
-def upgrade_add_task_start_end_time():
-    op.add_column(
-        'tasks',
-        sa.Column(
-            'time_start',
-            sa.TIMESTAMP(),
-            nullable=True,
-        )
-    )
-
-    op.add_column(
-        'tasks',
-        sa.Column(
-            'time_end',
-            sa.TIMESTAMP(),
-            nullable=True,
-        )
-    )
-
-
-def downgrade_add_task_start_end_time():
-    op.drop_column('tasks', 'time_start')
-    op.drop_column('tasks', 'time_end')
-
-
-def fix_deployment_history_constraint():
-    # only recreate deployment_history_task_id_fkey with valid properties
-    op.drop_constraint(
-        'deployment_history_task_id_fkey',
-        'deployment_history',
-        type_='foreignkey'
-    )
-
-    op.create_foreign_key(
-        "deployment_history_task_id_fkey",
-        "deployment_history", "tasks",
-        ["task_id"], ["id"], ondelete="CASCADE"
-    )
-
-
 def upgrade_deployment_sequences():
     op.create_table(
         'deployment_sequences',
@@ -366,6 +646,101 @@ def upgrade_deployment_sequences():
 
 def downgrade_deployment_sequences():
     op.drop_table('deployment_sequences')
+
+
+def upgrade_networks_metadata():
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, networks_metadata FROM releases "
+        "WHERE networks_metadata IS NOT NULL")
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET networks_metadata = :networks_metadata "
+        "WHERE id = :id")
+
+    for id, nets in connection.execute(select_query):
+        nets = jsonutils.loads(nets)
+        if 'dpdk_drivers' in nets and 'igb_uio' in nets['dpdk_drivers']:
+            igb_uio = nets['dpdk_drivers']['igb_uio']
+            if igb_uio and '8086:10f8' not in igb_uio:
+                igb_uio.append('8086:10f8')
+
+        connection.execute(
+            update_query,
+            id=id,
+            networks_metadata=jsonutils.dumps(nets))
+
+
+VCENTER_INSECURE = {
+    'name': "vcenter_insecure",
+    'type': "checkbox",
+    'label': "Bypass vCenter certificate verification"
+}
+
+VCENTER_CA_FILE = {
+    'name': "vcenter_ca_file",
+    'type': 'file',
+    'label': "CA file",
+    'description': ('File containing the trusted CA bundle that emitted '
+                    'vCenter server certificate. Even if CA bundle is not '
+                    'uploaded, certificate verification is turned on.')
+}
+
+
+def upgrade_vmware_attributes_metadata():
+    def update_availability_zones(fields, values):
+        names = [f['name'] for f in fields]
+        if 'vcenter_insecure' not in names:
+            fields.append(VCENTER_INSECURE)
+            for value in values:
+                value['vcenter_insecure'] = True
+        if 'vcenter_ca_file' not in names:
+            fields.append(VCENTER_CA_FILE)
+            for value in values:
+                value['vcenter_ca_file'] = {}
+
+    def update_glance(fields, values):
+        names = [f['name'] for f in fields]
+        if 'vcenter_insecure' not in names:
+            fields.append(VCENTER_INSECURE)
+            values['vcenter_insecure'] = True
+
+        for field in fields:
+            if field['name'] == 'ca_file':
+                field['description'] = VCENTER_CA_FILE['description']
+        values.setdefault('ca_file', {})
+
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, vmware_attributes_metadata FROM releases "
+        "WHERE vmware_attributes_metadata IS NOT NULL")
+
+    update_query = sa.sql.text(
+        "UPDATE releases SET vmware_attributes_metadata = "
+        ":vmware_attributes_metadata WHERE id = :id")
+
+    for id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        editable = attrs.setdefault('editable', {})
+        metadata = editable.setdefault('metadata', [])
+        value = editable.setdefault('value', {})
+
+        for m in metadata:
+            if not isinstance(m, dict):
+                continue
+            if m.get('name') == 'availability_zones':
+                fields = m.setdefault('fields', [])
+                availability_zones = value.setdefault('availability_zones', {})
+                update_availability_zones(fields, availability_zones)
+            elif m.get('name') == 'glance':
+                fields = m.setdefault('fields', [])
+                glance = value.setdefault('glance', {})
+                update_glance(fields, glance)
+
+        connection.execute(
+            update_query,
+            id=id,
+            vmware_attributes_metadata=jsonutils.dumps(attrs))
 
 
 def upgrade_release_state():

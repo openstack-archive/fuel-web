@@ -34,15 +34,11 @@ down_revision = 'f2314e5d63c9'
 
 def upgrade():
     upgrade_plugin_links_constraints()
-    upgrade_plugin_with_nics_and_nodes_attributes()
-    upgrade_node_deployment_info()
     upgrade_release_required_component_types()
 
 
 def downgrade():
     downgrade_release_required_component_types()
-    downgrade_node_deployment_info()
-    downgrade_plugin_with_nics_and_nodes_attributes()
     downgrade_plugin_links_constraints()
 
 
@@ -91,142 +87,6 @@ def downgrade_plugin_links_constraints():
     op.drop_constraint('plugin_links_url_uc', 'plugin_links')
 
 
-def upgrade_plugin_with_nics_and_nodes_attributes():
-    op.add_column(
-        'plugins',
-        sa.Column(
-            'nic_attributes_metadata',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.add_column(
-        'plugins',
-        sa.Column(
-            'bond_attributes_metadata',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.add_column(
-        'plugins',
-        sa.Column(
-            'node_attributes_metadata',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.add_column(
-        'node_nic_interfaces',
-        sa.Column(
-            'attributes',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.add_column(
-        'node_nic_interfaces',
-        sa.Column(
-            'meta',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.add_column(
-        'node_bond_interfaces',
-        sa.Column(
-            'attributes',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.add_column(
-        'releases',
-        sa.Column(
-            'nic_attributes',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.add_column(
-        'releases',
-        sa.Column(
-            'bond_attributes',
-            fields.JSON(),
-            nullable=False,
-            server_default='{}'
-        )
-    )
-
-    op.create_table(
-        'node_nic_interface_cluster_plugins',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column(
-            'attributes', fields.JSON(), nullable=False, server_default='{}'),
-        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
-        sa.Column('interface_id', sa.Integer(), nullable=False),
-        sa.Column('node_id', sa.Integer(), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(
-            ['cluster_plugin_id'],
-            ['cluster_plugins.id'],
-            ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(
-            ['interface_id'], ['node_nic_interfaces.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(
-            ['node_id'], ['nodes.id'], ondelete='CASCADE')
-    )
-
-    op.create_table(
-        'node_bond_interface_cluster_plugins',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column(
-            'attributes', fields.JSON(), nullable=False, server_default='{}'),
-        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
-        sa.Column('bond_id', sa.Integer(), nullable=False),
-        sa.Column('node_id', sa.Integer(), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(
-            ['cluster_plugin_id'],
-            ['cluster_plugins.id'],
-            ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(
-            ['bond_id'], ['node_bond_interfaces.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(
-            ['node_id'], ['nodes.id'], ondelete='CASCADE')
-    )
-
-    op.create_table(
-        'node_cluster_plugins',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column(
-            'attributes', fields.JSON(), nullable=False, server_default='{}'),
-        sa.Column('cluster_plugin_id', sa.Integer(), nullable=False),
-        sa.Column('node_id', sa.Integer(), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(
-            ['cluster_plugin_id'],
-            ['cluster_plugins.id'],
-            ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(
-            ['node_id'], ['nodes.id'], ondelete='CASCADE')
-    )
-
-
 def upgrade_release_required_component_types():
     op.add_column(
         'releases',
@@ -243,63 +103,6 @@ def upgrade_release_required_component_types():
             "UPDATE releases SET required_component_types = :required_types"),
         required_types=jsonutils.dumps(['hypervisor', 'network', 'storage'])
     )
-
-
-def downgrade_plugin_with_nics_and_nodes_attributes():
-    op.drop_table('node_cluster_plugins')
-    op.drop_table('node_bond_interface_cluster_plugins')
-    op.drop_table('node_nic_interface_cluster_plugins')
-    op.drop_column('releases', 'bond_attributes')
-    op.drop_column('releases', 'nic_attributes')
-    op.drop_column('node_bond_interfaces', 'attributes')
-    op.drop_column('node_nic_interfaces', 'meta')
-    op.drop_column('node_nic_interfaces', 'attributes')
-    op.drop_column('plugins', 'node_attributes_metadata')
-    op.drop_column('plugins', 'bond_attributes_metadata')
-    op.drop_column('plugins', 'nic_attributes_metadata')
-
-
-def upgrade_node_deployment_info():
-    op.create_table(
-        'node_deployment_info',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('node_uid', sa.String(20), nullable=True),
-        sa.Column('task_id', sa.Integer(), nullable=False),
-        sa.Column('deployment_info', fields.JSON(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(
-            ['task_id'], ['tasks.id'], ondelete='CASCADE')
-    )
-    op.create_index('node_deployment_info_task_id_and_node_uid',
-                    'node_deployment_info', ['task_id', 'node_uid'])
-
-    connection = op.get_bind()
-    select_query = sa.sql.text("""
-        SELECT id, deployment_info
-        FROM tasks
-        WHERE deployment_info IS NOT NULL""")
-
-    insert_query = sa.sql.text("""
-        INSERT INTO node_deployment_info
-            (task_id, node_uid, deployment_info)
-        VALUES
-            (:task_id, :node_uid, :deployment_info)""")
-
-    for (task_id, deployment_info_str) in connection.execute(select_query):
-        deployment_info = jsonutils.loads(deployment_info_str)
-        for node_uid, node_deployment_info in deployment_info.iteritems():
-            connection.execute(
-                insert_query,
-                task_id=task_id,
-                node_uid=node_uid,
-                deployment_info=jsonutils.dumps(node_deployment_info))
-
-    update_query = sa.sql.text("UPDATE tasks SET deployment_info=NULL")
-    connection.execute(update_query)
-
-
-def downgrade_node_deployment_info():
-    op.drop_table('node_deployment_info')
 
 
 def downgrade_release_required_component_types():

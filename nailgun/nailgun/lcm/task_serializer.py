@@ -72,6 +72,7 @@ class Context(object):
         context['$%old'] = self._transaction.get_old_data(node_id, task_id)
         context['$node'] = self._transaction.get_new_node_data(node_id)
         context['$common'] = self._transaction.get_new_common_data()
+        context['$'] = context['$%new']
         cache = self._yaql_expressions_cache
 
         def evaluate(expression):
@@ -81,7 +82,7 @@ class Context(object):
             except KeyError:
                 parsed_exp = self._yaql_engine(expression)
                 cache[expression] = parsed_exp
-            return parsed_exp.evaluate(data=context['$%new'], context=context)
+            return parsed_exp.evaluate(context=context)
         return evaluate
 
     def get_legacy_interpreter(self, node_id):

@@ -950,6 +950,45 @@
             regex:
               source: "^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
               error: "Invalid syslog port"
+        atop:
+          metadata:
+            label: "Advanced System & Process Monitor (atop)"
+            weight: 60
+            group: "logging"
+            toggleable: false
+            enabled: true
+          service_enabled:
+            value: true
+            label: "Enable atop service"
+            description: |
+              NOTE: When enabled, the service may generate logs up to a gigabyte in size per day.
+              This should be taken into consideration when determining the correct size for the log partition.
+            weight: 10
+            type: "checkbox"
+          interval:
+            description: "Interval between the snapshots in seconds"
+            value: "20"
+            label: "Interval between the snapshots"
+            weight: 20
+            type: "text"
+            regex:
+              source: '^[1-9]\d*$'
+              error: "Should be a number of seconds"
+            restrictions:
+              - condition: "settings:atop.service_enabled.value == false"
+                action: "hide"
+          rotate:
+            description: "Number of days to keep log files"
+            value: "7"
+            label: "Rotate days"
+            weight: 30
+            type: "text"
+            regex:
+              source: '^[1-9]\d*$'
+              error: "Should be a number of days"
+            restrictions:
+              - condition: "settings:atop.service_enabled.value == false"
+                action: "hide"
         provision:
           metadata:
             label: "Provision"

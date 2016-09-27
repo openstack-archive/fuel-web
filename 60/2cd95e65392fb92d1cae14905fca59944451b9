@@ -1,0 +1,11 @@
+Code-Review+1: Maksim Malchuk <mmalchuk@mirantis.com>
+Code-Review+2: Artur Svechnikov <asvechnikov@mirantis.com>
+Code-Review+1: Alex Schultz <aschultz@redhat.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Workflow+1: Denis V. Meltsaykin <dmeltsaykin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 27 Sep 2016 16:00:43 +0000
+Reviewed-on: https://review.openstack.org/338157
+Project: openstack/fuel-web
+Branch: refs/heads/stable/8.0

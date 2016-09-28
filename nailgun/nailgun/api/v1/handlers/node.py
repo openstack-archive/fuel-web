@@ -81,7 +81,7 @@ class NodeHandler(SingleHandler):
         """Deletes a node from DB and from Cobbler.
 
         :return: JSON-ed deletion task
-        :http: * 200 (node has been succesfully deleted)
+        :http: * 200 (node has been successfully deleted)
                * 202 (node is successfully scheduled for deletion)
                * 400 (data validation failed)
                * 404 (node not found in db)
@@ -168,7 +168,7 @@ class NodeCollectionHandler(CollectionHandler):
         Takes (JSONed) list of node ids to delete.
 
         :return: JSON-ed deletion task
-        :http: * 200 (nodes have been succesfully deleted)
+        :http: * 200 (nodes have been successfully deleted)
                * 202 (nodes are successfully scheduled for deletion)
                * 400 (data validation failed)
                * 404 (nodes not found in db)

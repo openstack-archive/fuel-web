@@ -68,7 +68,7 @@ def parse_release_file(content):
         'MD5Sum': ['md5sum', 'size', 'name'],
     }
 
-    # debian data format is very similiar to yaml, except
+    # debian data format is very similar to yaml, except
     # multivalued field. so we can parse it just like yaml
     # and then perform additional transformation for those
     # fields (we know which ones are multivalues).

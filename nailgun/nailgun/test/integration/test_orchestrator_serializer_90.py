@@ -21,6 +21,7 @@ from oslo_serialization import jsonutils
 import unittest2
 
 from nailgun import consts
+from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun import plugins
@@ -72,7 +73,7 @@ class TestDeploymentAttributesSerialization90(
                                }})
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def test_serialization_with_dpdk(self, drivers_mock):
+    def _check_serialization_with_dpdk(self, drivers_mock):
         drivers_mock.return_value = {
             'driver_1': ['test_id:1', 'test_id:2']
         }
@@ -89,6 +90,11 @@ class TestDeploymentAttributesSerialization90(
 
         objects.Cluster.prepare_for_deployment(self.cluster_db)
 
+        br_name = consts.DEFAULT_BRIDGES_NAMES.br_prv
+        if self.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.tun:
+            br_name = consts.DEFAULT_BRIDGES_NAMES.br_mesh
+
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
         self.assertEqual(len(serialised_for_astute['nodes']), 1)
@@ -98,22 +104,18 @@ class TestDeploymentAttributesSerialization90(
         self.assertTrue(dpdk.get('enabled'))
 
         transformations = node['network_scheme']['transformations']
-        private_br = filter(lambda t: t.get('name') ==
-                            consts.DEFAULT_BRIDGES_NAMES.br_prv,
+        private_br = filter(lambda t: t.get('name') == br_name,
                             transformations)[0]
-        dpdk_ports = filter(lambda t: t.get('name') ==
-                            dpdk_interface_name,
+        dpdk_ports = filter(lambda t: t.get('name') == dpdk_interface_name,
                             transformations)
-        all_ports = filter(lambda t: t.get('action') ==
-                           'add-port',
+        all_ports = filter(lambda t: t.get('action') == 'add-port',
                            transformations)
         self.assertEqual(private_br.get('vendor_specific'),
                          {'datapath_type': 'netdev'})
         self.assertEqual(len(all_ports) - len(dpdk_ports),
                          len(other_nic.assigned_networks_list))
         self.assertEqual(len(dpdk_ports), 1)
-        self.assertEqual(dpdk_ports[0]['bridge'],
-                         consts.DEFAULT_BRIDGES_NAMES.br_prv)
+        self.assertEqual(dpdk_ports[0]['bridge'], br_name)
         self.assertEqual(dpdk_ports[0].get('provider'),
                          consts.NEUTRON_L23_PROVIDERS.dpdkovs)
 
@@ -121,6 +123,33 @@ class TestDeploymentAttributesSerialization90(
         dpdk_interface = interfaces[dpdk_interface_name]
         vendor_specific = dpdk_interface.get('vendor_specific', {})
         self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
+
+        if self.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.tun:
+
+            roles = node['network_scheme']['roles']
+            self.assertTrue(roles.get('neutron/mesh') == 'br-mesh')
+
+            nm = objects.Cluster.get_network_manager(self.cluster)
+            networks = nm.get_node_networks(self.cluster_db.nodes[0])
+            expected_ip = nm.get_network_by_netname('private', networks)['ip']
+            ip = node['network_scheme']['endpoints']['br-mesh'].get('IP')
+            self.assertEqual(ip, [expected_ip])
+
+    def test_serialization_with_dpdk(self):
+        self._check_serialization_with_dpdk()
+
+    def test_serialization_with_dpdk_vxlan(self):
+        release_id = self.cluster_db.release.id
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.tun,
+                'release_id': release_id})
+        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        self.serializer = self.create_serializer(self.cluster_db)
+        self._check_serialization_with_dpdk()
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def _check_dpdk_bond_serializing(self, bond_properties, drivers_mock):

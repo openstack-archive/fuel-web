@@ -357,10 +357,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
     @patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def test_update_dpdk_unavailable_tun(self, drivers_mock):
+    def test_update_dpdk_available_tun(self, drivers_mock):
         node = self.create_cluster_and_node_with_dpdk_support(
             consts.NEUTRON_SEGMENT_TYPES.tun, drivers_mock)
-        nics = self.check_update_dpdk_availability(node, False)
+        nics = self.check_update_dpdk_availability(node, True)
         self.check_put_request_passes_without_dpdk_section(node, nics)
 
     @patch('nailgun.objects.Release.get_supported_dpdk_drivers')

@@ -119,6 +119,8 @@ class UploadMOSRepo(GenericRolesHook):
 
     def serialize(self):
         uids = self.get_uids()
+        if not uids:
+            return
         operating_system = self.cluster.release.operating_system
         repos = objects.Attributes.merged_attrs_values(
             self.cluster.attributes)['repo_setup']['repos']
@@ -166,8 +168,9 @@ class RsyncPuppet(GenericRolesHook):
             MASTER_IP=settings.MASTER_IP,
             OPENSTACK_VERSION=self.cluster.release.version)
         uids = self.get_uids()
-        yield templates.make_sync_scripts_task(
-            uids, src_path, self.task['parameters']['dst'])
+        if uids:
+            yield templates.make_sync_scripts_task(
+                uids, src_path, self.task['parameters']['dst'])
 
 
 class GenerateKeys(GenericRolesHook):
@@ -176,9 +179,11 @@ class GenerateKeys(GenericRolesHook):
 
     def serialize(self):
         uids = self.get_uids()
-        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
-            CLUSTER_ID=self.cluster.id)
-        yield templates.make_shell_task(uids, self.task)
+        if uids:
+            cmd = self.task['parameters']['cmd']
+            self.task['parameters']['cmd'] = cmd.format(
+                CLUSTER_ID=self.cluster.id)
+            yield templates.make_shell_task(uids, self.task)
 
 
 class CopyKeys(GenericRolesHook):
@@ -208,11 +213,13 @@ class GenerateHaproxyKeys(GenericRolesHook):
 
     def serialize(self):
         uids = self.get_uids()
-        self.task['parameters']['cmd'] = self.task['parameters']['cmd'].format(
-            CLUSTER_ID=self.cluster.id,
-            CN_HOSTNAME=objects.Cluster.get_editable_attributes(self.cluster)
-            ['public_ssl']['hostname']['value'])
-        yield templates.make_shell_task(uids, self.task)
+        if uids:
+            cmd = self.task['parameters']['cmd']
+            self.task['parameters']['cmd'] = cmd.format(
+                CLUSTER_ID=self.cluster.id,
+                CN_HOSTNAME=objects.Cluster.get_editable_attributes(
+                    self.cluster)['public_ssl']['hostname']['value'])
+            yield templates.make_shell_task(uids, self.task)
 
 
 class CopyHaproxyKeys(CopyKeys):
@@ -293,14 +300,15 @@ class UploadNodesInfo(GenericRolesHook):
 
         uids = [n.uid for n in nodes]
 
-        # every node must have data about every other good node in cluster
-        serialized_nodes = self._serialize_nodes(nodes)
-        data = yaml.safe_dump({
-            'nodes': serialized_nodes,
-        })
+        if uids:
+            # every node must have data about every other good node in cluster
+            serialized_nodes = self._serialize_nodes(nodes)
+            data = yaml.safe_dump({
+                'nodes': serialized_nodes,
+            })
 
-        path = self.task['parameters']['path']
-        yield templates.make_upload_task(uids, path=path, data=data)
+            path = self.task['parameters']['path']
+            yield templates.make_upload_task(uids, path=path, data=data)
 
     def _serialize_nodes(self, nodes):
         serializer = deployment_serializers.get_serializer_for_cluster(
@@ -328,7 +336,8 @@ class UpdateHosts(GenericRolesHook):
 
         uids = [n.uid for n in nodes]
 
-        yield templates.make_puppet_task(uids, self.task)
+        if uids:
+            yield templates.make_puppet_task(uids, self.task)
 
 
 class UploadConfiguration(GenericRolesHook):

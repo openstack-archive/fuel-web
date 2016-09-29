@@ -1530,6 +1530,13 @@ class BaseIntegrationTest(BaseTestCase):
         self.db.add_all(nodes)
         self.db.flush()
 
+    def emulate_nodes_deployment(self, nodes):
+        for node in nodes:
+            node.status = consts.NODE_STATUSES.ready
+            node.pending_addition = False
+
+        self.db.flush()
+
     @classmethod
     def tearDownClass(cls):
         super(BaseIntegrationTest, cls).tearDownClass()

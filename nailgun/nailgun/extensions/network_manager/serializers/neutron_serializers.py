@@ -562,17 +562,9 @@ class NeutronNetworkDeploymentSerializer61(
                 mtu=65000))
 
         # Dance around Neutron segmentation type.
-        if node.cluster.network_config.segmentation_type == \
-                consts.NEUTRON_SEGMENT_TYPES.vlan:
-            cls.configure_private_network(node, nm,
-                                          transformations,
-                                          prv_base_ep, nets_by_ifaces)
-
-        elif node.cluster.network_config.segmentation_type in \
-                (consts.NEUTRON_SEGMENT_TYPES.gre,
-                 consts.NEUTRON_SEGMENT_TYPES.tun):
-            transformations.append(
-                cls.add_bridge('br-mesh'))
+        cls.generate_transformations_by_segmentation_type(
+            node, nm, transformations, prv_base_ep, nets_by_ifaces
+        )
 
         # Add ports and bonds.
         for iface in node.interfaces:
@@ -595,6 +587,21 @@ class NeutronNetworkDeploymentSerializer61(
                                        nm)
 
         return transformations
+
+    @classmethod
+    def generate_transformations_by_segmentation_type(
+            cls, node, nm, transformations, prv_base_ep, nets_by_ifaces
+    ):
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
+            cls.configure_private_network(node, nm,
+                                          transformations,
+                                          prv_base_ep, nets_by_ifaces)
+        elif node.cluster.network_config.segmentation_type in \
+                (consts.NEUTRON_SEGMENT_TYPES.gre,
+                 consts.NEUTRON_SEGMENT_TYPES.tun):
+            transformations.append(
+                cls.add_bridge(consts.DEFAULT_BRIDGES_NAMES.br_mesh))
 
     @classmethod
     def add_bond_interface(cls, transformations, iface, nets_by_ifaces, nm):
@@ -1509,8 +1516,14 @@ class NeutronNetworkDeploymentSerializer90(
                 node, nm, transformations, prv_base_ep, nets_by_ifaces)
             return
 
+        if node.cluster.network_config.segmentation_type == \
+                consts.NEUTRON_SEGMENT_TYPES.vlan:
+            br_name = consts.DEFAULT_BRIDGES_NAMES.br_prv
+        else:
+            br_name = consts.DEFAULT_BRIDGES_NAMES.br_mesh
+
         transformations.append(cls.add_bridge(
-            consts.DEFAULT_BRIDGES_NAMES.br_prv,
+            br_name,
             provider=consts.NEUTRON_L23_PROVIDERS.ovs,
             vendor_specific={'datapath_type': 'netdev'}))
 
@@ -1519,7 +1532,7 @@ class NeutronNetworkDeploymentSerializer90(
                 nets_by_ifaces.pop(iface.name, {})
                 transformations.append(cls.add_port(
                     name=iface.name,
-                    bridge=consts.DEFAULT_BRIDGES_NAMES.br_prv,
+                    bridge=br_name,
                     provider=consts.NEUTRON_L23_PROVIDERS.dpdkovs
                 ))
         for iface in node.bond_interfaces:
@@ -1528,7 +1541,7 @@ class NeutronNetworkDeploymentSerializer90(
                 bond_params = {
                     'bond_properties': nm.get_lnx_bond_properties(iface),
                     'interface_properties': nm.get_iface_properties(iface),
-                    'bridge': consts.DEFAULT_BRIDGES_NAMES.br_prv,
+                    'bridge': br_name,
                     'provider': consts.NEUTRON_L23_PROVIDERS.dpdkovs
                 }
                 transformations.append(cls.add_bond(iface, bond_params))
@@ -1556,6 +1569,21 @@ class NeutronNetworkDeploymentSerializer90(
                     vendor_specific=config))
 
         return transformations
+
+    @classmethod
+    def generate_transformations_by_segmentation_type(
+            cls, node, nm, transformations, prv_base_ep, nets_by_ifaces
+    ):
+        if (objects.Node.dpdk_enabled(node) and
+                (node.cluster.network_config.segmentation_type ==
+                 consts.NEUTRON_SEGMENT_TYPES.tun)):
+            cls.configure_private_network(
+                node, nm, transformations, prv_base_ep, nets_by_ifaces
+            )
+        else:
+            (super(NeutronNetworkDeploymentSerializer90, cls)
+                .generate_transformations_by_segmentation_type(
+                node, nm, transformations, prv_base_ep, nets_by_ifaces))
 
 
 class NeutronNetworkTemplateSerializer90(

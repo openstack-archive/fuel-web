@@ -289,3 +289,13 @@
     data:
       yaql_exp: '$.toYaml()'
   refresh_on: ['*']
+
+- id: rsync_core_puppet
+  type: sync
+  role: '*'
+  required_for: [pre_deployment_end]
+  requires: [pre_deployment_start]
+  parameters:
+    src: /etc/puppet
+    dst: /etc/puppet
+  timeout: 180

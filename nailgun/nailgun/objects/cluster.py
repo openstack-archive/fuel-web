@@ -1659,6 +1659,11 @@ class Cluster(NailgunObject):
                 network_configuration.NeutronNetworkConfigurationSerializer
         return serializer.serialize_for_cluster(instance)
 
+    @classmethod
+    def is_dpdk_supported_for_segmentation(cls, instance):
+        return (instance.network_config.segmentation_type in
+                (consts.NEUTRON_SEGMENT_TYPES.vlan,
+                 consts.NEUTRON_SEGMENT_TYPES.tun))
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

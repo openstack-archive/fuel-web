@@ -29,7 +29,7 @@ class ComponentCollectionHandler(CollectionHandler):
     @validate
     @serialize
     def GET(self, release_id):
-        """:returns: JSONized component data for release and releated plugins.
+        """:returns: JSONized component data for release and related plugins.
 
         :http: * 200 (OK)
                * 404 (release not found in db)

@@ -21,6 +21,7 @@ from oslo_serialization import jsonutils
 import unittest2
 
 from nailgun import consts
+from nailgun.db.sqlalchemy import models
 from nailgun import objects
 from nailgun.orchestrator import deployment_serializers
 from nailgun import plugins
@@ -104,8 +105,25 @@ class TestDeploymentAttributesSerialization90(
                                    'pci_id': 'test_id:2'
                                }})
 
+    def _create_cluster_with_vxlan(self):
+        release_id = self.cluster_db.release.id
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                'mode': consts.CLUSTER_MODES.ha_compact,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+                'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.tun,
+                'release_id': release_id})
+        self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        self.serializer = self.create_serializer(self.cluster_db)
+
+    def _get_br_name_by_segmentation_type(self):
+        if (self.cluster.network_config.segmentation_type ==
+                consts.NEUTRON_SEGMENT_TYPES.vlan):
+            return consts.DEFAULT_BRIDGES_NAMES.br_prv
+        return consts.DEFAULT_BRIDGES_NAMES.br_mesh
+
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def test_serialization_with_dpdk(self, drivers_mock):
+    def _check_dpdk_serializing(self, drivers_mock, has_vlan_tag=False):
         drivers_mock.return_value = {
             'driver_1': ['test_id:1', 'test_id:2']
         }
@@ -113,6 +131,9 @@ class TestDeploymentAttributesSerialization90(
             1, 3,
             cluster_id=self.cluster_db.id,
             roles=['compute'])[0]
+        if has_vlan_tag:
+            objects.NetworkGroup.get_node_network_by_name(
+                node, 'private').vlan_start = '103'
 
         other_nic = node.interfaces[0]
         dpdk_nic = node.interfaces[2]
@@ -122,38 +143,53 @@ class TestDeploymentAttributesSerialization90(
 
         objects.Cluster.prepare_for_deployment(self.cluster_db)
 
+        br_name = self._get_br_name_by_segmentation_type()
+
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
         self.assertEqual(len(serialised_for_astute['nodes']), 1)
-        node = serialised_for_astute['nodes'][0]
-        dpdk = node.get('dpdk')
+        serialised_node = serialised_for_astute['nodes'][0]
+        dpdk = serialised_node.get('dpdk')
+
+        vendor_specific = {'datapath_type': 'netdev'}
+        vlan_id = objects.NetworkGroup.get_node_network_by_name(
+            node, 'private').vlan_start
+        if br_name == consts.DEFAULT_BRIDGES_NAMES.br_mesh and vlan_id:
+            vendor_specific['vlan_id'] = vlan_id
         self.assertIsNotNone(dpdk)
         self.assertTrue(dpdk.get('enabled'))
 
-        transformations = node['network_scheme']['transformations']
-        private_br = filter(lambda t: t.get('name') ==
-                            consts.DEFAULT_BRIDGES_NAMES.br_prv,
+        transformations = serialised_node['network_scheme']['transformations']
+        private_br = filter(lambda t: t.get('name') == br_name,
                             transformations)[0]
-        dpdk_ports = filter(lambda t: t.get('name') ==
-                            dpdk_interface_name,
+        dpdk_ports = filter(lambda t: t.get('name') == dpdk_interface_name,
                             transformations)
-        all_ports = filter(lambda t: t.get('action') ==
-                           'add-port',
+        all_ports = filter(lambda t: t.get('action') == 'add-port',
                            transformations)
         self.assertEqual(private_br.get('vendor_specific'),
-                         {'datapath_type': 'netdev'})
+                         vendor_specific)
         self.assertEqual(len(all_ports) - len(dpdk_ports),
                          len(other_nic.assigned_networks_list))
         self.assertEqual(len(dpdk_ports), 1)
-        self.assertEqual(dpdk_ports[0]['bridge'],
-                         consts.DEFAULT_BRIDGES_NAMES.br_prv)
+        self.assertEqual(dpdk_ports[0]['bridge'], br_name)
         self.assertEqual(dpdk_ports[0].get('provider'),
                          consts.NEUTRON_L23_PROVIDERS.dpdkovs)
 
-        interfaces = node['network_scheme']['interfaces']
+        interfaces = serialised_node['network_scheme']['interfaces']
         dpdk_interface = interfaces[dpdk_interface_name]
         vendor_specific = dpdk_interface.get('vendor_specific', {})
         self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
+
+    def test_serialization_with_dpdk(self):
+        self._check_dpdk_serializing()
+
+    def test_serialization_with_dpdk_vxlan(self):
+        self._create_cluster_with_vxlan()
+        self._check_dpdk_serializing()
+
+    def test_serialization_with_dpdk_vxlan_with_vlan_tag(self):
+        self._create_cluster_with_vxlan()
+        self._check_dpdk_serializing(has_vlan_tag=True)
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def _check_dpdk_bond_serializing(self, bond_properties, drivers_mock):
@@ -204,27 +240,34 @@ class TestDeploymentAttributesSerialization90(
         serialised_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
         self.assertEqual(len(serialised_for_astute['nodes']), 1)
-        node = serialised_for_astute['nodes'][0]
-        dpdk = node.get('dpdk')
+        serialised_node = serialised_for_astute['nodes'][0]
+        dpdk = serialised_node.get('dpdk')
+
+        br_name = self._get_br_name_by_segmentation_type()
+        vendor_specific = {'datapath_type': 'netdev'}
+        if br_name == consts.DEFAULT_BRIDGES_NAMES.br_mesh:
+            vendor_specific['vlan_id'] = \
+                objects.NetworkGroup.get_node_network_by_name(
+                    node, 'private').vlan_start
+
         self.assertIsNotNone(dpdk)
         self.assertTrue(dpdk.get('enabled'))
-        transformations = node['network_scheme']['transformations']
-        private_br = filter(lambda t: t.get('name') ==
-                            consts.DEFAULT_BRIDGES_NAMES.br_prv,
+        transformations = serialised_node['network_scheme']['transformations']
+
+        private_br = filter(lambda t: t.get('name') == br_name,
                             transformations)[0]
         dpdk_bonds = filter(lambda t: t.get('name') ==
                             bond_interface_name,
                             transformations)
         self.assertEqual(len(dpdk_bonds), 1)
-        self.assertEqual(dpdk_bonds[0]['bridge'],
-                         consts.DEFAULT_BRIDGES_NAMES.br_prv)
+        self.assertEqual(dpdk_bonds[0]['bridge'], br_name)
         self.assertEqual(private_br.get('vendor_specific'),
-                         {'datapath_type': 'netdev'})
+                         vendor_specific)
         self.assertEqual(dpdk_bonds[0].get('provider'),
                          consts.NEUTRON_L23_PROVIDERS.dpdkovs)
         self.assertEqual(dpdk_bonds[0].get('bond_properties').get('mode'),
                          bond_interface['bond_properties'].get('mode'))
-        interfaces = node['network_scheme']['interfaces']
+        interfaces = serialised_node['network_scheme']['interfaces']
         for iface in nics_for_bond:
             dpdk_interface = interfaces[iface['name']]
             vendor_specific = dpdk_interface.get('vendor_specific', {})
@@ -239,6 +282,24 @@ class TestDeploymentAttributesSerialization90(
         self._check_dpdk_bond_serializing(bond_properties)
 
     def test_serialization_with_dpdk_on_lacp_bond(self):
+        bond_properties = {
+            'mode': consts.BOND_MODES.balance_tcp,
+            'lacp': 'active',
+            'lacp_rate': 'fast',
+            'xmit_hash_policy': 'layer2',
+            'type__': consts.BOND_TYPES.dpdkovs}
+        self._check_dpdk_bond_serializing(bond_properties)
+
+    def test_serialization_with_vxlan_dpdk_on_bond(self):
+        self._create_cluster_with_vxlan()
+        bond_properties = {
+            'mode': consts.BOND_MODES.balance_slb,
+            'type__': consts.BOND_TYPES.dpdkovs,
+        }
+        self._check_dpdk_bond_serializing(bond_properties)
+
+    def test_serialization_with_vxlan_dpdk_on_lacp_bond(self):
+        self._create_cluster_with_vxlan()
         bond_properties = {
             'mode': consts.BOND_MODES.balance_tcp,
             'lacp': 'active',

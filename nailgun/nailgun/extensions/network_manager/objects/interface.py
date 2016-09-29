@@ -84,16 +84,21 @@ class NIC(DPDKMixin, NailgunObject):
         and libraries for particular NIC. It may vary for different OpenStack
         releases. So, dpdk_drivers vary for different releases and it can be
         not empty only for node that is assigned to cluster currently. Also,
-        DPDK is only supported for Neutron with VLAN segmentation currently.
-
+        DPDK is only supported for Neutron with VLAN and VXLAN segmentation
+        currently.
         :param instance: NodeNICInterface instance
         :param dpdk_drivers: DPDK drivers to PCI_ID mapping for cluster node is
                              currently assigned to (dict)
         :return: True if DPDK is available
         """
         return (cls.get_dpdk_driver(instance, dpdk_drivers) is not None and
-                instance.node.cluster.network_config.segmentation_type ==
-                consts.NEUTRON_SEGMENT_TYPES.vlan)
+                cls.dpdk_supported_for_segmentation(instance))
+
+    @staticmethod
+    def dpdk_supported_for_segmentation(instance):
+        return (instance.node.cluster.network_config.segmentation_type in
+                (consts.NEUTRON_SEGMENT_TYPES.vlan,
+                 consts.NEUTRON_SEGMENT_TYPES.tun))
 
     @classmethod
     def is_sriov_enabled(cls, instance):

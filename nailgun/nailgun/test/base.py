@@ -1493,6 +1493,14 @@ class BaseTestCase(BaseUnitTest):
         )
         syncdb()
 
+    def emulate_nodes_provisioning(self, nodes):
+        for node in nodes:
+            node.status = consts.NODE_STATUSES.provisioned
+            node.pending_addition = False
+
+        self.db.add_all(nodes)
+        self.db.flush()
+
     def setUp(self):
         self.db = db
         flush()
@@ -1509,14 +1517,6 @@ class BaseIntegrationTest(BaseTestCase):
     def setUpClass(cls):
         super(BaseIntegrationTest, cls).setUpClass()
         nailgun.task.task.logs_utils.prepare_syslog_dir = mock.Mock()
-
-    def emulate_nodes_provisioning(self, nodes):
-        for node in nodes:
-            node.status = consts.NODE_STATUSES.provisioned
-            node.pending_addition = False
-
-        self.db.add_all(nodes)
-        self.db.flush()
 
     @classmethod
     def tearDownClass(cls):

@@ -1,0 +1,3593 @@
+- id: database
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  requires: [deploy_start, openstack-haproxy]
+  required_for: [deploy_end, openstack-controller]
+  condition:
+    yaql_exp: &db >
+      changedAny($.network_scheme, $.network_metadata, $.get('use_syslog'),
+      ('primary-controller' in $.roles), $.mysql, $.network_metadata.vips,
+      $.get('database_vip'),
+      $.network_metadata.nodes.get(concat('node-', $.uid)).network_roles.get(
+        'mgmt/database'),
+      $.get('database_nodes'), $.get('mysql_custom_setup_class'),
+      $.get('mysql_binary_logs'), $.configuration.get('mysql'))
+  cross-depends:
+    - name: primary-database
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/database/database.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+    strategy:
+      type: parallel
+      amount:
+        yaql_exp: &db_strategy >
+          switch($.get('deployed_before', {}).get('value') => 1, true => 6)
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/database/database_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/database/database_post.rb
+
+- id: primary-database
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  requires: [deploy_start, openstack-haproxy]
+  required_for: [deploy_end, primary-openstack-controller]
+  condition:
+    yaql_exp: *db
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/database/database.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+    strategy:
+      type: parallel
+      amount:
+        yaql_exp: *db_strategy
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/database/database_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/database/database_post.rb
+- id: ntp-server
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller, controller]
+  required_for: [ntp-client]
+  requires: [dns-client]
+  condition:
+    yaql_exp: "changed($.external_ntp)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ntp/ntp-server.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+    cwd: /
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ntp/ntp_post.rb
+
+
+- id: ntp-client
+  type: puppet
+  version: 2.1.0
+  role: [primary-mongo, mongo, compute, ceph-osd, cinder, cinder-vmware]
+  requires: [dns-client]
+  cross-depends:
+    - name: ntp-server
+      policy: any
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: >
+      changedAny($.network_metadata.get('vips',{}).get('management'),
+      $.get('ntp_servers'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ntp/ntp-client.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+    cwd: /
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ntp/ntp_post.rb
+
+- id: ntp-check
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller, controller]
+  required_for: [ntp-server]
+  requires: [dns-client]
+  condition:
+    yaql_exp: "changed($.external_ntp)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ntp/ntp-check.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 600
+    cwd: /
+- id: cluster-vrouter
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [virtual_ips]
+  requires: [primary-cluster, cluster]
+  condition:
+    yaql_exp: "changedAny($.network_scheme, $.network_metadata)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster-vrouter/cluster-vrouter.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+- id: openstack-haproxy
+  type: puppet
+  version: 2.0.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, openstack-haproxy-ceilometer, openstack-haproxy-aodh, openstack-haproxy-cinder, openstack-haproxy-glance, openstack-haproxy-heat, openstack-haproxy-horizon, openstack-haproxy-keystone, openstack-haproxy-murano, openstack-haproxy-mysqld, openstack-haproxy-neutron, openstack-haproxy-nova, openstack-haproxy-radosgw, openstack-haproxy-sahara, openstack-haproxy-swift, openstack-haproxy-stats, openstack-haproxy-ironic]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+
+- id: openstack-haproxy-horizon
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.horizon, $.public_ssl, $.get('use_ssl'),
+      $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-horizon.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-horizon_post.rb
+
+- id: openstack-haproxy-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.keystone, $.public_ssl, $.get('use_ssl'),
+      $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.get('keystone_names'), $.get('keystone_ipaddresses'),
+      $.get('public_service_endpoint'), $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-keystone_post.rb
+
+- id: openstack-haproxy-nova
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.nova, $.public_ssl, $.get('use_ssl'), $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-nova.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-nova_post.rb
+
+- id: openstack-haproxy-heat
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      $.heat.enabled and changedAny($.heat, $.public_ssl, $.get('use_ssl'),
+      $.get('external_lb'), $.get('heat_roles'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-heat.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-heat_post.rb
+
+- id: openstack-haproxy-glance
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.glance, $.public_ssl, $.get('use_ssl'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-glance.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-glance_post.rb
+
+- id: openstack-haproxy-cinder
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.cinder, $.public_ssl, $.get('use_ssl'),
+      $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-cinder.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-cinder_post.rb
+
+- id: openstack-haproxy-neutron
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.quantum, $.public_ssl, $.get('use_ssl'),
+      $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.get('neutron_names'), $.get('neutron_ipaddresses'),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-neutron.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-neutron_post.rb
+
+- id: openstack-haproxy-mysqld
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.mysql, $.get('custom_mysql_setup_class', 'galera'),
+      $.get('external_lb'), $.get('database_nodes'), $.get('mysqld_names'),
+      $.get('mysqld_ipaddresses'), $.network_metadata.vips,
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.get('database_vip'), ('primary-controller' in $.roles))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-mysqld.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-mysqld_post.rb
+
+- id: openstack-haproxy-swift
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.storage, $.get('swift_proxy_roles'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.public_ssl, $.get('use_ssl'), $.get('external_lb'),
+      $.get('swift_server_names'), $.get('swift_ipaddresses'),
+      $.network_metadata.vips, $.ironic, $.network_scheme,
+      $.network_metadata.nodes.get(concat('node-', $.uid)))
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-swift.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-swift_post.rb
+
+- id: openstack-haproxy-radosgw
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.storage, $.public_ssl, $.get('use_ssl'),
+      $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips, $.ironic)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-radosgw.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-radosgw_post.rb
+
+- id: openstack-haproxy-ceilometer
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      $.ceilometer.enabled and changedAny($.ceilometer, $.public_ssl,
+      $.get('use_ssl'), $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-ceilometer.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-ceilometer_post.rb
+
+- id: openstack-haproxy-aodh
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      changedAny($.ceilometer, $.public_ssl, $.get('use_ssl'),
+      $.get('external_lb'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-aodh.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-aodh_post.rb
+
+- id: openstack-haproxy-sahara
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      $.sahara.enabled and changedAny($.sahara, $.public_ssl,
+      $.get('use_ssl'), $.get('external_lb'), $.get('sahara_roles'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-sahara.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-sahara_post.rb
+
+- id: openstack-haproxy-murano
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: >
+      $.murano.enabled and changedAny($.murano, $.get('murano-cfapi'),
+      $.public_ssl, $.get('use_ssl'), $.get('external_lb'),
+      $.get('murano_roles'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.get('murano_names'), $.get('murano_ipaddresses'),
+      $.network_metadata.vips)
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-murano.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-murano_post.rb
+
+- id: openstack-haproxy-stats
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  condition:
+    yaql_exp: "changed($.get('external_lb')) or changed($.network_metadata.vips)"
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-stats.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-stats_post.rb
+
+- id: openstack-haproxy-ironic
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  condition:
+    yaql_exp: >
+      $.ironic.enabled and changedAny($.get('ironic_api_nodes'),
+      $.network_metadata, $.public_ssl, $.get('use_ssl'), $.get('external_lb'))
+  required_for: [deploy_end]
+  requires: [deploy_start, primary-cluster-haproxy, cluster-haproxy]
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-ironic.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-ironic_post.rb
+
+- id: vmware-vcenter
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [controller_remaining_tasks]
+  condition:
+    yaql_exp: &use_vcenter '$.use_vcenter and changed($.use_vcenter)'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/vmware/vcenter.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+
+- id: top-role-cinder-vmware
+  type: puppet
+  version: 2.1.0
+  groups: [cinder-vmware]
+  required_for: [deploy_end]
+  requires: [top-role-cinder]
+  condition:
+    yaql_exp: *use_vcenter
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/vmware/cinder-vmware.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/vmware/cinder-vmware_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/vmware/cinder-vmware_post.rb
+
+- id: top-role-compute-vmware
+  type: puppet
+  version: 2.1.0
+  groups: [compute-vmware]
+  required_for: [enable_nova_compute_service]
+  requires: [top-role-compute, ceilometer-compute, ceilometer-keystone]
+  condition:
+    yaql_exp: *use_vcenter
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/vmware/compute-vmware.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+- id: pkg_upgrade
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, ironic]
+  requires: [setup_repositories]
+  required_for: [fuel_pkgs]
+  condition:
+    yaql_exp: $.get('mu_upgrade', {}).get('enabled')
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/upgrade/pkg_upgrade.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+- id: plugins_rsync
+  type: puppet
+  version: 2.1.0
+  groups: ['/.*/']
+  requires: [configuration_symlink]
+  required_for: [pre_deployment_start]
+  condition:
+    yaql_exp: &have_plugins "len($.plugins) > 0"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/plugins/plugins_rsync.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 600
+
+- id: plugins_setup_repositories
+  type: puppet
+  version: 2.1.0
+  groups: ['/.*/']
+  requires: [plugins_rsync]
+  required_for: [pre_deployment_start]
+  condition:
+    yaql_exp: *have_plugins
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/plugins/plugins_setup_repositories.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 600
+- id: setup_repositories
+  type: puppet
+  version: 2.1.0
+  groups: ['/.*/']
+  requires: [hiera]
+  required_for: [fuel_pkgs]
+  condition:
+    yaql_exp: '($.uid in added($.network_metadata.nodes.values()).uid) or changed($.repo_setup)'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/fuel_pkgs/setup_repositories.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 600
+
+- id: fuel_pkgs
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, ironic]
+  requires: [setup_repositories]
+  required_for: [globals]
+  condition:
+    yaql_exp: '$.uid in added($.network_metadata.nodes.values()).uid'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/fuel_pkgs/fuel_pkgs.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 600
+- id: logging
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, virt, ironic]
+  required_for: [deploy_end]
+  requires: [globals,setup_repositories]
+  condition:
+    yaql_exp: >
+      changedAny($.base_syslog, $.syslog, $.get('use_syslog', true),
+      $.syslog.get('debug', $.get('debug', false)),
+      $.get('node_name_prefix_for_messaging', 'messaging-'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/logging/logging.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+- id: hosts
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, ironic]
+  required_for: [deploy_end]
+  requires: [netconfig]
+  condition:
+    yaql_exp: 'changed($.network_metadata)'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hosts/hosts.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/hosts/hosts_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/hosts/hosts_post.rb
+- id: primary-dns-server
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end]
+  requires: [openstack-haproxy]
+  condition:
+    yaql_exp: &dns_server >
+      changedAny($.external_dns, ('primary-controller' in $.roles),
+      $.get('master_ip'), $.network_metadata, $.get('vrouter_name'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/dns/dns-server.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+
+- id: dns-server
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  required_for: [deploy_end]
+  requires: [openstack-haproxy]
+  condition:
+    yaql_exp: *dns_server
+  cross-depends:
+    - name: primary-dns-server
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/dns/dns-server.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+
+- id: dns-client
+  type: puppet
+  version: 2.1.0
+  role: [primary-mongo, mongo, primary-controller, controller, compute, ceph-osd, cinder, cinder-vmware]
+  requires: [post_deployment_start]
+  required_for: [ntp-client]
+  condition:
+    yaql_exp: "changed($.network_metadata.get('vips',{}).get('vrouter',{}).get('ipaddr'))"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/dns/dns-client.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+- id: umm
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [tools]
+  condition:
+    yaql_exp: "$.uid in added($.network_metadata.nodes.values().uid)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/umm/umm.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+- id: memcached
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end, keystone, primary-keystone]
+  requires: [netconfig]
+  condition:
+    yaql_exp: "changed($.network_scheme)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/memcached/memcached.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/memcached/memcached_post.rb
+- id: hiera
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device,
+           cinder-vmware, compute, compute-vmware, ceph-osd, primary-mongo, mongo, virt, ironic]
+  requires: [deploy_start, rsync_core_puppet]
+  required_for: [setup_repositories]
+  condition:
+    yaql_exp: >
+      ($.uid in added($.network_metadata.nodes.values()).uid) or
+      changedAny($.plugins, $.cgroups)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hiera/hiera.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_pre:
+    cmd: python /etc/puppet/modules/osnailyfacter/modular/hiera/hiera_pre.py
+  test_post:
+    cmd: python /etc/puppet/modules/osnailyfacter/modular/hiera/hiera_post.py
+- id: top-role-ceph-osd
+  type: puppet
+  version: 2.1.0
+  groups: [ceph-osd]
+  required_for: [deploy_end]
+  requires: [hosts, firewall]
+  condition:
+    yaql_exp:
+      changedAny($.storage, $.ceph_tuning_settings, $.get('use_ssl'),
+      $.get('use_syslog'), $.network_scheme,
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      ('primary-controller' in $.roles))
+  cross-depends:
+    - name: /(primary-)?ceph-mon/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/ceph-osd.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: primary-ceph-mon
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [primary-openstack-controller, openstack-controller, openstack-cinder]
+  condition:
+    yaql_exp: &ceph_mon >
+      ($.storage.objects_ceph or $.storage.images_ceph or
+       $.storage.volumes_ceph or $.storage.ephemeral_ceph) and
+      changedAny($.storage, $.get('use_syslog'), $.network_scheme,
+      $.network_metadata.nodes.values().where(
+       $.node_roles.any($.matches('(primary-)?controller'))))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/mon.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+
+- id: ceph-mon
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [primary-openstack-controller, openstack-controller, openstack-cinder]
+  condition:
+    yaql_exp: *ceph_mon
+  cross-depends:
+    - name: primary-ceph-mon
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/mon.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+
+- id: primary-mon-update
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [primary-ceph-mon]
+  condition:
+    yaql_exp: *ceph_mon
+  cross-depends:
+    - name: /(primary-)?ceph-mon/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/primary_mon_update.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+
+- id: ceph-radosgw
+  version: 2.1.0
+  type: puppet
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [radosgw-keystone, apache, keystone, ceph-mon]
+  condition:
+    yaql_exp:
+      $.storage.objects_ceph and
+      changedAny($.storage, $.get('use_syslog'), $.keystone, $.network_metadata.vips, $.get('use_ssl'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      ('primary-controller' in $.roles), $.network_scheme, $.get('apache_ports'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/radosgw.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ceph/radosgw_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ceph/radosgw_post.rb
+
+- id: radosgw-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [ceph-radosgw]
+  requires: [keystone, primary-mon-update]
+  condition:
+    yaql_exp:
+      $.storage.objects_ceph and
+      changedAny($.storage, $.network_metadata.vips,
+      $.get('region', 'RegionOne'), $.public_ssl, $.get('use_ssl'))
+  cross-depends:
+    - name: keystone
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/radosgw_keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: ceph-compute
+  type: puppet
+  version: 2.1.0
+  groups: [compute]
+  cross-depends:
+    - name: /(primary-)?ceph-mon/
+  requires: [top-role-compute]
+  required_for: [deploy_end]
+  condition:
+    yaql_exp: &storage_changed >
+      ($.storage.objects_ceph or $.storage.images_ceph or
+       $.storage.volumes_ceph or $.storage.ephemeral_ceph) and
+      (changedAny($.storage, $.quantum, $.network_metadata.vips,
+       $.get('use_syslog'), $.get('syslog_log_facility_ceph'), $.keystone,
+       $.network_scheme,
+       $.network_metadata.nodes.values().flatten().node_roles.flatten().where(
+         $ = 'controller' or $ = 'primary-controller')))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/ceph_compute.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+    cwd: /
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ceph/ceph_compute_post.rb
+
+#
+# POST_DEPLOYMENT Tasks
+#
+
+- id: ceph_create_pools
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller, controller]
+  requires: [post_deployment_start]
+  required_for: [ceph_ready_check]
+  cross-depended-by:
+    - name: ceph_ready_check
+  condition:
+    yaql_exp: &ceph_changed >
+      ($.storage.objects_ceph or $.storage.images_ceph or
+       $.storage.volumes_ceph or $.storage.ephemeral_ceph) and
+      changed($.storage)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/ceph_pools.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+    cwd: /
+
+- id: ceph_ready_check
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller]
+  condition:
+    yaql_exp: *ceph_changed
+  requires: [post_deployment_start]
+  required_for: [upload_cirros]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/ceph_ready_check.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+    cwd: /
+
+- id: updatedb
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller, controller, ceph-osd]
+  condition:
+    yaql_exp: *ceph_changed
+  requires: [post_deployment_start]
+  required_for: [post_deployment_end]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ceph/updatedb.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+- id: primary-cluster
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end]
+  requires: [hosts, firewall, deploy_start]
+  condition:
+    yaql_exp: &cluster >
+      changedAny($.network_scheme, $.get('cluster_recheck_interval', '190s'),
+      $.network_metadata, $.get('corosync_roles'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster/cluster.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/cluster/cluster_post.rb
+
+- id: cluster
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  cross-depends:
+    yaql_exp: >
+      [{name=>'primary-cluster', role=>$.roles.select('primary-' + $)}]
+  required_for: [deploy_end]
+  requires: [hosts, firewall, deploy_start]
+  condition:
+    yaql_exp: *cluster
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster/cluster.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/cluster/cluster_post.rb
+
+- id: cluster_health
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [primary-cluster, cluster]
+  condition:
+    yaql_exp: >
+      changedAny($.get('corosync_roles'), $.get('corosync_disks'),
+      $.get('corosync_min_disk_space'), $.get('corosync_disk_unit'),
+      $.get('corosync_disk_monitor_interval'),
+      $.get('cluster_recheck_interval', '190s'), $.network_metadata,
+      $.network_scheme)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster/health.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 600
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/cluster/health_post.rb
+
+- id: cluster_mm
+  type: shell
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  requires: [primary-cluster, cluster]
+  required_for: [deploy_end]
+  condition:
+    yaql_exp: >
+      $.status = 'ready' and
+      changedAny($.network_metadata.nodes.keys(), $.get('corosync_roles')) and
+      not changed($.get('configuration', {}))
+  cross-depended-by:
+    - name: /^(primary-)?(database|rabbitmq)$/
+  parameters:
+    cmd: crm node maintenance
+    timeout: 120
+- id: hiera_default_route
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device,
+           cinder-vmware, compute, compute-vmware, ceph-osd, primary-mongo,
+           mongo, virt, ironic]
+  # We need to execute this task before netconfig on all nodes except mongo.
+  # Mongo nodes will configure routing via admin network and update it later
+  # with configure_default_route task
+  cross-depended-by:
+    yaql_exp: >
+      switch(
+        (
+          ('mongo' in $.roles) or ('primary-mongo' in $.roles)
+        ) => [
+            {name=>'configure_default_route',role=>'self'}
+          ],
+        true => [
+          {name=>'netconfig',role=>'self'}
+        ]
+      )
+  # On mongo nodes this task should be executed after netconfig in order
+  # to not break default route by setting it to not yet existent mgmt VIP
+  cross-depends:
+    yaql_exp: >
+      switch(
+        (
+          ('mongo' in $.roles) or ('primary-mongo' in $.roles)
+        ) => [
+            {name=>'netconfig',role=>'self'},
+            {name=>'post_deployment_start',role=>'self'}
+          ],
+        true => [
+          {name=>'tools',role=>'self'}
+        ]
+      )
+  condition:
+    yaql_exp: &network >
+      changedAny($.network_scheme, $.get('dpdk'), $.get('use_ovs'),
+      $.get('set_rps'), $.get('run_ping_checker'),
+      $.network_scheme.endpoints.values().where(
+        $.get('gateway') != null).gateway,
+      $.network_metadata.vips)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig/hiera_default_route.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+
+- id: netconfig
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, virt, ironic]
+  required_for: [deploy_end]
+  requires: [tools]
+  condition:
+    yaql_exp: *network
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig/netconfig.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/netconfig/netconfig_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/netconfig/netconfig_post.rb
+  # Run netconfig task on all nodes (except mongo and vrouter VIP roles) after virtual_ips.
+  # Thus we make sure that our default gateway (vrouter VIP) is up before configuring
+  # routing on nodes.
+  cross-depends:
+    yaql_exp: >
+      switch(
+        (
+          $.roles.any($.matches('^(primary-)?(mongo)$'))
+          or ($.network_metadata.get('vips',{}).get('vrouter',{}).get('ipaddr') = null)
+          or (
+            len($.roles.toSet().intersect($.network_metadata.get('vips',{}).get('vrouter',{}).get('node_roles').toSet())) > 0
+          )
+        ) => [],
+        true => [{
+          name => 'virtual_ips',
+          role => $.network_metadata.get('vips',{}).get('vrouter',{}).get('node_roles')
+        }]
+      )
+
+- id: connectivity_tests
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, virt, ironic]
+  required_for: [firewall, hosts]
+  requires: [netconfig]
+  condition:
+    yaql_exp: 'changedAny($.repo_setup, $.network_scheme)'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig/connectivity_tests.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+
+- id: sriov_iommu_check
+  type: puppet
+  version: 2.1.0
+  groups: [compute]
+  requires: [netconfig]
+  required_for: [firewall, hosts]
+  condition:
+    yaql_exp: 'changed($.network_scheme.transformations)'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig/sriov_iommu_check.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+
+- id: reserved_ports
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, virt, ironic]
+  required_for: [globals]
+  requires: [rsync_core_puppet]
+  condition:
+    yaql_exp: '$.uid in added($.network_metadata.nodes.values()).uid'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig/reserved_ports.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+    cwd: /
+- id: rabbitmq
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  cross-depends:
+    - name: primary-rabbitmq
+  required_for: [deploy_end, openstack-controller, primary-openstack-controller, glance]
+  requires: [netconfig, cluster]
+  condition:
+    yaql_exp: &rabbitmq >
+      changedAny($.network_scheme, $.get('queue_provider'),
+      $.get('erlang_cookie'), $.get('rabbit_version'), $.get('amqp_port'),
+      $.rabbit, $.get('rabbit_ocf'), $.debug,
+      $.get('rabbit_cluster_partition_handling'),
+      $.get('mnesia_table_loading_timeout'),
+      $.network_metadata.nodes.values().where($.uid = new($.uid)),
+      $.get('management_bind_ip_address'), $.get('rabbit_management_port'),
+      $.get('enable_rpc_ha'), $.get('enable_notifications_ha'),
+      $.get('node_name_prefix_for_messaging'),
+      $.get('rabbit_config_kernel_variables'),
+      $.get('rabbit_config_variables'),
+      $.get('rabbit_config_management_variables'),
+      $.get('rabbit_environment_variables'), $.configuration.get('rabbitmq'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/rabbitmq/rabbitmq.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 900
+    strategy:
+      type: parallel
+      amount:
+        yaql_exp: &rabbitmq_strategy >
+          switch($.get('deployed_before', {}).get('value') => 1, true => 3)
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/rabbitmq/rabbitmq_post.rb
+
+- id: primary-rabbitmq
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end, openstack-controller, primary-openstack-controller, glance]
+  requires: [netconfig, primary-cluster]
+  condition:
+    yaql_exp: *rabbitmq
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/rabbitmq/rabbitmq.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 900
+    strategy:
+      type: parallel
+      amount:
+        yaql_exp: *rabbitmq_strategy
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/rabbitmq/rabbitmq_post.rb
+- id: apache
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [keystone, primary-keystone]
+  requires: [netconfig]
+  condition:
+    yaql_exp: "changed($)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/apache/apache.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/apache/apache_post.rb
+- id: primary-cluster-haproxy
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, virtual_ips, primary-cluster]
+  condition:
+    yaql_exp: &cluster_haproxy >
+      changedAny($.network_scheme, $.network_metadata,
+      $.get('database_vip'), ('primary-controller' in $.roles),
+      $.get('haproxy'), $.get('external_lb'), $.get('colocate_haproxy'),
+      $.debug, $.configuration.get('haproxy'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster-haproxy/cluster-haproxy.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    strategy:
+      type: parallel
+      amount:
+        yaql_exp: &haproxy_strategy >
+          switch($.get('deployed_before', {}).get('value') => 1, true => 6)
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/cluster-haproxy/cluster-haproxy_post.rb
+
+- id: cluster-haproxy
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  required_for: [deploy_end]
+  requires: [deploy_start, virtual_ips, cluster]
+  condition:
+    yaql_exp: *cluster_haproxy
+  cross-depends:
+    - name: primary-cluster-haproxy
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster-haproxy/cluster-haproxy.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    strategy:
+      type: parallel
+      amount:
+        yaql_exp: *haproxy_strategy
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/cluster-haproxy/cluster-haproxy_post.rb
+- id: cgroups
+  type: puppet
+  version: 2.1.0
+  role: ['/.*/']
+  requires: [post_deployment_start]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: "changed($.cgroups)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cgroups/cgroups.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+# POST_DEPLOYMENT TASKS
+- id: enable_quorum
+  type: shell
+  version: 2.1.0
+  role: [primary-controller]
+  requires: [post_deployment_start]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: "changed($.network_metadata.nodes) or changed($.get('corosync_roles'))"
+  cross-depends:
+    - name: dns-client
+    - name: ntp-server
+    - name: public_vip_ping
+  parameters:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/astute/enable_quorum.rb
+    timeout: 180
+
+- id: upload_cirros
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller]
+  requires: [enable_quorum]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: >
+      changedAny($.test_vm_image, $.glance, $.network_metadata.vips,
+      $.get('region', 'RegionOne'), $.get('use_ssl'))
+  cross-depends:
+    - name: enable_quorum
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/astute/upload_cirros.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+    cwd: /
+
+- id: upload_nodes_info
+  type: skipped
+  version: 2.1.0
+  role: ['/.*/']
+  requires: [post_deployment_start]
+
+- id: upload_configuration
+  type: upload_file
+  version: 2.1.0
+  role: ['master', '/.*/']
+  condition:
+    yaql_exp: 'changed($)'
+  requires: [override_configuration]
+  required_for: [pre_deployment_start]
+  refresh_on: ['*']
+  parameters:
+    path: /etc/fuel/cluster/{CLUSTER_ID}/astute.yaml
+    permissions: '0640'
+    dir_permissions: '0750'
+    timeout: 180
+    data:
+      yaql_exp: '$.toYaml()'
+
+- id: configuration_symlink
+  type: shell
+  version: 2.1.0
+  role: ['/.*/']
+  condition:
+    yaql_exp: '$.uid in added($.network_metadata.nodes.values()).uid'
+  requires: [upload_configuration]
+  required_for: [pre_deployment_start]
+  parameters:
+    cmd: ln -sf /etc/fuel/cluster/{CLUSTER_ID}/astute.yaml /etc/astute.yaml
+    timeout: 180
+
+- id: update_hosts
+  type: puppet
+  version: 2.1.0
+  role: ['/.*/']
+  required_for: [post_deployment_end]
+  requires: [upload_nodes_info, copy_deleted_nodes]
+  condition:
+    yaql_exp: 'changed($.network_metadata)'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hosts/hosts.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+
+- id: vcenter_compute_zones_create
+  type: shell
+  version: 2.1.0
+  role: [primary-controller, compute-vmware]
+  requires: [post_deployment_start, enable_nova_compute_service]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: '$.use_vcenter and changed($.use_vcenter)'
+  parameters:
+    cmd: /usr/bin/python /etc/puppet/modules/osnailyfacter/modular/astute/vcenter_hooks.py --create_zones
+    timeout: 180
+
+- id: disable_keystone_service_token
+  type: puppet
+  version: 2.0.0
+  role: [primary-controller, controller]
+  requires: [upload_cirros]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: >
+      changed($.keystone.get('service_token_off')) and
+      $.keystone.get('service_token_off')
+  cross-depends:
+    - name: upload_cirros
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/astute/service_token_off.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+    cwd: /
+
+- id: public_vip_ping
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller, controller]
+  requires: [post_deployment_start]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: "changed($.network_scheme) or changed($.get('run_ping_checker'))"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/virtual_ips/public_vip_ping.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+
+- id: configure_default_route
+  type: puppet
+  version: 2.1.0
+  role: [primary-mongo, mongo]
+  requires: [post_deployment_start]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: "changedAny($.network_scheme,
+               $.network_metadata.get('vips',{}).get('management'))"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/netconfig/configure_default_route.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+
+- id: cluster_mm_off
+  type: shell
+  version: 2.1.0
+  role: [primary-controller, controller]
+  condition:
+    yaql_exp: "changedAny($.network_metadata.nodes.keys(), $.get('corosync_roles'))"
+  requires: [post_deployment_start]
+  required_for: [enable_quorum]
+  parameters:
+    cmd: crm node ready
+    timeout: 120
+
+#PRE DEPLOYMENT
+- id: rsync_core_puppet
+  type: sync
+  version: 2.0.0
+  role: ['/.*/']
+  requires: []
+  required_for: [pre_deployment_start]
+  parameters:
+    src: rsync://{MASTER_IP}:/puppet/{OPENSTACK_VERSION}/modules/
+    dst: /etc/puppet/modules
+    timeout: 180
+
+
+- id: clear_nodes_info
+  type: skipped
+  version: 2.0.0
+  role: ['/.*/']
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment_end]
+  parameters:
+    cmd: rm -f /etc/hiera/nodes.yaml
+    retries: 1
+
+- id: copy_keys
+  type: copy_files
+  version: 2.0.0
+  role: ['/.*/']
+  required_for: [pre_deployment_end]
+  requires: [generate_keys]
+  cross-depends:
+      - name: generate_keys
+        role: master
+  parameters:
+    files:
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/mysql/mysql.pub
+        dst: /var/lib/astute/mysql/mysql.pub
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/mysql/mysql
+        dst: /var/lib/astute/mysql/mysql
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/mongodb/mongodb.key
+        dst: /var/lib/astute/mongodb/mongodb.key
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/fernet-keys/0
+        dst: /var/lib/astute/keystone/0
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/fernet-keys/1
+        dst: /var/lib/astute/keystone/1
+    permissions: '0600'
+    dir_permissions: '0700'
+
+- id: generate_keys
+  type: shell
+  version: 2.0.0
+  role: master
+  requires: [pre_deployment_start]
+  required_for: [copy_keys]
+  parameters:
+    cmd: sh /etc/puppet/modules/osnailyfacter/modular/astute/generate_keys.sh -p /var/lib/fuel/keys/ -i {CLUSTER_ID} -o 'mongodb' -s 'mysql' -f '0 1'
+    timeout: 180
+
+- id: generate_haproxy_keys
+  type: shell
+  version: 2.1.0
+  role: master
+  requires: [pre_deployment_start]
+  condition:
+    yaql_exp: &public_ssl >
+      (changedAny($.public_ssl.horizon, $.public_ssl.services)) and
+      ($.public_ssl.horizon or $.public_ssl.services) and
+      $.public_ssl.cert_source = 'self_signed'
+  required_for: [copy_haproxy_keys]
+  parameters:
+    cmd: sh /etc/puppet/modules/osnailyfacter/modular/astute/generate_haproxy_keys.sh -i {CLUSTER_ID} -h {CN_HOSTNAME} -o 'haproxy' -p /var/lib/fuel/keys/
+    timeout: 180
+
+- id: copy_haproxy_keys
+  type: copy_files
+  version: 2.1.0
+  role: ['/.*/']
+  condition:
+    yaql_exp: >
+      (((changedAny($.public_ssl.horizon, $.public_ssl.services)) and
+          ($.public_ssl.horizon or $.public_ssl.services) and
+          (not (old($.public_ssl.horizon) or old($.public_ssl.services)))) or
+        (($.public_ssl.horizon or $.public_ssl.services) and
+          ($.uid in added($.network_metadata.nodes.values()).uid))) and
+      $.public_ssl.cert_source = 'self_signed'
+  required_for: [pre_deployment_end]
+  requires: [generate_haproxy_keys]
+  cross-depends:
+      - name: generate_haproxy_keys
+        role: master
+  parameters:
+    files:
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/haproxy/public_haproxy.pem
+        dst: /var/lib/astute/haproxy/public_haproxy.pem
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/haproxy/public_haproxy.crt
+        dst: /etc/pki/tls/certs/public_haproxy.pem
+    permissions: '0600'
+    dir_permissions: '0700'
+
+- id: sync_time
+  type: shell
+  version: 2.1.0
+  role: ['/.*/']
+  condition:
+    yaql_exp: '$.uid in added($.network_metadata.nodes.values()).uid'
+  requires: [pre_deployment_start]
+  required_for: [pre_deployment_end]
+  parameters:
+    cmd: timeout -s9 40 ntpdate -u -v -s $(awk '/^server/ { if ($2 !~ /127\.127\.[0-9]+\.[0-9]+/) {ORS=" "; print $2}}' /etc/ntp.conf)
+    retries: 10
+    interval: 30
+    timeout: 300
+
+- id: pre_hiera_config
+  type: puppet
+  version: 2.1.0
+  role: ['/.*/']
+  condition:
+    yaql_exp: '$.uid in added($.network_metadata.nodes.values()).uid'
+  requires: [rsync_core_puppet]
+  required_for: [pre_deployment_start]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hiera/hiera.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+    cwd: /
+
+- id: override_configuration
+  type: puppet
+  version: 2.1.0
+  role: ['/.*/']
+  condition:
+    yaql_exp: '$.uid in added($.network_metadata.nodes.values()).uid'
+  requires: [pre_hiera_config]
+  required_for: [pre_deployment_start]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/hiera/override_configuration.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+    cwd: /
+
+- id: dump_rabbitmq_definitions
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller, controller]
+  requires: [post_deployment_start]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: >
+      changedAny($.rabbit, $.get('management_bind_ip_address'),
+      $.get('rabbit_management_port'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/astute/dump_rabbitmq_definitions.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+    cwd: /
+
+- id: ironic_post_swift_key
+  type: shell
+  version: 2.1.0
+  role: [primary-controller]
+  condition:
+    yaql_exp: &ironic_enabled '$.ironic.enabled and changed($.ironic.enabled)'
+  requires: [enable_quorum, ceph-radosgw]
+  required_for: [post_deployment_end]
+  parameters:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/astute/ironic_post_swift_key.rb
+    retries: 3
+    interval: 20
+    timeout: 180
+
+- id: ironic_upload_images
+  type: shell
+  version: 2.1.0
+  role: [primary-controller]
+  condition:
+    yaql_exp: *ironic_enabled
+  required_for: [post_deployment_end]
+  requires: [enable_quorum, ceph-radosgw]
+  parameters:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/ironic/upload_images.rb {CLUSTER_ID}
+    retries: 3
+    interval: 20
+    timeout: 180
+
+- id: ironic_copy_bootstrap_key
+  type: copy_files
+  version: 2.1.0
+  role: [ironic]
+  condition:
+    yaql_exp: >
+      ($.ironic.enabled and
+      (changed($.ironic.enabled) or ('ironic' in added($.roles))))
+  required_for: [pre_deployment_end]
+  requires: [pre_deployment_start]
+  parameters:
+    files:
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/ironic/ironic.pub
+        dst: /var/lib/astute/ironic/ironic.pub
+      - src: /var/lib/fuel/keys/{CLUSTER_ID}/ironic/ironic
+        dst: /var/lib/astute/ironic/ironic
+    permissions: '0600'
+    dir_permissions: '0700'
+
+- id: generate_deleted_nodes
+  version: 2.1.0
+  type: upload_file
+  role: master
+  condition:
+    yaql_exp: &deleted_nodes 'changed($.network_metadata.nodes)'
+  requires: [upload_configuration]
+  required_for: [pre_deployment_end]
+  parameters:
+    path: /etc/fuel/cluster/{CLUSTER_ID}/deleted_nodes.yaml
+    permissions: '0640'
+    dir_permissions: '0750'
+    data:
+      yaql_exp: '{"deleted_nodes" => coalesce(deleted($.network_metadata.nodes.values().fqdn), [])}.toYaml()'
+
+- id: copy_deleted_nodes
+  type: copy_files
+  version: 2.1.0
+  role: ['/.*/']
+  condition:
+    yaql_exp: *deleted_nodes
+  required_for: [pre_deployment_end]
+  requires: [generate_deleted_nodes]
+  cross-depends:
+      - name: generate_deleted_nodes
+        role: master
+  parameters:
+    files:
+      - src: /etc/fuel/cluster/{CLUSTER_ID}/deleted_nodes.yaml
+        dst: /etc/hiera/deleted_nodes.yaml
+    permissions: '0640'
+    dir_permissions: '0750'
+
+- id: purge_service_entries
+  version: 2.1.0
+  type: puppet
+  role: [primary-controller]
+  condition:
+    yaql_exp: *deleted_nodes
+  requires: [post_deployment_start]
+  required_for: [post_deployment_end]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/astute/purge_service_entries.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+    cwd: /
+- id: generate_vms
+  type: puppet
+  version: 2.0.0
+  groups: [virt]
+  requires: [netconfig]
+  required_for: [deploy_end]
+  condition:
+    yaql_exp: "changed($.vms_conf)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/generate_vms/generate_vms.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+- id: api-proxy
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [apache]
+  condition:
+    yaql_exp: >
+      changedAny($.get('max_header_size'), $.get('apache_ports'),
+      $.get('master_ip'),
+      $.network_metadata.nodes.values().where($.node_roles.any($.matches('controller'))))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/api-proxy/api-proxy.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/api-proxy/api-proxy_post.rb
+- id: tools
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, virt, ironic]
+  required_for: [deploy_end]
+  requires: [logging]
+  condition:
+    yaql_exp: >
+      changedAny($.get('custom_accounting_file', undef), $.puppet,
+      $.deployment_mode)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/tools/tools.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/tools/tools_post.rb
+- id: virtual_ips
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [primary-cluster,cluster]
+  condition:
+    yaql_exp: "changedAny($.network_metadata, $.network_scheme, $.roles)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/virtual_ips/virtual_ips.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/virtual_ips/virtual_ips_post.rb
+
+- id: conntrackd
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [virtual_ips,cluster,primary-cluster]
+  condition:
+    yaql_exp: >
+      changedAny($.network_metadata, $.network_scheme,
+      $.get('vrouter_name'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/virtual_ips/conntrackd.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/virtual_ips/conntrackd_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/virtual_ips/conntrackd_post.rb
+- id: globals
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller,
+           cinder, cinder-block-device, cinder-vmware, compute, compute-vmware,
+           ceph-osd, primary-mongo, mongo, virt, ironic]
+  required_for: [deploy_end]
+  requires: [hiera]
+  condition:
+    yaql_exp: 'changed($)'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/globals/globals.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_pre:
+    cmd: python /etc/puppet/modules/osnailyfacter/modular/globals/globals_pre.py
+  test_post:
+    cmd: python /etc/puppet/modules/osnailyfacter/modular/globals/globals_post.py
+- id: ssl-keys-saving
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, compute, compute-vmware, cinder, cinder-vmware, primary-mongo, mongo, ceph-osd, virt]
+  requires: [firewall]
+  condition:
+    yaql_exp: >
+      (($.public_ssl.horizon or $.public_ssl.services) and
+         $.public_ssl.cert_source = 'user_uploaded' and
+         changed($.public_ssl.cert_data)) or
+       (changed($.get('use_ssl')) and len($.get('use_ssl', [])) > 0)
+  required_for: [deploy_end]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ssl/ssl_keys_saving.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ssl/ssl_keys_saving_pre.rb
+
+- id: ssl-add-trust-chain
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, compute, compute-vmware, cinder, cinder-vmware, primary-mongo, mongo, ceph-osd, virt]
+  requires: [firewall, ssl-keys-saving]
+  condition:
+    yaql_exp: &public_ssl_enabled >
+      (changed($.public_ssl) and
+       ($.public_ssl.horizon or $.public_ssl.services)) or
+      (changed($.get('use_ssl')) and (len($.get('use_ssl', [])) > 0))
+  required_for: [hosts]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ssl/ssl_add_trust_chain.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ssl/ssl_keys_saving_pre.rb
+
+- id: ssl-dns-setup
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  requires: [firewall, ssl-add-trust-chain]
+  condition:
+    yaql_exp: *public_ssl_enabled
+  required_for: [hosts]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/ssl/ssl_dns_setup.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+- id: firewall
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller, cinder, cinder-block-device, cinder-vmware, compute, ceph-osd, primary-mongo, mongo, ironic]
+  required_for: [deploy_end]
+  requires: [netconfig]
+  condition:
+    yaql_exp: >
+      changedAny($.network_scheme, $.network_metadata,
+      ($.ironic.enabled and changed($.ironic.enabled)), $.roles, $.master_ip)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/firewall/firewall.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 120
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/firewall/firewall_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/firewall/firewall_post.rb
+- id: neutron-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-network-end]
+  requires: [primary-database, database]
+  condition:
+    yaql_exp: >
+      changedAny($.quantum, $.quantum_settings, $.mysql,
+      $.network_metadata.vips, $.get('database_vip'))
+  cross-depends:
+    - name: /^(primary-)?database$/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: neutron-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-network-end]
+  requires: [primary-keystone, keystone]
+  condition:
+    yaql_exp: >
+      changedAny($.quantum, $.quantum_settings,
+      $.network_metadata.vips, $.public_ssl, $.get('use_ssl'),
+      $.get('region', 'RegionOne'))
+  cross-depends:
+    - name: keystone
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+# Anchor (empty task) for another tasks, say 'tenant network FW setup starting'
+- id: openstack-network-start
+  type: skipped
+  version: 2.0.0
+  groups: [primary-controller,controller,compute]
+  requires: [neutron-keystone, neutron-db, netconfig, primary-openstack-controller, openstack-controller, top-role-compute]
+  required_for: [openstack-network-common-config]
+  cross-depends:
+    - name: neutron-keystone
+    - name: openstack-haproxy
+      role: primary-controller
+    - name: neutron-db
+    - name: /^(primary-)?rabbitmq$/
+      role: self
+
+- id: openstack-network-common-config
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller,controller,compute]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start]
+  condition:
+    yaql_exp: >
+      changedAny($.get('openstack_network'), $.get('verbose'), $.debug,
+      $.quantum_settings, $.neutron_advanced_configuration, $.rabbit,
+      $.ceilometer, $.network_scheme, $.get('use_syslog'),
+      $.get('use_stderr'), $.get('syslog_log_facility_neutron'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.get('kombu_compression'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/common-config.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: openstack-network-server-config
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller,controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config]
+  condition:
+    yaql_exp: >
+      changedAny($.quantum, $.configuration, $.quantum_settings,
+      $.get('database_vip'), $.network_metadata.vips, $.nova,
+      $.get('neutron_primary_controller_roles'),
+      $.get('neutron_compute_nodes'), $.get('region', 'RegionOne'),
+      $.get('use_ssl'), $.neutron_advanced_configuration, $.network_scheme)
+  refresh_on: [neutron_plugin_ml2, neutron_config, neutron_api_config]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/server-config.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: primary-openstack-network-plugins-l2
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config]
+  condition:
+    yaql_exp: &network_plugins_l2 >
+      changedAny($.quantum, $.configuration, $.fqdn,
+      $.get('neutron_primary_controller_roles'),
+      $.get('neutron_compute_nodes'), $.quantum_settings, $.public_ssl,
+      $.get('use_ssl'), $.get('region'), $.network_scheme,
+      $.neutron_advanced_configuration)
+  refresh_on: [neutron_agent_ovs]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/plugins/ml2.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+
+- id: openstack-network-plugins-l2
+  type: puppet
+  version: 2.1.0
+  groups: [controller,compute]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config]
+  condition:
+    yaql_exp: *network_plugins_l2
+  refresh_on: [neutron_agent_ovs]
+  cross-depends:
+    - name: primary-openstack-network-plugins-l2
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/plugins/ml2.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: openstack-network-networks
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config, primary-openstack-network-plugins-l2]
+  condition:
+    yaql_exp: "changedAny($.access, $.quantum_settings, $.quantum)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/networks.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: openstack-network-routers
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  condition:
+    yaql_exp: >
+      not $.neutron_advanced_configuration.neutron_l3_ha and
+      changed($.neutron_advanced_configuration.neutron_l3_ha)
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-networks]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/routers.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+# Additional task for routers when L3 HA is enabled
+# HA routers must be created on post-deployment step when all L3 agents are available
+- id: openstack-network-routers-ha
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller]
+  condition:
+    yaql_exp: >
+      $.neutron_advanced_configuration.neutron_l3_ha and
+      changed($.neutron_advanced_configuration.neutron_l3_ha)
+  required_for: [post_deployment_end]
+  requires: [post_deployment_start]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/routers.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+    cwd: /
+
+- id: primary-openstack-network-agents-l3
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-networks, openstack-network-routers, primary-openstack-network-plugins-l2, openstack-network-plugins-l2]
+  refresh_on: [neutron_l3_agent_config]
+  condition:
+    yaql_exp: &network_agents_l3 >
+      changedAny($.quantum, $.neutron_advanced_configuration,
+      $.get('neutron_controller_roles'), $.get('neutron_compute_nodes'),
+      $.debug, $.configuration, $.network_scheme,
+      ('primary-controller' in $.roles))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/l3.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+
+- id: openstack-network-agents-l3
+  type: puppet
+  version: 2.1.0
+  groups: [controller,compute]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-networks, openstack-network-routers, primary-openstack-network-plugins-l2, openstack-network-plugins-l2]
+  condition:
+    yaql_exp: *network_agents_l3
+  refresh_on: [neutron_l3_agent_config]
+  cross-depends:
+    - name: /(primary-)?openstack-network-plugins-l2/
+      role: ["/(primary-)?controller/"]
+    - name: primary-openstack-network-agents-l3
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/l3.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: openstack-network-agents-sriov
+  type: puppet
+  version: 2.1.0
+  groups: [compute]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-plugins-l2]
+  refresh_on: [neutron_sriov_agent_config]
+  condition:
+    yaql_exp: >
+      changedAny($.quantum, $.network_scheme,
+      $.quantum_settings, $.configuration)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/sriov.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: openstack-network-server-nova
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller,controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config, openstack-network-agents-l3]
+  condition:
+    yaql_exp: >
+      changedAny($.quantum, $.quantum_settings,
+      $.network_metadata.vips, $.get('use_ssl'))
+  cross-depends:
+    - name: /(primary-)?openstack-network-common-config/
+      role: self
+    - name: /(primary-)?openstack-network-server-config/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/server-nova.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: primary-openstack-network-agents-dhcp
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config, openstack-network-server-nova, openstack-network-agents-l3]
+  condition:
+    yaql_exp: &network_agents_dhcp >
+      changedAny($.quantum, $.configuration, $.debug,
+      $.neutron_advanced_configuration, ('primary-controller' in $.roles))
+  refresh_on: [neutron_dhcp_agent_config]
+  cross-depends:
+    - name: /(primary-)?openstack-network-plugins-l2/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/dhcp.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+
+- id: openstack-network-agents-dhcp
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config, openstack-network-server-nova, openstack-network-agents-l3]
+  condition:
+    yaql_exp: *network_agents_dhcp
+  refresh_on: [neutron_dhcp_agent_config]
+  cross-depends:
+    - name: primary-openstack-network-agents-dhcp
+    - name: /(primary-)?openstack-network-plugins-l2/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/dhcp.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: primary-openstack-network-agents-metadata
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config, openstack-network-server-nova, openstack-network-agents-l3]
+  refresh_on: [neutron_metadata_agent_config]
+  condition:
+    yaql_exp: &network_agents_metadata >
+      ($.quantum and changed($.quantum)) or
+        changed($.get('neutron_controller_roles')) or
+      changedAny($.get('neutron_compute_nodes'),
+        $.neutron_advanced_configuration, $.debug, $.configuration,
+        $.get('region'), $.network_metadata.vips, $.get('use_ssl'),
+        $.quantum_settings, $.get('nova_endpoint'), $.get('nova_metadata_protocol'),
+        $.get('workers_max'),
+        ('primary-controller' in $.roles))
+  cross-depends:
+    - name: /(primary-)?openstack-network-plugins-l2/
+      role: self
+    - name: /(primary-)?openstack-network-agents-l3/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/metadata.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+
+- id: openstack-network-agents-metadata
+  type: puppet
+  version: 2.1.0
+  groups: [controller,compute]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-server-config, openstack-network-server-nova, openstack-network-agents-l3]
+  condition:
+    yaql_exp: *network_agents_metadata
+  refresh_on: [neutron_metadata_agent_config]
+  cross-depends:
+    - name: primary-openstack-network-agents-metadata
+    - name: /(primary-)?openstack-network-plugins-l2/
+      role: ["/(primary-)?controller/"]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/agents/metadata.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: openstack-network-compute-nova
+  type: puppet
+  version: 2.1.0
+  groups: [compute]
+  required_for: [openstack-network-end]
+  requires: [openstack-network-start, openstack-network-common-config, openstack-network-agents-l3, openstack-network-agents-metadata]
+  condition:
+    yaql_exp: >
+      changedAny($.network_scheme, $.quantum, $.quantum_settings, $.nova,
+      $.network_metadata.vips, $.get('region'), $.get('use_ssl'))
+  cross-depends:
+    - name: /(primary-)?openstack-network-plugins-l2/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-network/compute-nova.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+# Anchor (empty task) for another tasks, say 'tenant network FW setup done'
+- id: openstack-network-end
+  type: skipped
+  version: 2.0.0
+  groups: [primary-controller,controller,compute]
+  required_for: [deploy_end]
+  requires: []
+- id: primary-swift-proxy_storage
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [openstack-controller, primary-rabbitmq, memcached]
+  condition:
+    yaql_exp: &swift_enabled >
+      ((not $.storage.objects_ceph and not $.storage.images_ceph) and
+        not $.storage.images_vcenter) and
+      (changedAny($.network_scheme, $.network_metadata, $.swift,
+        $.get('swift_master_role', 'primary-controller'),
+        $.get('swift_object_roles'), ('primary-controller' in $.roles),
+        $.get('swift_proxy_roles'), $.get('memcached_servers'),
+        $.network_metadata.nodes.values().where(
+          ('controller' in $.node_roles) or
+          ('primary-controller' in $.node_roles)),
+        $.get('proxy_port'), $.storage, $.debug, $.get('verbose'),
+        $.get('swift_ring_min_part_hours'), $.get('deploy_swift_proxy'),
+        $.get('use_ssl'), $.rabbit,
+        $.network_metadata.nodes.values().where(
+          $.node_roles.any($.matches('controller'))).network_roles.select(
+            $.get('mgmt/messaging')), $.get('amqp_hosts'),
+        $.ceilometer.enabled, $.mp,
+        $.get('swift_partition'), $.get('deploy_swift_storage')))
+  cross-depends:
+    - name: /glance/
+      role: self
+    - name: swift-keystone
+    - name: ceilometer-controller
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/swift/proxy_storage.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: swift-proxy_storage
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [openstack-controller, rabbitmq, memcached]
+  condition:
+    yaql_exp: *swift_enabled
+  cross-depends:
+    - name: primary-swift-proxy_storage
+    - name: /glance/
+      role: self
+    - name: swift-keystone
+    - name: ceilometer-controller
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/swift/proxy_storage.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: swift-rebalance-cron
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [swift-proxy_storage, primary-swift-proxy_storage]
+  condition:
+    yaql_exp: >
+      ((not $.storage.objects_ceph and not $.storage.images_ceph) and
+        not $.storage.images_vcenter) and
+      (changedAny($.storage, $.get('swift_master_role', 'primary-controller'),
+        $.get('swift_ring_min_part_hours'),('primary-controller' in $.roles)))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/swift/rebalance_cronjob.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+
+- id: swift-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  requires: [primary-keystone]
+  required_for: [swift-proxy_storage]
+  condition:
+    yaql_exp: >
+      ((not $.storage.objects_ceph and not $.storage.images_ceph) and
+        not $.storage.images_vcenter) and
+      (changedAny($.swift, $.network_metadata.vips,
+        $.get('region', 'RegionOne'), $.public_ssl, $.get('use_ssl')))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/swift/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+- id: sahara
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  condition:
+    yaql_exp: >
+      $.sahara.enabled and changedAny($.access, $.sahara, $.rabbit,
+      $.public_ssl, $.ceilometer,
+      ('primary-controller' in $.roles), $.network_metadata.vips,
+      $.get('database_vip'), $.quantum_settings, $.quantum, $.network_scheme,
+      $.get('syslog_log_facility_sahara'), $.debug, $.get('verbose'),
+      $.get('default_log_levels'), $.get('use_syslog'), $.get('use_stderr'),
+      $.get('rabbit_ha_queues'), $.get('amqp_port'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')), $.get('amqp_hosts'),
+      $.get('external_lb'), $.get('use_ssl'), $.get('kombu_compression'))
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [openstack-network-end, horizon]
+  cross-depends:
+    - name: sahara-db
+    - name: sahara-keystone
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/sahara/sahara.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/sahara/sahara_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/sahara/sahara_post.rb
+
+- id: sahara-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  cross-depends:
+    - name: /^(primary-)?database$/
+  required_for: [sahara]
+  condition:
+    yaql_exp: >
+      $.sahara.enabled and changedAny($.sahara, $.mysql,
+      $.network_metadata.vips, $.get('database_vip'),
+      $.get('mysql_custom_setup_class'))
+  requires: [primary-database, database]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/sahara/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: sahara-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [sahara]
+  requires: [primary-keystone, keystone]
+  cross-depends:
+    - name: keystone
+      role: self
+  condition:
+    yaql_exp: >
+      $.sahara.enabled and changedAny($.sahara, $.public_ssl,
+      $.network_metadata.vips, $.get('region', 'RegionOne'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/sahara/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+- id: primary-openstack-controller
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end]
+  requires: [openstack-haproxy]
+  condition:
+    yaql_exp: &nova_controller >
+      changedAny($.configuration, $.network_scheme, $.network_metadata,
+      ('primary-controller' in $.roles), $.get('use_syslog'),
+      $.get('use_stderr'), $.get('syslog_log_facility_nova'), $.sahara,
+      $.storage, $.nova, $.get('nova_config'), $.ceilometer,
+      $.get('nova_report_interval', '60'),
+      $.get('nova_service_down_time', '180'), $.rabbit, $.get('use_ssl'),
+      $.get('kombu_compression'), $.get('glance_endpoint'),
+      $.get('glance_api_servers'), $.get('region', 'RegionOne'), $.ironic,
+      $.get('memcached_servers'),
+      $.get('openstack_controller'), $.get('external_lb'), $.quantum_settings,
+      $.get('database_vip'), $.nova_quota, $.use_vcenter, $.libvirt_type,
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.debug, $.use_cow_images, $.get('nova_endpoint'))
+  cross-depends:
+    - name: /^(primary-)?rabbitmq$/
+      role: self
+    - name: nova-db
+    - name: nova-keystone
+    - name: memcached
+  refresh_on: [nova_config, nova_paste_api_ini]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-controller/openstack-controller.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: openstack-controller
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  required_for: [deploy_end]
+  requires: [openstack-haproxy]
+  condition:
+    yaql_exp: *nova_controller
+  cross-depends:
+    - name: primary-openstack-controller
+    - name: /^(primary-)?rabbitmq$/
+      role: self
+  refresh_on: [nova_config, nova_paste_api_ini]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-controller/openstack-controller.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: nova-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [primary-openstack-controller, openstack-controller]
+  requires: [primary-database, database]
+  condition:
+    yaql_exp: >
+      changedAny($.nova, $.mysql, $.network_metadata.vips,
+      $.get('database_vip'))
+  cross-depends:
+    - name: /^(primary-)?database$/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-controller/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: nova-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [primary-openstack-controller, openstack-controller]
+  requires: [primary-keystone, keystone]
+  condition:
+    yaql_exp: >
+      changedAny($.nova, $.network_metadata.vips, $.public_ssl,
+      $.get('use_ssl'), $.get('region', 'RegionOne'))
+  cross-depends:
+    - name: keystone
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-controller/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+- id: murano
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  condition:
+    yaql_exp: >
+      $.murano.enabled and changedAny($.murano, $.murano_settings,
+      $.rabbit, $.ceilometer, $.quantum_settings, $.network_metadata.vips,
+      $.get('database_vip'), $.get('region', 'RegionOne'), $.quantum,
+      $.network_metadata, $.get('syslog_log_facility_murano'), $.debug,
+      $.get('verbose'), $.get('default_log_levels'), $.get('use_syslog'),
+      $.get('use_stderr'), $.get('rabbit_ha_queues'), $.get('amqp_port'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.external_dns, $.public_ssl, $.get('use_ssl'),
+      ('primary-controller' in $.roles), $.get('kombu_compression'),
+      $.get('external_lb'), $.get('keystone_endpoint'))
+  required_for: [deploy_end, controller_remaining_tasks]
+  requires: [primary-heat, heat, horizon, primary-rabbitmq, rabbitmq]
+  cross-depends:
+    - name: murano-db
+    - name: murano-keystone
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/murano/murano.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/murano/murano_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/murano/murano_post.rb
+
+- id: murano-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  cross-depends:
+    - name: /^(primary-)?database$/
+  condition:
+    yaql_exp: >
+      $.murano.enabled and changedAny(
+      $.network_metadata.nodes.values().where($.fqdn = new($.fqdn)),
+      $.murano, $.mysql, $.network_metadata.vips, $.get('database_vip'))
+  required_for: [murano]
+  requires: [primary-database, database]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/murano/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: murano-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  condition:
+    yaql_exp: >
+      $.murano.enabled and changedAny($.murano, $.network_metadata.vips,
+      $.get('region', 'RegionOne'), $.public_ssl, $.get('use_ssl'))
+  required_for: [murano]
+  requires: [primary-keystone, keystone]
+  cross-depends:
+    - name: keystone
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/murano/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: murano-rabbitmq
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  condition:
+    yaql_exp: >
+      $.murano.enabled and changedAny($.rabbit, $.murano)
+  required_for: [murano]
+  cross-depends:
+    - name: /^(primary-)?rabbitmq$/
+      role: self
+  requires: [rabbitmq, primary-rabbitmq]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/murano/rabbitmq.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: murano-cfapi
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  condition:
+    yaql_exp: >
+      $.get('murano-cfapi').enabled and changedAny($.access,
+      $.get('murano-cfapi'), $.network_metadata.vips, $.public_ssl,
+      $.get('use_ssl'), $.network_metadata, $.get('external_lb'))
+  requires: [murano]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/murano/cfapi.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: murano-cfapi-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  condition:
+    yaql_exp: >
+      $.get('murano-cfapi').enabled and changedAny($.murano,
+      $.network_metadata.vips, $.get('region', 'RegionOne'), $.public_ssl,
+      $.get('use_ssl'))
+  required_for: [murano-cfapi]
+  requires: [primary-keystone, keystone]
+  cross-depends:
+    - name: keystone
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/murano/keystone_cfapi.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: upload_murano_package
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller]
+  requires: [upload_cirros]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: >
+      $.murano.enabled and changedAny($.murano_settings.murano_glance_artifacts_plugin)
+  cross-depends:
+    - name: upload_cirros
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/murano/upload_murano_package.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+- id: aodh
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [ceilometer-controller, openstack-controller]
+  requires: [openstack-haproxy]
+  cross-depends:
+    - name: aodh-db
+    - name: aodh-keystone
+  condition:
+    yaql_exp: >
+      $.ceilometer.enabled and changedAny($.get('rabbit_ha_queues'),
+      $.rabbit,
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.get('amqp_port'),
+      $.get('kombu_compression'), $.network_scheme, $.aodh,
+      $.get('region', 'RegionOne'), $.debug, $.get('verbose'),
+      $.get('database_vip'), $.get('external_lb'), $.network_metadata.vips,
+      $.public_ssl, $.get('use_ssl'), $.ceilometer)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/aodh/aodh.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/aodh/aodh_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/aodh/aodh_post.rb
+
+- id: aodh-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [aodh]
+  requires: [primary-keystone, keystone]
+  cross-depends:
+    - name: keystone
+      role: self
+  condition:
+    yaql_exp: >
+      $.ceilometer.enabled and changedAny($.aodh, $.network_metadata.vips,
+      $.public_ssl, $.get('use_ssl'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/aodh/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: aodh-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  cross-depends:
+    - name: /^(primary-)?database$/
+  required_for: [aodh]
+  condition:
+    yaql_exp: >
+      $.ceilometer.enabled and changedAny($.aodh, $.get('database_vip'),
+      $.mysql, $.get('mysql_custom_setup_class'))
+  requires: [primary-database, database]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/aodh/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+- id: controller_remaining_tasks
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  condition:
+    yaql_exp: >
+      changedAny(('primary-controller' in $.roles), $.quantum)
+  cross-depends:
+    - name: /(primary-)?openstack-controller/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/controller.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: top-role-compute
+  type: puppet
+  version: 2.1.0
+  groups: [compute]
+  required_for: [enable_nova_compute_service]
+  requires: [hosts, firewall]
+  condition:
+    yaql_exp: &top_compute >
+      changedAny($.network_scheme, $.configuration, $.get('compute', ''),
+      $.network_metadata.vips, $.debug, $.storage, $.nova, $.public_ssl,
+      $.get('use_ssl', {}), $.get('nova_rate_limits', {}),
+      $.get('nova_report_interval', 60), $.get('nova_service_down_time', 180),
+      $.get('novanetwork_parameters', {}), $.get('nova_custom', {}), $.rabbit,
+      $.cinder, $.ceilometer,
+      $.get('use_syslog', true), $.get('use_stderr', false),
+      $.get('syslog_log_facility_nova', ''),
+      $.network_metadata.nodes.get(concat('node-', $.uid)), $.libvirt_type,
+      $.get('kombu_compression', ''), $.get('dpdk'), $.get('glance_api_servers', ''),
+      $.get('block_device_allocate_retries', 300),
+      $.get('block_device_allocate_retries_interval', 3),
+      $.get('queue_provider', 'rabbit'), $.quantum_settings,
+      $.get('memcached_servers', ''),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'),
+      $.network_metadata.nodes.values().where(
+        $.network_roles.get('mgmt/messaging') != null),
+      $.resume_guests_state_on_host_boot, $.use_cow_images)
+  cross-depends:
+    - name: keystone
+    - name: /(primary-)?openstack-controller/
+    - name: /^(primary-)?rabbitmq$/
+    - name: memcached
+  refresh_on: [nova_config, nova_paste_api_ini]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/compute.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: top-role-cinder
+  type: puppet
+  version: 2.1.0
+  groups: [cinder, cinder-block-device, cinder-vmware]
+  required_for: [enable_cinder_volume_service]
+  requires: [hosts, firewall]
+  cross-depends:
+    - name: openstack-cinder
+  condition:
+    yaql_exp: >
+      changedAny($.cinder, $.get('cinder_volume_group'),
+      $.network_metadata.nodes.get(concat("node-", $.uid)).network_roles.get('cinder/iscsi'),
+      $.network_metadata.vips, $.debug, $.node_volumes, $.storage, $.rabbit, $.ceilometer,
+      $.get('use_stderr'), $.get('use_syslog'), $.get('syslog_log_facility_cinder'),
+      $.get('syslog_log_facility_ceph'), $.get('proxy_port'), $.get('kombu_compression'),
+      $.get('use_ssl'), $.get('service_endpoint'), $.get('glance_api_servers'),
+      $.get('amqp_hosts'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/cinder.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: enable_cinder_volume_service
+  type: puppet
+  version: 2.1.0
+  groups: [cinder, cinder-block-device]
+  requires: [top-role-cinder]
+  required_for: [deploy_end]
+  condition:
+    yaql_exp: >
+      changedAny($.cinder, $.get('cinder_volume_group'),
+      $.network_metadata.nodes.get(concat("node-", $.uid)).network_roles.get('cinder/iscsi'),
+      $.network_metadata.vips, $.debug, $.node_volumes, $.storage, $.rabbit, $.ceilometer,
+      $.get('use_stderr'), $.get('use_syslog'), $.get('syslog_log_facility_cinder'),
+      $.get('syslog_log_facility_ceph'), $.get('proxy_port'), $.get('kombu_compression'),
+      $.get('use_ssl'), $.get('service_endpoint'), $.get('glance_api_servers'),
+      $.get('amqp_hosts'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/enable_cinder.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+    cwd: /
+
+- id: top-role-primary-mongo
+  type: puppet
+  version: 2.1.0
+  groups: [primary-mongo]
+  required_for: [deploy_end]
+  requires: [hosts, firewall]
+  condition:
+    yaql_exp: &top_mongo >
+      $.ceilometer.enabled and changedAny($.network_scheme, $.mongo,
+      $.get('mongodb_port'),
+      $.network_metadata.nodes.values().where(
+        ('primary-mongo' in $.node_roles) or
+        ('mongo' in $.node_roles)),
+      $.get('use_syslog'), $.debug, $.ceilometer, $.roles)
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/mongo.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: top-role-mongo
+  type: puppet
+  version: 2.1.0
+  groups: [mongo]
+  cross-depends:
+    - name: top-role-primary-mongo
+  required_for: [deploy_end]
+  requires: [hosts, firewall]
+  condition:
+    yaql_exp: *top_mongo
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/mongo.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: ironic-conductor
+  type: puppet
+  version: 2.1.0
+  groups: [ironic]
+  required_for: [deploy_end]
+  requires: [hosts, firewall]
+  condition:
+    yaql_exp: >
+      $.ironic.enabled and changedAny($.network_scheme, $.ironic,
+      $.network_metadata.vips, $.get('database_vip'),
+      $.get('neutron_endpoint'), $.get('glance_api_servers'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.debug, $.get('use_syslog'),
+      $.get('syslog_log_facility_ironic'), $.rabbit, $.storage,
+      $.get('kombu_compression'))
+  cross-depends:
+    - name: ironic
+    - name: ironic-db
+    - name: /^(primary-)?rabbitmq$/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/ironic-conductor.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: enable_nova_compute_service
+  type: puppet
+  version: 2.1.0
+  groups: [compute, compute-vmware]
+  requires: [top-role-compute, top-role-compute-vmware, openstack-network-compute-nova]
+  required_for: [deploy_end]
+  refresh_on: [nova_config, nova_paste_api_ini]
+  condition:
+    yaql_exp: *top_compute
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/enable_compute.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+    cwd: /
+
+- id: allocate_hugepages
+  type: puppet
+  version: 2.1.0
+  role: ['/.*/']
+  requires: [setup_repositories]
+  required_for: [globals]
+  condition:
+    yaql_exp: 'changed($.get("hugepages", []))'
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/roles/allocate_hugepages.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+    cwd: /
+- id: openrc-delete
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  requires: [deploy_start, openstack-haproxy]
+  required_for: [primary-keystone, keystone]
+  condition:
+    yaql_exp: &keystone_changed >
+      changedAny($.configuration, $.network_scheme, $.network_metadata,
+      $.keystone, $.get('verbose'), $.debug, $.quantum, $.get('use_syslog'),
+      $.get('use_stderr'), $.access, $.get('database_vip'), $.glance, $.nova,
+      $.cinder, $.ceilometer, $.get('syslog_log_facility_keystone'), $.rabbit,
+      $.quantum_settings.keystone, $.get('default_log_levels'),
+      ('primary-controller' in $.roles), $.get('kombu_compression'),
+      $.get('region'), $.public_ssl, $.get('use_ssl'),
+      $.get('memcached_servers'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.get('token_provider'), $.get('max_pool_size'), $.get('max_overflow'),
+      $.murano_settings, $.murano, $.get('external_lb'), $.operator_user,
+      $.service_user, $.get('apache_ports'), $.get('user_admin_role'), $.get('user_admin_domain'))
+  refresh_on: [keystone_config]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/keystone/openrc_delete.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 90
+
+- id: primary-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [primary-openstack-controller, openstack-controller]
+  requires: [openstack-haproxy, database, primary-rabbitmq, rabbitmq, primary-database]
+  condition:
+    yaql_exp: *keystone_changed
+  refresh_on: [keystone_config]
+  cross-depends:
+    - name: /^(primary-)?rabbitmq$/
+      role: self
+    - name: keystone-db
+    - name: memcached
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/keystone/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/keystone/keystone_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/keystone/keystone_post.rb
+
+- id: keystone
+  type: puppet
+  groups: [controller]
+  version: 2.1.0
+  required_for: [primary-openstack-controller, openstack-controller]
+  requires: [openstack-haproxy, database, primary-rabbitmq, rabbitmq, primary-database]
+  condition:
+    yaql_exp: *keystone_changed
+  refresh_on: [keystone_config]
+  cross-depends:
+    - name: /^(primary-)?rabbitmq$/
+      role: self
+    - name: keystone-db
+    - name: primary-keystone
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/keystone/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/keystone/keystone_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/keystone/keystone_post.rb
+
+- id: keystone-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [keystone, primary-keystone]
+  requires: [primary-database, database]
+  condition:
+    yaql_exp: >
+      changedAny($.network_metadata, $.keystone, $.mysql,
+      $.get('database_vip'))
+  cross-depends:
+    - name: /^(primary-)?database$/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/keystone/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: workloads_collector_add
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end]
+  requires: [keystone, primary-keystone]
+  condition:
+    yaql_exp: >
+      changedAny($.workloads_collector, $.get('external_lb'),
+      $.get('use_ssl'), $.network_metadata.get('vips',{}).get('management'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/keystone/workloads_collector_add.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: generate_changed_admin_user
+  version: 2.1.0
+  type: upload_file
+  role: master
+  condition:
+    yaql_exp: &changed_username >
+      changed($.access.user)
+  requires: [upload_configuration]
+  required_for: [pre_deployment_end]
+  parameters:
+    path: /etc/fuel/cluster/{CLUSTER_ID}/old_admin_user.yaml
+    permissions: '0640'
+    dir_permissions: '0750'
+    data:
+      yaql_exp: '{"old_access" => old($).get("access", {})}.toYaml()'
+
+- id: copy_changed_admin_user
+  type: copy_files
+  version: 2.1.0
+  role: ['/.*/']
+  condition:
+    yaql_exp: *changed_username
+  required_for: [pre_deployment_end]
+  requires: [generate_changed_admin_user]
+  cross-depends:
+      - name: generate_changed_admin_user
+        role: master
+  parameters:
+    files:
+      - src: /etc/fuel/cluster/{CLUSTER_ID}/old_admin_user.yaml
+        dst: /etc/hiera/old_admin_user.yaml
+    permissions: '0640'
+    dir_permissions: '0750'
+
+- id: delete_old_admin_user
+  version: 2.1.0
+  type: puppet
+  role: [primary-controller]
+  condition:
+    yaql_exp: *changed_username
+  requires: [post_deployment_start, primary-keystone]
+  required_for: [post_deployment_end]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/keystone/purge_old_admin.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 180
+    cwd: /
+- id: glance
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [primary-openstack-controller, openstack-controller]
+  requires: [openstack-haproxy, primary-database, database]
+  condition:
+    yaql_exp: >
+      changedAny($.network_scheme, $.network_metadata, $.glance,
+      $.get('verbose'), $.debug, $.get('database_vip'), $.storage,
+      $.get('use_syslog'), $.get('use_stderr'),
+      $.get('syslog_log_facility_glance'), $.rabbit,
+      $.get('max_pool_size'), $.get('max_overflow'), $.ceilometer,
+      $.get('region', 'RegionOne'), $.ironic,
+      ('primary-controller' in $.roles), $.get('kombu_compression'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.get('use_ssl'), $.murano,
+      $.configuration.get('glance_api'), $.configuration.get('glance_cache'),
+      $.configuration.get('glance_registry'), $.configuration.get('glare_config'))
+  cross-depends:
+    - name: glance-db
+    - name: glance-keystone
+    - name: /^(primary-)?rabbitmq$/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/glance/glance.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/glance/glance_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/glance/glance_post.rb
+
+- id: glance-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [glance]
+  requires: [primary-database, database]
+  condition:
+    yaql_exp: >
+      changedAny($.glance, $.mysql, $.network_metadata.vips,
+      $.get('database_vip'))
+  cross-depends:
+    - name: /^(primary-)?database$/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/glance/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: glance-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [glance]
+  requires: [primary-keystone, keystone]
+  condition:
+    yaql_exp: >
+      changedAny($.glance, $.network_metadata.vips, $.public_ssl,
+      $.get('use_ssl'), $.get('region', 'RegionOne'))
+  cross-depends:
+    - name: /(primary-)?keystone/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/glance/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+- id: primary-heat
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [deploy_end]
+  requires: [primary-openstack-controller, openstack-controller]
+  condition:
+    yaql_exp: &heat_enabled >
+      changedAny($.network_scheme, $.heat, $.sahara, $.rabbit, $.ceilometer,
+      $.get('max_retries'), $.get('max_pool_size'), $.get('max_overflow'),
+      $.get('idle_timeout'), $.network_metadata.vips, $.public_ssl,
+      $.get('use_ssl'), ('primary-controller' in $.roles),
+      $.get('kombu_compression'), $.get('heat_endpoint'), $.debug,
+      $.get('verbose'), $.get('use_stderr'), $.get('use_syslog'),
+      $.get('syslog_log_facility_heat'), $.deployment_mode,
+      $.get('region', 'RegionOne'), $.get('external_lb'),
+      $.get('database_vip'), $.get('heat_db_name'), $.storage,
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')), $.get('amqp_hosts'),
+      $.configuration.get('heat'), $.configuration.get('heat_api_paste_ini'),
+      $.get('heat_ha_engine'))
+  cross-depends:
+    - name: heat-db
+    - name: heat-keystone
+    - name: memcached
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/heat/heat.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/heat/heat_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/heat/heat_post.rb
+
+- id: heat
+  type: puppet
+  version: 2.1.0
+  groups: [controller]
+  required_for: [deploy_end]
+  requires: [primary-openstack-controller, openstack-controller]
+  condition:
+    yaql_exp: *heat_enabled
+  cross-depends:
+    - name: primary-heat
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/heat/heat.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/heat/heat_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/heat/heat_post.rb
+
+- id: heat-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [primary-heat, heat]
+  requires: [primary-database, database]
+  condition:
+    yaql_exp: >
+      changedAny($.heat, $.mysql,
+      $.network_metadata.get('vips',{}).get('management'),
+      $.get('database_vip'), $.get('mysql_custom_setup_class'))
+  cross-depends:
+    - name: /^(primary-)?database$/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/heat/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: heat-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [heat, primary-heat]
+  requires: [primary-keystone, keystone]
+  condition:
+    yaql_exp: >
+      changedAny($.heat, $.network_metadata.vips,
+      $.get('region', 'RegionOne'), $.public_ssl, $.get('use_ssl'),
+      $.get('heat_endpoint'))
+  cross-depends:
+    - name: keystone
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/heat/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: heat-cfn-keystone
+  type: puppet
+  version: 2.0.0
+  groups: [primary-controller]
+  required_for: [heat, primary-heat]
+  requires: [primary-keystone, keystone]
+  cross-depends:
+    - name: keystone
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/heat/cfn_keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+- id: openstack-cinder
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end, openstack-controller]
+  requires: [primary-rabbitmq, rabbitmq, primary-keystone, keystone, hosts, firewall]
+  condition:
+    yaql_exp: >
+      changedAny($.network_scheme, $.cinder, $.network_metadata.vips,
+      $.get('cinder_volume_group'), $.storage, $.ceilometer, $.sahara,
+      $.rabbit, $.get('region', 'RegionOne'), $.get('use_ssl'),
+      ('primary-controller' in $.roles), $.get('proxy_port'),
+      $.get('kombu_compression'), $.get('keystone_endpoint'),
+      $.get('glance_endpoint'), $.get('glance_api_servers'),
+      $.get('use_syslog'), $.get('use_stderr'), $.get('verbose'), $.debug,
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.get('syslog_log_facility_cinder'),
+      $.get('cinder_rate_limits'), $.get('keystone_api', 'v3'),
+      $.configuration.get('cinder_api_paste_ini'), $.configuration.get('cinder') )
+  cross-depends:
+    - name: cinder-db
+    - name: cinder-keystone
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-cinder/openstack-cinder.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1200
+
+- id: cinder-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-cinder]
+  requires: [primary-database, database]
+  condition:
+    yaql_exp: >
+      changedAny($.cinder, $.mysql, $.network_metadata.vips,
+      $.get('mysql_custom_setup_class'))
+  cross-depends:
+    - name: /^(primary-)?database$/
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-cinder/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: cinder-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [openstack-cinder]
+  cross-depends:
+    - name: keystone
+      role: self
+  requires: [primary-keystone, keystone]
+  condition:
+    yaql_exp: >
+      changedAny($.cinder, $.public_ssl, $.get('use_ssl'),
+      $.network_metadata.vips, $.get('region', 'RegionOne'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-cinder/keystone.pp
+    puppet_modules: /etc/puppet/modules/
+    timeout: 1800
+
+- id: create-cinder-types
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  requires: [openstack-cinder]
+  required_for: [deploy_end]
+  condition:
+    yaql_exp: "changed($.storage)"
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/openstack-cinder/create_cinder_types.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1200
+- id: ironic-api
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  condition:
+    yaql_exp: >
+      $.ironic.enabled and changedAny($.ironic,
+      $.get('service_endpoint'), $.get('database_vip'),
+      $.get('neutron_endpoint'), $.debug, $.get('verbose'), $.network_metadata,
+      $.get('glance_api_servers'), $.get('default_log_levels'),
+      $.get('use_syslog'), $.get('syslog_log_facility_ironic'), $.rabbit,
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.get('amqp_port'), $.quantum_settings,
+      ('primary-controller' in $.roles), $.get('kombu_compression'),
+      $.get('use_ssl'), $.network_scheme)
+  cross-depends:
+    - name: ironic-db
+    - name: ironic-keystone
+  required_for: [primary-openstack-controller, openstack-controller]
+  requires: [openstack-haproxy, ironic-db, ironic-keystone]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ironic/ironic.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+
+- id: ironic-db
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  cross-depends:
+    - name: /^(primary-)?database$/
+  condition:
+    yaql_exp: >
+      $.ironic.enabled and changedAny($.ironic, $.mysql, $.get('database_vip'),
+      $.get('mysql_custom_setup_class'))
+  required_for: [ironic-api]
+  requires: [primary-database, database]
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ironic/db.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: ironic-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  condition:
+    yaql_exp: >
+      $.ironic.enabled and changedAny($.ironic, $.network_metadata.vips,
+      $.public_ssl, $.get('region', 'RegionOne'))
+  required_for: [ironic-api]
+  requires: [primary-keystone, keystone]
+  cross-depends:
+    - name: keystone
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ironic/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: ironic-compute
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  condition:
+    yaql_exp: >
+      $.ironic.enabled and changedAny($.ironic, $.nova,
+      $.network_metadata.vips, $.get('database_vip'),
+      $.get('neutron_endpoint'), $.get('ironic_endpoint'),
+      $.get('glance_api_servers'), $.debug, $.get('verbose'),
+      $.get('use_syslog'), $.get('syslog_log_facility_ironic'),
+      $.get('syslog_log_facility_nova'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')),
+      $.get('amqp_hosts'), $.rabbit,
+      $.get('nova_report_interval', '60'),
+      $.get('nova_service_down_time', '180'), $.quantum_settings,
+      $.get('memcached_servers'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.get('use_ssl'))
+  required_for: [deploy_end]
+  requires: [primary-openstack-controller, openstack-controller, ironic-api]
+  refresh_on: [nova_config, nova_paste_api_ini]
+  cross-depends:
+   - name: /^(primary-)?rabbitmq$/
+     role: self
+   - name: /(primary-)?openstack-controller/
+     role: self
+   - name: ironic-api
+     role: self
+   - name: memcached
+     role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ironic/ironic-compute.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+- id: horizon
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller, controller]
+  required_for: [deploy_end]
+  requires: [primary-openstack-controller, openstack-controller]
+  condition:
+    yaql_exp: >
+      changedAny($.network_scheme, $.horizon, $.get('memcached_addresses'),
+      $.get('memcache_roles'),
+      $.network_metadata.nodes.values().where(
+        ('controller' in $.node_roles) or
+        ('primary-controller' in $.node_roles)),
+      $.storage, $.neutron_advanced_configuration, $.public_ssl,
+      $.get('horizon_use_ssl'), $.get('external_lb'), $.get('use_ssl'),
+      $.nova_quota, $.debug, $.get('verbose'), $.get('apache_ports'))
+  cross-depends:
+    - name: memcached
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/horizon/horizon.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/horizon/horizon_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/horizon/horizon_post.rb
+- id: ceilometer-controller
+  type: puppet
+  version: 2.1.0
+  cross-depends:
+    - name: ceilometer-keystone
+    - name: /top-role-(primary-)?mongo/
+  groups: [primary-controller, controller]
+  required_for: [primary-openstack-controller, openstack-controller]
+  requires: [openstack-haproxy]
+  condition:
+    yaql_exp: >
+      $.ceilometer.enabled and changedAny($.ceilometer, $.get('verbose'),
+      $.debug, $.get('use_syslog'), $.get('use_stderr'),
+      $.get('syslog_log_facility_ceilometer'), $.storage, $.rabbit,
+      $.network_metadata.vips, $.get('region', 'RegionOne'),
+      $.network_metadata.nodes.values().where(
+        ('primary-mongo' in $.node_roles) or
+        ('mongo' in $.node_roles)),
+      ('primary-controller' in $.roles), $.get('kombu_compression'),
+      $.get('service_endpoint'), $.get('use_ssl'), $.get('workers_max'),
+      $.network_scheme, $.mongo, $.external_mongo,
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')), $.get('amqp_hosts'),
+      $.configuration.get('ceilometer'), $.configuration.get('ceilometer_api_paste_ini'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ceilometer/controller.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/ceilometer/controller_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/ceilometer/controller_post.rb
+
+- id: ceilometer-compute
+  type: puppet
+  version: 2.1.0
+  groups: [compute, compute-vmware]
+  required_for: [deploy_end]
+  requires: [ceilometer-controller, top-role-compute]
+  cross-depends:
+    - name: ceilometer-controller
+  condition:
+    yaql_exp: >
+      $.ceilometer.enabled and changedAny($.get('use_syslog'),
+      $.get('use_stderr'), $.get('syslog_log_facility_ceilometer'),
+      $.rabbit, $.network_metadata.vips, $.get('service_endpoint'),
+      $.get('region', 'RegionOne'), $.ceilometer, $.get('verbose'),
+      $.debug, $.get('use_ssl'),
+      $.network_metadata.nodes.values().where(
+        $.node_roles.any($.matches('controller'))).network_roles.select(
+          $.get('mgmt/messaging')), $.get('amqp_hosts'))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ceilometer/compute.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 3600
+  test_pre:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/ceilometer/compute_pre.rb
+  test_post:
+    cmd: ruby /etc/puppet/modules/openstack_tasks/examples/ceilometer/compute_post.rb
+
+- id: ceilometer-keystone
+  type: puppet
+  version: 2.1.0
+  groups: [primary-controller]
+  required_for: [ceilometer-controller]
+  condition:
+    yaql_exp: >
+      $.ceilometer.enabled and changedAny($.ceilometer,
+      $.network_metadata.vips, $.public_ssl, $.get('use_ssl'),
+      $.get('region', 'RegionOne'))
+  requires: [primary-keystone, keystone]
+  cross-depends:
+    - name: /(primary-)?keystone/
+      role: self
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ceilometer/keystone.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 1800
+
+- id: ceilometer-radosgw-user
+  type: puppet
+  version: 2.1.0
+  role: [primary-controller, controller]
+  requires: [post_deployment_start, ceph-radosgw]
+  required_for: [post_deployment_end]
+  condition:
+    yaql_exp: >
+      ($.ceilometer.enabled and $.storage.objects_ceph) and
+       (changedAny($.ceilometer.enabled, $.storage.objects_ceph))
+  parameters:
+    puppet_manifest: /etc/puppet/modules/openstack_tasks/examples/ceilometer/radosgw_user.pp
+    puppet_modules: /etc/puppet/modules
+    timeout: 300
+    cwd: /
+#STAGES
+
+- id: pre_deployment_start
+  type: stage
+
+- id: pre_deployment_end
+  type: stage
+  requires: [pre_deployment_start]
+
+- id: deploy_start
+  type: stage
+  requires: [pre_deployment_end]
+
+- id: deploy_end
+  type: stage
+  requires: [deploy_start]
+
+- id: post_deployment_start
+  type: stage
+  requires: [deploy_end]
+
+- id: post_deployment_end
+  type: stage
+  requires: [post_deployment_start]
+
+#GROUPS
+- id: primary-controller
+  type: group
+  role: [primary-controller]
+  requires: [deploy_start]
+  fault_tolerance: 0
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: controller
+  type: group
+  role: [controller]
+  requires: [primary-controller]
+  required_for: [deploy_end]
+  fault_tolerance: 1
+  parameters:
+    strategy:
+      type: parallel
+      amount: 6
+
+- id: cinder
+  type: group
+  role: [cinder]
+  requires: [controller]
+  required_for: [deploy_end]
+  fault_tolerance: "2%"
+  parameters:
+    strategy:
+      type: parallel
+
+- id: cinder-block-device
+  type: group
+  role: [cinder-block-device]
+  requires: [compute]
+  required_for: [deploy_end]
+  fault_tolerance: "2%"
+  parameters:
+    strategy:
+      type: parallel
+
+- id: cinder-vmware
+  type: group
+  role: [cinder-vmware]
+  requires: [controller]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel
+
+- id: compute
+  type: group
+  role: [compute]
+  requires: [controller]
+  required_for: [deploy_end]
+  fault_tolerance: "2%"
+  parameters:
+    strategy:
+      type: parallel
+
+- id: compute-vmware
+  type: group
+  role: [compute-vmware]
+  requires: [controller]
+  required_for: [deploy_end]
+  tasks: [globals, hiera, tools, logging, netconfig, connectivity_tests, hosts, firewall, top-role-compute]
+  parameters:
+    strategy:
+      type: parallel
+
+- id: mongo
+  type: group
+  role: [mongo]
+  requires: [primary-mongo]
+  required_for: [deploy_end, primary-controller, controller]
+  fault_tolerance: 1
+  parameters:
+    strategy:
+      type: parallel
+
+- id: primary-mongo
+  type: group
+  role: [primary-mongo]
+  requires: [deploy_start]
+  required_for: [deploy_end, primary-controller, controller]
+  fault_tolerance: 0
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: ceph-osd
+  type: group
+  role: [ceph-osd]
+  requires: [controller]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel
+
+# Base os must be first role on node
+- id: base-os
+  type: group
+  role: [base-os]
+  tasks: [hiera, globals, logging]
+  required_for:
+    - deploy_end
+    - primary-controller
+    - controller
+    - primary-mongo
+    - mongo
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: parallel
+
+- id: virt
+  type: group
+  role: [virt]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel
+
+- id: ironic
+  type: group
+  role: [ironic]
+  requires: [controller]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: parallel

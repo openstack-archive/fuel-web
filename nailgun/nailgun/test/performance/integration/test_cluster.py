@@ -14,13 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import functools
+import os
+import yaml
 
 from mock import patch
 from nailgun import consts
+from nailgun.db.sqlalchemy import fixman
+from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.objects.task import Task
 from nailgun.test.base import fake_tasks
 from nailgun.test.performance.base import BaseIntegrationLoadTestCase
 from nailgun.utils import reverse
+from oslo_serialization import jsonutils
 
 
 class IntegrationClusterTests(BaseIntegrationLoadTestCase):
@@ -30,7 +35,7 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
 
     def setUp(self):
         super(IntegrationClusterTests, self).setUp()
-        self.env.create_nodes(self.NODES_NUM, api=True)
+        self.env.create_nodes(400, api=True)
         self.cluster = self.env.create_cluster(api=True)
         controllers = 3
         created_controllers = 0
@@ -56,6 +61,58 @@ class IntegrationClusterTests(BaseIntegrationLoadTestCase):
     def test_deploy(self, mock_rpc):
         self.provision(self.cluster['id'], self.nodes_ids)
         self.deployment(self.cluster['id'], self.nodes_ids)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_graph_execute(self, mock_rpc):
+        fxtr_path = os.path.join(fixman.get_base_fixtures_path(),
+                                 'default_deployment_graph.yaml')
+        with open(fxtr_path) as f:
+            deployment_tasks = yaml.load(f)
+        DeploymentGraph.create_for_model(
+            {'tasks': deployment_tasks}, instance=self.cluster,
+            graph_type='test_graph')
+        self.emulate_nodes_provisioning(self.env.nodes)
+
+        self.app.post(
+            reverse('GraphsExecutorHandler'),
+            params=jsonutils.dumps(
+                {
+                    "cluster": self.cluster.id,
+                    "graphs": [{"type": "test_graph"}],
+                    "debug": True,
+                    "noop_run": False,
+                    "dry_run": False,
+                }
+            ),
+            headers=self.default_headers
+        )
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_graph_execute_2(self, mock_rpc):
+        fxtr_path = os.path.join(fixman.get_base_fixtures_path(),
+                                 'default_deployment_graph2.yaml')
+        with open(fxtr_path) as f:
+            deployment_tasks = yaml.load(f)
+        DeploymentGraph.create_for_model(
+            {'tasks': deployment_tasks}, instance=self.cluster,
+            graph_type='test_graph')
+        self.emulate_nodes_provisioning(self.env.nodes)
+
+        self.app.post(
+            reverse('GraphsExecutorHandler'),
+            params=jsonutils.dumps(
+                {
+                    "cluster": self.cluster.id,
+                    "graphs": [{"type": "test_graph"}],
+                    "debug": True,
+                    "noop_run": False,
+                    "dry_run": False,
+                }
+            ),
+            headers=self.default_headers
+        )
 
     @fake_tasks()
     def test_put_cluster_changes(self):

@@ -92,8 +92,9 @@ class NIC(DPDKMixin, NailgunObject):
         :return: True if DPDK is available
         """
         return (cls.get_dpdk_driver(instance, dpdk_drivers) is not None and
-                instance.node.cluster.network_config.segmentation_type ==
-                consts.NEUTRON_SEGMENT_TYPES.vlan)
+                instance.node.cluster.network_config.segmentation_type in
+                (consts.NEUTRON_SEGMENT_TYPES.vlan,
+                 consts.NEUTRON_SEGMENT_TYPES.tun))
 
     @classmethod
     def is_sriov_enabled(cls, instance):

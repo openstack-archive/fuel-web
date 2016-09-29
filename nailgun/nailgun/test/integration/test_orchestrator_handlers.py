@@ -630,6 +630,29 @@ class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
         self.assertItemsEqual(deployed_uids, self.node_uids)
         self.assertEqual(len(deployment_data['tasks']), 1)
 
+    @patch('nailgun.task.task.rpc.cast')
+    def test_only_reexecutable_when_node_is_deleted(self, mcast):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['compute'], 'pending_deletion': True}])
+        self.env.disable_task_deploy(cluster)
+        self.emulate_nodes_deployment(cluster.nodes)
+
+        action_url = reverse(
+            "DeploySelectedNodes",
+            kwargs={'cluster_id': cluster.id})
+        out = self.send_put(action_url)
+        self.assertEqual(out.status_code, 202)
+
+        args, _ = mcast.call_args
+        post_deploy_tasks = args[1]['args']['post_deployment']
+        task_names = set(task.get('id', task.get('type'))
+                         for task in post_deploy_tasks)
+        self.assertEqual(task_names, {'upload_file', 'update_hosts'})
+
     def test_deployment_is_forbidden(self):
         action_url = self.make_action_url(
             "DeploySelectedNodesWithTasks",

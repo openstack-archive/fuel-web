@@ -16,16 +16,27 @@
 
 import web
 
-from nailgun.fake_keystone.handlers import EndpointsHandler
-from nailgun.fake_keystone.handlers import ServicesHandler
-from nailgun.fake_keystone.handlers import TokensHandler
-from nailgun.fake_keystone.handlers import VersionHandler
+from nailgun.fake_keystone.v2_handlers \
+    import EndpointsHandler as V2EndpointsHandler
+from nailgun.fake_keystone.v2_handlers \
+    import ServicesHandler as V2ServicesHandler
+from nailgun.fake_keystone.v2_handlers \
+    import TokensHandler as V2TokensHandler
+from nailgun.fake_keystone.v2_handlers \
+    import VersionHandler as V2VersionHandler
+
+from nailgun.fake_keystone.v3_handlers \
+    import TokensHandler as V3TokensHandler
+from nailgun.fake_keystone.v3_handlers \
+    import VersionHandler as V3VersionHandler
 
 urls = (
-    r"/v2.0/?$", VersionHandler.__name__,
-    r"/v2.0/tokens/?$", TokensHandler.__name__,
-    r"/v2.0/OS-KSADM/services/?$", ServicesHandler.__name__,
-    r"/v2.0/endpoints/?$", EndpointsHandler.__name__,
+    r"/v2.0/?$", V2VersionHandler,
+    r"/v2.0/tokens/?$", V2TokensHandler,
+    r"/v2.0/OS-KSADM/services/?$", V2ServicesHandler,
+    r"/v2.0/endpoints/?$", V2EndpointsHandler,
+    r"/v3/?$", V3VersionHandler,
+    r"/v3/auth/tokens/?$", V3TokensHandler,
 )
 
 _locals = locals()

@@ -323,7 +323,7 @@ class VmwareAttributesHandler(BaseHandler):
         if not attributes:
             raise self.http(404, "No vmware attributes found")
 
-        if cluster.is_locked:
+        if False:
             raise self.http(403, "Environment attributes can't be changed "
                                  "after or during deployment.")
 

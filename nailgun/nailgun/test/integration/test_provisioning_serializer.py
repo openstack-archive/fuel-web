@@ -226,6 +226,12 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
             api=False, release_id=release.id)
         self.cluster.attributes.editable['provision']['method'] = \
             consts.PROVISION_METHODS.cobbler
+        fake_files = {'remote_relative': 'fake', 'local': 'fake'}
+
+        self.cluster.attributes.editable['repo_setup']['installer_kernel'] = \
+            fake_files
+        self.cluster.attributes.editable['repo_setup']['installer_initrd'] = \
+            fake_files
 
         serialized_info = self.serializer.serialize(self.cluster, [])
 

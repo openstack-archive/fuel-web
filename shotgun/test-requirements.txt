@@ -3,3 +3,6 @@ mock==1.0.1
 testrepository>=0.0.18
 unittest2
 discover
+packaging
+appdirs
+six

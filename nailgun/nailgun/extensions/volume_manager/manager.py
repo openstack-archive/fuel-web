@@ -83,7 +83,7 @@ def exclude_glance_partition(role_mapping, node):
     """Filter out image volume.
 
     In case images_ceph used as glance image storage
-    no need to create partition /var/lib/glance
+    no need to create partition /var/lib/storage
     """
     if node.cluster.attributes.editable.get('storage', {}).get('images_ceph'):
         images_ceph = (node.cluster.attributes['editable']['storage']
@@ -159,7 +159,7 @@ def calc_glance_cache_size(volumes):
     """Calculate glance cache size.
 
     Based on formula:
-    10%*(/var/lib/glance) if > 5GB else 5GB
+    10%*(/var/lib/storage) if > 5GB else 5GB
     """
     glance_mount_size = find_size_by_name(volumes, 'glance', 'image')
     if glance_mount_size == 0:

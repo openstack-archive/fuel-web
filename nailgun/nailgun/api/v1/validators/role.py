@@ -20,6 +20,7 @@ from nailgun.api.v1.validators.json_schema import role
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
+from nailgun.objects import PluginCollection
 
 
 class RoleValidator(BasicValidator):
@@ -49,6 +50,11 @@ class RoleValidator(BasicValidator):
         parsed = cls.validate(data, instance=instance)
 
         allowed_ids = [m['id'] for m in instance.volumes_metadata['volumes']]
+        release_plugins = PluginCollection.get_by_release(instance)
+        for plugin in release_plugins:
+            plugin_volume_ids = [m['id'] for m in
+                                 plugin.volumes_metadata.get('volumes', [])]
+            allowed_ids.extend(plugin_volume_ids)
         missing_volume_ids = []
         for volume in parsed['volumes_roles_mapping']:
             if volume['id'] not in allowed_ids:

@@ -129,7 +129,7 @@ class TestNodeReassignValidator(base.BaseTestCase):
         node = self.env.create_node(cluster_id=cluster.id,
                                     roles=["compute"],
                                     status="ready")
-        msg = "^'node_id' is a required property"
+        msg = "^'nodes_ids' is a required property"
         with self.assertRaisesRegexp(errors.InvalidData, msg):
             self.validator.validate("{}", node)
 

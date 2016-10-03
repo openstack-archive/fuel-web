@@ -99,4 +99,4 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
         self.assertIsNotNone(image_volume)
         self.assertEqual(len(image_volume['volumes']), 1)
         self.assertEqual(image_volume['volumes'][0]['mount'],
-                         '/var/lib/glance')
+                         '/var/lib/storage')

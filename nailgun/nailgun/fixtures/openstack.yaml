@@ -691,7 +691,7 @@
           min_size: {generator: "calc_min_glance_size"}
           label: "Image Storage"
           volumes:
-            - mount: "/var/lib/glance"
+            - mount: "/var/lib/storage"
               type: "lv"
               name: "glance"
               size:

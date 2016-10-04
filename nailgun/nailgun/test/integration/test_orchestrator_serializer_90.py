@@ -629,10 +629,13 @@ class TestDeploymentLCMSerialization90(
         node_info = next(x for x in serialized['nodes']
                          if x['uid'] == self.node.uid)
         self.assertIn('provision', node_info)
-        provision_info = node_info['provision']
+        node_provision_info = node_info['provision']
         # check that key options present in provision section
-        self.assertIn('ks_meta', provision_info)
+        self.assertIn('ks_meta', node_provision_info)
         self.assertIn('engine', serialized['common']['provision'])
+        provision_info = serialized['common']['provision']
+        self.assertIn('packages', provision_info)
+        self.assertIsInstance(provision_info['packages'], list)
 
     def test_deleted_field_present_only_for_deleted_nodes(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)

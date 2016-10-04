@@ -52,7 +52,7 @@ class NodesFilterMixin(object):
     validator = NodesFilterValidator
 
     def get_default_nodes(self, cluster):
-        """Method should be overriden and return list of nodes"""
+        """Method should be overridden and return list of nodes"""
         raise NotImplementedError('Please Implement this method')
 
     def get_nodes(self, cluster):

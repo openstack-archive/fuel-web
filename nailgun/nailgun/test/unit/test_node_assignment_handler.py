@@ -62,9 +62,9 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             node.pending_roles,
             assignment_data[0]["roles"]
         )
-
+        # NOTE(el): Role can be reassigned after initial assigment
         resp = self._assign_roles(assignment_data, True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
     def test_unassignment(self):
         cluster = self.env.create(

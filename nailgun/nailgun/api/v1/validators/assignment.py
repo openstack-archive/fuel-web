@@ -46,6 +46,8 @@ class AssignmentValidator(BasicValidator):
 
     @classmethod
     def check_if_already_done(cls, nodes):
+        # TODO(el): add force flag for that
+        return
         already_done_nodes = filter(cls.predicate, nodes)
         if any(already_done_nodes):
             raise errors.InvalidData(
@@ -57,10 +59,12 @@ class AssignmentValidator(BasicValidator):
     @classmethod
     def check_unique_hostnames(cls, nodes, cluster_id):
         hostnames = [node.hostname for node in nodes]
+        node_ids = [node.id for node in nodes]
         conflicting_hostnames = [
             x[0] for x in
             db.query(
                 Node.hostname).filter(sa.and_(
+                    ~Node.id.in_(node_ids),
                     Node.hostname.in_(hostnames),
                     Node.cluster_id == cluster_id,
                 )

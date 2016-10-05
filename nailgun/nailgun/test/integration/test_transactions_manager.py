@@ -31,8 +31,8 @@ class TestTransactionManager(base.BaseIntegrationTest):
         self.cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
-                {"status": consts.NODE_STATUSES.discover},
-                {"status": consts.NODE_STATUSES.discover, "online": False},
+                {"status": consts.NODE_STATUSES.provisioned},
+                {"status": consts.NODE_STATUSES.provisioned, "online": False},
             ],
             release_kwargs={
                 'version': 'mitaka-9.0',
@@ -481,7 +481,9 @@ class TestTransactionManager(base.BaseIntegrationTest):
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute_on_one_node(self, rpc_mock):
         node = self.env.create_node(
-            cluster_id=self.cluster.id, pending_roles=["compute"])
+            cluster_id=self.cluster.id, pending_roles=["compute"],
+            status=consts.NODE_STATUSES.ready
+        )
 
         task = self.manager.execute(graphs=[
             {
@@ -585,7 +587,8 @@ class TestTransactionManager(base.BaseIntegrationTest):
             }))
 
         node = self.env.create_node(
-            cluster_id=self.cluster.id, roles=["controller"]
+            cluster_id=self.cluster.id, roles=["controller"],
+            status=consts.NODE_STATUSES.stopped
         )
 
         task = self.manager.execute(graphs=[

@@ -217,9 +217,8 @@ class NailgunReceiver(object):
             )
 
         elif task.status in ('error',):
-            cluster.status = 'error'
-            db().add(cluster)
-            db().flush()
+            objects.Cluster.to_status(cluster, 'error')
+
             if not task.message:
                 task.message = "Failed to delete nodes:\n{0}".format(
                     cls._generate_error_message(

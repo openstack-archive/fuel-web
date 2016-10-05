@@ -30,6 +30,7 @@ from nailgun.extensions.manager import fire_callback_on_nodegroup_delete
 from nailgun.extensions.manager import fire_callback_on_cluster_create
 from nailgun.extensions.manager import fire_callback_on_cluster_delete
 from nailgun.extensions.manager import fire_callback_on_remove_node_from_cluster
+from nailgun.extensions.manager import fire_callback_on_cluster_status_change
 from nailgun.extensions.manager import \
     fire_callback_on_before_deployment_serialization
 from nailgun.extensions.manager import \

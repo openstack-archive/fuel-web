@@ -216,7 +216,7 @@ class Task(NailgunObject):
         if status == consts.CLUSTER_STATUSES.operational:
             Cluster.set_deployed_before_flag(cluster, value=True)
 
-        Cluster.update(cluster, {'status': status})
+        Cluster.to_status(cluster, status)
 
     @classmethod
     def _update_cluster_data(cls, instance):

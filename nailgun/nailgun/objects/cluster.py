@@ -37,6 +37,7 @@ from nailgun.extensions import callback_wrapper
 from nailgun.extensions import fire_callback_on_cluster_create
 from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_cluster_patch_attributes
+from nailgun.extensions import fire_callback_on_cluster_status_change
 from nailgun.extensions import fire_callback_on_node_collection_delete
 from nailgun.logger import logger
 from nailgun.objects import DeploymentGraph
@@ -1596,6 +1597,12 @@ class Cluster(NailgunObject):
             'version': settings.VERSION,
             'networking_parameters': instance.network_config,
         }
+
+    @classmethod
+    def to_status(cls, instance, status):
+        fire_callback_on_cluster_status_change()
+        cls.update(instance, {'status': status})
+        db().flush()
 
 
 class ClusterCollection(NailgunCollection):

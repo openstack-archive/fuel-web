@@ -226,3 +226,8 @@ def fire_callback_on_cluster_serialization_for_deployment(cluster, data):
 def fire_callback_on_cluster_serialization_for_provisioning(cluster, data):
     for pipeline in _collect_data_pipelines_for_cluster(cluster):
         pipeline.process_provisioning_for_cluster(cluster, data)
+
+
+def fire_callback_on_cluster_status_change(cluster, new_status):
+    for extension in _collect_extensions_for_cluster(cluster):
+        extension.on_cluster_status_change(cluster, new_status)

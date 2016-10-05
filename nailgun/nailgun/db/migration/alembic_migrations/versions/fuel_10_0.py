@@ -25,6 +25,7 @@ from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_enum
 
 
 # revision identifiers, used by Alembic.
@@ -32,12 +33,27 @@ revision = 'c6edea552f1e'
 down_revision = 'f2314e5d63c9'
 
 
+cluster_statuses_old = (
+    'new',
+    'deployment',
+    'stopped',
+    'operational',
+    'error',
+    'remove',
+    'partially_deployed',
+)
+
+cluster_statuses_new = cluster_statuses_old + ('maintenance',)
+
+
 def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_release_required_component_types()
+    upgrade_cluster_statuses()
 
 
 def downgrade():
+    downgrade_cluster_statuses()
     downgrade_release_required_component_types()
     downgrade_plugin_links_constraints()
 
@@ -107,3 +123,23 @@ def upgrade_release_required_component_types():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def upgrade_cluster_statuses():
+    upgrade_enum(
+        "clusters",
+        "status",
+        "cluster_status",
+        cluster_statuses_old,
+        cluster_statuses_new,
+    )
+
+
+def downgrade_cluster_statuses():
+    upgrade_enum(
+        "clusters",
+        "status",
+        "cluster_status",
+        cluster_statuses_new,
+        cluster_statuses_old,
+    )

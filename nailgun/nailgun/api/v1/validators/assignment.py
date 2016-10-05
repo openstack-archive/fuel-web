@@ -12,7 +12,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from operator import attrgetter
 import sqlalchemy as sa
 
 from nailgun.api.v1.validators.base import BasicValidator
@@ -30,9 +29,6 @@ from nailgun.utils.restrictions import RestrictionBase
 
 class AssignmentValidator(BasicValidator):
 
-    predicate = None
-    done_error_msg_template = None
-
     @staticmethod
     def check_all_nodes(nodes, node_ids):
         not_found_node_ids = set(node_ids) - set(n.id for n in nodes)
@@ -45,23 +41,14 @@ class AssignmentValidator(BasicValidator):
             )
 
     @classmethod
-    def check_if_already_done(cls, nodes):
-        already_done_nodes = [n.id for n in nodes if cls.predicate(n)]
-        already_done_nodes.sort()
-        if already_done_nodes:
-            raise errors.InvalidData(
-                cls.done_error_msg_template
-                .format(", ".join(map(str, already_done_nodes))),
-                log_message=True
-            )
-
-    @classmethod
     def check_unique_hostnames(cls, nodes, cluster_id):
         hostnames = [node.hostname for node in nodes]
+        node_ids = [node.id for node in nodes]
         conflicting_hostnames = [
             x[0] for x in
             db.query(
                 Node.hostname).filter(sa.and_(
+                    ~Node.id.in_(node_ids),
                     Node.hostname.in_(hostnames),
                     Node.cluster_id == cluster_id,
                 )
@@ -76,11 +63,6 @@ class AssignmentValidator(BasicValidator):
 
 class NodeAssignmentValidator(AssignmentValidator):
 
-    predicate = attrgetter('cluster')
-    done_error_msg_template = "Nodes with ids {0} already assigned to " \
-                              "environments. Nodes must be unassigned " \
-                              "before they can be assigned again."
-
     @classmethod
     def validate_collection_update(cls, data, cluster_id=None):
         data = cls.validate_json(data)
@@ -89,7 +71,6 @@ class NodeAssignmentValidator(AssignmentValidator):
         received_node_ids = dict_data.keys()
         nodes = db.query(Node).filter(Node.id.in_(received_node_ids))
         cls.check_all_nodes(nodes, received_node_ids)
-        cls.check_if_already_done(nodes)
         cluster = objects.Cluster.get_by_uid(
             cluster_id, fail_if_not_found=True
         )
@@ -160,13 +141,6 @@ class NodeAssignmentValidator(AssignmentValidator):
 
 class NodeUnassignmentValidator(AssignmentValidator):
 
-    done_error_msg_template = "Can't unassign nodes with ids {0} " \
-                              "if they not assigned."
-
-    @staticmethod
-    def predicate(node):
-        return not node.cluster or node.pending_deletion
-
     @classmethod
     def validate_collection_update(cls, data, cluster_id=None):
         list_data = cls.validate_json(data)
@@ -190,5 +164,4 @@ class NodeUnassignmentValidator(AssignmentValidator):
                     ), cluster_id), log_message=True
             )
         cls.check_all_nodes(nodes, node_ids_set)
-        cls.check_if_already_done(nodes)
         return nodes

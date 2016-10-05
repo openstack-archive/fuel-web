@@ -179,3 +179,25 @@ class TestClusterAttributesDowngrade(base.BaseAlembicMigrationTest):
 class TestDeploymentSequencesDowngrade(base.BaseAlembicMigrationTest):
     def test_deployment_sequences_table_removed(self):
         self.assertNotIn('deployment_sequences', self.meta.tables)
+
+
+class TestPluginAttributesMigration(base.BaseAlembicMigrationTest):
+    def test_downgrade_plugin_with_nic_attributes(self):
+        plugins_table = self.meta.tables['plugins']
+        self.assertNotIn('bond_attributes_metadata', plugins_table.c)
+        self.assertNotIn('nic_attributes_metadata', plugins_table.c)
+        self.assertNotIn('node_attributes_metadata', plugins_table.c)
+        releases_table = self.meta.tables['releases']
+        self.assertNotIn('nic_attributes', releases_table.c)
+        self.assertNotIn('bond_attributes', releases_table.c)
+        node_nic_interfaces_table = self.meta.tables['node_nic_interfaces']
+        self.assertNotIn('attributes', node_nic_interfaces_table.c)
+        self.assertNotIn('meta', node_nic_interfaces_table.c)
+        self.assertNotIn(
+            'attributes', self.meta.tables['node_bond_interfaces'].c)
+        self.assertNotIn(
+            'node_cluster_plugins', self.meta.tables)
+        self.assertNotIn(
+            'node_bond_interface_cluster_plugins', self.meta.tables)
+        self.assertNotIn(
+            'node_nic_interface_cluster_plugins', self.meta.tables)

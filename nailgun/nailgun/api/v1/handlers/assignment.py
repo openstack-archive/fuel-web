@@ -41,13 +41,13 @@ class NodeAssignmentHandler(BaseHandler):
                * 400 (invalid nodes data specified)
                * 404 (cluster/node not found in db)
         """
-        self.get_object_or_404(
+        cluster = self.get_object_or_404(
             objects.Cluster,
             cluster_id
         )
         data = self.checked_data(
             self.validator.validate_collection_update,
-            cluster_id=cluster_id
+            cluster_id=cluster.id
         )
         nodes = self.get_objects_list_or_404(
             objects.NodeCollection,
@@ -55,7 +55,7 @@ class NodeAssignmentHandler(BaseHandler):
         )
 
         for node in nodes:
-            objects.Node.update(node, {"cluster_id": cluster_id,
+            objects.Node.update(node, {"cluster_id": cluster.id,
                                        "pending_roles": data[node.id],
                                        "pending_addition": True})
         # fuel-client expects valid json for all put and post request

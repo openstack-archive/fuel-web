@@ -48,6 +48,11 @@ _DEFAULT_NODE_FILTER = (
     "($.status in [ready, provisioned, stopped] or $.error_type = 'deploy')"
 )
 
+_DEFAULT_NODE_FILTER = (
+    "not $.pending_addition and not $.pending_deletion and "
+    "($.status in [ready, provisioned, stopped] or $.error_type = 'deploy')"
+)
+
 
 def _get_node_attributes(graph, kind):
     r = get_in(graph, kind, 'node_attributes')

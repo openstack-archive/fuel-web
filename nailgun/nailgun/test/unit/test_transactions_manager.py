@@ -358,6 +358,38 @@ class TestGetNodesToRun(BaseUnitTest):
             mock.ANY, 'id', []
         )
 
+    @mock.patch('nailgun.transactions.manager.objects')
+    def test_default_node_filter(self, obj_mock):
+        nodes_obj_mock = obj_mock.NodeCollection
+        cluster = mock.MagicMock()
+        nodes_list = [
+            {
+                'id': 1, 'pending_deletion': False, 'pending_addition': False,
+                'status': 'provisioned', 'error_type': None
+            },
+            {
+                'id': 2, 'pending_deletion': False, 'pending_addition': False,
+                'status': 'ready', 'error_type': None
+            },
+            {
+                'id': 3, 'pending_deletion': False, 'pending_addition': False,
+                'status': 'stopped', 'error_type': None
+            },
+            {
+                'id': 4, 'pending_deletion': True, 'pending_addition': False,
+                'status': 'stopped', 'error_type': None
+            },
+            {
+                'id': 5, 'pending_deletion': False, 'pending_addition': True,
+                'status': 'stopped', 'error_type': None
+            },
+        ]
+        nodes_obj_mock.to_list.return_value = nodes_list
+        manager._get_nodes_to_run(cluster, None)
+        nodes_obj_mock.filter_by_list.assert_called_once_with(
+            mock.ANY, 'id', [1, 2, 3]
+        )
+
 
 class TestGetCurrentState(BaseUnitTest):
     def setUp(self):

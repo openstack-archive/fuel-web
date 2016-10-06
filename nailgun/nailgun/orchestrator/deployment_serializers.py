@@ -35,7 +35,7 @@ from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
     VmwareDeploymentSerializerMixin
 from nailgun.orchestrator.provisioning_serializers import \
-    ProvisioningSerializer90
+    ProvisionLCMSerializer
 
 from nailgun.extensions.network_manager.serializers import neutron_serializers
 from nailgun.extensions.network_manager.serializers import nova_serializers
@@ -678,7 +678,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             ),
             key=lambda x: self._priorities[x.config_type]
         )
-        self._provision_serializer = ProvisioningSerializer90()
+        self._provision_serializer = ProvisionLCMSerializer()
 
     def finalize(self):
         self._configs = None

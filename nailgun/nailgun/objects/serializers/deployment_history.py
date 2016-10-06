@@ -25,7 +25,6 @@ class DeploymentHistorySerializer(BasicSerializer):
         "time_start",
         "time_end",
         "status",
-        "custom"
     )
 
     @classmethod
@@ -37,4 +36,6 @@ class DeploymentHistorySerializer(BasicSerializer):
             data_dict['time_start'] = instance.time_start.isoformat()
         if instance.time_end:
             data_dict['time_end'] = instance.time_end.isoformat()
+        if instance.custom:
+            data_dict.update(instance.custom)
         return data_dict

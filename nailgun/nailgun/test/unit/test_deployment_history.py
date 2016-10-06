@@ -63,7 +63,6 @@ class TestDeploymentTasksHistory(base.BaseTestCase):
                     'status': consts.HISTORY_TASK_STATUSES.pending,
                     'time_start': None,
                     'time_end': None,
-                    'custom': {}
                 })
 
         expected.append({
@@ -89,7 +88,6 @@ class TestDeploymentTasksHistory(base.BaseTestCase):
                 'status': consts.HISTORY_TASK_STATUSES.pending,
                 'time_start': None,
                 'time_end': None,
-                'custom': {}
             }
             for task in self.tasks[0: 2]
         ]
@@ -108,7 +106,6 @@ class TestDeploymentTasksHistory(base.BaseTestCase):
                 'status': consts.HISTORY_TASK_STATUSES.pending,
                 'time_start': None,
                 'time_end': None,
-                'custom': {}
             }
             for n in [0, 2]
             for task in self.tasks[n: n + 2]
@@ -143,7 +140,38 @@ class TestDeploymentTasksHistory(base.BaseTestCase):
                 'status': consts.HISTORY_TASK_STATUSES.pending,
                 'time_start': None,
                 'time_end': None,
-                'custom': {}
+            },
+            {
+                'task_name': 'task31',
+                'parameters': {'name': 'task31'},
+                'node_id': '-',
+                'status': consts.HISTORY_TASK_STATUSES.skipped,
+                'time_start': None,
+                'time_end': None,
+            }
+        ]
+
+        self.assertItemsEqual(expected, history)
+
+    def test_serialization(self):
+        objects.DeploymentHistory.update_if_exist(
+            self.transaction.id, '0', 'task11',
+            status=consts.HISTORY_TASK_STATUSES.ready,
+            custom={'message': 'test message'}, summary=None
+        )
+        history = objects.DeploymentHistoryCollection.get_history(
+            self.transaction, tasks_names=['task31', 'task11']
+        )
+
+        expected = [
+            {
+                'task_name': 'task11',
+                'parameters': {'name': 'task11'},
+                'node_id': '0',
+                'status': consts.HISTORY_TASK_STATUSES.pending,
+                'time_start': None,
+                'time_end': None,
+                'message': 'test message'
             },
             {
                 'task_name': 'task31',

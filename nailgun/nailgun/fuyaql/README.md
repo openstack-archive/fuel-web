@@ -91,6 +91,8 @@ parentheses returns non-False
 ```changedAny($.first, $.second, $.Nth)``` - returns True if any expression in
 parentheses returns non-False
 
+```roleRelocated($.nodes, role)``` - returns true if node with this role
+has been changed
 
 # Changelog
 

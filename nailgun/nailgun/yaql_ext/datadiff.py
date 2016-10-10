@@ -44,6 +44,18 @@ def get_old(expression, context):
 
 @specs.parameter('expression', yaqltypes.Lambda())
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
+def role_relocated(finalizer, expression, context, role):
+    def find_node(data, role):
+        return [node for node in data if role in data[node]['node_roles']]
+    new_data = finalizer(get_new(expression, context))
+    old_data = finalizer(get_old(expression, context))
+    if old_data == _UNDEFINED:
+        return False
+    return find_node(new_data, role) != find_node(old_data, role)
+
+
+@specs.parameter('expression', yaqltypes.Lambda())
+@specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def changed(finalizer, expression, context):
     new_data = finalizer(get_new(expression, context))
     old_data = finalizer(get_old(expression, context))
@@ -95,6 +107,7 @@ def is_undef(finalizer, receiver):
 def register(context):
     context.register_function(get_new, name='new')
     context.register_function(get_old, name='old')
+    context.register_function(role_relocated)
     context.register_function(changed)
     context.register_function(changed_all)
     context.register_function(changed_any)

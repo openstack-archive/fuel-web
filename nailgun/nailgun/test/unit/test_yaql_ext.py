@@ -98,6 +98,47 @@ class TestYaqlExt(BaseUnitTest):
             self.evaluate('deleted($.nodes.where($.role=compute))')
         )
 
+    def test_decreased_roles(self):
+        variables = {
+            '$%new': {
+                'nodes': {
+                    'node-1': {
+                        'node_roles':
+                            [
+                                'primary-controller'
+                            ]
+                    },
+                    'node-2': {
+                        'node_roles':
+                            [
+                                'primary-database'
+                            ]
+                    }
+                }
+            },
+            '$%old': {
+                'nodes': {
+                    'node-1': {
+                        'node_roles':
+                            [
+                                'primary-controller',
+                                'primary-database'
+                            ]
+                    },
+                    'node-2': {
+                        'node_roles':
+                            [
+                                'primary-keystone',
+                                'database'
+                            ]
+                    }
+                }
+            }
+        }
+        self.assertTrue(self.evaluate(
+            'roleRelocated($.nodes, "primary-database")',
+            variables=variables))
+
     def test_changed(self):
         self.assertTrue(self.evaluate('changed($.configs.nova.value)'))
         self.assertFalse(self.evaluate('changed($.configs.nova.value2)'))

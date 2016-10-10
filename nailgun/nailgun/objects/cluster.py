@@ -1211,7 +1211,7 @@ class Cluster(NailgunObject):
         """Return proper volumes metadata for cluster
 
         Metadata consists of general volumes metadata from release
-        and volumes metadata from plugins which are releated to this cluster
+        and volumes metadata from plugins which are related to this cluster
 
         :param instance: Cluster DB instance
         :returns: dict -- object with merged volumes metadata

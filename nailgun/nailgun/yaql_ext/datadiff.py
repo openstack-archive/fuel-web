@@ -44,6 +44,26 @@ def get_old(expression, context):
 
 @specs.parameter('expression', yaqltypes.Lambda())
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
+def decreased_roles(finalizer, expression, context, role):
+    new_data = finalizer(get_new(expression, context))
+    old_data = finalizer(get_old(expression, context))
+    if old_data == _UNDEFINED:
+        return True
+    new_count = 0
+    old_count = 0
+    for roles in new_data:
+        if role in roles:
+                new_count += 1
+
+    for roles in old_data:
+            if role in roles:
+                old_count += 1
+
+    return new_count < old_count
+
+
+@specs.parameter('expression', yaqltypes.Lambda())
+@specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def changed(finalizer, expression, context):
     new_data = finalizer(get_new(expression, context))
     old_data = finalizer(get_old(expression, context))

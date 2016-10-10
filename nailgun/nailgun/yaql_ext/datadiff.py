@@ -44,6 +44,18 @@ def get_old(expression, context):
 
 @specs.parameter('expression', yaqltypes.Lambda())
 @specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
+def decreased_roles(finalizer, expression, context, *roles):
+    def counter(data, roles):
+        return sum(data.count(role) for role in roles)
+    new_data = finalizer(get_new(expression, context))
+    old_data = finalizer(get_old(expression, context))
+    if old_data == _UNDEFINED:
+        return True
+    return counter(new_data, roles) < counter(old_data, roles)
+
+
+@specs.parameter('expression', yaqltypes.Lambda())
+@specs.inject('finalizer', yaqltypes.Delegate('#finalize'))
 def changed(finalizer, expression, context):
     new_data = finalizer(get_new(expression, context))
     old_data = finalizer(get_old(expression, context))
@@ -95,6 +107,7 @@ def is_undef(finalizer, receiver):
 def register(context):
     context.register_function(get_new, name='new')
     context.register_function(get_old, name='old')
+    context.register_function(decreased_roles)
     context.register_function(changed)
     context.register_function(changed_all)
     context.register_function(changed_any)

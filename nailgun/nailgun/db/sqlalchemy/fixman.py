@@ -19,11 +19,11 @@ import itertools
 import jinja2
 import os.path
 import Queue
-from six import StringIO
 import sys
 import yaml
 
 from oslo_serialization import jsonutils
+import six
 from sqlalchemy import orm
 import sqlalchemy.types
 
@@ -64,7 +64,7 @@ def template_fixture(fileobj, **kwargs):
     if not kwargs.get('settings'):
         kwargs["settings"] = settings
     t = jinja2.Template(fileobj.read())
-    return StringIO(t.render(**kwargs))
+    return six.StringIO(t.render(**kwargs))
 
 
 def load_fixture(fileobj, loader=None):
@@ -260,7 +260,7 @@ def dump_fixture(model_name):
                 if value is None:
                     continue
                 if not isinstance(value, (
-                        list, dict, str, unicode, int, float, bool)):
+                        list, dict, int, float, bool) + six.string_types):
                     value = ""
                 obj_dump['fields'][field] = value
     sys.stdout.write(jsonutils.dumps(dump, indent=4))

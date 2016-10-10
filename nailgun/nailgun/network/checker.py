@@ -18,7 +18,9 @@
 from itertools import combinations
 from itertools import groupby
 from itertools import product
+
 import netaddr
+import six
 
 from nailgun import consts
 from nailgun import errors
@@ -212,7 +214,7 @@ class NetworkCheck(object):
                 for v in self.network_config['floating_ranges']
             ]
         }
-        for name, ranges in nets.iteritems():
+        for name, ranges in six.iteritems(nets):
             ids = [pub['id']] if name == consts.NETWORKS.public else []
             for npair in combinations(ranges, 2):
                 if self.net_man.is_range_intersection(npair[0], npair[1]):
@@ -274,7 +276,7 @@ class NetworkCheck(object):
             tagged_nets[consts.NETWORKS.fixed] = [
                 self.network_config['fixed_networks_vlan_start'],
                 self.network_config['fixed_networks_amount'] - 1]
-        for name, vlan_range in tagged_nets.iteritems():
+        for name, vlan_range in six.iteritems(tagged_nets):
             # check VLAN ID range against [2-4094]
             if vlan_range[0] < 2 or vlan_range[0] + vlan_range[1] > 4094:
                 self.err_msgs.append(
@@ -339,7 +341,8 @@ class NetworkCheck(object):
                     consts.NEUTRON_SEGMENT_TYPES.vlan:
                 # check networks tags not in Neutron L2 private VLAN ID range
                 vrange = self.network_config['vlan_range']
-                net_intersect = [name for name, vlan in tagged_nets.iteritems()
+                net_intersect = [name for name, vlan
+                                 in six.iteritems(tagged_nets)
                                  if vrange[0] <= vlan <= vrange[1]]
                 if net_intersect:
                     nets_with_errors = ", ". \

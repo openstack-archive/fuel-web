@@ -2106,7 +2106,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
             [ng.vlan_start for ng in cluster.network_groups if ng.vlan_start]
         )
         private_vlan_range = cluster.network_config["vlan_range"]
-        vlan_set.update(xrange(*private_vlan_range))
+        vlan_set.update(six.moves.range(*private_vlan_range))
         vlan_set.add(private_vlan_range[1])
 
         node = self.serializer.serialize(cluster, cluster.nodes)['nodes'][0]

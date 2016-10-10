@@ -619,7 +619,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
             self.assertTrue(type(volume['min_size']) == int)
             self.assertGreaterEqual(volume['min_size'], 0)
             # and label
-            self.assertTrue(type(volume['label']) in (str, unicode))
+            self.assertIsInstance(volume['label'], six.string_types)
             self.assertGreater(volume['label'], 0)
 
     def test_volumes_information_for_cinder_role(self):

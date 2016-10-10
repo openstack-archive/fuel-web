@@ -257,7 +257,7 @@ class TestTaskDeploy80(BaseIntegrationTest):
             task.message)
 
     def test_deploy_check_failed_with_incompatible_role(self):
-        node = self.env.nodes[1]
+        node = self.env.nodes[0]
 
         self.app.put(
             reverse(

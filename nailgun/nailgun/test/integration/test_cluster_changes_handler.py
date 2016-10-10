@@ -1622,9 +1622,8 @@ class TestHandlers(BaseIntegrationTest):
     def test_occurs_error_not_enough_osds_for_ceph(self):
         cluster = self.env.create(
             nodes_kwargs=[
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['ceph-osd'], 'pending_addition': True}
-            ])
+                {'roles': ['controller', 'ceph-osd'],
+                 'pending_addition': True}])
 
         self.app.patch(
             reverse(
@@ -1691,10 +1690,8 @@ class TestHandlers(BaseIntegrationTest):
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(
             nodes_kwargs=[
-                {'roles': ['controller'], 'pending_addition': True},
-                {'roles': ['ceph-osd'], 'pending_addition': True},
-            ])
-
+                {'roles': ['controller', 'ceph-osd'],
+                 'pending_addition': True}])
         self.app.patch(
             reverse(
                 'ClusterAttributesHandler',

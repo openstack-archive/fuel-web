@@ -91,6 +91,8 @@ parentheses returns non-False
 ```changedAny($.first, $.second, $.Nth)``` - returns True if any expression in
 parentheses returns non-False
 
+```decreasedRoles($.nodes, role)``` - return true if count of  these role in
+new config decreased
 
 # Changelog
 

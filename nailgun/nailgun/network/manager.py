@@ -48,6 +48,7 @@ from nailgun.network import utils
 from nailgun import objects
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
 from nailgun.settings import settings
+from nailgun.utils import dict_merge
 from nailgun.utils.restrictions import RestrictionBase
 from nailgun.utils.zabbix import ZabbixManager
 
@@ -1152,12 +1153,20 @@ class NetworkManager(object):
         interface.driver = interface_attrs.get('driver')
         interface.bus_info = interface_attrs.get('bus_info')
         interface.pxe = interface_attrs.get('pxe', False)
+
+        interface_properties = dict_merge(
+            cls.get_default_interface_properties(),
+            interface.interface_properties or {}
+        )
+
         if interface_attrs.get('interface_properties'):
-            interface.interface_properties = \
+            interface_properties = dict_merge(
+                interface_properties,
                 interface_attrs['interface_properties']
-        elif not interface.interface_properties:
-            interface.interface_properties = \
-                cls.get_default_interface_properties()
+            )
+        # update interface_properties in DB only if something was changed
+        if interface.interface_properties != interface_properties:
+            interface.interface_properties = interface_properties
 
         new_offloading_modes = interface_attrs.get('offloading_modes')
         old_modes_states = interface.\

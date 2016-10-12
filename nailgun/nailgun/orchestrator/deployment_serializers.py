@@ -308,6 +308,14 @@ class DeploymentMultinodeSerializer(object):
                 extensions.node_extension_call('get_node_volumes', node))
         return {'glance': {'image_cache_max_size': image_cache_max_size}}
 
+    def generate_properties_arguments(self, properties_data):
+        """build a string of properties from a key value hash"""
+        properties = []
+        for key, value in six.iteritems(properties_data):
+            properties.append('--property {key}={value}'.format(
+                key=key, value=value))
+        return ' '.join(properties)
+
     def generate_test_vm_image_data(self, node):
         # Instantiate all default values in dict.
         image_data = {
@@ -319,6 +327,7 @@ class DeploymentMultinodeSerializer(object):
             'os_name': 'cirros',
             'min_ram': 64,
             'glance_properties': '',
+            'properties': {},
         }
         # Generate a right path to image.
         c_attrs = node.cluster.attributes
@@ -328,7 +337,7 @@ class DeploymentMultinodeSerializer(object):
             img_dir = '/opt/vm/'
         image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
 
-        glance_properties = []
+        properties_data = {}
 
         # Alternate VMWare specific values.
         if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
@@ -336,11 +345,17 @@ class DeploymentMultinodeSerializer(object):
                 'disk_format': 'vmdk',
                 'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
             })
-            glance_properties.append('--property vmware_disktype=sparse')
-            glance_properties.append('--property vmware_adaptertype=lsiLogic')
-            glance_properties.append('--property hypervisor_type=vmware')
+            properties_data = {
+                'vmware_disktype': 'sparse',
+                'vmware_adaptertype': 'lsiLogic',
+                'hypervisor_type': 'vmware'
+            }
 
-        image_data['glance_properties'] = ' '.join(glance_properties)
+        # NOTE(aschultz): properties was added as part of N and should be
+        # used infavor of glance_properties
+        image_data['glance_properties'] = self.generate_properties_arguments(
+            properties_data)
+        image_data['properties'] = properties_data
 
         return {'test_vm_image': image_data}
 
@@ -549,10 +564,18 @@ class DeploymentHASerializer61(DeploymentHASerializer,
                 'disk_format': 'vmdk',
                 'img_path': img_path,
             })
-            image_vmdk_data['glance_properties'] = ' '.join([
-                '--property vmware_disktype=sparse',
-                '--property vmware_adaptertype=lsiLogic',
-                '--property hypervisor_type=vmware'])
+            properties_data = {
+                'vmware_disktype': 'sparse',
+                'vmware_adaptertype': 'lsiLogic',
+                'hypervisor_type': 'vmware'
+            }
+            glance_properties = self.generate_properties_arguments(
+                properties_data)
+
+            # NOTE(aschultz): properties was added as part of N and should be
+            # used infavor of glance_properties
+            image_vmdk_data['glance_properties'] = glance_properties
+            image_vmdk_data['properties'] = properties_data
             images_data['test_vm_image'].append(image_vmdk_data)
             images_data['test_vm_image'].append(image_data['test_vm_image'])
         else:

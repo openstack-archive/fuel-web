@@ -45,7 +45,8 @@ _DEFAULT_NODE_ATTRIBUTES = {
 
 _DEFAULT_NODE_FILTER = (
     "not $.pending_addition and not $.pending_deletion and "
-    "($.status in [ready, provisioned, stopped] or $.error_type = 'deploy')"
+    "($.status in ['ready', 'provisioned', 'stopped'] "
+    "or $.error_type = 'deploy')"
 )
 
 

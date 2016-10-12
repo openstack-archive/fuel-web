@@ -36,7 +36,12 @@ class VersionHandler(BaseHandler):
 
         :http: * 200 (OK)
         """
-        version = settings.VERSION
+        version = settings.VERSION.copy()
         method = settings.AUTH['AUTHENTICATION_METHOD']
         version['auth_required'] = method in ['fake', 'keystone']
+        if 'display_version' in version:
+            version['release'] = version.pop('display_version')
+        if 'openstack_display_version' in version:
+            version['openstack_version'] = version.pop(
+                'openstack_display_version')
         return version

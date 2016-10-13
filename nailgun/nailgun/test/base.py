@@ -239,6 +239,62 @@ class EnvironmentManager(object):
             expect_errors=expect_errors
         )
 
+    def get_tag(self, tag_id, expect_errors=False):
+        return self.app.get(
+            reverse(
+                'TagHandler',
+                {'obj_id': tag_id}),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def create_tag(self, owner_type, owner_id, data, expect_errors=False):
+        url = "/api/{}/{}/tags/"
+        return self.app.post(
+            url.format(owner_type, owner_id),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def update_tag(self, tag_id, data, expect_errors=False):
+        return self.app.put(
+            reverse(
+                'TagHandler',
+                {'obj_id': tag_id}),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def delete_tag(self, tag_id, expect_errors=False):
+        return self.app.delete(
+            reverse(
+                'TagHandler',
+                {'obj_id': tag_id}),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def assign_tag(self, node_id, tag_ids, expect_errors=False):
+        return self.app.post(
+            reverse(
+                'NodeTagAssignmentHandler',
+                {'node_id': node_id}),
+            jsonutils.dumps(tag_ids),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def unassign_tag(self, node_id, tag_ids, expect_errors=False):
+        return self.app.delete(
+            reverse(
+                'NodeTagAssignmentHandler',
+                {'tag_ids': tag_ids}),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
     def create_cluster(self, api=True, exclude=None, **kwargs):
         cluster_data = {
             'name': 'cluster-api-' + str(randint(0, 1000000)),
@@ -385,6 +441,14 @@ class EnvironmentManager(object):
             nodes.append(self.create_node(meta=meta, mac=if_list[0]['mac'],
                                           **kwargs))
         return nodes
+
+    def assign_nodes(self, cluster_id, node_ids, expect_errors=False):
+        return self.app.put(
+            reverse('ClusterHandler', kwargs={'obj_id': cluster_id}),
+            jsonutils.dumps({'nodes': node_ids}),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
 
     def create_task(self, **kwargs):
         task = Task(**kwargs)

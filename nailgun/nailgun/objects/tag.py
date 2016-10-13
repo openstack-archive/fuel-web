@@ -56,7 +56,31 @@ class TagCollection(NailgunCollection):
         )
 
     @classmethod
+    def get_tag_nodes_query(cls, tag_id):
+        return db().query(models.Node).join(
+            models.NodeTag
+        ).filter(
+            models.NodeTag.tag_id == tag_id
+        )
+
+    @classmethod
+    def get_node_tags_ids_query(cls, node_id):
+        return cls.get_node_tags_query(node_id).with_entities(
+            models.NodeTag.tag_id
+        )
+
+    @classmethod
+    def get_node_tags_ids_in_range(cls, node_id, tag_ids):
+        return cls.get_node_tags_ids_query(node_id).filter(
+            models.NodeTag.tag_id.in_(tag_ids)
+        )
+
+    @classmethod
     def get_cluster_tags(cls, cluster, **kwargs):
         return cls.get_cluster_tags_query(cluster).filter_by(**kwargs)
+
+    @classmethod
+    def get_tagged_nodes(cls, tag):
+        return cls.get_tag_nodes_query(tag.id)
 
     single = Tag

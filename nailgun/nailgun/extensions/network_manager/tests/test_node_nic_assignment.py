@@ -53,9 +53,9 @@ class TestClusterHandlers(BaseIntegrationTest):
         for resp_nic in resp.json_body:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
-                self.assertTrue("fuelweb_admin" in net_names)
+                self.assertIn("fuelweb_admin", net_names)
             else:
-                self.assertTrue("public" in net_names)
+                self.assertIn("public", net_names)
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
@@ -121,9 +121,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         for resp_nic in resp.json_body:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
-                self.assertTrue("fuelweb_admin" in net_names)
+                self.assertIn("fuelweb_admin", net_names)
             else:
-                self.assertTrue("public" in net_names)
+                self.assertIn("public", net_names)
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def test_network_assignment_when_node_added(self):
@@ -153,9 +153,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         for resp_nic in response:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
-                self.assertTrue("fuelweb_admin" in net_names)
+                self.assertIn("fuelweb_admin", net_names)
             else:
-                self.assertTrue("public" in net_names)
+                self.assertIn("public", net_names)
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def _add_node_with_pxe_on_eth2(self, cluster_id, **kwargs):

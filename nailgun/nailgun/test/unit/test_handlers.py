@@ -37,21 +37,21 @@ class TestHandlers(BaseIntegrationTest):
         for handler in urls:
             test_url = reverse(handler, urls[handler])
             resp = self.app.get(test_url, expect_errors=True)
-            self.assertTrue(resp.status_code in [404, 405])
+            self.assertIn(resp.status_code, [404, 405])
             resp = self.app.delete(test_url, expect_errors=True)
-            self.assertTrue(resp.status_code in [404, 405])
+            self.assertIn(resp.status_code, [404, 405])
             resp = self.app.put(
                 test_url,
                 json.dumps({}),
                 expect_errors=True
             )
-            self.assertTrue(resp.status_code in [404, 405])
+            self.assertIn(resp.status_code, [404, 405])
             resp = self.app.post(
                 test_url,
                 json.dumps({}),
                 expect_errors=True
             )
-            self.assertTrue(resp.status_code in [404, 405])
+            self.assertIn(resp.status_code, [404, 405])
 
     def test_http_response(self):
         web.ctx.headers = []

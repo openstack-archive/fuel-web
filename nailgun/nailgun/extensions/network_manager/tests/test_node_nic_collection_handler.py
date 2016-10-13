@@ -189,9 +189,9 @@ class TestNodeCollectionNICsDefaultHandler(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), 2)
 
         macs = [iface['mac'] for node in resp.json_body for iface in node]
-        self.assertTrue('01:01:01:01:01:01' in macs)
-        self.assertTrue('02:02:02:02:02:02' in macs)
-        self.assertFalse('03:03:03:03:03:03' in macs)
+        self.assertIn('01:01:01:01:01:01', macs)
+        self.assertIn('02:02:02:02:02:02', macs)
+        self.assertNotIn('03:03:03:03:03:03', macs)
 
     def test_get_wo_cluster_id(self):
         # get nics of cluster and check that response is ok
@@ -204,6 +204,6 @@ class TestNodeCollectionNICsDefaultHandler(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), 3)
 
         macs = [iface['mac'] for node in resp.json_body for iface in node]
-        self.assertTrue('01:01:01:01:01:01' in macs)
-        self.assertTrue('02:02:02:02:02:02' in macs)
-        self.assertTrue('03:03:03:03:03:03' in macs)
+        self.assertIn('01:01:01:01:01:01', macs)
+        self.assertIn('02:02:02:02:02:02', macs)
+        self.assertIn('03:03:03:03:03:03', macs)

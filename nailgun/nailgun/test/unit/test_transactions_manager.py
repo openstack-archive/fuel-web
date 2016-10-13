@@ -365,29 +365,44 @@ class TestGetNodesToRun(BaseUnitTest):
         nodes_list = [
             {
                 'id': 1, 'pending_deletion': False, 'pending_addition': False,
-                'status': 'provisioned', 'error_type': None
+                'status': 'provisioned', 'error_type': None,
+                'raw_status': 'provisioned'
             },
             {
                 'id': 2, 'pending_deletion': False, 'pending_addition': False,
-                'status': 'ready', 'error_type': None
+                'status': 'ready', 'error_type': None,
+                'raw_status': 'ready'
             },
             {
                 'id': 3, 'pending_deletion': False, 'pending_addition': False,
-                'status': 'stopped', 'error_type': None
+                'status': 'stopped', 'error_type': None,
+                'raw_status': 'stopped'
             },
             {
                 'id': 4, 'pending_deletion': True, 'pending_addition': False,
-                'status': 'stopped', 'error_type': None
+                'status': 'stopped', 'error_type': None,
+                'raw_status': 'stopped'
             },
             {
                 'id': 5, 'pending_deletion': False, 'pending_addition': True,
-                'status': 'stopped', 'error_type': None
+                'status': 'stopped', 'error_type': None,
+                'raw_status': 'stopped'
+            },
+            {
+                'id': 6, 'pending_deletion': False, 'pending_addition': False,
+                'status': 'error', 'error_type': consts.NODE_ERRORS.deploy,
+                'raw_status': 'ready'
+            },
+            {
+                'id': 7, 'pending_deletion': False, 'pending_addition': False,
+                'raw_status': 'ready', 'progress': 10, 'error_type': None,
+                'status': 'deploying'
             },
         ]
         nodes_obj_mock.to_list.return_value = nodes_list
         manager._get_nodes_to_run(cluster, None)
         nodes_obj_mock.filter_by_list.assert_called_once_with(
-            mock.ANY, 'id', [1, 2, 3]
+            mock.ANY, 'id', [1, 2, 3, 6, 7]
         )
 
 

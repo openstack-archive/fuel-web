@@ -17,10 +17,14 @@
 """
 Handlers dealing with tags
 """
+
+import web
+
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import serialize
 
 from nailgun.api.v1.validators.tag import TagValidator
 
@@ -38,6 +42,7 @@ class TagOwnerHandler(CollectionHandler):
     }
 
     @handle_errors
+    @serialize
     def GET(self, owner_type, owner_id):
         """:returns: JSONized list of tags.
 
@@ -80,6 +85,8 @@ class TagHandler(SingleHandler):
 
 class NodeTagAssignmentHandler(BaseHandler):
 
+    validator = TagValidator
+
     @handle_errors
     def POST(self, node_id):
         """Assign tags to node
@@ -94,7 +101,7 @@ class NodeTagAssignmentHandler(BaseHandler):
             node_id
         )
 
-        tag_ids = self.get_param_as_set('tags')
+        tag_ids = self.checked_data()
 
         tags = self.get_objects_list_or_404(
             objects.TagCollection,

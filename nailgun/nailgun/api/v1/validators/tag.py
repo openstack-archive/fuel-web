@@ -30,3 +30,7 @@ class TagValidator(BasicValidator):
             raise errors.CannotDelete(
                 "Read-only tags cannot be deleted."
             )
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        return cls.validate_json(data)

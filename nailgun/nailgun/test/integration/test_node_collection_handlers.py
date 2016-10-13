@@ -365,7 +365,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         response = resp.json_body
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue('cached' in response and response['cached'])
+        self.assertIn('cached', response and response['cached'])
 
     def test_agent_updates_node_by_interfaces(self):
         node = self.env.create_node(api=False)

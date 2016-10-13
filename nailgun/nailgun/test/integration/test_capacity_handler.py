@@ -54,13 +54,13 @@ class TestHandlers(BaseIntegrationTest):
         capacity_log = self._get_capacity_log_json()
 
         for field in ['id', 'report']:
-            self.assertTrue(field in capacity_log)
+            self.assertIn(field, capacity_log)
 
         report = capacity_log['report']
 
         report_fields = ['fuel_data', 'environment_stats', 'allocation_stats']
         for field in report_fields:
-            self.assertTrue(field in report)
+            self.assertIn(field, report)
 
         self.assertEqual(report['allocation_stats']['allocated'], 0)
         self.assertEqual(report['allocation_stats']['unallocated'], 1)
@@ -90,7 +90,7 @@ class TestHandlers(BaseIntegrationTest):
             [],
         ]
         for row in csvreader:
-            self.assertTrue(row in rows)
+            self.assertIn(row, rows)
 
     @mock_rpc()
     def test_capacity_nodes_allocation(self):

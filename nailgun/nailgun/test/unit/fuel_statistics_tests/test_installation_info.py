@@ -191,9 +191,9 @@ class TestInstallationInfo(BaseTestCase):
         self.assertEquals(cluster.fuel_version,
                           cluster_info['fuel_version'])
 
-        self.assertTrue('attributes' in cluster_info)
+        self.assertIn('attributes', cluster_info)
 
-        self.assertTrue('release' in cluster_info)
+        self.assertIn('release', cluster_info)
         self.assertEquals(cluster.release.operating_system,
                           cluster_info['release']['os'])
         self.assertEquals(cluster.release.name,
@@ -221,7 +221,7 @@ class TestInstallationInfo(BaseTestCase):
         })
         clusters_info = info.get_clusters_info()
         cluster_info = clusters_info[0]
-        self.assertTrue('network_configuration' in cluster_info)
+        self.assertIn('network_configuration', cluster_info)
         network_config = cluster_info['network_configuration']
 
         for field in ('fixed_network_size', 'fixed_networks_vlan_start',
@@ -239,7 +239,7 @@ class TestInstallationInfo(BaseTestCase):
         # cluster_info
         cluster_info = filter(lambda x: x['net_provider'] == neutron,
                               clusters_info)[0]
-        self.assertTrue('network_configuration' in cluster_info)
+        self.assertIn('network_configuration', cluster_info)
         network_config = cluster_info['network_configuration']
 
         for field in ('segmentation_type', 'net_l23_provider'):
@@ -342,8 +342,8 @@ class TestInstallationInfo(BaseTestCase):
         self.assertEquals(len(nodes_params), info['allocated_nodes_num'])
         self.assertEquals(len(unallocated_nodes_params),
                           info['unallocated_nodes_num'])
-        self.assertTrue('master_node_uid' in info)
-        self.assertTrue('contact_info_provided' in info['user_information'])
+        self.assertIn('master_node_uid', info)
+        self.assertIn('contact_info_provided', info['user_information'])
         self.assertDictEqual(settings.VERSION, info['fuel_release'])
 
     def get_model_schema(self, model, with_relationships=True):

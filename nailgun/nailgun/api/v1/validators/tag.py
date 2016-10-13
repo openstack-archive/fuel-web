@@ -17,6 +17,8 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import tag
 
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 from nailgun import errors
 
 
@@ -30,3 +32,31 @@ class TagValidator(BasicValidator):
             raise errors.CannotDelete(
                 "Read-only tags cannot be deleted."
             )
+
+        node = db().query(models.NodeTag).filter_by(tag_id=instance.id).first()
+
+        if node:
+            raise errors.CannotDelete(
+                "Tag {} is assigned to node {}.".format(instance.id, node.id)
+            )
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        parsed = cls.validate(data, instance=instance)
+        if instance.read_only:
+            raise errors.CannotUpdate(
+                "Read-only tags cannot be updated."
+            )
+        return parsed
+
+    @classmethod
+    def validate_create(cls, data, instance):
+        parsed = cls.validate(data, instance=instance)
+        # TODO(vvalyavskiy) tags with same name in one namespace
+        return parsed
+
+    @classmethod
+    def validate(cls, data, instance=None):
+        parsed = super(TagValidator, cls).validate(data)
+        cls.validate_schema(parsed, cls.single_schema)
+        return parsed

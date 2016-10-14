@@ -46,8 +46,7 @@ def deserializer_yaml(raw_data, loader=yaml.Loader, *args, **kwargs):
     :return: data
     :rtype: list|dict
     """
-    result = yaml.load(raw_data, Loader=loader)
-    return result
+    return yaml.safe_load(raw_data, Loader=loader)
 
 
 def deserializer_plaintext(raw_data, *args, **kwargs):

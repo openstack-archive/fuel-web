@@ -47,8 +47,8 @@ class PluginManager(object):
         min_task_version = StrictVersion(consts.TASK_CROSS_DEPENDENCY)
         for task in plugin.get_deployment_tasks():
             task_version = StrictVersion(task.get('version', '0.0.0'))
-            if (task.get('type') not in consts.INTERNAL_TASKS
-                    and task_version < min_task_version):
+            if (task.get('type') not in consts.INTERNAL_TASKS and
+                    task_version < min_task_version):
                 return True
         return False
 
@@ -712,9 +712,7 @@ class PluginManager(object):
         :returns: deserialized file
         """
         with io.open(path, encoding='utf-8') as f:
-            data = yaml.load(f)
-
-        return data
+            return yaml.safe_load(f)
 
     @classmethod
     def _list_plugins_on_fs(cls):

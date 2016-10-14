@@ -119,15 +119,10 @@ class TaskHelper(object):
         nodes_progress.extend(
             q_nodes_progress.filter_by(online=False).count() * [100])
 
-        # Progress of provisioned node is 0
-        # because deployment not started yet
-        nodes_progress.extend(
-            q_nodes_progress.filter_by(status='provisioned').count() * [0])
-
         nodes_progress.extend([
             n.progress for n in
-            q_nodes_progress.filter(
-                Node.status.in_(['deploying', 'ready']))])
+            q_nodes_progress.filter(Node.progress > 0).filter(
+                Node.status.in_(['deploying', 'ready', 'provisioned']))])
 
         if nodes_progress:
             return int(float(sum(nodes_progress)) / len(nodes_progress))

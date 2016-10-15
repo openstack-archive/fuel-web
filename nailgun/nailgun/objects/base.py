@@ -127,25 +127,28 @@ class NailgunObject(object):
         db().commit()
 
     @classmethod
-    def to_dict(cls, instance, fields=None):
+    def to_dict(cls, instance, fields=None, serializer=None):
         """Serialize instance to Python dict
 
         :param instance: object (model) instance
         :param fields: exact fields to serialize
+        :param serializer: the custom serializer
         :returns: serialized object (model) as dictionary
         """
-        return cls.serializer.serialize(instance, fields=fields)
+        serializer = serializer or cls.serializer
+        return serializer.serialize(instance, fields=fields)
 
     @classmethod
-    def to_json(cls, instance, fields=None):
+    def to_json(cls, instance, fields=None, serializer=None):
         """Serialize instance to JSON
 
         :param instance: object (model) instance
         :param fields: exact fields to serialize
+        :param serializer: the custom serializer
         :returns: serialized object (model) as JSON string
         """
         return jsonutils.dumps(
-            cls.to_dict(instance, fields=fields)
+            cls.to_dict(instance, fields=fields, serializer=serializer)
         )
 
     @classmethod
@@ -410,17 +413,21 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def to_list(cls, iterable=None, fields=None):
+    def to_list(cls, iterable=None, fields=None, serializer=None):
         """Serialize iterable to list of dicts
 
         In case if iterable=None serializes all object instances
 
         :param iterable: iterable (SQLAlchemy query)
         :param fields: exact fields to serialize
+        :param serializer: the custom serializer
         :returns: collection of objects as a list of dicts
         """
         use_iterable = cls.all() if iterable is None else iterable
-        return [cls.single.to_dict(o, fields=fields) for o in use_iterable]
+        return [
+            cls.single.to_dict(o, fields=fields, serializer=serializer)
+            for o in use_iterable
+        ]
 
     @classmethod
     def to_json(cls, iterable=None, fields=None):

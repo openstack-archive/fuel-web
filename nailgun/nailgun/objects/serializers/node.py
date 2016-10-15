@@ -52,3 +52,20 @@ class NodeSerializer(BasicSerializer):
         data_dict['status'] = Node.get_status(instance)
         data_dict['tags'] = instance.tag_names
         return data_dict
+
+
+class NodeSerializerForDeployment(BasicSerializer):
+    fields = (
+        'id',
+        'name',
+        'status',
+        'pending_deletion',
+        'pending_addition',
+        'error_type',
+        'roles',
+        'pending_roles',
+        'attributes',
+        'meta',
+        'hostname',
+        'labels'
+    )

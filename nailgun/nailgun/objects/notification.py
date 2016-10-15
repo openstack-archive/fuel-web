@@ -80,8 +80,9 @@ class Notification(NailgunObject):
         return None
 
     @classmethod
-    def to_dict(cls, instance, fields=None):
-        notif_dict = cls.serializer.serialize(instance, fields=fields)
+    def to_dict(cls, instance, fields=None, serializer=None):
+        serializer = serializer or cls.serializer
+        notif_dict = serializer.serialize(instance, fields=fields)
         notif_dict['time'] = instance.datetime.strftime('%H:%M:%S')
         notif_dict['date'] = instance.datetime.strftime('%d-%m-%Y')
         return notif_dict

@@ -25,6 +25,7 @@ from nailgun import lcm
 from nailgun.logger import logger
 from nailgun import notifier
 from nailgun import objects
+from nailgun.objects.serializers import node as node_serializers
 from nailgun.orchestrator import deployment_serializers
 from nailgun import rpc
 from nailgun.settings import settings
@@ -445,20 +446,7 @@ def _get_nodes_to_run(cluster, node_filter, ids=None):
                 # the field network_data causes fail of following
                 # cluster serialization because it modifies attributes of
                 # node and this update will be stored in DB.
-                fields=(
-                    'id',
-                    'name',
-                    'status',
-                    'pending_deletion',
-                    'pending_addition',
-                    'error_type',
-                    'roles',
-                    'pending_roles',
-                    'attributes',
-                    'meta',
-                    'hostname',
-                    'labels'
-                )
+                serializer=node_serializers.NodeSerializerForDeployment
             ),
             context=yaql_ext.create_context(
                 add_extensions=True, yaqlized=False

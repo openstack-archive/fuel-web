@@ -24,6 +24,7 @@ class ReleaseSerializer(BasicSerializer):
         "id",
         "name",
         "version",
+        "openstack_version",
         "description",
         "operating_system",
         "modes_metadata",

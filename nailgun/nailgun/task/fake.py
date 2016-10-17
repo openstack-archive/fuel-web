@@ -310,6 +310,16 @@ class FakeAmpqThread(FakeThread):
             )
             with Connection('amqp://guest:guest@localhost//') as conn:
                 with conn.Producer(serializer='json') as producer:
+                    producer.publish(
+                        {
+                            "method": self.respond_to,
+                            "args": {'task_uuid': self.task_uuid,
+                                     'status': consts.TASK_STATUSES.running}
+                        },
+                        exchange=nailgun_exchange,
+                        routing_key='nailgun',
+                        declare=[nailgun_queue]
+                    )
                     for msg in self.message_gen():
                         producer.publish(
                             {
@@ -321,6 +331,8 @@ class FakeAmpqThread(FakeThread):
                             declare=[nailgun_queue]
                         )
         else:
+            self.notify({'task_uuid': self.task_uuid,
+                         'status': consts.TASK_STATUSES.running})
             for msg in self.message_gen():
                 self.notify(msg)
 
@@ -780,12 +792,6 @@ class FakeCheckRepositories(FakeAmpqThread):
         }]
 
 
-class FakeTaskInOrchestrator(FakeAmpqThread):
-    def message_gen(self):
-        self.sleep(self.tick_interval)
-        return [{'task_uuid': self.task_uuid}]
-
-
 FAKE_THREADS = {
     'native_provision': FakeProvisionThread,
     'image_provision': FakeProvisionThread,
@@ -803,5 +809,4 @@ FAKE_THREADS = {
     'execute_tasks': FakeExecuteTasksThread,
     'check_repositories': FakeCheckRepositories,
     'check_repositories_with_setup': FakeCheckRepositories,
-    'task_in_orchestrator': FakeTaskInOrchestrator
 }

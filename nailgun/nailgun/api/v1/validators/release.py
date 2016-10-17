@@ -81,6 +81,9 @@ class ReleaseValidator(BasicValidator):
         d = cls.validate_json(data)
         cls._validate_common(d)
 
+        if 'openstack_version' in d:
+            d.pop('openstack_version')
+
         if db().query(models.Release).filter_by(
             name=d.get("name", instance.name),
             version=d.get("version", instance.version)

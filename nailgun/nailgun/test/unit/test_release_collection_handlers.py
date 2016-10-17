@@ -245,22 +245,22 @@ class TestReleaseCollectionSortingAllCriteria(ReleaseCollectionSortBaseTest):
     ]
 
     expected = [
-        ("2014.3-7.0", "CentOS"),
-        ("2014.2-6.1", "CentOS"),
-        ("2014.2.2-6.0", "CentOS"),
-        ("2014.2-6.0", "Ubuntu"),
-        ("2014.2-6.0", "CentOS"),
-        ("2014.1-6.0", "Ubuntu"),
-        ("2014.2-5.1.1", "Ubuntu"),
-        ("2014.2-5.1.1", "CentOS"),
-        ("2014.1.3-5.1.1", "CentOS"),
-        ("2014.1-5.1.1", "Ubuntu"),
-        ("2013.2.1-5.1", "Ubuntu"),
-        ("2013.2.1-5.1", "CentOS"),
-        ("2013.2.1-5.1", "Debian"),
-        ("2013.2.1-5.1", "Fedora"),
-        ("2013.2-5.0", "CentOS"),
-        ("2013.2-4.0", "Ubuntu"),
+        ("2014.3", "CentOS"),
+        ("2014.2", "CentOS"),
+        ("2014.2.2", "CentOS"),
+        ("2014.2", "Ubuntu"),
+        ("2014.2", "CentOS"),
+        ("2014.1", "Ubuntu"),
+        ("2014.2", "Ubuntu"),
+        ("2014.2", "CentOS"),
+        ("2014.1.3", "CentOS"),
+        ("2014.1", "Ubuntu"),
+        ("2013.2.1", "Ubuntu"),
+        ("2013.2.1", "CentOS"),
+        ("2013.2.1", "Debian"),
+        ("2013.2.1", "Fedora"),
+        ("2013.2", "CentOS"),
+        ("2013.2", "Ubuntu"),
         ("2014.3", "Ubuntu"),
         ("2014.3", "CentOS"),
         ("2014.3", "Arch"),
@@ -278,10 +278,10 @@ class TestReleaseCollectionSortByFuelVersion(ReleaseCollectionSortBaseTest):
     ]
 
     expected = [
-        ("-7.1", "CentOS"),
-        ("-7.0", "CentOS"),
-        ("-6.0", "CentOS"),
-        ("-6", "CentOS"),
+        ("", "CentOS"),
+        ("", "CentOS"),
+        ("", "CentOS"),
+        ("", "CentOS"),
     ]
 
 
@@ -295,11 +295,11 @@ class TestReleaseCollectionSortByOpenstack(ReleaseCollectionSortBaseTest):
     ]
 
     expected = [
-        ("2014.3-", "Ubuntu"),
-        ("2013.4-", "Ubuntu"),
+        ("2014.3", "Ubuntu"),
+        ("2013.4", "Ubuntu"),
         ("2013.2", "Ubuntu"),
-        ("2012.3-", "Ubuntu"),
-        ("2011.1-", "Ubuntu"),
+        ("2012.3", "Ubuntu"),
+        ("2011.1", "Ubuntu"),
     ]
 
 

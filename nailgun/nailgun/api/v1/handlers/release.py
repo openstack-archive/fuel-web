@@ -42,6 +42,23 @@ class ReleaseHandler(SingleHandler):
     single = Release
     validator = ReleaseValidator
 
+    @handle_errors
+    @serialize
+    def GET(self, obj_id):
+        """:returns: JSONized REST object.
+
+        :http: * 200 (OK)
+               * 404 (object not found in db)
+        """
+        release = self.get_object_or_404(self.single, obj_id)
+        release = self.single.to_dict(release)
+
+        version = release['version']
+        release['version'] = release['openstack_version']
+        release['full-version'] = version
+
+        return release
+
 
 class ReleaseAttributesMetadataHandler(SingleHandler):
     """Release attributes metadata handler"""
@@ -92,7 +109,12 @@ class ReleaseCollectionHandler(CollectionHandler):
         :http: * 200 (OK)
         """
         q = sorted(self.collection.all(), reverse=True)
-        return self.collection.to_list(q)
+        releases = self.collection.to_list(q)
+        for release in releases:
+            version = release['version']
+            release['version'] = release['openstack_version']
+            release['full-version'] = version
+        return releases
 
 
 class ReleaseNetworksHandler(SingleHandler):

@@ -30,6 +30,10 @@
               message: "Neutron L3 HA requires at least 2 Controller nodes to function properly."
         tags:
           - controller
+          - rabbitmq
+          - database
+          - keystone
+          - neutron
       compute:
         name: "Compute"
         description: "A Compute node creates, manages, and terminates virtual machine instances."
@@ -199,6 +203,14 @@
         has_primary: False
       cinder:
         has_primary: False
+      rabbitmq:
+        has_primary: True
+      database:
+        has_primary: True
+      keystone:
+        has_primary: True
+      neutron:
+        has_primary: True
 
     network_roles_metadata:
       -

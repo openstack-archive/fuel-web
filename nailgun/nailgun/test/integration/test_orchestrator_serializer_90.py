@@ -39,6 +39,8 @@ class TestSerializer90Mixin(object):
 
     @classmethod
     def create_serializer(cls, cluster):
+        # if objects.Release.is_lcm_supported(cluster.release):
+        #     return deployment_serializers.DeploymentLCMSerializer()
         serializer_type = deployment_serializers.get_serializer_for_cluster(
             cluster
         )
@@ -675,7 +677,7 @@ class TestDeploymentHASerializer90(
 
     def test_serialize_with_customized(self):
         cluster = self.env.clusters[0]
-        serializer = self.create_serializer(cluster)
+        serializer = deployment_serializers.DeploymentLCMSerializer()
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)

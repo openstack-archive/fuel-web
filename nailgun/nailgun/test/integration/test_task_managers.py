@@ -893,7 +893,7 @@ class TestTaskManagers(BaseIntegrationTest):
         deployment_info = args[1][0]['args']['deployment_info']
         self.assertItemsEqual(
             [node.uid for node in self.env.nodes],
-            [node['uid'] for node in deployment_info]
+            set([node['uid'] for node in deployment_info])
         )
 
     @fake_tasks()

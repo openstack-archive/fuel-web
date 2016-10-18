@@ -95,6 +95,34 @@ class TestTaskSerializers(BaseTestCase):
             connections[computes[0]]
         )
 
+    def test_serialize_inherited_result(self):
+        tasks = [
+            {
+                "id": "task1", "role": ["controller"],
+                "type": "shell", "version": "2.0.0",
+                "parameters": {"cmd": "bash -c 'echo 1'"}
+            },
+            {
+                "id": "task2", "inherited": ["task1"],
+                "parameters": {"cmd": "bash -c 'echo 2'"}
+            }
+        ]
+        tasks, _ = self.serializer.serialize(
+            self.env.clusters[-1], self.env.nodes, tasks
+        )
+        task1 = tasks["task1"]
+        task2 = tasks["task2"]
+
+        self.assertEqual(task1["type"], task2["type"])
+
+        self.assertEqual("task1", task1["id"])
+        self.assertEqual("task2", task2["id"])
+
+        self.assertEqual({"cmd": "bash -c 'echo 1'", "cwd": "/"},
+                         task1["parameters"])
+        self.assertEqual({"cmd": "bash -c 'echo 2'", "cwd": "/"},
+                         task2["parameters"])
+
     def test_self_referring_cross_dependencies_serialize_result(self):
         tasks = [
             {

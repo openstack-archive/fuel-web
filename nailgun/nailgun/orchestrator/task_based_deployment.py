@@ -25,6 +25,7 @@ from nailgun import consts
 from nailgun import errors
 from nailgun.logger import logger
 from nailgun.orchestrator import plugins_serializers
+from nailgun.orchestrator.tasks_inheritance import TaskInheritanceProcessor
 from nailgun.orchestrator.tasks_serializer import CreateVMsOnCompute
 from nailgun.orchestrator.tasks_serializer import StandardConfigRolesHook
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
@@ -440,6 +441,8 @@ class TasksSerializer(object):
         :return: the list of serialized task per node
         """
         serializer = cls(cluster, nodes, affected_nodes, task_ids, events)
+        inheritance = TaskInheritanceProcessor()
+        inheritance.process(tasks)
         serializer.resolve_nodes(add_plugin_deployment_hooks(tasks))
         serializer.resolve_dependencies()
         tasks_dictionary = serializer.tasks_dictionary

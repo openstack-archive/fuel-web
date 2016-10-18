@@ -117,3 +117,27 @@ class TaskNotFound(DeploymentException):
     def __init__(self, task_name=""):
         self.task_name = task_name
         super(TaskNotFound, self).__init__()
+
+
+class LinearizationImpossible(DeploymentException):
+    message = "Linearization of tasks hierarchy impossible"
+
+
+class WrongTasksHierarchy(DeploymentException):
+    message = "Wrong task {0} hierarchy: {1}. Order of the task parents " \
+              "can't be linearized."
+
+    def __init__(self, task_data):
+        super(WrongTasksHierarchy, self).__init__()
+        self.message = self.message.format(task_data.get("id"),
+                                           task_data.get("inherits"))
+
+
+class DifferentTasksTypesInheritance(DeploymentException):
+    message = "Different task types set as parents for task {0}: " \
+              "{1} and {2}"
+
+    def __init__(self, task_data, found_type):
+        super(DifferentTasksTypesInheritance, self).__init__()
+        self.message = self.message.format(
+            task_data.get("id"), task_data.get("type"), found_type)

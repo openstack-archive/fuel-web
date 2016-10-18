@@ -23,6 +23,7 @@ from nailgun import consts
 from nailgun import errors
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
+from nailgun.orchestrator.tasks_inheritance import TaskInheritanceProcessor
 from nailgun.settings import settings
 from nailgun.utils.role_resolver import NameMatchingPolicy
 
@@ -151,6 +152,8 @@ class TransactionSerializer(object):
         :return: the list of serialized task per node
         """
         serializer = cls(context, role_resolver)
+        inheritance = TaskInheritanceProcessor()
+        inheritance.process(tasks)
         serializer.process_tasks(tasks)
         serializer.resolve_dependencies()
         tasks_graph = serializer.tasks_graph

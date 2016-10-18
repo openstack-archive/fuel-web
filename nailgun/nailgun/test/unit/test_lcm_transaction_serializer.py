@@ -462,3 +462,60 @@ class TestTransactionSerializer(BaseUnitTest):
             9,
             lcm.TransactionSerializer.calculate_fault_tolerance('-1 ', 10)
         )
+
+    def test_serialize_inherited_tasks(self):
+        tasks = [
+            {
+                'id': 'task1', 'roles': ['controller'],
+                'type': 'puppet', 'version': '2.0.0',
+                'condition': {
+                    'yaql_exp': '$.public_ssl.hostname = localhost'
+                },
+                'parameters': {'x': 'y'}
+            },
+            {
+                'id': 'task2',
+                'inherits': ['task1'],
+                'condition': {
+                    'yaql_exp': '$.public_ssl.hostname != localhost'
+                }
+            },
+            {
+                'id': 'task3',
+                'roles': ['compute'],
+                'inherits': ['task1'],
+                'condition': {
+                    'yaql_exp': '$.public_ssl.hostname = localhost'
+                },
+                'parameters': {'a': 'b'}
+            }
+        ]
+
+        serialized = lcm.TransactionSerializer.serialize(
+            self.context, tasks, self.role_resolver
+        )[1]
+
+        # controller
+        self.datadiff(
+            [
+                {
+                    'id': 'task1', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {'x': 'y', 'cwd': '/'},
+                },
+                {
+                    'id': 'task2', 'type': 'skipped', 'fail_on_error': False,
+                },
+            ],
+            serialized['1']
+        )
+
+        # compute
+        self.datadiff(
+            [
+                {
+                    'id': 'task3', 'type': 'puppet', 'fail_on_error': True,
+                    'parameters': {'a': 'b', 'cwd': '/'},
+                },
+            ],
+            serialized['2']
+        )

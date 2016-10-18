@@ -101,7 +101,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
             self.assertIn('vnic_type', eswitch_dict)
             self.assertEqual('hostdev', eswitch_dict['vnic_type'])
             self.assertIn('apply_profile_patch', eswitch_dict)
-            self.assertEqual(True, eswitch_dict['apply_profile_patch'])
+            self.assertTrue(eswitch_dict['apply_profile_patch'])
 
         # Check L2 settings
         quantum_settings_l2 = common_attrs['quantum_settings']['L2']

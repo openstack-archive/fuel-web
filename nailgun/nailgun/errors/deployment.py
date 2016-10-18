@@ -117,3 +117,16 @@ class TaskNotFound(DeploymentException):
     def __init__(self, task_name=""):
         self.task_name = task_name
         super(TaskNotFound, self).__init__()
+
+
+class LinearizationImpossible(DeploymentException):
+    message = "Linearization of tasks hierarchy impossible"
+
+
+class WrongTasksHierarchy(DeploymentException):
+
+    def __init__(self, task_data):
+        super(WrongTasksHierarchy, self).__init__()
+        self.message = "Wrong tasks {0} hierarchy: {1}".format(
+            task_data.get('id'), task_data.get('inherited')
+        )

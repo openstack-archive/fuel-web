@@ -1084,6 +1084,13 @@
             # description: "Enables adaptation of granular tasks for task deployment."
             weight: 12
             type: "hidden"
+          security_groups:
+            value: false
+            label: "Enable Security Groups"
+            description: "If not selected, IPTables functionality is used by default"
+            group: "security"
+            weight: 20
+            type: "checkbox"
 
         public_network_assignment:
           metadata:

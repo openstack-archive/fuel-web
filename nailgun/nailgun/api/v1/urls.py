@@ -170,7 +170,7 @@ urls = (
 
     r'/releases/(?P<release_id>\d+)/roles/?$',
     RoleCollectionHandler,
-    r'/releases/(?P<release_id>\d+)/roles/(?P<role_name>[a-zA-Z-_]+)/?$',
+    r'/releases/(?P<release_id>\d+)/roles/(?P<role_name>[a-zA-Z0-9-_]+)/?$',
     RoleHandler,
 
     r'/releases/(?P<obj_id>\d+)/deployment_graphs/?$',
@@ -181,7 +181,7 @@ urls = (
 
     r'/clusters/(?P<cluster_id>\d+)/roles/?$',
     ClusterRolesCollectionHandler,
-    r'/clusters/(?P<cluster_id>\d+)/roles/(?P<role_name>[a-zA-Z-_]+)/?$',
+    r'/clusters/(?P<cluster_id>\d+)/roles/(?P<role_name>[a-zA-Z0-9-_]+)/?$',
     ClusterRolesHandler,
 
     r'/clusters/?$',

@@ -54,6 +54,8 @@ class InstallationInfo(object):
                       'task_deploy', None),
         WhiteListRule(('common', 'propagate_task_deploy', 'value'),
                       'propagate_task_deploy', None),
+        WhiteListRule(('common', 'security_groups', 'value'),
+                      'security_groups', None),
         WhiteListRule(('corosync', 'verified', 'value'),
                       'corosync_verified', None),
 

@@ -195,8 +195,8 @@ class TestRoleApi(BaseRoleTest):
         self.assertEqual(resp.status_code, 404)
         self.assertIn('is not found for the release', resp.body)
 
-    def test_create_role_with_numbers(self):
-        self.role_data['name'] = '1234'
+    def test_create_role_with_special_symbols(self):
+        self.role_data['name'] = '@#$%^&*()'
         resp = self.env.create_role(
             self.release.id, self.role_data, expect_errors=True)
 

@@ -113,6 +113,6 @@ SCHEMA = {
     "type": "object",
     "required": ['name', 'meta', 'volumes_roles_mapping'],
     "properties": {
-        "name": {"type": "string", "pattern": "^[a-zA-Z_-]+$"},
+        "name": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$"},
         "meta": ROLE_META_INFO,
         "volumes_roles_mapping": VOLUME_ALLOCATIONS}}

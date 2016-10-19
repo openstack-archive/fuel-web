@@ -213,7 +213,10 @@ _task_output_white_list_template = {
                 },
                 "debug": "",
                 "deployment_id": "",
-                "openstack_version_prev": ""
+                "openstack_version_prev": "",
+                "security_groups":{
+                    "enabled": ""
+                }
             },
             "pre_deployment": {
                 "*": {}

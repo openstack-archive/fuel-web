@@ -1,0 +1,10 @@
+Code-Review+2: Bulat Gaifullin <gaifullinbf@gmail.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Ilya Kutukov <post.ilya@gmail.com>
+Workflow+1: Ilya Kutukov <post.ilya@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 19 Oct 2016 14:02:37 +0000
+Reviewed-on: https://review.openstack.org/386644
+Project: openstack/fuel-web
+Branch: refs/heads/stable/mitaka

@@ -297,5 +297,276 @@
                 }
             }
         }
+    },
+    {
+        "pk": 5,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "plugin_with_node_and_nic_attributes",
+            "title": "Plugin with Node and NIC attributes",
+            "version": "1.0.0",
+            "description": "Plugin with Node and NIC attributes",
+            "fuel_version": ["9.0"],
+            "authors": [""],
+            "licenses": ["Apache License Version 2.0"],
+            "homepage": "",
+            "groups": [""],
+            "is_hotpluggable": true,
+            "releases": [
+                {
+                    "repository_path": "repositories/ubuntu",
+                    "version": "mitaka-9.0",
+                    "os": "ubuntu",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/"
+                },
+                {
+                    "repository_path": "repositories/centos",
+                    "version": "newton-10.0",
+                    "os": "ubuntu",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/"
+                }
+            ],
+            "package_version": "5.0.0",
+            "network_roles_metadata": [],
+            "attributes_metadata": {},
+            "volumes_metadata": {},
+            "roles_metadata": {},
+            "tasks": [],
+            "components_metadata": [
+                {
+                    "label": "Title for plugin_with_node_and_nic_attributes component.",
+                    "description": "Description for plugin_with_node_and_nic_attributes component.",
+                    "name": "additional_service:service_plugin_with_node_and_nic_attributes_component"
+                }
+            ],
+            "nic_attributes_metadata": {
+                "attribute_a": {
+                    "value": false,
+                    "type": "checkbox",
+                    "description": "NIC Attribute A description",
+                    "weight": 10,
+                    "label": "NIC Attribute A label"
+                },
+                "attribute_b": {
+                    "value": "SomeValue",
+                    "type": "text",
+                    "description": "NIC Attribute B description",
+                    "weight": 20,
+                    "label": "NIC Attribute B label",
+                    "restrictions": [{
+                        "nic_attributes:plugin_with_node_and_nic_attributes.attribute_a.value == false": "Requires enabled NIC attribute A"
+                    }],
+                    "regex": {
+                        "source": "^[A-z0-9]+$",
+                        "error": "NIC Attribute B value should match the following regex: ^[A-z0-9]+$"
+                    }
+                }
+            },
+            "bond_attributes_metadata": {
+                "bond_attribute_a": {
+                    "value": false,
+                    "type": "checkbox",
+                    "description": "Bond Attribute A description",
+                    "weight": 10,
+                    "label": "Bond Attribute A label"
+                },
+                "bond_attribute_b": {
+                    "value": 10,
+                    "type": "number",
+                    "description": "Bond Attribute B description",
+                    "weight": 20,
+                    "label": "Bond Attribute B label",
+                    "min": 10,
+                    "max": 20
+                }
+            },
+            "node_attributes_metadata": {
+                "plugin_section_a": {
+                    "metadata": {
+                        "label": "Section A",
+                        "weight": 110
+                    },
+                    "attribute_a": {
+                        "type": "checkbox",
+                        "description": "Node attribute A for section A description",
+                        "value": false,
+                        "label": "Node attribute A for section A label",
+                        "weight": 10
+                    },
+                    "attribute_b": {
+                        "type": "text",
+                        "description": "Node attribute B for section A",
+                        "value": "",
+                        "label": "Node attribute B for section A label",
+                        "restrictions": [
+                            "node_attributes:plugin_section_a.attribute_a.value == false"
+                        ],
+                        "regex": {
+                            "source": "^[A-z0-9]+$"
+                        },
+                        "weight": 20
+                    }
+                },
+                "plugin_section_b": {
+                    "metadata": {
+                        "label": "Section B",
+                        "weight": 120
+                    },
+                    "attribute_a": {
+                        "type": "textarea",
+                        "description": "Node attribute A for section B description",
+                        "value": "",
+                        "label": "Node attribute A for section B label",
+                        "weight": 10
+                    },
+                    "attribute_b": {
+                        "type": "number",
+                        "description": "Node attribute B for section B description",
+                        "value": 2,
+                        "min": 2,
+                        "max": 4,
+                        "label": "Node attribute B for section B label",
+                        "weight": 20
+                    }
+                }
+            }
+        }
+    },
+    {
+        "pk": 6,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "plugin_with_node_and_nic_attributes",
+            "title": "Plugin with Node and NIC attributes",
+            "version": "2.0.0",
+            "description": "Plugin with Node and NIC attributes",
+            "fuel_version": ["9.0"],
+            "authors": [""],
+            "licenses": ["Apache License Version 2.0"],
+            "homepage": "",
+            "groups": [""],
+            "is_hotpluggable": true,
+            "releases": [
+                {
+                    "repository_path": "repositories/ubuntu",
+                    "version": "mitaka-9.0",
+                    "os": "ubuntu",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/"
+                },
+                {
+                    "repository_path": "repositories/centos",
+                    "version": "newton-10.0",
+                    "os": "ubuntu",
+                    "mode": ["ha"],
+                    "deployment_scripts_path": "deployment_scripts/"
+                }
+            ],
+            "package_version": "5.0.0",
+            "network_roles_metadata": [],
+            "attributes_metadata": {},
+            "volumes_metadata": {},
+            "roles_metadata": {},
+            "tasks": [],
+            "components_metadata": [
+                {
+                    "label": "Title for plugin_with_node_and_nic_attributes component.",
+                    "description": "Description for plugin_with_node_and_nic_attributes component.",
+                    "name": "additional_service:service_plugin_with_node_and_nic_attributes_component"
+                }
+            ],
+            "nic_attributes_metadata": {
+                "attribute_a_v2": {
+                    "value": true,
+                    "type": "checkbox",
+                    "description": "NIC Attribute A description (v2)",
+                    "weight": 10,
+                    "label": "NIC Attribute A label (v2)"
+                },
+                "attribute_b_v2": {
+                    "value": ["123", "456"],
+                    "type": "text_list",
+                    "description": "NIC Attribute B description (v2)",
+                    "weight": 20,
+                    "label": "NIC Attribute B label (v2)",
+                    "min": 2,
+                    "max": 4,
+                    "regex": {
+                        "source": "^[0-9]+$",
+                        "error": "Positive number expected"
+                    }
+                }
+            },
+            "bond_attributes_metadata": {
+                "bond_attribute_a_v2": {
+                    "value": false,
+                    "type": "checkbox",
+                    "description": "Bond Attribute A description (v2)",
+                    "weight": 10,
+                    "label": "Bond Attribute A label (v2)"
+                },
+                "bond_attribute_b_v2": {
+                    "value": "SomeValue",
+                    "type": "text",
+                    "description": "Bond Attribute B description (v2)",
+                    "weight": 20,
+                    "label": "Bond Attribute B label (v2)",
+                    "restrictions": [{
+                        "bond_attributes:plugin_with_node_and_nic_attributes.bond_attribute_a_v2.value == false": "Requires enabled Bond attribute A (v2)"
+                    }],
+                    "regex": {
+                        "source": "^[A-z0-9]+$"
+                    }
+                }
+            },
+            "node_attributes_metadata": {
+                "plugin_section_a_v2": {
+                    "metadata": {
+                        "label": "Section A (v2)",
+                        "restrictions": [
+                            "settings:common.libvirt_type.value != 'kvm'"
+                        ],
+                        "weight": 110
+                    },
+                    "attribute_a": {
+                        "type": "checkbox",
+                        "description": "Node attribute A for Section A (v2)",
+                        "value": true,
+                        "label": "Node attribute A for Section A (v2)",
+                        "weight": 10
+                    }
+                },
+                "plugin_section_b_v2": {
+                    "metadata": {
+                        "label": "Section B (v2)",
+                        "weight": 120
+                    },
+                    "attribute_a_v2": {
+                        "type": "text_list",
+                        "description": "Node attribute 1 for Section B",
+                        "value": ["abc", ""],
+                        "regex": {
+                            "source": "^[A-z0-9]+$",
+                            "error": "Invalid value for regex ^[A-z0-9]+$"
+                        },
+                        "label": "Node attribute A for Section B",
+                        "weight": 10,
+                        "min": 1,
+                        "max": 3
+                    },
+                    "attribute_b_v2": {
+                        "type": "number",
+                        "description": "Node attribute B for Section B",
+                        "value": 3,
+                        "label": "Node attribute B for Section B",
+                        "min": 1,
+                        "max": 100,
+                        "weight": 20
+                    }
+                }
+            }
+        }
     }
 ]

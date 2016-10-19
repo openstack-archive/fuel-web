@@ -293,6 +293,56 @@ class TestTaskManagers(BaseIntegrationTest):
         supertask = self.env.launch_deployment(cluster.id)
         self.assertEqual(TASK_STATUSES.ready, supertask.status)
 
+    @fake_tasks()
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings.LCM_CHECK_TASK_VERSION',
+        new=True
+    )
+    @mock.patch('objects.Cluster.get_deployment_tasks')
+    @mock.patch('objects.Cluster.is_propagate_task_deploy_enabled')
+    def test_adapt_legacy_tasks_whanging_req(self, propagate_mock, tasks_mock):
+        # Here we add non-existing dependencies to test for absence of failure
+        # for LP#1635051
+        tasks_mock.return_value = [
+            {
+                'id': 'taskA', 'parameters': {}, 'type': 'puppet',
+                'roles': ['controller'], 'version': '1.0.0',
+                'requires': ['pre_deployment_start']
+            },
+            {
+                'id': 'taskB', 'parameters': {}, 'type': 'puppet',
+                'roles': ['controller'], 'version': '2.0.0',
+                'requires': ['pre_deployment_end', 'taskB']
+            },
+            {
+                'id': 'controller', 'type': 'group', 'roles': ['controller']
+            },
+            {
+                "id": "deploy_start",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+                "requires": ["pre_deployment_end"],
+            },
+            {
+                "id": "deploy_end",
+                "type": consts.ORCHESTRATOR_TASK_TYPES.stage,
+                "requires": ["deploy_start"],
+            },
+        ]
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "pending_roles": ['controller']},
+                {"pending_addition": True, "pending_roles": ['controller']},
+            ],
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            }
+        )
+        cluster = self.env.clusters[-1]
+        propagate_mock.return_value = True
+        supertask = self.env.launch_deployment(cluster.id)
+        self.assertEqual(TASK_STATUSES.ready, supertask.status)
+
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_write_action_logs(self, _):
         self.env.create(

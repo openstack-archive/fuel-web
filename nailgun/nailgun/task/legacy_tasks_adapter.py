@@ -111,11 +111,11 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, resolver):
     role_based_graph = GraphSolver(tasks=deployment_tasks)
     pre_deployment_graph = post_deployment_graph = GraphSolver()
 
-    if 'pre_deployment_end' in role_based_graph.node:
+    if role_based_graph.node.get('pre_deployment_end'):
         pre_deployment_graph = role_based_graph.find_subgraph(
             start='pre_deployment_start', end='pre_deployment_end'
         )
-    if 'post_deployment_start' in role_based_graph.node:
+    if role_based_graph.node.get('post_deployment_start'):
         post_deployment_graph = role_based_graph.find_subgraph(
             start='post_deployment_start', end='post_deployment_end'
         )

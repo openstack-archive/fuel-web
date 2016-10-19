@@ -33,7 +33,12 @@ from nailgun.utils.role_resolver import NameMatchingPolicy
 
 
 def _serialize_task_for_node(factory, node_and_task):
-    node_id, task = node_and_task
+    (node_id, task), err = node_and_task
+
+    # NOTE(el): See comment for `wrap_task_iter` method.
+    if err:
+        raise err
+
     logger.debug(
         "applying task '%s' for node: %s", task['id'], node_id
     )
@@ -72,6 +77,23 @@ class SingleWorkerConcurrencyPolicy(object):
         )
 
 
+def wrap_task_iter(iterator):
+    """Workaround is required to prevent deadlock.
+
+    Due to a bug in core python library [1], if iterator passed
+    to imap or imap_unordered raises an exception, it hangs in
+    deadlock forever, the issue is fixed in python 2.7.10, but
+    upstream repositories have much older version.
+
+    [1] http://bugs.python.org/issue23051
+    """
+    try:
+        for i in iterator:
+            yield i, None
+    except Exception as e:
+        yield (None, None), e
+
+
 class MultiProcessingConcurrencyPolicy(object):
     def __init__(self, workers_num):
         self.workers_num = workers_num
@@ -92,7 +114,7 @@ class MultiProcessingConcurrencyPolicy(object):
 
         try:
             result = pool.imap_unordered(
-                _serialize_task_for_node_in_worker, tasks
+                _serialize_task_for_node_in_worker, wrap_task_iter(tasks)
             )
             for r in result:
                 yield r

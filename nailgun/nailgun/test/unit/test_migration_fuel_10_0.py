@@ -224,7 +224,12 @@ def prepare():
                         }
                     ]
                 }
-            }])
+            }]),
+            'roles_metadata': jsonutils.dumps({
+                'role_x': {
+                    'has_primary': False
+                },
+            }),
         }]
     )
     plugin_a_id = result.inserted_primary_key[0]
@@ -262,7 +267,12 @@ def prepare():
                         }
                     ]
                 }
-            }])
+            }]),
+            'roles_metadata': jsonutils.dumps({
+                'role_y': {
+                    'has_primary': True
+                }
+            }),
         }]
     )
     plugin_b_id = result.inserted_primary_key[0]
@@ -384,7 +394,8 @@ def prepare():
             'cluster_id': cluster_ids[0],
             'group_id': None,
             'status': 'ready',
-            'roles': ['controller', 'ceph-osd'],
+            'roles': ['controller', 'ceph-osd', 'role_x', 'role_y'],
+            'primary_roles': ['controller', 'role_y'],
             'meta': '{}',
             'mac': 'bb:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
@@ -395,20 +406,20 @@ def prepare():
     db.commit()
 
 
-class TestTagExistingNodes(base.BaseAlembicMigrationTest):
+class TestTags(base.BaseAlembicMigrationTest):
     def test_tags_created_on_upgrade(self):
         tags_count = db.execute(
             sa.select(
                 [sa.func.count(self.meta.tables['tags'].c.id)]
             )).fetchone()[0]
 
-        self.assertEqual(tags_count, 11)
+        self.assertEqual(tags_count, 13)
 
     def test_nodes_assigned_tags(self):
         tags = self.meta.tables['tags']
         node_tags = self.meta.tables['node_tags']
 
-        query = sa.select([tags.c.tag]).select_from(
+        query = sa.select([tags.c.tag, node_tags.c.is_primary]).select_from(
             sa.join(
                 tags, node_tags,
                 tags.c.id == node_tags.c.tag_id
@@ -418,8 +429,15 @@ class TestTagExistingNodes(base.BaseAlembicMigrationTest):
         )
 
         res = db.execute(query)
-        tags = [t[0] for t in res]
-        self.assertItemsEqual(tags, ['controller', 'ceph-osd'])
+        primary_tags = []
+        tags = []
+        for tag, is_primary in res:
+            tags.append(tag)
+            if is_primary:
+                primary_tags.append(tag)
+        self.assertItemsEqual(tags, ['controller', 'ceph-osd',
+                                     'role_x', 'role_y'])
+        self.assertItemsEqual(primary_tags, ['controller', 'role_y'])
 
 
 class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):

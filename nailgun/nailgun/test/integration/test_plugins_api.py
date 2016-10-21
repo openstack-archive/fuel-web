@@ -306,9 +306,11 @@ class TestPluginsApi(BasePluginTest):
                                   propagate_task_deploy=False,
                                   expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.body,
+        self.assertEqual(resp.json_body['message'],
                          'Cannot enable plugin with legacy tasks unless '
-                         'propagate_task_deploy attribute is set')
+                         'propagate_task_deploy attribute is set. '
+                         'Ensure tasks.yaml is empty and all tasks '
+                         'has version >= 2.0.0.')
 
     @mock.patch.object(PluginManager, '_list_plugins_on_fs')
     @mock.patch('nailgun.plugins.loaders.files_manager.open', create=True)

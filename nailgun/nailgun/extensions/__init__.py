@@ -33,6 +33,7 @@ from nailgun.extensions.manager import \
     fire_callback_on_cluster_serialization_for_provisioning
 from nailgun.extensions.manager import \
     fire_callback_on_node_serialization_for_provisioning
+from nailgun.extensions.manager import fire_callback_on_tasks_serialization
 from nailgun.extensions.manager import node_extension_call
 from nailgun.extensions.manager import remove_extensions_from_object
 from nailgun.extensions.manager import setup_yaql_context

@@ -35,6 +35,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun import errors
 from nailgun.extensions import fire_callback_on_cluster_delete
 from nailgun.extensions import fire_callback_on_node_collection_delete
+from nailgun.extensions import fire_callback_on_tasks_serialization
 from nailgun.logger import logger
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
@@ -1181,7 +1182,9 @@ class Cluster(NailgunObject):
         :return: deployment tasks list
         :rtype: list[dict]
         """
-        return cls.get_deployment_graph(instance, graph_type)['tasks']
+        tasks = cls.get_deployment_graph(instance, graph_type)['tasks']
+        fire_callback_on_tasks_serialization(instance, tasks)
+        return tasks
 
     @classmethod
     def get_legacy_plugin_tasks(cls, instance):

@@ -153,3 +153,8 @@ def fire_callback_on_cluster_serialization_for_deployment(cluster, data):
 def fire_callback_on_cluster_serialization_for_provisioning(cluster, data):
     for pipeline in _collect_data_pipelines_for_cluster(cluster):
         pipeline.process_provisioning_for_cluster(cluster, data)
+
+
+def fire_callback_on_tasks_serialization(cluster, tasks, **kwargs):
+    for pipeline in _collect_data_pipelines_for_cluster(cluster):
+        pipeline.process_tasks(tasks, cluster, **kwargs)

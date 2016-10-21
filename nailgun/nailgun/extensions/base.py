@@ -101,6 +101,14 @@ class BasePipeline(object):
         :param node_data: serialized data for node
         """
 
+    @classmathod
+    def process_tasks(cls, tasks, cluster, **kwargs):
+        """Extend or modify provisioning tasks data
+
+        :param tasks: list of deployment tasks
+        :param cluster: the instance of Cluster
+        """
+
     @classmethod
     @deprecated("Please implement methods process_deployment_for_* instead")
     def process_deployment(cls, deployment_data, cluster, nodes, **kwargs):

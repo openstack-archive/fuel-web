@@ -19,6 +19,7 @@ from distutils.version import LooseVersion
 from itertools import groupby
 import operator
 
+from copy import copy
 import six
 
 from nailgun import consts
@@ -75,9 +76,42 @@ class Plugin(NailgunObject):
 
         cls.update(plugin_obj, plugin_adapter.get_metadata())
 
+        cls.create_tags(plugin_obj)
+
         ClusterPlugin.add_compatible_clusters(plugin_obj)
 
         return plugin_obj
+
+    @classmethod
+    def create_tags(cls, instance):
+        from nailgun.objects import Tag
+        tags = instance.tags_metadata
+        roles = copy(instance.roles_metadata)
+        # add creation of so-called tags for roles if tags are not
+        # present in role's metadata. it's necessary for compatibility
+        # with plugins without tags feature
+        for role, meta in six.iteritems(roles):
+            role_tags = meta.get('tags')
+            if not role_tags:
+                tags[role] = {
+                    'tag': role,
+                    'has_primary': meta.get('has_primary', False),
+                }
+                # it's necessary for auto adding tag when we are
+                # assigning the role
+                meta['tags'] = [role]
+
+        for name, meta in six.iteritems(tags):
+            data = {
+                'owner_id': instance.id,
+                'owner_type': consts.TAG_OWNER_TYPES.plugin,
+                'tag': name,
+                'has_primary': meta.get('has_primary', False),
+                'read_only': True
+            }
+            Tag.create(data)
+        cls.update(instance, {'roles_metadata': roles})
+        db().flush()
 
     @classmethod
     def update(cls, instance, data):

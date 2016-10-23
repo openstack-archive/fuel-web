@@ -32,7 +32,7 @@ class TagValidator(BasicValidator):
                 "Read-only tags cannot be deleted."
             )
 
-        node = objects.TagCollection.get_tag_nodes_query(instance.id).first()
+        node = objects.TagCollection.get_tag_nodes(instance.id).first()
 
         if node:
             raise errors.CannotDelete(

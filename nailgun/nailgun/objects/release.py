@@ -32,6 +32,7 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
 from nailgun.objects import Tag
+from nailgun.objects import TagCollection
 from nailgun.orchestrator import graph_configuration
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
@@ -337,7 +338,7 @@ class Release(NailgunObject):
             for tag in role_data.get('tags', []):
                 data = {
                     'owner_id': instance.id,
-                    'owner_type': 'release',
+                    'owner_type': consts.TAG_OWNER_TYPES.release,
                     'tag': tag,
                     'has_primary': tag_meta.get('has_primary', False),
                     'read_only': True
@@ -353,6 +354,16 @@ class Release(NailgunObject):
         """
         DeploymentGraph.delete_for_parent(instance)
         super(Release, cls).delete(instance)
+
+    @staticmethod
+    def get_nm_tags(instance, **kwargs):
+        """Return list of tags used in release's namespace.
+
+        :param instance: nailgun.db.sqlalchemy.models.Release instance
+        :return: query with Tag models
+        """
+        return (TagCollection.get_release_nm_tags_query(instance)
+                .filter_by(**kwargs).all())
 
 
 class ReleaseCollection(NailgunCollection):

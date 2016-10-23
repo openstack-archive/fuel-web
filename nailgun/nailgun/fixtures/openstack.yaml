@@ -638,6 +638,19 @@
         ironic:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "logs"}
+      volumes_tags_mapping:
+        controller:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "logs"}
+          - {allocate_size: "all", id: "image"}
+          - {allocate_size: "min", id: "horizon"}
+        database:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "mysql"}
+        rabbitmq:
+          - {allocate_size: "min", id: "os"}
+        keystone:
+          - {allocate_size: "min", id: "os"}
       volumes:
         - id: "os"
           type: "vg"

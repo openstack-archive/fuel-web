@@ -32,8 +32,8 @@ class TagValidator(BasicValidator):
                 "Read-only tags cannot be deleted."
             )
 
-        n_ids = [str(n.id)
-                 for n in objects.TagCollection.get_tag_nodes(instance)]
+        n_ids = [str(n)
+                 for n in objects.TagCollection.get_tag_nodes_ids(instance)]
 
         if n_ids:
             raise errors.CannotDelete(

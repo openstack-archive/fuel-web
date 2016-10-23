@@ -1568,6 +1568,16 @@ class Cluster(NailgunObject):
             'networking_parameters': instance.network_config,
         }
 
+    @staticmethod
+    def get_nm_tags(instance, **kwargs):
+        """Return list of tags used in cluster
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :return: query with Tag models
+        """
+        return (TagCollection.get_cluster_nm_tags_query(instance)
+                .filter_by(**kwargs))
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection."""

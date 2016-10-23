@@ -42,13 +42,13 @@ class TagOwnerHandler(CollectionHandler):
         'plugins': 'plugin'
     }
 
-    def _get_owner_or_404(self, owner_type, owner_id):
+    def _get_owner_and_class_or_404(self, owner_type, owner_id):
         obj_cls = {
             'releases': objects.Release,
             'clusters': objects.Cluster,
             'plugins': objects.Plugin
         }[owner_type]
-        return self.get_object_or_404(obj_cls, owner_id)
+        return obj_cls, self.get_object_or_404(obj_cls, owner_id)
 
     @handle_errors
     @validate
@@ -60,7 +60,7 @@ class TagOwnerHandler(CollectionHandler):
             * 200 (OK)
             * 404 (owner doesn't exist)
         """
-        self._get_owner_or_404(owner_type, owner_id)
+        self._get_owner_and_class_or_404(owner_type, owner_id)
 
         tags = objects.TagCollection.filter_by(
             None,
@@ -78,9 +78,17 @@ class TagOwnerHandler(CollectionHandler):
             * 400 (invalid object data specified)
             * 404 (owner doesn't exist)
         """
-        owner_obj = self._get_owner_or_404(owner_type, owner_id)
+        owner_cls, owner_obj = self._get_owner_and_class_or_404(owner_type,
+                                                                owner_id)
         data = self.checked_data(self.validator.validate_create,
                                  instance=owner_obj)
+
+        tag = owner_cls.get_nm_tags(owner_obj, tag=data['tag']).first()
+
+        if tag:
+            raise errors.NotAllowed("Tag '{}' is already present."
+                                    "".format(tag.tag))
+
         data.pop('id', None)
         data['owner_type'] = self.owner_map[owner_type]
         data['owner_id'] = owner_id
@@ -108,6 +116,12 @@ class NodeTagAssignmentHandler(BaseHandler):
                                                                   tag_ids)
         return set([t[0] for t in q_tags])
 
+    @staticmethod
+    def _get_cluster_tags_in_range(cluster, tag_ids):
+        q_tags = objects.TagCollection.get_cluster_nm_tags_in_range(cluster,
+                                                                    tag_ids)
+        return set([t[0] for t in q_tags])
+
     @handle_errors
     def POST(self, node_id):
         """Assign tags to node
@@ -126,15 +140,20 @@ class NodeTagAssignmentHandler(BaseHandler):
             raise self.http(405, "Node '{}' is not in a cluster."
                                  "".format(node_id))
 
-        tag_ids = self.checked_data()
+        tag_ids = set(self.checked_data())
 
         tags = self.get_objects_list_or_404(
             objects.TagCollection,
             tag_ids
         )
 
-        assigned_tags = (set(tag_ids) &
-                         self._get_assigned_tags(node.id, tag_ids))
+        foreign_tags = (tag_ids -
+                        self._get_cluster_tags_in_range(node.cluster, tag_ids))
+        if foreign_tags:
+            raise self.http(405, "Tags '{}' are not present in node '{}' "
+                                 "namespace.".format(foreign_tags, node_id))
+
+        assigned_tags = tag_ids & self._get_assigned_tags(node.id, tag_ids)
         if assigned_tags:
             raise self.http(405, "Tags '{}' are already assigned to the "
                                  "node {}.".format(assigned_tags, node_id))

@@ -125,6 +125,7 @@ def get_node_spaces(node):
 
     node_spaces = []
     volumes_metadata = objects.Cluster.get_volumes_metadata(node.cluster)
+    tag_mapping = volumes_metadata['volumes_tags_mapping']
     role_mapping = volumes_metadata['volumes_roles_mapping']
     all_spaces = volumes_metadata['volumes']
     # TODO(dshulyak)
@@ -132,10 +133,10 @@ def get_node_spaces(node):
     # when it will be extended with flexible template engine
     modify_volumes_hook(role_mapping, node)
 
-    for role in node.all_roles:
-        if not role_mapping.get(role):
+    for tag in node.all_tags:
+        volumes = tag_mapping.get(tag) or role_mapping.get(tag)
+        if not volumes:
             continue
-        volumes = role_mapping[role]
 
         for volume in volumes:
             space = find_space_by_id(all_spaces, volume['id'])

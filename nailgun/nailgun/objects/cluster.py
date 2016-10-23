@@ -270,7 +270,7 @@ class Cluster(NailgunObject):
         TagCollection.filter_by(
             None,
             owner_id=instance.id,
-            owner_type='cluster'
+            owner_type=consts.TAG_OWNER_TYPES.cluster
         ).delete()
         db().flush()
 
@@ -1567,6 +1567,16 @@ class Cluster(NailgunObject):
             'version': settings.VERSION,
             'networking_parameters': instance.network_config,
         }
+
+    @staticmethod
+    def get_nm_tags(instance, **kwargs):
+        """Return list of tags used in cluster
+
+        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
+        :return: query with Tag models
+        """
+        return (TagCollection.get_cluster_nm_tags_query(instance)
+                .filter_by(**kwargs))
 
 
 class ClusterCollection(NailgunCollection):

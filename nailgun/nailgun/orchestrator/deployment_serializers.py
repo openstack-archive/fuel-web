@@ -62,7 +62,7 @@ from nailgun.orchestrator.nova_serializers import \
 from nailgun.orchestrator.nova_serializers import \
     NovaNetworkDeploymentSerializer70
 from nailgun.orchestrator.provisioning_serializers import \
-    ProvisioningSerializer90
+    ProvisionLCMSerializer
 
 
 class DeploymentMultinodeSerializer(object):
@@ -765,7 +765,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             ),
             key=lambda x: self._priorities[x.config_type]
         )
-        self._provision_serializer = ProvisioningSerializer90()
+        self._provision_serializer = ProvisionLCMSerializer()
 
     def finalize(self):
         self._configs = None

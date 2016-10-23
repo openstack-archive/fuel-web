@@ -479,3 +479,15 @@ class ProvisioningSerializer90(ProvisioningSerializer80):
             serialized_node['ks_meta']['user_accounts'].append(root_user_dict)
 
         return serialized_node
+
+
+class ProvisionLCMSerializer(ProvisioningSerializer90):
+    @classmethod
+    def serialize_cluster(cls, cluster, cluster_attrs):
+        cluster_info = super(ProvisionLCMSerializer, cls).serialize_cluster(
+            cluster, cluster_attrs
+        )
+        cluster_info['packages'] = cls._make_provisioning_package_list(
+            cluster_attrs['provision']
+        )
+        return cluster_info

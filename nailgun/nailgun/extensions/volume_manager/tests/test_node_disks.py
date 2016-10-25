@@ -441,9 +441,10 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 "roles": ['controller'],
                 "pending_roles": [],
                 "meta": {"disks": disks}
-            }]
+            }],
         )
         node_db = self.env.nodes[0]
+
         disks = self.get(node_db.id)
         hda = next(disk for disk in disks if disk['id'] == 'hda')
         md0 = next(disk for disk in disks if disk['id'] == 'md0')
@@ -881,7 +882,6 @@ class TestVolumeManager(BaseIntegrationTest):
         horizon_sum_size = self.horizon_size(disks)
         logs_sum_size = self.logs_size(disks)
         reserved_size = self.reserved_size(disks)
-
         self.assertEqual(disks_size_sum - reserved_size,
                          os_sum_size + glance_sum_size +
                          mysql_sum_size + logs_sum_size +
@@ -1128,18 +1128,20 @@ class TestVolumeManager(BaseIntegrationTest):
 
     def test_get_node_spaces_with_plugins(self):
         cluster = self._prepare_env()
-        node = self.env.create_node(
-            api=False,
-            cluster_id=cluster.id,
-            roles=['controller', 'testing_plugin'],
-            pending_addition=True
-        )
 
         self.env.create_plugin(
             cluster=cluster,
             package_version='3.0.0',
             fuel_version=['7.0'],
+            roles_metadata={'testing_plugin': {'name': 'testing plugin'}},
             volumes_metadata=self.env.get_default_plugin_volumes_config()
+        )
+
+        node = self.env.create_node(
+            api=False,
+            cluster_id=cluster.id,
+            roles=['controller', 'testing_plugin'],
+            pending_addition=True
         )
 
         expected_spaces = [

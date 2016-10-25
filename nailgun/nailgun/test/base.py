@@ -74,6 +74,7 @@ from nailgun.objects import OpenstackConfig
 from nailgun.objects import Plugin
 from nailgun.objects import Release
 
+
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.extensions.network_manager.manager import NetworkManager

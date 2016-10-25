@@ -94,7 +94,6 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['controller']}])
         volumes = manager.VolumeManager(self.env.nodes[0]).gen_volumes_info()
-
         image_volume = next((v for v in volumes if v['id'] == 'image'), None)
         self.assertIsNotNone(image_volume)
         self.assertEqual(len(image_volume['volumes']), 1)

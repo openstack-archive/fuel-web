@@ -79,7 +79,7 @@ def get_allocate_size(node, vol):
         return vol['allocate_size']
 
 
-def exclude_glance_partition(role_mapping, node):
+def exclude_glance_partition(vol_mapping, node):
     """Filter out image volume.
 
     In case images_ceph used as glance image storage
@@ -90,32 +90,35 @@ def exclude_glance_partition(role_mapping, node):
                        ['images_ceph']['value'])
         if images_ceph:
             # just filter out image volume
-            role_mapping['controller'] = \
+            vol_mapping['controller'] = \
                 filter(lambda space: space['id'] != 'image',
-                       role_mapping['controller'])
+                       vol_mapping['controller'])
     return
 
 
-def modify_volumes_hook(role_mapping, node):
+def modify_volumes_hook(vol_mapping, node):
     """Filter node volumes based on filter functions logic."""
     filters = [exclude_glance_partition]
 
     for f in filters:
-        f(role_mapping, node)
-    return role_mapping
+        f(vol_mapping, node)
+    return vol_mapping
 
 
 def get_rule_to_pick_boot(node):
     # FIXME(apopovych): ugly hack to avoid circular dependency
     from nailgun import objects
-    metadata = objects.Cluster.get_volumes_metadata(node.cluster)
+    metadata = objects.Cluster.get_all_volumes_metadata(node.cluster)
     return metadata.get('rule_to_pick_boot_disk', [])
 
 
 def get_node_spaces(node):
     """Helper for retrieving node volumes.
 
-    If spaces don't defained for role, will be used
+    Firstly, function tries to fetch volumes info from tags metadata.
+    If there is no volumes info for role, then it fallbacks to roles
+    volumes metadata.
+    If spaces don't defined for role, will be used
     partitioning for role `other`.
     Sets key `_allocate_size` which used only for internal calculation
     and not used in partitioning system.
@@ -124,18 +127,20 @@ def get_node_spaces(node):
     from nailgun import objects
 
     node_spaces = []
-    volumes_metadata = objects.Cluster.get_volumes_metadata(node.cluster)
+    volumes_metadata = objects.Cluster.get_all_volumes_metadata(node.cluster)
+    tag_mapping = volumes_metadata.get('volumes_tags_mapping', {})
     role_mapping = volumes_metadata['volumes_roles_mapping']
     all_spaces = volumes_metadata['volumes']
     # TODO(dshulyak)
     # This logic should go to openstack.yaml (or other template)
     # when it will be extended with flexible template engine
     modify_volumes_hook(role_mapping, node)
+    modify_volumes_hook(tag_mapping, node)
 
-    for role in node.all_roles:
-        if not role_mapping.get(role):
+    for tag in node.tag_names:
+        volumes = tag_mapping.get(tag) or role_mapping.get(tag)
+        if not volumes:
             continue
-        volumes = role_mapping[role]
 
         for volume in volumes:
             space = find_space_by_id(all_spaces, volume['id'])
@@ -1095,6 +1100,7 @@ class VolumeManager(object):
             bootable_disks = filter(lambda disk: not regex.match(disk.name),
                                     bootable_disks)
         if bootable_disks:
+            self.__logger('ALL BOOT Disks {}'.format(bootable_disks))
             self.__logger('Disk %s is picked as bootable'
                           '' % bootable_disks[0].name)
             self.pick_disk_as_bootable(bootable_disks[0])

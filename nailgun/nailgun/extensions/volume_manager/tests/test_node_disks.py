@@ -249,7 +249,8 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         assignment_data = [
             {
                 "id": node_db.id,
-                "roles": ['compute', 'cinder']
+                "roles": [],
+                "pending_roles": ['compute', 'cinder']
             }
         ]
         self.app.post(
@@ -372,8 +373,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                  {"name": "sdb", "disk": "sdb", "size": 2 ** 40}]
         self.env.create(
             nodes_kwargs=[{
-                "roles": ['controller'],
-                "pending_roles": [],
+                "pending_roles": ['controller'],
                 "meta": {"disks": disks}
             }]
         )
@@ -419,8 +419,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                  {"name": "sda", "disk": "sda", "size": 2 ** 40}]
         self.env.create(
             nodes_kwargs=[{
-                "roles": ['controller'],
-                "pending_roles": [],
+                "pending_roles": ['controller'],
                 "meta": {"disks": disks}
             }]
         )
@@ -438,8 +437,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                  {"name": "hda", "disk": "hda", "size": 2 ** 40}]
         self.env.create(
             nodes_kwargs=[{
-                "roles": ['controller'],
-                "pending_roles": [],
+                "pending_roles": ['controller'],
                 "meta": {"disks": disks}
             }]
         )
@@ -607,7 +605,8 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
 
     def create_node(self, role):
         self.env.create(
-            nodes_kwargs=[{'roles': [role], 'pending_addition': True}])
+            nodes_kwargs=[{'pending_roles': [role],
+                           'pending_addition': True}])
 
         return self.env.nodes[0]
 
@@ -881,7 +880,6 @@ class TestVolumeManager(BaseIntegrationTest):
         horizon_sum_size = self.horizon_size(disks)
         logs_sum_size = self.logs_size(disks)
         reserved_size = self.reserved_size(disks)
-
         self.assertEqual(disks_size_sum - reserved_size,
                          os_sum_size + glance_sum_size +
                          mysql_sum_size + logs_sum_size +
@@ -1128,18 +1126,20 @@ class TestVolumeManager(BaseIntegrationTest):
 
     def test_get_node_spaces_with_plugins(self):
         cluster = self._prepare_env()
-        node = self.env.create_node(
-            api=False,
-            cluster_id=cluster.id,
-            roles=['controller', 'testing_plugin'],
-            pending_addition=True
-        )
 
         self.env.create_plugin(
             cluster=cluster,
             package_version='3.0.0',
             fuel_version=['7.0'],
+            roles_metadata={'testing_plugin': {'name': 'testing plugin'}},
             volumes_metadata=self.env.get_default_plugin_volumes_config()
+        )
+
+        node = self.env.create_node(
+            api=False,
+            cluster_id=cluster.id,
+            roles=['controller', 'testing_plugin'],
+            pending_addition=True
         )
 
         expected_spaces = [

@@ -26,6 +26,23 @@ class TagValidator(BasicValidator):
     single_schema = tag.TAG_CREATION_SCHEMA
 
     @classmethod
+    def _check_volumes(cls, data):
+        if data.get('volumes_tags_mapping') is None:
+            return
+        #  owner_cls, owner_obj = objects.Tag.get_owner(data['owner_type'],
+        #                                               data['owner_id'])
+        #  allowed_ids = set(v['id']
+        #                    for v in owner_cls.get_tags_volumes(owner_obj))
+        #  tag_volume_ids = set(v['id'] for v in data['volumes_tags_mapping'])
+        #  missing_volume_ids = tag_volume_ids - allowed_ids
+
+        #  if missing_volume_ids:
+        #      raise errors.InvalidData(
+        #          "Wrong data in volumes_tags_mapping. Volumes with ids {0}"
+        #          " are not in the list of allowed volumes {1}".format(
+        #              missing_volume_ids, allowed_ids))
+
+    @classmethod
     def validate_delete(cls, data, instance):
         if instance.read_only:
             raise errors.CannotDelete(

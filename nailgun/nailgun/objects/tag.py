@@ -20,9 +20,12 @@ Tag object and collection
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+
 from nailgun.objects.plugin import ClusterPlugin
+from nailgun.objects.plugin import Plugin
 from nailgun.objects.serializers.tag import TagSerializer
 
 
@@ -30,6 +33,48 @@ class Tag(NailgunObject):
 
     model = models.Tag
     serializer = TagSerializer
+
+    @staticmethod
+    def get_owner(self, owner_type, owner_id):
+        from nailgun.objects import Cluster
+        from nailgun.objects import Release
+
+        obj_cls = {
+            'releases': Release,
+            'clusters': Cluster,
+            'plugins': Plugin
+        }[owner_type]
+        return obj_cls, obj_cls.get_by_uid(owner_id)
+
+    @classmethod
+    def create(cls, data):
+        """Create tag.
+
+        :param data: data
+        :type data: dict
+
+        :return: plugin instance
+        :rtype: models.Plugin
+        """
+        # update only if user specified this field
+        if data.get('volumes_tags_mapping') is not None:
+            owner_cls, owner_obj = cls.get_owner(data['owner_type'],
+                                                 data['owner_id'])
+            owner_cls.update_tag_volumes(owner_obj, data)
+            data.pop('volumes_tags_mapping')
+        return super(Tag, cls).create(data)
+
+    @classmethod
+    def delete(cls, instance):
+        """Delete tag.
+
+        :param instance: Tag model instance
+        :type instance: models.Tag
+        """
+        owner_cls, owner_obj = cls._get_owner(instance.owner_type,
+                                              instance.owner_id)
+        owner_cls.delete_tag_volumes(owner_obj, instance.tag)
+        super(Tag, cls).delete(instance)
 
 
 class TagCollection(NailgunCollection):

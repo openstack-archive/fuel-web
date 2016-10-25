@@ -1483,7 +1483,7 @@ class TestClusterObject(BaseTestCase):
                 'volumes': []
             }
         })
-        volumes_metadata = objects.Cluster.get_volumes_metadata(
+        volumes_metadata = objects.Cluster.get_all_volumes_metadata(
             cluster)
         self.assertEqual(
             volumes_metadata, expected_volumes_metadata)
@@ -1514,7 +1514,7 @@ class TestClusterObject(BaseTestCase):
             expected_volumes_metadata['volumes'].extend(
                 plugin_volumes_metadata['volumes'])
 
-            volumes_metadata = objects.Cluster.get_volumes_metadata(
+            volumes_metadata = objects.Cluster.get_all_volumes_metadata(
                 self.cluster)
 
             self.assertDictEqual(

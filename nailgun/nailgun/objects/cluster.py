@@ -43,6 +43,7 @@ from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.plugin import ClusterPlugin
+from nailgun.objects.plugin import Plugin
 from nailgun.objects import Release
 from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.objects import TagCollection
@@ -673,6 +674,42 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
+    def update_tag_volumes(cls, instance, tag):
+        """Introduce/update tag volumes info for  cluster.
+
+        :param instance: a Release instance
+        :param role: a dict with tag data
+        :returns: None
+        """
+        tag_vol_data = {tag['tag']: tag.get('volumes_tags_mapping', [])}
+        instance.volumes_metadata.setdefault('volumes_tags_mapping',
+                                             {}).update(tag_vol_data)
+        instance.volumes_metadata.changed()
+
+    @classmethod
+    def get_tag_volumes(cls, instance, tag):
+        """Get tag volumes info from cluster.
+
+        :param instance: a Cluster instance
+        :param tag: a Tag instance
+        :returns: list with volumes meta
+        """
+        return (instance.volumes_metadata.get('volumes_tags_mapping', {})
+                .get(tag.tag, []))
+
+    @classmethod
+    def delete_tag_volumes(cls, instance, tag):
+        """Remove tag volumes info from cluster.
+
+        :param instance: a Cluster instance
+        :param tag: a string contains tag name
+        :returns: None
+        """
+        instance.volumes_metadata.get('volumes_tags_mapping', {}).pop(tag,
+                                                                      None)
+        instance.volumes_metadata.changed()
+
+    @classmethod
     def get_ifaces_for_network_in_cluster(cls, cluster, net):
         """Method for receiving node_id:iface pairs for all nodes in cluster
 
@@ -1179,28 +1216,86 @@ class Cluster(NailgunObject):
         return tasks
 
     @classmethod
-    def get_volumes_metadata(cls, instance):
+    def get_volumes_by_ids(cls, instance_ids):
+        """Get volumes
+
+        :param instance_ids: a list of cluster ids
+        :returns: volumes list
+        """
+        return (db().query(cls.model.volumes_metadata)
+                .filter(cls.model.id.in_(instance_ids)))
+
+    @classmethod
+    def get_nm_volumes_ids(cls, instance):
+        """Get all volumes what may be used in cluster
+
+        :param instance: a cluster instance
+        :returns: volumes list
+        """
+
+        plugin_ids = (ClusterPlugin.get_enabled(instance.id)
+                      .with_entities(models.Plugin.id).subquery())
+        all_volumes_meta = cls.get_volumes_by_ids([instance.id]).union(
+            Plugin.get_volumes_by_ids(plugin_ids)
+        ).union(
+            Release.get_volumes_by_ids([instance.release.id])
+        )
+        for v_meta in all_volumes_meta:
+            for volume in v_meta[0].get('volumes', []):
+                yield volume.get('id')
+
+    @classmethod
+    def get_all_volumes_metadata(cls, instance):
         """Return proper volumes metadata for cluster
 
-        Metadata consists of general volumes metadata from release
-        and volumes metadata from plugins which are related to this cluster
+        Metadata consists of general volumes metadata from cluster itself,
+        volumes metadata release, and volumes metadata from plugins which
+        are related to this cluster.
 
         :param instance: Cluster DB instance
         :returns: dict -- object with merged volumes metadata
         """
-        volumes_metadata = copy.deepcopy(instance.release.volumes_metadata)
+        def _update_volumes_meta(to_update, data):
+            to_update.get('volumes_roles_mapping', {}).update(
+                data.get('volumes_roles_mapping', {}))
+            to_update.get('volumes', []).extend(
+                data.get('volumes', []))
+            to_update.setdefault('rule_to_pick_boot_disk', []).extend(
+                data.get('rule_to_pick_boot_disk', []))
+            return to_update
+
+        rel_volumes = copy.deepcopy(instance.release.volumes_metadata)
+        cluster_volumes = cls.get_volumes_metadata(instance)
+        volumes_metadata = _update_volumes_meta(rel_volumes,
+                                                cluster_volumes)
+
         plugin_volumes = PluginManager.get_volumes_metadata(instance)
-
-        volumes_metadata['volumes_roles_mapping'].update(
-            plugin_volumes['volumes_roles_mapping'])
-
-        volumes_metadata['volumes'].extend(plugin_volumes['volumes'])
-        volumes_metadata.setdefault(
-            'rule_to_pick_boot_disk',
-            []
-        ).extend(plugin_volumes['rule_to_pick_boot_disk'])
+        volumes_metadata = _update_volumes_meta(volumes_metadata,
+                                                plugin_volumes)
 
         return volumes_metadata
+
+    @classmethod
+    def get_volumes_metadata(cls, instance):
+        """Return proper volumes metadata for cluster
+
+        :param instance: Cluster DB instance
+        :returns: dict -- object with merged volumes metadata
+        """
+        cluster_volumes = instance.volumes_metadata.get('volumes', [])
+        cluster_volumes_ids = set(v['id'] for v in cluster_volumes)
+
+        release_volumes = instance.release.volumes_metadata.get('volumes', [])
+        release_volumes_ids = set(v['id'] for v in release_volumes)
+
+        same_volumes = cluster_volumes_ids & release_volumes_ids
+        if same_volumes:
+            raise errors.AlreadyExists(
+                "Cluster is overlapping with its release "
+                "by introducing the same volumes with "
+                "ids '{}''".format(same_volumes)
+            )
+        return instance.volumes_metadata
 
     @classmethod
     def create_vmware_attributes(cls, instance):

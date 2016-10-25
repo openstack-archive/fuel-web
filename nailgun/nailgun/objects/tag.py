@@ -21,9 +21,12 @@ Tag object and collection
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+
 from nailgun.objects.plugin import ClusterPlugin
+from nailgun.objects.plugin import Plugin
 from nailgun.objects.serializers.tag import TagSerializer
 
 
@@ -31,6 +34,79 @@ class Tag(NailgunObject):
 
     model = models.Tag
     serializer = TagSerializer
+
+    @staticmethod
+    def get_owner(owner_type, owner_id):
+        from nailgun.objects import Cluster
+        from nailgun.objects import Release
+
+        obj_cls = {
+            consts.TAG_OWNER_TYPES.release: Release,
+            consts.TAG_OWNER_TYPES.cluster: Cluster,
+            consts.TAG_OWNER_TYPES.plugin: Plugin
+        }[owner_type]
+        return obj_cls, obj_cls.get_by_uid(owner_id)
+
+    @classmethod
+    def create(cls, data):
+        """Create tag.
+
+        :param data: data
+        :type data: dict
+
+        :return: tag instance
+        :rtype: models.Tag
+        """
+        # update only if user specified this field
+        if data.get('volumes_tags_mapping') is not None:
+            owner_cls, owner_obj = cls.get_owner(data['owner_type'],
+                                                 data['owner_id'])
+            owner_cls.update_tag_volumes(owner_obj, data)
+            data.pop('volumes_tags_mapping')
+        return super(Tag, cls).create(data)
+
+    @classmethod
+    def update(cls, instance, data):
+        """Update tag.
+
+        :param instance: tag instance
+        :type instance: models.Tag
+        :param data: data
+        :type data: dict
+
+        :return: tag instance
+        :rtype: models.Tag
+        """
+        # update only if user specified this field
+        if data.get('volumes_tags_mapping') is not None:
+            owner_cls, owner_obj = cls.get_owner(instance.owner_type,
+                                                 instance.owner_id)
+            owner_cls.update_tag_volumes(owner_obj, data)
+            data.pop('volumes_tags_mapping')
+        return super(Tag, cls).update(instance, data)
+
+    @classmethod
+    def get_volumes_meta(cls, instance):
+        """Get tag volumes metadata.
+
+        :param instance: Tag model instance
+        :type instance: models.Tag
+        """
+        owner_cls, owner_obj = cls.get_owner(instance.owner_type,
+                                             instance.owner_id)
+        return owner_cls.get_tag_volumes(owner_obj, instance)
+
+    @classmethod
+    def delete(cls, instance):
+        """Delete tag.
+
+        :param instance: Tag model instance
+        :type instance: models.Tag
+        """
+        owner_cls, owner_obj = cls.get_owner(instance.owner_type,
+                                             instance.owner_id)
+        owner_cls.delete_tag_volumes(owner_obj, instance.tag)
+        super(Tag, cls).delete(instance)
 
 
 class TagCollection(NailgunCollection):

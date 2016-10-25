@@ -132,6 +132,79 @@ class Plugin(NailgunObject):
                     graph_data, instance, graph_type)
 
     @classmethod
+    def update_tag_volumes(cls, instance, tag):
+        """Introduce/update tag volumes info for plugin.
+
+        :param instance: a Release instance
+        :param tag: a dict with tag data
+        :returns: None
+        """
+        tag_vol_data = {tag['tag']: tag.get('volumes_tags_mapping', [])}
+        instance.volumes_metadata.setdefault('volumes_tags_mapping',
+                                             {}).update(tag_vol_data)
+        instance.volumes_metadata.changed()
+
+    @classmethod
+    def get_tag_volumes(cls, instance, tag):
+        """Get tag volumes info from plugin.
+
+        :param instance: a Plugin instance
+        :param tag: a Tag instance
+        :returns: list with volumes meta
+        """
+        return (instance.volumes_metadata.get('volumes_tags_mapping', {})
+                .get(tag.tag, []))
+
+    @classmethod
+    def delete_tag_volumes(cls, instance, tag):
+        """Remove tag volumes info from plugin.
+
+        :param instance: a Plugin instance
+        :param tag: a string contains tag name
+        :returns: None
+        """
+        instance.volumes_metadata.get('volumes_tags_mapping', {}).pop(tag,
+                                                                      None)
+        instance.volumes_metadata.changed()
+
+    @classmethod
+    def get_volumes_by_ids(cls, instance_ids):
+        """Get volumes
+
+        :param instance_ids: a list of plugin ids
+        :returns: volumes list
+        """
+        return (db().query(cls.model.volumes_metadata)
+                .filter(cls.model.id.in_(instance_ids)))
+
+    @classmethod
+    def get_nm_volumes(cls, instance):
+        """Get all volumes what may be used with plugin
+
+        :param instance: a plugin instance
+        :returns: volumes list
+        """
+        from nailgun.objects import Cluster
+        from nailgun.objects import Release
+
+        cluster_ids = (db().query(models.ClusterPlugin.cluster_id)
+                       .filter_by(plugin_id=instance.id, enabled=True)
+                       .subquery())
+
+        release_ids = (db().query(models.Release.id).join(models.Cluster)
+                       .filter(models.Cluster.id.in_(cluster_ids)).subquery())
+
+        all_volumes_meta = cls.get_volumes_by_ids([instance.id]).union(
+            Cluster.get_volumes_by_ids(cluster_ids)
+        ).union(
+            Release.get_volumes_by_ids(release_ids)
+        )
+
+        for v_meta in all_volumes_meta:
+            for volume in v_meta[0].get('volumes', []):
+                yield volume.get('id')
+
+    @classmethod
     def get_by_name_version(cls, name, version):
         return db()\
             .query(cls.model)\

@@ -24,3 +24,10 @@ class TagSerializer(BasicSerializer):
         "tag",
         "has_primary"
     )
+
+    @classmethod
+    def serialize(cls, instance, fields=None):
+        from nailgun.objects import Tag
+        data_dict = super(TagSerializer, cls).serialize(instance, fields)
+        data_dict['volumes_tags_mapping'] = Tag.get_volumes_meta(instance)
+        return data_dict

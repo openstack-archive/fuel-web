@@ -26,6 +26,7 @@ import six
 import yaml
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
@@ -124,7 +125,7 @@ class Release(NailgunObject):
         Previous ones are deleted.
 
         :param instance: a Release instance
-        :param role: a role dict
+        :param tag: a tag dict
         :returns: None
         """
         instance.roles_metadata[role['name']] = role['meta']
@@ -134,12 +135,87 @@ class Release(NailgunObject):
         instance.volumes_metadata.changed()
 
     @classmethod
+    def update_tag_volumes(cls, instance, tag):
+        """Introduce/update tag volumes info for release.
+
+        :param instance: a Release instance
+        :param tag: a dict with tag data
+        :returns: None
+        """
+        tag_vol_data = {tag['tag']: tag.get('volumes_tags_mapping', [])}
+        instance.volumes_metadata.setdefault('volumes_tags_mapping',
+                                             {}).update(tag_vol_data)
+        instance.volumes_metadata.changed()
+
+    @classmethod
+    def get_tag_volumes(cls, instance, tag):
+        """Get tag volumes info from release.
+
+        :param instance: a Release instance
+        :param tag: a Tag instance
+        :returns: list with volumes meta
+        """
+        return (instance.volumes_metadata.get('volumes_tags_mapping', {})
+                .get(tag.tag, []))
+
+    @classmethod
     def remove_role(cls, instance, role_name):
         result = instance.roles_metadata.pop(role_name, None)
         instance.volumes_metadata['volumes_roles_mapping'].pop(role_name, None)
         # notify about changes
         instance.volumes_metadata.changed()
         return bool(result)
+
+    @classmethod
+    def delete_tag_volumes(cls, instance, tag):
+        """Remove tag volumes info from release.
+
+        :param instance: a Release instance
+        :param tag: a string contains tag name
+        :returns: None
+        """
+        instance.volumes_metadata.get('volumes_tags_mapping', {}).pop(tag,
+                                                                      None)
+        instance.volumes_metadata.changed()
+
+    @classmethod
+    def get_volumes_by_ids(cls, instance_ids):
+        """Get volumes for list of releases
+
+        :param instance_ids: a list of release ids
+        :returns: volumes list
+        """
+        return (db().query(cls.model.volumes_metadata)
+                .filter(cls.model.id.in_(instance_ids)))
+
+    @classmethod
+    def get_nm_volumes(cls, instance):
+        """Get volumes
+
+        :param instance_ids: a list of release ids
+        :returns: volumes list
+        """
+        from nailgun.objects import Cluster
+        from nailgun.objects import Plugin
+
+        cluster_ids = (db().query(cls.model.id)
+                       .filter_by(release_id=instance.id).subquery())
+
+        plugin_ids = (db().query(models.ClusterPlugin.plugin_id)
+                      .filter(
+                          ((models.ClusterPlugin.enabled.is_(True)) &
+                           (models.ClusterPlugin.cluster_id.in_(cluster_ids))))
+                      .subquery())
+
+        all_volumes_meta = cls.get_volumes_by_ids([instance.id]).union(
+            Cluster.get_volumes_by_ids(cluster_ids)
+        ).union(
+            Plugin.get_volumes_by_ids(plugin_ids)
+        )
+
+        for v_meta in all_volumes_meta:
+            for volume in v_meta[0].get('volumes', []):
+                yield volume.get('id')
 
     @classmethod
     def is_deployable(cls, instance):

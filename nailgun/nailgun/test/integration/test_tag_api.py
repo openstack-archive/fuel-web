@@ -44,6 +44,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                          pending_roles=['controller'],
                                          pending_addition=True)
         self.tag_data = yaml.load(self.TAG)
+        self.vol_data = {"allocate_size": "min", "id": "os"}
 
     def _get_all_tags(self, owner, owner_id):
         return self.app.get(self.owner_url.format(self.owner_map[owner],
@@ -77,6 +78,29 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertDictContainsSubset(self.tag_data, resp.json)
 
+    def test_create_tag_with_volume_data(self):
+        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        self.tag_data['volumes_tags_mapping'] = [self.vol_data]
+        resp = self.env.create_tag(self.owner_map[owner],
+                                   owner_id,
+                                   self.tag_data)
+        self.assertEqual(resp.status_code, 201)
+
+        resp = self.env.get_tag(resp.json['id'])
+        self.assertEqual(resp.status_code, 200)
+        self.assertDictContainsSubset(self.tag_data, resp.json)
+
+    def test_failed_create_tag_with_non_existing_volume(self):
+        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        self.vol_data['id'] = "test"
+        self.tag_data['volumes_tags_mapping'] = [self.vol_data]
+        resp = self.env.create_tag(self.owner_map[owner],
+                                   owner_id,
+                                   self.tag_data,
+                                   expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("not in the list of allowed volumes set", resp.body)
+
     def test_failed_create_tag_with_same_name_in_cluster_namespace(self):
         owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
         resp = self.env.create_tag(self.owner_map[owner],
@@ -90,7 +114,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
         owner, owner_id = TAG_OWNER_TYPES.plugin, self.plugin.id
@@ -99,7 +123,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
     def test_failed_create_tag_with_same_name_in_release_namespace(self):
@@ -114,8 +138,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                    owner_id,
                                    self.tag_data,
                                    expect_errors=True)
-
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
         owner, owner_id = TAG_OWNER_TYPES.plugin, self.plugin.id
@@ -124,7 +147,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
     def test_failed_create_tag_with_same_name_in_plugin_namespace(self):
@@ -140,7 +163,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
         owner, owner_id = TAG_OWNER_TYPES.release, self.release.id
@@ -149,7 +172,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
     def test_update_tag(self):
@@ -220,7 +243,7 @@ class TestTagApi(base.BaseIntegrationTest):
 
         resp = self.env.assign_tag(self.node.id, [n_tag['id']],
                                    expect_errors=True)
-        self.assertEqual(resp.status_code, 405)
+        self.assertEqual(resp.status_code, 400)
         self.assertIn("are already assigned to", resp.body)
 
     def test_failed_unassign_not_assigned_tag(self):
@@ -229,14 +252,13 @@ class TestTagApi(base.BaseIntegrationTest):
 
         resp = self.env.unassign_tag(self.node.id, [n_tag['id']],
                                      expect_errors=True)
-        self.assertEqual(resp.status_code, 405)
+        self.assertEqual(resp.status_code, 400)
         self.assertIn("are not assigned to", resp.body)
 
     def test_failed_assign_tag_to_non_cluster_node(self):
         owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
         node = self.env.create_node(api=False)
-
         resp = self.env.assign_tag(node.id, [n_tag['id']],
                                    expect_errors=True)
         self.assertEqual(resp.status_code, 403)

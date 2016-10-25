@@ -89,8 +89,35 @@ class BasePluginTest(base.BaseIntegrationTest):
     def enable_plugin(self, cluster, plugin_name, plugin_id):
         return self.modify_plugin(cluster, plugin_name, plugin_id, True)
 
+    def enable_plugin_with_only_attributes(self, cluster, plugin_name,
+                                           plugin_id, expect_errors=False):
+        editable_attrs = objects.Cluster.get_editable_attributes(
+            cluster, all_plugins_versions=True)
+        plugin_attrs = editable_attrs[plugin_name]
+        plugin_attrs['metadata']['enabled'] = True
+        plugin_attrs['metadata']['chosen_id'] = plugin_id
+        resp = self.app.put(
+            base.reverse('ClusterAttributesHandler',
+                         {'cluster_id': cluster.id}),
+            jsonutils.dumps({'editable': {plugin_name: plugin_attrs}}),
+            headers=self.default_headers,
+            expect_errors=expect_errors)
+        return resp
+
     def disable_plugin(self, cluster, plugin_name):
         return self.modify_plugin(cluster, plugin_name, None, False)
+
+    def enable_propagate_task_deploy(self, cluster):
+        editable_attrs = objects.Cluster.get_editable_attributes(
+            cluster, all_plugins_versions=True)
+        editable_attrs['common']['propagate_task_deploy']['value'] = True
+        resp = self.app.put(
+            base.reverse('ClusterAttributesHandler',
+                         {'cluster_id': cluster.id}),
+            jsonutils.dumps({'editable': editable_attrs}),
+            headers=self.default_headers)
+
+        return resp
 
     def get_pre_hooks(self, cluster):
         with mock.patch('nailgun.plugins.adapters.glob') as glob:
@@ -311,6 +338,18 @@ class TestPluginsApi(BasePluginTest):
                          'propagate_task_deploy attribute is set. '
                          'Ensure tasks.yaml is empty and all tasks '
                          'has version >= 2.0.0.')
+
+    def test_enable_plugin_with_only_plugin_attributes(self):
+        resp = self.env.create_plugin(api=True, tasks=self.TASKS_CONFIG)
+        plugin = objects.Plugin.get_by_uid(resp.json['id'])
+        cluster = self.env.create(
+            release_kwargs={'version': 'mitaka-9.0',
+                            'operating_system': 'Ubuntu',
+                            'deployment_tasks': []})
+        self.enable_propagate_task_deploy(cluster)
+        resp = self.enable_plugin_with_only_attributes(
+            cluster, plugin.name, plugin.id)
+        self.assertEqual(resp.status_code, 200)
 
     @mock.patch.object(PluginManager, '_list_plugins_on_fs')
     @mock.patch('nailgun.plugins.loaders.files_manager.open', create=True)

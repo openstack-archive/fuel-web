@@ -133,12 +133,37 @@ class Release(NailgunObject):
         instance.volumes_metadata.changed()
 
     @classmethod
+    def update_tag_volumes(cls, instance, tag):
+        """Introduce/update tag volumes info for release.
+
+        :param instance: a Release instance
+        :param role: a dict with tag data
+        :returns: None
+        """
+        tag_vol_data = {tag['tag']: tag.get('volumes_tags_mapping', [])}
+        instance.volumes_metadata.setdefault('volumes_tags_mapping',
+                                             {}).update(tag_vol_data)
+        instance.volumes_metadata.changed()
+
+    @classmethod
     def remove_role(cls, instance, role_name):
         result = instance.roles_metadata.pop(role_name, None)
         instance.volumes_metadata['volumes_roles_mapping'].pop(role_name, None)
         # notify about changes
         instance.volumes_metadata.changed()
         return bool(result)
+
+    @classmethod
+    def delete_tag_volumes(cls, instance, tag):
+        """Remove tag volumes info from release.
+
+        :param instance: a Release instance
+        :param tag: a string contains tag name
+        :returns: None
+        """
+        instance.volumes_metadata.get('volumes_tags_mapping', {}).pop(tag,
+                                                                      None)
+        instance.volumes_metadata.changed()
 
     @classmethod
     def is_deployable(cls, instance):

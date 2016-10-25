@@ -132,6 +132,31 @@ class Plugin(NailgunObject):
                     graph_data, instance, graph_type)
 
     @classmethod
+    def update_tag_volumes(cls, instance, tag):
+        """Introduce/update tag volumes info for plugin.
+
+        :param instance: a Release instance
+        :param role: a dict with tag data
+        :returns: None
+        """
+        tag_vol_data = {tag['tag']: tag.get('volumes_tags_mapping', [])}
+        instance.volumes_metadata.setdefault('volumes_tags_mapping',
+                                             {}).update(tag_vol_data)
+        instance.volumes_metadata.changed()
+
+    @classmethod
+    def delete_tag_volumes(cls, instance, tag):
+        """Remove tag volumes info from plugin.
+
+        :param instance: a Plugin instance
+        :param tag: a string contains tag name
+        :returns: None
+        """
+        instance.volumes_metadata.get('volumes_tags_mapping', {}).pop(tag,
+                                                                      None)
+        instance.volumes_metadata.changed()
+
+    @classmethod
     def get_by_name_version(cls, name, version):
         return db()\
             .query(cls.model)\

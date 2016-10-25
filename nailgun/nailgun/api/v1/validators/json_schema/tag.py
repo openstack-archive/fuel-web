@@ -13,6 +13,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+VOLUME_ALLOCATION = {
+    'type': 'object',
+    'description': 'Volume allocations for tag',
+    'required': ['allocate_size', 'id'],
+    'properties': {
+        'allocate_size': {'type': 'string',
+                          'enum': ['all', 'min', 'full-disk']},
+        'id': {'type': 'string'}}}
+
+
+VOLUME_ALLOCATIONS = {
+    'type': 'array',
+    "minItems": 1,
+    'items': VOLUME_ALLOCATION}
+
 TAG_CREATION_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Tag",
@@ -21,7 +36,8 @@ TAG_CREATION_SCHEMA = {
     "properties": {
         "id": {"type": "integer"},
         "tag": {"type": "string"},
-        "has_primary": {"type": "boolean"}
+        "has_primary": {"type": "boolean"},
+        "volumes_tags_mapping": VOLUME_ALLOCATIONS,
     },
     "required": ["tag"],
 }

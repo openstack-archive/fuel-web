@@ -21,7 +21,8 @@ TAG_CREATION_SCHEMA = {
     "properties": {
         "id": {"type": "integer"},
         "tag": {"type": "string"},
-        "has_primary": {"type": "boolean"}
+        "has_primary": {"type": "boolean"},
+        "volumes_metadata": {"type": "boolean"}
     },
     "required": ["tag"],
 }

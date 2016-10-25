@@ -50,9 +50,11 @@ q_update_plugin_query = sa.sql.text(
 
 def upgrade():
     upgrade_plugins_tags()
+    upgrade_tags_components()
 
 
 def downgrade():
+    downgrade_tags_components()
     downgrade_plugins_tags()
 
 
@@ -187,3 +189,17 @@ def downgrade_plugins_tags():
                               q_select_plugin_query,
                               q_update_plugin_query)
     op.drop_column('plugins', 'tags_metadata')
+
+
+def upgrade_tags_components():
+    op.add_column(
+        'clusters',
+        sa.Column('volumes_metadata',
+                  fields.JSON(),
+                  nullable=False,
+                  server_default='{}'),
+    )
+
+
+def downgrade_tags_components():
+    op.drop_column('clusters', 'tags_metadata')

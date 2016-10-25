@@ -108,7 +108,7 @@ def modify_volumes_hook(role_mapping, node):
 def get_rule_to_pick_boot(node):
     # FIXME(apopovych): ugly hack to avoid circular dependency
     from nailgun import objects
-    metadata = objects.Cluster.get_volumes_metadata(node.cluster)
+    metadata = objects.Cluster.get_all_volumes_metadata(node.cluster)
     return metadata.get('rule_to_pick_boot_disk', [])
 
 
@@ -124,7 +124,8 @@ def get_node_spaces(node):
     from nailgun import objects
 
     node_spaces = []
-    volumes_metadata = objects.Cluster.get_volumes_metadata(node.cluster)
+    volumes_metadata = objects.Cluster.get_all_volumes_metadata(node.cluster)
+    tag_mapping = volumes_metadata('volumes_tags_mapping', {})
     role_mapping = volumes_metadata['volumes_roles_mapping']
     all_spaces = volumes_metadata['volumes']
     # TODO(dshulyak)
@@ -132,10 +133,10 @@ def get_node_spaces(node):
     # when it will be extended with flexible template engine
     modify_volumes_hook(role_mapping, node)
 
-    for role in node.all_roles:
-        if not role_mapping.get(role):
+    for tag in node.all_tags:
+        volumes = tag_mapping.get(tag) or role_mapping.get(tag)
+        if not volumes:
             continue
-        volumes = role_mapping[role]
 
         for volume in volumes:
             space = find_space_by_id(all_spaces, volume['id'])

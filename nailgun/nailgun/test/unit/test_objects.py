@@ -367,8 +367,9 @@ class TestNodeObject(BaseIntegrationTest):
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
             },
             nodes_kwargs=nodes)
-
-        cluster.release.roles_metadata['mongo']['public_ip_required'] = True
+        tag_mongo = objects.TagCollection.get_release_tags(
+            [cluster.release_id], tag='mongo').first()
+        tag_mongo.update({'public_ip_required': True})
         attrs = cluster.attributes.editable
         self.assertFalse(
             attrs['public_network_assignment']['assign_to_all_nodes']['value'])
@@ -390,24 +391,6 @@ class TestNodeObject(BaseIntegrationTest):
             int(objects.Node.should_have_public_with_ip(node))
             for node in self.env.nodes)
         self.assertEqual(nodes_w_public_count, len(nodes))
-
-    def test_should_have_public_with_ip_with_given_metadata(self):
-        cluster = self.env.create(
-            cluster_kwargs={
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
-            },
-            nodes_kwargs=[{}, {}])
-
-        node = self.env.nodes[0]
-        roles_metadata = objects.Cluster.get_roles(cluster)
-        with mock.patch.object(objects.Cluster, 'get_roles') as get_roles_mock:
-            get_roles_mock.return_value = roles_metadata
-            objects.Node.should_have_public_with_ip(node)
-            self.assertEqual(get_roles_mock.call_count, 1)
-
-        with mock.patch.object(objects.Cluster, 'get_roles') as get_roles_mock:
-            objects.Node.should_have_public_with_ip(node, roles_metadata)
-            self.assertEqual(get_roles_mock.call_count, 0)
 
     def test_should_have_public(self):
         nodes = [

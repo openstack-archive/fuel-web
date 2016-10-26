@@ -402,7 +402,7 @@ class Cluster(NailgunObject):
         public_map = {}
         for node in instance.nodes:
             public_map[node.id] = objects.Node.should_have_public(
-                node, roles_metadata)
+                node)
         return public_map
 
     @classmethod

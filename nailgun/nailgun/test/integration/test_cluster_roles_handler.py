@@ -35,6 +35,11 @@ class TestClusterRolesHandler(base.BaseTestCase):
             - condition: "some logic condition"
               message: "Some message for restriction warning"
     """)
+    TAG = yaml.safe_load("""
+        test_role:
+            tag: "test_role"
+            has_primary: False
+    """)
 
     VOLUMES = yaml.safe_load("""
         volumes_roles_mapping:
@@ -161,6 +166,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
     def test_get_particular_role_for_cluster_w_plugin(self):
         plugin_data = self.env.get_default_plugin_metadata()
         plugin_data['roles_metadata'] = self.ROLES
+        plugin_data['tags_metadata'] = self.TAG
         plugin_data['volumes_metadata'] = self.VOLUMES
         plugin = objects.Plugin.create(plugin_data)
         self.cluster.plugins.append(plugin)

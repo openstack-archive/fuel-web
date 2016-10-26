@@ -116,7 +116,8 @@ def prepare():
             'roles_metadata': jsonutils.dumps({
                 'role_y': {
                     'name': 'role_y',
-                    'has_primary': True
+                    'has_primary': True,
+                    'public_ip_required': True
                 },
             })
         }]
@@ -146,16 +147,35 @@ def prepare():
             'timestamp': datetime.datetime.utcnow(),
         }]
     )
-
+    result = db.execute(
+        meta.tables['tags'].insert(),
+        [
+            {
+                'tag': 'controller',
+                'owner_id': release_id,
+                'owner_type': 'release',
+                'has_primary': True,
+                'read_only': True
+            },
+            {
+                'tag': 'compute',
+                'owner_id': cluster_id,
+                'owner_type': 'cluster',
+                'has_primary': False,
+                'read_only': True
+            }
+        ]
+    )
     db.commit()
 
 
 class TestTags(base.BaseAlembicMigrationTest):
     def test_plugins_tags_created_on_upgrade(self):
+        tags = self.meta.tables['tags']
         tags_count = db.execute(
             sa.select(
-                [sa.func.count(self.meta.tables['tags'].c.id)]
-            )).fetchone()[0]
+                [sa.func.count(tags.c.id)]
+            ).where(tags.c.owner_type == 'plugin')).fetchone()[0]
 
         self.assertEqual(tags_count, 2)
 
@@ -188,3 +208,39 @@ class TestTags(base.BaseAlembicMigrationTest):
         for role_meta in db.execute(q_roles_meta):
             for role, meta in six.iteritems(jsonutils.loads(role_meta[0])):
                 self.assertEqual(meta['tags'], [role])
+
+    def test_cluster_tag_metada_updated(self):
+        tags = self.meta.tables['tags']
+        releases = self.meta.tables['releases']
+        plugins = self.meta.tables['plugins']
+        tags_meta = db.execute(
+            sa.select(
+                [tags.c.tag, tags.c.owner_id, tags.c.owner_type,
+                 tags.c.public_ip_required, tags.c.public_for_dvr_required]
+            )
+        ).fetchall()
+        releases = db.execute(
+            sa.select([releases.c.id, releases.c.roles_metadata])
+        )
+        plugins = db.execute(
+            sa.select([plugins.c.id, plugins.c.roles_metadata])
+        )
+        for tag, owner_id, owner_type, p_i_r, p_f_d_r in tags_meta:
+            for own_id, roles_meta in releases:
+                if owner_type == 'release' and owner_id == own_id:
+                    for role, role_meta in roles_meta:
+                        if tag in role_meta.get('tags', []):
+                            self.assertEqual(p_i_r, role_meta.get(
+                                'public_ip_required', False))
+                            self.assertEqual(p_f_d_r, role_meta.get(
+                                'public_for_dvr_required', False))
+
+            for own_id, roles_meta in plugins:
+                if owner_type == 'plugin' and owner_id == own_id:
+                    for role, role_meta in roles_meta:
+                        if tag in role_meta.get('tags', []):
+                            self.assertEqual(p_i_r, role_meta.get(
+                                'public_ip_required',
+                                False))
+                            self.assertEqual(p_f_d_r, role_meta.get(
+                                'public_for_dvr_required', False))

@@ -23,4 +23,6 @@ class Tag(Base):
         nullable=False
     )
     has_primary = Column(Boolean, default=False)
+    public_ip_required = Column(Boolean, default=False)
+    public_for_dvr_required = Column(Boolean, default=False)
     read_only = Column(Boolean, default=False)

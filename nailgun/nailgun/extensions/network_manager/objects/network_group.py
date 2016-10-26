@@ -382,7 +382,7 @@ class NetworkGroup(NailgunObject):
         from nailgun.objects import Node
         for node in cluster.nodes:
             should_have_public = Node.should_have_public(
-                node, roles_metadata)
+                node)
             if public_map.get(node.id) == should_have_public:
                 continue
             if should_have_public:

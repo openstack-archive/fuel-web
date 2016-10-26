@@ -186,18 +186,45 @@
         tags:
           - ironic
     tags_metadata:
+      ironic:
+        has_primary: False
+      compute-vmware:
+        has_primary: False
+      virt:
+        has_primary: False
+        public_ip_required: True
+      base-os:
+        has_primary: False
+      cinder-vmware:
+        has_primary: False
+      cinder-block-device:
+        has_primary: False
+        public_ip_required: False
       controller:
         has_primary: True
-      mysql:
-        has_primary: True
+        public_ip_required: True
       mongo:
         has_primary: True
       compute:
         has_primary: False
+        public_for_dvr_required: True
       ceph-osd:
         has_primary: False
       cinder:
         has_primary: False
+      rabbitmq:
+        has_primary: True
+        public_ip_required: False
+      database:
+        has_primary: True
+        public_ip_required: False
+      keystone:
+        has_primary: True
+        public_ip_required: True
+      neutron:
+        has_primary: True
+        public_ip_required: True
+        public_for_dvr_required: True
 
     network_roles_metadata:
       -

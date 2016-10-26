@@ -299,6 +299,11 @@ class TestDeploymentHistoryHandlers(BaseIntegrationTest):
 
         self.assertItemsEqual(
             rows,
-            [['task_name', 'node_id', 'status', 'time_start', 'time_end'],
-             ['test2', cluster.nodes[0].uid, 'pending', '', ''],
-             ['test1', cluster.nodes[0].uid, 'pending', '', '']])
+            [['task_name',
+              'node_id',
+              'status',
+              'type',
+              'time_start',
+              'time_end'],
+             ['test2', cluster.nodes[0].uid, 'pending', 'puppet', '', ''],
+             ['test1', cluster.nodes[0].uid, 'pending', 'puppet', '', '']])

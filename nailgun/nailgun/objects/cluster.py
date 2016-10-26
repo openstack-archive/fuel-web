@@ -395,14 +395,14 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
-    def _create_public_map(cls, instance, roles_metadata=None):
+    def _create_public_map(cls, instance):
         if instance.network_config.configuration_template is not None:
             return
         from nailgun import objects
         public_map = {}
         for node in instance.nodes:
             public_map[node.id] = objects.Node.should_have_public(
-                node, roles_metadata)
+                node)
         return public_map
 
     @classmethod
@@ -412,11 +412,10 @@ class Cluster(NailgunObject):
         :param instance: Cluster object
         :param data: dict
         """
-        roles_metadata = Cluster.get_roles(instance)
         # Note(kszukielojc): We need to create status map of public networks
         # to avoid updating networks if there was no change to node public
         # network after patching attributes
-        public_map = cls._create_public_map(instance, roles_metadata)
+        public_map = cls._create_public_map(instance)
 
         PluginManager.process_cluster_attributes(instance, data['editable'])
         instance.attributes.editable = dict_merge(

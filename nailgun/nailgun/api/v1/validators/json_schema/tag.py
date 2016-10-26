@@ -21,7 +21,9 @@ TAG_CREATION_SCHEMA = {
     "properties": {
         "id": {"type": "integer"},
         "tag": {"type": "string"},
-        "has_primary": {"type": "boolean"}
+        "has_primary": {"type": "boolean"},
+        "public_ip_required": {"type": "boolean"},
+        "public_for_dvr_required": {"type": "boolean"}
     },
     "required": ["tag"],
 }

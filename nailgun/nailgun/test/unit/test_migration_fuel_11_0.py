@@ -116,7 +116,8 @@ def prepare():
             'roles_metadata': jsonutils.dumps({
                 'role_y': {
                     'name': 'role_y',
-                    'has_primary': True
+                    'has_primary': True,
+                    'public_ip_required': True
                 },
             })
         }]
@@ -146,16 +147,24 @@ def prepare():
             'timestamp': datetime.datetime.utcnow(),
         }]
     )
-
     db.commit()
 
 
 class TestTags(base.BaseAlembicMigrationTest):
     def test_plugins_tags_created_on_upgrade(self):
+        tags = self.meta.tables['tags']
+        node_tags = self.meta.tables['node_tags']
         tags_count = db.execute(
             sa.select(
-                [sa.func.count(self.meta.tables['tags'].c.id)]
-            )).fetchone()[0]
+                [sa.func.count(tags.c.id)]).select_from(
+                sa.join(
+                    tags, node_tags,
+                    tags.c.id == node_tags.c.tag_id
+                )
+            ).where(
+                node_tags.c.node_id == 2
+            )
+        ).fetchone()[0]
 
         self.assertEqual(tags_count, 2)
 
@@ -188,3 +197,21 @@ class TestTags(base.BaseAlembicMigrationTest):
         for role_meta in db.execute(q_roles_meta):
             for role, meta in six.iteritems(jsonutils.loads(role_meta[0])):
                 self.assertEqual(meta['tags'], [role])
+
+    def test_cluster_tag_metada_updated(self):
+        tags = self.meta.tables['tags']
+        node_tags = self.meta.tables['node_tags']
+        query = sa.select([tags.c.public_ip_required,
+                           tags.c.public_for_dvr_required]).select_from(
+            sa.join(
+                tags, node_tags,
+                tags.c.id == node_tags.c.tag_id
+            )
+        ).where(
+            node_tags.c.node_id == 2
+        )
+        res = db.execute(query)
+        value = []
+        for meta in res:
+            value = meta
+        self.assertEqual(value, (True, False))

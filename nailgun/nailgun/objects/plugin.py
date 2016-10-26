@@ -83,33 +83,8 @@ class Plugin(NailgunObject):
 
     @classmethod
     def create_tags(cls, instance):
-        from nailgun.objects import Tag
-        tags = instance.tags_metadata
-        roles = instance.roles_metadata
-        # add creation of so-called tags for roles if tags are not
-        # present in role's metadata. it's necessary for compatibility
-        # with plugins without tags feature
-        for role, meta in six.iteritems(roles):
-            role_tags = meta.get('tags')
-            if not role_tags:
-                tags[role] = {
-                    'tag': role,
-                    'has_primary': meta.get('has_primary', False),
-                }
-                # it's necessary for auto adding tag when we are
-                # assigning the role
-                meta['tags'] = [role]
-                roles.mark_dirty()
-
-        for name, meta in six.iteritems(tags):
-            data = {
-                'owner_id': instance.id,
-                'owner_type': consts.TAG_OWNER_TYPES.plugin,
-                'tag': name,
-                'has_primary': meta.get('has_primary', False),
-                'read_only': True
-            }
-            Tag.create(data)
+        from nailgun.objects import TagCollection
+        TagCollection.create_tags(instance, consts.TAG_OWNER_TYPES.plugin)
         db().flush()
 
     @classmethod

@@ -369,7 +369,7 @@ class NetworkGroup(NailgunObject):
         return query
 
     @classmethod
-    def _update_public_network(cls, cluster, public_map, roles_metadata):
+    def _update_public_network(cls, cluster, public_map):
         """Applies changes to node's public_network checked using public_map.
 
         :param instance: Cluster object
@@ -382,7 +382,7 @@ class NetworkGroup(NailgunObject):
         from nailgun.objects import Node
         for node in cluster.nodes:
             should_have_public = Node.should_have_public(
-                node, roles_metadata)
+                node)
             if public_map.get(node.id) == should_have_public:
                 continue
             if should_have_public:

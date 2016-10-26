@@ -17,10 +17,12 @@
 """
 Tag object and collection
 """
+import six
 
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun import errors
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.plugin import ClusterPlugin
@@ -34,6 +36,44 @@ class Tag(NailgunObject):
 
 
 class TagCollection(NailgunCollection):
+
+    @classmethod
+    def create_tags(cls, instance, owner_type):
+        tag_meta = instance.tags_metadata
+        role_meta = instance.roles_metadata
+        for role, role_data in role_meta.items():
+            role_tags = role_data.get('tags', [])
+            if not role_tags:
+                if role in tag_meta:
+                    raise errors.InvalidData(
+                        "{0} has tag {1} and it's not linked with role {1}."
+                        "It's not possible to create tags and roles of the "
+                        "same name which are not linked together."
+                        .format(owner_type.title(), role))
+                tag_meta[role] = {
+                    'tag': role,
+                    'has_primary': role_data.get('has_primary', False),
+                    'public_ip_required':
+                        role_data.get('public_ip_required', False),
+                    'public_for_dvr_required':
+                        role_data.get('public_for_dvr_required', False)
+                }
+                role_data['tags'] = [role]
+                role_meta.mark_dirty()
+            missed = set(role_tags) - set(tag_meta)
+            if missed:
+                raise errors.InvalidData('Missed metadata for tag(s): {}'
+                                         .format(','.join(missed)))
+
+        for name, meta in six.iteritems(tag_meta):
+            data = {
+                'owner_id': instance.id,
+                'owner_type': owner_type,
+                'tag': name,
+                'read_only': True
+            }
+            data.update(meta)
+            Tag.create(data)
 
     @classmethod
     def get_release_tags(cls, release_ids, **kwargs):
@@ -149,6 +189,18 @@ class TagCollection(NailgunCollection):
         return cls.get_cluster_nm_tags(cluster).filter(
             models.Tag.id.in_(tag_ids)
         ).with_entities(models.Tag.id)
+
+    @classmethod
+    def should_have_public_with_ip(cls, node):
+        return cls.get_node_tags(node).filter(
+            models.Tag.public_ip_required.is_(True)
+        ).first()
+
+    @classmethod
+    def should_have_public_for_dvr(cls, node):
+        return cls.get_node_tags(node).filter(
+            models.Tag.public_for_dvr_required.is_(True)
+        ).first()
 
     @classmethod
     def get_node_tags(cls, node):

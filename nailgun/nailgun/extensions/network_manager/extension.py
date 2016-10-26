@@ -104,11 +104,10 @@ class NetworkManagerExtension(BaseExtension):
     @classmethod
     def on_cluster_patch_attributes(cls, cluster, public_map):
 
-        roles_metadata = objects.Cluster.get_roles(cluster)
         nm = objects.Cluster.get_network_manager(cluster)
         nm.update_restricted_networks(cluster)
         objects.NetworkGroup._update_public_network(
-            cluster, public_map, roles_metadata
+            cluster, public_map
         )
 
     @classmethod

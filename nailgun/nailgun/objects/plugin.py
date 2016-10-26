@@ -24,6 +24,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun import errors
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -90,23 +91,39 @@ class Plugin(NailgunObject):
         # present in role's metadata. it's necessary for compatibility
         # with plugins without tags feature
         for role, meta in six.iteritems(roles):
-            role_tags = meta.get('tags')
+            role_tags = meta.get('tags', [])
             if not role_tags:
+                if role in tags:
+                    raise errors.InvalidData(
+                        "Plugin has tag {} and it's not linked with role {}."
+                        " It's not possible to create so-called independent"
+                        " tags and roles.".format(role))
                 tags[role] = {
                     'tag': role,
                     'has_primary': meta.get('has_primary', False),
+                    'public_ip_required':
+                        meta.get('public_ip_required', False),
+                    'public_for_dvr_required':
+                        meta.get('public_for_dvr_required', False)
                 }
                 # it's necessary for auto adding tag when we are
                 # assigning the role
                 meta['tags'] = [role]
                 roles.mark_dirty()
-
+            missed = set(role_tags) - set(tags)
+            if missed:
+                raise errors.InvalidData('Missed metadata for tag: {}'
+                                         .format(', '.join(missed)))
         for name, meta in six.iteritems(tags):
             data = {
                 'owner_id': instance.id,
                 'owner_type': consts.TAG_OWNER_TYPES.plugin,
                 'tag': name,
                 'has_primary': meta.get('has_primary', False),
+                'public_ip_required':
+                    meta.get('public_ip_required', False),
+                'public_for_dvr_required':
+                    meta.get('public_for_dvr_required', False),
                 'read_only': True
             }
             Tag.create(data)

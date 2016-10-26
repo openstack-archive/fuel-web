@@ -46,14 +46,21 @@ q_select_plugin_query = sa.sql.text(
 )
 q_update_plugin_query = sa.sql.text(
     "UPDATE plugins SET roles_metadata = :roles_metadata WHERE id = :id")
+q_select_cluster_query = sa.sql.text(
+    "SELECT c.id, roles_metadata FROM releases r "
+    "JOIN clusters c ON c.release_id = r.id"
+)
 
 
 def upgrade():
     upgrade_plugins_tags()
+    upgrade_tags_table()
+    update_tags_meta()
 
 
 def downgrade():
     downgrade_plugins_tags()
+    downgrade_tags_table()
 
 
 def _create_tags(conn, select_query, update_query, owner_type):
@@ -166,6 +173,53 @@ def upgrade_tags_existing_nodes():
                              consts.TAG_OWNER_TYPES.plugin)
 
 
+def update_tags_meta():
+    connection = op.get_bind()
+    _upgrade_tag_meta(connection,
+                      q_select_release_query,
+                      consts.TAG_OWNER_TYPES.release)
+
+    _upgrade_tag_meta(connection,
+                      q_select_plugin_query,
+                      consts.TAG_OWNER_TYPES.plugin)
+
+    _upgrade_tag_meta(connection,
+                      q_select_cluster_query,
+                      consts.TAG_OWNER_TYPES.cluster)
+
+
+def _upgrade_tag_meta(conn, select_query, owner_type):
+    tag_update_query = sa.sql.text(
+        "UPDATE tags SET public_ip_required=:public_ip_required, "
+        "public_for_dvr_required=:public_for_dvr_required "
+        "WHERE tag = :tag"
+    )
+    select_owner_tags = sa.sql.text(
+        "SELECT tag from tags WHERE owner_id=:id AND "
+        "owner_type=:owner_type"
+    )
+    for id, roles_metadata in conn.execute(select_query):
+        tags = conn.execute(
+            select_owner_tags,
+            id=id,
+            owner_type=owner_type,
+        ).fetchone()
+        if not tags:
+            continue
+        roles_metadata = jsonutils.loads(roles_metadata)
+        for role, role_meta in six.iteritems(roles_metadata):
+            for tag in tags:
+                if tag in role_meta.get('tags', []):
+                    conn.execute(
+                        tag_update_query,
+                        public_ip_required=role_meta.get('public_ip_required',
+                                                         False),
+                        public_for_dvr_required=role_meta.get(
+                            'public_for_dvr_required', False),
+                        tag=tag
+                    )
+
+
 def upgrade_plugins_table():
     op.add_column(
         'plugins',
@@ -174,6 +228,22 @@ def upgrade_plugins_table():
                   nullable=False,
                   server_default='{}'),
     )
+
+
+def upgrade_tags_table():
+    op.add_column(
+        'tags',
+        sa.Column('public_ip_required', sa.Boolean, default=False)
+    )
+    op.add_column(
+        'tags',
+        sa.Column('public_for_dvr_required', sa.Boolean, default=False)
+    )
+
+
+def downgrade_tags_table():
+    op.drop_column('tags', 'public_ip_required')
+    op.drop_column('tags', 'public_for_dvr_required')
 
 
 def downgrade_plugins_tags():

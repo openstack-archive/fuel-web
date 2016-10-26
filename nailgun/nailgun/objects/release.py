@@ -27,6 +27,7 @@ import yaml
 
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
+from nailgun import errors
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -332,18 +333,44 @@ class Release(NailgunObject):
 
     @classmethod
     def create_tags(cls, instance):
-        metadata = instance.tags_metadata
-        for role, role_data in instance.roles_metadata.items():
-            tag_meta = metadata.get(role, {})
-            for tag in role_data.get('tags', []):
-                data = {
-                    'owner_id': instance.id,
-                    'owner_type': consts.TAG_OWNER_TYPES.release,
-                    'tag': tag,
-                    'has_primary': tag_meta.get('has_primary', False),
-                    'read_only': True
+        tag_meta = instance.tags_metadata
+        role_meta = instance.roles_metadata
+        for role, role_data in role_meta.items():
+            role_tags = role_data.get('tags', [])
+            if not role_tags:
+                if role in tag_meta:
+                    raise errors.InvalidData(
+                        "Release has tag {} and it's not linked with role {}."
+                        " It's not possible to create so-called independent"
+                        " tags and roles.".format(role))
+                tag_meta[role] = {
+                    'tag': role,
+                    'has_primary': role_data.get('has_primary', False),
+                    'public_ip_required':
+                        role_data.get('public_ip_required', False),
+                    'public_for_dvr_required':
+                        role_data.get('public_for_dvr_required', False)
                 }
-                Tag.create(data)
+                role_data['tags'] = [role]
+                role_meta.mark_dirty()
+            missed = set(role_tags) - set(tag_meta)
+            if missed:
+                raise errors.InvalidData('Missed metadata for tag: {}'
+                                         .format(', '.join(missed)))
+
+        for name, meta in six.iteritems(tag_meta):
+            data = {
+                'owner_id': instance.id,
+                'owner_type': consts.TAG_OWNER_TYPES.release,
+                'tag': name,
+                'has_primary': meta.get('has_primary', False),
+                'public_ip_required':
+                    meta.get('public_ip_required', False),
+                'public_for_dvr_required':
+                    meta.get('public_for_dvr_required', False),
+                'read_only': True
+            }
+            Tag.create(data)
 
     @classmethod
     def delete(cls, instance):

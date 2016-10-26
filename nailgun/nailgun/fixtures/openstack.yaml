@@ -190,12 +190,27 @@
         tags:
           - ironic
     tags_metadata:
+      ironic:
+        has_primary: False
+      compute-vmware:
+        has_primary: False
+      virt:
+        has_primary: False
+        public_ip_required: True
+      base-os:
+        has_primary: False
+      cinder-vmware:
+        has_primary: False
+      cinder-block-device:
+        has_primary: False
       controller:
         has_primary: True
+        public_ip_required: True
       mongo:
         has_primary: True
       compute:
         has_primary: False
+        public_for_dvr_required: True
       ceph-osd:
         has_primary: False
       cinder:

@@ -14,24 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import yaml
-
-from nailgun.consts import TAG_OWNER_TYPES
+from nailgun import consts
 from nailgun.test import base
 
 
 class TestTagApi(base.BaseIntegrationTest):
 
-    TAG = """
-    tag: my_tag
-    has_primary: false
-    """
     owner_url = "/api/{}/{}/tags/"
     owner_map = {
-        TAG_OWNER_TYPES.release: 'releases',
-        TAG_OWNER_TYPES.cluster: 'clusters',
-        TAG_OWNER_TYPES.plugin: 'plugins'
+        consts.TAG_OWNER_TYPES.release: 'releases',
+        consts.TAG_OWNER_TYPES.cluster: 'clusters',
+        consts.TAG_OWNER_TYPES.plugin: 'plugins'
     }
 
     def setUp(self):
@@ -43,7 +36,7 @@ class TestTagApi(base.BaseIntegrationTest):
                                          cluster_id=self.cluster.id,
                                          pending_roles=['controller'],
                                          pending_addition=True)
-        self.tag_data = yaml.load(self.TAG)
+        self.tag_data = {'tag': 'my_tag', 'has_primary': False}
 
     def _get_all_tags(self, owner, owner_id):
         return self.app.get(self.owner_url.format(self.owner_map[owner],
@@ -58,16 +51,16 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertTrue([t for t in resp.json if t['id'] == n_tag['id']])
 
     def test_get_release_tags(self):
-        self._test_get_tags(TAG_OWNER_TYPES.release, self.release.id)
+        self._test_get_tags(consts.TAG_OWNER_TYPES.release, self.release.id)
 
     def test_get_cluster_tags(self):
-        self._test_get_tags(TAG_OWNER_TYPES.cluster, self.cluster.id)
+        self._test_get_tags(consts.TAG_OWNER_TYPES.cluster, self.cluster.id)
 
     def test_get_plugins_tags(self):
-        self._test_get_tags(TAG_OWNER_TYPES.plugin, self.plugin.id)
+        self._test_get_tags(consts.TAG_OWNER_TYPES.plugin, self.plugin.id)
 
     def test_create_get_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data)
@@ -78,82 +71,81 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertDictContainsSubset(self.tag_data, resp.json)
 
     def test_failed_create_tag_with_same_name_in_cluster_namespace(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data)
         self.assertEqual(resp.status_code, 201)
 
-        owner, owner_id = TAG_OWNER_TYPES.release, self.release.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.release, self.release.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
-        owner, owner_id = TAG_OWNER_TYPES.plugin, self.plugin.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.plugin, self.plugin.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
     def test_failed_create_tag_with_same_name_in_release_namespace(self):
-        owner, owner_id = TAG_OWNER_TYPES.release, self.release.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.release, self.release.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data)
         self.assertEqual(resp.status_code, 201)
 
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data,
                                    expect_errors=True)
-
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
-        owner, owner_id = TAG_OWNER_TYPES.plugin, self.plugin.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.plugin, self.plugin.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
     def test_failed_create_tag_with_same_name_in_plugin_namespace(self):
-        owner, owner_id = TAG_OWNER_TYPES.plugin, self.plugin.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.plugin, self.plugin.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data)
         self.assertEqual(resp.status_code, 201)
 
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
-        owner, owner_id = TAG_OWNER_TYPES.release, self.release.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.release, self.release.id
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
                                    self.tag_data,
                                    expect_errors=True)
 
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 409)
         self.assertIn("is already present", resp.body)
 
     def test_update_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
 
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
         n_tag.update({'tag': 'other_tag', 'has_primary': True})
@@ -163,7 +155,7 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertDictEqual(resp.json, n_tag)
 
     def test_failed_update_read_only_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         self.tag_data.update({'read_only': True})
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
         n_tag.update({'tag': 'other_tag', 'has_primary': True})
@@ -171,8 +163,18 @@ class TestTagApi(base.BaseIntegrationTest):
 
         self.assertEqual(resp.status_code, 400)
 
+    def test_failed_update_tag_name_to_existent(self):
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
+
+        n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
+        n_tag.update({'tag': 'controller', 'has_primary': True})
+        resp = self.env.update_tag(n_tag['id'], n_tag, expect_errors=True)
+
+        self.assertEqual(resp.status_code, 409)
+        self.assertIn("Tag can not be renamed", resp.body)
+
     def test_delete_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         n_tag = self.env.create_tag(self.owner_map[owner], owner_id,
                                     self.tag_data)
         resp = self.env.delete_tag(n_tag.json['id'])
@@ -180,7 +182,7 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertEqual(resp.status_code, 204)
 
     def test_failed_delete_read_only_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         self.tag_data.update({'read_only': True})
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
         resp = self.env.delete_tag(n_tag['id'], expect_errors=True)
@@ -188,7 +190,7 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertEqual(resp.status_code, 400)
 
     def test_failed_delete_assigned_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
 
         resp = self.env.assign_tag(self.node.id, [n_tag['id']])
@@ -199,7 +201,7 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertIn("is assigned to node", resp.body)
 
     def test_assign_unassign_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
 
         resp = self.env.assign_tag(self.node.id, [n_tag['id']])
@@ -211,7 +213,7 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertNotIn(n_tag['tag'], [t.tag.tag for t in self.node.tags])
 
     def test_failed_assign_tag_twice(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
 
         resp = self.env.assign_tag(self.node.id, [n_tag['id']])
@@ -220,23 +222,22 @@ class TestTagApi(base.BaseIntegrationTest):
 
         resp = self.env.assign_tag(self.node.id, [n_tag['id']],
                                    expect_errors=True)
-        self.assertEqual(resp.status_code, 405)
+        self.assertEqual(resp.status_code, 400)
         self.assertIn("are already assigned to", resp.body)
 
     def test_failed_unassign_not_assigned_tag(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
 
         resp = self.env.unassign_tag(self.node.id, [n_tag['id']],
                                      expect_errors=True)
-        self.assertEqual(resp.status_code, 405)
+        self.assertEqual(resp.status_code, 400)
         self.assertIn("are not assigned to", resp.body)
 
     def test_failed_assign_tag_to_non_cluster_node(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
         node = self.env.create_node(api=False)
-
         resp = self.env.assign_tag(node.id, [n_tag['id']],
                                    expect_errors=True)
         self.assertEqual(resp.status_code, 403)
@@ -245,7 +246,7 @@ class TestTagApi(base.BaseIntegrationTest):
     def test_failed_create_tag_for_non_existent_cluster(self):
         cluster_ids = [c.id for c in self.env.clusters]
         owner_id = next(x for x in xrange(1, 1000) if x not in cluster_ids)
-        owner = TAG_OWNER_TYPES.cluster
+        owner = consts.TAG_OWNER_TYPES.cluster
         resp = self.env.create_tag(owner, owner_id, self.tag_data,
                                    api=True, expect_errors=True)
 
@@ -253,7 +254,7 @@ class TestTagApi(base.BaseIntegrationTest):
         self.assertIn("not found", resp.body)
 
     def test_failed_create_tag_with_incorrect_data(self):
-        owner, owner_id = TAG_OWNER_TYPES.cluster, self.cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, self.cluster.id
         self.tag_data['has_primary'] = 'abc'
         resp = self.env.create_tag(self.owner_map[owner],
                                    owner_id,
@@ -268,17 +269,19 @@ class TestTagApi(base.BaseIntegrationTest):
                                    ['my_tag'],
                                    expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("only a numeric", resp.body)
+        self.assertIn("Comma-separated numbers list expected",
+                      resp.body)
 
         resp = self.env.unassign_tag(self.node.id,
                                      ['my_tag'],
                                      expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("only a numeric", resp.body)
+        self.assertIn("Comma-separated numbers list expected",
+                      resp.body)
 
     def test_failed_assign_tag_from_wrong_namespace_cluster(self):
         other_cluster = self.env.create_cluster(release_id=self.release.id)
-        owner, owner_id = TAG_OWNER_TYPES.cluster, other_cluster.id
+        owner, owner_id = consts.TAG_OWNER_TYPES.cluster, other_cluster.id
         n_tag = self.env.create_tag(owner, owner_id, self.tag_data, api=False)
 
         resp = self.env.assign_tag(self.node.id, [n_tag['id']],

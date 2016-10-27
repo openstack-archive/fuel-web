@@ -13,13 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-TAG_CREATION_SCHEMA = {
+TAG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Tag",
     "description": "Serialized Tag object",
     "type": "object",
     "properties": {
-        "id": {"type": "integer"},
         "tag": {"type": "string"},
         "has_primary": {"type": "boolean"}
     },

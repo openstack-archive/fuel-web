@@ -135,6 +135,24 @@ class BasicValidator(object):
 
         return ret
 
+    @classmethod
+    def get_objects_list_or_404(cls, obj, ids):
+        """Get list of objects
+
+        :param obj: model object
+        :param ids: list of ids
+
+        :http: 404 when not found
+        :returns: list of object instances
+        """
+
+        node_query = obj.filter_by_id_list(None, ids)
+        objects_count = obj.count(node_query)
+        if len(set(ids)) != objects_count:
+            raise errors.ObjectNotFound()
+
+        return list(node_query)
+
 
 class BaseDefferedTaskValidator(BasicValidator):
 

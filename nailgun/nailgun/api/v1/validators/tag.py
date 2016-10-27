@@ -23,7 +23,8 @@ from nailgun import objects
 
 class TagValidator(BasicValidator):
 
-    single_schema = tag.TAG_CREATION_SCHEMA
+    creation_schema = tag.TAG_CREATION_SCHEMA
+    updating_schema = tag.TAG_UPDATING_SCHEMA
 
     @classmethod
     def validate_delete(cls, data, instance):
@@ -32,28 +33,84 @@ class TagValidator(BasicValidator):
                 "Read-only tag '{}' cannot be deleted.".format(instance.tag)
             )
 
-        n_ids = [str(n)
+        n_ids = [str(n[0])
                  for n in objects.TagCollection.get_tag_nodes_ids(instance)]
 
         if n_ids:
             raise errors.CannotDelete(
-                "Tag {} is assigned to nodes '{}'.".format(instance.id,
-                                                           ",".join(n_ids))
+                "Tag '{}' is assigned to nodes {}. You should unassign tag "
+                "from these nodes before remove it. ".format(instance.tag,
+                                                             ",".join(n_ids))
             )
 
     @classmethod
-    def validate_update(cls, data, instance):
-        parsed = cls.validate(data, instance=instance)
+    def validate_update(cls, data, instance=None, owner=None, owner_cls=None):
+        parsed = cls.validate(data, instance=instance,
+                              schema=cls.updating_schema)
+        parsed.pop('id')
+
         if instance.read_only:
             raise errors.CannotUpdate(
-                "Read-only tag '{}' cannot be deleted.".format(instance.tag)
+                "Read-only tag '{}' cannot be updated.".format(instance.tag)
             )
+        tags = owner_cls.get_nm_tags(owner, tag=parsed['tag'])
+        if tags and tags[0].id != instance.id:
+            raise errors.AlreadyExists("Tag can not be renamed to '{}'."
+                                       "Tag with this name is already present."
+                                       "".format(tags[0].tag))
         return parsed
 
     @classmethod
-    def validate_create(cls, data, instance):
-        parsed = cls.validate(data, instance=instance)
+    def validate_create(cls, data, instance=None, owner=None, owner_cls=None):
+        parsed = cls.validate(data, instance=instance,
+                              schema=cls.creation_schema)
+        tags = owner_cls.get_nm_tags(owner, tag=parsed['tag'])
+        if tags:
+            raise errors.AlreadyExists("Tag with name '{}' is already present."
+                                       "".format(tags[0].tag))
         return parsed
+
+    @classmethod
+    def validate(cls, data, instance=None, schema=None):
+        parsed = super(TagValidator, cls).validate(data)
+        cls.validate_schema(parsed, schema)
+        return parsed
+
+
+class TagAssignmentValidator(BasicValidator):
+
+    @classmethod
+    def validate_assignment(cls, data, instance):
+        """Validates tags assignment.
+
+        :param data: Json string with tag ids
+        :type data: string
+        :param instance: A node instance
+        :type instance: models.Node
+        """
+        tag_ids = set(cls.validate_ids_list(cls.validate(data)))
+        tags = BasicValidator.get_objects_list_or_404(objects.TagCollection,
+                                                      tag_ids)
+        if not instance.cluster:
+            raise errors.NotAllowed("Node {} is not in a cluster."
+                                    "".format(instance.id))
+
+        if instance.cluster.is_locked:
+            raise errors.NotAllowed("Tag assignment is not allowed for node "
+                                    "{} as it belongs to cluster '{}' where "
+                                    "deployment is in progress.".format(
+                                        instance.id, instance.cluster.id))
+
+        cluster_tags = objects.TagCollection.get_cluster_tags_in_range(
+            instance.cluster, tag_ids)
+
+        foreign_tags = tag_ids - cluster_tags
+
+        if foreign_tags:
+            raise errors.InvalidData("Tags '{}' are not present in node {} "
+                                     "namespace.".format(foreign_tags,
+                                                         instance.id))
+        return tags
 
     @classmethod
     def validate_assign(cls, data, instance):
@@ -62,23 +119,36 @@ class TagValidator(BasicValidator):
         :param data: Json string with tag ids
         :type data: string
         :param instance: A node instance
-        :type node: nailgun.db.sqlalchemy.models.node.Node
+        :type instance: models.Node
         """
-        if not instance.cluster:
-            raise errors.NotAllowed("Node '{}' is not in a cluster."
-                                    "".format(instance.id))
-        parsed = super(TagValidator, cls).validate(data)
+        tags = cls.validate_assignment(data, instance)
+        tag_ids = set([tag['id'] for tag in tags])
 
-        for t in parsed:
-            if not isinstance(t, int):
-                raise errors.InvalidData(
-                    "Tag '{}' can not be assigned to the node '{}' as only "
-                    "a numeric notation is supported.".format(t, instance.id)
-                )
-        return parsed
+        node_tags = objects.TagCollection.get_assigned_tags(instance, tag_ids)
+        assigned_tags = tag_ids & node_tags
+        if assigned_tags:
+            raise errors.InvalidData("Tags '{}' are already assigned to the "
+                                     "node {}.".format(assigned_tags,
+                                                       instance.id))
+        return tags
 
     @classmethod
-    def validate(cls, data, instance=None):
-        parsed = super(TagValidator, cls).validate(data)
-        cls.validate_schema(parsed, cls.single_schema)
-        return parsed
+    def validate_unassign(cls, data, instance):
+        """Validates tags unassignment.
+
+        :param data: Json string with tag ids
+        :type data: string
+        :param instance: A node instance
+        :type instance: models.Node
+        """
+        tags = cls.validate_assignment(data, instance)
+        tag_ids = set([tag['id'] for tag in tags])
+        assigned_tags = objects.TagCollection.get_assigned_tags(instance,
+                                                                tag_ids)
+        not_assigned_tags = tag_ids - assigned_tags
+
+        if not_assigned_tags:
+            raise errors.InvalidData("Tags '{}' are not assigned to the node "
+                                     "{}.".format(not_assigned_tags,
+                                                  instance.id))
+        return tag_ids

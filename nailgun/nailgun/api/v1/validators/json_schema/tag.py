@@ -19,9 +19,20 @@ TAG_CREATION_SCHEMA = {
     "description": "Serialized Tag object",
     "type": "object",
     "properties": {
-        "id": {"type": "integer"},
         "tag": {"type": "string"},
         "has_primary": {"type": "boolean"}
     },
     "required": ["tag"],
+}
+
+TAG_UPDATING_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Tag",
+    "description": "Serialized Tag object",
+    "type": "object",
+    "properties": {
+        "id": {"type": "integer"},
+        "tag": {"type": "string"},
+        "has_primary": {"type": "boolean"}
+    }
 }

@@ -184,4 +184,14 @@ class TagCollection(NailgunCollection):
             models.NodeTag.node_id
         )
 
+    @classmethod
+    def get_assigned_tags(cls, node, tag_ids):
+        q_tags = cls.get_node_tags_ids_in_range(node, tag_ids)
+        return set(t[0] for t in q_tags)
+
+    @classmethod
+    def get_cluster_tags_in_range(cls, cluster, tag_ids):
+        q_tags = cls.get_cluster_nm_tags_in_range(cluster, tag_ids)
+        return set(t[0] for t in q_tags)
+
     single = Tag

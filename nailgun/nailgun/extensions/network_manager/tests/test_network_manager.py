@@ -44,6 +44,8 @@ from nailgun.extensions.network_manager.managers.neutron import \
     NeutronManager70
 from nailgun.extensions.network_manager.managers.neutron import \
     NeutronManager80
+from nailgun.extensions.network_manager.managers.neutron import \
+    NeutronManager90
 from nailgun.extensions.network_manager.managers.nova_network import \
     NovaNetworkManager
 from nailgun.extensions.network_manager.managers.nova_network import \
@@ -1698,70 +1700,51 @@ class TestTemplateManager70(BaseIntegrationTest):
     def test_get_interfaces_from_template(self):
         expected_interfaces = {
             'br-aux': {
-                'interface_properties': {},
-                'name': 'eth3.103',
-                'offloading_modes': [],
+                'name': 'eth2.103',
                 'type': 'ether'
             },
             'br-ex': {
-                'interface_properties': {},
                 'name': 'eth1',
-                'offloading_modes': [],
                 'type': 'ether'
             },
             'br-fw-admin': {
-                'interface_properties': {},
                 'name': 'eth0',
-                'offloading_modes': [],
                 'type': 'ether'
             },
             'br-keystone': {
-                'interface_properties': {},
                 'name': 'eth4.202',
-                'offloading_modes': [],
                 'type': 'ether'
             },
             'br-mgmt': {
                 'bond_properties': {'mode': u'active-backup'},
                 'name': u'lnxbond0',
-                'offloading_modes': [],
                 'slaves': [{'name': u'eth3'}, {'name': u'eth4'}],
                 'type': 'bond'
             },
             'br-mongo': {
-                'interface_properties': {},
                 'name': u'eth4.201',
-                'offloading_modes': [],
                 'type': 'ether'
             },
             'br-storage': {
-                'interface_properties': {},
                 'name': 'eth1.102',
-                'offloading_modes': [],
                 'type': 'ether'
             },
             'eth2': {
-                'interface_properties': {},
                 'name': 'eth2',
-                'offloading_modes': [],
                 'type': 'ether'
             },
             'eth3.101': {
-                'interface_properties': {},
                 'name': u'eth3.101',
-                'offloading_modes': [],
                 'type': 'ether'
             },
             'eth4.101': {
-                'interface_properties': {},
                 'name': u'eth4.101',
-                'offloading_modes': [],
                 'type': 'ether'
             }
         }
 
         interfaces = self.nm.get_interfaces_from_template(self.env.nodes[0])
-        self.assertItemsEqual(interfaces, expected_interfaces)
+        self.assertEqual(expected_interfaces, interfaces)
 
     def test_reassign_networks_based_on_template(self):
         expected_mapping = {
@@ -1947,3 +1930,59 @@ class TestNeutronManager80(BaseIntegrationTest):
         template['templates_for_node_role']['test_role'].remove('private')
 
         self.assertFalse(self.net_manager.dpdk_enabled_for_node(node))
+
+
+class TestTemplateManager90(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestTemplateManager90, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-9.0'},
+            cluster_kwargs={
+                'api': True,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            }
+        )
+        self.cluster = objects.Cluster.get_by_uid(self.cluster['id'])
+        self.nm = objects.Cluster.get_network_manager(self.cluster)
+        self.net_templates = self.env.read_fixtures(['network_template_90'])
+
+    def test_get_network_manager(self):
+        self.assertIs(self.nm, NeutronManager90)
+
+    def test_get_interfaces_from_template(self):
+        nodes = self.env.create_nodes_w_interfaces_count(
+            1,
+            if_count=15,
+            cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.ready,
+            roles=["controller"],
+            iface_name_prefix='eno{0}'
+        )
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_templates[3]
+        )
+
+        interfaces = self.nm.get_interfaces_from_template(nodes[0])
+
+        expected_interfaces = {
+            'br-fw-admin': {'type': 'ether', 'name': 'eno3'},
+            'bond0': {
+                'bond_properties': {
+                    'lacp_rate': 'fast',
+                    'mode': '802.3ad',
+                    'xmit_hash_policy': 'layer3+4'
+                },
+                'type': 'bond',
+                'name': 'bond0',
+                'slaves': [{'name': 'eno1'}, {'name': 'eno2'}]},
+            'br-prv': {'type': 'bond', 'name': 'bond0.342'},
+            'br-storage': {'type': 'bond', 'name': 'bond0.344'},
+            'br-mgmt': {'type': 'bond', 'name': 'bond0.346'},
+            'br-ex': {'type': 'bond', 'name': 'bond0.345'},
+            'br0': {'type': 'bond', 'name': 'port-with-tag-111'},
+            'br1': {'type': 'bond', 'name': 'eno3333.222'},
+            'br2': {'type': 'ether', 'name': 'eno3333'}
+        }
+        self.assertEqual(expected_interfaces, interfaces)

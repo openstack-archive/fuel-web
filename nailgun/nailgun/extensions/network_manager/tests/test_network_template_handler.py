@@ -174,3 +174,36 @@ class TestHandlers(BaseIntegrationTest):
             # error (403 in this case)
             db().commit()
             self.check_put_delete_template(cluster, status not in allowed)
+
+    def test_network_template_sub_ifaces_without_nic(self):
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider=consts.CLUSTER_NET_PROVIDERS.neutron
+        )
+        cluster.release.version = '1111-9.0'
+
+        self.env.create_nodes_w_interfaces_count(
+            1,
+            if_count=6,
+            cluster_id=cluster.id,
+            roles=["controller"]
+        )[0]
+
+        template = self.env.read_fixtures(
+            ['testcase_sub_iface_without_nic_template'])[0]
+        template.pop('pk')
+        resp = self.app.put(
+            reverse(
+                'TemplateNetworkConfigurationHandler',
+                kwargs={'cluster_id': cluster.id},
+            ),
+            jsonutils.dumps(template),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+        self.assertRegexpMatches(
+            resp.json_body['message'],
+            'Networks cannot be assigned as interface with name .* '
+            'does not exist for node.*'
+        )

@@ -471,29 +471,34 @@ class NeutronManager70(
                 ng = {'id': net.id}
                 node_ifaces[iface]['assigned_networks'].append(ng)
 
-            # The parent interface NIC ID does not need to be updated for each
-            # sub-interface as it will have the same value every time. This
-            # also avoids issues caused by the assumption that all add-port
-            # actions are for ethernet interfaces. A bond sub-interface added
-            # via add-port will NOT exist in the database at this point and is
-            # not an ethernet interface so no NIC will be found.
-            if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether \
-                    and not is_sub_iface:
+            # Update interface NIC ID for each sub-iface, despite the fact
+            # that all will have the same value, because parent interface
+            # can be connected to a bridge, but don't have a network assigned
+            # like br-aux. In this case only sub-interfaces will get to this
+            # point.
+            if values['type'] == consts.NETWORK_INTERFACE_TYPES.ether:
                 nic = objects.NIC.get_nic_by_name(node, iface)
 
-                # NIC names in the template, that networks should be
-                # assigned to, might not be consistent with names of actually
-                # existing NICs for the node; in this case the queried object
-                # will not be found and consequently applying of the template
-                # must be stopped
                 if nic is None:
-                    raise errors.NetworkTemplateCannotBeApplied(
-                        "Networks cannot be assigned as interface with name "
-                        "{0} does not exist for node {1}"
-                        .format(iface, objects.Node.get_slave_name(node))
-                    )
-
-                node_ifaces[iface]['id'] = nic.id
+                    if not is_sub_iface:
+                        # NIC names in the template, that networks should
+                        # be assigned to, might not be consistent with names
+                        # of actually existing NICs for the node; in this
+                        # case the queried object will not be found and
+                        # consequently applying of the template must be
+                        # stopped.
+                        raise errors.NetworkTemplateCannotBeApplied(
+                            "Networks cannot be assigned as interface with "
+                            "name {0} does not exist for node {1}"
+                            .format(iface, objects.Node.get_slave_name(node))
+                        )
+                    else:
+                        # A bond sub-interface added via add-port will NOT
+                        # exist in the database at this point and is not an
+                        # ethernet interface so no NIC will be found.
+                        pass
+                else:
+                    node_ifaces[iface]['id'] = nic.id
 
         node_data = {
             'id': node.id,

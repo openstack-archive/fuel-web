@@ -1,0 +1,234 @@
+---
+- pk: 0
+  adv_net_template:
+    default:
+      network_assignments:
+        fuelweb_admin:
+          ep: br-fw-admin
+        management:
+          ep: br-mgmt
+        nprod_ext:
+          ep: br-pub-npx
+        nprod_int:
+          ep: br-pub-npi
+        private:
+          ep: br-prv
+        prod_ext:
+          ep: br-pub-px
+        prod_int:
+          ep: br-pub-pi
+        public:
+          ep: br-ex
+        storage:
+          ep: br-storage
+      network_scheme:
+        nprod_ext:
+          endpoints:
+          - br-pub-npx
+          roles:
+            ino/npx: br-pub-npx
+          transformations:
+          - action: add-br
+            name: br-pub-npx
+          - action: add-br
+            name: br-fl-npx
+            provider: ovs
+          - action: add-patch
+            bridges:
+            - br-fl-npx
+            - br-pub-npx
+            mtu: 65000
+            provider: ovs
+          - action: add-port
+            bridge: br-pub-npx
+            name: <% nprod_ext %>
+        nprod_int:
+          endpoints:
+          - br-pub-npi
+          roles:
+            ino/npi: br-pub-npi
+          transformations:
+          - action: add-br
+            name: br-pub-npi
+          - action: add-br
+            name: br-fl-npi
+            provider: ovs
+          - action: add-patch
+            bridges:
+            - br-fl-npi
+            - br-pub-npi
+            mtu: 65000
+            provider: ovs
+          - action: add-port
+            bridge: br-pub-npi
+            name: <% nprod_int %>
+        prod_ext:
+          endpoints:
+          - br-pub-px
+          roles:
+            ino/px: br-pub-px
+          transformations:
+          - action: add-br
+            name: br-pub-px
+          - action: add-br
+            name: br-fl-px
+            provider: ovs
+          - action: add-patch
+            bridges:
+            - br-fl-px
+            - br-pub-px
+            mtu: 65000
+            provider: ovs
+          - action: add-port
+            bridge: br-pub-px
+            name: <% prod_ext %>
+        prod_int:
+          endpoints:
+          - br-pub-pi
+          roles:
+            ino/pi: br-pub-pi
+          transformations:
+          - action: add-br
+            name: br-pub-pi
+          - action: add-br
+            name: br-fl-pi
+            provider: ovs
+          - action: add-patch
+            bridges:
+            - br-fl-pi
+            - br-pub-pi
+            mtu: 65000
+            provider: ovs
+          - action: add-port
+            bridge: br-pub-pi
+            name: <% prod_int %>
+        public:
+          endpoints:
+          - br-ex
+          roles:
+            ceph/radosgw: br-ex
+            ex: br-ex
+            neutron/floating: br-floating
+            public/vip: br-ex
+          transformations:
+          - action: add-br
+            name: br-ex
+          - action: add-br
+            name: br-floating
+            provider: ovs
+          - action: add-patch
+            bridges:
+            - br-floating
+            - br-ex
+            mtu: 65000
+            provider: ovs
+          - action: add-port
+            bridge: br-ex
+            name: <% pub %>
+        private:
+          endpoints:
+          - br-prv
+          roles:
+            neutron/private: br-prv
+          transformations:
+          - action: add-br
+            name: br-prv
+            provider: ovs
+          - action: add-br
+            name: br-aux
+          - action: add-patch
+            bridges:
+            - br-prv
+            - br-aux
+            mtu: 65000
+            provider: ovs
+          - action: add-port
+            bridge: br-aux
+            name: <% prv %>
+        storage:
+          endpoints:
+          - br-storage
+          roles:
+            ceph/replication: br-storage
+            cinder/iscsi: br-storage
+            storage: br-storage
+            swift/replication: br-storage
+          transformations:
+          - action: add-br
+            name: br-storage
+          - action: add-port
+            bridge: br-storage
+            name: <% str %>
+        common:
+          endpoints:
+          - br-fw-admin
+          - br-mgmt
+          roles:
+            admin/pxe: br-fw-admin
+            ceilometer/api: br-mgmt
+            ceph/public: br-mgmt
+            cinder/api: br-mgmt
+            fw-admin: br-fw-admin
+            glance/api: br-mgmt
+            heat/api: br-mgmt
+            horizon: br-mgmt
+            keystone/api: br-mgmt
+            management: br-mgmt
+            mgmt/api: br-mgmt
+            mgmt/corosync: br-mgmt
+            mgmt/database: br-mgmt
+            mgmt/memcache: br-mgmt
+            mgmt/messaging: br-mgmt
+            mgmt/vip: br-mgmt
+            mongo/db: br-mgmt
+            murano/api: br-mgmt
+            neutron/api: br-mgmt
+            neutron/mesh: br-mgmt
+            nova/api: br-mgmt
+            nova/migration: br-mgmt
+            sahara/api: br-mgmt
+            swift/api: br-mgmt
+          transformations:
+          - action: add-br
+            name: br-fw-admin
+          - action: add-port
+            bridge: br-fw-admin
+            name: <% adm %>
+          - action: add-br
+            name: br-mgmt
+          - action: add-port
+            bridge: br-mgmt
+            name: <% mgmt %>
+      nic_mapping:
+        default:
+          adm: enp0s3
+          mgmt: enp0s6.1201
+          nprod_ext: enp0s4.301
+          nprod_int: enp0s4.397
+          prod_ext: enp0s4.101
+          prod_int: enp0s4.197
+          prv: enp0s7
+          pub: enp0s4
+          str: enp0s5.1202
+      templates_for_node_role:
+        ceph-osd:
+        - storage
+        - common
+        cinder:
+        - storage
+        - common
+        compute:
+        - private
+        - storage
+        - common
+        controller:
+        - public
+        - prod_int
+        - nprod_int
+        - prod_ext
+        - nprod_ext
+        - private
+        - storage
+        - common
+        mongo:
+        - common

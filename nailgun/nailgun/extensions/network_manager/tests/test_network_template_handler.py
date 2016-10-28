@@ -58,6 +58,42 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(200, resp.status_code)
         self.assertEqual(template, resp.json_body)
 
+    def test_network_template_add_node(self):
+        cluster = self.env.create(
+            release_kwargs={'version': '1111-9.0'},
+            cluster_kwargs={
+                'api': False,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron
+            }
+        )
+
+        self.env.create_nodes_w_interfaces_count(
+            5,
+            if_count=15,
+            cluster_id=cluster.id,
+            status=consts.NODE_STATUSES.ready,
+            roles=["controller"],
+            iface_name_prefix='eno{0}'
+        )
+
+        template = self.env.read_fixtures(['network_template_90'])[3]
+        template.pop('pk')  # PK is not needed
+
+        resp = self.app.put(
+            reverse(
+                'TemplateNetworkConfigurationHandler',
+                kwargs={'cluster_id': cluster.id},
+            ),
+            jsonutils.dumps(template),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEquals(template, resp.json_body)
+
+        resp = self.get_template(cluster.id)
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(template, resp.json_body)
+
     def test_network_template_upload_on_multi_group_cluster(self):
         cluster = self.env.create_cluster(
             api=False,

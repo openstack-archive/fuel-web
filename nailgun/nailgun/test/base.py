@@ -459,11 +459,12 @@ class EnvironmentManager(object):
         Default random MAC is generated for each interface
         """
         nodes = []
+        prefix_tpl = kwargs.get('iface_name_prefix', 'eth{0}')
         for i in range(nodes_count):
             meta = self.default_metadata()
             if_list = [
                 {
-                    "name": "eth{0}".format(i),
+                    "name": prefix_tpl.format(i),
                     "mac": self.generate_random_mac(),
                 }
                 for i in range(if_count)]

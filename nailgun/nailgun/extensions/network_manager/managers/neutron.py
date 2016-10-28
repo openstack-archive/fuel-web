@@ -34,7 +34,7 @@ from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
 
 from nailgun.extensions.network_manager.serializers.neutron_serializers \
-    import NeutronNetworkTemplateSerializer70
+    import NeutronNetworkTemplateSerializer110
 
 
 class NeutronManager(NetworkManager):
@@ -363,7 +363,7 @@ class NeutronManager70(
         except ValueError:
             vlan = None
 
-        return (iface, vlan)
+        return iface, vlan
 
     @classmethod
     def get_interfaces_from_template(cls, node):
@@ -372,15 +372,33 @@ class NeutronManager70(
         Returns a list of bare interfaces and bonds.
         """
         transformations = \
-            NeutronNetworkTemplateSerializer70.generate_transformations(node)
+            NeutronNetworkTemplateSerializer110.generate_transformations(node)
 
         interfaces = {}
         for tx in transformations:
             if tx['action'] == 'add-port':
-                key = tx.get('bridge', tx['name'])
+                name = tx['name']
+                key = tx.get('bridge', name)
+
+                iface_type = consts.NETWORK_INTERFACE_TYPES.ether
+
+                if tx.get('provider') == consts.NEUTRON_L23_PROVIDERS.ovs:
+                    iface_name = name
+                    vlan = tx.get('vlan_id')
+                else:
+                    iface_name, vlan = cls._split_iface_name(name)
+
+                if vlan is not None:
+                    # We can't resolve bond type in case of adding port
+                    # on the bond. Ether type can be set only if NIC with
+                    # iface_name present in the DB
+                    nic = objects.NIC.get_nic_by_name(node, iface_name)
+                    if nic is None:
+                        iface_type = consts.NETWORK_INTERFACE_TYPES.bond
+
                 interfaces[key] = {
-                    'name': tx['name'],
-                    'type': consts.NETWORK_INTERFACE_TYPES.ether
+                    'name': name,
+                    'type': iface_type
                 }
 
             if tx['action'] == 'add-bond':
@@ -489,8 +507,8 @@ class NeutronManager70(
                 if nic is None:
                     raise errors.NetworkTemplateCannotBeApplied(
                         "Networks cannot be assigned as interface with name "
-                        "{0} does not exist for node {1}"
-                        .format(iface, objects.Node.get_slave_name(node))
+                        "{0} does not exist for node {1}".format(
+                            iface, objects.Node.get_slave_name(node))
                     )
 
                 node_ifaces[iface]['id'] = nic.id

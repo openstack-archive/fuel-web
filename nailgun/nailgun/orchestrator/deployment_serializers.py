@@ -684,8 +684,9 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
     def initialize(self, cluster):
         super(DeploymentLCMSerializer, self).initialize(cluster)
         self._configs = sorted(
-            objects.OpenstackConfigCollection.filter_by(
-                None, cluster_id=cluster.id
+            objects.OpenstackConfigCollection.find_configs_for_nodes(
+                cluster,
+                cluster.nodes or [],
             ),
             key=lambda x: self._priorities[x.config_type]
         )

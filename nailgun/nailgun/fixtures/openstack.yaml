@@ -1251,6 +1251,7 @@
             description: "List of upstream NTP servers"
             weight: 10
             type: "text_list"
+            min: 1
             regex:
               source: *ipv4_or_hostname_regex
               error: "Invalid NTP server"

@@ -551,6 +551,9 @@ class TestDeploymentLCMSerialization90(
         self.node = self.env.create_node(
             cluster_id=self.cluster_db.id, roles=['compute']
         )
+        self.initialize_serrializer()
+
+    def initialize_serrializer(slef):
         self.serializer = self.create_serializer(self.cluster_db)
 
     @classmethod
@@ -586,6 +589,32 @@ class TestDeploymentLCMSerialization90(
         )
 
     def test_cluster_attributes_in_serialized(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        release = self.cluster_db.release
+        release_info = {
+            'name': release.name,
+            'version': release.version,
+            'operating_system': release.operating_system,
+        }
+        cluster_info = {
+            "id": self.cluster_db.id,
+            "name": self.cluster_db.name,
+            "fuel_version": self.cluster_db.fuel_version,
+            "status": self.cluster_db.status,
+            "mode": self.cluster_db.mode
+        }
+        self.assertEqual(cluster_info, serialized['common']['cluster'])
+        self.assertEqual(release_info, serialized['common']['release'])
+
+        self.assertEqual(['compute'], serialized['nodes'][0]['roles'])
+        self.assertEqual(
+            [consts.TASK_ROLES.master], serialized['nodes'][1]['roles']
+        )
+
+    def test_inactive_cluster_attributes_in_serialized(self):
+        objects.OpenstackConfig.disable_by_nodes([self.node])
+        self.initialize_serrializer()
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])
         release = self.cluster_db.release

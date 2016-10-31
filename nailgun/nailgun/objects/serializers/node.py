@@ -156,3 +156,20 @@ class NodeInterfacesSerializer(BasicSerializer):
             return cls.serialize_nic_interface(instance, fields)
         elif instance.type == iface_types.bond:
             return cls.serialize_bond_interface(instance, fields)
+
+
+class NodeSerializerForDeployment(BasicSerializer):
+    fields = (
+        'id',
+        'name',
+        'status',
+        'pending_deletion',
+        'pending_addition',
+        'error_type',
+        'roles',
+        'pending_roles',
+        'attributes',
+        'meta',
+        'hostname',
+        'labels'
+    )

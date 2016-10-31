@@ -96,7 +96,7 @@ class OpenstackConfigCollection(NailgunCollection):
         return configs
 
     @classmethod
-    def find_configs_for_nodes(cls, cluster, nodes):
+    def find_configs_for_nodes(cls, cluster, nodes=None):
         """Returns list of configurations that should be applied.
 
         Returns list of configurations for specified nodes that will be
@@ -108,6 +108,9 @@ class OpenstackConfigCollection(NailgunCollection):
 
         node_ids = set(n.id for n in nodes)
         node_roles = set()
+
+        if nodes is None:
+            nodes = cluster.nodes
 
         for node in nodes:
             node_roles.update(node.roles)

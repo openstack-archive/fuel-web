@@ -862,6 +862,14 @@ class Cluster(NailgunObject):
             cls.set_primary_tag(instance, nodes, tag.tag)
 
     @classmethod
+    def drop_primary_tags(cls, instance, nodes):
+        prim_tags = TagCollection.get_cluster_nodes_tags(instance,
+                                                         nodes=nodes,
+                                                         is_primary=True)
+        prim_tags.update({'is_primary': False}, synchronize_session='fetch')
+        db().flush()
+
+    @classmethod
     def get_nodes_by_role(cls, instance, role_name):
         """Get nodes related to some specific role
 

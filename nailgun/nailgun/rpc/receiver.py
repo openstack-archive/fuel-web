@@ -837,6 +837,7 @@ class NailgunReceiver(object):
                 q_nodes
             ).all()
 
+            objects.Cluster.drop_primary_tags(task.cluster, update_nodes)
             for node in update_nodes:
                 logs_utils.delete_node_logs(node)
                 objects.Node.reset_to_discover(node)

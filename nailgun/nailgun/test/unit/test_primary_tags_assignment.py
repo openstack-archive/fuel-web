@@ -132,6 +132,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
         """Removing primary roles after resetting node to discovery"""
         with self.assert_node_reassigned() as node:
             objects.Node.reset_to_discover(node)
+            objects.Cluster.drop_primary_tags(self.env.clusters[0], [node])
 
     def test_primary_assign_after_node_is_removed_from_cluster(self):
         """Node removal from cluster should cause flushing its primary roles"""

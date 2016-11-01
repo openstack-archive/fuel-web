@@ -159,6 +159,19 @@ class TagCollection(NailgunCollection):
         )
 
     @classmethod
+    def get_cluster_nodes_tags(cls, cluster, nodes=None, **kwargs):
+        if nodes is None:
+            n_ids = (db().query(models.Node.id)
+                     .filter_by(cluster_id=cluster.id).subquery())
+        else:
+            n_ids = [n.id for n in nodes]
+        return db().query(models.NodeTag).filter_by(
+            **kwargs
+        ).filter(
+            models.NodeTag.node_id.in_(n_ids)
+        )
+
+    @classmethod
     def get_node_tags_ids(cls, node):
         return cls.get_node_tags(node).with_entities(
             models.NodeTag.tag_id

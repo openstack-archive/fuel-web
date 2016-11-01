@@ -125,6 +125,27 @@ class TestResetEnvironment(BaseIntegrationTest):
         recover_nodes=False,
         ia_nodes_count=1
     )
+    def test_environment_reset_not_cleans_tags(self):
+        cluster_db = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"name": "First",
+                 "roles": ["controller"],
+                 "pending_addition": True},
+            ]
+        )
+        node_db = cluster_db.nodes[0]
+        tags_before_reset = list(node_db.tag_names)
+        self.env.launch_deployment()
+        self.env.reset_environment()
+        tags_after_reset = list(node_db.tag_names)
+        self.assertItemsEqual(tags_before_reset, tags_after_reset)
+
+    @fake_tasks(
+        override_state={"progress": 100, "status": "ready"},
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
     def test_reset_node_pending_statuses(self):
         cluster_db = self.env.create(
             cluster_kwargs={},

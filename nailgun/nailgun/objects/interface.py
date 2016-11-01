@@ -17,9 +17,9 @@
 import six
 from sqlalchemy.sql import not_
 
-from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.base import BasicSerializer
@@ -84,16 +84,16 @@ class NIC(DPDKMixin, NailgunObject):
         and libraries for particular NIC. It may vary for different OpenStack
         releases. So, dpdk_drivers vary for different releases and it can be
         not empty only for node that is assigned to cluster currently. Also,
-        DPDK is only supported for Neutron with VLAN segmentation currently.
-
+        DPDK is only supported for Neutron with VLAN and VXLAN segmentation
+        currently.
         :param instance: NodeNICInterface instance
         :param dpdk_drivers: DPDK drivers to PCI_ID mapping for cluster node is
                              currently assigned to (dict)
         :return: True if DPDK is available
         """
         return (cls.get_dpdk_driver(instance, dpdk_drivers) is not None and
-                instance.node.cluster.network_config.segmentation_type ==
-                consts.NEUTRON_SEGMENT_TYPES.vlan)
+                Cluster.is_dpdk_supported_for_segmentation(
+                    instance.node.cluster))
 
     @classmethod
     def is_sriov_enabled(cls, instance):

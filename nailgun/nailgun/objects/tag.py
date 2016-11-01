@@ -184,4 +184,14 @@ class TagCollection(NailgunCollection):
             models.NodeTag.node_id
         )
 
+    @classmethod
+    def get_cluster_node_tags(cls, cluster, **kwargs):
+        return db().query(models.NodeTag).filter_by(
+            **kwargs
+        ).join(
+            models.Node
+        ).filter(
+            models.Node.cluster_id == cluster.id
+        )
+
     single = Tag

@@ -862,6 +862,18 @@ class Cluster(NailgunObject):
             cls.set_primary_tag(instance, nodes, tag.tag)
 
     @classmethod
+    def drop_primary_tags(cls, instance, nodes):
+        if not instance.is_ha_mode:
+            return
+        node_ids = [n.id for n in nodes]
+        primary_assocs = (TagCollection.get_cluster_node_tags(instance,
+                                                              is_primary=True)
+                          .filter(models.NodeTag.node_id.in_(node_ids)))
+        for assoc in primary_assocs:
+            assoc.is_primary = False
+        db().flush()
+
+    @classmethod
     def get_nodes_by_role(cls, instance, role_name):
         """Get nodes related to some specific role
 

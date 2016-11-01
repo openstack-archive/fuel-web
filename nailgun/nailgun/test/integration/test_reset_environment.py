@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 from nailgun.db.sqlalchemy.models import Notification
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -119,6 +120,30 @@ class TestResetEnvironment(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(response.status_int, 200)
         self.assertEqual(response.json, [])
+
+    @fake_tasks(
+        override_state={"progress": 100, "status": "ready"},
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
+    def test_environment_reset_updates_tags(self):
+        cluster_db = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"name": "First",
+                 "roles": ["controller"],
+                 "pending_addition": True},
+            ]
+        )
+        node_db = cluster_db.nodes[0]
+        tags_before_reset = list(node_db.tag_names)
+        self.env.launch_deployment()
+        self.env.reset_environment()
+        tags_after_reset = list(node_db.tag_names)
+        self.assertItemsEqual(tags_before_reset, tags_after_reset)
+        primary_tags = [t for t in objects.Node.all_tags(node_db)
+                        if t.startswith('primary')]
+        self.assertFalse(primary_tags)
 
     @fake_tasks(
         override_state={"progress": 100, "status": "ready"},

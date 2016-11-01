@@ -726,7 +726,6 @@ class Node(NailgunObject):
         }
         cls.update(instance, node_data)
         cls.move_roles_to_pending_roles(instance)
-        instance.tags = []
         # when node reseted to discover:
         # - cobbler system is deleted
         # - mac to ip mapping from dnsmasq.conf is deleted

@@ -28,6 +28,26 @@ _prepare_revision = 'f2314e5d63c9'
 _test_revision = '3763c404ca48'
 
 
+VMWARE_ATTRIBUTES_METADATA = {
+    'editable': {
+        'metadata': [
+            {
+                'name': 'availability_zones',
+                'fields': []
+            },
+            {
+                'name': 'glance',
+                'fields': []
+            },
+        ],
+        'value': {
+            'availability_zones': [{}, {}],
+            'glance': {},
+        }
+    }
+}
+
+
 def setup_module():
     dropdb()
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
@@ -37,7 +57,6 @@ def setup_module():
 
 def prepare():
     meta = base.reflect_db_metadata()
-
     result = db.execute(
         meta.tables['releases'].insert(),
         [{
@@ -94,7 +113,9 @@ def prepare():
                     'name': 'Operating System',
                 }
             }),
-            'is_deployable': True
+            'is_deployable': True,
+            'vmware_attributes_metadata':
+                jsonutils.dumps(VMWARE_ATTRIBUTES_METADATA)
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -212,3 +233,41 @@ class TestTagExistingNodes(base.BaseAlembicMigrationTest):
         for role_meta in db.execute(q_roles_meta):
             for role, meta in six.iteritems(jsonutils.loads(role_meta[0])):
                 self.assertEqual(meta['tags'], [role])
+
+
+class TestReleasesUpdate(base.BaseAlembicMigrationTest):
+    def test_vmware_attributes_metadata_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        attrs = jsonutils.loads(result['vmware_attributes_metadata'])
+
+        fields = attrs['editable']['metadata'][0]['fields']
+        self.assertItemsEqual(['vcenter_unsecure', 'vcenter_ca_file'],
+                              [f['name'] for f in fields])
+
+        fields = attrs['editable']['metadata'][1]['fields']
+        self.assertItemsEqual(['vcenter_unsecure', 'ca_file'],
+                              [f['name'] for f in fields])
+
+        self.assertEqual(
+            attrs['editable']['value'],
+            {
+                'availability_zones':
+                    [
+                        {
+                            'vcenter_unsecure': True,
+                            'vcenter_ca_file': {},
+
+                        },
+                        {
+                            'vcenter_unsecure': True,
+                            'vcenter_ca_file': {},
+                        }
+                    ],
+                'glance':
+                    {
+                        'vcenter_unsecure': True,
+                        'ca_file': {},
+
+                    }
+            })

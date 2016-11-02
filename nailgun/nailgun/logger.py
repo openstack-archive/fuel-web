@@ -15,6 +15,7 @@
 #    under the License.
 
 import logging
+import re
 import sys
 
 from logging.handlers import WatchedFileHandler
@@ -26,6 +27,8 @@ DATEFORMAT = '%Y-%m-%d %H:%M:%S'
 LOGFORMAT = '%(asctime)s.%(msecs)03d %(levelname)s ' + \
             '[%(thread)x] (%(module)s) %(message)s'
 formatter = logging.Formatter(LOGFORMAT, DATEFORMAT)
+nodes_agent_uri = re.compile('/api/(v[0-9]+/)?nodes/agent/')
+
 
 # NOTE(aroma): the logging level for nailgun is set up inside
 # nailgun settings parsing object in nailgun.settings module hence
@@ -42,16 +45,40 @@ def make_nailgun_logger():
     return logger
 
 
+def make_file_logger(name, filename):
+    logger = logging.getLogger(name)
+    log_file = WatchedFileHandler(filename)
+    set_logger(logger, log_file)
+    return logger
+
+
 def make_api_logger():
     """Make logger for REST API writes logs to the file"""
     # Circular import dependency problem
     # we import logger module in settings
     from nailgun.settings import settings
+    return make_file_logger("nailgun-api", settings.API_LOG)
 
-    logger = logging.getLogger("nailgun-api")
-    log_file = WatchedFileHandler(settings.API_LOG)
-    set_logger(logger, log_file)
-    return logger
+
+def make_separate_api_loggers():
+    """It create addtional api loggers to split message flood
+    into differnt logs."""
+
+    # Circular import dependency problem
+    # we import logger module in settings
+    from nailgun.settings import settings
+
+    result = []
+    for log in settings.API_SEPARATE_LOGS:
+        logger = make_file_logger(
+            log['name'],
+            log['path']
+        )
+        result.append({
+            'regexp': re.compile(log['regexp']),
+            'logger': logger,
+        })
+    return result
 
 
 def set_logger(logger, handler, level=None):
@@ -82,6 +109,7 @@ class HTTPLoggerMiddleware(object):
     def __init__(self, application):
         self.application = application
         self.api_logger = make_api_logger()
+        self.api_separate_loggers = make_separate_api_loggers()
 
     def __call__(self, env, start_response):
         env['wsgi.errors'] = WriteLogger(self.api_logger.error)
@@ -93,6 +121,12 @@ class HTTPLoggerMiddleware(object):
 
         return self.application(env, start_response_with_logging)
 
+    def __get_api_logger(self, env):
+        for logger in self.api_separate_loggers:
+            if logger['regexp'].match(env['REQUEST_URI']):
+                return logger['logger']
+        return self.api_logger
+
     def __logging_response(self, env, response_code):
         response_info = "Response code '%s' for %s %s from %s:%s" % (
             response_code,
@@ -103,9 +137,9 @@ class HTTPLoggerMiddleware(object):
         )
 
         if response_code == SERVER_ERROR_MSG:
-            self.api_logger.error(response_info)
+            self.__get_api_logger(env).error(response_info)
         else:
-            self.api_logger.debug(response_info)
+            self.__get_api_logger(env).debug(response_info)
 
     def __logging_request(self, env):
         content_length = env.get('CONTENT_LENGTH', 0)
@@ -126,7 +160,7 @@ class HTTPLoggerMiddleware(object):
             body
         )
 
-        self.api_logger.debug(request_info)
+        self.__get_api_logger(env).debug(request_info)
 
     def __get_remote_ip(self, env):
         if 'HTTP_X_REAL_IP' in env:

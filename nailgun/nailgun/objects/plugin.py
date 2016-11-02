@@ -38,6 +38,16 @@ class Plugin(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        """Create plugin.
+
+        WARNING: don't pass keys with none to non nullable fields.
+
+        :param data: data
+        :type data: dict
+
+        :return: plugin instance
+        :rtype: models.Plugin
+        """
         graphs = {}
         for graph in data.pop("graphs", []):
             graphs[graph.pop('type')] = graph

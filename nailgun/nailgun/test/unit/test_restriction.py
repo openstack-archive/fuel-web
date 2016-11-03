@@ -321,18 +321,6 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
         )
         self.vm_data = self.env.read_fixtures(['vmware_attributes'])[0]
 
-    def _get_models(self, attributes, vmware_attributes):
-        return {
-            'settings': attributes,
-            'default': vmware_attributes['editable'],
-            'current_vcenter': vmware_attributes['editable']['value'].get(
-                'availability_zones')[0],
-            'glance': vmware_attributes['editable']['value'].get('glance'),
-            'cluster': self.cluster,
-            'version': settings.VERSION,
-            'networking_parameters': self.cluster.network_config
-        }
-
     def test_check_data_with_empty_values_without_restrictions(self):
         attributes = objects.Cluster.get_editable_attributes(self.cluster)
         attributes['common']['use_vcenter']['value'] = True
@@ -345,7 +333,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
                     "vcenter_host": "",
                     "vcenter_username": "",
                     "vcenter_password": "",
-                    "vcenter_unsecure": "",
+                    "vcenter_insecure": "",
                     "vcenter_ca_file": {},
                     "nova_computes": [
                         {
@@ -364,14 +352,18 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
                 "vcenter_username": "",
                 "vcenter_password": "",
                 "datacenter": "",
-                "datastore": "",
-                "vcenter_unsecure": "",
-                "ca_file": {}
+                "datastore": ""
             }
         }
         # Update value with empty value
         vmware_attributes['editable']['value'] = empty_values
-        models = self._get_models(attributes, vmware_attributes)
+        models = {
+            'settings': attributes,
+            'default': vmware_attributes['editable'],
+            'cluster': self.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': self.cluster.network_config
+        }
 
         errs = VmwareAttributesRestriction.check_data(
             models=models,
@@ -390,7 +382,13 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
         # value data taken from fixture one cluster of
         # nova computes left empty
         vmware_attributes = self.vm_data.copy()
-        models = self._get_models(attributes, vmware_attributes)
+        models = {
+            'settings': attributes,
+            'default': vmware_attributes['editable'],
+            'cluster': self.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': self.cluster.network_config
+        }
 
         errs = VmwareAttributesRestriction.check_data(
             models=models,
@@ -403,7 +401,13 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
         # fixture have restrictions enabled for glance that's why
         # only 'Empty cluster' should returned
         vmware_attributes = self.vm_data.copy()
-        models = self._get_models(attributes, vmware_attributes)
+        models = {
+            'settings': attributes,
+            'default': vmware_attributes['editable'],
+            'cluster': self.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': self.cluster.network_config
+        }
 
         errs = VmwareAttributesRestriction.check_data(
             models=models,
@@ -420,7 +424,13 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
             for j, ncompute in enumerate(azone['nova_computes']):
                 ncompute['vsphere_cluster'] = 'cluster-{0}-{1}'.format(i, j)
 
-        models = self._get_models(attributes, vmware_attributes)
+        models = {
+            'settings': attributes,
+            'default': vmware_attributes['editable'],
+            'cluster': self.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': self.cluster.network_config
+        }
 
         errs = VmwareAttributesRestriction.check_data(
             models=models,
@@ -443,7 +453,13 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
         glance = vmware_attributes['editable']['value']['glance']
         glance['datacenter'] = 'test_datacenter'
         glance['datastore'] = 'test_datastore'
-        models = self._get_models(attributes, vmware_attributes)
+        models = {
+            'settings': attributes,
+            'default': vmware_attributes['editable'],
+            'cluster': self.cluster,
+            'version': settings.VERSION,
+            'networking_parameters': self.cluster.network_config
+        }
 
         errs = VmwareAttributesRestriction.check_data(
             models=models,

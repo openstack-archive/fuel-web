@@ -26,10 +26,8 @@ from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
 
-from nailgun import consts
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils.migration import drop_enum
-
 
 # revision identifiers, used by Alembic.
 revision = '3763c404ca48'
@@ -130,7 +128,7 @@ def upgrade_tags_existing_nodes():
         connection,
         q_select_release_query,
         q_update_release_query,
-        consts.TAG_OWNER_TYPES.plugin
+        'release'
     )
 
     # Create tags for all plugins roles
@@ -138,18 +136,18 @@ def upgrade_tags_existing_nodes():
         connection,
         q_select_plugin_query,
         q_update_plugin_query,
-        consts.TAG_OWNER_TYPES.plugin
+        'plugin'
     )
 
     # update tag's assignment for releases tags
     _upgrade_tags_assignment(connection,
                              node_release_query,
-                             consts.TAG_OWNER_TYPES.release)
+                             'release')
 
     # update tag's assignment for plugin tags
     _upgrade_tags_assignment(connection,
                              node_plugin_query,
-                             consts.TAG_OWNER_TYPES.plugin)
+                             'plugin')
 
 
 def upgrade_node_tagging():
@@ -161,7 +159,7 @@ def upgrade_node_tagging():
         sa.Column(
             'owner_type',
             sa.Enum(
-                *consts.TAG_OWNER_TYPES,
+                'release', 'cluster', 'plugin',
                 name='tag_owner_type'),
             nullable=False),
         sa.Column('has_primary', sa.Boolean),

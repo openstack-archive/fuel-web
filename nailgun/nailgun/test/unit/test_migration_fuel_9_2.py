@@ -26,14 +26,47 @@ from nailgun.test import base
 
 _prepare_revision = 'f2314e5d63c9'
 _test_revision = '3763c404ca48'
-
+release_roles_metadata = {
+    'controller': {
+        'name': 'Controller',
+    },
+    'compute': {
+        'name': 'Compute',
+    },
+    'virt': {
+        'name': 'Virtual',
+    },
+    'compute-vmware': {
+        'name': 'Compute VMware',
+    },
+    'ironic': {
+        'name': 'Ironic',
+    },
+    'cinder': {
+        'name': 'Cinder',
+    },
+    'cinder-block-device': {
+        'name': 'Cinder Block Device',
+    },
+    'cinder-vmware': {
+        'name': 'Cinder Proxy to VMware Datastore',
+    },
+    'ceph-osd': {
+        'name': 'Ceph OSD',
+    },
+    'mongo': {
+        'name': 'Telemetry - MongoDB',
+    },
+    'base-os': {
+        'name': 'Operating System',
+    }
+}
 
 def setup_module():
     dropdb()
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
     prepare()
     alembic.command.upgrade(ALEMBIC_CONFIG, _test_revision)
-
 
 def prepare():
     meta = base.reflect_db_metadata()
@@ -59,41 +92,8 @@ def prepare():
                 'mongo',
                 'base-os',
             ]),
-            'roles_metadata': jsonutils.dumps({
-                'controller': {
-                    'name': 'Controller',
-                },
-                'compute': {
-                    'name': 'Compute',
-                },
-                'virt': {
-                    'name': 'Virtual',
-                },
-                'compute-vmware': {
-                    'name': 'Compute VMware',
-                },
-                'ironic': {
-                    'name': 'Ironic',
-                },
-                'cinder': {
-                    'name': 'Cinder',
-                },
-                'cinder-block-device': {
-                    'name': 'Cinder Block Device',
-                },
-                'cinder-vmware': {
-                    'name': 'Cinder Proxy to VMware Datastore',
-                },
-                'ceph-osd': {
-                    'name': 'Ceph OSD',
-                },
-                'mongo': {
-                    'name': 'Telemetry - MongoDB',
-                },
-                'base-os': {
-                    'name': 'Operating System',
-                }
-            }),
+            'roles_metadata': jsonutils.dumps(
+                release_roles_metadata),
             'is_deployable': True
         }])
 
@@ -173,12 +173,10 @@ def prepare():
 
 class TestTagExistingNodes(base.BaseAlembicMigrationTest):
     def test_tags_created_on_upgrade(self):
-        tags_count = db.execute(
-            sa.select(
-                [sa.func.count(self.meta.tables['tags'].c.id)]
-            )).fetchone()[0]
-
-        self.assertEqual(tags_count, 13)
+        result = db.execute(sa.sql.text(
+            "SELECT DISTINCT tag FROM tags WHERE owner_type = 'release'"))
+        release_tags = set(row[0] for row in result)
+        self.assertEqual(release_tags, set(release_roles_metadata.keys()))
 
     def test_nodes_assigned_tags(self):
         tags = self.meta.tables['tags']

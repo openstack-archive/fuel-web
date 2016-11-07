@@ -130,7 +130,7 @@ def upgrade_tags_existing_nodes():
         connection,
         q_select_release_query,
         q_update_release_query,
-        consts.TAG_OWNER_TYPES.plugin
+        consts.TAG_OWNER_TYPES.release
     )
 
     # Create tags for all plugins roles

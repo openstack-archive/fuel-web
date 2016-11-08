@@ -41,14 +41,12 @@ from nailgun.db.sqlalchemy.models.node import Node
 from nailgun.db.sqlalchemy.models.node import NodeBondInterface
 from nailgun.db.sqlalchemy.models.node import NodeNICInterface
 from nailgun.db.sqlalchemy.models.node import NodeGroup
-from nailgun.db.sqlalchemy.models.node import NodeTag
 
 from nailgun.db.sqlalchemy.models.network import NetworkGroup
 from nailgun.db.sqlalchemy.models.network import IPAddr
 from nailgun.db.sqlalchemy.models.network import IPAddrRange
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
-from nailgun.db.sqlalchemy.models.tag import Tag
 
 from nailgun.db.sqlalchemy.models.network_config import NetworkingConfig
 from nailgun.db.sqlalchemy.models.network_config import NeutronConfig

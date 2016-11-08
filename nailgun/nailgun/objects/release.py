@@ -26,6 +26,7 @@ import six
 import yaml
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
@@ -207,6 +208,10 @@ class Release(NailgunObject):
                 >= StrictVersion(consts.FUEL_NFV_AVAILABLE_SINCE))
 
     @classmethod
+    def get_volumes_metadata(cls, instance):
+        return instance.volumes_metadata
+
+    @classmethod
     def get_deployment_graph(cls, instance, graph_type=None):
         """Get deployment graph based on release version.
 
@@ -294,6 +299,22 @@ class Release(NailgunObject):
                     'name': comp_j['name']})
 
         return components
+
+    @classmethod
+    def get_node_by_role(cls, instance, role_name):
+        from objects import Node
+        cluster_ids = db().query(models.Cluster.id).filter_by(
+            release_id=instance.id
+        ).subquery()
+        return Node.get_nodes_by_role(cluster_ids, role_name).first()
+
+    @classmethod
+    def get_roles(cls, instance):
+        return instance.roles_metadata
+
+    @classmethod
+    def get_own_roles(cls, instance):
+        return instance.roles_metadata
 
     @classmethod
     def _check_relation(cls, a, b, relation):

@@ -46,10 +46,7 @@ class DeploymentMultinodeSerializer(object):
     neutron_network_serializer = \
         neutron_serializers.NeutronNetworkDeploymentSerializer
 
-    critical_roles = frozenset(('controller', 'ceph-osd', 'primary-mongo',
-                                'primary-database', 'primary-rabbitmq',
-                                'primary-keystone', 'primary-neutron',
-                                'database', 'keystone', 'neutron', 'rabbitmq'))
+    critical_roles = frozenset(('controller', 'ceph-osd', 'primary-mongo'))
 
     def __init__(self, tasks_graph=None):
         self.task_graph = tasks_graph
@@ -337,15 +334,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         'primary-mongo',
         'primary-swift-proxy',
         'ceph-osd',
-        'controller',
-        'primary-database',
-        'primary-rabbitmq',
-        'primary-keystone',
-        'primary-neutron',
-        'database',
-        'keystone',
-        'neutron',
-        'rabbitmq'
+        'controller'
     ))
 
     def get_last_controller(self, nodes):

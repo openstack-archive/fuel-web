@@ -1198,11 +1198,11 @@ class Node(NailgunObject):
 
         # There are tags currently assigned that won't be needed after updating
         # the roles
-        q_remained_tags = TagCollection.get_node_tags(
-            instance
+        q_remained_tags = TagCollection.get_node_tags_query(
+            instance.id
         ).filter(~models.Tag.tag.in_(current_tags - new_tags))
 
-        q_new_role_tags = TagCollection.get_cluster_tags(
+        q_new_role_tags = TagCollection.get_cluster_tags_query(
             instance.cluster
         ).filter(models.Tag.tag.in_(new_tags - current_tags))
 

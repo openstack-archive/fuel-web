@@ -17,16 +17,12 @@
 """
 Handlers dealing with tags
 """
-
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import handle_errors
-from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
-from nailgun.api.v1.handlers.base import validate
 
 from nailgun.api.v1.validators.tag import TagValidator
-
 
 from nailgun import errors
 from nailgun import objects
@@ -34,7 +30,6 @@ from nailgun import objects
 
 class TagOwnerHandler(CollectionHandler):
 
-    validator = TagValidator
     collection = objects.TagCollection
     owner_map = {
         'releases': 'release',
@@ -42,25 +37,12 @@ class TagOwnerHandler(CollectionHandler):
         'plugins': 'plugin'
     }
 
-    def _get_owner_or_404(self, owner_type, owner_id):
-        obj_cls = {
-            'releases': objects.Release,
-            'clusters': objects.Cluster,
-            'plugins': objects.Plugin
-        }[owner_type]
-        return self.get_object_or_404(obj_cls, owner_id)
-
     @handle_errors
-    @validate
-    @serialize
     def GET(self, owner_type, owner_id):
         """:returns: JSONized list of tags.
 
-        :http:
-            * 200 (OK)
-            * 404 (owner doesn't exist)
+        :http: * 200 (OK)
         """
-        self._get_owner_or_404(owner_type, owner_id)
 
         tags = objects.TagCollection.filter_by(
             None,
@@ -71,17 +53,13 @@ class TagOwnerHandler(CollectionHandler):
 
     @handle_errors
     def POST(self, owner_type, owner_id):
-        """Create tag
+        """Assign tags to node
 
         :http:
             * 201 (tag successfully created)
             * 400 (invalid object data specified)
-            * 404 (owner doesn't exist)
         """
-        owner_obj = self._get_owner_or_404(owner_type, owner_id)
-        data = self.checked_data(self.validator.validate_create,
-                                 instance=owner_obj)
-        data.pop('id', None)
+        data = self.checked_data()
         data['owner_type'] = self.owner_map[owner_type]
         data['owner_id'] = owner_id
 
@@ -102,14 +80,6 @@ class TagHandler(SingleHandler):
 
 class NodeTagAssignmentHandler(BaseHandler):
 
-    validator = TagValidator
-
-    @staticmethod
-    def _get_assigned_tags(node, tag_ids):
-        q_tags = objects.TagCollection.get_node_tags_ids_in_range(node,
-                                                                  tag_ids)
-        return set([t[0] for t in q_tags])
-
     @handle_errors
     def POST(self, node_id):
         """Assign tags to node
@@ -118,26 +88,18 @@ class NodeTagAssignmentHandler(BaseHandler):
             * 200 (tags successfully assigned)
             * 400 (invalid object data specified)
             * 404 (node instance or tags not found)
-            * 405 (method not allowed)
         """
         node = self.get_object_or_404(
             objects.Node,
             node_id
         )
 
-        tag_ids = self.checked_data(self.validator.validate_assign,
-                                    instance=node)
+        tag_ids = self.get_param_as_set('tags')
 
         tags = self.get_objects_list_or_404(
             objects.TagCollection,
             tag_ids
         )
-
-        assigned_tags = (set(tag_ids) &
-                         self._get_assigned_tags(node, tag_ids))
-        if assigned_tags:
-            raise self.http(405, "Tags '{}' are already assigned to the "
-                                 "node {}.".format(assigned_tags, node_id))
 
         objects.Node.assign_tags(node, tags)
         raise self.http(200, None)
@@ -150,26 +112,18 @@ class NodeTagAssignmentHandler(BaseHandler):
             * 200 (tags successfully unassigned)
             * 400 (invalid object data specified)
             * 404 (node instance or tags not found)
-            * 405 (method not allowed)
         """
         node = self.get_object_or_404(
             objects.Node,
             node_id
         )
 
-        tag_ids = self.checked_data(self.validator.validate_assign,
-                                    instance=node)
+        tag_ids = self.get_param_as_set('tags')
 
         tags = self.get_objects_list_or_404(
             objects.TagCollection,
             tag_ids
         )
 
-        not_assigned_tags = (set(tag_ids) -
-                             self._get_assigned_tags(node, tag_ids))
-        if not_assigned_tags:
-            raise self.http(405, "Tags '{}' are not assigned to the node "
-                                 "{}.".format(not_assigned_tags, node_id))
-
         objects.Node.unassign_tags(node, tags)
-        raise self.http(204, None)
+        raise self.http(200, None)

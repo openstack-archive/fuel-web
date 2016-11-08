@@ -596,7 +596,6 @@ class Node(NailgunObject):
         """
         data.pop("id", None)
         data.pop("network_data", None)
-        data.pop("tags", None)
 
         roles = data.pop("roles", None)
         pending_roles = data.pop("pending_roles", None)
@@ -1031,43 +1030,6 @@ class Node(NailgunObject):
 
         db().flush()
         db().refresh(instance)
-
-    @classmethod
-    def assign_tags(cls, instance, tags):
-        """Assign tags to node.
-
-        Assigns tags to node skipping already assigned
-        tags.
-
-        :param instance: Node instance
-        :param tags: List of tags
-        :returns: None
-        """
-        node_tags = set(t.tag for t in instance.tags)
-        tags_to_assign = set(tags) - node_tags
-        for tag in tags_to_assign:
-            t = models.NodeTag(tag=tag, node_id=instance.id)
-            db().add(t)
-            instance.tags.append(t)
-
-        db().flush()
-
-    @classmethod
-    def unassign_tags(cls, instance, tags):
-        """Remove tags from node.
-
-        :param instance: Node instance
-        :param tags: List of tags
-        :returns: None
-        """
-        node_tags = set(t.tag for t in instance.tags)
-        tags_to_remove = set(tags) & node_tags
-        tags = copy.copy(instance.tags)
-        for assoc in tags:
-            if assoc.tag in tags_to_remove:
-                instance.tags.remove(assoc)
-
-        db().flush()
 
     @classmethod
     def move_roles_to_pending_roles(cls, instance):

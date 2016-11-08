@@ -175,11 +175,9 @@ def prepare():
             }])
         cluster_ids.append(result.inserted_primary_key[0])
 
-    node_id = 1
     result = db.execute(
         meta.tables['nodes'].insert(),
         [{
-            'id': node_id,
             'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',
             'cluster_id': None,
             'group_id': None,
@@ -326,100 +324,8 @@ def prepare():
         ]
     )
 
-    db.execute(
-        meta.tables['node_nic_interfaces'].insert(),
-        [{
-            'id': 1,
-            'node_id': node_id,
-            'name': 'test_interface',
-            'mac': '00:00:00:00:00:01',
-            'max_speed': 200,
-            'current_speed': 100,
-            'ip_addr': '10.20.0.2',
-            'netmask': '255.255.255.0',
-            'state': 'test_state',
-            'interface_properties': jsonutils.dumps(
-                {'test_property': 'test_value'}),
-            'driver': 'test_driver',
-            'bus_info': 'some_test_info'
-        }]
-    )
-
-    db.execute(
-        meta.tables['node_bond_interfaces'].insert(),
-        [{
-            'node_id': node_id,
-            'name': 'test_bond_interface',
-            'mode': 'active-backup',
-            'bond_properties': jsonutils.dumps(
-                {'test_property': 'test_value'})
-        }]
-    )
-
-    result = db.execute(
-        meta.tables['tasks'].insert(),
-        [
-            {
-                'id': 55,
-                'uuid': '219eaafe-01a1-4f26-8edc-b9d9b0df06b3',
-                'name': 'deployment',
-                'status': 'running',
-                'deployment_info': jsonutils.dumps(DEPLOYMENT_INFO[55])
-            },
-            {
-                'id': 56,
-                'uuid': 'a45fbbcd-792c-4245-a619-f4fb2f094d38',
-                'name': 'deployment',
-                'status': 'running',
-                'deployment_info': jsonutils.dumps(DEPLOYMENT_INFO[56])
-            }
-        ]
-    )
-
-    result = db.execute(
-        meta.tables['nodes'].insert(),
-        [{
-            'id': 2,
-            'uuid': 'fcd49872-3917-4a18-98f9-3f5acfe3fdec',
-            'cluster_id': cluster_ids[0],
-            'group_id': None,
-            'status': 'ready',
-            'roles': ['controller', 'ceph-osd'],
-            'meta': '{}',
-            'mac': 'bb:aa:aa:aa:aa:aa',
-            'timestamp': datetime.datetime.utcnow(),
-        }]
-    )
-
     TestRequiredComponentTypesField.prepare(meta)
     db.commit()
-
-
-class TestTagExistingNodes(base.BaseAlembicMigrationTest):
-    def test_tags_created_on_upgrade(self):
-        tags_count = db.execute(
-            sa.select(
-                [sa.func.count(self.meta.tables['tags'].c.id)]
-            )).fetchone()[0]
-
-        self.assertEqual(tags_count, 11)
-
-    def test_nodes_assigned_tags(self):
-        tags = self.meta.tables['tags']
-        node_tags = self.meta.tables['node_tags']
-
-        query = sa.select([tags.c.tag]).select_from(
-            sa.join(
-                tags, node_tags,
-                tags.c.id == node_tags.c.tag_id
-            )
-        ).where(
-            node_tags.c.node_id == 2
-        )
-
-        res = db.execute(query)
-        tags = [t[0] for t in res]
-        self.assertItemsEqual(tags, ['controller', 'ceph-osd'])
 
 
 class TestPluginLinksConstraints(base.BaseAlembicMigrationTest):

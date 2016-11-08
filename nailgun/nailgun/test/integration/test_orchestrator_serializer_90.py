@@ -773,7 +773,7 @@ class TestDeploymentHASerializer90(
 
     def test_serialize_with_customized(self):
         cluster = self.env.clusters[0]
-        serializer = deployment_serializers.DeploymentLCMSerializer()
+        serializer = self.create_serializer(cluster)
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)

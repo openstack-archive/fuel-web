@@ -148,16 +148,6 @@ class Plugin(NailgunObject):
         DeploymentGraph.delete_for_parent(instance)
         super(Plugin, cls).delete(instance)
 
-    @staticmethod
-    def get_nm_tags(instance, **kwargs):
-        """Return list of tags used in plugin's namespace.
-
-        :param instance: nailgun.db.sqlalchemy.models.Plugin instance
-        :return: query with Tag models
-        """
-        from nailgun.objects import TagCollection
-        return TagCollection.get_plugin_nm_tags(instance, **kwargs).all()
-
 
 class PluginCollection(NailgunCollection):
 

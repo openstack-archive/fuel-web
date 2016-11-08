@@ -29,11 +29,11 @@ class TagValidator(BasicValidator):
     def validate_delete(cls, data, instance):
         if instance.read_only:
             raise errors.CannotDelete(
-                "Read-only tag '{}' cannot be deleted.".format(instance.tag)
+                "Read-only tags cannot be deleted."
             )
 
-        n_ids = [str(n)
-                 for n in objects.TagCollection.get_tag_nodes_ids(instance)]
+        n_ids = [str(n.id)
+                 for n in objects.TagCollection.get_tag_nodes(instance)]
 
         if n_ids:
             raise errors.CannotDelete(
@@ -46,7 +46,7 @@ class TagValidator(BasicValidator):
         parsed = cls.validate(data, instance=instance)
         if instance.read_only:
             raise errors.CannotUpdate(
-                "Read-only tag '{}' cannot be deleted.".format(instance.tag)
+                "Read-only tags cannot be updated."
             )
         return parsed
 
@@ -57,13 +57,6 @@ class TagValidator(BasicValidator):
 
     @classmethod
     def validate_assign(cls, data, instance):
-        """Validates tags assignment.
-
-        :param data: Json string with tag ids
-        :type data: string
-        :param instance: A node instance
-        :type node: nailgun.db.sqlalchemy.models.node.Node
-        """
         if not instance.cluster:
             raise errors.NotAllowed("Node '{}' is not in a cluster."
                                     "".format(instance.id))
@@ -72,8 +65,7 @@ class TagValidator(BasicValidator):
         for t in parsed:
             if not isinstance(t, int):
                 raise errors.InvalidData(
-                    "Tag '{}' can not be assigned to the node '{}' as only "
-                    "a numeric notation is supported.".format(t, instance.id)
+                    "Tag's assignment supports only numeric notation."
                 )
         return parsed
 

@@ -24,7 +24,7 @@ from nailgun import errors
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
 from nailgun.settings import settings
-from nailgun.utils.resolvers import NameMatchingPolicy
+from nailgun.utils.role_resolver import NameMatchingPolicy
 
 
 # This class has similar functional with TasksSerializer from task deploy
@@ -130,8 +130,8 @@ class TransactionSerializer(object):
         consts.ORCHESTRATOR_TASK_TYPES.skipped
     )
 
-    def __init__(self, context, resolver):
-        self.resolver = resolver
+    def __init__(self, context, role_resolver):
+        self.role_resolver = role_resolver
         self.context = context
         self.tasks_graph = {}
         self.tasks_dictionary = {}
@@ -142,15 +142,15 @@ class TransactionSerializer(object):
         self.concurrency_policy = get_concurrency_policy()
 
     @classmethod
-    def serialize(cls, context, tasks, resolver):
+    def serialize(cls, context, tasks, role_resolver):
         """Resolves roles and dependencies for tasks.
 
         :param context: the deployment context
         :param tasks: the deployment tasks
-        :param resolver: the nodes tag resolver
+        :param role_resolver: the nodes role resolver
         :return: the list of serialized task per node
         """
-        serializer = cls(context, resolver)
+        serializer = cls(context, role_resolver)
         serializer.process_tasks(tasks)
         serializer.resolve_dependencies()
         tasks_graph = serializer.tasks_graph
@@ -225,8 +225,8 @@ class TransactionSerializer(object):
                     yield node_id, task
 
         for task in groups:
-            node_ids = self.resolver.resolve(
-                task.get('tags', task.get('roles', task.get('groups')))
+            node_ids = self.role_resolver.resolve(
+                task.get('roles', task.get('groups'))
             )
             if not node_ids:
                 continue
@@ -256,8 +256,8 @@ class TransactionSerializer(object):
             # all synchronisation tasks will run on sync node
             return [None]
         # TODO(bgaifullin) remove deprecated groups
-        return self.resolver.resolve(
-            task.get('tags', task.get('roles', task.get('groups')))
+        return self.role_resolver.resolve(
+            task.get('roles', task.get('groups'))
         )
 
     def resolve_dependencies(self):
@@ -315,7 +315,7 @@ class TransactionSerializer(object):
             return
 
         for dep in six.moves.filter(None, dependencies):
-            roles = dep.get('tags', dep.get('role', consts.TASK_ROLES.all))
+            roles = dep.get('role', consts.TASK_ROLES.all)
 
             if roles == consts.TASK_ROLES.self:
                 node_ids = [node_id]
@@ -324,7 +324,7 @@ class TransactionSerializer(object):
                 node_ids = [None]
                 excludes = []
             else:
-                node_ids = self.resolver.resolve(
+                node_ids = self.role_resolver.resolve(
                     roles, dep.get('policy', consts.NODE_RESOLVE_POLICY.all)
                 )
                 excludes = [(task_id, node_id)]

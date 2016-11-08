@@ -137,10 +137,6 @@ from nailgun.api.v1.handlers.role import ClusterRolesHandler
 from nailgun.api.v1.handlers.role import RoleCollectionHandler
 from nailgun.api.v1.handlers.role import RoleHandler
 
-from nailgun.api.v1.handlers.tag import NodeTagAssignmentHandler
-from nailgun.api.v1.handlers.tag import TagHandler
-from nailgun.api.v1.handlers.tag import TagOwnerHandler
-
 from nailgun.api.v1.handlers.tasks import TaskCollectionHandler
 from nailgun.api.v1.handlers.tasks import TaskHandler
 
@@ -358,12 +354,6 @@ urls = (
     NodeNICsDefaultHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
-    r'/nodes/(?P<node_id>\d+)/tags/?$',
-    NodeTagAssignmentHandler,
-    r'/tags/(?P<obj_id>\d+)/?$',
-    TagHandler,
-    r'/(releases|clusters|plugins)/(?P<owner_id>\d+)/tags/?$',
-    TagOwnerHandler,
     r'/tasks/?$',
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',

@@ -336,13 +336,18 @@ class PluginManager(object):
         :type cluster: Cluster model
         :return: dict -- Object with merged volumes data from plugins
         """
+        def _get_volumes_ids(instance):
+            for instance_vol in instance.volumes_metadata.get('volumes', []):
+                yield instance_vol['id']
+
         volumes_metadata = {
             'volumes': [],
             'volumes_roles_mapping': {},
             'rule_to_pick_boot_disk': [],
         }
-        release_volumes = cluster.release.volumes_metadata.get('volumes', [])
-        release_volumes_ids = [v['id'] for v in release_volumes]
+
+        cluster_volumes_ids = _get_volumes_ids(cluster)
+        release_volumes_ids = _get_volumes_ids(cluster.release)
         processed_volumes = {}
 
         enabled_plugins = ClusterPlugin.get_enabled(cluster.id)
@@ -351,24 +356,28 @@ class PluginManager(object):
 
             for volume in metadata.get('volumes', []):
                 volume_id = volume['id']
-                if volume_id in release_volumes_ids:
-                    raise errors.AlreadyExists(
-                        'Plugin {0} is overlapping with release '
-                        'by introducing the same volume with '
-                        'id "{1}"'.format(plugin_adapter.full_name, volume_id)
-                    )
-                elif volume_id in processed_volumes:
-                    raise errors.AlreadyExists(
-                        'Plugin {0} is overlapping with plugin {1} '
-                        'by introducing the same volume with '
-                        'id "{2}"'.format(
-                            plugin_adapter.full_name,
-                            processed_volumes[volume_id],
-                            volume_id
+                for owner, volumes_ids in (('cluster', cluster_volumes_ids),
+                                           ('release', release_volumes_ids)):
+                    if volume_id in release_volumes_ids:
+                        raise errors.AlreadyExists(
+                            'Plugin {0} is overlapping with {1} '
+                            'by introducing the same volume with '
+                            'id "{2}"'.format(plugin_adapter.full_name,
+                                              owner,
+                                              volume_id)
                         )
-                    )
+                    elif volume_id in processed_volumes:
+                        raise errors.AlreadyExists(
+                            'Plugin {0} is overlapping with plugin {1} '
+                            'by introducing the same volume with '
+                            'id "{2}"'.format(
+                                plugin_adapter.full_name,
+                                processed_volumes[volume_id],
+                                volume_id
+                            )
+                        )
 
-                processed_volumes[volume_id] = plugin_adapter.full_name
+                    processed_volumes[volume_id] = plugin_adapter.full_name
 
             volumes_metadata.get('volumes_roles_mapping', {}).update(
                 metadata.get('volumes_roles_mapping', {}))

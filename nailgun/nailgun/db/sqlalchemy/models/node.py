@@ -55,24 +55,6 @@ class NodeGroup(Base):
     )
 
 
-class NodeTag(Base):
-    __tablename__ = 'node_tags'
-
-    # NOTE(rmoe): This is required to satisfy some tests. When DEVELOPMENT=1
-    # in settings.yaml ObserverModelBase is used as the declarative base
-    # class. __setattr__ defined in that class requires a mapped object to
-    # have an id field.
-    id = Column(Integer)
-    node_id = Column(
-        ForeignKey('nodes.id', ondelete='CASCADE'), primary_key=True
-    )
-    tag_id = Column(
-        ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True
-    )
-    is_primary = Column(Boolean, default=False)
-    tag = relationship('Tag')
-
-
 class Node(Base):
     __tablename__ = 'nodes'
     __table_args__ = (
@@ -113,13 +95,13 @@ class Node(Base):
     online = Column(Boolean, default=True)
     labels = Column(
         MutableDict.as_mutable(JSON), nullable=False, server_default='{}')
-    tags = relationship('NodeTag', cascade='delete, delete-orphan')
     roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                    default=[], nullable=False, server_default='{}')
     pending_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                            default=[], nullable=False, server_default='{}')
     primary_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                            default=[], nullable=False, server_default='{}')
+
     nic_interfaces = relationship("NodeNICInterface", backref="node",
                                   cascade="all, delete-orphan",
                                   order_by="NodeNICInterface.name")
@@ -186,10 +168,6 @@ class Node(Base):
     @property
     def full_name(self):
         return u'%s (id=%s, mac=%s)' % (self.name, self.id, self.mac)
-
-    @property
-    def tag_names(self):
-        return (t.tag.tag for t in self.tags)
 
     @property
     def all_roles(self):

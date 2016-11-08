@@ -121,6 +121,12 @@ class Cluster(Base):
         nullable=False)
     extensions = Column(psql.ARRAY(String(consts.EXTENSION_NAME_MAX_SIZE)),
                         default=[], nullable=False, server_default='{}')
+    volumes_metadata = Column(MutableDict.as_mutable(JSON),
+                              default={},
+                              server_default='{}')
+    roles_metadata = Column(MutableDict.as_mutable(JSON),
+                            default={},
+                            server_default='{}')
 
     @property
     def changes(self):

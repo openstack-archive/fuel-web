@@ -186,15 +186,6 @@ class EnvironmentManager(object):
             self.releases.append(release)
         return release
 
-    def get_role(self, release_id, role_name, expect_errors=False):
-        return self.app.get(
-            reverse(
-                'RoleHandler',
-                {'role_name': role_name, 'release_id': release_id}),
-            headers=self.default_headers,
-            expect_errors=expect_errors
-        )
-
     def create_openstack_config(self, api=False, **kwargs):
         if api:
             resp = self.app.post(
@@ -212,28 +203,60 @@ class EnvironmentManager(object):
             self.openstack_configs.append(config)
         return config
 
-    def update_role(self, release_id, role_name, data, expect_errors=False):
+    def get_all_roles(self, obj_type, obj_id, expect_errors=False):
+        return self.app.get(
+            reverse(
+                'RoleCollectionHandler',
+                kwargs={'obj_id': obj_id, 'obj_type': obj_type}
+            ),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def get_role(self, obj_type, obj_id, role_name, expect_errors=False):
+        return self.app.get(
+            reverse(
+                'RoleHandler',
+                kwargs={'obj_id': obj_id,
+                        'obj_type': obj_type,
+                        'role_name': role_name}
+            ),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def update_role(self, obj_type, obj_id, role_name, data,
+                    expect_errors=False):
         return self.app.put(
             reverse(
                 'RoleHandler',
-                {'role_name': role_name, 'release_id': release_id}),
+                kwargs={'obj_id': obj_id,
+                        'obj_type': obj_type,
+                        'role_name': role_name}
+            ),
             jsonutils.dumps(data),
             headers=self.default_headers,
             expect_errors=expect_errors
         )
 
-    def delete_role(self, release_id, role_name, expect_errors=False):
+    def delete_role(self, obj_type, obj_id, role_name, expect_errors=False):
         return self.app.delete(
             reverse(
                 'RoleHandler',
-                {'role_name': role_name, 'release_id': release_id}),
+                kwargs={'obj_id': obj_id,
+                        'obj_type': obj_type,
+                        'role_name': role_name}
+            ),
             headers=self.default_headers,
             expect_errors=expect_errors
         )
 
-    def create_role(self, release_id, data, expect_errors=False):
+    def create_role(self, obj_type, obj_id, data, expect_errors=False):
         return self.app.post(
-            reverse('RoleCollectionHandler', {'release_id': release_id}),
+            reverse(
+                'RoleCollectionHandler',
+                kwargs={'obj_id': obj_id, 'obj_type': obj_type}
+            ),
             jsonutils.dumps(data),
             headers=self.default_headers,
             expect_errors=expect_errors

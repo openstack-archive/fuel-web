@@ -80,17 +80,6 @@ class TestPluginBase(base.BaseTestCase):
 
         db().flush()
 
-    def test_plugins_tags(self):
-        role = 'role_x'
-        ClusterPlugin.set_attributes(self.cluster.id,
-                                     self.plugin_adapter.plugin.id,
-                                     enabled=True)
-        self.node = self.env.create_node(api=True,
-                                         cluster_id=self.cluster.id,
-                                         pending_roles=[role],
-                                         pending_addition=True)
-        self.assertItemsEqual(self.node['tags'], [role])
-
     def test_plugin_release_versions(self):
         """Should return set of all versions this plugin is applicable to"""
         self.assertEqual(

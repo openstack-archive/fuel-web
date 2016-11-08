@@ -28,6 +28,7 @@ from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
 
+from nailgun.db.sqlalchemy.models import fields
 
 # revision identifiers, used by Alembic.
 revision = '3763c404ca48'
@@ -153,9 +154,11 @@ def upgrade():
     upgrade_release_with_nic_and_bond_attributes()
     upgrade_node_nic_attributes()
     upgrade_node_bond_attributes()
+    upgrade_cluster_roles()
 
 
 def downgrade():
+    downgrade_cluster_roles()
     downgrade_node_bond_attributes()
     downgrade_node_nic_attributes()
     downgrade_release_with_nic_and_bond_attributes()
@@ -601,3 +604,25 @@ def downgrade_node_bond_attributes():
             attributes="{}",
             id=bond_id
         )
+
+
+def upgrade_cluster_roles():
+    op.add_column(
+        'clusters',
+        sa.Column('roles_metadata',
+                  fields.JSON(),
+                  default={},
+                  server_default='{}'),
+    )
+    op.add_column(
+        'clusters',
+        sa.Column('volumes_metadata',
+                  fields.JSON(),
+                  default={},
+                  server_default='{}'),
+    )
+
+
+def downgrade_cluster_roles():
+    op.drop_column('clusters', 'roles_metadata')
+    op.drop_column('clusters', 'volumes_metadata')

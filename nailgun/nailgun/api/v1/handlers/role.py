@@ -26,50 +26,60 @@ from nailgun import objects
 from nailgun.objects.serializers.role import RoleSerializer
 
 
-class RoleHandler(base.SingleHandler):
+class RoleMixIn(object):
+
+    def _get_object_or_404(self, obj_type, obj_id):
+        obj_cls = {
+            'releases': objects.Release,
+            'clusters': objects.Cluster,
+        }[obj_type]
+        return obj_cls, self.get_object_or_404(obj_cls, obj_id)
+
+
+class RoleHandler(base.SingleHandler, RoleMixIn):
 
     validator = RoleValidator
 
-    def get_role_or_404(self, release_id, role_name):
-        role = self.single.get_by_release_id_role_name(release_id, role_name)
-        if role is None:
+    def _check_role(self, obj_cls, obj, role_name):
+        if role_name not in obj_cls.get_own_roles(obj):
             raise self.http(
                 404,
-                u'Role {name} for release {release} is not found'.format(
-                    release=release_id, name=role_name))
-        return role
+                "Role '{}' is not found for the {} {}".format(
+                    role_name, obj_cls.__name__.lower(), obj.id))
 
     @handle_errors
     @validate
     @serialize
-    def GET(self, release_id, role_name):
+    def GET(self, obj_type, obj_id, role_name):
         """Retrieve role
 
         :http:
             * 200 (OK)
             * 404 (no such object found)
         """
-        release = self.get_object_or_404(objects.Release, release_id)
-        return RoleSerializer.serialize_from_release(release, role_name)
+        obj_cls, obj = self._get_object_or_404(obj_type, obj_id)
+        self._check_role(obj_cls, obj, role_name)
+        return RoleSerializer.serialize_from_obj(obj_cls, obj, role_name)
 
     @handle_errors
     @validate
     @serialize
-    def PUT(self, release_id, role_name):
+    def PUT(self, obj_type, obj_id, role_name):
         """Update role
 
         :http:
             * 200 (OK)
             * 404 (no such object found)
         """
-        release = self.get_object_or_404(objects.Release, release_id)
+        obj_cls, obj = self._get_object_or_404(obj_type, obj_id)
+        self._check_role(obj_cls, obj, role_name)
         data = self.checked_data(
-            self.validator.validate_update, instance=release)
-        objects.Release.update_role(release, data)
-        return RoleSerializer.serialize_from_release(release, role_name)
+            self.validator.validate_update, instance_cls=obj_cls, instance=obj)
+        obj_cls.update_role(obj, data)
+        return RoleSerializer.serialize_from_obj(obj_cls, obj, role_name)
 
     @handle_errors
-    def DELETE(self, release_id, role_name):
+    def DELETE(self, obj_type, obj_id, role_name):
         """Remove role
 
         :http:
@@ -77,88 +87,51 @@ class RoleHandler(base.SingleHandler):
             * 400 (cannot delete object)
             * 404 (no such object found)
         """
-        release = self.get_object_or_404(objects.Release, release_id)
+        obj_cls, obj = self._get_object_or_404(obj_type, obj_id)
+        self._check_role(obj_cls, obj, role_name)
 
         try:
-            self.validator.validate_delete(release, role_name)
+            self.validator.validate_delete(obj_cls, obj, role_name)
         except errors.CannotDelete as exc:
             raise self.http(400, exc.message)
 
-        objects.Release.remove_role(release, role_name)
+        obj_cls.remove_role(obj, role_name)
         raise self.http(204)
 
 
-class RoleCollectionHandler(base.CollectionHandler):
+class RoleCollectionHandler(base.CollectionHandler, RoleMixIn):
 
     validator = RoleValidator
 
     @handle_errors
     @validate
-    def POST(self, release_id):
-        """Create role for release
+    def POST(self, obj_type, obj_id):
+        """Create role for release or cluster
 
         :http:
             * 201 (object successfully created)
             * 400 (invalid object data specified)
             * 409 (object with such parameters already exists)
         """
-        release = self.get_object_or_404(objects.Release, release_id)
+        obj_cls, obj = self._get_object_or_404(obj_type, obj_id)
         try:
             data = self.checked_data(
-                self.validator.validate_create, instance=release)
+                self.validator.validate_create,
+                instance_cls=obj_cls,
+                instance=obj)
         except errors.AlreadyExists as exc:
             raise self.http(409, exc.message)
 
         role_name = data['name']
-        objects.Release.update_role(release, data)
+        obj_cls.update_role(obj, data)
         raise self.http(
-            201, RoleSerializer.serialize_from_release(release, role_name))
+            201, RoleSerializer.serialize_from_obj(obj_cls, obj, role_name))
 
     @handle_errors
     @validate
     @serialize
-    def GET(self, release_id):
-        release = self.get_object_or_404(objects.Release, release_id)
-        role_names = six.iterkeys(release.roles_metadata)
-        return [RoleSerializer.serialize_from_release(release, name)
+    def GET(self, obj_type, obj_id):
+        obj_cls, obj = self._get_object_or_404(obj_type, obj_id)
+        role_names = six.iterkeys(obj_cls.get_roles(obj))
+        return [RoleSerializer.serialize_from_obj(obj_cls, obj, name)
                 for name in role_names]
-
-
-class ClusterRolesHandler(base.BaseHandler):
-
-    def _check_role(self, cluster, role_name):
-        available_roles = six.iterkeys(objects.Cluster.get_roles(cluster))
-        if role_name not in available_roles:
-            raise self.http(404, 'Role is not found for the cluster')
-
-    @handle_errors
-    @validate
-    @serialize
-    def GET(self, cluster_id, role_name):
-        """:returns: JSON-ed metadata for the role
-
-            :http:
-            * 200 (OK)
-            * 404 (no such object found)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        self._check_role(cluster, role_name)
-        return RoleSerializer.serialize_from_cluster(cluster, role_name)
-
-
-class ClusterRolesCollectionHandler(base.BaseHandler):
-
-    @handle_errors
-    @validate
-    @serialize
-    def GET(self, cluster_id):
-        """:returns: collection of JSON-ed cluster roles metadata
-
-            :http:
-            * 200 (OK)
-            * 404 (no such object found)
-        """
-        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
-        roles_names = six.iterkeys(objects.Cluster.get_roles(cluster))
-        return [RoleSerializer.serialize_from_cluster(cluster, name)
-                for name in roles_names]

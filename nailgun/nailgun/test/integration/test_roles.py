@@ -22,6 +22,9 @@ from nailgun.utils import reverse
 
 class TestRoles(BaseIntegrationTest):
 
+    OWNER_MAP = {'cluster': 'clusters',
+                 'release': 'releases'}
+
     def test_roles_update(self):
         self.env.create_release()
         resp = self.app.get(
@@ -78,7 +81,7 @@ class TestRoles(BaseIntegrationTest):
         old_roles = release_json["roles_metadata"].keys()
         duplicated_role = old_roles[0]
 
-        resp = self.env.create_role(release_json["id"], {
+        role_data = {
             "name": duplicated_role,
             "meta": {
                 "name": "yep role",
@@ -88,7 +91,13 @@ class TestRoles(BaseIntegrationTest):
                 "id": "os",
                 "allocate_size": "all",
             }],
-        }, expect_errors=True)
+        }
+        resp = self.env.create_role(
+            self.OWNER_MAP['release'],
+            release_json["id"],
+            role_data,
+            expect_errors=True
+        )
 
         self.assertEqual(resp.status_code, 409)
         self.assertRegexpMatches(

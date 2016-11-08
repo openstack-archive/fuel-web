@@ -109,12 +109,3 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
     def test_downgrade_release_required_component_types(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('required_component_types', releases_table.c)
-
-
-class TestNodeTagging(base.BaseAlembicMigrationTest):
-
-    def test_downgrade_release_tags_metadata(self):
-        releases_table = self.meta.tables['releases']
-        self.assertNotIn('tags_metadata', releases_table.c)
-        self.assertNotIn('tags', self.meta.tables)
-        self.assertNotIn('node_tags', self.meta.tables)

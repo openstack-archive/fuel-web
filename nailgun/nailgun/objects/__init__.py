@@ -28,9 +28,6 @@ from nailgun.objects.deployment_graph import DeploymentGraph
 from nailgun.objects.deployment_graph import DeploymentGraphCollection
 from nailgun.objects.deployment_graph import DeploymentGraphTask
 
-from nailgun.objects.tag import Tag
-from nailgun.objects.tag import TagCollection
-
 from nailgun.objects.release import Release
 from nailgun.objects.release import ReleaseCollection
 
@@ -66,6 +63,9 @@ from nailgun.objects.interface import NICCollection
 
 from nailgun.objects.bond import Bond
 from nailgun.objects.bond import BondCollection
+
+from nailgun.objects.tag import Tag
+from nailgun.objects.tag import TagCollection
 
 from nailgun.objects.node import Node
 from nailgun.objects.node import NodeAttributes

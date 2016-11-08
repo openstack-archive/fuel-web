@@ -25,7 +25,7 @@ from nailgun import errors
 from nailgun.logger import logger
 import nailgun.orchestrator.tasks_templates as templates
 from nailgun.settings import settings
-from nailgun.utils.resolvers import TagResolver
+from nailgun.utils.role_resolver import RoleResolver
 
 # TODO(bgaifullin) HUCK to prevent cycle imports
 from nailgun.plugins.manager import PluginManager
@@ -34,17 +34,17 @@ from nailgun.plugins.manager import PluginManager
 class BasePluginDeploymentHooksSerializer(object):
     # TODO(dshulyak) refactor it to be consistent with task_serializer
 
-    def __init__(self, cluster, nodes, resolver=None):
+    def __init__(self, cluster, nodes, role_resolver=None):
         """Initialises.
 
         :param cluster: the cluster object instance
         :param nodes: the list of nodes for deployment
-        :param resolver: the instance of BaseRoleResolver
+        :param role_resolver: the instance of BaseRoleResolver
         """
 
         self.cluster = cluster
         self.nodes = nodes
-        self.resolver = resolver or TagResolver(nodes)
+        self.role_resolver = role_resolver or RoleResolver(nodes)
 
     def deployment_tasks(self, plugins, stage):
         plugin_tasks = []
@@ -58,7 +58,7 @@ class BasePluginDeploymentHooksSerializer(object):
         sorted_tasks = self._sort_by_stage_postfix(plugin_tasks)
         for task in sorted_tasks:
             make_task = None
-            uids = self.resolver.resolve(task.get('tags', task['role']))
+            uids = self.role_resolver.resolve(task['role'])
             if not uids:
                 continue
 
@@ -163,10 +163,10 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         for task in tasks_to_process:
             # plugin tasks may store information about node
             # role not only in `role` key but also in `groups`
-            task_role = task.get('tags', task.get('role', task.get('groups')))
+            task_role = task.get('role', task.get('groups'))
             if task_role == consts.TASK_ROLES.all:
                 # just return all nodes
-                return self.resolver.resolve(consts.TASK_ROLES.all)
+                return self.role_resolver.resolve(consts.TASK_ROLES.all)
             elif isinstance(task_role, six.string_types):
                 roles.add(task_role)
             elif isinstance(task_role, (list, tuple)):
@@ -187,7 +187,7 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         # executes `apt-get update` which fails on CentOS
         roles.discard(consts.TASK_ROLES.master)
 
-        return list(self.resolver.resolve(roles))
+        return list(self.role_resolver.resolve(roles))
 
     def create_repositories(self, plugins):
         operating_system = self.cluster.release.operating_system

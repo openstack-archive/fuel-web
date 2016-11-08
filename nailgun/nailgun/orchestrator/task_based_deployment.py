@@ -29,9 +29,9 @@ from nailgun.orchestrator.tasks_serializer import CreateVMsOnCompute
 from nailgun.orchestrator.tasks_serializer import StandardConfigRolesHook
 from nailgun.orchestrator.tasks_serializer import TaskSerializers
 from nailgun.orchestrator.tasks_templates import make_noop_task
-from nailgun.utils.resolvers import NameMatchingPolicy
-from nailgun.utils.resolvers import NullResolver
-from nailgun.utils.resolvers import TagResolver
+from nailgun.utils.role_resolver import NameMatchingPolicy
+from nailgun.utils.role_resolver import NullResolver
+from nailgun.utils.role_resolver import RoleResolver
 
 
 class NoopSerializer(StandardConfigRolesHook):
@@ -40,12 +40,11 @@ class NoopSerializer(StandardConfigRolesHook):
         return True
 
     def get_uids(self):
-        roles = self.task.get('tags', self.task.get('groups',
-                                                    self.task.get('role')))
+        roles = self.task.get('groups', self.task.get('role'))
         if roles is None:
             # it means that task is not associated with any node
             return [None]
-        return self.resolver.resolve(roles)
+        return self.role_resolver.resolve(roles)
 
     def serialize(self):
         uids = self.get_uids()
@@ -61,7 +60,7 @@ class PluginTaskSerializer(StandardConfigRolesHook):
 
     def serialize(self):
         serializer = self.serializer_class(
-            self.cluster, self.nodes, resolver=self.resolver
+            self.cluster, self.nodes, role_resolver=self.role_resolver
         )
         return itertools.chain(
             serializer.serialize_begin_tasks(),
@@ -418,7 +417,7 @@ class TasksSerializer(object):
             self.deployment_nodes = nodes
             self.affected_node_ids = frozenset()
         self.cluster = cluster
-        self.resolver = TagResolver(self.deployment_nodes)
+        self.role_resolver = RoleResolver(self.deployment_nodes)
         self.task_serializer = DeployTaskSerializer()
         self.task_processor = TaskProcessor()
         self.tasks_connections = collections.defaultdict(dict)
@@ -467,17 +466,17 @@ class TasksSerializer(object):
             else:
                 tasks_mapping[task['id']] = task
                 skip = not self.task_filter(task['id'])
-                self.process_task(task, self.resolver, skip)
+                self.process_task(task, self.role_resolver, skip)
 
         self.expand_task_groups(groups, tasks_mapping)
         # make sure that null node is present
         self.tasks_connections.setdefault(None, dict())
 
-    def process_task(self, task, resolver, skip=False):
+    def process_task(self, task, role_resolver, skip=False):
         """Processes one task one nodes of cluster.
 
         :param task: the task instance
-        :param resolver: the role resolver
+        :param role_resolver: the role resolver
         :param skip: make the task as skipped
         """
 
@@ -486,7 +485,7 @@ class TasksSerializer(object):
         )
         task_serializer = serializer_factory(
             task, self.cluster, self.deployment_nodes,
-            resolver=resolver
+            role_resolver=role_resolver
         )
         skipped = skip or not task_serializer.should_execute()
         force = self.events and self.events.check_subscription(task)
@@ -494,12 +493,12 @@ class TasksSerializer(object):
             # Do not call real serializer if it should be skipped
             task_serializer = NoopSerializer(
                 task, self.cluster, self.deployment_nodes,
-                resolver=resolver
+                role_resolver=role_resolver
             )
+
         serialised_tasks = self.task_processor.process_tasks(
             task, task_serializer.serialize()
         )
-
         for serialized in serialised_tasks:
             # all skipped task shall have type skipped
             # do not exclude them from graph to keep connections between nodes
@@ -577,8 +576,7 @@ class TasksSerializer(object):
         """
         for task in groups:
             skipped = not self.task_filter(task['id'])
-            node_ids = self.resolver.resolve(task.get('tags',
-                                                      task.get('role', ())))
+            node_ids = self.role_resolver.resolve(task.get('role', ()))
             for sub_task_id in task.get('tasks', ()):
                 try:
                     sub_task = task_mapping[sub_task_id]
@@ -626,13 +624,13 @@ class TasksSerializer(object):
             return
 
         for dep in dependencies:
-            roles = dep.get('tags', dep.get('role', consts.TASK_ROLES.all))
+            roles = dep.get('role', consts.TASK_ROLES.all)
 
             if roles == consts.TASK_ROLES.self:
                 node_ids = [node_id]
                 excludes = []
             else:
-                node_ids = self.resolver.resolve(
+                node_ids = self.role_resolver.resolve(
                     roles, dep.get('policy', consts.NODE_RESOLVE_POLICY.all)
                 )
                 excludes = [(node_id, task_id)]

@@ -360,7 +360,7 @@ class TestTaskSerializers(BaseTestCase):
 
     def test_expand_task_groups(self):
         node_ids = ['1', '2']
-        with mock.patch.object(self.serializer, 'resolver') as m_resolve:
+        with mock.patch.object(self.serializer, 'role_resolver') as m_resolve:
             m_resolve.resolve.return_value = node_ids
             self.serializer.expand_task_groups(
                 [
@@ -433,7 +433,7 @@ class TestTaskSerializers(BaseTestCase):
 
             }
         }
-        with mock.patch.object(self.serializer, 'resolver') as m_resolve:
+        with mock.patch.object(self.serializer, 'role_resolver') as m_resolve:
             m_resolve.resolve.return_value = node_ids
             # the default role and policy
             self.assertItemsEqual(
@@ -536,7 +536,7 @@ class TestTaskSerializers(BaseTestCase):
         self.serializer.task_processor.origin_task_ids = {
             'task_1': 'task'
         }
-        self.serializer.resolver = task_based_deployment.NullResolver(
+        self.serializer.role_resolver = task_based_deployment.NullResolver(
             node_ids
         )
         self.serializer.resolve_dependencies()
@@ -592,11 +592,11 @@ class TestTaskSerializers(BaseTestCase):
     def test_deploy_only_selected_nodes(self):
         tasks = [
             {
-                "id": "test1", "role": ["controller"], "tags": ["controller"],
+                "id": "test1", "role": ["controller"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             },
             {
-                "id": "test2", "role": ["compute"], "tags": ["compute"],
+                "id": "test2", "role": ["compute"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             }
         ]
@@ -619,20 +619,20 @@ class TestTaskSerializers(BaseTestCase):
     def test_serialise_with_events(self):
         tasks = [
             {
-                "id": "test1", "role": ["controller"], "tags": ["controller"],
+                "id": "test1", "role": ["controller"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             },
             {
-                "id": "test2", "role": ["compute"], "tags": ["compute"],
+                "id": "test2", "role": ["compute"],
                 "type": "puppet", "version": "2.0.0", "parameters": {},
                 "reexecute_on": ["deploy"]
             },
             {
-                "id": "test3", "role": ["compute"], "tags": ["compute"],
+                "id": "test3", "role": ["compute"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             },
             {
-                "id": "test4", "role": ["cinder"], "tags": ["cinder"],
+                "id": "test4", "role": ["cinder"],
                 "type": "puppet", "version": "2.0.0", "parameters": {}
             }
         ]

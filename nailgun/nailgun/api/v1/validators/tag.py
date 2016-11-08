@@ -18,7 +18,6 @@ from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import tag
 
 from nailgun import errors
-from nailgun import objects
 
 
 class TagValidator(BasicValidator):
@@ -31,46 +30,3 @@ class TagValidator(BasicValidator):
             raise errors.CannotDelete(
                 "Read-only tags cannot be deleted."
             )
-
-        n_ids = [str(n.id)
-                 for n in objects.TagCollection.get_tag_nodes(instance)]
-
-        if n_ids:
-            raise errors.CannotDelete(
-                "Tag {} is assigned to nodes '{}'.".format(instance.id,
-                                                           ",".join(n_ids))
-            )
-
-    @classmethod
-    def validate_update(cls, data, instance):
-        parsed = cls.validate(data, instance=instance)
-        if instance.read_only:
-            raise errors.CannotUpdate(
-                "Read-only tags cannot be updated."
-            )
-        return parsed
-
-    @classmethod
-    def validate_create(cls, data, instance):
-        parsed = cls.validate(data, instance=instance)
-        return parsed
-
-    @classmethod
-    def validate_assign(cls, data, instance):
-        if not instance.cluster:
-            raise errors.NotAllowed("Node '{}' is not in a cluster."
-                                    "".format(instance.id))
-        parsed = super(TagValidator, cls).validate(data)
-
-        for t in parsed:
-            if not isinstance(t, int):
-                raise errors.InvalidData(
-                    "Tag's assignment supports only numeric notation."
-                )
-        return parsed
-
-    @classmethod
-    def validate(cls, data, instance=None):
-        parsed = super(TagValidator, cls).validate(data)
-        cls.validate_schema(parsed, cls.single_schema)
-        return parsed

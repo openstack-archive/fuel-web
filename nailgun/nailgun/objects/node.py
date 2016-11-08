@@ -1095,7 +1095,7 @@ class Node(NailgunObject):
             instance
         ).filter(~models.Tag.tag.in_(current_tags - new_tags))
 
-        q_new_role_tags = TagCollection.get_cluster_nm_tags(
+        q_new_role_tags = TagCollection.get_cluster_tags(
             instance.cluster
         ).filter(models.Tag.tag.in_(new_tags - current_tags))
 

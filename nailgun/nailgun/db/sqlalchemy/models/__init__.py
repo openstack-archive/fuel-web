@@ -52,9 +52,7 @@ from nailgun.extensions.network_manager.models.network import \
 from nailgun.extensions.network_manager.models import network
 from nailgun.db.sqlalchemy.models.node import Node
 from nailgun.db.sqlalchemy.models.node import NodeGroup
-from nailgun.db.sqlalchemy.models.node import NodeTag
 
-from nailgun.db.sqlalchemy.models.tag import Tag
 
 from nailgun.extensions.network_manager.models.network_config import \
     NetworkingConfig

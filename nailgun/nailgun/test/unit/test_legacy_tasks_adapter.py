@@ -59,9 +59,9 @@ class TestLegacyTasksAdapter(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestLegacyTasksAdapter, cls).setUpClass()
-        cls.resolver = mock.MagicMock()
-        cls.resolver.get_all_roles.side_effect = \
-            cls.resolver_side_effect
+        cls.role_resolver = mock.MagicMock()
+        cls.role_resolver.get_all_roles.side_effect = \
+            cls.role_resolver_side_effect
 
     def test_returns_same_task_if_no_legacy(self):
         tasks = [
@@ -71,7 +71,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
             {'id': 'group1', 'type': consts.ORCHESTRATOR_TASK_TYPES.group},
             {'id': 'stage1', 'type': consts.ORCHESTRATOR_TASK_TYPES.stage}
         ]
-        new_tasks = list(adapt_legacy_tasks(tasks, None, self.resolver))
+        new_tasks = list(adapt_legacy_tasks(tasks, None, self.role_resolver))
         self.datadiff(tasks, new_tasks, ignore_keys='required_for')
         self.assertEqual([], tasks[0].get('required_for', []))
         self.assertEqual(
@@ -79,7 +79,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         )
 
     @staticmethod
-    def resolver_side_effect(roles):
+    def role_resolver_side_effect(roles):
         if isinstance(roles, six.string_types):
             roles = [roles]
         return set(roles)
@@ -118,7 +118,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         ]
 
         tasks.extend(stages)
-        new_tasks = list(adapt_legacy_tasks(tasks, [], self.resolver))
+        new_tasks = list(adapt_legacy_tasks(tasks, [], self.role_resolver))
 
         self.assertEqual(
             {
@@ -297,7 +297,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
             }
         ]
         new_tasks = list(adapt_legacy_tasks(
-            tasks, legacy_plugin_tasks, self.resolver
+            tasks, legacy_plugin_tasks, self.role_resolver
         ))
         stage1_tasks = new_tasks[-5:-2]
         depends = [{'role': None, 'name': 'stage1_end'}]

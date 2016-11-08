@@ -384,6 +384,31 @@ class Cluster(NailgunObject):
         db().flush()
 
     @classmethod
+    def update_role(cls, instance, role):
+        """Update existing Cluster instance with specified role.
+
+        Previous ones are deleted.
+
+        :param instance: a Cluster instance
+        :param role: a role dict
+        :returns: None
+        """
+        instance.roles_metadata[role['name']] = role['meta']
+        instance.volumes_metadata.setdefault(
+            'volumes_roles_mapping', {}).update(
+            {role['name']: role.get('volumes_roles_mapping', [])})
+        # notify about changes
+        instance.volumes_metadata.changed()
+
+    @classmethod
+    def remove_role(cls, instance, role_name):
+        result = instance.roles_metadata.pop(role_name, None)
+        instance.volumes_metadata['volumes_roles_mapping'].pop(role_name, None)
+        # notify about changes
+        instance.volumes_metadata.changed()
+        return bool(result)
+
+    @classmethod
     def _create_public_map(cls, instance, roles_metadata=None):
         if instance.network_config.configuration_template is not None:
             return
@@ -789,10 +814,15 @@ class Cluster(NailgunObject):
         :param instance: cluster instance
         :returns: a dictionary of roles metadata
         """
-        available_roles = copy.deepcopy(instance.release.roles_metadata)
+        available_roles = copy.deepcopy(cls.get_own_roles(instance.release))
+        available_roles.update(cls.get_own_roles(instance))
         available_roles.update(
             PluginManager.get_plugins_node_roles(instance))
         return available_roles
+
+    @classmethod
+    def get_own_roles(cls, instance):
+        return instance.roles_metadata
 
     @classmethod
     def set_primary_role(cls, instance, nodes, role_name):
@@ -865,19 +895,17 @@ class Cluster(NailgunObject):
         :param role_name: node role name
         :type: string
         """
-
+        from nailgun.objects import Node
         if role_name not in cls.get_roles(instance):
             logger.warning("%s role doesn't exist", role_name)
             return []
 
-        nodes = db().query(models.Node).filter_by(
-            cluster_id=instance.id
-        ).filter(sa.or_(
-            models.Node.roles.any(role_name),
-            models.Node.pending_roles.any(role_name)
-        )).all()
+        return Node.get_nodes_by_role([instance.id], role_name).all()
 
-        return nodes
+    @classmethod
+    def get_node_by_role(cls, instance, role_name):
+        from nailgun.objects import Node
+        return Node.get_nodes_by_role([instance.id], role_name).first()
 
     @classmethod
     def get_nodes_by_status(cls, instance, status, exclude=None):
@@ -1210,23 +1238,28 @@ class Cluster(NailgunObject):
     def get_volumes_metadata(cls, instance):
         """Return proper volumes metadata for cluster
 
-        Metadata consists of general volumes metadata from release
-        and volumes metadata from plugins which are related to this cluster
+        Metadata consists of general volumes metadata from release,
+        volumes metadata from cluster and volumes metadata from
+        plugins which are related to this cluster.
 
         :param instance: Cluster DB instance
         :returns: dict -- object with merged volumes metadata
         """
-        volumes_metadata = copy.deepcopy(instance.release.volumes_metadata)
+        def _update_volumes_meta(to_update, data):
+            to_update.get('volumes_roles_mapping', {}).update(
+                data.get('volumes_roles_mapping', {}))
+            to_update.get('volumes', []).extend(
+                data.get('volumes', []))
+            to_update.setdefault('rule_to_pick_boot_disk', []).extend(
+                data.get('rule_to_pick_boot_disk', []))
+
+        volumes_metadata = copy.deepcopy(
+            Release.get_volumes_metadata(instance.release))
+        cluster_volumes = instance.volumes_metadata
+        _update_volumes_meta(volumes_metadata, cluster_volumes)
+
         plugin_volumes = PluginManager.get_volumes_metadata(instance)
-
-        volumes_metadata['volumes_roles_mapping'].update(
-            plugin_volumes['volumes_roles_mapping'])
-
-        volumes_metadata['volumes'].extend(plugin_volumes['volumes'])
-        volumes_metadata.setdefault(
-            'rule_to_pick_boot_disk',
-            []
-        ).extend(plugin_volumes['rule_to_pick_boot_disk'])
+        _update_volumes_meta(volumes_metadata, plugin_volumes)
 
         return volumes_metadata
 

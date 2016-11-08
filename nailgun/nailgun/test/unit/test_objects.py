@@ -45,7 +45,6 @@ from nailgun import consts
 from nailgun import plugins
 
 from nailgun.db.sqlalchemy.models import NodeGroup
-from nailgun.db.sqlalchemy.models import NodeTag
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.extensions.network_manager.manager import NetworkManager
@@ -742,35 +741,6 @@ class TestNodeObject(BaseIntegrationTest):
                                 'fake_key_2': 'fake_value_2'}
         }
         self.assertEqual(expected_attributes, node.attributes)
-
-    def test_update_tags(self):
-        self.env.create(
-            cluster_kwargs={'api': False},
-            nodes_kwargs=[{'role': 'controller'}])
-        node = self.env.nodes[0]
-        self.assertEqual(['controller'], objects.Node.all_tags(node))
-
-        objects.Node.update_roles(node, ['controller', 'cinder'])
-        self.assertItemsEqual(
-            ['controller', 'cinder'], objects.Node.all_tags(node)
-        )
-
-        t = objects.Tag.create({
-            'tag': 'test',
-            'owner_id': node.cluster.id,
-            'owner_type': 'cluster'
-        })
-        node_tag = NodeTag(tag=t)
-
-        node.tags.append(node_tag)
-        self.db.add(node_tag)
-        self.db.flush()
-        self.assertItemsEqual(
-            ['controller', 'cinder', 'test'], objects.Node.all_tags(node)
-        )
-
-        objects.Node.update_roles(node, [])
-        self.assertEquals(['test'], objects.Node.all_tags(node))
 
 
 class TestTaskObject(BaseIntegrationTest):

@@ -36,16 +36,16 @@ def stage_serialize(serializer, graph_tasks):
 
 
 def pre_deployment_serialize(orchestrator_graph, cluster, nodes,
-                             resolver=None):
+                             role_resolver=None):
     graph_tasks = orchestrator_graph.pre_tasks_serialize(nodes)
     return stage_serialize(
         plugins_serializers.PluginsPreDeploymentHooksSerializer(
-            cluster, nodes, resolver=resolver), graph_tasks)
+            cluster, nodes, role_resolver=role_resolver), graph_tasks)
 
 
 def post_deployment_serialize(orchestrator_graph, cluster, nodes,
-                              resolver=None):
+                              role_resolver=None):
     graph_tasks = orchestrator_graph.post_tasks_serialize(nodes)
     return stage_serialize(
         plugins_serializers.PluginsPostDeploymentHooksSerializer(
-            cluster, nodes, resolver=resolver), graph_tasks)
+            cluster, nodes, role_resolver=role_resolver), graph_tasks)

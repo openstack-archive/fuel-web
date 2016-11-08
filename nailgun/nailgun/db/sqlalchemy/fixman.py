@@ -203,9 +203,6 @@ def upload_fixture(fileobj, loader=None):
             fire_callback_on_node_create(new_obj)
             db().commit()
 
-        if new_obj.__class__.__name__ == 'Release':
-            objects.Release.create_tags(new_obj)
-
 
 def get_base_fixtures_path():
     return os.path.join(os.path.dirname(__file__), '..', '..', 'fixtures')

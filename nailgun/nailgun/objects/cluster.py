@@ -270,7 +270,7 @@ class Cluster(NailgunObject):
         TagCollection.filter_by(
             None,
             owner_id=instance.id,
-            owner_type=consts.TAG_OWNER_TYPES.cluster
+            owner_type='cluster'
         ).delete()
         db().flush()
 
@@ -857,8 +857,7 @@ class Cluster(NailgunObject):
     def set_primary_tags(cls, instance, nodes):
         if not instance.is_ha_mode:
             return
-        for tag in TagCollection.get_cluster_nm_tags(instance,
-                                                     has_primary=True):
+        for tag in TagCollection.get_cluster_tags(instance, has_primary=True):
             cls.set_primary_tag(instance, nodes, tag.tag)
 
     @classmethod
@@ -1568,15 +1567,6 @@ class Cluster(NailgunObject):
             'version': settings.VERSION,
             'networking_parameters': instance.network_config,
         }
-
-    @staticmethod
-    def get_nm_tags(instance, **kwargs):
-        """Return list of tags used in cluster's namespace.
-
-        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
-        :return: query with Tag models
-        """
-        return TagCollection.get_cluster_nm_tags(instance, **kwargs).all()
 
 
 class ClusterCollection(NailgunCollection):

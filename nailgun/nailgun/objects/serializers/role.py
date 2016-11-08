@@ -14,30 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun import objects
 from nailgun.objects.serializers.base import BasicSerializer
 
 
 class RoleSerializer(BasicSerializer):
 
     @classmethod
-    def serialize_from_release(cls, release, role_name):
-        meta = release.roles_metadata[role_name]
-        volumes = release.volumes_metadata['volumes_roles_mapping'][role_name]
-
-        return {
-            'name': role_name,
-            'meta': meta,
-            'volumes_roles_mapping': volumes}
-
-    @classmethod
-    def serialize_from_cluster(cls, cluster, role_name):
-        role_metadata = objects.Cluster.get_roles(cluster)[role_name]
-        volumes_metadata = objects.Cluster.get_volumes_metadata(cluster)
+    def serialize_from_obj(cls, obj_cls, obj, role_name):
+        role_meta = obj_cls.get_roles(obj)[role_name]
+        volumes_metadata = obj_cls.get_volumes_metadata(obj)
         role_mapping = volumes_metadata.get('volumes_roles_mapping').get(
             role_name, [])
 
         return {
             'name': role_name,
-            'meta': role_metadata,
+            'meta': role_meta,
             'volumes_roles_mapping': role_mapping}

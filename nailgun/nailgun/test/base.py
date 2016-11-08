@@ -59,7 +59,6 @@ from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import PluginLink
-from nailgun.db.sqlalchemy.models import Tag as TagModel
 from nailgun.db.sqlalchemy.models import Task
 
 
@@ -73,8 +72,6 @@ from nailgun.objects import NodeGroup
 from nailgun.objects import OpenstackConfig
 from nailgun.objects import Plugin
 from nailgun.objects import Release
-from nailgun.objects import Tag
-
 
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
@@ -237,72 +234,6 @@ class EnvironmentManager(object):
         return self.app.post(
             reverse('RoleCollectionHandler', {'release_id': release_id}),
             jsonutils.dumps(data),
-            headers=self.default_headers,
-            expect_errors=expect_errors
-        )
-
-    def get_tag(self, tag_id, expect_errors=False):
-        return self.app.get(
-            reverse(
-                'TagHandler',
-                {'obj_id': tag_id}),
-            headers=self.default_headers,
-            expect_errors=expect_errors
-        )
-
-    def create_tag(self, owner_type, owner_id, data, api=True,
-                   expect_errors=False):
-        if api:
-            url = "/api/{}/{}/tags/"
-            return self.app.post(
-                url.format(owner_type, owner_id),
-                jsonutils.dumps(data),
-                headers=self.default_headers,
-                expect_errors=expect_errors
-            )
-
-        tag = TagModel(owner_type=owner_type,
-                       owner_id=owner_id,
-                       **data)
-        self.db.add(tag)
-        self.db.flush()
-        return Tag.to_dict(tag)
-
-    def update_tag(self, tag_id, data, expect_errors=False):
-        return self.app.put(
-            reverse(
-                'TagHandler',
-                {'obj_id': tag_id}),
-            jsonutils.dumps(data),
-            headers=self.default_headers,
-            expect_errors=expect_errors
-        )
-
-    def delete_tag(self, tag_id, expect_errors=False):
-        return self.app.delete(
-            reverse(
-                'TagHandler',
-                {'obj_id': tag_id}),
-            headers=self.default_headers,
-            expect_errors=expect_errors
-        )
-
-    def assign_tag(self, node_id, tag_ids, expect_errors=False):
-        return self.app.post(
-            reverse(
-                'NodeTagAssignmentHandler',
-                {'node_id': node_id}),
-            jsonutils.dumps(tag_ids),
-            headers=self.default_headers,
-            expect_errors=expect_errors
-        )
-
-    def unassign_tag(self, node_id, tag_ids, expect_errors=False):
-        return self.app.delete(
-            reverse(
-                'NodeTagAssignmentHandler',
-                {'node_id': node_id}),
-            jsonutils.dumps(tag_ids),
             headers=self.default_headers,
             expect_errors=expect_errors
         )

@@ -153,33 +153,6 @@ def prepare():
     db.commit()
 
 
-class TestTagExistingNodes(base.BaseAlembicMigrationTest):
-    def test_tags_created_on_upgrade(self):
-        tags_count = db.execute(
-            sa.select(
-                [sa.func.count(self.meta.tables['tags'].c.id)]
-            )).fetchone()[0]
-
-        self.assertEqual(tags_count, 11)
-
-    def test_nodes_assigned_tags(self):
-        tags = self.meta.tables['tags']
-        node_tags = self.meta.tables['node_tags']
-
-        query = sa.select([tags.c.tag]).select_from(
-            sa.join(
-                tags, node_tags,
-                tags.c.id == node_tags.c.tag_id
-            )
-        ).where(
-            node_tags.c.node_id == 1
-        )
-
-        res = db.execute(query)
-        tags = [t[0] for t in res]
-        self.assertItemsEqual(tags, ['controller', 'ceph-osd'])
-
-
 class TestReleasesUpdate(base.BaseAlembicMigrationTest):
     def test_vmware_attributes_metadata_update(self):
         result = db.execute(sa.select([

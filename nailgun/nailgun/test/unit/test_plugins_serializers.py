@@ -26,7 +26,7 @@ from nailgun.orchestrator.plugins_serializers import \
 from nailgun.orchestrator.plugins_serializers import \
     PluginsPreDeploymentHooksSerializer
 from nailgun.test import base
-from nailgun.utils.resolvers import NullResolver
+from nailgun.utils.role_resolver import NullResolver
 
 
 class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
@@ -42,7 +42,7 @@ class TestBasePluginDeploymentHooksSerializer(base.BaseTestCase):
         self.hook = BasePluginDeploymentHooksSerializer(
             self.nodes,
             self.cluster,
-            resolver=NullResolver({x['id'] for x in self.nodes})
+            role_resolver=NullResolver({x['id'] for x in self.nodes})
         )
 
     def test_tasks_are_serializable(self):
@@ -161,7 +161,7 @@ class TestTasksDeploymentOrder(base.BaseTestCase):
         self.hook = BasePluginDeploymentHooksSerializer(
             self.nodes,
             self.cluster,
-            resolver=NullResolver([x['id'] for x in self.nodes])
+            role_resolver=NullResolver([x['id'] for x in self.nodes])
         )
 
     def make_plugin_mock_with_stages(self, plugin_name, stages):
@@ -238,7 +238,7 @@ class TestPluginsPreDeploymentHooksSerializer(
         self.hook = PluginsPreDeploymentHooksSerializer(
             self.cluster,
             self.nodes,
-            resolver=NullResolver([x['id'] for x in self.nodes]))
+            role_resolver=NullResolver([x['id'] for x in self.nodes]))
 
     @mock.patch(
         'nailgun.orchestrator.plugins_serializers.'
@@ -298,7 +298,7 @@ class TestPluginsPostDeploymentHooksSerializer(
         self.hook = PluginsPostDeploymentHooksSerializer(
             self.cluster,
             self.nodes,
-            resolver=NullResolver([x['id'] for x in self.nodes]))
+            role_resolver=NullResolver([x['id'] for x in self.nodes]))
 
     def test_serialize_begin_tasks(self):
         self.assertItemsEqual(self.hook.serialize_begin_tasks(), list())

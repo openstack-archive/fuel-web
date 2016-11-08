@@ -27,8 +27,6 @@
             - condition: "settings:neutron_advanced_configuration.neutron_l3_ha.value == true"
               min: 2
               message: "Neutron L3 HA requires at least 2 Controller nodes to function properly."
-        tags:
-          - controller
       compute:
         name: "Compute"
         description: "A Compute node creates, manages, and terminates virtual machine instances."
@@ -38,8 +36,6 @@
         limits:
           recommended: 1
         fault_tolerance: "2%"
-        tags:
-          - compute
       cinder:
         # NOTE: naming, see https://bugs.launchpad.net/fuel/+bug/1383224
         name: "Cinder"
@@ -54,8 +50,6 @@
           # NOTE: https://bugs.launchpad.net/fuel/+bug/1372914 - Prohibit possibility of adding cinder nodes to an environment with Ceph RBD
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder"
-        tags:
-          - cinder
       cinder-block-device:
         name: 'Cinder Block Device'
         description: 'Host node for Cinder Block Devices.'
@@ -73,8 +67,6 @@
             message: "Cinder Block Device driver should be enabled in the environment settings."
           - condition: "settings:storage.volumes_ceph.value == true"
             message: "Ceph RBD cannot be used with Cinder Block Device"
-        tags:
-          - cinder-block-device
       cinder-vmware:
         name: "Cinder Proxy to VMware Datastore"
         description: "Cinder-VMware provides scheduling of block storage resources delivered over VMware vCenter. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
@@ -86,8 +78,6 @@
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
             message: "VMware vCenter not enabled for cluster"
-        tags:
-          - cinder-vmware
       ceph-osd:
         name: "Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
@@ -100,8 +90,6 @@
             message: "Ceph should be enabled in the environment settings."
         update_once:
           - controller
-        tags:
-          - ceph-osd
       mongo:
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
@@ -125,15 +113,11 @@
             message: "Ceilometer should be enabled in the environment settings."
           - condition: "settings:additional_components.mongo.value == true"
             message: "You are already using external MongoDB."
-        tags:
-          - mongo
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
         weight: 70
         group: "other"
-        tags:
-          - base-os
       virt:
         name: "Virtual"
         description: "ADVANCED: Make available possibilities to spawn vms on this node that can be assign as a normal nodes."
@@ -147,8 +131,6 @@
           - condition: "not ('advanced' in version:feature_groups)"
             action: "hide"
             message: "Advanced feature should be enabled in feature groups"
-        tags:
-          - virt
       compute-vmware:
         name: "Compute VMware"
         description: "A node that runs nova-compute with VCDriver, that manages ESXi computing resources via VMware vCenter."
@@ -168,8 +150,6 @@
           - condition: "settings:common.use_vcenter.value == false"
             action: "hide"
             message: "VMware vCenter not enabled for cluster"
-        tags:
-          - compute-vmware
       ironic:
         name: "Ironic"
         description: "Ironic conductor."
@@ -183,21 +163,6 @@
         restrictions:
           - condition: "settings:additional_components.ironic.value == false"
             message: "Ironic should be enabled in the environment settings."
-        tags:
-          - ironic
-    tags_metadata:
-      controller:
-        has_primary: True
-      mysql:
-        has_primary: True
-      mongo:
-        has_primary: True
-      compute:
-        has_primary: False
-      ceph-osd:
-        has_primary: False
-      cinder:
-        has_primary: False
 
     network_roles_metadata:
       -

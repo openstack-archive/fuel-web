@@ -28,8 +28,8 @@ from nailgun import objects
 from nailgun import plugins
 from nailgun.settings import settings
 from nailgun import utils
-from nailgun.utils.resolvers import NameMatchingPolicy
-from nailgun.utils.resolvers import TagResolver
+from nailgun.utils.role_resolver import NameMatchingPolicy
+from nailgun.utils.role_resolver import RoleResolver
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
 from nailgun.orchestrator.base_serializers import \
@@ -51,17 +51,17 @@ class DeploymentMultinodeSerializer(object):
     def __init__(self, tasks_graph=None):
         self.task_graph = tasks_graph
         self.all_nodes = None
-        self.resolver = None
+        self.role_resolver = None
         self.initialized = None
 
     def initialize(self, cluster):
         self.all_nodes = objects.Cluster.get_nodes_not_for_deletion(cluster)
-        self.resolver = TagResolver(self.all_nodes)
+        self.role_resolver = RoleResolver(self.all_nodes)
         self.initialized = cluster.id
 
     def finalize(self):
         self.all_nodes = None
-        self.resolver = None
+        self.role_resolver = None
         self.initialized = None
 
     def _ensure_initialized_for(self, cluster):
@@ -162,7 +162,7 @@ class DeploymentMultinodeSerializer(object):
         username = attrs['workloads_collector'].pop('user', None)
         attrs['workloads_collector']['username'] = username
 
-        if self.resolver.resolve(['cinder']):
+        if self.role_resolver.resolve(['cinder']):
             attrs['use_cinder'] = True
 
         net_serializer = self.get_net_provider_serializer(cluster)
@@ -178,7 +178,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in objects.Node.all_tags(node):
+            for role in objects.Node.all_roles(node):
                 node_list.append(cls.serialize_node_for_node_list(node, role))
 
         return node_list
@@ -207,7 +207,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in objects.Node.all_tags(node):
+            for role in objects.Node.all_roles(node):
                 serialized_nodes.append(
                     self.serialize_node(node, role)
                 )
@@ -728,7 +728,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
     def serialize_nodes(self, nodes):
         serialized_nodes = []
         for node in nodes:
-            roles = objects.Node.all_tags(node)
+            roles = objects.Node.all_roles(node)
             if roles:
                 serialized_nodes.append(
                     self.serialize_node(node, roles)
@@ -893,7 +893,7 @@ def _invoke_serializer(serializer, cluster, nodes,
             cluster, cluster.nodes, ignore_customized
         )
 
-    objects.Cluster.set_primary_tags(cluster, nodes)
+    objects.Cluster.set_primary_roles(cluster, nodes)
     return serializer.serialize(
         cluster, nodes,
         ignore_customized=ignore_customized, skip_extensions=skip_extensions

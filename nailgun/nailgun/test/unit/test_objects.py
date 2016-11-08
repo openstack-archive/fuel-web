@@ -45,7 +45,6 @@ from nailgun import consts
 from nailgun import plugins
 
 from nailgun.db.sqlalchemy.models import NodeGroup
-from nailgun.db.sqlalchemy.models import NodeTag
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.extensions.network_manager.manager import NetworkManager
@@ -783,58 +782,6 @@ class TestNodeObject(BaseIntegrationTest):
         expected_attributes = copy.deepcopy(plugin_node_attributes)
         expected_attributes.update(release_node_attributes)
         self.assertDictEqual(expected_attributes, default_attributes)
-
-    def test_update_tags(self):
-        self.env.create(
-            cluster_kwargs={'api': False},
-            nodes_kwargs=[{'role': 'controller'}])
-        node = self.env.nodes[0]
-        self.assertEqual(['controller'], objects.Node.all_tags(node))
-
-        objects.Node.update_roles(node, ['controller', 'cinder'])
-        self.assertItemsEqual(
-            ['controller', 'cinder'], objects.Node.all_tags(node)
-        )
-
-        t = objects.Tag.create({
-            'tag': 'test',
-            'owner_id': node.cluster.id,
-            'owner_type': 'cluster'
-        })
-        node_tag = NodeTag(tag=t)
-
-        node.tags.append(node_tag)
-        self.db.add(node_tag)
-        self.db.flush()
-        self.assertItemsEqual(
-            ['controller', 'cinder', 'test'], objects.Node.all_tags(node)
-        )
-
-        objects.Node.update_roles(node, [])
-        self.assertEquals(['test'], objects.Node.all_tags(node))
-
-    @mock.patch.object(objects.Cluster, 'get_editable_attributes')
-    def test_get_restrictions_models(self, get_cluster_attributes):
-        mocked_node_attributes = {
-            'plugin_section_a': 'some_attributes',
-            'cpu_pinning': {}
-        }
-        mocked_cluster_attributes = {'some': {'fake': 'attributes'}}
-        get_cluster_attributes.return_value = mocked_cluster_attributes
-
-        cluster = mock.Mock()
-        node = mock.Mock(cluster=cluster)
-        with mock.patch.object(objects.Node, 'get_attributes',
-                               return_value=mocked_node_attributes):
-            node_models = objects.Node.get_restrictions_models(node)
-            expected_models = {
-                'settings': mocked_cluster_attributes,
-                'cluster': cluster,
-                'version': settings.VERSION,
-                'networking_parameters': cluster.network_config,
-                'node_attributes': mocked_node_attributes
-            }
-            self.assertEqual(expected_models, node_models)
 
 
 class TestTaskObject(BaseIntegrationTest):

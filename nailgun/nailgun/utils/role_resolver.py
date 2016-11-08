@@ -67,7 +67,7 @@ class NullResolver(BaseRoleResolver):
         return []
 
 
-class TagResolver(BaseRoleResolver):
+class RoleResolver(BaseRoleResolver):
     """The general role resolver.
 
     Allows to use patterns in name of role
@@ -86,7 +86,7 @@ class TagResolver(BaseRoleResolver):
         """
         self.__mapping = defaultdict(set)
         for node in nodes:
-            for r in objects.Node.all_tags(node):
+            for r in objects.Node.all_roles(node):
                 self.__mapping[r].add(node.uid)
 
     def resolve(self, roles, policy=None):

@@ -18,11 +18,9 @@
 Tag object and collection
 """
 
-from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-from nailgun.objects.plugin import ClusterPlugin
 from nailgun.objects.serializers.tag import TagSerializer
 
 
@@ -33,30 +31,5 @@ class Tag(NailgunObject):
 
 
 class TagCollection(NailgunCollection):
-
-    @classmethod
-    def get_cluster_tags_query(cls, cluster):
-        plugins_ids = (ClusterPlugin.get_enabled(cluster.id)
-                       .with_entities(models.Plugin.id).subquery())
-        return db().query(models.Tag).filter(
-            ((models.Tag.owner_id == cluster.release.id) &
-             (models.Tag.owner_type == 'release')) |
-            ((models.Tag.owner_id == cluster.id) &
-             (models.Tag.owner_type == 'cluster')) |
-            ((models.Tag.owner_id.in_(plugins_ids)) &
-             (models.Tag.owner_type == 'plugin'))
-        )
-
-    @classmethod
-    def get_node_tags_query(cls, node_id):
-        return db().query(models.Tag).join(
-            models.NodeTag
-        ).filter(
-            models.NodeTag.node_id == node_id
-        )
-
-    @classmethod
-    def get_cluster_tags(cls, cluster, **kwargs):
-        return cls.get_cluster_tags_query(cluster).filter_by(**kwargs)
 
     single = Tag

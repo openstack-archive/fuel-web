@@ -33,15 +33,10 @@ class BaseGraphTasksTests(BaseIntegrationTest):
 
     def setUp(self):
         super(BaseGraphTasksTests, self).setUp()
-        roles_metadata = {'test-controller': {'tags': ['test-controller']}}
-        tags_metadata = {'test-controller': {'has_primary': False}}
         self.env.create(
             nodes_kwargs=[
                 {'roles': ['test-controller'], 'pending_addition': True},
-            ],
-            release_kwargs={'roles_metadata': roles_metadata,
-                            'tags_metadata': tags_metadata}
-        )
+            ])
         self.cluster = self.env.clusters[0]
         self.cluster.release.roles_metadata.setdefault('test-controller', {})
 

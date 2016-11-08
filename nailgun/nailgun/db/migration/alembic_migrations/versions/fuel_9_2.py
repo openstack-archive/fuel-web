@@ -23,7 +23,6 @@ Create Date: 2016-10-11 16:33:57.247855
 from alembic import op
 from oslo_serialization import jsonutils
 
-import six
 import sqlalchemy as sa
 
 from nailgun import consts
@@ -34,19 +33,6 @@ from nailgun.utils.migration import drop_enum
 # revision identifiers, used by Alembic.
 revision = '3763c404ca48'
 down_revision = 'f2314e5d63c9'
-
-q_select_release_query = sa.sql.text(
-    "SELECT id, roles_metadata FROM releases "
-    "WHERE roles_metadata IS NOT NULL"
-)
-q_update_release_query = sa.sql.text(
-    "UPDATE releases SET roles_metadata = :roles_metadata WHERE id = :id")
-q_select_plugin_query = sa.sql.text(
-    "SELECT id, roles_metadata FROM plugins "
-    "WHERE roles_metadata IS NOT NULL"
-)
-q_update_plugin_query = sa.sql.text(
-    "UPDATE plugins SET roles_metadata = :roles_metadata WHERE id = :id")
 
 
 def upgrade():
@@ -60,98 +46,58 @@ def downgrade():
     downgrade_node_tagging()
 
 
-def _create_tags(conn, select_query, update_query, owner_type):
-    tag_create_query = sa.sql.text(
-        "INSERT INTO tags (tag, owner_id, owner_type, has_primary, read_only) "
-        "VALUES(:tag, :owner_id, :owner_type, :has_primary, true) RETURNING id"
+def upgrade_tags_existing_nodes():
+    connection = op.get_bind()
+    node_query = sa.sql.text(
+        "SELECT n.id as n_id, unnest(roles || pending_roles) AS role, "
+        "primary_roles, r.id AS release_id FROM nodes n "
+        "JOIN clusters c ON n.cluster_id=c.id "
+        "JOIN releases r ON r.id=c.release_id"
     )
-    for id, roles_metadata in conn.execute(select_query):
-        roles_metadata = jsonutils.loads(roles_metadata)
-        for role_name, role_metadata in six.iteritems(roles_metadata):
-            role_metadata['tags'] = [role_name]
-            conn.execute(
-                tag_create_query,
-                tag=role_name,
-                owner_id=id,
-                owner_type=owner_type,
-                has_primary=roles_metadata.get('has_primary', False)
-            )
-        conn.execute(
-            update_query,
-            id=id,
-            roles_metadata=jsonutils.dumps(roles_metadata),
-        )
-
-
-def _upgrade_tags_assignment(conn, node_query, owner_type):
     tag_assign_query = sa.sql.text(
         "INSERT INTO node_tags (node_id, tag_id, is_primary) "
         "VALUES(:node_id, :tag_id, :is_primary)"
     )
     tag_select_query = sa.sql.text(
         "SELECT id FROM tags WHERE owner_id=:id AND "
-        "owner_type=:owner_type AND tag=:tag"
+        "owner_type='release' AND tag=:tag"
     )
-    for id, role, primary_roles, owner_id in conn.execute(node_query):
-        tag = conn.execute(
+    select_query = sa.sql.text(
+        "SELECT id, roles_metadata FROM releases "
+        "WHERE roles_metadata IS NOT NULL"
+    )
+    insert_query = sa.sql.text(
+        "INSERT INTO tags (tag, owner_id, owner_type, has_primary, read_only) "
+        "VALUES(:tag, :owner_id, 'release', :has_primary, true) RETURNING id"
+    )
+
+    # Create tags for all release roles
+    for id, roles_metadata in connection.execute(select_query):
+        roles_metadata = jsonutils.loads(roles_metadata)
+        for role_name, role_metadata in roles_metadata.items():
+            connection.execute(
+                insert_query,
+                tag=role_name,
+                owner_id=id,
+                has_primary=roles_metadata.get('has_primary', False)
+            )
+
+    for id, role, primary_roles, release_id in connection.execute(node_query):
+        tag = connection.execute(
             tag_select_query,
-            id=owner_id,
-            owner_type=owner_type,
+            id=release_id,
             tag=role
         ).fetchone()
 
         if not tag:
             continue
 
-        conn.execute(
+        connection.execute(
             tag_assign_query,
             node_id=id,
             tag_id=tag.id,
             is_primary=role in primary_roles
         )
-
-
-def upgrade_tags_existing_nodes():
-    connection = op.get_bind()
-    node_release_query = sa.sql.text(
-        "SELECT n.id as n_id, unnest(roles || pending_roles) AS role, "
-        "primary_roles, r.id AS release_id FROM nodes n "
-        "JOIN clusters c ON n.cluster_id=c.id "
-        "JOIN releases r ON r.id=c.release_id"
-    )
-    node_plugin_query = sa.sql.text(
-        "SELECT n.id as n_id, unnest(roles || pending_roles) AS role, "
-        "primary_roles, p.id AS plugin_id FROM nodes n "
-        "JOIN clusters c ON n.cluster_id=c.id "
-        "JOIN cluster_plugins cp ON cp.cluster_id=c.id "
-        "JOIN plugins p ON cp.plugin_id=p.id"
-    )
-
-    # Create tags for all plugins roles
-    _create_tags(
-        connection,
-        q_select_release_query,
-        q_update_release_query,
-        consts.TAG_OWNER_TYPES.plugin
-    )
-
-    # Create tags for all plugins roles
-    _create_tags(
-        connection,
-        q_select_plugin_query,
-        q_update_plugin_query,
-        consts.TAG_OWNER_TYPES.plugin
-    )
-
-    # update tag's assignment for releases tags
-    _upgrade_tags_assignment(connection,
-                             node_release_query,
-                             consts.TAG_OWNER_TYPES.release)
-
-    # update tag's assignment for plugin tags
-    _upgrade_tags_assignment(connection,
-                             node_plugin_query,
-                             consts.TAG_OWNER_TYPES.plugin)
 
 
 def upgrade_node_tagging():
@@ -189,17 +135,7 @@ def upgrade_node_tagging():
     )
     op.add_column(
         'releases',
-        sa.Column('tags_metadata',
-                  fields.JSON(),
-                  nullable=False,
-                  server_default='{}')
-    )
-    op.add_column(
-        'plugins',
-        sa.Column('tags_metadata',
-                  fields.JSON(),
-                  nullable=False,
-                  server_default='{}')
+        sa.Column('tags_metadata', fields.JSON(), nullable=True),
     )
 
 
@@ -333,34 +269,11 @@ def upgrade_vmware_attributes_metadata():
     update_vmware_attributes_metadata(upgrade=True)
 
 
-def _downgrade_roles_metadata(conn, select_query, update_query):
-    for id, roles_metadata in conn.execute(select_query):
-        roles_metadata = jsonutils.loads(roles_metadata)
-        for role_name, role_metadata in six.iteritems(roles_metadata):
-            del role_metadata['tags']
-        conn.execute(
-            update_query,
-            id=id,
-            roles_metadata=jsonutils.dumps(roles_metadata),
-        )
-
-
 def downgrade_node_tagging():
-    connection = op.get_bind()
-    # wipe out 'tags' key in JSON for releases
-    _downgrade_roles_metadata(connection,
-                              q_select_release_query,
-                              q_update_release_query)
-    # wipe out 'tags' key in JSON for plugins
-    _downgrade_roles_metadata(connection,
-                              q_select_plugin_query,
-                              q_update_plugin_query)
-
     op.drop_table('node_tags')
     op.drop_table('tags')
     drop_enum('tag_owner_type')
     op.drop_column('releases', 'tags_metadata')
-    op.drop_column('plugins', 'tags_metadata')
 
 
 def downgrade_vmware_attributes_metadata():

@@ -50,14 +50,13 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                  'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
-        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
-
+        objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         # with lowest uid is assigned as primary
         self.assertEqual(
-            objects.Node.all_tags(nodes[0]), [self.primary_role_name])
+            objects.Node.all_roles(nodes[0]), [self.primary_role_name])
         self.assertEqual(
-            objects.Node.all_tags(nodes[1]), [self.role_name])
+            objects.Node.all_roles(nodes[1]), [self.role_name])
 
     def test_primary_controller_assigned_for_ready_node(self):
         self.env.create(
@@ -72,16 +71,16 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
-        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
+        objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         # primary assigned to node with ready status
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         ready_node = next(n for n in cluster.nodes
                           if n.status == consts.NODE_STATUSES.ready)
         self.assertEqual(nodes[1], ready_node)
         self.assertEqual(
-            objects.Node.all_tags(nodes[1]), [self.primary_role_name])
+            objects.Node.all_roles(nodes[1]), [self.primary_role_name])
         self.assertEqual(
-            objects.Node.all_tags(nodes[0]), [self.role_name])
+            objects.Node.all_roles(nodes[0]), [self.role_name])
 
     def test_primary_assignment_multinode(self):
         """Primary should not be assigned in multinode env."""
@@ -99,11 +98,11 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
-        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
+        objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
-            objects.Node.all_tags(cluster.nodes[0]), [self.role_name])
+            objects.Node.all_roles(cluster.nodes[0]), [self.role_name])
         self.assertEqual(
-            objects.Node.all_tags(cluster.nodes[1]), [self.role_name])
+            objects.Node.all_roles(cluster.nodes[1]), [self.role_name])
 
     def test_primary_not_assigned_to_pending_deletion(self):
         self.env.create(
@@ -115,9 +114,9 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                  'status': consts.NODE_STATUSES.ready,
                  'pending_deletion': True}])
         cluster = self.env.clusters[0]
-        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
+        objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
-            objects.Node.all_tags(cluster.nodes[0]), [self.role_name])
+            objects.Node.all_roles(cluster.nodes[0]), [self.role_name])
 
     @contextmanager
     def assert_node_reassigned(self):
@@ -133,16 +132,16 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
         cluster = self.env.clusters[0]
-        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
+        objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         self.assertEqual(
-            objects.Node.all_tags(nodes[1]), [self.primary_role_name])
+            objects.Node.all_roles(nodes[1]), [self.primary_role_name])
         self.assertEqual(
-            objects.Node.all_tags(nodes[0]), [self.role_name])
+            objects.Node.all_roles(nodes[0]), [self.role_name])
         yield nodes[1]
-        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
+        objects.Cluster.set_primary_roles(cluster, cluster.nodes)
         self.assertEqual(
-            objects.Node.all_tags(nodes[0]), [self.primary_role_name])
+            objects.Node.all_roles(nodes[0]), [self.primary_role_name])
 
     def test_primary_assign_after_reset_to_discovery(self):
         """Removing primary roles after resetting node to discovery"""

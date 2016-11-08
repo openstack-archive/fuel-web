@@ -31,7 +31,6 @@ from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers import release as release_serializer
-from nailgun.objects import Tag
 from nailgun.orchestrator import graph_configuration
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
@@ -74,8 +73,6 @@ class Release(NailgunObject):
         for graph_type, graph_data in six.iteritems(graphs):
             DeploymentGraph.create_for_model(
                 graph_data, release_obj, graph_type)
-
-        cls.create_tags(release_obj)
         return release_obj
 
     @classmethod
@@ -328,21 +325,6 @@ class Release(NailgunObject):
         """
         metadata = instance.networks_metadata
         return metadata.get('dpdk_drivers', {})
-
-    @classmethod
-    def create_tags(cls, instance):
-        metadata = instance.tags_metadata
-        for role, role_data in instance.roles_metadata.items():
-            tag_meta = metadata.get(role, {})
-            for tag in role_data.get('tags', []):
-                data = {
-                    'owner_id': instance.id,
-                    'owner_type': 'release',
-                    'tag': tag,
-                    'has_primary': tag_meta.get('has_primary', False),
-                    'read_only': True
-                }
-                Tag.create(data)
 
     @classmethod
     def delete(cls, instance):

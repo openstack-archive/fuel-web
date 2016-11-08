@@ -1075,7 +1075,7 @@ class Node(NailgunObject):
 
     @classmethod
     def update_tags(cls, instance, new_roles):
-        roles_metadata = Cluster.get_roles(instance.cluster)
+        roles_metadata = instance.cluster.release.roles_metadata
         current_tags = set()
         new_tags = set()
 

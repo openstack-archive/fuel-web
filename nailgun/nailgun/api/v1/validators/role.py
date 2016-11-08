@@ -13,30 +13,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sqlalchemy as sa
-
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema import role
-from nailgun.db import db
-from nailgun.db.sqlalchemy import models
 from nailgun import errors
 
 
 class RoleValidator(BasicValidator):
 
     @classmethod
-    def validate_delete(cls, release, role_name):
-        clusters = [cluster.id for cluster in release.clusters]
-        node = db().query(models.Node).filter(
-            models.Node.cluster_id.in_(clusters)
-        ).filter(sa.or_(
-            models.Node.roles.any(role_name),
-            models.Node.pending_roles.any(role_name)
-        )).first()
+    def validate_delete(cls, instance_cls, instance, role_name):
+        node = instance_cls.get_node_by_role(instance, role_name)
 
         if node:
             raise errors.CannotDelete(
-                "Can't delete roles that is assigned to some node.")
+                "Can't delete role {} that is assigned "
+                "to node {}.".format(role_name, node.id))
 
     @classmethod
     def validate(cls, data, instance=None):
@@ -45,10 +36,11 @@ class RoleValidator(BasicValidator):
         return parsed
 
     @classmethod
-    def validate_update(cls, data, instance):
+    def validate_update(cls, data, instance_cls, instance):
         parsed = cls.validate(data, instance=instance)
 
-        allowed_ids = [m['id'] for m in instance.volumes_metadata['volumes']]
+        volumes_meta = instance_cls.get_volumes_metadata(instance)
+        allowed_ids = [m['id'] for m in volumes_meta.get('volumes', [])]
         missing_volume_ids = []
         for volume in parsed['volumes_roles_mapping']:
             if volume['id'] not in allowed_ids:
@@ -63,14 +55,14 @@ class RoleValidator(BasicValidator):
         return parsed
 
     @classmethod
-    def validate_create(cls, data, instance):
-        parsed = cls.validate_update(data, instance)
+    def validate_create(cls, data, instance_cls, instance):
+        parsed = cls.validate_update(data, instance_cls, instance)
 
         role_name = parsed['name']
-        if role_name in instance.roles_metadata:
+        if role_name in instance_cls.get_own_roles(instance):
             raise errors.AlreadyExists(
-                "Role with name {name} already "
-                "exists for release {release}".format(
-                    name=role_name, release=instance.id))
+                "Role with name {} already "
+                "exists for {} {}".format(
+                    role_name, instance_cls.__name__.lower(), instance.id))
 
         return parsed

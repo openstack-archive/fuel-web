@@ -30,8 +30,7 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from oslo_serialization import jsonutils
 import six
-from sqlalchemy.orm import joinedload
-from sqlalchemy.orm import subqueryload_all
+import sqlalchemy as sa
 
 from nailgun import consts
 from nailgun.db import db
@@ -163,6 +162,15 @@ class Node(NailgunObject):
         :returns: List of single element tuples with IP address
         """
         return db().query(models.Node.ip)
+
+    @classmethod
+    def get_nodes_by_role(cls, cluster_ids, role_name):
+        return db().query(models.Node).filter(
+            models.Node.cluster_id.in_(cluster_ids)
+        ).filter(sa.or_(
+            models.Node.roles.any(role_name),
+            models.Node.pending_roles.any(role_name)
+        ))
 
     @classmethod
     def get_by_mac_or_uid(cls, mac=None, node_uid=None):
@@ -1267,10 +1275,10 @@ class NodeCollection(NailgunCollection):
         :returns: iterable (SQLAlchemy query)
         """
         options = (
-            joinedload('cluster'),
-            subqueryload_all('nic_interfaces.assigned_networks_list'),
-            subqueryload_all('bond_interfaces.assigned_networks_list'),
-            subqueryload_all('ip_addrs.network_data')
+            sa.orm.joinedload('cluster'),
+            sa.orm.subqueryload_all('nic_interfaces.assigned_networks_list'),
+            sa.orm.subqueryload_all('bond_interfaces.assigned_networks_list'),
+            sa.orm.subqueryload_all('ip_addrs.network_data')
         )
         return cls.eager_base(iterable, options)
 

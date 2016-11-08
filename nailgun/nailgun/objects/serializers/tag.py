@@ -22,5 +22,7 @@ class TagSerializer(BasicSerializer):
     fields = (
         "id",
         "tag",
+        "owner_id",
+        "owner_type",
         "has_primary"
     )

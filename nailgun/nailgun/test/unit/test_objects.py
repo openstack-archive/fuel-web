@@ -791,14 +791,11 @@ class TestNodeObject(BaseIntegrationTest):
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'role': 'controller'}])
         node = self.env.nodes[0]
-        node_tags = ['controller', 'database', 'keystone', 'neutron',
-                     'rabbitmq']
-        self.assertEqual(node_tags, objects.Node.all_tags(node))
+        self.assertEqual(['controller'], objects.Node.all_tags(node))
 
         objects.Node.update_roles(node, ['controller', 'cinder'])
-        node_tags.append('cinder')
         self.assertItemsEqual(
-            node_tags, objects.Node.all_tags(node)
+            ['controller', 'cinder'], objects.Node.all_tags(node)
         )
 
         t = objects.Tag.create({
@@ -811,9 +808,8 @@ class TestNodeObject(BaseIntegrationTest):
         node.tags.append(node_tag)
         self.db.add(node_tag)
         self.db.flush()
-        node_tags.append('test')
         self.assertItemsEqual(
-            node_tags, objects.Node.all_tags(node)
+            ['controller', 'cinder', 'test'], objects.Node.all_tags(node)
         )
 
         objects.Node.update_roles(node, [])

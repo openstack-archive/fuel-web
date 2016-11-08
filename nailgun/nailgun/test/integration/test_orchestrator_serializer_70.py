@@ -733,30 +733,6 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
          'requires': ['deploy_start'],
          'role': ['primary-controller'],
          'type': 'group'},
-        {'id': 'primary-database',
-         'parameters': {'strategy': {'type': 'one_by_one'}},
-         'required_for': ['deploy_end'],
-         'requires': ['deploy_start'],
-         'role': ['primary-database'],
-         'type': 'group'},
-        {'id': 'primary-keystone',
-         'parameters': {'strategy': {'type': 'one_by_one'}},
-         'required_for': ['deploy_end'],
-         'requires': ['deploy_start'],
-         'role': ['primary-keystone'],
-         'type': 'group'},
-        {'id': 'primary-neutron',
-         'parameters': {'strategy': {'type': 'one_by_one'}},
-         'required_for': ['deploy_end'],
-         'requires': ['deploy_start'],
-         'role': ['primary-neutron'],
-         'type': 'group'},
-        {'id': 'primary-rabbitmq',
-         'parameters': {'strategy': {'type': 'one_by_one'}},
-         'required_for': ['deploy_end'],
-         'requires': ['deploy_start'],
-         'role': ['primary-rabbitmq'],
-         'type': 'group'},
         {'id': 'first-fake-depl-task',
          'required_for': ['deploy_end'],
          'requires': ['deploy_start'],
@@ -1345,8 +1321,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         serialized_for_astute = deployment_info_to_legacy(
             serialized_for_astute)
 
-        # 15 node roles on 5 nodes
-        self.assertEqual(len(serialized_for_astute), 15)
+        # 7 node roles on 5 nodes
+        self.assertEqual(len(serialized_for_astute), 7)
         for node_data in serialized_for_astute:
             node = objects.Node.get_by_uid(node_data['uid'])
             for node_roles, net_names in node_roles_vs_net_names:

@@ -16,7 +16,6 @@ import datetime
 
 import alembic
 from oslo_serialization import jsonutils
-import six
 import sqlalchemy as sa
 
 from nailgun.db import db
@@ -114,43 +113,6 @@ def prepare():
 
     cluster_id = result.inserted_primary_key[0]
 
-    result = db.execute(
-        meta.tables['plugins'].insert(),
-        [{
-            'name': 'test_plugin_a',
-            'title': 'Test plugin A',
-            'version': '2.0.0',
-            'description': 'Test plugin A for Fuel',
-            'homepage': 'http://fuel_plugins.test_plugin.com',
-            'package_version': '5.0.0',
-            'groups': jsonutils.dumps(['tgroup']),
-            'authors': jsonutils.dumps(['tauthor']),
-            'licenses': jsonutils.dumps(['tlicense']),
-            'releases': jsonutils.dumps([
-                {'repository_path': 'repositories/ubuntu'}
-            ]),
-            'fuel_version': jsonutils.dumps(['10.0']),
-            'roles_metadata': jsonutils.dumps({
-                'role_x': {
-                    'name': 'role_x',
-                    'has_primary': False
-                },
-                'role_y': {
-                    'name': 'role_y',
-                    'has_primary': True
-                },
-            })
-        }]
-    )
-    plugin_id = result.inserted_primary_key[0]
-
-    db.execute(
-        meta.tables['cluster_plugins'].insert(),
-        [
-            {'cluster_id': cluster_id, 'plugin_id': plugin_id}
-        ]
-    )
-
     node_id = 1
     db.execute(
         meta.tables['nodes'].insert(),
@@ -160,8 +122,7 @@ def prepare():
             'cluster_id': cluster_id,
             'group_id': None,
             'status': 'ready',
-            'roles': ['controller', 'ceph-osd', 'role_x', 'role_y'],
-            'primary_roles': ['controller', 'role_y'],
+            'roles': ['controller', 'ceph-osd'],
             'meta': '{}',
             'mac': 'bb:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
@@ -178,13 +139,13 @@ class TestTagExistingNodes(base.BaseAlembicMigrationTest):
                 [sa.func.count(self.meta.tables['tags'].c.id)]
             )).fetchone()[0]
 
-        self.assertEqual(tags_count, 13)
+        self.assertEqual(tags_count, 11)
 
     def test_nodes_assigned_tags(self):
         tags = self.meta.tables['tags']
         node_tags = self.meta.tables['node_tags']
 
-        query = sa.select([tags.c.tag, node_tags.c.is_primary]).select_from(
+        query = sa.select([tags.c.tag]).select_from(
             sa.join(
                 tags, node_tags,
                 tags.c.id == node_tags.c.tag_id
@@ -194,21 +155,5 @@ class TestTagExistingNodes(base.BaseAlembicMigrationTest):
         )
 
         res = db.execute(query)
-        primary_tags = []
-        tags = []
-        for tag, is_primary in res:
-            tags.append(tag)
-            if is_primary:
-                primary_tags.append(tag)
-        self.assertItemsEqual(tags, ['controller', 'ceph-osd',
-                                     'role_x', 'role_y'])
-        self.assertItemsEqual(primary_tags, ['controller', 'role_y'])
-
-    def test_role_metadata_changed(self):
-        plugins = self.meta.tables['plugins']
-        releases = self.meta.tables['releases']
-        q_roles_meta = (sa.select([plugins.c.roles_metadata]).union(
-                        sa.select([releases.c.roles_metadata])))
-        for role_meta in db.execute(q_roles_meta):
-            for role, meta in six.iteritems(jsonutils.loads(role_meta[0])):
-                self.assertEqual(meta['tags'], [role])
+        tags = [t[0] for t in res]
+        self.assertItemsEqual(tags, ['controller', 'ceph-osd'])

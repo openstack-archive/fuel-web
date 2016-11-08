@@ -177,7 +177,6 @@ class InstallationInfo(object):
         WhiteListRule(('attributes_metadata',), 'attributes_metadata', None),
         WhiteListRule(('volumes_metadata',), 'volumes_metadata', None),
         WhiteListRule(('roles_metadata',), 'roles_metadata', None),
-        WhiteListRule(('tags_metadata',), 'tags_metadata', None),
         WhiteListRule(('network_roles_metadata',),
                       'network_roles_metadata', None),
         WhiteListRule(('components_metadata',), 'components_metadata', None),

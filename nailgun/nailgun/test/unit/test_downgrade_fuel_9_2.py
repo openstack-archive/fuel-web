@@ -17,8 +17,6 @@
 import datetime
 
 import alembic
-import six
-import sqlalchemy as sa
 
 from nailgun.db import db
 from nailgun.db import dropdb
@@ -54,53 +52,10 @@ def prepare():
                     'networks': [],
                     'config': {}
                 }
-            }),
-            'roles_metadata': jsonutils.dumps({
-                'controller': {
-                    'name': 'controller',
-                    'has_primary': False,
-                    'tags': ['controller']
-                },
-            }),
-            'tags_metadata': jsonutils.dumps({
-                'controller': {
-                    'has_primary': False
-                },
             })
         }])
 
     release_id = result.inserted_primary_key[0]
-
-    db.execute(
-        meta.tables['plugins'].insert(),
-        [{
-            'name': 'test_plugin_a',
-            'title': 'Test plugin A',
-            'version': '2.0.0',
-            'description': 'Test plugin A for Fuel',
-            'homepage': 'http://fuel_plugins.test_plugin.com',
-            'package_version': '5.0.0',
-            'groups': jsonutils.dumps(['tgroup']),
-            'authors': jsonutils.dumps(['tauthor']),
-            'licenses': jsonutils.dumps(['tlicense']),
-            'releases': jsonutils.dumps([
-                {'repository_path': 'repositories/ubuntu'}
-            ]),
-            'fuel_version': jsonutils.dumps(['10.0']),
-            'roles_metadata': jsonutils.dumps({
-                'role_x': {
-                    'name': 'role_x',
-                    'has_primary': False,
-                    'tags': ['role_x']
-                },
-            }),
-            'tags_metadata': jsonutils.dumps({
-                'role_x': {
-                    'has_primary': False
-                },
-            })
-        }]
-    )
 
     result = db.execute(
         meta.tables['clusters'].insert(),
@@ -138,19 +93,8 @@ def prepare():
 
 class TestNodeTagging(base.BaseAlembicMigrationTest):
 
-    def test_downgrade_tags_metadata(self):
+    def test_downgrade_release_tags_metadata(self):
         releases_table = self.meta.tables['releases']
-        plugins_table = self.meta.tables['plugins']
         self.assertNotIn('tags_metadata', releases_table.c)
-        self.assertNotIn('tags_metadata', plugins_table.c)
         self.assertNotIn('tags', self.meta.tables)
         self.assertNotIn('node_tags', self.meta.tables)
-
-    def test_tags_are_absent_in_role_meta(self):
-        plugins = self.meta.tables['plugins']
-        releases = self.meta.tables['releases']
-        q_roles_meta = (sa.select([plugins.c.roles_metadata]).union(
-                        sa.select([releases.c.roles_metadata])))
-        for role_meta in db.execute(q_roles_meta):
-            for role, meta in six.iteritems(jsonutils.loads(role_meta[0])):
-                self.assertNotIn('tags', meta)

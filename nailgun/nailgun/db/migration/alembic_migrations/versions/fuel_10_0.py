@@ -31,13 +31,55 @@ from nailgun.db.sqlalchemy.models import fields
 revision = 'c6edea552f1e'
 down_revision = 'f2314e5d63c9'
 
+VCENTER_INSECURE = {
+    'name': "vcenter_insecure",
+    'type': "checkbox",
+    'label': "Bypass vCenter certificate verification"
+}
+
+VCENTER_SECURITY_DISABLED = {
+    'name': "vcenter_security_disabled",
+    'type': "checkbox",
+    'label': "Bypass vCenter certificate verification"
+}
+
+VCENTER_CA_FILE = {
+    'name': "vcenter_ca_file",
+    'type': 'file',
+    'label': "CA file",
+    'description': ('File containing the trusted CA bundle that emitted '
+                    'vCenter server certificate. Even if CA bundle is not '
+                    'uploaded, certificate verification is turned on.'),
+    'restrictions': [{
+        'message': ('Bypass vCenter certificate verification should be '
+                    'disabled.'),
+        'condition': 'current_vcenter:vcenter_security_disabled == true'
+    }]
+}
+
+CA_FILE = {
+    'name': "ca_file",
+    'type': 'file',
+    'label': "CA file",
+    'description': ('File containing the trusted CA bundle that emitted '
+                    'vCenter server certificate. Even if CA bundle is not '
+                    'uploaded, certificate verification is turned on.'),
+    'restrictions': [{
+        'message': ('Bypass vCenter certificate verification should be '
+                    'disabled.'),
+        'condition': 'glance:vcenter_security_disabled == true'
+    }]
+}
+
 
 def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_release_required_component_types()
+    upgrade_vmware_attributes_metadata()
 
 
 def downgrade():
+    downgrade_vmware_attributes_metadata()
     downgrade_release_required_component_types()
     downgrade_plugin_links_constraints()
 
@@ -107,3 +149,96 @@ def upgrade_release_required_component_types():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def update_vmware_attributes_metadata(upgrade):
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, vmware_attributes_metadata FROM releases "
+        "WHERE vmware_attributes_metadata IS NOT NULL")
+    update_query = sa.sql.text(
+        "UPDATE releases SET vmware_attributes_metadata = "
+        ":vmware_attributes_metadata WHERE id = :id")
+
+    for id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        editable = attrs.setdefault('editable', {})
+        metadata = editable.setdefault('metadata', [])
+        value = editable.setdefault('value', {})
+
+        for m in metadata:
+            if not isinstance(m, dict):
+                continue
+            if m.get('name') == 'availability_zones':
+                fields = m.setdefault('fields', [])
+                names = [f['name'] for f in fields]
+                av_z = value.setdefault('availability_zones', {})
+                update_availability_zones(fields, av_z, names, upgrade)
+            elif m.get('name') == 'glance':
+                fields = m.setdefault('fields', [])
+                names = [f['name'] for f in fields]
+                glance = value.setdefault('glance', {})
+                update_glance(fields, glance, names, upgrade)
+
+        connection.execute(
+            update_query,
+            id=id,
+            vmware_attributes_metadata=jsonutils.dumps(attrs))
+
+
+def update_availability_zones(fields, values, names, upgrade):
+    if upgrade:
+        if 'vcenter_security_disabled' not in names:
+            fields.insert(5, VCENTER_SECURITY_DISABLED)
+            for value in values:
+                value['vcenter_security_disabled'] = True
+        if 'vcenter_insecure' in names:
+            fields.remove(VCENTER_INSECURE)
+            for value in values:
+                del value['vcenter_insecure']
+        for field in fields:
+            if field['name'] == 'vcenter_ca_file':
+                field['restrictions'] = VCENTER_CA_FILE['restrictions']
+    else:
+        if 'vcenter_insecure' not in names:
+            fields.insert(5, VCENTER_INSECURE)
+            for value in values:
+                value['vcenter_insecure'] = True
+        if 'vcenter_security_disabled' in names:
+            fields.remove(VCENTER_SECURITY_DISABLED)
+            for value in values:
+                del value['vcenter_security_disabled']
+        for field in fields:
+            if field['name'] == 'vcenter_ca_file':
+                del field['restrictions']
+
+
+def update_glance(fields, values, names, upgrade):
+    if upgrade:
+        if 'vcenter_security_disabled' not in names:
+            fields.insert(6, VCENTER_SECURITY_DISABLED)
+            values['vcenter_security_disabled'] = True
+        if 'vcenter_insecure' in names:
+            fields.remove(VCENTER_INSECURE)
+            del values['vcenter_insecure']
+        for field in fields:
+            if field['name'] == 'ca_file':
+                field['restrictions'] = CA_FILE['restrictions']
+    else:
+        if 'vcenter_insecure' not in names:
+            fields.insert(6, VCENTER_INSECURE)
+            values['vcenter_insecure'] = True
+        if 'vcenter_security_disabled' in names:
+            fields.remove(VCENTER_SECURITY_DISABLED)
+            del values['vcenter_security_disabled']
+        for field in fields:
+            if field['name'] == 'ca_file':
+                del field['restrictions']
+
+
+def upgrade_vmware_attributes_metadata():
+    update_vmware_attributes_metadata(upgrade=True)
+
+
+def downgrade_vmware_attributes_metadata():
+    update_vmware_attributes_metadata(upgrade=False)

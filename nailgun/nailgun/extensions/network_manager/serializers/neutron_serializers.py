@@ -1495,7 +1495,7 @@ class DPDKSerializerMixin90(object):
 
         transformations.append(cls.add_bridge(
             br_name,
-            provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+            provider=consts.NEUTRON_L23_PROVIDERS.dpdkovs,
             vendor_specific=vendor_specific))
 
         for iface in node.nic_interfaces:

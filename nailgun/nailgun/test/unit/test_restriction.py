@@ -346,7 +346,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
                     "vcenter_host": "",
                     "vcenter_username": "",
                     "vcenter_password": "",
-                    "vcenter_unsecure": "",
+                    "vcenter_security_disabled": "",
                     "vcenter_ca_file": {},
                     "nova_computes": [
                         {
@@ -366,7 +366,7 @@ class TestVmwareAttributesRestriction(base.BaseTestCase):
                 "vcenter_password": "",
                 "datacenter": "",
                 "datastore": "",
-                "vcenter_unsecure": "",
+                "vcenter_security_disabled": "",
                 "ca_file": {}
             }
         }

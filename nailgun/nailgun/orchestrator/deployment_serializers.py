@@ -840,6 +840,16 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         return serialized_node
 
 
+class DeploymentLCMSerializer110(DeploymentLCMSerializer):
+
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return neutron_serializers.NeutronNetworkTemplateSerializer110
+        else:
+            return neutron_serializers.NeutronNetworkDeploymentSerializer110
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -870,10 +880,13 @@ def get_serializer_for_cluster(cluster):
         '8.0': {
             'ha': DeploymentHASerializer80,
         },
-        '9.0': {
-            'ha': DeploymentHASerializer90,
+        '11.0': {
+            'ha': DeploymentLCMSerializer110,
         }
     }
+
+    serializers_map.update({version: {'ha': DeploymentLCMSerializer}
+                           for version in ('9.0', '9.1', '9.2', '10.0')})
 
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
     for version, serializers in six.iteritems(serializers_map):
@@ -881,7 +894,7 @@ def get_serializer_for_cluster(cluster):
             return serializers[env_mode]
 
     # return latest serializer by default
-    latest_version = max(serializers_map, key=lambda v: StrictVersion(v))
+    latest_version = max(serializers_map.keys(), key=StrictVersion)
 
     return serializers_map[latest_version][env_mode]
 
@@ -913,7 +926,7 @@ def serialize(orchestrator_graph, cluster, nodes,
 def serialize_for_lcm(cluster, nodes,
                       ignore_customized=False, skip_extensions=False):
     return _invoke_serializer(
-        DeploymentLCMSerializer(), cluster, nodes,
+        get_serializer_for_cluster(cluster)(), cluster, nodes,
         ignore_customized, skip_extensions
     )
 

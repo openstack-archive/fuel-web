@@ -24,7 +24,7 @@ from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
 
-_prepare_revision = 'f2314e5d63c9'
+_prepare_revision = '3763c404ca48'
 _test_revision = 'c6edea552f1e'
 
 JSON_TASKS = [

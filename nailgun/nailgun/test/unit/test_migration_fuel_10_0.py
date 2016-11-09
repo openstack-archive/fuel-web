@@ -87,6 +87,25 @@ DEPLOYMENT_INFO = {
     }
 }
 
+VMWARE_ATTRIBUTES_METADATA = {
+    'editable': {
+        'metadata': [
+            {
+                'name': 'availability_zones',
+                'fields': []
+            },
+            {
+                'name': 'glance',
+                'fields': []
+            },
+        ],
+        'value': {
+            'availability_zones': [{}, {}],
+            'glance': {},
+        }
+    }
+}
+
 
 def setup_module():
     dropdb()
@@ -154,7 +173,9 @@ def prepare():
                     'name': 'Operating System',
                 }
             }),
-            'is_deployable': True
+            'is_deployable': True,
+            'vmware_attributes_metadata':
+                jsonutils.dumps(VMWARE_ATTRIBUTES_METADATA)
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -453,7 +474,9 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                 'operating_system': 'ubuntu',
                 'state': 'available',
                 'roles_metadata': '{}',
-                'is_deployable': True
+                'is_deployable': True,
+                'vmware_attributes_metadata':
+                    jsonutils.dumps(VMWARE_ATTRIBUTES_METADATA)
             }])
 
     def test_upgrade_release_required_component_types(self):
@@ -483,3 +506,36 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestReleasesUpdate(base.BaseAlembicMigrationTest):
+    def test_vmware_attributes_metadata_update(self):
+        result = db.execute(sa.select([
+            self.meta.tables['releases']])).first()
+        attrs = jsonutils.loads(result['vmware_attributes_metadata'])
+
+        fields = attrs['editable']['metadata'][0]['fields']
+        self.assertItemsEqual(['vcenter_security_disabled'],
+                              [f['name'] for f in fields])
+
+        fields = attrs['editable']['metadata'][1]['fields']
+        self.assertItemsEqual(['vcenter_security_disabled'],
+                              [f['name'] for f in fields])
+
+        self.assertEqual(
+            attrs['editable']['value'],
+            {
+                'availability_zones':
+                    [
+                        {
+                            'vcenter_security_disabled': True,
+                        },
+                        {
+                            'vcenter_security_disabled': True,
+                        }
+                    ],
+                'glance':
+                    {
+                        'vcenter_security_disabled': True,
+                    }
+            })

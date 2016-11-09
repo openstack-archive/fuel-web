@@ -182,7 +182,8 @@ class VmwareDeploymentSerializerMixin(object):
                         'vc_host': zone.get('vcenter_host', ''),
                         'vc_user': vc_user,
                         'vc_password': vc_password,
-                        'vc_insecure': zone.get('vcenter_unsecure', ''),
+                        'vc_insecure': zone.get('vcenter_security_disabled',
+                                                ''),
                         'vc_ca_file': zone.get('vcenter_ca_file', ''),
                         'service_name': compute.get('service_name', ''),
                         'vc_cluster': compute.get('vsphere_cluster', ''),
@@ -198,7 +199,7 @@ class VmwareDeploymentSerializerMixin(object):
                     'vc_host': zone.get('vcenter_host', ''),
                     'vc_user': vc_user,
                     'vc_password': vc_password,
-                    'vc_insecure': zone.get('vcenter_unsecure', ''),
+                    'vc_insecure': zone.get('vcenter_security_disabled', ''),
                     'vc_ca_file': zone.get('vcenter_ca_file', '')
                 }
                 cinder_instances.append(cinder_item)
@@ -231,7 +232,8 @@ class VmwareDeploymentSerializerMixin(object):
                     'vc_password': glance_password,
                     'vc_datacenter': glance_instance.get('datacenter', ''),
                     'vc_datastore': glance_instance.get('datastore', ''),
-                    'vc_insecure': glance_instance.get('vcenter_unsecure', ''),
+                    'vc_insecure': glance_instance.get(
+                        'vcenter_security_disabled', ''),
                     'vc_ca_file': glance_instance.get('ca_file', '')
                 }
 

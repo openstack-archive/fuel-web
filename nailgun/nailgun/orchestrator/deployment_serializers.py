@@ -660,7 +660,17 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
                 hugepages)
 
 
-class DeploymentLCMSerializer(DeploymentHASerializer90):
+class DeploymentHASerializer110(DeploymentHASerializer90):
+
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return neutron_serializers.NeutronNetworkTemplateSerializer110
+        else:
+            return neutron_serializers.NeutronNetworkDeploymentSerializer110
+
+
+class DeploymentLCMSerializer(DeploymentHASerializer110):
     _configs = None
     _cluster_info = None
     _provision_serializer = None
@@ -870,9 +880,11 @@ def get_serializer_for_cluster(cluster):
         '8.0': {
             'ha': DeploymentHASerializer80,
         },
-        '9.0': {
+        ('9.0','9.1','9.2','10.0'): {
             'ha': DeploymentHASerializer90,
-        }
+        },
+        '11.0': {
+            'ha': DeploymentHASerializer110,
     }
 
     env_mode = 'ha' if cluster.is_ha_mode else 'multinode'

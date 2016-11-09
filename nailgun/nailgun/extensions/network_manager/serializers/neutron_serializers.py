@@ -1477,7 +1477,7 @@ class DPDKSerializerMixin90(object):
 
     @classmethod
     def configure_private_network_dpdk(cls, node, nm, transformations,
-                                       nets_by_ifaces):
+                                       nets_by_ifaces, br_provider):
         """This method configures transformations for private network.
 
         It is used for VLAN and VXLAN segmentation types only.
@@ -1495,7 +1495,7 @@ class DPDKSerializerMixin90(object):
 
         transformations.append(cls.add_bridge(
             br_name,
-            provider=consts.NEUTRON_L23_PROVIDERS.ovs,
+            provider=br_provider,
             vendor_specific=vendor_specific))
 
         for iface in node.nic_interfaces:
@@ -1574,13 +1574,14 @@ class NeutronNetworkDeploymentSerializer90(
 
     @classmethod
     def generate_transformations_by_segmentation_type(
-            cls, node, nm, transformations, prv_base_ep, nets_by_ifaces
+            cls, node, nm, transformations, prv_base_ep, nets_by_ifaces,
+            br_provider=consts.NEUTRON_L23_PROVIDERS.ovs
     ):
         if (objects.Node.dpdk_enabled(node) and
                 objects.Cluster.is_dpdk_supported_for_segmentation(
                     node.cluster)):
             cls.configure_private_network_dpdk(
-                node, nm, transformations, nets_by_ifaces
+                node, nm, transformations, nets_by_ifaces, br_provider
             )
         else:
             (super(NeutronNetworkDeploymentSerializer90, cls)
@@ -1595,3 +1596,23 @@ class NeutronNetworkTemplateSerializer90(
     NeutronNetworkTemplateSerializer80
 ):
     pass
+
+
+class NeutronNetworkTemplateSerializer110(
+    NeutronNetworkTemplateSerializer90
+):
+    pass
+
+
+class NeutronNetworkDeploymentSerializer110(
+    NeutronNetworkDeploymentSerializer90
+):
+    @classmethod
+    def generate_transformations_by_segmentation_type(
+            cls, node, nm, transformations, prv_base_ep, nets_by_ifaces,
+            br_provider=consts.NEUTRON_L23_PROVIDERS.dpdkovs
+    ):
+        (super(NeutronNetworkDeploymentSerializer110, cls)
+            .generate_transformations_by_segmentation_type(
+            node, nm, transformations, prv_base_ep, nets_by_ifaces,
+            br_provider))

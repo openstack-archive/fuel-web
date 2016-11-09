@@ -30,7 +30,7 @@
                     },
                     {
                         "type": "checkbox",
-                        "name": "vcenter_unsecure",
+                        "name": "vcenter_security_disabled",
                         "label": "Bypass vCenter certificate verification"
                     },
                     {
@@ -40,7 +40,7 @@
                         "label": "CA file",
                         "restrictions": [
                           {
-                            "condition": "current_vcenter:vcenter_unsecure == true",
+                            "condition": "current_vcenter:vcenter_security_disabled == true",
                             "message": "Bypass vCenter certificate verification should be disabled."
                           }
                         ]
@@ -149,7 +149,7 @@
                     },
                     {
                         "type": "checkbox",
-                        "name": "vcenter_unsecure",
+                        "name": "vcenter_security_disabled",
                         "label": "Bypass vCenter certificate verification"
                     },
                     {
@@ -159,7 +159,7 @@
                         "label": "CA file",
                         "restrictions": [
                           {
-                            "condition": "glance:vcenter_unsecure == true",
+                            "condition": "glance:vcenter_security_disabled == true",
                             "message": "Bypass vCenter certificate verification should be disabled."
                           }
                         ]
@@ -182,7 +182,7 @@
                     "vcenter_host": "1.2.3.4",
                     "vcenter_username": "admin",
                     "vcenter_password": "secret",
-                    "vcenter_unsecure": "true",
+                    "vcenter_security_disabled": "true",
                     "vcenter_ca_file": "file_blob",
                     "nova_computes": [
                         {
@@ -212,7 +212,7 @@
                     "vcenter_host": "1.2.3.6",
                     "vcenter_username": "user$",
                     "vcenter_password": "pass$word",
-                    "vcenter_unsecure": "true",
+                    "vcenter_security_disabled": "true",
                     "vcenter_ca_file": "file_blob",
                     "nova_computes": [
                         {
@@ -234,7 +234,7 @@
                 "vcenter_password": "secret",
                 "datacenter": "test_datacenter",
                 "datastore": "test_datastore",
-                "vcenter_unsecure": "true",
+                "vcenter_security_disabled": "true",
                 "ca_file": "file_blob"
             },
             "network": {

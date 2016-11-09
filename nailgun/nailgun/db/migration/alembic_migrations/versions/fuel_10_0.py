@@ -29,7 +29,7 @@ from nailgun.db.sqlalchemy.models import fields
 
 # revision identifiers, used by Alembic.
 revision = 'c6edea552f1e'
-down_revision = 'f2314e5d63c9'
+down_revision = '3763c404ca48'
 
 
 def upgrade():

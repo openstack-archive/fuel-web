@@ -262,6 +262,65 @@ class EnvironmentManager(object):
             expect_errors=expect_errors
         )
 
+    def get_all_tags(self, obj_type, obj_id, expect_errors=False):
+        return self.app.get(
+            reverse(
+                'TagCollectionHandler',
+                kwargs={'obj_id': obj_id, 'obj_type': obj_type}
+            ),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def get_tag(self, obj_type, obj_id, role_name, expect_errors=False):
+        return self.app.get(
+            reverse(
+                'TagHandler',
+                kwargs={'obj_id': obj_id,
+                        'obj_type': obj_type,
+                        'role_name': role_name}
+            ),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def update_tag(self, obj_type, obj_id, role_name, data,
+                   expect_errors=False):
+        return self.app.put(
+            reverse(
+                'TagHandler',
+                kwargs={'obj_id': obj_id,
+                        'obj_type': obj_type,
+                        'role_name': role_name}
+            ),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def delete_tag(self, obj_type, obj_id, role_name, expect_errors=False):
+        return self.app.delete(
+            reverse(
+                'TagHandler',
+                kwargs={'obj_id': obj_id,
+                        'obj_type': obj_type,
+                        'role_name': role_name}
+            ),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
+    def create_tag(self, obj_type, obj_id, data, expect_errors=False):
+        return self.app.post(
+            reverse(
+                'TagCollectionHandler',
+                kwargs={'obj_id': obj_id, 'obj_type': obj_type}
+            ),
+            jsonutils.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors
+        )
+
     def create_cluster(self, api=True, exclude=None, **kwargs):
         cluster_data = {
             'name': 'cluster-api-' + str(randint(0, 1000000)),

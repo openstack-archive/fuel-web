@@ -163,7 +163,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         actual_uids = [node['uid'] for node in resp.json_body]
         node_ids.append('common')
-        self.assertItemsEqual(actual_uids, node_ids)
+        self.assertItemsEqual(set(actual_uids), node_ids)
 
     def test_cluster_provisioning_customization(self):
         facts = {'engine': {'1': '2'}}
@@ -241,8 +241,8 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
         else:
             deployed_uids = [n['uid'] for n in
                              args[1]['args']['deployment_info']]
-        self.assertEqual(len(nodes_uids), len(deployed_uids))
-        self.assertItemsEqual(nodes_uids, deployed_uids)
+        self.assertEqual(len(nodes_uids), len(set(deployed_uids)))
+        self.assertItemsEqual(nodes_uids, set(deployed_uids))
 
     def check_resp_declined(self, resp):
         self.assertEqual(resp.status_code, 400)
@@ -627,7 +627,7 @@ class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
         args, kwargs = mcast.call_args
         deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
         deployment_data = args[1]['args']['deployment_info'][0]
-        self.assertItemsEqual(deployed_uids, self.node_uids)
+        self.assertItemsEqual(set(deployed_uids), self.node_uids)
         self.assertEqual(len(deployment_data['tasks']), 1)
 
     def test_deployment_is_forbidden(self):

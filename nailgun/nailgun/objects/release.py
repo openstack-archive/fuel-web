@@ -140,6 +140,27 @@ class Release(NailgunObject):
         return bool(result)
 
     @classmethod
+    def update_tag(cls, instance, tag):
+        """Update existing Cluster instance with specified tag.
+
+        Previous ones are deleted.
+
+        :param instance: a Cluster instance
+        :param role: a tag dict
+        :returns: None
+        """
+        instance.tags_metadata[tag['name']] = tag['meta']
+
+    @classmethod
+    def remove_tag(cls, instance, tag_name):
+        for role, meta in six.iteritems(cls.get_own_roles(instance)):
+            tags = meta.get('tags', [])
+            if tag_name in tags:
+                tags.remove(tag_name)
+                instance.roles_metadata.changed()
+        return bool(instance.tags_metadata.pop(tag_name, None))
+
+    @classmethod
     def is_deployable(cls, instance):
         """Returns whether a given release deployable or not.
 
@@ -316,6 +337,14 @@ class Release(NailgunObject):
     @classmethod
     def get_own_roles(cls, instance):
         return instance.roles_metadata
+
+    @classmethod
+    def get_tags_metadata(cls, instance):
+        return cls.get_own_tags(instance)
+
+    @classmethod
+    def get_own_tags(cls, instance):
+        return instance.tags_metadata
 
     @classmethod
     def _check_relation(cls, a, b, relation):

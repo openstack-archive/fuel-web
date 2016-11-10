@@ -209,9 +209,13 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         return cluster_db
 
     def assert_roles_flattened(self, nodes):
-        self.assertEqual(len(nodes), 7)
+        self.assertEqual(len(nodes), 11)
         self.assert_nodes_with_role(nodes, 'controller', 1)
         self.assert_nodes_with_role(nodes, 'compute', 2)
+        self.assert_nodes_with_role(nodes, 'database', 1)
+        self.assert_nodes_with_role(nodes, 'keystone', 1)
+        self.assert_nodes_with_role(nodes, 'neutron', 1)
+        self.assert_nodes_with_role(nodes, 'rabbitmq', 1)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
         self.assert_nodes_with_role(nodes, 'mongo', 1)
 
@@ -447,7 +451,11 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'fail_if_error': False, 'role': 'compute'},
             {'fail_if_error': False, 'role': 'compute'},
             {'fail_if_error': True, 'role': 'primary-mongo'},
-            {'fail_if_error': False, 'role': 'cinder'}
+            {'fail_if_error': False, 'role': 'cinder'},
+            {'fail_if_error': True, 'role': 'primary-database'},
+            {'fail_if_error': True, 'role': 'primary-keystone'},
+            {'fail_if_error': True, 'role': 'primary-neutron'},
+            {'fail_if_error': True, 'role': 'primary-rabbitmq'}
         ]
 
         self.assertItemsEqual(
@@ -1320,7 +1328,20 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'fail_if_error': False, 'role': 'compute'},
             {'fail_if_error': False, 'role': 'compute'},
             {'fail_if_error': True, 'role': 'primary-mongo'},
-            {'fail_if_error': False, 'role': 'cinder'}
+            {'fail_if_error': False, 'role': 'cinder'},
+            {'fail_if_error': True, 'role': 'primary-database'},
+            {'fail_if_error': True, 'role': 'primary-keystone'},
+            {'fail_if_error': True, 'role': 'primary-neutron'},
+            {'fail_if_error': True, 'role': 'primary-rabbitmq'},
+            {'fail_if_error': True, 'role': u'database'},
+            {'fail_if_error': True, 'role': u'database'},
+            {'fail_if_error': True, 'role': u'keystone'},
+            {'fail_if_error': True, 'role': u'keystone'},
+            {'fail_if_error': True, 'role': u'neutron'},
+            {'fail_if_error': True, 'role': u'neutron'},
+            {'fail_if_error': True, 'role': u'rabbitmq'},
+            {'fail_if_error': True, 'role': u'rabbitmq'}
+
         ]
 
         self.assertItemsEqual(
@@ -1489,7 +1510,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         return serializer.serialize(cluster, cluster.nodes)
 
     def assert_roles_flattened(self, nodes):
-        self.assertEqual(len(nodes), 6)
+        self.assertEqual(len(nodes), 10)
         self.assert_nodes_with_role(nodes, 'controller', 1)
         self.assert_nodes_with_role(nodes, 'compute', 2)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
@@ -1635,10 +1656,11 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                     node['fqdn'],
                     '%s.%s' % (node_db.hostname, settings.DNS_DOMAIN))
 
-            # We have 6 roles on 4 nodes summarily.
-            # Only 1 node w 2 roles (controller+cinder) will have public
+            # We have 10 roles on 4 nodes summarily.
+            # Only 1 node w 6 roles (controller+cinder+rabbitmq+database+
+            # keystone+neutron) will have public
             # when 'assign_to_all_nodes' option is switched off
-            self.assertEqual(roles_w_public_count, 6 if assign else 2)
+            self.assertEqual(roles_w_public_count, 10 if assign else 6)
 
             # Check uncommon attrs
             node_uids = sorted(set([int(n['uid']) for n in node_list]))

@@ -42,6 +42,79 @@ DEPLOYMENT_51_60 = """
     strategy:
       type: parallel
       amount: 6
+
+- id: primary-database
+  type: group
+  role: [primary-database]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: database
+  type: group
+  role: [database]
+  requires: [primary-database]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: primary-keystone
+  type: group
+  role: [primary-keystone]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: keystone
+  type: group
+  role: [keystone]
+  requires: [primary-keystone]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: primary-rabbitmq
+  type: group
+  role: [primary-rabbitmq]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: rabbitmq
+  type: group
+  role: [rabbitmq]
+  requires: [primary-rabbitmq]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: primary-neutron
+  type: group
+  role: [primary-neutron]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: neutron
+  type: group
+  role: [neutron]
+  requires: [primary-neutron]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
 - id: cinder
   type: group
   role: [cinder]
@@ -129,6 +202,80 @@ DEPLOYMENT_50 = """
   parameters:
     strategy:
       type: one_by_one
+
+- id: primary-database
+  type: group
+  role: [primary-database]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: database
+  type: group
+  role: [database]
+  requires: [primary-database]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: primary-keystone
+  type: group
+  role: [primary-keystone]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: keystone
+  type: group
+  role: [keystone]
+  requires: [primary-keystone]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: primary-rabbitmq
+  type: group
+  role: [primary-rabbitmq]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: rabbitmq
+  type: group
+  role: [rabbitmq]
+  requires: [primary-rabbitmq]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: primary-neutron
+  type: group
+  role: [primary-neutron]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    strategy:
+      type: one_by_one
+
+- id: neutron
+  type: group
+  role: [neutron]
+  requires: [primary-neutron]
+  required_for: [deploy_end]
+  parameters:
+    strategy:
+      type: one_by_one
+
+
 - id: cinder
   type: group
   role: [cinder]

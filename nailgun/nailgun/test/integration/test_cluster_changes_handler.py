@@ -34,6 +34,9 @@ from nailgun.utils import reverse
 
 
 class TestHandlers(BaseIntegrationTest):
+    primary_controller_tags = ['primary-controller', 'primary-database',
+                               'primary-keystone', 'primary-neutron',
+                               'primary-rabbitmq']
 
     @mock_rpc(pass_mock=True)
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
@@ -113,7 +116,7 @@ class TestHandlers(BaseIntegrationTest):
         for node in nodes_db:
             node_id = node.id
             admin_ip = admin_ips.pop()
-            for role in sorted(node.roles + node.pending_roles):
+            for role in sorted(objects.Node.get_tags(node)):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['internal'] = '192.168.0.%d' % (i + 2)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
@@ -143,7 +146,9 @@ class TestHandlers(BaseIntegrationTest):
             deepcopy(nodes_list))
 
         common_attrs['nodes'] = nodes_list
-        common_attrs['nodes'][0]['role'] = 'primary-controller'
+        for node, role in zip(common_attrs['nodes'],
+                              self.primary_controller_tags):
+            node['role'] = role
 
         common_attrs['last_controller'] = controller_nodes[-1]['name']
         common_attrs['storage']['pg_num'] = 128
@@ -170,13 +175,17 @@ class TestHandlers(BaseIntegrationTest):
             'primary-controller': True,
             'controller': True,
             'cinder': False,
-            'compute': False
+            'compute': False,
+            'database': True,
+            'keystone': True,
+            'rabbitmq': True,
+            'neutron': True
         }
 
         deployment_info = []
         for node in nodes_db:
             ips = assigned_ips[node.id]
-            for role in sorted(node.roles):
+            for role in sorted(objects.Node.get_tags(node)):
                 is_critical = critical_mapping[role]
 
                 individual_atts = {
@@ -214,11 +223,9 @@ class TestHandlers(BaseIntegrationTest):
                 individual_atts.update(common_attrs)
                 deployment_info.append(deepcopy(individual_atts))
 
-        controller_nodes = filter(
-            lambda node: node['role'] == 'controller',
-            deployment_info)
-        controller_nodes[0]['role'] = 'primary-controller'
-        controller_nodes[0]['fail_if_error'] = True
+        for node, role in zip(deployment_info, self.primary_controller_tags):
+            node['role'] = role
+            node['fail_if_error'] = True
 
         supertask = self.env.launch_deployment()
         deploy_task_uuid = [x.uuid for x in supertask.subtasks
@@ -530,7 +537,7 @@ class TestHandlers(BaseIntegrationTest):
         for node in nodes_db:
             node_id = node.id
             admin_ip = admin_ips.pop()
-            for role in sorted(node.roles + node.pending_roles):
+            for role in sorted(objects.Node.get_tags(node)):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 2)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
@@ -560,7 +567,9 @@ class TestHandlers(BaseIntegrationTest):
             deepcopy(nodes_list))
 
         common_attrs['nodes'] = nodes_list
-        common_attrs['nodes'][0]['role'] = 'primary-controller'
+        for node, role in zip(common_attrs['nodes'],
+                              self.primary_controller_tags):
+            node['role'] = role
 
         common_attrs['last_controller'] = controller_nodes[-1]['name']
         common_attrs['storage']['pg_num'] = 128
@@ -587,13 +596,17 @@ class TestHandlers(BaseIntegrationTest):
             'primary-controller': True,
             'controller': True,
             'cinder': False,
-            'compute': False
+            'compute': False,
+            'database': True,
+            'keystone': True,
+            'rabbitmq': True,
+            'neutron': True
         }
 
         deployment_info = []
         for node in nodes_db:
             ips = assigned_ips[node.id]
-            for role in sorted(node.roles):
+            for role in sorted(objects.Node.get_tags(node)):
                 is_critical = critical_mapping[role]
 
                 individual_atts = {
@@ -682,11 +695,9 @@ class TestHandlers(BaseIntegrationTest):
                 individual_atts.update(common_attrs)
                 deployment_info.append(deepcopy(individual_atts))
 
-        controller_nodes = filter(
-            lambda node: node['role'] == 'controller',
-            deployment_info)
-        controller_nodes[0]['role'] = 'primary-controller'
-        controller_nodes[0]['fail_if_error'] = True
+        for node, role in zip(deployment_info, self.primary_controller_tags):
+            node['role'] = role
+            node['fail_if_error'] = True
 
         supertask = self.env.launch_deployment()
         deploy_task_uuid = [x.uuid for x in supertask.subtasks
@@ -1018,7 +1029,7 @@ class TestHandlers(BaseIntegrationTest):
         for node in nodes_db:
             node_id = node.id
             admin_ip = admin_ips.pop()
-            for role in sorted(node.roles + node.pending_roles):
+            for role in sorted(objects.Node.get_tags(node)):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 2)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
@@ -1048,7 +1059,9 @@ class TestHandlers(BaseIntegrationTest):
             deepcopy(nodes_list))
         common_attrs['tasks'] = []
         common_attrs['nodes'] = nodes_list
-        common_attrs['nodes'][0]['role'] = 'primary-controller'
+        for node, role in zip(common_attrs['nodes'],
+                              self.primary_controller_tags):
+            node['role'] = role
 
         common_attrs['last_controller'] = controller_nodes[-1]['name']
         common_attrs['storage']['pg_num'] = 128
@@ -1075,17 +1088,21 @@ class TestHandlers(BaseIntegrationTest):
             'primary-controller': True,
             'controller': True,
             'cinder': False,
-            'compute': False
+            'compute': False,
+            'database': True,
+            'keystone': True,
+            'rabbitmq': True,
+            'neutron': True
         }
 
         deployment_info = []
 
-        nm = objects.Cluster.get_network_manager(node.cluster)
+        nm = objects.Cluster.get_network_manager(cluster_db)
         for node in nodes_db:
             ips = assigned_ips[node.id]
             other_nets = nm.get_networks_not_on_node(node)
 
-            for role in sorted(node.roles):
+            for role in sorted(objects.Node.get_tags(node)):
                 is_critical = critical_mapping[role]
 
                 individual_atts = {
@@ -1190,11 +1207,9 @@ class TestHandlers(BaseIntegrationTest):
                 individual_atts.update(common_attrs)
                 deployment_info.append(deepcopy(individual_atts))
 
-        controller_nodes = filter(
-            lambda node: node['role'] == 'controller',
-            deployment_info)
-        controller_nodes[0]['role'] = 'primary-controller'
-        controller_nodes[0]['fail_if_error'] = True
+        for node, role in zip(deployment_info, self.primary_controller_tags):
+            node['role'] = role
+            node['fail_if_error'] = True
 
         supertask = self.env.launch_deployment()
         deploy_task_uuid = [x.uuid for x in supertask.subtasks
@@ -1412,7 +1427,7 @@ class TestHandlers(BaseIntegrationTest):
         # deploy method call [1][0][1][1]
         n_rpc_deploy = mocked_rpc.call_args_list[
             1][0][1][1]['args']['deployment_info']
-        self.assertEqual(len(n_rpc_deploy), 1)
+        self.assertEqual(len(n_rpc_deploy), 5)
         self.assertEqual(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
 
     @mock_rpc(pass_mock=True)
@@ -1444,18 +1459,18 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(args[1]), 2)
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEqual(len(n_rpc_deploy), 5)
+        self.assertEqual(len(n_rpc_deploy), 25)
         pub_ips = ['172.16.0.11', '172.16.0.12', '172.16.0.13',
                    '172.16.0.20', '172.16.0.21', '172.16.0.22']
         for n in n_rpc_deploy:
             self.assertIn('management_vrouter_vip', n)
             self.assertIn('public_vrouter_vip', n)
-            used_ips = []
-            for n_common_args in n['nodes']:
-                self.assertIn(n_common_args['public_address'], pub_ips)
-                self.assertNotIn(n_common_args['public_address'], used_ips)
-                used_ips.append(n_common_args['public_address'])
-                self.assertIn('management_vrouter_vip', n)
+        old_nodes = n_rpc_deploy[0]['nodes']
+        used_ips = []
+        for n in {v['uid']: v for v in old_nodes}.values():
+                self.assertIn(n['public_address'], pub_ips)
+                self.assertNotIn(n['public_address'], used_ips)
+                used_ips.append(n['public_address'])
 
     @mock_rpc(pass_mock=True)
     def test_deploy_ha_neutron_gre_w_custom_public_ranges(self, mocked_rpc):
@@ -1486,16 +1501,18 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(args[1]), 2)
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEqual(len(n_rpc_deploy), 5)
+        self.assertEqual(len(n_rpc_deploy), 25)
         pub_ips = ['172.16.0.11', '172.16.0.12', '172.16.0.13',
                    '172.16.0.20', '172.16.0.21', '172.16.0.22']
         for n in n_rpc_deploy:
             self.assertEqual(n['public_vip'], '172.16.0.10')
-            used_ips = []
-            for n_common_args in n['nodes']:
-                self.assertIn(n_common_args['public_address'], pub_ips)
-                self.assertNotIn(n_common_args['public_address'], used_ips)
-                used_ips.append(n_common_args['public_address'])
+        old_nodes = n_rpc_deploy[0]['nodes']
+
+        used_ips = []
+        for n in {v['uid']: v for v in old_nodes}.values():
+                self.assertIn(n['public_address'], pub_ips)
+                self.assertNotIn(n['public_address'], used_ips)
+                used_ips.append(n['public_address'])
 
     @mock_rpc(pass_mock=True)
     def test_deploy_neutron_gre_w_changed_public_cidr(self, mocked_rpc):
@@ -1525,7 +1542,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(args[1]), 2)
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEqual(len(n_rpc_deploy), 2)
+        self.assertEqual(len(n_rpc_deploy), 10)
         pub_ips = ['172.16.10.11', '172.16.10.12', '172.16.10.13']
         for n in n_rpc_deploy:
             for n_common_args in n['nodes']:
@@ -1873,8 +1890,8 @@ class TestHandlers(BaseIntegrationTest):
         deployment_info = args[1][0]['args']['deployment_info']
 
         self.assertItemsEqual(
-            [node.uid for node in self.env.nodes],
-            [node['uid'] for node in deployment_info]
+            set([node.uid for node in self.env.nodes]),
+            set([node['uid'] for node in deployment_info])
         )
 
     def _test_run(self, mcast, mode='dry_run'):
@@ -2146,6 +2163,86 @@ class TestGranularDeployment(BaseIntegrationTest):
                 'required_for': ['post_deployment_end'],
                 'reexecute_on': ['deploy_changes'],
             },
+            {
+                'fault_tolerance': 0,
+                'id': 'primary-database',
+                'parameters': {'strategy': {'type': 'one_by_one'}},
+                'required_for': ['deploy_end'],
+                'requires': ['deploy_start'],
+                'roles': ['primary-database'],
+                'role': 'primary-database',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'primary-keystone',
+                'parameters': {'strategy': {'type': 'one_by_one'}},
+                'required_for': ['deploy_end'],
+                'requires': ['deploy_start'],
+                'roles': ['primary-keystone'],
+                'role': 'primary-keystone',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'primary-rabbitmq',
+                'parameters': {'strategy': {'type': 'one_by_one'}},
+                'required_for': ['deploy_end'],
+                'requires': ['deploy_start'],
+                'roles': ['primary-rabbitmq'],
+                'role': 'primary-rabbitmq',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'primary-neutron',
+                'parameters': {'strategy': {'type': 'one_by_one'}},
+                'required_for': ['deploy_end'],
+                'requires': ['deploy_start'],
+                'roles': ['primary-neutron'],
+                'role': 'primary-neutron',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'database',
+                'parameters': {'strategy': {'amount': 6, 'type': 'parallel'}},
+                'required_for': ['deploy_end'],
+                'requires': ['primary-database'],
+                'roles': ['database'],
+                'role': 'database',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'keystone',
+                'parameters': {'strategy': {'amount': 6, 'type': 'parallel'}},
+                'required_for': ['deploy_end'],
+                'requires': ['primary-keystone'],
+                'roles': ['keystone'],
+                'role': 'keystone',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'rabbitmq',
+                'parameters': {'strategy': {'amount': 6, 'type': 'parallel'}},
+                'required_for': ['deploy_end'],
+                'requires': ['primary-rabbitmq'],
+                'roles': ['rabbitmq'],
+                'role': 'rabbitmq',
+                'type': 'group'
+            },
+            {
+                'fault_tolerance': 0,
+                'id': 'neutron',
+                'parameters': {'strategy': {'amount': 6, 'type': 'parallel'}},
+                'required_for': ['deploy_end'],
+                'requires': ['primary-neutron'],
+                'roles': ['neutron'],
+                'role': 'neutron',
+                'type': 'group'
+            }
         ]
 
         n1 = self.env.create_node(

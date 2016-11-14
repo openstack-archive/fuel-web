@@ -586,6 +586,116 @@ class TestPluginV5(TestPluginBase):
                     v)
 
 
+class TestPluginV6(TestPluginBase):
+    __test__ = True
+    package_version = '6.0.0'
+
+
+    def test_get_metadata(self):
+        plugin_metadata = self.env.get_default_plugin_metadata()
+        attributes_metadata = self.env.get_default_plugin_env_config()
+        roles_metadata = self.env.get_default_plugin_node_roles_config()
+        tags_metadata = self.env.get_default_plugin_node_tags_config()
+        volumes_metadata = self.env.get_default_plugin_volumes_config()
+        network_roles_metadata = self.env.get_default_network_roles_config()
+        deployment_tasks = self.env.get_default_plugin_deployment_tasks()
+        tasks = self.env.get_default_plugin_tasks()
+        components_metadata = self.env.get_default_components()
+
+        nic_attributes_metadata = self.env.get_default_plugin_nic_config()
+        bond_attributes_metadata = self.env.get_default_plugin_bond_config()
+        node_attributes_metadata = self.env.get_default_plugin_node_config()
+
+        plugin_metadata.update({
+            'attributes_metadata': attributes_metadata,
+            'roles_metadata': roles_metadata,
+            'tags_metadata': tags_metadata,
+            'volumes_metadata': volumes_metadata,
+            'network_roles_metadata': network_roles_metadata,
+            'deployment_tasks': deployment_tasks,
+            'tasks': tasks,
+            'components_metadata': components_metadata,
+            'nic_attributes_metadata': nic_attributes_metadata,
+            'bond_attributes_metadata': bond_attributes_metadata,
+            'node_attributes_metadata': node_attributes_metadata,
+            'graphs': [{
+                'type': 'custom',
+                'name': 'custom',
+                'tasks': [
+                    {'id': 'task{}'.format(n), 'type': 'puppet'}
+                    for n in range(2)
+                ]
+            }]
+        })
+
+        with mock.patch.object(
+                self.plugin_adapter, 'loader') as loader:
+            loader.load.return_value = (plugin_metadata, ReportNode())
+            Plugin.update(self.plugin, self.plugin_adapter.get_metadata())
+            for key, val in six.iteritems(
+                {
+                    k: v for (k, v) in six.iteritems(plugin_metadata)
+                    if k not in ('deployment_tasks', 'graphs')
+                }
+            ):
+                self.assertEqual(
+                    getattr(self.plugin, key), val)
+
+            self.assertEqual(
+                self.plugin.attributes_metadata,
+                attributes_metadata['attributes'])
+            self.assertEqual(
+                self.plugin.roles_metadata, roles_metadata)
+            self.assertEqual(
+                self.plugin.tags_metadata, tags_metadata)
+            self.assertEqual(
+                self.plugin.volumes_metadata, volumes_metadata)
+            self.assertEqual(
+                self.plugin.tasks, tasks)
+            self.assertEqual(
+                self.plugin.components_metadata, components_metadata)
+            self.assertEqual(
+                self.plugin.nic_attributes_metadata,
+                nic_attributes_metadata)
+            self.assertEqual(
+                self.plugin.bond_attributes_metadata,
+                bond_attributes_metadata)
+            self.assertEqual(
+                self.plugin.node_attributes_metadata,
+                node_attributes_metadata)
+
+            # check custom graph
+            dg = DeploymentGraph.get_for_model(
+                self.plugin, graph_type='custom'
+            )
+            self.assertEqual(dg.name, 'custom')
+            self.assertItemsEqual(
+                DeploymentGraph.get_tasks(dg),
+                [
+                    {
+                        'id': 'task{}'.format(i),
+                        'task_name':
+                        'task{}'.format(i),
+                        'type': 'puppet',
+                        'version': '1.0.0'
+                    } for i in range(2)
+                ]
+            )
+            # deployment tasks returning all non-defined fields, so check
+            # should differ from JSON-stored fields
+            plugin_tasks = self.env.get_default_plugin_deployment_tasks()
+            self.assertGreater(len(plugin_tasks), 0)
+            for k, v in six.iteritems(plugin_tasks[0]):
+                # this field is updated by plugin adapter
+                if k is 'parameters':
+                    v.update({
+                        'cwd': '/etc/fuel/plugins/testing_plugin-0.1/'
+                    })
+                self.assertEqual(
+                    self.plugin_adapter.get_deployment_tasks()[0][k],
+                    v)
+
+
 class TestClusterCompatibilityValidation(base.BaseTestCase):
     def setUp(self):
         super(TestClusterCompatibilityValidation, self).setUp()

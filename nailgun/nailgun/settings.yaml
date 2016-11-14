@@ -821,7 +821,17 @@ DUMP:
       - type: dir
         path: /var/log/docker-logs
       - type: file
-        path: /var/log/*
+        path: /var/log/*.log
+      - type: file
+        path: /var/log/*.gz
+      - type: file
+        path: /var/log/cron
+      - type: file
+        path: /var/log/dmesg
+      - type: file
+        path: /var/log/messages
+      - type: file
+        path: /var/log/secure
       - type: file
         path: /var/log/puppet/bootstrap_admin_node.log
       - type: file

@@ -491,12 +491,35 @@ class PluginAdapterV5(PluginAdapterV4):
         return extend_releases
 
 
+class PluginAdapterV6(PluginAdapterV5):
+    """Plugin wrapper class for package version 6.0.0"""
+
+    loader_class = loaders.PluginLoaderV6
+
+    _release_fields_to_db_fields = {
+        "attributes": "attributes_metadata",
+
+        "networks": "networks_metadata",
+        "network_roles": "network_roles_metadata",
+        "volumes": "volumes_metadata",
+        "roles": "roles_metadata",
+        "tags": "tags_metadata",
+
+        "components": "components_metadata",
+
+        "vmware_attributes": "vmware_attributes_metadata",
+
+        "os": "operating_system"
+    }
+
+
 __plugins_mapping = {
     '1.0.': PluginAdapterV1,
     '2.0.': PluginAdapterV2,
     '3.0.': PluginAdapterV3,
     '4.0.': PluginAdapterV4,
-    '5.0.': PluginAdapterV5
+    '5.0.': PluginAdapterV5,
+    '6.0.': PluginAdapterV6
 }
 
 

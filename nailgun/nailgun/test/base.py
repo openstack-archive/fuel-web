@@ -562,6 +562,7 @@ class EnvironmentManager(object):
             plugin_data = self.get_default_plugin_metadata(**kwargs)
         env_config = plugin_data.pop('attributes_metadata', None)
         node_roles = plugin_data.pop('roles_metadata', None)
+        node_tags = plugin_data.pop('tags_metadata', None)
         volumes = plugin_data.pop('volumes_metadata', None)
         network_roles = plugin_data.pop('network_roles_metadata', None)
         deployment_tasks = plugin_data.pop('deployment_tasks', None)
@@ -576,6 +577,7 @@ class EnvironmentManager(object):
             'metadata.yaml': plugin_data,
             'environment_config.yaml': env_config,
             'node_roles.yaml': node_roles,
+            'node_tags.yaml': node_tags,
             'volumes.yaml': volumes,
             'network_roles.yaml': network_roles,
             'deployment_tasks.yaml': deployment_tasks,
@@ -847,12 +849,23 @@ class EnvironmentManager(object):
         node_roles = {
             'testing_plugin': {
                 'name': 'Some plugin role',
-                'description': 'Some description'
+                'description': 'Some description',
+                'tags': ['testing_plugin']
             }
         }
 
         node_roles.update(kwargs)
         return node_roles
+
+    def get_default_plugin_node_tags_config(self, **kwargs):
+        node_tags = {
+            'testing_plugin': {
+                'has_primary': False
+            }
+        }
+
+        node_tags.update(kwargs)
+        return node_tags
 
     def get_default_plugin_volumes_config(self, **kwargs):
         volumes = {

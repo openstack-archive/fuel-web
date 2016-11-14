@@ -491,12 +491,26 @@ class PluginAdapterV5(PluginAdapterV4):
         return extend_releases
 
 
+class PluginAdapterV6(PluginAdapterV5):
+    """Plugin wrapper class for package version 6.0.0"""
+
+    loader_class = loaders.PluginLoaderV6
+
+    @property
+    def _release_fields_to_db_fields(self):
+        fields = dict(super(PluginAdapterV6, self).
+                      _release_fields_to_db_fields)
+        fields['tags'] = 'tags_metadata'
+        return fields
+
+
 __plugins_mapping = {
     '1.0.': PluginAdapterV1,
     '2.0.': PluginAdapterV2,
     '3.0.': PluginAdapterV3,
     '4.0.': PluginAdapterV4,
-    '5.0.': PluginAdapterV5
+    '5.0.': PluginAdapterV5,
+    '6.0.': PluginAdapterV6
 }
 
 

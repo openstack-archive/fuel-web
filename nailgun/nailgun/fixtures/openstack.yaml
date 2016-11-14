@@ -1306,6 +1306,9 @@
             description: "Your DNS entries should point to this name. Self-signed certificates also will use this hostname"
             weight: 50
             type: "text"
+            regex:
+              source: *ipv4_or_hostname_regex
+              error: "Invalid DNS hostname"
             restrictions:
               - condition: "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
                 action: "hide"

@@ -16,6 +16,7 @@ from itertools import chain
 import re
 
 from alembic import op
+from distutils import version as vers
 from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
@@ -566,3 +567,17 @@ def upgrade_cluster_attributes_6_0_to_6_1(connection):
             update_query,
             editable=jsonutils.dumps(attributes),
             attr_id=attr_id)
+
+
+def is_security_group_available(release_version, compare_version):
+    env_version = get_environment_version(release_version)
+    return vers.StrictVersion(env_version) >= vers.StrictVersion(
+        compare_version)
+
+
+def get_environment_version(version):
+    try:
+        env_version = version.split('-')[1]
+    except IndexError:
+        env_version = ''
+    return env_version

@@ -29,6 +29,7 @@ import sqlalchemy as sa
 from nailgun.db.sqlalchemy.models import fields
 from nailgun.utils import dict_update
 from nailgun.utils import is_feature_supported
+from nailgun.utils import migration
 
 
 # revision identifiers, used by Alembic.
@@ -38,6 +39,7 @@ down_revision = 'f2314e5d63c9'
 
 def upgrade():
     upgrade_vmware_attributes_metadata()
+    upgrade_attributes_metadata()
     upgrade_cluster_roles()
     upgrade_tags_meta()
     upgrade_primary_unit()
@@ -49,6 +51,7 @@ def downgrade():
     downgrade_primary_unit()
     downgrade_tags_meta()
     downgrade_cluster_roles()
+    downgrade_attributes_metadata()
     downgrade_vmware_attributes_metadata()
 
 # version of Fuel when tags was introduced
@@ -128,6 +131,30 @@ CA_FILE = {
         'condition': 'glance:vcenter_security_disabled == true'
     }]
 }
+
+SECURITY_GROUP = {
+    'value': 'iptables_hybrid',
+    'values': [
+        {
+            'data': 'openvswitch',
+            'label': 'Open vSwitch Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use OVS Bridges for networking needs.'
+        },
+        {
+            'data': 'iptables_hybrid',
+            'label': 'Iptables-based Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use Linux Bridges for networking needs.'
+        }
+    ],
+    'group': 'security',
+    'weight': 20,
+    'type': 'radio',
+}
+
+# version of Fuel when security group switch was added
+FUEL_SECURITY_GROUP_VERSION = '9.0'
 
 
 def update_vmware_attributes_metadata(upgrade):
@@ -221,6 +248,102 @@ def upgrade_vmware_attributes_metadata():
 
 def downgrade_vmware_attributes_metadata():
     update_vmware_attributes_metadata(upgrade=False)
+
+
+def upgrade_attributes_metadata():
+    connection = op.get_bind()
+    upgrade_release_attributes_metadata(connection)
+    upgrade_cluster_attributes(connection)
+
+
+def upgrade_release_attributes_metadata(connection):
+    select_query = sa.sql.text(
+        'SELECT id, attributes_metadata, version FROM releases '
+        'WHERE attributes_metadata IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE releases SET attributes_metadata = :attributes_metadata '
+        'WHERE id = :release_id')
+
+    for release_id, attrs, release_version in connection.execute(select_query):
+        if not migration.is_security_group_available(
+                release_version, FUEL_SECURITY_GROUP_VERSION):
+            continue
+        attrs = jsonutils.loads(attrs)
+        common = attrs.setdefault('editable', {}).setdefault('common', {})
+        common.setdefault('security_group', SECURITY_GROUP)
+        connection.execute(
+            update_query,
+            release_id=release_id,
+            attributes_metadata=jsonutils.dumps(attrs))
+
+
+def upgrade_cluster_attributes(connection):
+    select_query = sa.sql.text(
+        'SELECT cluster_id, editable, version FROM attributes INNER JOIN '
+        'clusters ON clusters.id = attributes.cluster_id INNER JOIN releases '
+        'ON releases.id = clusters.release_id WHERE editable IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE attributes SET editable = :editable WHERE cluster_id = '
+        ':cluster_id')
+
+    for cluster_id, editable, release_version in connection.execute(
+            select_query
+    ):
+        if not migration.is_security_group_available(
+                release_version, FUEL_SECURITY_GROUP_VERSION):
+            continue
+        editable = jsonutils.loads(editable)
+        editable.setdefault('common', {}).setdefault('security_group',
+                                                     SECURITY_GROUP)
+        connection.execute(
+            update_query,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable))
+
+
+def downgrade_attributes_metadata():
+    connection = op.get_bind()
+    downgrade_cluster_attributes(connection)
+    downgrade_release_attributes_metadata(connection)
+
+
+def downgrade_release_attributes_metadata(connection):
+    select_query = sa.sql.text(
+        'SELECT id, attributes_metadata FROM releases '
+        'WHERE attributes_metadata IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE releases SET attributes_metadata = :attributes_metadata '
+        'WHERE id = :release_id')
+
+    for release_id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        attrs.setdefault('editable', {}).setdefault('common', {}).pop(
+            'security_group', None)
+        connection.execute(
+            update_query,
+            release_id=release_id,
+            attributes_metadata=jsonutils.dumps(attrs))
+
+
+def downgrade_cluster_attributes(connection):
+    select_query = sa.sql.text(
+        'SELECT cluster_id, editable FROM attributes '
+        'WHERE editable IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE attributes SET editable = :editable '
+        'WHERE cluster_id = :cluster_id')
+
+    for cluster_id, editable in connection.execute(select_query):
+        editable = jsonutils.loads(editable)
+        editable.setdefault('common', {}).pop('security_group', None)
+        connection.execute(
+            update_query,
+            cluster_id=cluster_id,
+            editable=jsonutils.dumps(editable))
 
 
 def upgrade_cluster_roles():

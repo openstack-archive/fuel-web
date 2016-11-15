@@ -23,6 +23,7 @@ from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
+from nailgun.utils import migration
 
 
 _prepare_revision = 'f2314e5d63c9'
@@ -47,6 +48,36 @@ VMWARE_ATTRIBUTES_METADATA = {
         }
     }
 }
+
+ATTRIBUTES_METADATA = {
+    'editable': {
+        'common': {}
+    }
+}
+
+SECURITY_GROUP = {
+    'value': 'iptables_hybrid',
+    'values': [
+        {
+            'data': 'openvswitch',
+            'label': 'Open vSwitch Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use OVS Bridges for networking needs.'
+        },
+        {
+            'data': 'iptables_hybrid',
+            'label': 'Iptables-based Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use Linux Bridges for networking needs.'
+        }
+    ],
+    'group': 'security',
+    'weight': 20,
+    'type': 'radio',
+}
+
+# version of Fuel when security group switch was added
+RELEASE_VERSION = '9.0'
 
 
 DEFAULT_NIC_ATTRIBUTES = {
@@ -174,13 +205,21 @@ def setup_module():
 
 def prepare():
     meta = base.reflect_db_metadata()
-    result = db.execute(
-        meta.tables['releases'].insert(),
-        [{
-            'name': 'test_name',
-            'version': 'mitaka-9.0',
+    for release_name, env_version, cluster_name, uuid, mac in zip(
+            ('release_1', 'release_2'),
+            ('liberty-8.0', 'mitaka-9.0'),
+            ('cluster_1', 'cluster_2'),
+            ('fcd49872-3917-4a18-98f9-3f5acfe3fde',
+             'fcd49872-3917-4a18-98f9-3f5acfe3fdd'),
+            ('bb:aa:aa:aa:aa:aa', 'bb:aa:aa:aa:aa:cc')
+    ):
+        release = {
+            'name': release_name,
+            'version': env_version,
             'operating_system': 'ubuntu',
             'state': 'available',
+            'networks_metadata': '{}',
+            'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA),
             'deployment_tasks': '{}',
             'roles': jsonutils.dumps([
                 'controller',
@@ -232,23 +271,33 @@ def prepare():
             }),
             'is_deployable': True,
             'vmware_attributes_metadata':
-            jsonutils.dumps(VMWARE_ATTRIBUTES_METADATA)
-        }])
-    release_id = result.inserted_primary_key[0]
+                jsonutils.dumps(VMWARE_ATTRIBUTES_METADATA)
+        }
+        result = db.execute(meta.tables['releases'].insert(), [release])
+        release_id = result.inserted_primary_key[0]
 
-    result = db.execute(
-        meta.tables['clusters'].insert(),
-        [{
-            'name': 'test',
-            'release_id': release_id,
-            'mode': 'ha_compact',
-            'status': 'new',
-            'net_provider': 'neutron',
-            'grouping': 'roles',
-            'fuel_version': '10.0',
-            'deployment_tasks': '{}'
-        }])
-    cluster_id = result.inserted_primary_key[0]
+        result = db.execute(
+            meta.tables['clusters'].insert(),
+            [{
+                'name': cluster_name,
+                'release_id': release_id,
+                'mode': 'ha_compact',
+                'status': 'new',
+                'net_provider': 'neutron',
+                'grouping': 'roles',
+                'fuel_version': '9.0',
+                'deployment_tasks': '{}'
+            }])
+
+        cluster_id = result.inserted_primary_key[0]
+        editable = ATTRIBUTES_METADATA.get('editable', {})
+        db.execute(
+            meta.tables['attributes'].insert(),
+            [{
+                'cluster_id': cluster_id,
+                'editable': jsonutils.dumps(editable)
+            }]
+        )
 
     result = db.execute(
         meta.tables['plugins'].insert(),
@@ -279,6 +328,8 @@ def prepare():
         }]
     )
     plugin_id = result.inserted_primary_key[0]
+
+    cluster_id = 1
 
     db.execute(
         meta.tables['cluster_plugins'].insert(),
@@ -443,7 +494,6 @@ def prepare():
             ])
         }]
     )
-
     db.commit()
 
 
@@ -475,7 +525,8 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
         releases_table = self.meta.tables['releases']
         result = db.execute(
             sa.select([releases_table.c.nic_attributes,
-                       releases_table.c.bond_attributes])
+                       releases_table.c.bond_attributes],
+                      releases_table.c.id == 1)
         ).fetchone()
         self.assertEqual(DEFAULT_NIC_ATTRIBUTES,
                          jsonutils.loads(result['nic_attributes']))
@@ -600,3 +651,82 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
         # self.assertNotIn('offloading_modes', bonds_table.c)
         # self.assertNotIn('interface_properties', bonds_table.c)
         # self.assertNotIn('bond_properties', bonds_table.c)
+
+
+class TestAttributesUpdate(base.BaseAlembicMigrationTest):
+
+    def test_release_attributes_update(self):
+        releases = self.meta.tables['releases']
+        results = db.execute(
+            sa.select([releases.c.attributes_metadata],
+                      releases.c.id.in_(
+                          self.get_release_ids(RELEASE_VERSION))))
+        for attrs in results:
+            attrs = jsonutils.loads(attrs[0])
+            common = attrs.setdefault('editable', {}).setdefault('common', {})
+            self.assertEqual(common.get('security_group'), SECURITY_GROUP)
+
+    def test_release_attributes_no_update(self):
+        releases = self.meta.tables['releases']
+        results = db.execute(
+            sa.select([releases.c.attributes_metadata],
+                      releases.c.id.in_(
+                          self.get_release_ids(RELEASE_VERSION,
+                                               available=False))))
+        for attrs in results:
+            attrs = jsonutils.loads(attrs[0])
+            common = attrs.setdefault('editable', {}).setdefault('common', {})
+            self.assertEqual(common.get('security_group'), None)
+
+    def test_cluster_attributes_update(self):
+        clusters_attributes = self.meta.tables['attributes']
+        clusters = self.meta.tables['clusters']
+        releases_list = self.get_release_ids(RELEASE_VERSION)
+        results = db.execute(
+            sa.select([clusters_attributes.c.editable],
+                      clusters.c.release_id.in_(releases_list)
+                      ).select_from(sa.join(clusters, clusters_attributes,
+                                            clusters.c.id ==
+                                            clusters_attributes.c.cluster_id)))
+        for editable in results:
+            editable = jsonutils.loads(editable[0])
+            common = editable.setdefault('common', {})
+            self.assertEqual(common.get('security_group'), SECURITY_GROUP)
+
+    def test_cluster_attributes_no_update(self):
+        clusters_attributes = self.meta.tables['attributes']
+        clusters = self.meta.tables['clusters']
+        releases_list = self.get_release_ids(RELEASE_VERSION, available=False)
+        results = db.execute(
+            sa.select([clusters_attributes.c.editable],
+                      clusters.c.release_id.in_(releases_list)
+                      ).select_from(sa.join(clusters, clusters_attributes,
+                                            clusters.c.id ==
+                                            clusters_attributes.c.cluster_id)))
+        for editable in results:
+            editable = jsonutils.loads(editable[0])
+            common = editable.setdefault('common', {})
+            self.assertEqual(common.get('security_group'), None)
+
+    def get_release_ids(self, start_version, available=True):
+        """Get release ids
+
+        :param start_version: String in version format "n.n"
+               for comparing
+        :param available: boolean value
+        :return: * list of release ids since start_version
+                 if available parameter is True
+                 * list of release ids before start_version
+                 if available parameter is False
+        """
+        releases = self.meta.tables['releases']
+        results = db.execute(
+            sa.select([releases.c.id,
+                       releases.c.version]))
+        release_ids = []
+        for release_id, release_version in results:
+            if (available ==
+                    migration.is_security_group_available(release_version,
+                                                          start_version)):
+                release_ids.append(release_id)
+        return release_ids

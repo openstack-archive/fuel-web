@@ -21,7 +21,6 @@ Create Date: 2016-10-22 02:11:47.708895
 """
 
 from alembic import op
-
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields

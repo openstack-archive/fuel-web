@@ -14,9 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import datetime
 
 import alembic
+from copy import deepcopy
+import datetime
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
 
@@ -29,18 +30,47 @@ _prepare_revision = '3763c404ca48'
 _test_revision = 'f2314e5d63c9'
 
 
+ATTRIBUTES_METADATA = {
+    'editable': {
+        'common': {}
+    }
+}
+SECURITY_GROUP = {
+    'value': 'iptables_hybrid',
+    'values': [
+        {
+            'data': 'openvswitch',
+            'label': 'Open vSwitch Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use OVS Brige for networking needs.'
+        },
+        {
+            'data': 'iptables_hybrid',
+            'label': 'Iptables-based Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use Linux Bridge for networking needs.'
+        }
+    ],
+    'group': 'security',
+    'weight': 20,
+    'type': 'radio',
+}
+
+
 def setup_module():
     dropdb()
     alembic.command.upgrade(ALEMBIC_CONFIG, _prepare_revision)
-
     prepare()
-    db.commit()
-
     alembic.command.downgrade(ALEMBIC_CONFIG, _test_revision)
 
 
 def prepare():
     meta = base.reflect_db_metadata()
+
+    attrs_with_sec_group = deepcopy(ATTRIBUTES_METADATA)
+    attrs_with_sec_group.setdefault('editable', {}).setdefault(
+        'common', {}).setdefault('security_group', SECURITY_GROUP)
+
     result = db.execute(
         meta.tables['releases'].insert(),
         [{
@@ -53,7 +83,8 @@ def prepare():
                     'networks': [],
                     'config': {}
                 }
-            })
+            }),
+            'attributes_metadata': jsonutils.dumps(attrs_with_sec_group)
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -86,6 +117,15 @@ def prepare():
             'meta': '{}',
             'mac': 'bb:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
+        }]
+    )
+
+    editable = attrs_with_sec_group.get('editable', {})
+    db.execute(
+        meta.tables['attributes'].insert(),
+        [{
+            'cluster_id': result.inserted_primary_key[0],
+            'editable': jsonutils.dumps(editable)
         }]
     )
 
@@ -193,7 +233,6 @@ def prepare():
             })
         }]
     )
-
     db.commit()
 
 
@@ -298,3 +337,24 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
         )
         self.assertEqual(result['offloading_modes'], "[]")
         self.assertEqual(result['attributes'], "{}")
+
+
+class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_cluster_attributes_downgrade(self):
+        clusters_attributes = self.meta.tables['attributes']
+        results = db.execute(
+            sa.select([clusters_attributes.c.editable]))
+        for editable in results:
+            editable = jsonutils.loads(editable[0])
+            common = editable.setdefault('common', {})
+            self.assertEqual(common.get('security_group'), None)
+
+    def test_release_attributes_downgrade(self):
+        releases = self.meta.tables['releases']
+        results = db.execute(
+            sa.select([releases.c.attributes_metadata]))
+        for attrs in results:
+            attrs = jsonutils.loads(attrs[0])
+            common = attrs.setdefault('editable', {}).setdefault('common', {})
+            self.assertEqual(common.get('security_group'), None)

@@ -365,3 +365,27 @@ def remove_key_from_dict(target_dict, key):
             remove_key_from_dict(v, key)
 
     return target_dict
+
+
+def get_environment_version(version):
+    """Returns environment version based on release version.
+
+    A release version consists of 'OSt' and 'MOS' versions:
+        '2014.1.1-5.0.2'
+
+    so we need to extract 'MOS' version and returns it as result.
+
+    :param: version: release version
+    :returns: an environment version
+    """
+    # unfortunately, Fuel 5.0 didn't have an env version in release_version
+    # so we need to handle that special case
+    if version == '2014.1':
+        version = '5.0'
+    else:
+        try:
+            version = version.split('-')[1]
+        except IndexError:
+            version = ''
+    return version
+

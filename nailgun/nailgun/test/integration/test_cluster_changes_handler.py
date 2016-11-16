@@ -1427,7 +1427,6 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True},
                           {"pending_addition": True}]
         )
-
         net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -1469,7 +1468,6 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True},
                           {"pending_addition": True}]
         )
-
         net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -1505,7 +1503,6 @@ class TestHandlers(BaseIntegrationTest):
             nodes_kwargs=[{"pending_addition": True},
                           {"pending_addition": True}]
         )
-
         net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -2000,6 +1997,7 @@ class TestGranularDeployment(BaseIntegrationTest):
                 'status': 'operational'},
             nodes_kwargs=[]
         )
+
         self.env.disable_task_deploy(self.cluster)
 
     @mock_rpc(pass_mock=True)

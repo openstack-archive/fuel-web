@@ -81,6 +81,7 @@ from nailgun.extensions.network_manager.template import NetworkTemplate
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.utils import dict_merge
+from nailgun.utils import is_feature_supported
 from nailgun.utils import reverse
 
 
@@ -167,6 +168,8 @@ class EnvironmentManager(object):
         if kwargs.get('deployment_tasks') is None:
             kwargs['deployment_tasks'] = \
                 load_fake_deployment_tasks(apply_to_db=False)
+
+        _patch_tags_legacy(release_data, version)
 
         release_data.update(kwargs)
         if api:
@@ -1690,6 +1693,14 @@ class DeploymentTasksTestMixin(object):
                     )
                 else:
                     self.assertEqual(ref.get(field), (res or {}).get(field))
+
+
+def _patch_tags_legacy(release_data, version):
+    if is_feature_supported(version, consts.TAGS_SUPPORT_VERSION):
+        return
+    roles = release_data.get('roles_metadata', {})
+    for role_name, meta in six.iteritems(roles):
+        meta['tags'] = [role_name]
 
 
 # this method is for development and troubleshooting purposes

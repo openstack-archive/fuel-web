@@ -2573,6 +2573,15 @@ class BaseDeploymentSerializer(BaseSerializerTest):
             self.env.nodes[0])['test_vm_image']['glance_properties']
         self.assertIn('murano_image_info', glance_properties)
 
+    @staticmethod
+    def _get_serializer(cluster):
+        serializer_type = get_serializer_for_cluster(cluster)
+        return serializer_type(AstuteGraph(cluster))
+
+    @staticmethod
+    def _get_nodes_count_in_astute_info(nodes):
+        return len([role for n in nodes for role in n.roles])
+
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
 

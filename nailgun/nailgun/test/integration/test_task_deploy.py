@@ -26,6 +26,7 @@ from nailgun import rpc
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import mock_rpc
+from nailgun.test.base import patch_tags_legacy
 from nailgun.utils import reverse
 
 
@@ -47,6 +48,7 @@ class TestTaskDeploy80(BaseIntegrationTest):
                 'version': '2015.1.0-8.0',
             },
         )
+        patch_tags_legacy(self.cluster.release)
 
     def add_plugin_with_tasks(self, task_id):
         deployment_tasks = self.env.get_default_plugin_deployment_tasks(

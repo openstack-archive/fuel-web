@@ -23,6 +23,7 @@ from nailgun import objects
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.orchestrator.provisioning_serializers \
     import serialize as prov_serializer
+from nailgun.test.base import patch_tags_legacy
 from nailgun.test.integration.test_orchestrator_serializer \
     import OrchestratorSerializerTestBase
 
@@ -87,6 +88,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         # Serialize cluster
         self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact,
                                        mellanox=True)
+        patch_tags_legacy(self.cluster.release)
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
         common_attrs = serialized_data['common']
@@ -124,6 +126,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact,
                                        mellanox=True, iser=True,
                                        iser_vlan=None)
+        patch_tags_legacy(self.cluster.release)
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
 
@@ -154,6 +157,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact,
                                        mellanox=True, iser=True,
                                        iser_vlan=vlan)
+        patch_tags_legacy(self.cluster.release)
         serialized_data = self.serializer.serialize(self.cluster,
                                                     self.cluster.nodes)
 

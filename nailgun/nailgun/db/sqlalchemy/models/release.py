@@ -29,6 +29,7 @@ from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
+from nailgun.utils import get_environment_version
 
 
 class Release(Base):
@@ -89,24 +90,9 @@ class Release(Base):
     def environment_version(self):
         """Returns environment version based on release version.
 
-        A release version consists of 'OSt' and 'MOS' versions:
-            '2014.1.1-5.0.2'
-
-        so we need to extract 'MOS' version and returns it as result.
-
         :returns: an environment version
         """
-        # unfortunately, Fuel 5.0 didn't have an env version in release_version
-        # so we need to handle that special case
-        if self.version == '2014.1':
-            version = '5.0'
-        else:
-            try:
-                version = self.version.split('-')[1]
-            except IndexError:
-                version = ''
-
-        return version
+        return get_environment_version(self.version)
 
     @property
     def os_weight(self):

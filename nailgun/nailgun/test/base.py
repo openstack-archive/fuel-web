@@ -169,6 +169,7 @@ class EnvironmentManager(object):
                 load_fake_deployment_tasks(apply_to_db=False)
 
         release_data.update(kwargs)
+
         if api:
             resp = self.app.post(
                 reverse('ReleaseCollectionHandler'),

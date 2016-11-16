@@ -765,7 +765,7 @@ class TestDeploymentHASerializer90(
 
     def test_serialize_with_customized(self):
         cluster = self.env.clusters[0]
-        serializer = self.create_serializer(cluster)
+        serializer = deployment_serializers.DeploymentLCMSerializer()
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)
@@ -788,7 +788,14 @@ class TestMultiNodeGroupsSerialization90(
     TestSerializer90Mixin,
     test_orchestrator_serializer_80.TestMultiNodeGroupsSerialization80
 ):
-    pass
+    @staticmethod
+    def _get_serializer(cluster):
+        return deployment_serializers.DeploymentLCMSerializer()
+
+    @staticmethod
+    def handle_facts(facts):
+        [facts.remove(node) for node in facts if 'master' in node['roles']]
+        return facts
 
 
 class TestNetworkTemplateSerializer90CompatibleWith80(
@@ -798,6 +805,18 @@ class TestNetworkTemplateSerializer90CompatibleWith80(
 ):
     general_serializer = NeutronNetworkDeploymentSerializer90
     template_serializer = NeutronNetworkTemplateSerializer90
+
+    @staticmethod
+    def handle_facts(facts):
+        [facts.remove(node) for node in facts if 'master' in node['roles']]
+        return facts
+
+    @staticmethod
+    def _get_serializer(cluster):
+        return deployment_serializers.DeploymentLCMSerializer()
+
+    def assert_test_ip_assignment(self, facts):
+        self.assertEqual(len(facts), 5)
 
     def check_vendor_specific_is_not_set(self, use_net_template=False):
         node = self.env.create_node(

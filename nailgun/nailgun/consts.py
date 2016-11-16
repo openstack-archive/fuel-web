@@ -428,6 +428,9 @@ FUEL_LCM_AVAILABLE = '9.0'
 # version of Fuel when NFV was introduced
 FUEL_NFV_AVAILABLE_SINCE = '9.0'
 
+# version of Fuel when tags was introduced
+FUEL_TAGS_SUPPORT_SINCE = '9.2'
+
 # this file is provided by the fuel-release package
 FUEL_RELEASE_FILE = '/etc/fuel_release'
 

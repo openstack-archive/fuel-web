@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from distutils.version import StrictVersion
 
 try:
     from unittest.case import TestCase
@@ -81,6 +82,7 @@ from nailgun.extensions.network_manager.template import NetworkTemplate
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.utils import dict_merge
+from nailgun.utils import dict_update
 from nailgun.utils import reverse
 
 
@@ -169,6 +171,8 @@ class EnvironmentManager(object):
                 load_fake_deployment_tasks(apply_to_db=False)
 
         release_data.update(kwargs)
+        release_data = self._patch_release_meta(release_data, version)
+
         if api:
             resp = self.app.post(
                 reverse('ReleaseCollectionHandler'),
@@ -185,6 +189,24 @@ class EnvironmentManager(object):
             db().commit()
             self.releases.append(release)
         return release
+
+    def _patch_release_meta(self, rel_data, version):
+        if StrictVersion(version.split('-')[1]) < StrictVersion(
+                consts.FUEL_TAGS_SUPPORT_SINCE):
+            rel_data = self._patch_roles_meta(rel_data)
+        return rel_data
+
+    @staticmethod
+    def _patch_roles_meta(rel_data):
+        legacy_roles_meta = {
+            'roles_metadata': {
+                'controller': {
+                    'tags': ['controller']
+                }
+            }
+        }
+        dict_update(rel_data, legacy_roles_meta)
+        return rel_data
 
     def create_openstack_config(self, api=False, **kwargs):
         if api:

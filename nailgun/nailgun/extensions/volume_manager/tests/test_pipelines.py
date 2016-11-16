@@ -50,11 +50,13 @@ class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
             cluster_id=self.cluster_db.id,
             roles=['controller']
         )
-        serialized_for_astute = deployment_serializers.serialize(
-            AstuteGraph(self.cluster_db),
-            self.cluster_db,
-            self.cluster_db.nodes)
-        for node in serialized_for_astute['nodes']:
+        serializer = self._get_serializer(self.cluster_db)
+        serialized_for_astute = deployment_serializers._invoke_serializer(
+            serializer, self.cluster_db, self.cluster_db.nodes, False, False)
+        serialized_for_astute = (deployment_serializers
+                                 .deployment_info_to_legacy(
+                                     serialized_for_astute))
+        for node in serialized_for_astute:
             self.assertIn("node_volumes", node)
             for node_volume in node["node_volumes"]:
                 if node_volume["id"] == "cinder-block-device":

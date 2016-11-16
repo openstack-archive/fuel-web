@@ -29,6 +29,8 @@ import six
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils import dict_update
+from nailgun.utils import is_feature_supported
 from nailgun.utils import migration
 
 
@@ -36,6 +38,128 @@ from nailgun.utils import migration
 revision = '3763c404ca48'
 down_revision = 'f2314e5d63c9'
 
+
+def upgrade():
+    upgrade_vmware_attributes_metadata()
+    upgrade_attributes_metadata()
+    upgrade_cluster_roles()
+    upgrade_tags_meta()
+    upgrade_primary_unit()
+    upgrade_release_with_nic_and_bond_attributes()
+    upgrade_node_nic_attributes()
+    upgrade_node_bond_attributes()
+    upgrade_tags_set()
+
+
+def downgrade():
+    downgrade_tags_set()
+    downgrade_node_bond_attributes()
+    downgrade_node_nic_attributes()
+    downgrade_release_with_nic_and_bond_attributes()
+    downgrade_primary_unit()
+    downgrade_tags_meta()
+    downgrade_cluster_roles()
+    downgrade_attributes_metadata()
+    downgrade_vmware_attributes_metadata()
+
+# version of Fuel when tags was introduced
+FUEL_TAGS_SUPPORT = '9.0'
+
+NEW_ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller',
+            'rabbitmq',
+            'database',
+            'keystone',
+            'neutron'
+        ]
+    }
+}
+
+OLD_ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller'
+        ]
+    }
+}
+
+NEW_TAGS_META = {
+    'rabbitmq': {
+        'has_primary': True
+    },
+    'database': {
+        'has_primary': True
+    },
+    'keystone': {
+        'has_primary': True
+    },
+    'neutron': {
+        'has_primary': True
+    }
+}
+
+VCENTER_INSECURE = {
+    'name': "vcenter_insecure",
+    'type': "checkbox",
+    'label': "Bypass vCenter certificate verification"
+}
+
+VCENTER_SECURITY_DISABLED = {
+    'name': "vcenter_security_disabled",
+    'type': "checkbox",
+    'label': "Bypass vCenter certificate verification"
+}
+
+VCENTER_CA_FILE = {
+    'name': "vcenter_ca_file",
+    'type': 'file',
+    'label': "CA file",
+    'description': ('File containing the trusted CA bundle that emitted '
+                    'vCenter server certificate. Even if CA bundle is not '
+                    'uploaded, certificate verification is turned on.'),
+    'restrictions': [{
+        'message': ('Bypass vCenter certificate verification should be '
+                    'disabled.'),
+        'condition': 'current_vcenter:vcenter_security_disabled == true'
+    }]
+}
+
+CA_FILE = {
+    'name': "ca_file",
+    'type': 'file',
+    'label': "CA file",
+    'description': ('File containing the trusted CA bundle that emitted '
+                    'vCenter server certificate. Even if CA bundle is not '
+                    'uploaded, certificate verification is turned on.'),
+    'restrictions': [{
+        'message': ('Bypass vCenter certificate verification should be '
+                    'disabled.'),
+        'condition': 'glance:vcenter_security_disabled == true'
+    }]
+}
+
+SECURITY_GROUP = {
+    'value': 'iptables_hybrid',
+    'values': [
+        {
+            'data': 'openvswitch',
+            'label': 'Open vSwitch Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use OVS Bridges for networking needs.'
+        },
+        {
+            'data': 'iptables_hybrid',
+            'label': 'Iptables-based Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use Linux Bridges for networking needs.'
+        }
+    ],
+    'group': 'security',
+    'weight': 20,
+    'type': 'radio',
+}
 
 DEFAULT_RELEASE_NIC_ATTRIBUTES = {
     'offloading': {
@@ -173,28 +297,6 @@ SECURITY_GROUP = {
 
 # version of Fuel when security group switch was added
 FUEL_SECURITY_GROUP_VERSION = '9.0'
-
-
-def upgrade():
-    upgrade_vmware_attributes_metadata()
-    upgrade_release_with_nic_and_bond_attributes()
-    upgrade_attributes_metadata()
-    upgrade_node_nic_attributes()
-    upgrade_node_bond_attributes()
-    upgrade_cluster_roles()
-    upgrade_tags_meta()
-    upgrade_primary_unit()
-
-
-def downgrade():
-    downgrade_primary_unit()
-    downgrade_tags_meta()
-    downgrade_cluster_roles()
-    downgrade_node_bond_attributes()
-    downgrade_node_nic_attributes()
-    downgrade_attributes_metadata()
-    downgrade_release_with_nic_and_bond_attributes()
-    downgrade_vmware_attributes_metadata()
 
 
 def update_vmware_attributes_metadata(upgrade):
@@ -832,3 +934,54 @@ def downgrade_primary_unit():
             primary_tags=primary_tags
         )
     op.alter_column('nodes', 'primary_tags', new_column_name='primary_roles')
+
+
+def upgrade_tags_set():
+    connection = op.get_bind()
+    q_get_role_tags_meta = sa.text(
+        "SELECT id, version, roles_metadata, tags_metadata FROM releases")
+    q_update_role_tags_meta = sa.text(
+        "UPDATE releases "
+        "SET roles_metadata = :roles_meta, tags_metadata = :tags_meta "
+        "WHERE id = :obj_id")
+
+    for obj_id, version, roles_meta, tags_meta in connection.execute(
+            q_get_role_tags_meta):
+
+        if not is_feature_supported(version, FUEL_TAGS_SUPPORT):
+            continue
+
+        roles_meta = jsonutils.loads(roles_meta or '{}')
+        tags_meta = jsonutils.loads(tags_meta or '{}')
+        dict_update(roles_meta, NEW_ROLES_META)
+        dict_update(tags_meta, NEW_TAGS_META)
+        connection.execute(q_update_role_tags_meta,
+                           roles_meta=jsonutils.dumps(roles_meta),
+                           tags_meta=jsonutils.dumps(tags_meta),
+                           obj_id=obj_id)
+
+
+def downgrade_tags_set():
+    connection = op.get_bind()
+    q_get_role_tags_meta = sa.text("SELECT id, roles_metadata, tags_metadata "
+                                   "FROM releases")
+    q_update_role_tags_meta = sa.text(
+        "UPDATE releases "
+        "SET roles_metadata = :roles_meta, tags_metadata = :tags_meta "
+        "WHERE id = :obj_id")
+
+    for obj_id, roles_meta, tags_meta in connection.execute(
+            q_get_role_tags_meta):
+        roles_meta = jsonutils.loads(roles_meta or '{}')
+        tags_meta = jsonutils.loads(tags_meta or '{}')
+        dict_update(roles_meta, OLD_ROLES_META)
+
+        tags_to_remove = set(NEW_TAGS_META) & set(tags_meta)
+
+        for tag_name in tags_to_remove:
+            tags_meta.pop(tags_meta)
+
+        connection.execute(q_update_role_tags_meta,
+                           roles_meta=jsonutils.dumps(roles_meta),
+                           tags_meta=jsonutils.dumps(tags_meta),
+                           obj_id=obj_id)

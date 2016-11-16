@@ -30,6 +30,7 @@ from nailgun.objects import Task
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import mock_rpc
+from nailgun.test.base import patch_tags_legacy
 from nailgun.utils import reverse
 
 
@@ -54,6 +55,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
+        patch_tags_legacy(cluster_db.release)
         common_attrs = {
             'deployment_mode': consts.CLUSTER_MODES.ha_compact,
 
@@ -410,6 +412,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
+        patch_tags_legacy(cluster_db.release)
         self.env.disable_task_deploy(cluster_db)
 
         # This is here to work around the fact that we use the same fixture
@@ -900,6 +903,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
+        patch_tags_legacy(cluster_db.release)
         self.env.disable_task_deploy(cluster_db)
 
         # This is here to work around the fact that we use the same fixture
@@ -1376,6 +1380,7 @@ class TestHandlers(BaseIntegrationTest):
                 }
             ]
         )
+        patch_tags_legacy(self.env.releases[0])
         self.env.launch_deployment()
 
         # launch_deployment kicks ClusterChangesHandler
@@ -1427,7 +1432,7 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True},
                           {"pending_addition": True}]
         )
-
+        patch_tags_legacy(cluster.release)
         net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -1469,7 +1474,7 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True},
                           {"pending_addition": True}]
         )
-
+        patch_tags_legacy(cluster.release)
         net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -1505,7 +1510,7 @@ class TestHandlers(BaseIntegrationTest):
             nodes_kwargs=[{"pending_addition": True},
                           {"pending_addition": True}]
         )
-
+        patch_tags_legacy(cluster.release)
         net_data = self.env.neutron_networks_get(cluster.id).json_body
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -1842,6 +1847,7 @@ class TestHandlers(BaseIntegrationTest):
                 'status': consts.CLUSTER_STATUSES.operational
             },
         )
+        patch_tags_legacy(self.env.releases[0])
 
         def _send_request(handler):
             return self.app.put(
@@ -2000,6 +2006,8 @@ class TestGranularDeployment(BaseIntegrationTest):
                 'status': 'operational'},
             nodes_kwargs=[]
         )
+
+        patch_tags_legacy(self.cluster.release)
         self.env.disable_task_deploy(self.cluster)
 
     @mock_rpc(pass_mock=True)

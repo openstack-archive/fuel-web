@@ -21,26 +21,67 @@ Create Date: 2016-10-22 02:11:47.708895
 """
 
 from alembic import op
+from distutils.version import StrictVersion
 from oslo_serialization import jsonutils
 import six
 
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
-
+from nailgun.utils import dict_update
 
 # revision identifiers, used by Alembic.
 revision = 'dc8bc8751c42'
 down_revision = 'c6edea552f1e'
+
+# version of Fuel when tags was introduced
+FUEL_TAGS_SUPPORT = '9.2'
+
+NEW_ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller',
+            'rabbitmq',
+            'database',
+            'keystone',
+            'neutron'
+        ]
+    }
+}
+
+OLD_ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller'
+        ]
+    }
+}
+
+NEW_TAGS_META = {
+    'rabbitmq': {
+        'has_primary': True
+    },
+    'database': {
+        'has_primary': True
+    },
+    'keystone': {
+        'has_primary': True
+    },
+    'neutron': {
+        'has_primary': True
+    }
+}
 
 
 def upgrade():
     upgrade_cluster_roles()
     upgrade_tags_meta()
     upgrade_primary_unit()
+    upgrade_tags_set()
 
 
 def downgrade():
+    downgrade_tags_set()
     downgrade_primary_unit()
     downgrade_tags_meta()
     downgrade_cluster_roles()
@@ -144,3 +185,59 @@ def downgrade_primary_unit():
             primary_tags=primary_tags
         )
     op.alter_column('nodes', 'primary_tags', new_column_name='primary_roles')
+
+
+def upgrade_tags_set():
+    connection = op.get_bind()
+    q_get_role_tags_meta = sa.text(
+        "SELECT id, version, roles_metadata, tags_metadata FROM releases")
+    q_update_role_tags_meta = sa.text(
+        "UPDATE releases "
+        "SET roles_metadata = :roles_meta, tags_metadata = :tags_meta "
+        "WHERE id = :obj_id")
+
+    for obj_id, version, roles_meta, tags_meta in connection.execute(
+            q_get_role_tags_meta):
+
+        try:
+            version = version.split('-')[1]
+        except IndexError:
+            continue
+
+        if StrictVersion(FUEL_TAGS_SUPPORT) > StrictVersion(version):
+            continue
+
+        roles_meta = jsonutils.loads(roles_meta or '{}')
+        tags_meta = jsonutils.loads(tags_meta or '{}')
+        dict_update(roles_meta, NEW_ROLES_META)
+        dict_update(tags_meta, NEW_TAGS_META)
+        connection.execute(q_update_role_tags_meta,
+                           roles_meta=jsonutils.dumps(roles_meta),
+                           tags_meta=jsonutils.dumps(tags_meta),
+                           obj_id=obj_id)
+
+
+def downgrade_tags_set():
+    connection = op.get_bind()
+    q_get_role_tags_meta = sa.text("SELECT id, roles_metadata, tags_metadata "
+                                   "FROM releases")
+    q_update_role_tags_meta = sa.text(
+        "UPDATE releases "
+        "SET roles_metadata = :roles_meta, tags_metadata = :tags_meta "
+        "WHERE id = :obj_id")
+
+    for obj_id, roles_meta, tags_meta in connection.execute(
+            q_get_role_tags_meta):
+        roles_meta = jsonutils.loads(roles_meta or '{}')
+        tags_meta = jsonutils.loads(tags_meta or '{}')
+        dict_update(roles_meta, OLD_ROLES_META)
+
+        tags_to_remove = set(NEW_TAGS_META) & set(tags_meta)
+
+        for tag_name in tags_to_remove:
+            tags_meta.pop(tags_meta)
+
+        connection.execute(q_update_role_tags_meta,
+                           roles_meta=jsonutils.dumps(roles_meta),
+                           tags_meta=jsonutils.dumps(tags_meta),
+                           obj_id=obj_id)

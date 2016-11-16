@@ -447,8 +447,7 @@ class TestMultiNodeGroupsSerialization80(
             pending_addition=True,
             cluster_id=cluster['id'])
         self.cluster_db = self.db.query(models.Cluster).get(cluster['id'])
-        serializer_type = get_serializer_for_cluster(self.cluster_db)
-        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+        self.serializer = self._get_serializer(self.cluster_db)
 
     def _add_node_group_with_node(self, cidr_start, node_address):
         node_group = self.env.create_node_group(

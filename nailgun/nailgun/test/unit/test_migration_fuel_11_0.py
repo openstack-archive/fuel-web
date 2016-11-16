@@ -15,6 +15,7 @@
 import datetime
 
 import alembic
+from distutils.version import StrictVersion
 from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
@@ -26,6 +27,28 @@ from nailgun.test import base
 
 _prepare_revision = 'c6edea552f1e'
 _test_revision = 'dc8bc8751c42'
+
+# version of Fuel when tags was introduced
+FUEL_TAGS_SUPPORT = '9.2'
+
+NEW_ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller',
+            'rabbitmq',
+            'database',
+            'keystone',
+            'neutron'
+        ]
+    }
+}
+
+NEW_TAGS_LIST = [
+    'rabbitmq',
+    'database',
+    'keystone',
+    'neutron'
+]
 
 
 def setup_module():
@@ -41,8 +64,8 @@ def prepare():
     result = db.execute(
         meta.tables['releases'].insert(),
         [{
-            'name': 'test_name',
-            'version': '2016.1-11.0',
+            'name': 'test_name0',
+            'version': '2015.1-8.0',
             'operating_system': 'ubuntu',
             'state': 'available',
             'roles': jsonutils.dumps([
@@ -60,6 +83,27 @@ def prepare():
             'is_deployable': True
         }])
 
+    result = db.execute(
+        meta.tables['releases'].insert(),
+        [{
+            'name': 'test_name1',
+            'version': '2016.1-11.0',
+            'operating_system': 'ubuntu',
+            'state': 'available',
+            'roles': jsonutils.dumps([
+                'controller',
+            ]),
+            'roles_metadata': jsonutils.dumps({
+                'controller': {
+                    'name': 'Controller',
+                    'has_primary': True
+                },
+                'compute': {
+                    'name': 'Compute'
+                },
+            }),
+            'is_deployable': True
+        }])
     release_id = result.inserted_primary_key[0]
 
     result = db.execute(
@@ -113,3 +157,52 @@ class TestTags(base.BaseAlembicMigrationTest):
                     tags_meta[role_name].get('has_primary', False),
                     role_meta.get('has_primary', False)
                 )
+
+    def test_tags_migration_for_supported_releases(self):
+        releases = self.meta.tables['releases']
+        query = sa.select([releases.c.version,
+                           releases.c.roles_metadata,
+                           releases.c.tags_metadata])
+        for version, roles_meta, tags_meta in db.execute(query):
+            if not self._is_tags_supported(version):
+                continue
+
+            roles_meta = jsonutils.loads(roles_meta)
+            for role_name, role_meta in six.iteritems(NEW_ROLES_META):
+                self.assertItemsEqual(
+                    roles_meta[role_name]['tags'],
+                    role_meta['tags']
+                )
+            tags_meta = jsonutils.loads(tags_meta)
+            missing_tags = set(NEW_TAGS_LIST) - set(tags_meta)
+            self.assertEqual(len(missing_tags), 0)
+
+    def test_tags_migration_for_not_supported_releases(self):
+        releases = self.meta.tables['releases']
+        query = sa.select([releases.c.version,
+                           releases.c.roles_metadata,
+                           releases.c.tags_metadata])
+        for version, roles_meta, tags_meta in db.execute(query):
+            if self._is_tags_supported(version):
+                continue
+
+            roles_meta = jsonutils.loads(roles_meta)
+            for role_name, role_meta in six.iteritems(NEW_ROLES_META):
+                common_tags = (set(role_meta['tags']) &
+                               set(roles_meta[role_name]['tags']))
+                # common tag 'controller' for backward compatibility
+                self.assertEqual(len(common_tags), 1)
+            tags_meta = jsonutils.loads(tags_meta)
+            wrong_tags = set(NEW_TAGS_LIST) - set(tags_meta)
+            self.assertNotEqual(len(wrong_tags), 0)
+
+    @staticmethod
+    def _is_tags_supported(version):
+        try:
+            version = version.split('-')[1]
+        except IndexError:
+            return False
+
+        if StrictVersion(FUEL_TAGS_SUPPORT) > StrictVersion(version):
+            return False
+        return True

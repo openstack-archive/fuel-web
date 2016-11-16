@@ -1581,7 +1581,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.check_50x_neutron_attrs("2014.1.1-5.0.1")
 
     def test_serialize_neutron_attrs_on_5_0_env(self):
-        self.check_50x_neutron_attrs("2014.1")
+        self.check_50x_neutron_attrs("2014.1-5.0")
 
     def test_serialize_node(self):
         node = self.env.create_node(

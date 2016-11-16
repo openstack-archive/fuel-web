@@ -274,14 +274,14 @@ class TestReleaseCollectionSortByFuelVersion(ReleaseCollectionSortBaseTest):
         ("-7.1", "CentOS"),
         ("-7.0", "CentOS"),
         ("-6.0", "CentOS"),
-        ("-6", "CentOS"),
+        ("-5.1", "CentOS"),
     ]
 
     expected = [
         ("-7.1", "CentOS"),
         ("-7.0", "CentOS"),
         ("-6.0", "CentOS"),
-        ("-6", "CentOS"),
+        ("-5.1", "CentOS"),
     ]
 
 

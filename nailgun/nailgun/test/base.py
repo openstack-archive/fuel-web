@@ -21,6 +21,7 @@ except ImportError:
     from unittest2.case import TestCase
 
 import copy
+from distutils.version import StrictVersion
 import mock
 import os
 import re
@@ -81,6 +82,7 @@ from nailgun.extensions.network_manager.template import NetworkTemplate
 from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.utils import dict_merge
+from nailgun.utils import dict_update
 from nailgun.utils import reverse
 
 
@@ -168,7 +170,9 @@ class EnvironmentManager(object):
             kwargs['deployment_tasks'] = \
                 load_fake_deployment_tasks(apply_to_db=False)
 
+        release_data = self._patch_release_meta(release_data, version)
         release_data.update(kwargs)
+
         if api:
             resp = self.app.post(
                 reverse('ReleaseCollectionHandler'),
@@ -185,6 +189,34 @@ class EnvironmentManager(object):
             db().commit()
             self.releases.append(release)
         return release
+
+    @staticmethod
+    def _parse_version(full_version):
+        try:
+            return full_version.split('-')[1]
+        except IndexError:
+            return None
+
+    def _patch_release_meta(self, rel_data, full_version):
+        version = self._parse_version(full_version)
+        if not version:
+            return rel_data
+        if StrictVersion(version) < StrictVersion(
+                consts.FUEL_TAGS_SUPPORT_SINCE):
+            rel_data = self._patch_roles_meta(rel_data)
+        return rel_data
+
+    @staticmethod
+    def _patch_roles_meta(rel_data):
+        legacy_roles_meta = {
+            'roles_metadata': {
+                'controller': {
+                    'tags': ['controller']
+                }
+            }
+        }
+        dict_update(rel_data, legacy_roles_meta)
+        return rel_data
 
     def create_openstack_config(self, api=False, **kwargs):
         if api:

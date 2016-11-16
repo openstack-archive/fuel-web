@@ -33,6 +33,11 @@ from nailgun.utils import reverse
 class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
     env_version = 'liberty-8.0'
 
+    @staticmethod
+    def get_deployment_info(cluster, nodes):
+        return deployment_serializers.serialize(
+            AstuteGraph(cluster), cluster, nodes)
+
     def test_block_device_disks(self):
         self.env.create(
             release_kwargs={'version': self.env_version},
@@ -50,11 +55,13 @@ class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
             cluster_id=self.cluster_db.id,
             roles=['controller']
         )
-        serialized_for_astute = deployment_serializers.serialize(
-            AstuteGraph(self.cluster_db),
-            self.cluster_db,
-            self.cluster_db.nodes)
-        for node in serialized_for_astute['nodes']:
+        serialized_for_astute = self._handle_facts(
+            self.get_deployment_info(
+                self.cluster_db, self.cluster_db.nodes
+            ).get('nodes')
+        )
+
+        for node in serialized_for_astute:
             self.assertIn("node_volumes", node)
             for node_volume in node["node_volumes"]:
                 if node_volume["id"] == "cinder-block-device":
@@ -67,7 +74,9 @@ class TestBlockDeviceDevicesSerialization90(
     TestSerializer90Mixin,
     TestBlockDeviceDevicesSerialization80
 ):
-    pass
+    @staticmethod
+    def get_deployment_info(cluster, nodes):
+        return deployment_serializers.serialize_for_lcm(cluster, nodes)
 
 
 class TestDeploymentAttributesSerialization80(

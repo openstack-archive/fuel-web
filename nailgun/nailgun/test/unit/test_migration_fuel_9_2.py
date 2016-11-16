@@ -24,6 +24,7 @@ from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
 from nailgun.test import base
+from nailgun.utils import is_feature_supported
 from nailgun.utils import migration
 
 
@@ -194,6 +195,30 @@ NODE_OFFLOADING_MODES = [
         'name': 'rx-vlan-offload',
         'sub': []
     }
+]
+
+# version of Fuel when security group switch was added
+RELEASE_VERSION = '9.0'
+# version of Fuel when tags was introduced
+FUEL_TAGS_SUPPORT = '9.0'
+
+NEW_ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller',
+            'rabbitmq',
+            'database',
+            'keystone',
+            'neutron'
+        ]
+    }
+}
+
+NEW_TAGS_LIST = [
+    'rabbitmq',
+    'database',
+    'keystone',
+    'neutron'
 ]
 
 
@@ -517,6 +542,46 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
                 {'vcenter_security_disabled': True}],
             'glance': {'vcenter_security_disabled': True}
         })
+
+    def test_tags_migration_for_supported_releases(self):
+        releases = self.meta.tables['releases']
+        query = sa.select([releases.c.version,
+                           releases.c.roles_metadata,
+                           releases.c.tags_metadata])
+        for version, roles_meta, tags_meta in db.execute(query):
+
+            if not is_feature_supported(version, FUEL_TAGS_SUPPORT):
+                continue
+
+            roles_meta = jsonutils.loads(roles_meta)
+            for role_name, role_meta in six.iteritems(NEW_ROLES_META):
+                self.assertItemsEqual(
+                    roles_meta[role_name]['tags'],
+                    role_meta['tags']
+                )
+            tags_meta = jsonutils.loads(tags_meta)
+            missing_tags = set(NEW_TAGS_LIST) - set(tags_meta)
+            self.assertEqual(len(missing_tags), 0)
+
+    def test_tags_migration_for_not_supported_releases(self):
+        releases = self.meta.tables['releases']
+        query = sa.select([releases.c.version,
+                           releases.c.roles_metadata,
+                           releases.c.tags_metadata])
+        for version, roles_meta, tags_meta in db.execute(query):
+
+            if is_feature_supported(version, FUEL_TAGS_SUPPORT):
+                continue
+
+            roles_meta = jsonutils.loads(roles_meta)
+            for role_name, role_meta in six.iteritems(NEW_ROLES_META):
+                common_tags = (set(role_meta['tags']) &
+                               set(roles_meta[role_name]['tags']))
+                # common tag 'controller' for backward compatibility
+                self.assertEqual(len(common_tags), 1)
+            tags_meta = jsonutils.loads(tags_meta)
+            wrong_tags = set(NEW_TAGS_LIST) - set(tags_meta)
+            self.assertNotEqual(len(wrong_tags), 0)
 
 
 class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):

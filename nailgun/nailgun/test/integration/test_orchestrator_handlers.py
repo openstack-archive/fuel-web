@@ -25,6 +25,7 @@ from nailgun.objects import DeploymentGraph
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import mock_rpc
+from nailgun.test.base import patch_tags_legacy
 from nailgun.utils import reverse
 
 
@@ -52,6 +53,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
                 {'roles': ['compute'], 'pending_addition': True},
                 {'roles': ['cinder'], 'pending_addition': True}]
         )
+        patch_tags_legacy(self.cluster.release)
 
     def customization_handler_helper(self, handler_name, get_info, facts):
         resp = self.app.put(
@@ -75,6 +77,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             }
         )
         cluster = self.env.clusters[-1]
+        patch_tags_legacy(cluster.release)
         resp = self.app.get(
             reverse('DefaultDeploymentInfo',
                     kwargs={'cluster_id': cluster.id}) + '?split=1',
@@ -217,6 +220,7 @@ class BaseSelectedNodesTest(BaseIntegrationTest):
                 {'roles': ['mongo'], 'pending_addition': True},
                 {'roles': ['mongo'], 'pending_addition': True},
                 {'roles': ['cinder'], 'pending_addition': True}])
+        patch_tags_legacy(self.cluster.release)
 
         self.nodes = [n for n in self.cluster.nodes][:3]
         self.node_uids = [n.uid for n in self.nodes]

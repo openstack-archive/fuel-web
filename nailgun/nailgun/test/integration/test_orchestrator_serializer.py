@@ -155,6 +155,7 @@ class TestReplacedDeploymentInfoSerialization(OrchestratorSerializerTestBase):
         self.cluster = self.env.create(
             release_kwargs={'version': self.env_version},
             cluster_kwargs={'api': False})
+        base.patch_tags_legacy(self.cluster.release)
         objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
 
     def test_replaced_tasks_is_not_preserved(self):
@@ -184,6 +185,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
     def setUp(self):
         super(TestNovaOrchestratorSerializer, self).setUp()
         self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
+        base.patch_tags_legacy(self.cluster.release)
         objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
 
     def create_env(self, mode, network_manager='FlatDHCPManager'):
@@ -488,6 +490,7 @@ class TestNovaNetworkOrchestratorSerializer61(OrchestratorSerializerTestBase):
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         objects.Cluster.prepare_for_deployment(cluster_db)
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.set_primary_tags(cluster_db, cluster_db.nodes)
         self.db.flush()
         return cluster_db
@@ -742,6 +745,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
             cluster_id=cluster['id'])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.prepare_for_deployment(cluster_db)
         objects.Cluster.set_primary_tags(cluster_db, cluster_db.nodes)
         self.db.flush()
@@ -1245,6 +1249,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.prepare_for_deployment(cluster_db)
         return cluster_db
 
@@ -1479,6 +1484,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                  'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.prepare_for_deployment(cluster_db)
         return cluster_db
 
@@ -1951,6 +1957,7 @@ class TestVlanSplinters(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.prepare_for_deployment(cluster_db)
         return cluster_db
 
@@ -2150,6 +2157,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.prepare_for_deployment(cluster_db)
         return cluster_db
 
@@ -2213,6 +2221,7 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
             pending_addition=True,
             cluster_id=cluster['id'])
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         return cluster_db
 
     def check_add_bond_msg_lacp(self, msg):
@@ -2293,6 +2302,7 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
                 'editable': {'storage': {'images_ceph': {'value': True}}}}),
             headers=self.default_headers)
         self.cluster = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(self.cluster.release)
 
 
 class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
@@ -2313,6 +2323,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
             ]
         )
         cluster = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster.release)
         objects.Cluster.prepare_for_deployment(cluster)
         return cluster
 
@@ -2363,6 +2374,7 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         self.db.commit()
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.prepare_for_deployment(cluster_db)
         return cluster_db
 
@@ -2752,6 +2764,7 @@ class TestSerializeInterfaceDriversData(base.BaseIntegrationTest):
 
         self.serializer = DeploymentHASerializer61(cluster)
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        base.patch_tags_legacy(cluster_db.release)
         objects.Cluster.prepare_for_deployment(cluster_db)
         return cluster_db
 
@@ -2858,6 +2871,7 @@ class TestDeploymentGraphlessSerializers(OrchestratorSerializerTestBase):
                 {'roles': [], 'pending_roles': ['cinder'],
                  'pending_addition': True}]
         )
+        base.patch_tags_legacy(self.cluster.release)
         objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
 
     @property

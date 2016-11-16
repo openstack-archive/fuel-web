@@ -38,6 +38,7 @@ from nailgun.task import manager
 from nailgun.task import task
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import patch_tags_legacy
 from nailgun.utils import reverse
 
 
@@ -174,6 +175,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 'version': release_ver
             },
         )
+        patch_tags_legacy(cluster.release)
         if not is_task_deploy:
             self.env.disable_task_deploy(cluster)
 
@@ -883,6 +885,7 @@ class TestTaskManagers(BaseIntegrationTest):
             },
         )
         cluster_db = self.env.clusters[0]
+        patch_tags_legacy(cluster_db.release)
         objects.Cluster.clear_pending_changes(cluster_db)
         manager_ = manager.ApplyChangesTaskManager(cluster_db.id)
         supertask = manager_.execute(force=True)

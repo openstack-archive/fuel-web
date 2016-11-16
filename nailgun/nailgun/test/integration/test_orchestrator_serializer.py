@@ -2573,6 +2573,39 @@ class BaseDeploymentSerializer(BaseSerializerTest):
             self.env.nodes[0])['test_vm_image']['glance_properties']
         self.assertIn('murano_image_info', glance_properties)
 
+    @staticmethod
+    def _get_serializer(cluster):
+        serializer_type = get_serializer_for_cluster(cluster)
+        return serializer_type(AstuteGraph(cluster))
+
+    @staticmethod
+    def _get_nodes_count_in_astute_info(nodes):
+        """Count number of node in deployment info for non-LCM serializers
+
+        As we are running 7.0 tests against 9.0 environments where
+        LCM serializer is used we should consider difference in a number
+        of elements in deployment info.
+        In case of non-LCM serializer we have separate item in deployment
+        info for each node-role relationship.
+
+        :param nodes: array of cluster nodes
+        :returns: expected number of elements in deployment info
+        """
+        return len([role for n in nodes for role in n.roles])
+
+    @staticmethod
+    def _handle_facts(facts):
+        """Handle deployment facts for non-LCM serializers
+
+        This method was introduced to be overloaded for classes where LCM
+        serialization engine is used and 'master' node info should be
+        filtered.
+
+        :param facts: deployment info produced by non-LCM serializer
+        :returns: deployment info as it is
+        """
+        return facts
+
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
 

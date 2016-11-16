@@ -1108,9 +1108,6 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
             ]
         }
 
-    def _get_serializer(self, cluster):
-        return get_serializer_for_cluster(cluster)(AstuteGraph(cluster))
-
     def test_tasks_were_serialized(self):
         plugin_data = {
             'roles_metadata': self.ROLES,
@@ -1228,10 +1225,9 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         )
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
         objects.Cluster.prepare_for_deployment(cluster_db)
-
-        serializer = get_serializer_for_cluster(self.cluster)
-        self.serialized_for_astute = serializer(
-            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        serializer = self._get_serializer(self.cluster)
+        self.serialized_for_astute =\
+            serializer.serialize(self.cluster, cluster_db.nodes)
         self.serialized_for_astute = deployment_info_to_legacy(
             self.serialized_for_astute)
 
@@ -1311,15 +1307,14 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         )
         cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
         objects.Cluster.prepare_for_deployment(cluster_db)
-
-        serializer = get_serializer_for_cluster(self.cluster)
-        serialized_for_astute = serializer(
-            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        serializer = self._get_serializer(self.cluster)
+        serialized_for_astute =\
+            serializer.serialize(self.cluster, cluster_db.nodes)
         serialized_for_astute = deployment_info_to_legacy(
             serialized_for_astute)
 
-        # 7 node roles on 5 nodes
-        self.assertEqual(len(serialized_for_astute), 7)
+        nodes_count = self._get_nodes_count_in_astute_info(self.cluster.nodes)
+        self.assertEqual(len(serialized_for_astute), nodes_count)
         for node_data in serialized_for_astute:
             node = objects.Node.get_by_uid(node_data['uid'])
             for node_roles, net_names in node_roles_vs_net_names:
@@ -1423,9 +1418,9 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         cluster_db = objects.Cluster.get_by_uid(self.cluster['id'])
         objects.Cluster.prepare_for_deployment(cluster_db)
 
-        serializer = get_serializer_for_cluster(self.cluster)
-        serialized_for_astute = serializer(
-            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
+        serializer = self._get_serializer(self.cluster)
+        serialized_for_astute =\
+            serializer.serialize(self.cluster, cluster_db.nodes)
         serialized_for_astute = deployment_info_to_legacy(
             serialized_for_astute)
 
@@ -1512,8 +1507,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
     def test_routes_while_using_multiple_node_groups(self):
         self.env.create_node_group()
         objects.Cluster.prepare_for_deployment(self.cluster)
-        serializer = get_serializer_for_cluster(self.cluster)
-        facts = serializer(AstuteGraph(self.cluster)).serialize(
+        serializer = self._get_serializer(self.cluster)
+        facts = serializer.serialize(
             self.cluster, self.cluster.nodes)
         facts = deployment_info_to_legacy(facts)
 
@@ -1779,11 +1774,12 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         )
         cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
         nm = objects.Cluster.get_network_manager(self.cluster)
-        serializer = get_serializer_for_cluster(self.cluster)
-        self.serialized_for_astute = serializer(
-            AstuteGraph(cluster_db)).serialize(self.cluster, cluster_db.nodes)
-        self.serialized_for_astute = deployment_info_to_legacy(
-            self.serialized_for_astute)
+        serializer = self._get_serializer(self.cluster)
+        self.serialized_for_astute =\
+            serializer.serialize(self.cluster, cluster_db.nodes)
+        self.serialized_for_astute =\
+            deployment_info_to_legacy(self.serialized_for_astute)
+
         for node_data in self.serialized_for_astute:
             node = objects.Node.get_by_uid(node_data['uid'])
             # check nodes with assigned public ip

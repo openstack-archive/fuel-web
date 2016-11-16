@@ -46,6 +46,14 @@ class TestSerializer90Mixin(object):
         )
         return serializer_type(None)
 
+    @staticmethod
+    def _get_serializer(cluster):
+        return deployment_serializers.DeploymentLCMSerializer()
+
+    @staticmethod
+    def _get_nodes_count_in_astute_info(nodes):
+        return len(nodes)
+
 
 class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
@@ -765,7 +773,7 @@ class TestDeploymentHASerializer90(
 
     def test_serialize_with_customized(self):
         cluster = self.env.clusters[0]
-        serializer = self.create_serializer(cluster)
+        serializer = deployment_serializers.DeploymentLCMSerializer()
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)

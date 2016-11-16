@@ -16,6 +16,7 @@ from itertools import chain
 import re
 
 from alembic import op
+from distutils.version import StrictVersion
 from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
@@ -23,6 +24,7 @@ from sqlalchemy.sql import text
 
 from nailgun import consts
 from nailgun.settings import settings
+from nailgun.utils import get_environment_version
 
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
@@ -566,3 +568,8 @@ def upgrade_cluster_attributes_6_0_to_6_1(connection):
             update_query,
             editable=jsonutils.dumps(attributes),
             attr_id=attr_id)
+
+
+def is_feature_supported(rel_version, support_version):
+    version = get_environment_version(rel_version)
+    return StrictVersion(version) >= StrictVersion(support_version)

@@ -50,6 +50,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'pending_roles': [self.role_name],
                  'status': consts.NODE_STATUSES.discover,
                  'pending_addition': True}])
+        base.patch_tags_legacy(cluster.release)
         objects.Cluster.set_primary_tags(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         # with lowest uid is assigned as primary
@@ -70,6 +71,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
+        base.patch_tags_legacy(cluster.release)
         objects.Cluster.set_primary_tags(cluster, cluster.nodes)
         # primary assigned to node with ready status
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
@@ -96,6 +98,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
+        base.patch_tags_legacy(cluster.release)
         objects.Cluster.set_primary_tags(cluster, cluster.nodes)
         self.assertEqual(
             objects.Node.all_tags(cluster.nodes[0]), [self.role_name])
@@ -111,6 +114,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_deletion': True}])
+        base.patch_tags_legacy(cluster.release)
         objects.Cluster.set_primary_tags(cluster, cluster.nodes)
         self.assertEqual(
             objects.Node.all_tags(cluster.nodes[0]), [self.role_name])
@@ -128,6 +132,7 @@ class BasePrimaryRolesAssignmentTestCase(base.BaseTestCase):
                 {'roles': [self.role_name],
                  'status': consts.NODE_STATUSES.ready,
                  'pending_addition': True}])
+        base.patch_tags_legacy(cluster.release)
         objects.Cluster.set_primary_tags(cluster, cluster.nodes)
         nodes = sorted(cluster.nodes, key=lambda node: node.id)
         self.assertEqual(

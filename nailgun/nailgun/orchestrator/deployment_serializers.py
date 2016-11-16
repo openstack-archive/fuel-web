@@ -921,5 +921,6 @@ def serialize_for_lcm(cluster, nodes,
 def deployment_info_to_legacy(deployment_info):
     common_attrs = deployment_info['common']
     nodes = [utils.dict_merge(common_attrs, n)
-             for n in deployment_info['nodes']]
+             for n in deployment_info['nodes']
+             if n.get('roles') != [consts.TASK_ROLES.master]]
     return nodes

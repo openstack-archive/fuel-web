@@ -46,6 +46,39 @@ class TestSerializer90Mixin(object):
         )
         return serializer_type(None)
 
+    @staticmethod
+    def _get_serializer(cluster):
+        return deployment_serializers.DeploymentLCMSerializer()
+
+    @staticmethod
+    def _get_nodes_count_in_astute_info(nodes):
+        """Count number of node in deployment info for LCM serializer
+
+        As we are running 7.0 tests against 9.0 environments where
+        LCM serializer is used we should consider difference in a number
+        of elements in deployment info.
+        Number of elements in deployment info for LCM serializer is equal
+        with node's number in a cluster.
+
+        :param nodes: array of cluster nodes
+        :returns: expected number of elements in deployment info
+        """
+        return len(nodes)
+
+    @staticmethod
+    def _handle_facts(facts):
+        """Handle deployment facts fro LCM serializers
+
+        As we are running 7.0 tests against 9.0 environments where
+        LCM serializer is used it's not expected to have master node
+        in the list of serialized nodes.
+
+        :param facts: deployment info produced by LCM serializer
+        :returns: deployment info without master node data
+        """
+        return [node for node in facts
+                if node.get('roles') != [consts.TASK_ROLES.master]]
+
 
 class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
@@ -765,7 +798,7 @@ class TestDeploymentHASerializer90(
 
     def test_serialize_with_customized(self):
         cluster = self.env.clusters[0]
-        serializer = self.create_serializer(cluster)
+        serializer = self._get_serializer(cluster)
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)

@@ -47,6 +47,18 @@ class TestSerializer90Mixin(object):
         return serializer_type(None)
 
 
+class TestLCMSerializerMixin(object):
+    @staticmethod
+    def _get_serializer(cluster):
+        return deployment_serializers.DeploymentLCMSerializer()
+
+    @staticmethod
+    def handle_facts(facts):
+        for node in facts:
+            if 'master' not in node['roles']:
+                yield node
+
+
 class TestDeploymentAttributesSerialization90(
     TestSerializer90Mixin,
     test_orchestrator_serializer_80.TestDeploymentAttributesSerialization80
@@ -765,7 +777,7 @@ class TestDeploymentHASerializer90(
 
     def test_serialize_with_customized(self):
         cluster = self.env.clusters[0]
-        serializer = self.create_serializer(cluster)
+        serializer = deployment_serializers.DeploymentLCMSerializer()
 
         objects.Cluster.prepare_for_deployment(cluster)
         serialized = serializer.serialize(cluster, cluster.nodes)
@@ -786,7 +798,8 @@ class TestDeploymentTasksSerialization90(
 
 class TestMultiNodeGroupsSerialization90(
     TestSerializer90Mixin,
-    test_orchestrator_serializer_80.TestMultiNodeGroupsSerialization80
+    test_orchestrator_serializer_80.TestMultiNodeGroupsSerialization80,
+    TestLCMSerializerMixin
 ):
     pass
 
@@ -794,7 +807,8 @@ class TestMultiNodeGroupsSerialization90(
 class TestNetworkTemplateSerializer90CompatibleWith80(
     TestSerializer90Mixin,
     test_orchestrator_serializer_80.
-        TestNetworkTemplateSerializer80CompatibleWith70
+        TestNetworkTemplateSerializer80CompatibleWith70,
+        TestLCMSerializerMixin
 ):
     general_serializer = NeutronNetworkDeploymentSerializer90
     template_serializer = NeutronNetworkTemplateSerializer90

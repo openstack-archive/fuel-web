@@ -169,6 +169,7 @@ class EnvironmentManager(object):
                 load_fake_deployment_tasks(apply_to_db=False)
 
         release_data.update(kwargs)
+
         if api:
             resp = self.app.post(
                 reverse('ReleaseCollectionHandler'),
@@ -1683,6 +1684,14 @@ class DeploymentTasksTestMixin(object):
                     )
                 else:
                     self.assertEqual(ref.get(field), (res or {}).get(field))
+
+
+def patch_tags_legacy(release):
+    roles = release.roles_metadata
+    for role_name, meta in six.iteritems(roles):
+        meta['tags'] = [role_name]
+    roles.changed()
+    db.commit()
 
 
 # this method is for development and troubleshooting purposes

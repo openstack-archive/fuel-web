@@ -30,12 +30,15 @@ from nailgun.orchestrator.deployment_serializers import \
 from nailgun.orchestrator.deployment_serializers import \
     get_serializer_for_cluster
 from nailgun.orchestrator.orchestrator_graph import AstuteGraph
+from nailgun.test import base
 from nailgun.test.integration.test_orchestrator_serializer import \
     BaseDeploymentSerializer
 from nailgun.test.integration.test_orchestrator_serializer import \
     TestSerializeInterfaceDriversData
 from nailgun.test.integration.test_orchestrator_serializer_70 import \
     TestDeploymentHASerializer70
+from nailgun.test.integration.test_orchestrator_serializer_70 import \
+    TestLegacySerializerMixin
 from nailgun.test.integration.test_orchestrator_serializer_70 import \
     TestNetworkTemplateSerializer70
 
@@ -102,6 +105,7 @@ class TestNetworkTemplateSerializer80(
                 'mode': consts.CLUSTER_MODES.ha_compact,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
+        base.patch_tags_legacy(self.cluster.release)
         self.net_template = self.env.read_fixtures(['network_template_80'])[0]
         self.serializer = self.create_serializer(self.cluster)
 
@@ -225,6 +229,7 @@ class TestDeploymentTasksSerialization80(
                 {'roles': ['controller'],
                  'status': consts.NODE_STATUSES.ready}]
         )
+        base.patch_tags_legacy(self.cluster.release)
 
         if not self.task_deploy:
             self.env.disable_task_deploy(self.cluster)
@@ -311,6 +316,7 @@ class TestDeploymentAttributesSerialization80(
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan})
         self.cluster_db = self.db.query(models.Cluster).get(self.cluster['id'])
+        base.patch_tags_legacy(self.cluster_db.release)
         self.serializer = self.create_serializer(self.cluster_db)
 
     def test_neutron_attrs(self):
@@ -430,7 +436,8 @@ class TestDeploymentAttributesSerialization80(
 
 class TestMultiNodeGroupsSerialization80(
     TestSerializer80Mixin,
-    BaseDeploymentSerializer
+    BaseDeploymentSerializer,
+    TestLegacySerializerMixin
 ):
     def setUp(self):
         super(TestMultiNodeGroupsSerialization80, self).setUp()
@@ -447,8 +454,13 @@ class TestMultiNodeGroupsSerialization80(
             pending_addition=True,
             cluster_id=cluster['id'])
         self.cluster_db = self.db.query(models.Cluster).get(cluster['id'])
-        serializer_type = get_serializer_for_cluster(self.cluster_db)
-        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+        base.patch_tags_legacy(self.cluster_db.release)
+        self.serializer = self._get_serializer(self.cluster_db)
+
+    @staticmethod
+    def _get_serializer(cluster):
+        serializer_type = get_serializer_for_cluster(cluster)
+        return serializer_type(AstuteGraph(cluster))
 
     def _add_node_group_with_node(self, cidr_start, node_address):
         node_group = self.env.create_node_group(
@@ -478,7 +490,7 @@ class TestMultiNodeGroupsSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         facts = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        facts = deployment_info_to_legacy(facts)
+        facts = self.handle_facts(deployment_info_to_legacy(facts))
 
         for node in facts:
             endpoints = node['network_scheme']['endpoints']
@@ -487,6 +499,10 @@ class TestMultiNodeGroupsSerialization80(
                     self.assertNotIn('routes', descr)
                 else:
                     self.assertEqual(len(descr['routes']), count)
+
+    @staticmethod
+    def handle_facts(facts):
+        return facts
 
     def test_routes_with_no_shared_networks_2_nodegroups(self):
         self._add_node_group_with_node('199.99', 3)

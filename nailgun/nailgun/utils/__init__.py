@@ -25,6 +25,7 @@ import time
 import yaml
 
 from copy import deepcopy
+from distutils.version import StrictVersion
 from itertools import chain
 from random import choice
 
@@ -370,3 +371,10 @@ def get_environment_version(version):
             version = ''
     return version
 
+
+def is_feature_supported(rel_version, support_version):
+    version = get_environment_version(rel_version)
+    try:
+        return StrictVersion(version) >= StrictVersion(support_version)
+    except ValueError:
+        return False

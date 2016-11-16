@@ -29,6 +29,8 @@ from nailgun.test.integration.test_orchestrator_serializer_90 import \
     TestSerializer90Mixin
 from nailgun.utils import reverse
 
+from nailgun.test import base
+
 
 class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
     env_version = 'liberty-8.0'
@@ -50,6 +52,7 @@ class TestBlockDeviceDevicesSerialization80(BaseDeploymentSerializer):
             cluster_id=self.cluster_db.id,
             roles=['controller']
         )
+        base.patch_tags_legacy(self.cluster_db.release)
         serialized_for_astute = deployment_serializers.serialize(
             AstuteGraph(self.cluster_db),
             self.cluster_db,
@@ -212,6 +215,7 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
                     'storage': {
                         'osd_pool_size': {'value': osd_pool_size}}}}),
             headers=self.default_headers)
+        base.patch_tags_legacy(cluster.release)
         return self.env.clusters[0]
 
     @staticmethod

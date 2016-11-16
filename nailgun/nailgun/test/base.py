@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from distutils.version import StrictVersion
 
 try:
     from unittest.case import TestCase
@@ -169,6 +170,10 @@ class EnvironmentManager(object):
                 load_fake_deployment_tasks(apply_to_db=False)
 
         release_data.update(kwargs)
+        if StrictVersion(version.split('-')[1]) < StrictVersion('9.0'):
+            release_data =\
+                self.change_roles_metadata_for_old_release(release_data)
+
         if api:
             resp = self.app.post(
                 reverse('ReleaseCollectionHandler'),
@@ -184,6 +189,10 @@ class EnvironmentManager(object):
             release = Release.create(release_data)
             db().commit()
             self.releases.append(release)
+        return release
+
+    def change_roles_metadata_for_old_release(self, release):
+        release['roles_metadata']['controller']['tags'] = ['controller']
         return release
 
     def create_openstack_config(self, api=False, **kwargs):

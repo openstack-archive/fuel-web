@@ -447,8 +447,12 @@ class TestMultiNodeGroupsSerialization80(
             pending_addition=True,
             cluster_id=cluster['id'])
         self.cluster_db = self.db.query(models.Cluster).get(cluster['id'])
-        serializer_type = get_serializer_for_cluster(self.cluster_db)
-        self.serializer = serializer_type(AstuteGraph(self.cluster_db))
+        self.serializer = self._get_serializer(self.cluster_db)
+
+    @staticmethod
+    def _get_serializer(cluster):
+        serializer_type = get_serializer_for_cluster(cluster)
+        return serializer_type(AstuteGraph(cluster))
 
     def _add_node_group_with_node(self, cidr_start, node_address):
         node_group = self.env.create_node_group(
@@ -478,7 +482,7 @@ class TestMultiNodeGroupsSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         facts = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        facts = deployment_info_to_legacy(facts)
+        facts = self.handle_facts(deployment_info_to_legacy(facts))
 
         for node in facts:
             endpoints = node['network_scheme']['endpoints']
@@ -487,6 +491,10 @@ class TestMultiNodeGroupsSerialization80(
                     self.assertNotIn('routes', descr)
                 else:
                     self.assertEqual(len(descr['routes']), count)
+
+    @staticmethod
+    def handle_facts(facts):
+        return facts
 
     def test_routes_with_no_shared_networks_2_nodegroups(self):
         self._add_node_group_with_node('199.99', 3)

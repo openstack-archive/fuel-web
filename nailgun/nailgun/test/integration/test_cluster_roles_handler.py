@@ -42,6 +42,7 @@ class TestClusterRolesHandler(base.BaseTestCase):
         meta:
             name: My Role
             description: Something goes here
+            tags: []
         volumes_roles_mapping:
             - id: os
               allocate_size: all

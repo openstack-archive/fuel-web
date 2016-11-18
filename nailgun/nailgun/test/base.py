@@ -60,6 +60,7 @@ from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import PluginLink
+from nailgun.db.sqlalchemy.models import Release as ReleaseModel
 from nailgun.db.sqlalchemy.models import Task
 
 
@@ -143,7 +144,7 @@ class EnvironmentManager(object):
             )
         return cluster
 
-    def create_release(self, api=False, **kwargs):
+    def create_release(self, api=False, expect_errors=False, **kwargs):
         os = kwargs.get(
             'operating_system', consts.RELEASE_OS.centos)
         version = kwargs.get(
@@ -173,13 +174,14 @@ class EnvironmentManager(object):
             resp = self.app.post(
                 reverse('ReleaseCollectionHandler'),
                 params=jsonutils.dumps(release_data),
-                headers=self.default_headers
+                headers=self.default_headers,
+                expect_errors=expect_errors
             )
-            self.tester.assertEqual(resp.status_code, 201)
             release = resp.json_body
-            self.releases.append(
-                self.db.query(Release).get(release['id'])
-            )
+            if not expect_errors:
+                self.releases.append(
+                    self.db.query(ReleaseModel).get(release['id'])
+                )
         else:
             release = Release.create(release_data)
             db().commit()
@@ -660,7 +662,6 @@ class EnvironmentManager(object):
             return any(path.endswith(d) for d in directories)
 
         is_dir_m.side_effect = define_dir
-
         if api:
             return self.app.post(
                 reverse('PluginCollectionHandler'),

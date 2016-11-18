@@ -123,7 +123,7 @@ class RoleCollectionHandler(base.CollectionHandler, RoleMixIn):
             raise self.http(409, exc.message)
 
         role_name = data['name']
-        obj_cls.update_role(obj, data)
+        obj_cls.create_role(obj, data)
         raise self.http(
             201, RoleSerializer.serialize_from_obj(obj_cls, obj, role_name))
 

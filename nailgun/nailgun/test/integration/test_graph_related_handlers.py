@@ -597,7 +597,7 @@ class TestReleasePluginsGraphHandler(BaseGraphTasksTests,
             headers=self.default_headers,
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.json), 25)    # default release tasks
+        self.assertEqual(len(resp.json), 26)    # default release tasks
 
     def test_get_existing_custom_deployment_tasks(self):
         resp = self.app.get(

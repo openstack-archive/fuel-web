@@ -618,6 +618,29 @@ class TestDeploymentHandlerSkipTasks(BaseSelectedNodesTest):
         self.assertItemsEqual(deployed_uids, self.node_uids)
         self.assertEqual(len(deployment_data['tasks']), 1)
 
+    @patch('nailgun.task.task.rpc.cast')
+    def test_only_reexecutable_when_node_is_deleted(self, mcast):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['controller']},
+                {'roles': ['compute'], 'pending_deletion': True}])
+        self.env.disable_task_deploy(cluster)
+        self.emulate_nodes_deployment(cluster.nodes)
+
+        action_url = reverse(
+            "DeploySelectedNodes",
+            kwargs={'cluster_id': cluster.id})
+        out = self.send_put(action_url)
+        self.assertEqual(out.status_code, 202)
+
+        args, _ = mcast.call_args
+        pre_deploy_tasks = args[1]['args']['pre_deployment']
+        task_names = set(task.get('id', task.get('type'))
+                         for task in pre_deploy_tasks)
+        self.assertNotIn('sync', task_names)
+
     def test_deployment_is_forbidden(self):
         action_url = self.make_action_url(
             "DeploySelectedNodesWithTasks",
@@ -703,8 +726,8 @@ class TestSerializedTasksHandler(BaseIntegrationTest):
         self.assertIn('tasks_directory', resp.json)
         tasks_graph = resp.json['tasks_graph']
         self.assertItemsEqual(nodes_uids + ['null'], tasks_graph.keys())
-        expected_tasks = ['netconfig', 'globals', 'deploy_legacy',
-                          'upload_nodes_info', 'update_hosts']
+        expected_tasks = ['rsync_core_puppet', 'netconfig', 'globals',
+                          'deploy_legacy', 'upload_nodes_info', 'update_hosts']
         for n in nodes_uids:
             self.assertItemsEqual(
                 [t['id'] for t in tasks_graph[n]], expected_tasks)

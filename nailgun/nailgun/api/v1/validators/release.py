@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql as psql
 
@@ -27,7 +29,9 @@ from nailgun import errors
 class ReleaseValidator(BasicValidator):
 
     @classmethod
-    def _validate_common(cls, d):
+    def _validate_common(cls, d, instance=None):
+        if not instance:
+            instance = {}
         if "networks_metadata" in d:
             # TODO(enchantner): additional validation
             meta = d["networks_metadata"]["nova_network"]
@@ -35,6 +39,21 @@ class ReleaseValidator(BasicValidator):
                 if "name" not in network:
                     raise errors.InvalidData(
                         "Invalid network data: {0}".format(network),
+                        log_message=True
+                    )
+        if 'roles_metadata' in d:
+            roles_meta = d['roles_metadata']
+            tags_meta = d.get('tags_metadata',
+                              instance.get('tags_metadata', {}))
+            available_tags = set(tags_meta)
+            for role_name, meta in six.iteritems(roles_meta):
+                role_tags = set(meta.get('tags', []))
+                missing_tags = role_tags - available_tags
+                if missing_tags:
+                    raise errors.InvalidData(
+                        "Tags {} are present for role {}, but, absent in "
+                        "release tags metadata".format(missing_tags,
+                                                       role_name),
                         log_message=True
                     )
 
@@ -79,7 +98,7 @@ class ReleaseValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance):
         d = cls.validate_json(data)
-        cls._validate_common(d)
+        cls._validate_common(d, instance)
 
         if db().query(models.Release).filter_by(
             name=d.get("name", instance.name),

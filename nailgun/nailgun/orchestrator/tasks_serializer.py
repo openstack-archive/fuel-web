@@ -28,7 +28,7 @@ from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import tasks_templates as templates
 from nailgun.settings import settings
 from nailgun import utils
-from nailgun.utils.role_resolver import RoleResolver
+from nailgun.utils.resolvers import TagResolver
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -89,14 +89,15 @@ class PuppetHook(GenericNodeHook):
 class StandardConfigRolesHook(ExpressionBasedTask):
     """Role hooks that serializes task based on config file only."""
 
-    def __init__(self, task, cluster, nodes, role_resolver=None):
+    def __init__(self, task, cluster, nodes, resolver=None):
         super(StandardConfigRolesHook, self).__init__(task, cluster)
         self.nodes = nodes
-        self.role_resolver = role_resolver or RoleResolver(nodes)
+        self.resolver = resolver or TagResolver(nodes)
 
     def get_uids(self):
-        return list(self.role_resolver.resolve(
-            self.task.get('role', self.task.get('groups'))
+        return list(self.resolver.resolve(
+            self.task.get('tags', self.task.get('role',
+                                                self.task.get('groups')))
         ))
 
     def serialize(self):
@@ -115,7 +116,7 @@ class UploadMOSRepo(GenericRolesHook):
     identity = 'upload_core_repos'
 
     def get_uids(self):
-        return list(self.role_resolver.resolve(consts.TASK_ROLES.all))
+        return list(self.resolver.resolve(consts.TASK_ROLES.all))
 
     def serialize(self):
         uids = self.get_uids()
@@ -161,7 +162,7 @@ class RsyncPuppet(GenericRolesHook):
     identity = 'rsync_core_puppet'
 
     def get_uids(self):
-        return list(self.role_resolver.resolve(consts.TASK_ROLES.all))
+        return list(self.resolver.resolve(consts.TASK_ROLES.all))
 
     def serialize(self):
         src_path = self.task['parameters']['src'].format(
@@ -245,7 +246,7 @@ class IronicCopyBootstrapKey(CopyKeys):
     identity = 'ironic_copy_bootstrap_key'
 
     def should_execute(self):
-        return len(self.role_resolver.resolve(['ironic'])) > 0
+        return len(self.resolver.resolve(['ironic'])) > 0
 
 
 class RestartRadosGW(GenericRolesHook):
@@ -265,9 +266,9 @@ class CreateVMsOnCompute(GenericRolesHook):
     identity = 'generate_vms'
     hook_type = 'puppet'
 
-    def __init__(self, task, cluster, nodes, role_resolver=None):
+    def __init__(self, task, cluster, nodes, resolver=None):
         super(CreateVMsOnCompute, self).__init__(
-            task, cluster, [], role_resolver
+            task, cluster, [], resolver
         )
         self.vm_nodes = objects.Cluster.get_nodes_to_spawn_vms(self.cluster)
 
@@ -345,9 +346,9 @@ class UploadConfiguration(GenericRolesHook):
 
     identity = 'upload_configuration'
 
-    def __init__(self, task, cluster, nodes, configs=None, role_resolver=None):
+    def __init__(self, task, cluster, nodes, configs=None, resolver=None):
         super(UploadConfiguration, self).__init__(
-            task, cluster, nodes, role_resolver=role_resolver
+            task, cluster, nodes, resolver=resolver
         )
         self.configs = configs
 

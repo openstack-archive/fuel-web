@@ -28,6 +28,7 @@ class ReleaseSerializer(BasicSerializer):
         "operating_system",
         "modes_metadata",
         "roles_metadata",
+        "tags_metadata",
         "state",
         "attributes_metadata",
         "vmware_attributes_metadata",

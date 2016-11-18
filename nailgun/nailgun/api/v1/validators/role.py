@@ -38,6 +38,13 @@ class RoleValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance_cls, instance):
         parsed = cls.validate(data, instance=instance)
+        tags_meta = instance_cls.get_tags_metadata(instance)
+        for tag in parsed.get('meta', {}).get('tags', []):
+            if tag not in tags_meta:
+                raise errors.InvalidData(
+                    "Role {} contains non-existent tag {}".format(
+                        parsed['name'], tag)
+                )
 
         volumes_meta = instance_cls.get_volumes_metadata(instance)
         allowed_ids = [m['id'] for m in volumes_meta.get('volumes', [])]
@@ -50,14 +57,20 @@ class RoleValidator(BasicValidator):
             raise errors.InvalidData(
                 "Wrong data in volumes_roles_mapping. Volumes with ids {0} are"
                 " not in the list of allowed volumes {1}".format(
-                    missing_volume_ids, allowed_ids))
+                    missing_volume_ids, allowed_ids)) 
 
         return parsed
 
     @classmethod
     def validate_create(cls, data, instance_cls, instance):
         parsed = cls.validate_update(data, instance_cls, instance)
-
+        tags_meta = instance_cls.get_tags_metadata(instance)
+        for tag in parsed.get('meta', {}).get('tags', []):
+            if tag not in tags_meta:
+                raise errors.InvalidData(
+                    "Role {} contains non-existent tag {}".format(
+                        parsed['name'], tag)
+                )
         role_name = parsed['name']
         if role_name in instance_cls.get_own_roles(instance):
             raise errors.AlreadyExists(

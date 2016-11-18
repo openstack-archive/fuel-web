@@ -72,12 +72,42 @@ class Plugin(NailgunObject):
 
         # todo(ikutukov): this update is a smell from the current plugins
         # installation schema. Remove it.
-
-        cls.update(plugin_obj, plugin_adapter.get_metadata())
+        plugin_meta = cls._process_tags(plugin_adapter.get_metadata())
+        cls.update(plugin_obj, plugin_meta)
 
         ClusterPlugin.add_compatible_clusters(plugin_obj)
 
         return plugin_obj
+
+    @staticmethod
+    def _process_tags(data):
+        roles_meta = data.get('roles_metadata')
+
+        # nothing to check if no roles is introduced
+        if not roles_meta:
+            return data
+
+        tags_meta = data.get('tags_metadata', {})
+        # add creation of so-called tags for roles if tags are not
+        # present in role's metadata. it's necessary for compatibility
+        # with plugins without tags feature
+        for role, meta in six.iteritems(roles_meta):
+            # if developer specified 'tags' field then he is in charge
+            # of tags management
+            if 'tags' in meta:
+                continue
+            # it's necessary for auto adding tag when we are
+            # assigning the role
+            roles_meta[role]['tags'] = [role]
+            # so-called should be added to plugin tags_metadata as well
+            tags_meta[role] = {
+                'has_primary': meta.get('has_primary', False)
+            }
+        # update changed data
+        data['roles_metadata'] = roles_meta
+        data['tags_metadata'] = tags_meta
+
+        return data
 
     @classmethod
     def update(cls, instance, data):

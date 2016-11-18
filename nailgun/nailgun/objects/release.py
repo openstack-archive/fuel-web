@@ -69,6 +69,7 @@ class Release(NailgunObject):
             graphs[consts.DEFAULT_DEPLOYMENT_GRAPH_TYPE] = \
                 {'tasks': deployment_tasks}
 
+        data = cls._process_tags(data)
         release_obj = super(Release, cls).create(data)
 
         for graph_type, graph_data in six.iteritems(graphs):
@@ -76,6 +77,36 @@ class Release(NailgunObject):
                 graph_data, release_obj, graph_type)
 
         return release_obj
+
+    @staticmethod
+    def _process_tags(data):
+        roles_meta = data.get('roles_metadata')
+
+        # nothing to check if no roles is introduced
+        if not roles_meta:
+            return data
+
+        tags_meta = data.get('tags_metadata', {})
+        # add creation of so-called tags for roles if tags are not
+        # present in role's metadata. it's necessary for compatibility
+        # with plugins without tags feature
+        for role, meta in six.iteritems(roles_meta):
+            # if developer specified 'tags' field then he is in charge
+            # of tags management
+            if 'tags' in meta:
+                continue
+            # it's necessary for auto adding tag when we are
+            # assigning the role
+            roles_meta[role]['tags'] = [role]
+            # so-called should be added to plugin tags_metadata as well
+            tags_meta[role] = {
+                'has_primary': meta.get('has_primary', False)
+            }
+        # update changed data
+        data['roles_metadata'] = roles_meta
+        data['tags_metadata'] = tags_meta
+
+        return data
 
     @classmethod
     def update(cls, instance, data):

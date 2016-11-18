@@ -53,5 +53,7 @@ class TestRoleVolumeAllocationsValidationBySchema(BaseUnitTest):
         RoleValidator.validate_schema(restrictions, base_types.RESTRICTIONS)
 
     def test_meta_info(self):
-        meta = {'name': 'Some Name', 'description': 'Some Description'}
+        meta = {'name': 'Some Name',
+                'description': 'Some Description',
+                'tags': []}
         RoleValidator.validate_schema(meta, role.ROLE_META_INFO)

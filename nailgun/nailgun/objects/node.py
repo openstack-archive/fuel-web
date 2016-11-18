@@ -921,7 +921,7 @@ class Node(NailgunObject):
         """
         if not instance.cluster_id:
             logger.warning(
-                u"Attempting to assign peimary tags to node "
+                u"Attempting to assign primary tags to node "
                 u"'{0}' which isn't added to cluster".format(
                     instance.full_name))
             return

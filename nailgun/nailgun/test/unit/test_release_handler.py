@@ -53,6 +53,18 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
 
+    def test_release_non_existent_tag_present_in_role(self):
+        roles_meta = {
+            'controller': {
+                'tags': ['test']
+            }
+        }
+        resp = self.env.create_release(api=True,
+                                       expect_errors=True,
+                                       roles_metadata=roles_meta)
+        self.assertIn("are present for role controller, but, absent in",
+                      resp['message'])
+
     def test_release_delete_returns_400_if_clusters(self):
         cluster = self.env.create_cluster(api=False)
         resp = self.app.delete(

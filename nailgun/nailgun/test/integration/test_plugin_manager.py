@@ -77,6 +77,40 @@ class TestPluginManager(base.BaseIntegrationTest):
             volumes_metadata['volumes'],
             expected_volumes_metadata['volumes'])
 
+    def test_plugin_role_with_empty_tags(self):
+        role_name = 'test'
+        roles_meta = {
+            role_name: {
+                'has_primary': True,
+                'tags': []
+            }
+        }
+        plugin = self.env.create_plugin(
+            cluster=self.cluster,
+            package_version='3.0.0',
+            roles_metadata=roles_meta
+        )
+        self.assertEqual(
+            plugin.roles_metadata[role_name]['tags'], [])
+
+    def test_plugin_legacy_tags(self):
+        role_name = 'test'
+        roles_meta = {
+            role_name: {
+                'has_primary': True
+            }
+        }
+        plugin = self.env.create_plugin(
+            cluster=self.cluster,
+            package_version='3.0.0',
+            roles_metadata=roles_meta
+        )
+        self.assertEqual(
+            plugin.roles_metadata[role_name]['tags'], [role_name])
+        self.assertEqual(
+            plugin.tags_metadata[role_name]['has_primary'],
+            roles_meta[role_name]['has_primary'])
+
     def test_get_empty_plugin_volumes_metadata_for_cluster(self):
         cluster = self.env.create_cluster(api=False)
         self.env.create_plugin(

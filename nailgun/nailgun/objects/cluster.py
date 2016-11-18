@@ -415,19 +415,26 @@ class Cluster(NailgunObject):
         Previous ones are deleted.
 
         :param instance: a Cluster instance
-        :param role: a tag dict
+        :param tag: a tag dict
         :returns: None
         """
         instance.tags_metadata[tag['name']] = tag['meta']
 
     @classmethod
     def remove_tag(cls, instance, tag_name):
+        res = instance.tags_metadata.pop(tag_name, None)
+        if tag_name not in instance.release.tags_metadata:
+            cls.remove_tag_from_roles(instance, tag_name)
+            cls.remove_primary_tag(instance, tag_name)
+        return bool(res)
+
+    @classmethod
+    def remove_tag_from_roles(cls, instance, tag_name):
         for role, meta in six.iteritems(cls.get_own_roles(instance)):
             tags = meta.get('tags', [])
             if tag_name in tags:
                 tags.remove(tag_name)
                 instance.roles_metadata.changed()
-        return bool(instance.tags_metadata.pop(tag_name, None))
 
     @classmethod
     def _create_public_map(cls, instance, roles_metadata=None):
@@ -842,12 +849,26 @@ class Cluster(NailgunObject):
         return available_roles
 
     @classmethod
+    def get_roles_by_tag(cls, tag_name, instance):
+        roles = []
+        for role, meta in six.iteritems(cls.get_own_roles(instance)):
+            if tag_name in meta.get('tags', {}):
+                roles.append(role)
+        return set(roles)
+
+    @classmethod
     def get_own_roles(cls, instance):
         return instance.roles_metadata
 
     @classmethod
     def get_own_tags(cls, instance):
         return instance.tags_metadata
+
+    @classmethod
+    def remove_primary_tag(cls, instance, tag):
+        node = cls.get_primary_node(instance, tag)
+        if node:
+            node.primary_tags.remove(tag)
 
     @classmethod
     def set_primary_tag(cls, instance, nodes, tag):
@@ -875,7 +896,6 @@ class Cluster(NailgunObject):
                     if node.status == consts.NODE_STATUSES.ready),
                     filtered_nodes[0])
 
-                primary_node.primary_tags = list(primary_node.primary_tags)
                 primary_node.primary_tags.append(tag)
 
         db().flush()

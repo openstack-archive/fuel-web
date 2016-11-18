@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import objects
 from nailgun.test import base
 
 
@@ -21,8 +22,22 @@ class TestReleaseTagsHandler(base.BaseTestCase):
 
     def setUp(self):
         super(TestReleaseTagsHandler, self).setUp()
-        self.release = self.env.create_release()
-        self.tag_data = {'name': 'my_tag', 'meta': {'has_primary': False}}
+        self.cluster = self.env.create(api=False,
+                                       nodes_kwargs=[
+                                           {'pending_roles': ['controller']},
+                                           {'pending_roles': ['controller']},
+                                           {'pending_roles': ['controller']}])
+
+        objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
+        self.release = self.cluster.release
+        self.tag_data = {'name': 'my_tag', 'meta': {'has_primary': True}}
+        self.role_data = {'name': 'my_role',
+                          'meta': {'name': 'My Role',
+                                   'description': 'Something goes here',
+                                   'tags': ['my_tag']
+                                   },
+                          'volumes_roles_mapping':
+                              [{'id': 'os', 'allocate_size': 'all'}]}
 
     def test_get_all_tags(self):
         owner_type, owner_id = 'releases', self.release.id
@@ -71,10 +86,26 @@ class TestReleaseTagsHandler(base.BaseTestCase):
     def test_delete_tag(self):
         owner_type, owner_id = 'releases', self.release.id
         self.env.create_tag(owner_type, owner_id, self.tag_data)
+        cluster = self.env.create(
+            cluster_kwargs={'release_id': self.release.id})
+        self.env.create_role('clusters', cluster.id, self.role_data)
+        self.env.create_node(api=False, cluster_id=cluster.id,
+                             pending_roles=[self.role_data['name']])
+        self.env.create_node(api=False, cluster_id=cluster.id,
+                             pending_roles=[self.role_data['name']])
+        self.env.create_node(api=False, cluster_id=cluster.id,
+                             pending_roles=[self.role_data['name']])
+        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
+
         delete_resp = self.env.delete_tag(
             owner_type, owner_id, self.tag_data['name'])
 
         self.assertEqual(delete_resp.status_code, 204)
+        self.assertNotIn(
+            self.tag_data['name'],
+            cluster.roles_metadata[self.role_data['name']]['tags'])
+        for node in cluster.nodes:
+            self.assertNotIn(self.tag_data['name'], node.primary_tags)
 
     def test_delete_tag_not_present(self):
         owner_type, owner_id = 'releases', self.release.id
@@ -115,8 +146,21 @@ class TestClusterTagsHandler(base.BaseTestCase):
 
     def setUp(self):
         super(TestClusterTagsHandler, self).setUp()
-        self.cluster = self.env.create_cluster(api=False)
-        self.tag_data = {'name': 'my_tag', 'meta': {'has_primary': False}}
+        self.cluster = self.env.create(api=False,
+                                       nodes_kwargs=[
+                                           {'pending_roles': ['controller']},
+                                           {'pending_roles': ['controller']},
+                                           {'pending_roles': ['controller']}])
+        objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
+        self.tag_data = {'name': 'my_tag', 'meta': {'has_primary': True}}
+        self.release = self.cluster.release
+        self.role_data = {'name': 'my_role',
+                          'meta': {'name': 'My Role',
+                                   'description': 'Something goes here',
+                                   'tags': ['my_tag']
+                                   },
+                          'volumes_roles_mapping':
+                              [{'id': 'os', 'allocate_size': 'all'}]}
 
     def test_get_all_tags(self):
         owner_type, owner_id = 'clusters', self.cluster.id
@@ -160,12 +204,26 @@ class TestClusterTagsHandler(base.BaseTestCase):
         self.assertEqual(tag.json['name'], self.tag_data['name'])
 
     def test_delete_tag(self):
-        owner_type, owner_id = 'clusters', self.cluster.id
+        cluster = self.env.create(
+            cluster_kwargs={'release_id': self.release.id})
+        owner_type, owner_id = 'clusters', cluster.id
         self.env.create_tag(owner_type, owner_id, self.tag_data)
+        self.env.create_role(owner_type, owner_id, self.role_data)
+        self.env.create_node(api=False, cluster_id=owner_id,
+                             pending_roles=[self.role_data['name']])
+        self.env.create_node(api=False, cluster_id=owner_id,
+                             pending_roles=[self.role_data['name']])
+        self.env.create_node(api=False, cluster_id=owner_id,
+                             pending_roles=[self.role_data['name']])
+        objects.Cluster.set_primary_tags(cluster, cluster.nodes)
         delete_resp = self.env.delete_tag(
             owner_type, owner_id, self.tag_data['name'])
-
         self.assertEqual(delete_resp.status_code, 204)
+        self.assertNotIn(
+            self.tag_data['name'],
+            cluster.roles_metadata[self.role_data['name']]['tags'])
+        for node in cluster.nodes:
+            self.assertNotIn(self.tag_data['name'], node.primary_tags)
 
     def test_error_tag_not_present(self):
         owner_type, owner_id = 'clusters', self.cluster.id

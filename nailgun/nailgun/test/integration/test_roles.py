@@ -85,7 +85,8 @@ class TestRoles(BaseIntegrationTest):
             "name": duplicated_role,
             "meta": {
                 "name": "yep role",
-                "description": ""
+                "description": "",
+                "tags": []
             },
             "volumes_roles_mapping": [{
                 "id": "os",

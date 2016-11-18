@@ -70,7 +70,7 @@ LIMITS = {
 
 ROLE_META_INFO = {
     "type": "object",
-    "required": ["name", "description"],
+    "required": ["name", "description", "tags"],
     "properties": {
         "name": {
             "type": "string",

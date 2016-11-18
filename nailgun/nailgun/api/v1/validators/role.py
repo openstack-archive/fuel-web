@@ -38,6 +38,13 @@ class RoleValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance_cls, instance):
         parsed = cls.validate(data, instance=instance)
+        tags_meta = instance_cls.get_tags_metadata(instance)
+        for tag in parsed.get('meta', {}).get('tags', []):
+            if tag not in tags_meta:
+                raise errors.InvalidData(
+                    "Role {} contains non-existent tag {}".format(
+                        parsed['name'], tag)
+                )
 
         volumes_meta = instance_cls.get_volumes_metadata(instance)
         allowed_ids = [m['id'] for m in volumes_meta.get('volumes', [])]

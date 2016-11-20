@@ -14,18 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import datetime
-
 import alembic
-from oslo_serialization import jsonutils
 
-import sqlalchemy as sa
-
-from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
-from nailgun.test import base
-
 
 _prepare_revision = 'dc8bc8751c42'
 _test_revision = 'c6edea552f1e'
@@ -39,63 +31,4 @@ def setup_module():
 
 
 def prepare():
-    meta = base.reflect_db_metadata()
-
-    result = db.execute(
-        meta.tables['releases'].insert(),
-        [{
-            'name': 'test_name',
-            'version': '2016.1-11.0',
-            'operating_system': 'ubuntu',
-            'state': 'available',
-            'roles': jsonutils.dumps([
-                'controller',
-            ]),
-            'roles_metadata': jsonutils.dumps({
-                'controller': {
-                    'name': 'Controller',
-                },
-            }),
-            'is_deployable': True
-        }])
-
-    release_id = result.inserted_primary_key[0]
-
-    result = db.execute(
-        meta.tables['clusters'].insert(),
-        [{
-            'name': 'test_env1',
-            'release_id': release_id,
-            'mode': 'ha_compact',
-            'status': 'operational',
-            'net_provider': 'neutron',
-            'grouping': 'roles',
-            'fuel_version': '10.0',
-        }])
-    cluster_id = result.inserted_primary_key[0]
-
-    result = db.execute(
-        meta.tables['nodes'].insert(),
-        [{
-            'uuid': 'fcd49872-3917-4a18-98f9-3f5acfe3fdec',
-            'cluster_id': cluster_id,
-            'group_id': None,
-            'status': 'ready',
-            'roles': ['role_x', 'role_y'],
-            'primary_tags': ['role_y', 'test'],
-            'meta': '{}',
-            'mac': 'bb:aa:aa:aa:aa:aa',
-            'timestamp': datetime.datetime.utcnow(),
-        }]
-    )
-
-    db.commit()
-
-
-class TestPluginTags(base.BaseAlembicMigrationTest):
-    def test_primary_tags_downgrade(self):
-        nodes = self.meta.tables['nodes']
-        query = sa.select([nodes.c.primary_roles]).where(
-            nodes.c.uuid == 'fcd49872-3917-4a18-98f9-3f5acfe3fdec')
-        primary_roles = db.execute(query).fetchone()[0]
-        self.assertItemsEqual(primary_roles, ['role_y'])
+    pass

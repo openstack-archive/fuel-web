@@ -1126,6 +1126,19 @@
             description: "Enables adaptation of granular tasks for task deployment."
             weight: 12
             type: "checkbox"
+          security_groups:
+            value: "iptables_hybrid"
+            values:
+              - data: "openvswitch"
+                label: "Open vSwitch Firewall Driver"
+                description: "Choose this type of firewall driver if you use OVS Bridges for networking needs."
+              - data: "iptables_hybrid"
+                label: "Iptables-based Firewall Driver"
+                description: "Choose this type of firewall driver if you use Linux Bridges for networking needs."
+            label: "Security Groups"
+            group: "security"
+            weight: 20
+            type: "radio"
 
         public_network_assignment:
           metadata:

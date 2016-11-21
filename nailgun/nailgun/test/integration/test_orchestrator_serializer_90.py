@@ -58,6 +58,11 @@ class TestDeploymentAttributesSerialization90(
     test_orchestrator_serializer_80.TestDeploymentAttributesSerialization80
 ):
 
+    def serialize(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        return self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
     def _assign_dpdk_to_nic(self, node, dpdk_nic, other_nic):
         node.attributes['cpu_pinning']['dpdk']['value'] = 2
         other_nets = other_nic.assigned_networks_list
@@ -210,9 +215,7 @@ class TestDeploymentAttributesSerialization90(
             'attributes': attributes}
         interfaces.append(bond_interface)
         self.env.node_nics_put(node.id, interfaces)
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialised_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
+        serialised_for_astute = self.serialize()
         self.assertEqual(len(serialised_for_astute['nodes']), 1)
         serialized_node = serialised_for_astute['nodes'][0]
         dpdk = serialized_node.get('dpdk')
@@ -307,10 +310,7 @@ class TestDeploymentAttributesSerialization90(
                 'dpdk': {'value': 2},
             }
         })
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-
+        serialized_for_astute = self.serialize()
         serialized_node = serialized_for_astute['nodes'][0]
 
         self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
@@ -342,10 +342,7 @@ class TestDeploymentAttributesSerialization90(
                 'dpdk': {'value': 2},
             }
         })
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-
+        serialized_for_astute = self.serialize()
         serialized_node = serialized_for_astute['nodes'][0]
 
         self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x2')
@@ -386,10 +383,7 @@ class TestDeploymentAttributesSerialization90(
                     'value': {'2048': 1}}}}
         )
 
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-
+        serialized_for_astute = self.serialize()
         serialized_node = serialized_for_astute['nodes'][0]
 
         self.assertEquals(
@@ -426,12 +420,7 @@ class TestDeploymentAttributesSerialization90(
             }
         })
 
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-
-        serialized_node = serialized_for_astute['nodes'][0]
-
+        serialized_node = self.serialize()['nodes'][0]
         self.assertNotIn('hugepages', serialized_node)
 
     def test_attributes_hugepages_distribution(self):
@@ -462,11 +451,7 @@ class TestDeploymentAttributesSerialization90(
             }
         })
 
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-
-        serialized_node = serialized_for_astute['nodes'][0]
+        serialized_node = self.serialize()['nodes'][0]
 
         expected = [
             {'numa_id': 0, 'size': 2048, 'count': 512},
@@ -482,10 +467,7 @@ class TestDeploymentAttributesSerialization90(
                 cluster_id=self.cluster_db.id,
                 roles=roles)
 
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-
+        serialized_for_astute = self.serialize()
         for serialized_node in serialized_for_astute['nodes']:
             nova = serialized_node.get('nova', {})
             self.assertNotIn('cpu_pinning', nova)
@@ -505,10 +487,7 @@ class TestDeploymentAttributesSerialization90(
                 cluster_id=self.cluster_db.id,
                 roles=roles)
 
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
-
+        serialized_for_astute = self.serialize()
         for serialized_node in serialized_for_astute['nodes']:
             nova = serialized_node.get('nova', {})
             self.assertFalse(nova.get('enable_hugepages', False))
@@ -534,9 +513,7 @@ class TestDeploymentAttributesSerialization90(
             jsonutils.dumps({'hostname': 'new-name'}),
             headers=self.default_headers)
         self.assertEqual(200, resp.status_code)
-        objects.Cluster.prepare_for_deployment(self.cluster_db)
-        serialized_for_astute = self.serializer.serialize(
-            self.cluster_db, self.cluster_db.nodes)
+        serialized_for_astute = self.serialize()
 
         network_data = serialized_for_astute['common']['network_metadata']
         for k, v in six.iteritems(network_data['nodes']):
@@ -576,6 +553,118 @@ class TestDeploymentAttributesSerialization90(
             },
             serialized_for_astute.get('test_plugin_section', {})
         )
+
+    def test_plugin_interface_attributes_in_network_schema(self):
+        interface_offloading = [
+            {
+                'name': 'tx-checksumming',
+                'state': False,
+                'sub': [{
+                    'name': 'tx-checksum-ipv6',
+                    'state': True,
+                    'sub': []
+                }]
+            },
+            {
+                'name': 'rx-checksumming',
+                'state': True,
+                'sub': []
+            },
+            {
+                'name': 'scatter-gather',
+                'state': None,
+                'sub': []
+            }
+        ]
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller'],
+            meta={
+                'interfaces': [
+                    {'name': 'eth0', 'offloading_modes': interface_offloading},
+                    {'name': 'eth1', 'offloading_modes': interface_offloading}
+                ]
+            }
+        )
+        self.env.create_plugin(
+            name='test_plugin',
+            package_version='5.0.0',
+            cluster=self.cluster,
+            nic_attributes_metadata={
+                'attribute_a': {
+                    'label': 'Interface attribute A',
+                    'value': 'attribute_a_val'
+                },
+                'attribute_b': {
+                    'label': 'Interface attribute B',
+                    'value': 'attribute_b_val'
+                }
+            }
+        )
+
+        for nic_interface in node.nic_interfaces:
+            nic_interface.attributes.update({
+                'mtu': {'value': {'value': 2000}},
+            })
+        self.db.flush()
+
+        serialized_data = self.serialize()['nodes'][0]
+        serialized_interfaces = serialized_data['network_scheme']['interfaces']
+        for nic_interface in node.nic_interfaces:
+            nic_name = nic_interface.name
+            self.assertEqual(2000, serialized_interfaces[nic_name].get('mtu'))
+            vendor_specific = serialized_interfaces[nic_name].get(
+                'vendor_specific', {})
+            self.assertEqual('attribute_a_val',
+                             vendor_specific.get('attribute_a'))
+            self.assertEqual('attribute_b_val',
+                             vendor_specific.get('attribute_b'))
+            self.assertDictEqual(
+                {
+                    'offload': {'rx-checksumming': True,
+                                'tx-checksumming': False}
+                },
+                serialized_interfaces[nic_name].get('ethtool')
+            )
+
+    def test_plugin_bond_attributes_in_network_schema(self):
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 2, **{'cluster_id': self.cluster_db.id,
+                     'roles': ['controller']})[0]
+        bond_config = {
+            'mode': {'value': {'value': consts.BOND_MODES.balance_rr}}}
+        nic_names = [iface.name for iface in node.nic_interfaces]
+        self.env.make_bond_via_api(
+            'lnx_bond', '', nic_names, node.id, attrs=bond_config)
+        self.env.create_plugin(
+            name='test_plugin',
+            package_version='5.0.0',
+            cluster=self.cluster_db,
+            bond_attributes_metadata={
+                'attribute_a': {
+                    'label': 'Bond attribute A',
+                    'value': 'attribute_a_val'
+                },
+                'attribute_b': {
+                    'label': 'Bond attribute B',
+                    'value': 'attribute_b_val'
+                }
+            }
+        )
+
+        serialized_data = self.serialize()['nodes'][0]
+        for t in serialized_data['network_scheme']['transformations']:
+            if t.get('name') == 'lnx_bond':
+                vendor_interface_properties = \
+                    t.get('interface_properties').get('vendor_specific', {})
+                self.assertEqual(
+                    'attribute_a_val',
+                    vendor_interface_properties.get('attribute_a')
+                )
+                self.assertEqual(
+                    'attribute_b_val',
+                    vendor_interface_properties.get('attribute_b')
+                )
 
 
 class TestDeploymentLCMSerialization90(
@@ -904,6 +993,55 @@ class TestNetworkTemplateSerializer90(
 
     def test_selective_gateway_in_template_serializer(self):
         self.check_selective_gateway(use_net_template=True)
+
+    def test_plugin_interface_attributes_in_network_schema(self):
+        node = self.env.create_node(
+            cluster_id=self.cluster.id,
+            roles=['controller']
+        )
+
+        releases = [
+            {'repository_path': 'repositories/ubuntu',
+             'version': self.env_version,
+             'os': self.cluster.release.operating_system.lower(),
+             'mode': ['ha', 'multinode'],
+             'deployment_scripts_path': 'deployment_scripts/'}
+        ]
+        self.env.create_plugin(
+            name='test_plugin',
+            package_version='5.0.0',
+            cluster=self.cluster,
+            nic_attributes_metadata={
+                'attribute_a': {
+                    'label': 'Interface attribute A',
+                    'value': 'attribute_a_val'
+                },
+                'attribute_b': {
+                    'label': 'Interface attribute B',
+                    'value': 'attribute_b_val'
+                }
+            },
+            releases=releases
+        )
+
+        objects.Cluster.set_network_template(self.cluster, self.net_template)
+        objects.Cluster.prepare_for_deployment(self.cluster)
+
+        serializer = deployment_serializers.get_serializer_for_cluster(
+            self.cluster)
+        net_serializer = serializer.get_net_provider_serializer(self.cluster)
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        networks_list = nm.get_node_networks(node)
+        serialized_interfaces = net_serializer.generate_network_scheme(
+            node, networks_list)['interfaces']
+
+        for nic_interface in node.nic_interfaces:
+            vendor_specific = serialized_interfaces[nic_interface.name].get(
+                'vendor_specific', {})
+            self.assertEqual('attribute_a_val',
+                             vendor_specific.get('attribute_a'))
+            self.assertEqual('attribute_b_val',
+                             vendor_specific.get('attribute_b'))
 
 
 class TestSerializeInterfaceDriversData90(

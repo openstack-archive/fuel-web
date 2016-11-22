@@ -62,9 +62,9 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             node.pending_roles,
             assignment_data[0]["roles"]
         )
-
+        # NOTE(el): Role can be reassigned after initial assigment
         resp = self._assign_roles(assignment_data, True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
     def test_unassignment(self):
         cluster = self.env.create(
@@ -144,24 +144,6 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(node.pending_deletion, True)
-
-    def test_assigment_with_already_assigned_node(self):
-        cluster = self.env.create_cluster(api=False)
-        node = self.env.create_node(cluster_id=cluster.id)
-        resp = self.app.post(
-            reverse(
-                'NodeAssignmentHandler',
-                kwargs={'cluster_id': cluster.id}
-            ),
-            jsonutils.dumps([{'id': node.id, 'roles': ['controller']}]),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        msg = 'Nodes with ids {} already assigned ' \
-              'to environments. Nodes must be unassigned ' \
-              'before they can be assigned again.'.format(node.id)
-        self.assertEquals(400, resp.status_code)
-        self.assertEquals(msg, resp.json_body["message"])
 
     def test_assigment_with_invalid_cluster(self):
         node = self.env.create_node(api=False)

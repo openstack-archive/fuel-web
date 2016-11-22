@@ -197,7 +197,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         """)
 
         release = self.env.create_release()
-        resp = self.env.create_role(release.id, ROLE)
+        resp = self.env.create_role('releases', release.id, ROLE)
 
         self.env.create(
             cluster_kwargs={

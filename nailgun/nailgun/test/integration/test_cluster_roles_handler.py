@@ -22,6 +22,7 @@ from nailgun.test import base
 
 
 class TestClusterRolesHandler(base.BaseTestCase):
+
     # TODO(apopovych): use test data from base test file
     ROLES = yaml.safe_load("""
         test_role:
@@ -34,6 +35,16 @@ class TestClusterRolesHandler(base.BaseTestCase):
           restrictions:
             - condition: "some logic condition"
               message: "Some message for restriction warning"
+    """)
+
+    ROLE = yaml.safe_load("""
+        name: my_role
+        meta:
+            name: My Role
+            description: Something goes here
+        volumes_roles_mapping:
+            - id: os
+              allocate_size: all
     """)
 
     VOLUMES = yaml.safe_load("""
@@ -52,28 +63,11 @@ class TestClusterRolesHandler(base.BaseTestCase):
         self.expected_roles_data = self.cluster.release.roles_metadata
         self.expected_volumes_data = \
             self.cluster.release.volumes_metadata['volumes_roles_mapping']
-        self.role_name = 'compute'
-
-    def _check_methods_not_allowed(self, url):
-        req_kwargs = {
-            'url': url,
-            'expect_errors': True
-        }
-        not_allowed_methods = ('post', 'put', 'delete')
-
-        for method in not_allowed_methods:
-            resp = getattr(self.app, method)(**req_kwargs)
-            self.assertEqual(resp.status_code, 405)
-            self.assertIn("Method Not Allowed", resp.status)
+        self.role_data = self.ROLE
 
     def test_get_all_roles(self):
-        roles = self.app.get(
-            url=base.reverse(
-                'ClusterRolesCollectionHandler',
-                {'cluster_id': self.cluster.id}
-            ),
-            headers=self.default_headers
-        ).json
+        owner_type, owner_id = 'clusters', self.cluster.id
+        roles = self.env.get_all_roles(owner_type, owner_id).json
 
         self.assertItemsEqual(
             [role['name'] for role in roles],
@@ -90,76 +84,50 @@ class TestClusterRolesHandler(base.BaseTestCase):
                 self.expected_volumes_data[role['name']]
             )
 
-    def test_not_allowed_http_methods(self):
-        url = base.reverse(
-            'ClusterRolesCollectionHandler',
-            {'cluster_id': self.cluster.id}
-        )
-        self._check_methods_not_allowed(url)
+    def test_create_role(self):
+        owner_type, owner_id = 'clusters', self.cluster.id
+        resp = self.env.create_role(owner_type, owner_id, self.ROLE)
+        self.assertEqual(resp.json['meta'], self.role_data['meta'])
 
-    def test_get_particular_role_for_cluster(self):
-        role = self.app.get(
-            url=base.reverse(
-                'ClusterRolesHandler',
-                {'cluster_id': self.cluster.id, 'role_name': self.role_name}
-            )
-        ).json
+    def test_update_role(self):
+        changed_name = 'Another name'
+        owner_type, owner_id = 'clusters', self.cluster.id
 
-        self.assertEqual(role['name'], self.role_name)
-        self.assertDictEqual(
-            role['meta'],
-            self.expected_roles_data[role['name']]
-        )
-        self.assertItemsEqual(
-            role['volumes_roles_mapping'],
-            self.expected_volumes_data[role['name']]
-        )
+        resp = self.env.create_role(owner_type, owner_id, self.role_data)
+
+        data = resp.json
+        data['meta']['name'] = changed_name
+
+        resp = self.env.update_role(owner_type, owner_id, data['name'], data)
+        self.assertEqual(resp.json['meta']['name'], changed_name)
+
+    def test_get_role(self):
+        owner_type, owner_id = 'clusters', self.cluster.id
+        self.env.create_role(owner_type, owner_id, self.role_data)
+        role = self.env.get_role(owner_type, owner_id, self.role_data['name'])
+
+        self.assertEqual(role.status_code, 200)
+        self.assertEqual(role.json['name'], self.role_data['name'])
+
+    def test_delete_cluster_role(self):
+        owner_type, owner_id = 'clusters', self.cluster.id
+        self.env.create_role(owner_type, owner_id, self.role_data)
+        delete_resp = self.env.delete_role(
+            owner_type, owner_id, self.role_data['name'])
+
+        self.assertEqual(delete_resp.status_code, 204)
 
     def test_error_role_not_present(self):
+        owner_type, owner_id = 'clusters', self.cluster.id
         role_name = 'blah_role'
-        resp = self.app.get(
-            url=base.reverse(
-                'ClusterRolesHandler',
-                {'cluster_id': self.cluster.id, 'role_name': role_name}
-            ),
-            expect_errors=True
-        )
+        resp = self.env.get_role(
+            owner_type, owner_id, role_name, expect_errors=True)
 
         self.assertEqual(resp.status_code, 404)
-        self.assertIn("Role is not found for the cluster",
+        self.assertIn("is not found for the cluster",
                       resp.json_body['message'])
 
-    def test_not_allowed_methods_for_single_role(self):
-        url = base.reverse(
-            'ClusterRolesHandler',
-            {'cluster_id': self.cluster.id, 'role_name': self.role_name}
-        )
-        self._check_methods_not_allowed(url)
-
-    def test_all_roles_w_plugin(self):
-        plugin_data = self.env.get_default_plugin_metadata()
-        plugin_data['roles_metadata'] = self.ROLES
-        plugin = objects.Plugin.create(plugin_data)
-        self.cluster.plugins.append(plugin)
-        objects.ClusterPlugin.set_attributes(self.cluster.id,
-                                             plugin.id,
-                                             enabled=True)
-        self.db.flush()
-
-        roles = self.app.get(
-            url=base.reverse(
-                'ClusterRolesCollectionHandler',
-                {'cluster_id': self.cluster.id}
-            ),
-            headers=self.default_headers
-        ).json
-
-        self.assertItemsEqual(
-            [role['name'] for role in roles],
-            set(self.expected_roles_data) | set(self.ROLES),
-        )
-
-    def test_get_particular_role_for_cluster_w_plugin(self):
+    def _create_plugin(self):
         plugin_data = self.env.get_default_plugin_metadata()
         plugin_data['roles_metadata'] = self.ROLES
         plugin_data['volumes_metadata'] = self.VOLUMES
@@ -169,22 +137,71 @@ class TestClusterRolesHandler(base.BaseTestCase):
                                              plugin.id,
                                              enabled=True)
         self.db.flush()
-        plugin_adapter = plugins.wrap_plugin(plugin)
+        return plugins.wrap_plugin(plugin)
 
-        role = self.app.get(
-            url=base.reverse(
-                'ClusterRolesHandler',
-                {'cluster_id': self.cluster.id, 'role_name': 'test_role'}
-            )
-        ).json
+    def test_all_roles_w_plugin(self):
+        owner_type, owner_id = 'clusters', self.cluster.id
+        self._create_plugin()
 
-        self.assertEqual(role['name'], 'test_role')
+        roles = self.env.get_all_roles(owner_type, owner_id).json
+        self.assertItemsEqual(
+            [role['name'] for role in roles],
+            set(self.expected_roles_data) | set(self.ROLES),
+        )
+
+    def test_plugin_role_in_clusters_roles(self):
+        owner_type, owner_id = 'clusters', self.cluster.id
+        role_name = self.ROLES.keys()[0]
+        plugin_adapter = self._create_plugin()
+
+        roles = self.env.get_all_roles(owner_type, owner_id).json
+        role = [r for r in roles if r['name'] == role_name][0]
         self.assertDictEqual(
             role['meta'],
-            plugin_adapter.normalized_roles_metadata['test_role']
+            plugin_adapter.normalized_roles_metadata[role_name]
         )
         self.assertItemsEqual(
             role['volumes_roles_mapping'],
             plugin_adapter.volumes_metadata[
-                'volumes_roles_mapping']['test_role']
+                'volumes_roles_mapping'][role_name]
+        )
+
+    def test_cluster_role_overriding_release_role(self):
+        owner_type, owner_id = 'releases', self.cluster.release.id
+        self.env.create_role(owner_type, owner_id, self.role_data)
+
+        owner_type, owner_id = 'clusters', self.cluster.id
+        data = self.env.get_all_roles(owner_type, owner_id).json
+        role_name = self.role_data['name']
+        role_data = [r for r in data if r['name'] == role_name][0]
+        self.assertItemsEqual(role_data['volumes_roles_mapping'],
+                              self.role_data['volumes_roles_mapping'])
+
+        self.role_data['volumes_roles_mapping'] = [
+            {'allocate_size': 'min', 'id': 'os'},
+            {'allocate_size': 'min', 'id': 'logs'}]
+        self.env.create_role(owner_type, owner_id, self.role_data)
+        data = self.env.get_all_roles(owner_type, owner_id).json
+        role_data = [r for r in data if r['name'] == role_name][0]
+        self.assertItemsEqual(role_data['volumes_roles_mapping'],
+                              self.role_data['volumes_roles_mapping'])
+
+    def test_cluster_not_overriding_plugin_role(self):
+        owner_type, owner_id = 'clusters', self.cluster.id
+        role_name = self.ROLES.keys()[0]
+        self.role_data['name'] = role_name
+
+        self.env.create_role(owner_type, owner_id, self.role_data)
+        data = self.env.get_all_roles(owner_type, owner_id).json
+        role_data = [r for r in data if r['name'] == role_name][0]
+        self.assertItemsEqual(role_data['volumes_roles_mapping'],
+                              self.role_data['volumes_roles_mapping'])
+
+        plugin_adapter = self._create_plugin()
+        data = self.env.get_all_roles(owner_type, owner_id).json
+        role_data = [r for r in data if r['name'] == role_name][0]
+        self.assertItemsEqual(
+            role_data['volumes_roles_mapping'],
+            plugin_adapter.volumes_metadata[
+                'volumes_roles_mapping'][role_name]
         )

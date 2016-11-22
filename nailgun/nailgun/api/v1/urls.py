@@ -133,8 +133,6 @@ from nailgun.api.v1.handlers.release import ReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
 from nailgun.api.v1.handlers.release import ReleaseNetworksHandler
 
-from nailgun.api.v1.handlers.role import ClusterRolesCollectionHandler
-from nailgun.api.v1.handlers.role import ClusterRolesHandler
 from nailgun.api.v1.handlers.role import RoleCollectionHandler
 from nailgun.api.v1.handlers.role import RoleHandler
 
@@ -191,9 +189,10 @@ urls = (
     r'/releases/(?P<release_id>\d+)/components/?$',
     ComponentCollectionHandler,
 
-    r'/releases/(?P<release_id>\d+)/roles/?$',
+    r'/(?P<obj_type>releases|clusters)/(?P<obj_id>\d+)/roles/?$',
     RoleCollectionHandler,
-    r'/releases/(?P<release_id>\d+)/roles/(?P<role_name>[a-zA-Z0-9-_]+)/?$',
+    r'/(?P<obj_type>releases|clusters)/(?P<obj_id>\d+)/roles/'
+    '(?P<role_name>[a-zA-Z0-9-_]+)/?$',
     RoleHandler,
 
     r'/releases/(?P<obj_id>\d+)/deployment_graphs/?$',
@@ -201,11 +200,6 @@ urls = (
     r'/releases/(?P<obj_id>\d+)/deployment_graphs/'
     r'(?P<graph_type>[a-zA-Z0-9-_]+)/?$',
     ReleaseDeploymentGraphHandler,
-
-    r'/clusters/(?P<cluster_id>\d+)/roles/?$',
-    ClusterRolesCollectionHandler,
-    r'/clusters/(?P<cluster_id>\d+)/roles/(?P<role_name>[a-zA-Z0-9-_]+)/?$',
-    ClusterRolesHandler,
 
     r'/clusters/?$',
     ClusterCollectionHandler,

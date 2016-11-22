@@ -294,7 +294,9 @@ class InstallationInfo(object):
                     cluster),
                 'installed_plugins': self.get_cluster_plugins_info(cluster),
                 'components': cluster.components,
-                'cluster_plugins': cluster.cluster_plugins
+                'cluster_plugins': cluster.cluster_plugins,
+                'roles_metadata': cluster.roles_metadata,
+                'volumes_metadata': cluster.volumes_metadata,
             }
             clusters_info.append(cluster_info)
         return clusters_info

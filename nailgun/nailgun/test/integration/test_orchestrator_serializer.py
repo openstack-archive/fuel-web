@@ -754,7 +754,7 @@ class TestNeutronOrchestratorSerializer61(OrchestratorSerializerTestBase):
                 reverse('NodeNICsHandler', kwargs={'node_id': node.id}),
                 headers=self.default_headers
             )
-            self.assertEquals(200, resp.status_code)
+            self.assertEqual(200, resp.status_code)
             interfaces = jsonutils.loads(resp.body)
             for iface in interfaces:
                 self.assertEqual(

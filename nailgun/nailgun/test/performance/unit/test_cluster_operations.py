@@ -287,7 +287,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
             'NovaNetworkConfigurationHandler',
             handler_kwargs={'cluster_id': nova_cluster['id']}
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         network_data = jsonutils.loads(resp.body)
         func = functools.partial(
             self.put_handler,
@@ -325,7 +325,7 @@ class ClusterNeutronOperationsLoadTest(base.BaseUnitLoadTestCase):
             'NeutronNetworkConfigurationHandler',
             handler_kwargs={'cluster_id': self.cluster['id']}
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         network_data = jsonutils.loads(resp.body)
         func = functools.partial(
             self.put_handler,

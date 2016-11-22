@@ -669,12 +669,12 @@ class TestSchemalessRoles(base.BaseAlembicMigrationTest):
             self.assertIsNotNone(r_weight)
 
             if r_name in default_roles_weight:
-                self.assertEquals(
+                self.assertEqual(
                     r_weight, default_roles_weight.get(r_name)
                 )
             # role which is not present in list of default ones
             else:
-                self.assertEquals(r_weight, 10000)
+                self.assertEqual(r_weight, 10000)
 
 
 class TestClusterUISettingsMigration(base.BaseAlembicMigrationTest):

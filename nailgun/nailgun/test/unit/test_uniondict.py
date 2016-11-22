@@ -102,4 +102,4 @@ f: 6"""
 
     def test_repr(self):
         d = UnionDict(self.D1, self.D2, self.D3)
-        self.assertEquals(eval(repr(d)), self.D)
+        self.assertEqual(eval(repr(d)), self.D)

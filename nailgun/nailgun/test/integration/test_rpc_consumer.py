@@ -1453,7 +1453,7 @@ class TestConsumer(BaseReciverTestCase):
         nets_db = self.db.query(NetworkGroup).\
             filter(NetworkGroup.group_id ==
                    group_id).all()
-        self.assertEquals(len(nets_db), 0)
+        self.assertEqual(len(nets_db), 0)
 
         task_db = self.db.query(Task)\
             .filter_by(cluster_id=cluster_id).all()

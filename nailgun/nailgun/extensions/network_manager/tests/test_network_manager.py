@@ -668,8 +668,8 @@ class TestNetworkManager(BaseIntegrationTest):
         node_net_ips = dict(
             (ip.network_data.name, ip.ip_addr) for ip in node.ip_addrs
         )
-        self.assertEquals(node_net_ips,
-                          objects.IPAddr.get_networks_ips_dict(node))
+        self.assertEqual(node_net_ips,
+                         objects.IPAddr.get_networks_ips_dict(node))
 
     def test_get_admin_ip_for_node(self):
         cluster = self.env.create(api=False)
@@ -702,8 +702,8 @@ class TestNetworkManager(BaseIntegrationTest):
             dict((net.name, self.env.network_manager.get_free_ips(net)[0])
                  for net in node.networks)
         objects.IPAddr.set_networks_ips(node, node_net_ips)
-        self.assertEquals(node_net_ips,
-                          objects.IPAddr.get_networks_ips_dict(node))
+        self.assertEqual(node_net_ips,
+                         objects.IPAddr.get_networks_ips_dict(node))
 
     def test_set_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)
@@ -715,7 +715,7 @@ class TestNetworkManager(BaseIntegrationTest):
         node_ng_ids = dict((ip.network, admin_ng_id) for ip in node.ip_addrs)
         objects.Node.set_netgroups_ids(node, node_ng_ids)
         for ip in node.ip_addrs:
-            self.assertEquals(admin_ng_id, ip.network)
+            self.assertEqual(admin_ng_id, ip.network)
 
     def test_set_nic_assignment_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)
@@ -732,7 +732,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.db.refresh(node)
         for iface in node.nic_interfaces:
             for net in iface.assigned_networks_list:
-                self.assertEquals(admin_ng_id, net.id)
+                self.assertEqual(admin_ng_id, net.id)
 
     def test_set_bond_assignment_netgroups_ids(self):
         cluster = self.env.create_cluster(api=False)
@@ -761,7 +761,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.db.refresh(node)
         for iface in node.bond_interfaces:
             for net in iface.assigned_networks_list:
-                self.assertEquals(admin_ng_id, net.id)
+                self.assertEqual(admin_ng_id, net.id)
 
     def test_get_assigned_vips(self):
         vips_to_create = {

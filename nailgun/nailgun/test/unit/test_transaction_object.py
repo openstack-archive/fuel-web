@@ -65,7 +65,7 @@ class TestTransactionObject(BaseTestCase):
             'name': consts.TASK_NAMES.deployment,
             'status': consts.TASK_STATUSES.ready
         })
-        self.assertEquals(
+        self.assertEqual(
             objects.Transaction.get_deployment_info(transaction),
             {}
         )

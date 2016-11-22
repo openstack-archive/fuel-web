@@ -160,8 +160,8 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         msg = 'Nodes with ids {} already assigned ' \
               'to environments. Nodes must be unassigned ' \
               'before they can be assigned again.'.format(node.id)
-        self.assertEquals(400, resp.status_code)
-        self.assertEquals(msg, resp.json_body["message"])
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(msg, resp.json_body["message"])
 
     def test_assigment_with_invalid_cluster(self):
         node = self.env.create_node(api=False)
@@ -178,7 +178,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(404, resp.status_code)
+        self.assertEqual(404, resp.status_code)
 
     def test_assign_conflicting_roles(self):
         self.cluster = self.env.create(
@@ -198,7 +198,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             }
         ]
         resp = self._assign_roles(assignment_data, True)
-        self.assertEquals(400, resp.status_code)
+        self.assertEqual(400, resp.status_code)
 
     def test_assign_conflicting_all_role(self):
         ROLE = yaml.safe_load("""
@@ -235,11 +235,11 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             }
         ]
         resp = self._assign_roles(assignment_data, True)
-        self.assertEquals(400, resp.status_code, resp.body)
+        self.assertEqual(400, resp.status_code, resp.body)
 
         assignment_data[0]["roles"] = ['test_role']
         resp = self._assign_roles(assignment_data)
-        self.assertEquals(200, resp.status_code, resp.body)
+        self.assertEqual(200, resp.status_code, resp.body)
 
     def test_add_node_with_cluster_network_template(self):
         net_template = {
@@ -324,13 +324,13 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
         net_scheme = node.network_template['templates']['common']
         self.assertNotEqual({}, node.network_template)
-        self.assertEquals(['br-mgmt'], net_scheme['endpoints'])
-        self.assertEquals({'management': 'br-mgmt'}, net_scheme['roles'])
+        self.assertEqual(['br-mgmt'], net_scheme['endpoints'])
+        self.assertEqual({'management': 'br-mgmt'}, net_scheme['roles'])
 
         # The order of transformations matters
         self.assertIn('add-br', net_scheme['transformations'][0].values())
         self.assertIn('add-port', net_scheme['transformations'][1].values())
-        self.assertEquals('eth1', net_scheme['transformations'][1]['name'])
+        self.assertEqual('eth1', net_scheme['transformations'][1]['name'])
 
 
 class TestClusterStateUnassignment(BaseIntegrationTest):

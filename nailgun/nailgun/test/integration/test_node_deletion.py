@@ -86,7 +86,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         node_query = self.db.query(Node).filter_by(cluster_id=self.cluster.id)
-        self.assertEquals(node_query.count(), 0)
+        self.assertEqual(node_query.count(), 0)
 
     @mock_rpc(pass_mock=True)
     def test_mclient_remove_is_false_on_node_deletion(self, mrpc):

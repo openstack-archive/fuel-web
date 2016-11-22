@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 
 import alembic
 from copy import deepcopy
@@ -101,14 +102,31 @@ def prepare():
                 'deployment_tasks': '[]',
             }])
 
+        cluster_id = result.inserted_primary_key[0]
         editable = attrs.get('editable', {})
         db.execute(
             meta.tables['attributes'].insert(),
             [{
-                'cluster_id': result.inserted_primary_key[0],
+                'cluster_id': cluster_id,
                 'editable': jsonutils.dumps(editable)
             }]
         )
+
+    db.execute(
+        meta.tables['nodes'].insert(),
+        [{
+            'uuid': 'fcd49872-3917-4a18-98f9-3f5acfe3fdec',
+            'cluster_id': cluster_id,
+            'group_id': None,
+            'status': 'ready',
+            'roles': ['role_x', 'role_y'],
+            'primary_tags': ['role_y', 'test'],
+            'meta': '{}',
+            'mac': 'bb:aa:aa:aa:aa:aa',
+            'timestamp': datetime.datetime.utcnow(),
+        }]
+    )
+
     db.commit()
 
 
@@ -131,3 +149,12 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
             self.assertEqual(common.get('security_group'), None)
+
+
+class TestPluginTags(base.BaseAlembicMigrationTest):
+    def test_primary_tags_downgrade(self):
+        nodes = self.meta.tables['nodes']
+        query = sa.select([nodes.c.primary_roles]).where(
+            nodes.c.uuid == 'fcd49872-3917-4a18-98f9-3f5acfe3fdec')
+        primary_roles = db.execute(query).fetchone()[0]
+        self.assertItemsEqual(primary_roles, ['role_y'])

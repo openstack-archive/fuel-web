@@ -150,7 +150,7 @@ class TestTaskHelpers(BaseTestCase):
              'status': 'provisioned',
              'progress': 100},
             {'roles': ['compute'],
-             'status': 'deploying',
+             'status': 'provisioned',
              'progress': 100},
             {'roles': ['compute'],
              'status': 'ready',
@@ -164,7 +164,7 @@ class TestTaskHelpers(BaseTestCase):
         self.db.commit()
 
         progress = TaskHelper.recalculate_deployment_task_progress(task)
-        self.assertEqual(progress, 25)
+        self.assertEqual(progress, 66)
 
     # TODO(aroma): move it to utils testing code
     def test_recalculate_provisioning_task_progress(self):

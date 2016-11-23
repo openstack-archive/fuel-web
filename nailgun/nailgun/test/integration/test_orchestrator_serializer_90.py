@@ -557,6 +557,15 @@ class TestDeploymentLCMSerialization90(
     def create_serializer(cls, cluster):
         return deployment_serializers.DeploymentLCMSerializer()
 
+    def test_inject_provision_node_with_node_replaced_provisioning_info(self):
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        test_provisioning_info = {'test': 123}
+        self.node.replaced_provisioning_info = test_provisioning_info
+        data = {}
+        self.serializer.inject_provision_info(self.node, data)
+        self.assertIn('provision', data)
+        self.assertEqual(test_provisioning_info, data['provision'])
+
     def test_openstack_configuration_in_serialized(self):
 
         self.env.create_openstack_config(

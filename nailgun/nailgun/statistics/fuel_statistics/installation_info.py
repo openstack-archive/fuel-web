@@ -179,6 +179,7 @@ class InstallationInfo(object):
         WhiteListRule(('attributes_metadata',), 'attributes_metadata', None),
         WhiteListRule(('volumes_metadata',), 'volumes_metadata', None),
         WhiteListRule(('roles_metadata',), 'roles_metadata', None),
+        WhiteListRule(('tags_metadata',), 'tags_metadata', None),
         WhiteListRule(('network_roles_metadata',),
                       'network_roles_metadata', None),
         WhiteListRule(('components_metadata',), 'components_metadata', None),
@@ -201,7 +202,7 @@ class InstallationInfo(object):
         WhiteListRule(('name',), 'name', None),
         WhiteListRule(('labels',), 'labels', None),
         WhiteListRule(('roles',), 'roles', None),
-        WhiteListRule(('primary_roles',), 'primary_roles', None),
+        WhiteListRule(('primary_tags',), 'primary_tags', None),
         WhiteListRule(('os_platform',), 'os', None),
         WhiteListRule(('manufacturer',), 'manufacturer', None),
         WhiteListRule(('platform_name',), 'platform_name', None),
@@ -298,6 +299,7 @@ class InstallationInfo(object):
                 'components': cluster.components,
                 'cluster_plugins': cluster.cluster_plugins,
                 'roles_metadata': cluster.roles_metadata,
+                'tags_metadata': cluster.tags_metadata,
                 'volumes_metadata': cluster.volumes_metadata,
             }
             clusters_info.append(cluster_info)

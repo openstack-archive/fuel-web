@@ -17,6 +17,7 @@ import datetime
 
 import alembic
 from oslo_serialization import jsonutils
+import six
 import sqlalchemy as sa
 
 from nailgun.db import db
@@ -341,10 +342,9 @@ def prepare():
     node_interface_properties = copy.deepcopy(NODE_NIC_PROPERTIES)
     node_interface_properties['dpdk'].pop('available')
     node_id = 1
-    db.execute(
+    result = db.execute(
         meta.tables['nodes'].insert(),
         [{
-            'id': node_id,
             'uuid': '26b508d0-0d76-4159-bce9-f67ec2765481',
             'cluster_id': cluster_id,
             'group_id': None,
@@ -394,11 +394,11 @@ def prepare():
             'timestamp': datetime.datetime.utcnow(),
         }]
     )
+    node_id = result.inserted_primary_key[0]
 
     db.execute(
         meta.tables['nodes'].insert(),
         [{
-            'id': 2,
             'uuid': '26b508d0-0d76-4159-bce9-f67ec2765480',
             'cluster_id': None,
             'group_id': None,
@@ -730,3 +730,25 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
                                                           start_version)):
                 release_ids.append(release_id)
         return release_ids
+
+
+class TestTags(base.BaseAlembicMigrationTest):
+    def test_primary_tags_migration(self):
+        nodes = self.meta.tables['nodes']
+        query = sa.select([nodes.c.primary_tags]).where(
+            nodes.c.uuid == '26b508d0-0d76-4159-bce9-f67ec2765481')
+        primary_tags = db.execute(query).fetchone()[0]
+        self.assertItemsEqual(primary_tags, ['controller', 'role_y'])
+
+    def test_tags_meta_migration(self):
+        releases = self.meta.tables['releases']
+        query = sa.select([releases.c.roles_metadata,
+                           releases.c.tags_metadata])
+        for roles_meta, tags_meta in db.execute(query):
+            tags_meta = jsonutils.loads(tags_meta)
+            for role_name, role_meta in six.iteritems(
+                    jsonutils.loads(roles_meta)):
+                self.assertEqual(
+                    tags_meta[role_name].get('has_primary', False),
+                    role_meta.get('has_primary', False)
+                )

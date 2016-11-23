@@ -192,19 +192,28 @@ class TestFuyaqlController(base.BaseUnitTest):
         self.controller._cluster = mock.MagicMock()
         self.controller._node_id = 7
 
-        self.controller._set_info(self.controller.CURRENT, 'info')
-        self.assertEqual(self.controller._infos[self.controller.CURRENT],
-                         'info')
+        self.controller._set_info(
+            self.controller.CURRENT, {'common': {}, 'nodes': {'1': {'v': 1}}}
+        )
+        self.assertEqual(
+            {'1': {'v': 1}}, self.controller._infos[self.controller.CURRENT],
+        )
         self.assertEqual(self.controller._node_id, 7)
 
         self.controller._set_info(self.controller.CURRENT, None)
         self.assertEqual(self.controller._infos[self.controller.CURRENT], {})
         self.assertEqual(self.controller._node_id, 7)
 
-        serialized.return_value = list(self.new_context.values())
-        self.controller._set_info(self.controller.EXPECTED, 'exp_info')
-        self.assertEqual(self.controller._infos[self.controller.EXPECTED],
-                         'exp_info')
+        serialized.return_value = {
+            'common': {}, 'nodes': self.new_context.values()
+        }
+        self.controller._set_info(
+            self.controller.EXPECTED, {'common': {'a': 2}, 'nodes': {'1': {}}}
+        )
+        self.assertEqual(
+            {'1': {'a': 2}},
+            self.controller._infos[self.controller.EXPECTED],
+        )
         self.assertEqual(self.controller._node_id, None)
 
         self.controller._node_id = 8

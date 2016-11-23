@@ -919,7 +919,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             self._cluster_info = self.get_common_attrs(node.cluster)
 
         if node.replaced_provisioning_info:
-            info = node.replaced_provision_info
+            info = node.replaced_provisioning_info
         else:
             info = self._provision_serializer.serialize_node_info(
                 self._cluster_info, node

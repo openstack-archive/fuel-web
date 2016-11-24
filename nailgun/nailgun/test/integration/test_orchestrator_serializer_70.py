@@ -1346,7 +1346,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         objects.Cluster.set_network_template(self.cluster, None)
 
         computes = filter(lambda n: 'compute' in n.roles, self.cluster.nodes)
-        self.assertTrue(len(computes) > 0)
+        self.assertGreater(len(computes), 0)
         compute = computes[0]
 
         serializer = get_serializer_for_cluster(self.cluster)
@@ -1378,7 +1378,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
         objects.Cluster.set_network_template(self.cluster, None)
 
         computes = filter(lambda n: 'compute' in n.roles, self.cluster.nodes)
-        self.assertTrue(len(computes) > 0)
+        self.assertGreater(len(computes), 0)
         compute = computes[0]
 
         serializer = get_serializer_for_cluster(self.cluster)

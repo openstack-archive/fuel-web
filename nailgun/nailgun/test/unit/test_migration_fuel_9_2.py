@@ -57,7 +57,7 @@ ATTRIBUTES_METADATA = {
     }
 }
 
-SECURITY_GROUP = {
+SECURITY_GROUPS = {
     'value': 'iptables_hybrid',
     'values': [
         {
@@ -729,7 +729,7 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
         for attrs in results:
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
-            self.assertEqual(common.get('security_group'), SECURITY_GROUP)
+            self.assertEqual(common.get('security_groups'), SECURITY_GROUPS)
 
     def test_release_attributes_no_update(self):
         releases = self.meta.tables['releases']
@@ -741,7 +741,7 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
         for attrs in results:
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
-            self.assertEqual(common.get('security_group'), None)
+            self.assertEqual(common.get('security_groups'), None)
 
     def test_cluster_attributes_update(self):
         clusters_attributes = self.meta.tables['attributes']
@@ -756,7 +756,7 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
         for editable in results:
             editable = jsonutils.loads(editable[0])
             common = editable.setdefault('common', {})
-            self.assertEqual(common.get('security_group'), SECURITY_GROUP)
+            self.assertEqual(common.get('security_groups'), SECURITY_GROUPS)
 
     def test_cluster_attributes_no_update(self):
         clusters_attributes = self.meta.tables['attributes']
@@ -771,7 +771,7 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
         for editable in results:
             editable = jsonutils.loads(editable[0])
             common = editable.setdefault('common', {})
-            self.assertEqual(common.get('security_group'), None)
+            self.assertEqual(common.get('security_groups'), None)
 
     def get_release_ids(self, start_version, available=True):
         """Get release ids
@@ -791,8 +791,8 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
         release_ids = []
         for release_id, release_version in results:
             if (available ==
-                    migration.is_security_group_available(release_version,
-                                                          start_version)):
+                    migration.is_security_groups_available(release_version,
+                                                           start_version)):
                 release_ids.append(release_id)
         return release_ids
 

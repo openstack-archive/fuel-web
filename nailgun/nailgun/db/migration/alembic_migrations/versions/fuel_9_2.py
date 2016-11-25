@@ -100,66 +100,6 @@ NEW_TAGS_META = {
     }
 }
 
-VCENTER_INSECURE = {
-    'name': "vcenter_insecure",
-    'type': "checkbox",
-    'label': "Bypass vCenter certificate verification"
-}
-
-VCENTER_SECURITY_DISABLED = {
-    'name': "vcenter_security_disabled",
-    'type': "checkbox",
-    'label': "Bypass vCenter certificate verification"
-}
-
-VCENTER_CA_FILE = {
-    'name': "vcenter_ca_file",
-    'type': 'file',
-    'label': "CA file",
-    'description': ('File containing the trusted CA bundle that emitted '
-                    'vCenter server certificate. Even if CA bundle is not '
-                    'uploaded, certificate verification is turned on.'),
-    'restrictions': [{
-        'message': ('Bypass vCenter certificate verification should be '
-                    'disabled.'),
-        'condition': 'current_vcenter:vcenter_security_disabled == true'
-    }]
-}
-
-CA_FILE = {
-    'name': "ca_file",
-    'type': 'file',
-    'label': "CA file",
-    'description': ('File containing the trusted CA bundle that emitted '
-                    'vCenter server certificate. Even if CA bundle is not '
-                    'uploaded, certificate verification is turned on.'),
-    'restrictions': [{
-        'message': ('Bypass vCenter certificate verification should be '
-                    'disabled.'),
-        'condition': 'glance:vcenter_security_disabled == true'
-    }]
-}
-
-SECURITY_GROUP = {
-    'value': 'iptables_hybrid',
-    'values': [
-        {
-            'data': 'openvswitch',
-            'label': 'Open vSwitch Firewall Driver',
-            'description': 'Choose this type of firewall driver if you'
-                           ' use OVS Bridges for networking needs.'
-        },
-        {
-            'data': 'iptables_hybrid',
-            'label': 'Iptables-based Firewall Driver',
-            'description': 'Choose this type of firewall driver if you'
-                           ' use Linux Bridges for networking needs.'
-        }
-    ],
-    'group': 'security',
-    'weight': 20,
-    'type': 'radio',
-}
 
 DEFAULT_RELEASE_NIC_ATTRIBUTES = {
     'offloading': {
@@ -274,7 +214,7 @@ CA_FILE = {
     }]
 }
 
-SECURITY_GROUP = {
+SECURITY_GROUPS = {
     'value': 'iptables_hybrid',
     'values': [
         {
@@ -296,7 +236,7 @@ SECURITY_GROUP = {
 }
 
 # version of Fuel when security group switch was added
-FUEL_SECURITY_GROUP_VERSION = '9.0'
+FUEL_SECURITY_GROUPS_VERSION = '9.0'
 
 
 def update_vmware_attributes_metadata(upgrade):
@@ -756,12 +696,12 @@ def upgrade_release_attributes_metadata(connection):
         'WHERE id = :release_id')
 
     for release_id, attrs, release_version in connection.execute(select_query):
-        if not migration.is_security_group_available(
-                release_version, FUEL_SECURITY_GROUP_VERSION):
+        if not migration.is_security_groups_available(
+                release_version, FUEL_SECURITY_GROUPS_VERSION):
             continue
         attrs = jsonutils.loads(attrs)
         common = attrs.setdefault('editable', {}).setdefault('common', {})
-        common.setdefault('security_group', SECURITY_GROUP)
+        common.setdefault('security_groups', SECURITY_GROUPS)
         connection.execute(
             update_query,
             release_id=release_id,
@@ -781,12 +721,12 @@ def upgrade_cluster_attributes(connection):
     for cluster_id, editable, release_version in connection.execute(
             select_query
     ):
-        if not migration.is_security_group_available(
-                release_version, FUEL_SECURITY_GROUP_VERSION):
+        if not migration.is_security_groups_available(
+                release_version, FUEL_SECURITY_GROUPS_VERSION):
             continue
         editable = jsonutils.loads(editable)
-        editable.setdefault('common', {}).setdefault('security_group',
-                                                     SECURITY_GROUP)
+        editable.setdefault('common', {}).setdefault('security_groups',
+                                                     SECURITY_GROUPS)
         connection.execute(
             update_query,
             cluster_id=cluster_id,
@@ -811,7 +751,7 @@ def downgrade_release_attributes_metadata(connection):
     for release_id, attrs in connection.execute(select_query):
         attrs = jsonutils.loads(attrs)
         attrs.setdefault('editable', {}).setdefault('common', {}).pop(
-            'security_group', None)
+            'security_groups', None)
         connection.execute(
             update_query,
             release_id=release_id,
@@ -829,7 +769,7 @@ def downgrade_cluster_attributes(connection):
 
     for cluster_id, editable in connection.execute(select_query):
         editable = jsonutils.loads(editable)
-        editable.setdefault('common', {}).pop('security_group', None)
+        editable.setdefault('common', {}).pop('security_groups', None)
         connection.execute(
             update_query,
             cluster_id=cluster_id,

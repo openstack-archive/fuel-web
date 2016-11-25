@@ -370,10 +370,15 @@ class TestNodeNICInterfaceClusterPlugin(ExtraFunctions):
         expected_attributes = {
             'plugin_a_with_nic_attributes': {
                 'metadata': {
-                    'label': 'Test plugin',
+                    'label': 'Test base plugin',
                     'nic_plugin_id': nic_plugin_id,
-                    'class': 'plugin'}}}
-        expected_attributes['plugin_a_with_nic_attributes'].update(nic_config)
+                    'class': 'plugin'},
+                'plugin_name_text': {
+                    'value': 'value',
+                    'type': 'text',
+                    'description': 'Some description',
+                    'weight': 25,
+                    'label': 'label'}}}
 
         self.assertEqual(expected_attributes, attributes)
 
@@ -507,11 +512,15 @@ class TestNodeBondInterfaceClusterPlugin(ExtraFunctions):
         expected_attributes = {
             'plugin_a_with_bond_attributes': {
                 'metadata': {
-                    'label': 'Test plugin',
+                    'label': 'Test base plugin',
                     'bond_plugin_id': bond_plugin_id,
-                    'class': 'plugin'}}}
-        expected_attributes['plugin_a_with_bond_attributes'].update(
-            plugin_bond_config)
+                    'class': 'plugin'},
+                'plugin_name_text': {
+                    'value': 'value',
+                    'type': 'text',
+                    'description': 'Some description',
+                    'weight': 25,
+                    'label': 'label'}}}
 
         self.assertEqual(expected_attributes, attributes)
 

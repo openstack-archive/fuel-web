@@ -1555,6 +1555,16 @@ class NodeAttributes(object):
                 list(itertools.repeat(dpdk_memory, numa_nodes_len))}
 
     @classmethod
+    def dpdk_multiqueue_attrs(cls, node):
+        """Return multiqueue configuration for DPDK
+
+        """
+        queues_count = node.meta['cpu']['total']
+        return {
+            'ovs_queues_count': queues_count
+        }
+
+    @classmethod
     def distribute_hugepages(cls, node, attributes=None):
         hugepages = cls._safe_get_hugepages(
             node, attributes=attributes)

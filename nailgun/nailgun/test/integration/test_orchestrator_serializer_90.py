@@ -418,6 +418,27 @@ class TestDeploymentAttributesSerialization90(
             serialized_node['dpdk']['ovs_socket_mem'])
         self.assertTrue(serialized_node['nova']['enable_hugepages'])
 
+    def test_dpdk_multiqueue(self):
+        cpu_count = 3
+        meta = {
+            'cpu': {
+                'total': cpu_count
+            }
+        }
+        self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute'],
+            meta=meta)
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        serialized_node = serialized_for_astute['nodes'][0]
+
+        self.assertEquals(
+            cpu_count,
+            serialized_node['dpdk']['ovs_queues_count'])
+
     def test_attributes_no_hugepages_distribution_with_gig_hugepage(self):
         meta = {
             'numa_topology': {

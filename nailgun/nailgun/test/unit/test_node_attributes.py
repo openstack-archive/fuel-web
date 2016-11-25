@@ -19,6 +19,24 @@ import mock
 from nailgun import objects
 from nailgun.test import base
 
+FAKE_HUGEPAGES = ['0', '1', '2', '3']
+
+NODE_ATTRIBUTES = {
+    'hugepages': {
+        'nova': {
+            'type': 'custom_hugepages',
+            'value': {}
+        }
+    }
+}
+
+NODE_META = {
+    'numa_topology': {
+        'supported_hugepages': FAKE_HUGEPAGES,
+        'numa_nodes': []
+    }
+}
+
 
 class TestNodeAttributes(base.BaseUnitTest):
 
@@ -166,23 +184,24 @@ class TestNodeAttributes(base.BaseUnitTest):
             objects.NodeAttributes.distribute_hugepages(node), expected)
 
     def test_set_default_hugepages(self):
-        fake_hugepages = ['0', '1', '2', '3']
         node = mock.Mock(
             id=1,
-            attributes={
-                'hugepages': {
-                    'nova': {
-                        'type': 'custom_hugepages',
-                        'value': {}
-                    }
-                }
-            },
-            meta={
-                'numa_topology': {
-                    'supported_hugepages': fake_hugepages,
-                    'numa_nodes': []}}
+            attributes=NODE_ATTRIBUTES,
+            meta=NODE_META
         )
         objects.NodeAttributes.set_default_hugepages(node)
         hugepages = node.attributes['hugepages']['nova']['value']
-        for size in fake_hugepages:
+        for size in FAKE_HUGEPAGES:
             self.assertEqual(0, hugepages[size])
+
+    def test_get_default_hugepages(self):
+        node = mock.Mock(
+            id=1,
+            attributes=NODE_ATTRIBUTES,
+            meta=NODE_META
+        )
+
+        hugepages = objects.NodeAttributes.get_default_hugepages(node)
+        hugepages_value = hugepages['hugepages']['nova']['value']
+        for size in FAKE_HUGEPAGES:
+            self.assertEqual(0, hugepages_value[size])

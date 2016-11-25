@@ -1311,7 +1311,7 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
                 'description': 'Some description'
             },
             'metadata': {
-                'label': 'Test plugin',
+                'label': 'Test base plugin',
                 'class': 'plugin'
             }
         }

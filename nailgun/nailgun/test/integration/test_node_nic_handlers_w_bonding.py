@@ -807,26 +807,15 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
             }
         },
         'plugin_a_with_bond_attributes': {
-            'plugin_name_text': {
-                'weight': 25,
-                'type': 'text',
-                'value': 'value',
-                'label': 'label',
+            'metadata': {
+                'label': 'Test base plugin'
             },
-            'value': {
-                'weight': 10,
-                'type': 'number',
-                'value': None,
-                'label': 'MTU'
-            }
-        },
-        'plugin_a_with_bond_attributes': {
             'plugin_name_text': {
-                'weight': 25,
-                'type': 'text',
                 'value': 'value',
-                'label': 'label',
-                'description': 'Some description'
+                'type': 'text',
+                'description': 'Some description',
+                'weight': 25,
+                'label': 'label'
             }
         }
     }

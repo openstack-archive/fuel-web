@@ -37,7 +37,7 @@ ATTRIBUTES_METADATA = {
         'common': {}
     }
 }
-SECURITY_GROUP = {
+SECURITY_GROUPS = {
     'value': 'iptables_hybrid',
     'values': [
         {
@@ -70,7 +70,7 @@ def prepare():
     meta = base.reflect_db_metadata()
     attrs_with_sec_group = deepcopy(ATTRIBUTES_METADATA)
     attrs_with_sec_group.setdefault('editable', {}).setdefault(
-        'common', {}).setdefault('security_group', SECURITY_GROUP)
+        'common', {}).setdefault('security_groupS', SECURITY_GROUPS)
     for release_name, env_version, cluster_name, attrs in zip(
             ('release_1', 'release_2', 'release_3'),
             ('mitaka-9.0', 'liberty-8.0', 'mitaka-9.0'),
@@ -110,7 +110,7 @@ def prepare():
         db.execute(
             meta.tables['attributes'].insert(),
             [{
-                'cluster_id': result.inserted_primary_key[0],
+                'cluster_id': cluster_id,
                 'editable': jsonutils.dumps(editable)
             }]
         )
@@ -141,7 +141,7 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
         for editable in results:
             editable = jsonutils.loads(editable[0])
             common = editable.setdefault('common', {})
-            self.assertEqual(common.get('security_group'), None)
+            self.assertEqual(common.get('security_groups'), None)
 
     def test_release_attributes_downgrade(self):
         releases = self.meta.tables['releases']
@@ -150,7 +150,7 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
         for attrs in results:
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
-            self.assertEqual(common.get('security_group'), None)
+            self.assertEqual(common.get('security_groups'), None)
 
 
 class TestPluginTags(base.BaseAlembicMigrationTest):

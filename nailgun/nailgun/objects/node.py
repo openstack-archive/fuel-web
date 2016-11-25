@@ -1276,6 +1276,7 @@ class Node(NailgunObject):
 
         cluster = instance.cluster
         attributes = copy.deepcopy(instance.cluster.release.node_attributes)
+        attributes.update(NodeAttributes.get_default_hugepages(instance))
         attributes.update(
             PluginManager.get_plugins_node_default_attributes(cluster))
 
@@ -1413,6 +1414,11 @@ class NodeAttributes(object):
 
     @classmethod
     def set_default_hugepages(cls, node):
+        hugepages = cls.get_default_hugepages(node)
+        Node.update_attributes(node, hugepages)
+
+    @classmethod
+    def get_default_hugepages(cls, node):
         supported_hugepages = node.meta['numa_topology']['supported_hugepages']
         hugepages = cls._safe_get_hugepages(node)
         if not hugepages:
@@ -1421,8 +1427,7 @@ class NodeAttributes(object):
         for attrs in six.itervalues(hugepages):
             if attrs.get('type') == 'custom_hugepages':
                 attrs['value'] = dict.fromkeys(supported_hugepages, 0)
-
-        Node.update_attributes(node, {'hugepages': hugepages})
+        return {'hugepages': hugepages}
 
     @classmethod
     def distribute_node_cpus(cls, node, attributes=None):

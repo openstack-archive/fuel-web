@@ -582,6 +582,7 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
     def serialize_node_attributes(self, node, serialized_node):
         self.generate_cpu_pinning(node, serialized_node)
         self.generate_node_hugepages(node, serialized_node)
+        self.generate_dpdk_multiqueue(node, serialized_node)
 
     def generate_cpu_pinning(self, node, serialized_node):
         pinning_info = objects.NodeAttributes.distribute_node_cpus(node)
@@ -602,6 +603,11 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
         self._generate_nova_hugepages(node, serialized_node)
         self._generate_dpdk_hugepages(node, serialized_node)
         self._generate_hugepages_distribution(node, serialized_node)
+
+    @staticmethod
+    def generate_dpdk_multiqueue(node, serialized_node):
+        serialized_node.setdefault('dpdk', {}).update(
+            objects.NodeAttributes.dpdk_multiqueue_attrs(node))
 
     @staticmethod
     def _generate_nova_cpu_pinning(serialized_node, cpus):

@@ -56,6 +56,47 @@ SECURITY_GROUP = {
     'type': 'radio',
 }
 
+ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller',
+            'rabbitmq',
+            'database',
+            'keystone',
+            'neutron'
+        ]
+    }
+}
+
+PLUGIN_ROLE_META = {
+    'test_plugin_role': {
+        'tags': ['test_plugin_tag']
+    }
+}
+
+PLUGIN_TAGS_META = {
+    'test_plugin_tag':
+        {'has_primary': False}
+}
+
+TAGS_META = {
+    'controller': {
+        'has_primary': True,
+    },
+    'rabbitmq': {
+        'has_primary': True
+    },
+    'database': {
+        'has_primary': True
+    },
+    'keystone': {
+        'has_primary': True
+    },
+    'neutron': {
+        'has_primary': True
+    }
+}
+
 
 def setup_module():
     dropdb()
@@ -70,6 +111,15 @@ def prepare():
     attrs_with_sec_group = deepcopy(ATTRIBUTES_METADATA)
     attrs_with_sec_group.setdefault('editable', {}).setdefault(
         'common', {}).setdefault('security_group', SECURITY_GROUP)
+    plugin = {
+        'name': 'Test_P',
+        'version': '3.0.0',
+        'title': 'Test Plugin',
+        'package_version': '5.0.0',
+        'roles_metadata': jsonutils.dumps(PLUGIN_ROLE_META),
+        'tags_metadata': jsonutils.dumps(PLUGIN_TAGS_META)
+    }
+    result = db.execute(meta.tables['plugins'].insert(), [plugin])
 
     result = db.execute(
         meta.tables['releases'].insert(),
@@ -78,6 +128,8 @@ def prepare():
             'version': 'mitaka-9.0',
             'operating_system': 'ubuntu',
             'state': 'available',
+            'roles_metadata': jsonutils.dumps(ROLES_META),
+            'tags_metadata': jsonutils.dumps(TAGS_META),
             'networks_metadata': jsonutils.dumps({
                 'neutron': {
                     'networks': [],
@@ -100,6 +152,8 @@ def prepare():
             'grouping': 'roles',
             'fuel_version': '10.0',
             'deployment_tasks': '[]',
+            'roles_metadata': jsonutils.dumps(ROLES_META),
+            'tags_metadata': '{}',
             'replaced_deployment_info': '[]'
         }]
     )
@@ -237,6 +291,37 @@ def prepare():
     db.commit()
 
 
+class TestTags(base.BaseAlembicMigrationTest):
+    def test_primary_tags_downgrade(self):
+        nodes = self.meta.tables['nodes']
+        query = sa.select([nodes.c.primary_roles]).where(
+            nodes.c.uuid == 'fcd49872-3917-4a18-98f9-3f5acfe3fdec')
+        primary_roles = db.execute(query).fetchone()[0]
+        self.assertItemsEqual(primary_roles, ['controller'])
+
+    def test_downgrade_tags_metadata(self):
+        releases = self.meta.tables['releases']
+        self.assertNotIn('tags_metadata', releases.c._all_columns)
+
+        clusters = self.meta.tables['clusters']
+        self.assertNotIn('tags_metadata', clusters.c._all_columns)
+        self.assertNotIn('roles_metadata', clusters.c._all_columns)
+
+        plugins = self.meta.tables['plugins']
+        self.assertNotIn('tags_metadata', plugins.c._all_columns)
+
+    def test_downgrade_field_tags_from_roles(self):
+        releases = self.meta.tables['releases']
+        query = sa.select([releases.c.roles_metadata])
+        for role_meta in db.execute(query).fetchall():
+            self.assertNotIn('tags', role_meta)
+
+        plugins = self.meta.tables['plugins']
+        query = sa.select([plugins.c.roles_metadata])
+        for role_meta in db.execute(query):
+            self.assertNotIn('tags', role_meta)
+
+
 class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
 
     def test_downgrade_node_nic_attributes_with_empty_attributes(self):
@@ -359,12 +444,3 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
             self.assertEqual(common.get('security_group'), None)
-
-
-class TestPluginTags(base.BaseAlembicMigrationTest):
-    def test_primary_tags_downgrade(self):
-        nodes = self.meta.tables['nodes']
-        query = sa.select([nodes.c.primary_roles]).where(
-            nodes.c.uuid == 'fcd49872-3917-4a18-98f9-3f5acfe3fdec')
-        primary_roles = db.execute(query).fetchone()[0]
-        self.assertItemsEqual(primary_roles, ['controller'])

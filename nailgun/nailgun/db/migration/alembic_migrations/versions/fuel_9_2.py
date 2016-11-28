@@ -234,67 +234,6 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
 }
 
 
-VCENTER_INSECURE = {
-    'name': "vcenter_insecure",
-    'type': "checkbox",
-    'label': "Bypass vCenter certificate verification"
-}
-
-VCENTER_SECURITY_DISABLED = {
-    'name': "vcenter_security_disabled",
-    'type': "checkbox",
-    'label': "Bypass vCenter certificate verification"
-}
-
-VCENTER_CA_FILE = {
-    'name': "vcenter_ca_file",
-    'type': 'file',
-    'label': "CA file",
-    'description': ('File containing the trusted CA bundle that emitted '
-                    'vCenter server certificate. Even if CA bundle is not '
-                    'uploaded, certificate verification is turned on.'),
-    'restrictions': [{
-        'message': ('Bypass vCenter certificate verification should be '
-                    'disabled.'),
-        'condition': 'current_vcenter:vcenter_security_disabled == true'
-    }]
-}
-
-CA_FILE = {
-    'name': "ca_file",
-    'type': 'file',
-    'label': "CA file",
-    'description': ('File containing the trusted CA bundle that emitted '
-                    'vCenter server certificate. Even if CA bundle is not '
-                    'uploaded, certificate verification is turned on.'),
-    'restrictions': [{
-        'message': ('Bypass vCenter certificate verification should be '
-                    'disabled.'),
-        'condition': 'glance:vcenter_security_disabled == true'
-    }]
-}
-
-SECURITY_GROUP = {
-    'value': 'iptables_hybrid',
-    'values': [
-        {
-            'data': 'openvswitch',
-            'label': 'Open vSwitch Firewall Driver',
-            'description': 'Choose this type of firewall driver if you'
-                           ' use OVS Bridges for networking needs.'
-        },
-        {
-            'data': 'iptables_hybrid',
-            'label': 'Iptables-based Firewall Driver',
-            'description': 'Choose this type of firewall driver if you'
-                           ' use Linux Bridges for networking needs.'
-        }
-    ],
-    'group': 'security',
-    'weight': 20,
-    'type': 'radio',
-}
-
 # version of Fuel when security group switch was added
 FUEL_SECURITY_GROUP_VERSION = '9.0'
 
@@ -979,9 +918,28 @@ def downgrade_tags_set():
         tags_to_remove = set(NEW_TAGS_META) & set(tags_meta)
 
         for tag_name in tags_to_remove:
-            tags_meta.pop(tags_meta)
+            tags_meta.pop(tag_name)
 
         connection.execute(q_update_role_tags_meta,
                            roles_meta=jsonutils.dumps(roles_meta),
                            tags_meta=jsonutils.dumps(tags_meta),
                            obj_id=obj_id)
+
+
+def downgrade_role_tags():
+    connection = op.get_bind()
+    q_get_role_meta = "SELECT id, roles_metadata FROM {}"
+    q_update_role_tags_meta = '''
+        UPDATE {}
+        SET roles_metadata = :roles_meta WHERE id = :obj_id
+    '''
+    tables = ["releases", "clusters", "plugins"]
+    for table in tables:
+        for obj_id, roles_meta in connection.execute(
+                sa.text(q_get_role_meta.format(table))):
+            roles_meta = jsonutils.loads(roles_meta or '{}')
+            for role, meta in six.iteritems(roles_meta):
+                meta.pop("tags")
+            connection.execute(sa.text(q_update_role_tags_meta.format(table)),
+                               roles_meta=jsonutils.dumps(roles_meta),
+                               obj_id=obj_id)

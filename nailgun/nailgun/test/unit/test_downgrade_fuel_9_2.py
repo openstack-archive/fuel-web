@@ -54,6 +54,36 @@ SECURITY_GROUP = {
     'type': 'radio',
 }
 
+ROLES_META = {
+    'controller': {
+        'tags': [
+            'controller',
+            'rabbitmq',
+            'database',
+            'keystone',
+            'neutron'
+        ]
+    }
+}
+
+TAGS_META = {
+    'controller': {
+        'has_primary': True,
+    },
+    'rabbitmq': {
+        'has_primary': True
+    },
+    'database': {
+        'has_primary': True
+    },
+    'keystone': {
+        'has_primary': True
+    },
+    'neutron': {
+        'has_primary': True
+    }
+}
+
 
 def setup_module():
     dropdb()
@@ -80,8 +110,8 @@ def prepare():
             'operating_system': 'ubuntu',
             'state': 'available',
             'deployment_tasks': '[]',
-            'roles': '[]',
-            'roles_metadata': '{}',
+            'roles_metadata': jsonutils.dumps(ROLES_META),
+            'tags_matadata': jsonutils.dumps(TAGS_META),
             'is_deployable': True,
             'networks_metadata': '{}',
             'attributes_metadata': jsonutils.dumps(attrs)
@@ -100,6 +130,8 @@ def prepare():
                 'grouping': 'roles',
                 'fuel_version': '9.0',
                 'deployment_tasks': '[]',
+                'roles_metadata': jsonutils.dumps(ROLES_META),
+                'tags_metadata': '{}',
             }])
 
         cluster_id = result.inserted_primary_key[0]
@@ -256,13 +288,24 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
             self.assertEqual(common.get('security_group'), None)
 
 
-class TestPluginTags(base.BaseAlembicMigrationTest):
+class TestTags(base.BaseAlembicMigrationTest):
     def test_primary_tags_downgrade(self):
         nodes = self.meta.tables['nodes']
         query = sa.select([nodes.c.primary_roles]).where(
             nodes.c.uuid == 'fcd49872-3917-4a18-98f9-3f5acfe3fdec')
         primary_roles = db.execute(query).fetchone()[0]
         self.assertItemsEqual(primary_roles, ['role_y'])
+
+    def test_tags_downgrade(self):
+        releases = self.meta.tables['releases']
+        self.assertNotIn("tags_metadata", releases.c._all_columns)
+        clusters = self.meta.tables['clusters']
+        self.assertNotIn("tags_metadata", clusters.c._all_columns)
+        self.assertNotIn("roles_metadata", clusters.c._all_columns)
+        query = sa.select([releases.c.roles_metadata])
+        r_roles_meta = db.execute(query).fetchall()
+        for role_meta in r_roles_meta:
+            self.assertNotIn("tags", role_meta)
 
 
 class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):

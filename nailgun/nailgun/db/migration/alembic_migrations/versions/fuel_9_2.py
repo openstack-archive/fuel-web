@@ -497,6 +497,7 @@ def downgrade_tags_meta():
     op.drop_column('plugins', 'tags_metadata')
     op.drop_column('clusters', 'tags_metadata')
     op.drop_column('releases', 'tags_metadata')
+    downgrade_role_tags()
 
 
 def upgrade_primary_unit():
@@ -917,9 +918,28 @@ def downgrade_tags_set():
         tags_to_remove = set(NEW_TAGS_META) & set(tags_meta)
 
         for tag_name in tags_to_remove:
-            tags_meta.pop(tags_meta)
+            tags_meta.pop(tag_name)
 
         connection.execute(q_update_role_tags_meta,
                            roles_meta=jsonutils.dumps(roles_meta),
                            tags_meta=jsonutils.dumps(tags_meta),
                            obj_id=obj_id)
+
+
+def downgrade_role_tags():
+    connection = op.get_bind()
+    q_get_role_meta = "SELECT id, roles_metadata FROM {}"
+    q_update_role_tags_meta = '''
+        UPDATE {}
+        SET roles_metadata = :roles_meta WHERE id = :obj_id
+    '''
+    tables = ["releases", "clusters", "plugins"]
+    for table in tables:
+        for obj_id, roles_meta in connection.execute(
+                sa.text(q_get_role_meta.format(table))):
+            roles_meta = jsonutils.loads(roles_meta or '{}')
+            for role, meta in six.iteritems(roles_meta):
+                meta.pop("tags")
+            connection.execute(sa.text(q_update_role_tags_meta.format(table)),
+                               roles_meta=jsonutils.dumps(roles_meta),
+                               obj_id=obj_id)

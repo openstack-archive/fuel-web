@@ -24,6 +24,7 @@ from datetime import datetime
 import itertools
 import math
 import operator
+from os import path
 import traceback
 
 from netaddr import IPAddress
@@ -31,6 +32,7 @@ from netaddr import IPNetwork
 from oslo_serialization import jsonutils
 import six
 import sqlalchemy as sa
+import yaml
 
 from nailgun import consts
 from nailgun.db import db
@@ -1069,7 +1071,33 @@ class Node(NailgunObject):
 
     @classmethod
     def get_node_fqdn(cls, instance):
-        return cls.generate_fqdn_by_hostname(instance.hostname)
+        # Changing FQDN for nodes in already deployed cluster may lead to
+        # unexpected behavior, for example: LP1641140.
+        # That's why in case of redeployment the method firstly tries to fetch
+        # FQDN from cluster settings in
+        # /etc/fuel/cluster/{cluster_id}/astute.yaml
+        cluster_settings_file = path.join('/etc/fuel/cluster/',
+                                          str(instance.cluster_id),
+                                          'astute.yaml')
+
+        if path.isfile(cluster_settings_file):
+            try:
+                cluster_config = yaml.load(settings.
+                                           get_file_content
+                                           (cluster_settings_file))
+                fqdn = (cluster_config['network_metadata']['nodes']
+                        [instance.hostname]['fqdn'])
+                fqdn = u"{0}".format(fqdn)
+            except Exception:
+                return cls.generate_fqdn_by_hostname(instance.hostname)
+
+            if fqdn.startswith(instance.hostname):
+                return fqdn
+            else:
+                return cls.generate_fqdn_by_hostname(instance.hostname)
+
+        else:
+            return cls.generate_fqdn_by_hostname(instance.hostname)
 
     @classmethod
     def get_kernel_params(cls, instance):

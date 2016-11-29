@@ -546,12 +546,10 @@ class PluginManager(object):
                 plugins.append(attributes.pop(k))
 
         for plugin in plugins:
-            metadata = plugin.pop('metadata')
+            metadata = plugin.get('metadata', {})
+            bond_plugin_id = metadata.pop('bond_plugin_id')
             NodeBondInterfaceClusterPlugin.\
-                set_attributes(
-                    metadata['bond_plugin_id'],
-                    plugin
-                )
+                set_attributes(bond_plugin_id, plugin)
 
     @classmethod
     def get_nic_default_attributes(cls, cluster):
@@ -589,12 +587,10 @@ class PluginManager(object):
                 plugins.append(attributes.pop(k))
 
         for plugin in plugins:
-            metadata = plugin.pop('metadata')
+            metadata = plugin.get('metadata', {})
+            nic_plugin_id = metadata.pop('nic_plugin_id')
             NodeNICInterfaceClusterPlugin.\
-                set_attributes(
-                    metadata['nic_plugin_id'],
-                    plugin
-                )
+                set_attributes(nic_plugin_id, plugin)
 
     @classmethod
     def add_plugin_attributes_for_interface(cls, interface):

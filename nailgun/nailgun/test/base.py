@@ -861,6 +861,9 @@ class EnvironmentManager(object):
 
     def get_default_plugin_nic_config(self, **kwargs):
         nic_attributes = {
+            'metadata': {
+                'label': 'Test base plugin'
+            },
             'plugin_name_text': {
                 'value': 'value',
                 'type': 'text',
@@ -875,6 +878,9 @@ class EnvironmentManager(object):
 
     def get_default_plugin_bond_config(self, **kwargs):
         bond_attributes = {
+            'metadata': {
+                'label': 'Test base plugin'
+            },
             'plugin_name_text': {
                 'value': 'value',
                 'type': 'text',

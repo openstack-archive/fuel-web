@@ -467,15 +467,16 @@ class TestNodeHandlers(BaseIntegrationTest):
 
 class TestNodeNICsSerialization(BaseIntegrationTest):
 
-    versions = [('2014.1', False),
-                ('2014.1.1-5.0.1', False),
-                ('2014.1.1-5.1', False),
-                ('2014.1.1-5.1.1', False),
-                ('2014.2-6.0', False),
-                ('2014.2-6.0.1', False),
-                ('2014.2-6.1', True)]
+    versions = [('2014.1', True),
+                ('2014.1.1-5.0.1', True),
+                ('2014.1.1-5.1', True),
+                ('2014.1.1-5.1.1', True),
+                ('2014.2-6.0', True),
+                ('2014.2-6.0.1', True),
+                ('2014.2-6.1', True),
+                ('newton-10.0', True)]
 
-    def check_nics_interface_properties(self, handler):
+    def check_nics_interface_attributes(self, handler):
         for ver, present in self.versions:
             cluster = self.env.create(
                 release_kwargs={'version': ver},
@@ -492,7 +493,7 @@ class TestNodeNICsSerialization(BaseIntegrationTest):
                 headers=self.default_headers
             )
             self.assertEqual(resp.status_code, 200)
-            self.assertEqual('interface_properties' in resp.json_body[0],
+            self.assertEqual('attributes' in resp.json_body[0],
                              present)
             objects.Node.delete(node)
             objects.Cluster.delete(cluster)
@@ -500,10 +501,10 @@ class TestNodeNICsSerialization(BaseIntegrationTest):
             self.env.clusters = []
 
     def test_interface_properties_in_default_nic_information(self):
-        self.check_nics_interface_properties('NodeNICsDefaultHandler')
+        self.check_nics_interface_attributes('NodeNICsDefaultHandler')
 
     def test_interface_properties_in_current_nic_information(self):
-        self.check_nics_interface_properties('NodeNICsHandler')
+        self.check_nics_interface_attributes('NodeNICsHandler')
 
 
 class TestNodeNICAdminAssigning(BaseIntegrationTest):

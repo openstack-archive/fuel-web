@@ -15,11 +15,14 @@
 #    under the License.
 
 import mock
+import uuid
+
 from oslo_serialization import jsonutils
 
 from nailgun.consts import BOND_MODES
 from nailgun.consts import BOND_TYPES
 from nailgun.consts import BOND_XMIT_HASH_POLICY
+from nailgun.consts import CLUSTER_MODES
 from nailgun.consts import HYPERVISORS
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.db import db
@@ -125,7 +128,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                 self.admin_nic = nic
             elif net_names:
                 self.other_nic = nic
-            elif nic['interface_properties']['sriov']['available']:
+            elif nic['meta']['sriov']['available']:
                 self.sriov_nic = nic
             else:
                 self.empty_nic = nic
@@ -169,7 +172,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                 "lacp_rate": "slow",
                 "type__": bond_type
             },
-            "interface_properties": iface_props,
+            "attributes": iface_props,
             "slaves": [
                 {"name": self.other_nic["name"]},
                 {"name": self.empty_nic["name"]}],
@@ -257,9 +260,10 @@ class TestNodeNICsBonding(BaseIntegrationTest):
     def test_nics_lnx_bond_create_failed_with_dpdk(self, m_dpdk_available):
         m_dpdk_available.return_value = True
         bond_name = 'bond0'
-        self.prepare_bond_w_props(bond_name=bond_name,
-                                  bond_type=BOND_TYPES.linux,
-                                  iface_props={'dpdk': {'enabled': True}})
+        self.prepare_bond_w_props(
+            bond_name=bond_name,
+            bond_type=BOND_TYPES.linux,
+            iface_props={'dpdk': {'enabled': {'value': True}}})
         self.node_nics_put_check_error("Bond interface '{0}': DPDK can be"
                                        " enabled only for 'dpdkovs' bond type".
                                        format(bond_name))
@@ -294,7 +298,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data = self.env.node_nics_get(node.id).json_body
         bond = [iface for iface in self.data
                 if iface['type'] == NETWORK_INTERFACE_TYPES.bond][0]
-        bond['interface_properties'] = {'dpdk': {'enabled': True}}
+        bond['attributes'] = {'dpdk': {'enabled': {'value': True}}}
         self.node_nics_put_check_error(
             "Bond interface '{0}': DPDK can be enabled only for 'dpdkovs' bond"
             " type".format(bond_name))
@@ -766,8 +770,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                 {"name": self.sriov_nic["name"]}],
             "assigned_networks": self.sriov_nic["assigned_networks"]
         })
-        self.sriov_nic['interface_properties']['sriov']['enabled'] = True
-        self.sriov_nic['interface_properties']['sriov']['sriov_numvfs'] = 2
+        self.sriov_nic['attributes']['sriov']['enabled']['value'] = True
+        self.sriov_nic['attributes']['sriov']['numvfs']['value'] = 2
         cluster_db = self.env.clusters[-1]
         cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
         cluster_attrs['common']['libvirt_type']['value'] = HYPERVISORS.kvm
@@ -860,3 +864,89 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             "type: '{3}'".format(
                 self.env.nodes[0]["id"], BOND_MODES.balance_rr, BOND_TYPES.ovs,
                 allowed_modes))
+
+
+class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
+
+    EXPECTED_ATTRIBUTES = {
+        'mode': {
+            'value': {
+                'weight': 10,
+                'type': 'select',
+                'value': 'balance-rr',
+                'label': 'Mode',
+                'values': [
+                    {'data': 'balance-rr', 'label': 'balance-rr'}
+                ]
+            },
+            'metadata': {
+                'weight': 10,
+                'label': 'Mode'
+            }
+        },
+        'offloading': {
+            'metadata': {
+                'weight': 20,
+                'label': 'Offloading'
+            },
+            'disable': {
+                'weight': 10,
+                'type': 'checkbox',
+                'value': False,
+                'label': 'Disable offloading'
+            },
+            'modes': {
+                'weight': 20,
+                'type': 'offloading_modes',
+                'value': {},
+                'label': 'Offloading modes',
+                'description': 'Offloading modes'
+            }
+        },
+        'mtu': {
+            'metadata': {
+                'weight': 30,
+                'label': 'MTU'
+            },
+            'value': {
+                'weight': 10,
+                'type': 'number',
+                'value': None,
+                'label': 'MTU'
+            }
+        },
+        'plugin_a_with_bond_attributes': {
+            'plugin_name_text': {
+                'weight': 25,
+                'type': 'text',
+                'value': 'value',
+                'label': 'label',
+                'description': 'Some description'
+            }
+        }
+    }
+
+    def setUp(self):
+        super(TestBondAttributesDefaultsHandler, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={
+                'name': uuid.uuid4().get_hex(),
+                'version': 'newton-10.0',
+                'operating_system': 'Ubuntu',
+                'modes': [CLUSTER_MODES.ha_compact]},
+            nodes_kwargs=[{'roles': ['controller']}])
+        self.node = self.env.nodes[0]
+        self.env.create_plugin(
+            name='plugin_a_with_bond_attributes',
+            package_version='5.0.0',
+            cluster=self.cluster,
+            bond_attributes_metadata=self.env.get_default_plugin_bond_config())
+
+    def test_get_bond_default_attributes(self):
+        resp = self.app.get(
+            reverse(
+                "NodeBondAttributesDefaultsHandler",
+                kwargs={"node_id": self.node.id}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertDictEqual(self.EXPECTED_ATTRIBUTES, resp.json_body)

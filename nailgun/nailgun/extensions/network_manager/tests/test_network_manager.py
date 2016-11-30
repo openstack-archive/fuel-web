@@ -1060,24 +1060,6 @@ class TestNetworkManager(BaseIntegrationTest):
         for iface in node.interfaces:
             self.assertEqual([], iface.assigned_networks_list)
 
-    def test_get_default_interface_properties(self):
-        defaults = self.env.network_manager.get_default_interface_properties()
-        hw_data = {
-            'sriov': {
-                'pci_id': '123:456',
-                'available': True,
-                'sriov_totalvfs': 100500,
-            },
-            'dpdk': {
-                'available': True,
-            }
-        }
-        expected = nailgun.utils.dict_merge(defaults, hw_data)
-        test = self.env.network_manager.get_default_interface_properties(
-            hw_data
-        )
-        self.assertEqual(test, expected)
-
 
 class TestNovaNetworkManager(BaseIntegrationTest):
 

@@ -768,8 +768,6 @@ class NetworkManager(object):
                  in iface['assigned_networks']]
             objects.NIC.assign_networks(current_iface, nets_to_assign)
             update = {}
-            if 'offloading_modes' in iface:
-                update['offloading_modes'] = iface['offloading_modes']
             if 'attributes' in iface:
                 update['attributes'] = nailgun_utils.dict_merge(
                     current_iface.attributes,
@@ -814,10 +812,8 @@ class NetworkManager(object):
                 objects.Bond.get_attributes(bond_db),
                 bond_attributes
             )
-
             update = {
                 'slaves': slaves,
-                'offloading_modes': bond.get('offloading_modes', {}),
                 'attributes': bond_attributes
             }
             objects.Bond.update(bond_db, update)
@@ -1400,26 +1396,13 @@ class NetworkManager(object):
                 iface.attributes['offloading']['disable']['value']
             }
 
-        # TODO(apopovych): rewrite to get offloading data from attributes
-        if iface.offloading_modes:
-            modified_offloading_modes = \
-                cls._get_modified_offloading_modes(iface.offloading_modes)
-            if modified_offloading_modes:
-                properties['ethtool'] = {}
-                properties['ethtool']['offload'] = \
-                    modified_offloading_modes
+        if iface.attributes.get('offloading', {}).get(
+                'modes', {}).get('value'):
+            properties['ethtool'] = {
+                'offload': iface.attributes['offloading']['modes']['value']
+            }
 
         return properties
-
-    @classmethod
-    def _get_modified_offloading_modes(cls, offloading_modes):
-        result = dict()
-        for mode in offloading_modes:
-            if mode['state'] is not None:
-                result[mode['name']] = mode['state']
-            if mode['sub'] and mode['state'] is not False:
-                result.update(cls._get_modified_offloading_modes(mode['sub']))
-        return result
 
     @classmethod
     def find_nic_assoc_with_ng(cls, node, network_group):

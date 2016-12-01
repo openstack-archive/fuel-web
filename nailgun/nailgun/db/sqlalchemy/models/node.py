@@ -99,8 +99,9 @@ class Node(Base):
                    default=[], nullable=False, server_default='{}')
     pending_roles = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
                            default=[], nullable=False, server_default='{}')
-    primary_tags = Column(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE)),
-                          default=[], nullable=False, server_default='{}')
+    primary_tags = Column(
+        MutableList.as_mutable(psql.ARRAY(String(consts.ROLE_NAME_MAX_SIZE))),
+        default=[], nullable=False, server_default='{}')
 
     nic_interfaces = relationship("NodeNICInterface", backref="node",
                                   cascade="all, delete-orphan",

@@ -151,7 +151,8 @@ SECURITY_GROUPS = {
         },
         {
             'data': 'iptables_hybrid',
-            'label': 'Iptables-based Firewall Driver',
+            'label': 'Iptables-based Firewall Driver'
+                     ' (No firewall for DPDK case)',
             'description': 'Choose this type of firewall driver if you'
                            ' use Linux Bridges for networking needs.'
         }

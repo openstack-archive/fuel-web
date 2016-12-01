@@ -856,7 +856,7 @@ class Cluster(NailgunObject):
         :param nodes: list of Node db objects
         :param tag: string with known tag name
         """
-        from objects import Node
+        from nailgun.objects import Node
         node = cls.get_primary_node(instance, tag)
         if not node:
             # get nodes with a given role name which are not going to be

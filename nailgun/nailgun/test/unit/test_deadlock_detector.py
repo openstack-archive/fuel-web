@@ -148,9 +148,9 @@ class TestDeadlockDetector(BaseTestCase):
                 len(dd.context.locks)
             )
             results.append(True)
-        except Exception as e:
+        except Exception:
             results.append(False)
-            raise e
+            raise
         finally:
             db().commit()
 

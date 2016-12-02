@@ -191,6 +191,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
               name: "Some plugin role"
               description: "Some description"
               conflicts: "*"
+              tags: []
             volumes_roles_mapping:
                 - id: os
                   allocate_size: all

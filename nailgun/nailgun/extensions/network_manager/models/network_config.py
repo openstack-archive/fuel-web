@@ -26,6 +26,7 @@ from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
+from nailgun.settings import settings
 
 
 class NetworkingConfig(Base):
@@ -41,6 +42,8 @@ class NetworkingConfig(Base):
         "8.8.4.4",
         "8.8.8.8"
     ])
+    dns_domain = Column(String(63), nullable=False,
+                        default=settings.DNS_DOMAIN)
     floating_ranges = Column(MutableList.as_mutable(JSON), default=[])
     configuration_template = Column(
         MutableDict.as_mutable(JSON), nullable=True)

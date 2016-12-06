@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 from nailgun.db.sqlalchemy.models import Notification
 
 from nailgun import consts
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -84,6 +85,9 @@ class TestResetEnvironment(BaseIntegrationTest):
             ).count(),
             1
         )
+
+        self.assertEqual(cluster_db.network_config.dns_domain,
+                         settings.DNS_DOMAIN)
 
     @fake_tasks(
         override_state={"progress": 100, "status": "ready"},

@@ -27,6 +27,7 @@ from netaddr import IPRange
 import six
 
 from nailgun import consts
+from nailgun.db import db
 
 from nailgun import errors
 from nailgun.extensions.network_manager.objects.serializers.nic import \
@@ -1485,6 +1486,16 @@ class NetworkManager(object):
                 nics.update(bond.slaves)
 
         return list(nics)
+
+    @classmethod
+    def update_dns_domain(cls, cluster):
+        """Updates DNS domain for cluster
+
+        :param cluster: Cluster instance.
+        :returns: None
+        """
+        cluster.network_config.dns_domain = u'{0}'.format(settings.DNS_DOMAIN)
+        db().flush()
 
 
 class AllocateVIPs70Mixin(object):

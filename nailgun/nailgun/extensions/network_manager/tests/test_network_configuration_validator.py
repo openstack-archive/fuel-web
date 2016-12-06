@@ -544,6 +544,7 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
                     "8.8.8.8",
                     "2001:4860:4860::8888"
                 ],
+                "dns_domain": "localdomain",
                 "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
                 "gre_id_range": [2, 65535],
                 "internal_cidr": "192.168.111.0/24",
@@ -611,6 +612,10 @@ class TestNeutronNetworkConfigurationValidatorProtocol(
             self.nc,
             "'1.2.3.x'",
             "['networking_parameters']['dns_nameservers']")
+
+    def test_dns_domain_invalid_type(self):
+        self.nc['networking_parameters']['dns_domain'] = 1
+        self.assertRaisesInvalidType(self.nc, 1, "'string'")
 
     def test_floating_ranges_invalid_type(self):
         self.nc['networking_parameters']['floating_ranges'] = {}

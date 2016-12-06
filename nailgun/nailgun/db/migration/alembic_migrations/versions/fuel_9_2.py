@@ -29,6 +29,7 @@ import six
 import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models import fields
+from nailgun.settings import settings
 from nailgun.utils import dict_update
 from nailgun.utils import is_feature_supported
 from nailgun.utils import migration
@@ -49,9 +50,11 @@ def upgrade():
     upgrade_release_with_nic_and_bond_attributes()
     upgrade_node_nic_attributes()
     upgrade_node_bond_attributes()
+    upgrade_networking_configs_dns_domain()
 
 
 def downgrade():
+    downgrade_networking_configs_dns_domain()
     downgrade_node_bond_attributes()
     downgrade_node_nic_attributes()
     downgrade_release_with_nic_and_bond_attributes()
@@ -944,3 +947,16 @@ def downgrade_node_bond_attributes():
             attributes="{}",
             id=bond_id
         )
+
+
+def upgrade_networking_configs_dns_domain():
+    op.add_column(
+        'networking_configs',
+        sa.Column('dns_domain',
+                  sa.String(63),
+                  server_default=settings.DNS_DOMAIN),
+    )
+
+
+def downgrade_networking_configs_dns_domain():
+    op.drop_column('networking_configs', 'dns_domain')

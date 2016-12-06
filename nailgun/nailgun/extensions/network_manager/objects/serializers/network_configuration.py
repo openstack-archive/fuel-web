@@ -85,6 +85,7 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
         'base_mac',
         'configuration_template',
         'dns_nameservers',
+        'dns_domain',
         'floating_name',
         'floating_ranges',
         'gre_id_range',

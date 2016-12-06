@@ -23,6 +23,7 @@ import sqlalchemy as sa
 from nailgun.db import db
 from nailgun.db import dropdb
 from nailgun.db.migration import ALEMBIC_CONFIG
+from nailgun.settings import settings
 from nailgun.test import base
 from nailgun.utils import is_feature_supported
 from nailgun.utils import migration
@@ -337,6 +338,14 @@ def prepare():
                 'timestamp': datetime.datetime.utcnow(),
             }]
         )
+        db.execute(
+            meta.tables['networking_configs'].insert(),
+            [{
+                'cluster_id': cluster_id,
+                'dns_nameservers': ['8.8.8.8'],
+                'floating_ranges': [],
+                'configuration_template': None,
+            }])
 
     release_id = result.inserted_primary_key[0]
 
@@ -801,3 +810,11 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
         # self.assertNotIn('offloading_modes', bonds_table.c)
         # self.assertNotIn('interface_properties', bonds_table.c)
         # self.assertNotIn('bond_properties', bonds_table.c)
+
+
+class TestNetworkingConfigsDNSDomainMigration(base.BaseAlembicMigrationTest):
+
+    def test_upgrade_networking_configs_dns_domain(self):
+        column = self.meta.tables['networking_configs'].c.dns_domain
+        result = db.execute(sa.select([column])).fetchone()
+        self.assertEqual(result[0], settings.DNS_DOMAIN)

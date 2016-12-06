@@ -160,6 +160,16 @@ def prepare():
 
     cluster_id = result.inserted_primary_key[0]
 
+        db.execute(
+            meta.tables['networking_configs'].insert(),
+            [{
+                'cluster_id': cluster_id,
+                'dns_nameservers': ['8.8.8.8'],
+                'dns_domain': 'example.com',
+                'floating_ranges': [],
+                'configuration_template': None,
+            }])
+
     db.execute(
         meta.tables['nodes'].insert(),
         [{
@@ -444,3 +454,10 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
             self.assertEqual(common.get('security_groups'), None)
+
+
+class TestNetworkingConfigsDNSDomainMigration(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_networking_configs_dns_domain(self):
+        networking_configs = self.meta.tables['networking_configs']
+        self.assertNotIn('dns_domain', networking_configs.c)

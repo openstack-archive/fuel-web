@@ -229,7 +229,7 @@ class NodeValidator(base.BasicValidator):
 
             if public_ssl_endpoint in (
                 hostname,
-                objects.Node.generate_fqdn_by_hostname(hostname)
+                objects.Node.generate_fqdn_by_hostname(instance)
             ):
                 raise errors.InvalidData(
                     "New hostname '{0}' conflicts with public TLS endpoint"

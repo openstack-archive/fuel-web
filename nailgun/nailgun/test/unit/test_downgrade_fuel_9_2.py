@@ -14,10 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import datetime
 
 import alembic
+from copy import deepcopy
+import datetime
 from oslo_serialization import jsonutils
+
 
 import sqlalchemy as sa
 
@@ -29,6 +31,32 @@ from nailgun.test import base
 
 _prepare_revision = '3763c404ca48'
 _test_revision = 'f2314e5d63c9'
+
+ATTRIBUTES_METADATA = {
+    'editable': {
+        'common': {}
+    }
+}
+SECURITY_GROUP = {
+    'value': 'iptables_hybrid',
+    'values': [
+        {
+            'data': 'openvswitch',
+            'label': 'Open vSwitch Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use OVS Brige for networking needs.'
+        },
+        {
+            'data': 'iptables_hybrid',
+            'label': 'Iptables-based Firewall Driver',
+            'description': 'Choose this type of firewall driver if you'
+                           ' use Linux Bridge for networking needs.'
+        }
+    ],
+    'group': 'security',
+    'weight': 20,
+    'type': 'radio',
+}
 
 ROLES_META = {
     'controller': {
@@ -81,6 +109,9 @@ def setup_module():
 
 def prepare():
     meta = base.reflect_db_metadata()
+    attrs_with_sec_group = deepcopy(ATTRIBUTES_METADATA)
+    attrs_with_sec_group.setdefault('editable', {}).setdefault(
+        'common', {}).setdefault('security_group', SECURITY_GROUP)
     plugin = {
         'name': 'Test_P',
         'version': '3.0.0',
@@ -90,12 +121,15 @@ def prepare():
         'tags_metadata': jsonutils.dumps(PLUGIN_TAGS_META)
     }
     result = db.execute(meta.tables['plugins'].insert(), [plugin])
-
-    result = db.execute(
-        meta.tables['releases'].insert(),
-        [{
-            'name': 'test_name',
-            'version': '2016.1-10.0',
+    for release_name, env_version, cluster_name, attrs in zip(
+            ('release_1', 'release_2', 'release_3'),
+            ('mitaka-9.0', 'liberty-8.0', 'mitaka-9.0'),
+            ('cluster_1', 'cluster_2', 'cluster_3'),
+            (ATTRIBUTES_METADATA, ATTRIBUTES_METADATA, attrs_with_sec_group)
+    ):
+        release = {
+            'name': release_name,
+            'version': env_version,
             'operating_system': 'ubuntu',
             'state': 'available',
             'deployment_tasks': '[]',
@@ -103,26 +137,37 @@ def prepare():
             'tags_matadata': jsonutils.dumps(TAGS_META),
             'is_deployable': True,
             'networks_metadata': '{}',
-        }])
+            'attributes_metadata': jsonutils.dumps(attrs)
+        }
+        result = db.execute(meta.tables['releases'].insert(), [release])
+        release_id = result.inserted_primary_key[0]
 
-    release_id = result.inserted_primary_key[0]
+        result = db.execute(
+            meta.tables['clusters'].insert(),
+            [{
+                'name': cluster_name,
+                'release_id': release_id,
+                'mode': 'ha_compact',
+                'status': 'new',
+                'net_provider': 'neutron',
+                'grouping': 'roles',
+                'fuel_version': '9.0',
+                'deployment_tasks': '[]',
+                'roles_metadata': jsonutils.dumps(ROLES_META),
+                'tags_metadata': '{}',
+            }])
 
-    result = db.execute(
-        meta.tables['clusters'].insert(),
-        [{
-            'name': 'test_env1',
-            'release_id': release_id,
-            'mode': 'ha_compact',
-            'status': 'operational',
-            'net_provider': 'neutron',
-            'grouping': 'roles',
-            'fuel_version': '10.0',
-            'roles_metadata': jsonutils.dumps(ROLES_META),
-            'tags_metadata': '{}',
-        }])
-    cluster_id = result.inserted_primary_key[0]
+        cluster_id = result.inserted_primary_key[0]
+        editable = attrs.get('editable', {})
+        db.execute(
+            meta.tables['attributes'].insert(),
+            [{
+                'cluster_id': cluster_id,
+                'editable': jsonutils.dumps(editable)
+            }]
+        )
 
-    result = db.execute(
+    db.execute(
         meta.tables['nodes'].insert(),
         [{
             'uuid': 'fcd49872-3917-4a18-98f9-3f5acfe3fdec',
@@ -136,11 +181,31 @@ def prepare():
             'timestamp': datetime.datetime.utcnow(),
         }]
     )
-
     db.commit()
 
 
-class TestTags(base.BaseAlembicMigrationTest):
+class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
+
+    def test_cluster_attributes_downgrade(self):
+        clusters_attributes = self.meta.tables['attributes']
+        results = db.execute(
+            sa.select([clusters_attributes.c.editable]))
+        for editable in results:
+            editable = jsonutils.loads(editable[0])
+            common = editable.setdefault('common', {})
+            self.assertEqual(common.get('security_group'), None)
+
+    def test_release_attributes_downgrade(self):
+        releases = self.meta.tables['releases']
+        results = db.execute(
+            sa.select([releases.c.attributes_metadata]))
+        for attrs in results:
+            attrs = jsonutils.loads(attrs[0])
+            common = attrs.setdefault('editable', {}).setdefault('common', {})
+            self.assertEqual(common.get('security_group'), None)
+
+
+class TestPluginTags(base.BaseAlembicMigrationTest):
     def test_primary_tags_downgrade(self):
         nodes = self.meta.tables['nodes']
         query = sa.select([nodes.c.primary_roles]).where(

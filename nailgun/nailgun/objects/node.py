@@ -1037,14 +1037,19 @@ class Node(NailgunObject):
         return u"node-{node_id}".format(node_id=instance.id)
 
     @classmethod
-    def generate_fqdn_by_hostname(cls, hostname):
-        return u"{instance_name}.{dns_domain}" \
-            .format(instance_name=hostname,
-                    dns_domain=settings.DNS_DOMAIN)
+    def generate_fqdn_by_hostname(cls, instance):
+        try:
+            return u"{instance_name}.{dns_domain}"\
+                .format(instance_name=instance.hostname,
+                        dns_domain=instance.cluster.network_config.dns_domain)
+        except Exception:
+            return u"{instance_name}.{dns_domain}"\
+                .format(instance_name=instance.hostname,
+                        dns_domain=settings.DNS_DOMAIN)
 
     @classmethod
     def get_node_fqdn(cls, instance):
-        return cls.generate_fqdn_by_hostname(instance.hostname)
+        return cls.generate_fqdn_by_hostname(instance)
 
     @classmethod
     def get_kernel_params(cls, instance):

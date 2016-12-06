@@ -76,10 +76,8 @@ class PluginAdapterBase(object):
                     self.attributes_processors[field](data_tree.get(field))
 
         data_tree = {
-            k: v
-            for k, v in six.iteritems(data_tree)
-            if v is not None
-        }
+            k: v for k, v in six.iteritems(data_tree)
+            if v is not None}
 
         return data_tree
 
@@ -319,13 +317,14 @@ class PluginAdapterV1(PluginAdapterBase):
 
     @staticmethod
     def _process_legacy_tasks(tasks):
-        if tasks:
-            for task in tasks:
-                role = task['role']
-                if isinstance(role, list) and 'controller' in role:
-                    role.append('primary-controller')
-            return tasks
-        return []
+        if not tasks:
+            return []
+
+        for task in tasks:
+            role = task['role']
+            if isinstance(role, list) and 'controller' in role:
+                role.append('primary-controller')
+        return tasks
 
     def get_tasks(self):
         tasks = self.plugin.tasks

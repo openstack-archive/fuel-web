@@ -172,6 +172,28 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.assertEqual(409, resp.status_code)
 
+    def test_node_fqdn_gets_updated_after_hostname_update(self):
+        cluster = self.env.create_cluster(api=False)
+        node = self.env.create_node(cluster_id=cluster.id)
+
+        # check node FQDN
+        self.assertEqual(objects.Node.get_node_fqdn(node),
+                         u"{hostname}.{dns_domain}"
+                         .format(hostname=node.hostname,
+                                 dns_domain=cluster.network_config.dns_domain))
+
+        # update node hostname
+        resp = self.app.put(
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
+            jsonutils.dumps({'hostname': 'new-name'}),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+
+        # check node has new FQDN
+        self.assertEqual(objects.Node.get_node_fqdn(node),
+                         u"new-name.{dns_domain}"
+                         .format(dns_domain=cluster.network_config.dns_domain))
+
     def test_node_valid_status_gets_updated(self):
         node = self.env.create_node(api=False)
         params = {'status': 'error'}

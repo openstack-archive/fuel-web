@@ -49,9 +49,11 @@ def upgrade():
     upgrade_node_nic_attributes()
     upgrade_node_bond_attributes()
     upgrade_tags_set()
+    upgrade_networking_configs_dns_domain()
 
 
 def downgrade():
+    downgrade_networking_configs_dns_domain()
     downgrade_tags_set()
     downgrade_node_bond_attributes()
     downgrade_node_nic_attributes()
@@ -948,3 +950,16 @@ def downgrade_role_tags():
             connection.execute(sa.text(q_update_role_tags_meta.format(table)),
                                roles_meta=jsonutils.dumps(roles_meta),
                                obj_id=obj_id)
+
+
+def upgrade_networking_configs_dns_domain():
+    op.add_column(
+        'networking_configs',
+        sa.Column('dns_domain',
+                  sa.String(255),
+                  server_default='localdomain'),
+    )
+
+
+def downgrade_networking_configs_dns_domain():
+    op.drop_column('networking_configs', 'dns_domain')

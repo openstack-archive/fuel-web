@@ -1486,6 +1486,15 @@ class NetworkManager(object):
 
         return list(nics)
 
+    @classmethod
+    def reset_dns_domain(cls, cluster):
+        """Updates DNS domain for cluster
+
+        :param cluster: Cluster instance.
+        :returns: None
+        """
+        cluster.network_config.dns_domain = settings.DNS_DOMAIN
+
 
 class AllocateVIPs70Mixin(object):
 

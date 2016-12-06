@@ -133,6 +133,7 @@ NEUTRON_NETWORK_CONFIGURATION = {
                     ]
                 },
                 "dns_nameservers": base_types.IP_ADDRESS_LIST,
+                "dns_domain": base_types.FQDN,
                 "floating_name": {"type": "string"},
                 "floating_ranges": {
                     "type": "array",

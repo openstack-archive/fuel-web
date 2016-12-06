@@ -49,6 +49,7 @@ class TestNetworkModels(BaseIntegrationTest):
             ["172.16.0.160", "172.16.0.254"]
         ],
         "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+        "dns_domain": "localdomain",
         "configuration_template": {}
     }
 
@@ -191,6 +192,7 @@ class TestNetworkModels(BaseIntegrationTest):
             "fixed_networks_amount": 16,
             "floating_ranges": [["172.16.0.128", "172.16.0.254"]],
             "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+            "dns_domain": "localdomain",
             "cluster_id": cluster.id
         }
         nc = NovaNetworkConfig(**kw)

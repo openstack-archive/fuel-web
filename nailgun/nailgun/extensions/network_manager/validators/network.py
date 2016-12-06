@@ -294,6 +294,7 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
                 .format(consts.FUEL_MULTIPLE_FLOATING_IP_RANGES))
 
         cls._check_segmentation_type_changing(cluster_id, np)
+        cls._check_dns_domain_changing(cluster_id, np)
 
         return d
 
@@ -307,6 +308,19 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
                         "Change of '{0}' is prohibited".format(k),
                         log_message=True
                     )
+
+    @classmethod
+    def _check_dns_domain_changing(cls, cluster_id, data):
+        cluster = db().query(Cluster).get(cluster_id)
+        if cluster and cluster.network_config:
+            for k in ("dns_domain",):
+                if k in data and getattr(cluster.network_config, k) != data[k]:
+                    for node in cluster.nodes:
+                        if node.status != consts.NODE_STATUSES.discover:
+                            raise errors.InvalidData(
+                                "Change of '{0}' is prohibited".format(k),
+                                log_message=True
+                            )
 
     @classmethod
     def additional_network_validation(cls, data, cluster):

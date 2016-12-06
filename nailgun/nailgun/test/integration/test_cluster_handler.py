@@ -23,6 +23,7 @@ from nailgun.db.sqlalchemy.models import DeploymentGraph
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun import errors
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.utils import make_mock_extensions
@@ -239,6 +240,11 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.db.refresh(cluster)
         self.assertEqual(long_name, cluster.name)
+
+    def test_dns_domain_assigned_to_cluster(self):
+        cluster = self.env.create_cluster(api=False)
+        self.assertEqual(settings.DNS_DOMAIN,
+                         cluster.network_config.dns_domain)
 
 
 class TestClusterModes(BaseIntegrationTest):

@@ -839,6 +839,11 @@ class NailgunReceiver(object):
         if status == consts.TASK_STATUSES.ready:
             if restore_pending_changes:
                 cls._restore_pending_changes(nodes, task, ia_nodes)
+
+            # updating DNS domain for cluster after reset
+            net_manager = objects.Cluster.get_network_manager(task.cluster)
+            net_manager.reset_dns_domain(task.cluster)
+
             if ia_nodes:
                 cls._notify_inaccessible(
                     task.cluster_id,

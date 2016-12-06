@@ -174,6 +174,14 @@ def prepare():
                 'deployment_tasks': jsonutils.dumps(JSON_TASKS)
             }])
         cluster_ids.append(result.inserted_primary_key[0])
+        db.execute(
+            meta.tables['networking_configs'].insert(),
+            [{
+                'cluster_id': cluster_ids[0],
+                'dns_nameservers': ['8.8.8.8'],
+                'floating_ranges': [],
+                'configuration_template': None,
+            }])
 
     result = db.execute(
         meta.tables['nodes'].insert(),
@@ -389,3 +397,11 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestNetworkingConfigsDNSDomainMigration(base.BaseAlembicMigrationTest):
+
+    def test_upgrade_networking_configs_dns_domain(self):
+        column = self.meta.tables['networking_configs'].c.dns_domain
+        result = db.execute(sa.select([column])).fetchone()
+        self.assertEqual(result[0], 'localdomain')

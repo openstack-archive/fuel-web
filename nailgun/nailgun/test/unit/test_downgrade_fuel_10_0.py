@@ -71,6 +71,16 @@ def prepare():
     )
     cluster_id = result.inserted_primary_key[0]
 
+    db.execute(
+        meta.tables['networking_configs'].insert(),
+        [{
+            'cluster_id': cluster_id,
+            'dns_nameservers': ['8.8.8.8'],
+            'dns_domain': 'example.com',
+            'floating_ranges': [],
+            'configuration_template': None,
+        }])
+
     TestPluginLinksConstraints.prepare(meta, cluster_id)
 
 
@@ -109,3 +119,10 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
     def test_downgrade_release_required_component_types(self):
         releases_table = self.meta.tables['releases']
         self.assertNotIn('required_component_types', releases_table.c)
+
+
+class TestNetworkingConfigsDNSDomainMigration(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_networking_configs_dns_domain(self):
+        networking_configs = self.meta.tables['networking_configs']
+        self.assertNotIn('dns_domain', networking_configs.c)

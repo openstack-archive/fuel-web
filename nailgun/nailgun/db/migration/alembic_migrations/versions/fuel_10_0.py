@@ -51,9 +51,11 @@ def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_release_required_component_types()
     upgrade_remove_vmware()
+    upgrade_networking_configs_dns_domain()
 
 
 def downgrade():
+    downgrade_networking_configs_dns_domain()
     downgrade_remove_vmware()
     downgrade_release_required_component_types()
     downgrade_plugin_links_constraints()
@@ -181,3 +183,16 @@ def downgrade_remove_vmware():
         ['cluster_id'], ['id'],
         ondelete='CASCADE'
     )
+
+
+def upgrade_networking_configs_dns_domain():
+    op.add_column(
+        'networking_configs',
+        sa.Column('dns_domain',
+                  sa.String(255),
+                  server_default='localdomain'),
+    )
+
+
+def downgrade_networking_configs_dns_domain():
+    op.drop_column('networking_configs', 'dns_domain')

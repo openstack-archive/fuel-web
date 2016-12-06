@@ -22,6 +22,7 @@ from nailgun.db.sqlalchemy.models import Notification
 from nailgun import consts
 from nailgun import objects
 from nailgun.rpc.receiver import NailgunReceiver
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -271,3 +272,42 @@ class TestResetEnvironment(BaseIntegrationTest):
             self.assertEqual(n.roles, [])
             self.assertNotEqual(n.pending_roles, [])
             self.assertEqual(n.progress, 0)
+
+    @fake_tasks(
+        override_state={"progress": 100, "status": "ready"},
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
+    def test_reset_environment_dns_domain(self):
+        cluster_db = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"name": "First",
+                 "pending_addition": True},
+                {"name": "Second",
+                 "roles": ["compute"],
+                 "pending_addition": True}
+            ]
+        )
+
+        # deploy environment
+        deploy_task = self.env.launch_deployment()
+        self.assertEqual(consts.TASK_STATUSES.ready, deploy_task.status)
+
+        # change DNS_DOMAIN value in settings
+        settings.DNS_DOMAIN = "example.tld"
+        self.assertNotEqual(settings.DNS_DOMAIN,
+                            cluster_db.network_config.dns_domain)
+
+        # reset environment
+        reset_task = self.env.reset_environment()
+        self.assertEqual(consts.TASK_STATUSES.ready, reset_task.status)
+
+        # check that dns_domain for environment has been reset to a new value
+        self.assertEqual("example.tld", cluster_db.network_config.dns_domain)
+
+        # check FQDN on nodes after reset
+        for n in cluster_db.nodes:
+            self.assertEqual(u"{hostname}.example.tld"
+                             .format(hostname=n.hostname),
+                             objects.Node.get_node_fqdn(n))

@@ -164,6 +164,16 @@ def prepare():
             }]
         )
 
+        db.execute(
+            meta.tables['networking_configs'].insert(),
+            [{
+                'cluster_id': cluster_id,
+                'dns_nameservers': ['8.8.8.8'],
+                'dns_domain': 'example.com',
+                'floating_ranges': [],
+                'configuration_template': None,
+            }])
+
     db.execute(
         meta.tables['nodes'].insert(),
         [{
@@ -451,3 +461,10 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
         )
         self.assertEqual(result['offloading_modes'], "[]")
         self.assertEqual(result['attributes'], "{}")
+
+
+class TestNetworkingConfigsDNSDomainMigration(base.BaseAlembicMigrationTest):
+
+    def test_downgrade_networking_configs_dns_domain(self):
+        networking_configs = self.meta.tables['networking_configs']
+        self.assertNotIn('dns_domain', networking_configs.c)

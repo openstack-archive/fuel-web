@@ -824,6 +824,10 @@ class NailgunReceiver(object):
                 consts.CLUSTER_CHANGES.networks
             )
 
+            # updating DNS domain for cluster after reset
+            net_manager = objects.Cluster.get_network_manager(task.cluster)
+            net_manager.update_dns_domain(task.cluster)
+
             node_uids = [n["uid"] for n in itertools.chain(nodes, ia_nodes)]
             q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
             q_nodes = objects.NodeCollection.filter_by(

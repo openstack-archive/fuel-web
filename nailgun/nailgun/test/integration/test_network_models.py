@@ -49,6 +49,7 @@ class TestNetworkModels(BaseIntegrationTest):
             ["172.16.0.160", "172.16.0.254"]
         ],
         "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+        "dns_domain": "localdomain",
         "configuration_template": {}
     }
 

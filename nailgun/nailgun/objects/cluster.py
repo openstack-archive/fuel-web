@@ -196,6 +196,7 @@ class Cluster(NailgunObject):
             PluginManager.enable_plugins_by_components(cluster)
 
             net_manager.assign_vips_for_net_groups(cluster)
+            net_manager.update_dns_domain(cluster)
 
         except (
             errors.OutOfVLANs,

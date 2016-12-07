@@ -715,7 +715,7 @@ class TestDeploymentLCMSerialization90(
                 }],
                 'repositories': [{
                     'type': 'deb',
-                    'name': p.full_name,
+                    'name': p.path_name,
                     'uri': p.repo_url(self.cluster_db),
                     'suite': '/',
                     'section': '',

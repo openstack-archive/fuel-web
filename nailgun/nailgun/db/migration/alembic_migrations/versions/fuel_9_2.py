@@ -171,9 +171,15 @@ DEFAULT_RELEASE_NIC_ATTRIBUTES = {
         'metadata': {'weight': 10, 'label': 'Offloading'}
     },
     'mtu': {
-        'value': {'type': 'number', 'value': None, 'weight': 10,
-                  'label': 'MTU'},
-        'metadata': {'weight': 20, 'label': 'MTU'}
+        'metadata': {'label': 'MTU', 'weight': 20},
+        'value': {'type': 'hidden', 'value': None},
+        'use_custom_mtu': {'label': 'Use custom MTU value',
+                           'weight': 10, 'type': 'checkbox',
+                           'value': False},
+        'custom_mtu': {'label': 'Custom MTU value', 'weight': 20,
+                       'type': 'number', 'value': 42, 'min': 42, 'max': 65536,
+                       'restrictions': [
+                           "nic_attributes:mtu.use_custom_mtu.value == false"]}
     },
     'sriov': {
         'numvfs': {'min': 0, 'type': 'number', 'value': None,
@@ -211,9 +217,15 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
         'metadata': {'weight': 20, 'label': 'Offloading'}
     },
     'mtu': {
-        'value': {'type': 'number', 'weight': 10, 'value': None,
-                  'label': 'MTU'},
-        'metadata': {'weight': 30, 'label': 'MTU'}
+        'metadata': {'label': 'MTU', 'weight': 30},
+        'value': {'type': 'hidden', 'value': None},
+        'use_custom_mtu': {'label': 'Use custom MTU value',
+                           'weight': 10, 'type': 'checkbox',
+                           'value': False},
+        'custom_mtu': {'label': 'Custom MTU value', 'weight': 20,
+                       'type': 'number', 'value': 42, 'min': 42, 'max': 65536,
+                       'restrictions': [
+                           "nic_attributes:mtu.use_custom_mtu.value == false"]}
     },
     'lacp': {
         'value': {'type': 'select', 'weight': 10, 'value': '',

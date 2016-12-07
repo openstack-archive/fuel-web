@@ -732,16 +732,29 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
         },
         'mtu': {
             'metadata': {
-                'weight': 30,
-                'label': 'MTU'
+                'label': 'Custom MTU',
+                'weight': 30
             },
             'value': {
+                'type': 'hidden',
+                'value': None
+            },
+            'use_custom_mtu': {
+                'label': 'Use custom MTU value',
                 'weight': 10,
+                'type': 'checkbox',
+                'value': False
+            },
+            'custom_mtu': {
+                'label': 'Custom MTU value',
+                'weight': 20,
                 'type': 'number',
-                'value': None,
-                'label': 'MTU',
+                'value': 42,
                 'min': 42,
-                'max': 65536
+                'max': 65536,
+                'restrictions': [
+                    "bond_attributes:mtu.use_custom_mtu.value == false"
+                ]
             }
         },
         'dpdk': {

@@ -34,6 +34,7 @@ from nailgun.objects.plugin import NodeNICInterfaceClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
+from nailgun.utils import dict_merge
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
 
@@ -511,6 +512,10 @@ class PluginManager(object):
         for plugin_adapter in six.moves.map(wrap_plugin, enabled_plugins):
             metadata = plugin_adapter.bond_attributes_metadata
             if metadata:
+                metadata = dict_merge({
+                    'metadata': {
+                        'label': plugin_adapter.title, 'class': 'plugin'}},
+                    metadata)
                 plugins_bond_metadata[plugin_adapter.name] = metadata
 
         return plugins_bond_metadata
@@ -564,6 +569,10 @@ class PluginManager(object):
         for plugin_adapter in six.moves.map(wrap_plugin, enabled_plugins):
             metadata = plugin_adapter.nic_attributes_metadata
             if metadata:
+                metadata = dict_merge({
+                    'metadata': {
+                        'label': plugin_adapter.title, 'class': 'plugin'}},
+                    metadata)
                 plugins_nic_metadata[plugin_adapter.name] = metadata
 
         return plugins_nic_metadata

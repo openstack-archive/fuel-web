@@ -777,8 +777,12 @@ class TestNICIntegration(base.BaseTestCase):
         default_attributes = PluginManager.get_nic_default_attributes(
             self.cluster)
         self.assertDictEqual({
-            'plugin_a': {'attr_a': {'value': 'test_a'}},
-            'plugin_b': {'attr_b': {'value': 'test_b'}}
+            'plugin_a': {
+                'metadata': {'label': 'Test plugin', 'class': 'plugin'},
+                'attr_a': {'value': 'test_a'}},
+            'plugin_b': {
+                'metadata': {'label': 'Test plugin', 'class': 'plugin'},
+                'attr_b': {'value': 'test_b'}}
         }, default_attributes)
 
     def test_get_nic_plugin_atributes(self):

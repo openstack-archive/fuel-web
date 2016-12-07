@@ -2029,15 +2029,25 @@
           value: {}
       mtu:
         metadata:
-          label: "MTU"
+          label: "Custom MTU"
           weight: 20
         value:
-          label: "MTU"
-          weight: 10
-          type: "number"
+          type: "hidden"
           value: null
+        use_custom_mtu:
+          label: 'Use custom MTU value'
+          weight: 10
+          type: 'checkbox'
+          value: false
+        custom_mtu:
+          label: 'Custom MTU value'
+          weight: 20
+          type: 'number'
+          value: 42
           min: 42
           max: 65536
+          restrictions:
+            - "nic_attributes:mtu.use_custom_mtu.value == false"
       sriov:
         metadata:
           label: "SR-IOV"
@@ -2113,15 +2123,25 @@
           value: {}
       mtu:
         metadata:
-          label: "MTU"
-          weight: 30
+          label: "Custom MTU"
+          weight: 20
         value:
-          label: "MTU"
-          weight: 10
-          type: "number"
+          type: "hidden"
           value: null
+        use_custom_mtu:
+          label: 'Use custom MTU value'
+          weight: 10
+          type: 'checkbox'
+          value: false
+        custom_mtu:
+          label: 'Custom MTU value'
+          weight: 20
+          type: 'number'
+          value: 42
           min: 42
           max: 65536
+          restrictions:
+            - "bond_attributes:mtu.use_custom_mtu.value == false"
       dpdk:
         metadata:
           label: "DPDK"

@@ -676,16 +676,29 @@ class TestHandlers(BaseIntegrationTest):
         # change mtu
         nic['attributes']['mtu'] = {
             'metadata': {
-                'label': 'MTU',
+                'label': 'Custom MTU',
                 'weight': 20
             },
             'value': {
-                'label': 'MTU',
+                'type': 'hidden',
+                'value': 1500
+            },
+            'use_custom_mtu': {
+                'label': 'Use custom MTU value',
                 'weight': 10,
+                'type': 'checkbox',
+                'value': False
+            },
+            'custom_mtu': {
+                'label': 'Custom MTU value',
+                'weight': 20,
                 'type': 'number',
-                'value': 1500,
+                'value': 42,
                 'min': 42,
-                'max': 65536
+                'max': 65536,
+                'restrictions': [
+                    "nic_attributes:mtu.use_custom_mtu.value == false"
+                ]
             }
         }
 
@@ -710,16 +723,29 @@ class TestHandlers(BaseIntegrationTest):
         resp_nic = resp.json_body[0]
         self.assertEqual(resp_nic['attributes']['mtu'], {
             'metadata': {
-                'label': 'MTU',
+                'label': 'Custom MTU',
                 'weight': 20
             },
             'value': {
-                'label': 'MTU',
+                'type': 'hidden',
+                'value': 1500
+            },
+            'use_custom_mtu': {
+                'label': 'Use custom MTU value',
                 'weight': 10,
+                'type': 'checkbox',
+                'value': False
+            },
+            'custom_mtu': {
+                'label': 'Custom MTU value',
+                'weight': 20,
                 'type': 'number',
-                'value': 1500,
+                'value': 42,
                 'min': 42,
-                'max': 65536
+                'max': 65536,
+                'restrictions': [
+                    "nic_attributes:mtu.use_custom_mtu.value == false"
+                ]
             }
         })
 
@@ -1211,17 +1237,30 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
             }
         },
         'mtu': {
-            'value': {
-                'value': None,
-                'label': 'MTU',
-                'type': 'number',
-                'weight': 10,
-                'min': 42,
-                'max': 65536
-            },
             'metadata': {
-                'label': 'MTU',
+                'label': 'Custom MTU',
                 'weight': 20
+            },
+            'value': {
+                'type': 'hidden',
+                'value': None
+            },
+            'use_custom_mtu': {
+                'label': 'Use custom MTU value',
+                'weight': 10,
+                'type': 'checkbox',
+                'value': False
+            },
+            'custom_mtu': {
+                'label': 'Custom MTU value',
+                'weight': 20,
+                'type': 'number',
+                'value': 42,
+                'min': 42,
+                'max': 65536,
+                'restrictions': [
+                    "nic_attributes:mtu.use_custom_mtu.value == false"
+                ]
             }
         },
         'sriov': {
@@ -1356,7 +1395,7 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         expected_attributes = deepcopy(self.EXPECTED_ATTRIBUTES)
-
+        self.maxDiff = None
         for nic in resp.json_body:
             expected_attributes['offloading']['modes']['value'] = \
                 self.OFFLOADING_MODES[nic['name']]

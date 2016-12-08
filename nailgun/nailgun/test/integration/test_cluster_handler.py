@@ -149,7 +149,8 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 409)
 
-    def test_empty_cluster_deletion(self):
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_empty_cluster_deletion(self, mocked_rpc):
         cluster = self.env.create_cluster(api=True)
         resp = self.delete(cluster['id'])
 

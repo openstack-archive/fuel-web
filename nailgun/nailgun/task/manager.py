@@ -1153,15 +1153,21 @@ class ClusterDeletionManager(ClearTaskHistory):
         db().add(self.cluster)
 
         logger.debug("Creating cluster deletion task")
-        task = Task(name=consts.TASK_NAMES.cluster_deletion,
-                    cluster=self.cluster)
-        db().add(task)
+        supertask = Task(name=consts.TASK_NAMES.cluster_deletion,
+                         cluster=self.cluster)
+        db().add(supertask)
+        remove_keys_task = supertask.create_subtask(
+            consts.TASK_NAMES.cluster_deletion
+        )
         db().commit()
         self._call_silently(
-            task,
+            supertask,
             tasks.ClusterDeletionTask
         )
-        return task
+        rpc.cast('naily', [
+            tasks.RemoveClusterKeys.message(remove_keys_task)
+        ])
+        return supertask
 
 
 class DumpTaskManager(TaskManager):

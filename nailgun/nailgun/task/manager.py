@@ -413,16 +413,15 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
                     ))
                     resetup_tasks = resetup_message['args'][stage]
 
-                    while resetup_tasks:
-                        r_task = resetup_tasks.pop()
-                        task = next((
-                            t for t in deployment_tasks
-                            if t['id'] == r_task.get('id')), None)
+                    if deployment_tasks:
+                        max_priority = deployment_tasks[-1].get('priority', 0)
+                    else:
+                        max_priority = 0
 
-                        if task is not None:
-                            task['uids'].extend(r_task['uids'])
-                        else:
-                            deployment_message['args'][stage].append(r_task)
+                    for r_task in resetup_tasks:
+                        r_task_priority = r_task.get('priority', 0)
+                        r_task['priority'] = max_priority + r_task_priority
+                        deployment_message['args'][stage].append(r_task)
             else:
                 deployment_message = resetup_message
             task_deployment.cache = deployment_message

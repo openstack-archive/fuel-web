@@ -20,7 +20,7 @@ class Priority(object):
 
     Node with priority 0 will be deployed first. We have a big step
     because we want to allow user redefine deployment order and
-    he can use free space between prioriries.
+    he can use free space between priorities.
 
     :param step: an increment step
     """

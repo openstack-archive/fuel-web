@@ -149,6 +149,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 409)
 
+    @fake_tasks()
     def test_empty_cluster_deletion(self):
         cluster = self.env.create_cluster(api=True)
         resp = self.delete(cluster['id'])

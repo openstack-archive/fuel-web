@@ -326,6 +326,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertEqual(action_log.additional_info["message"], "")
                 self.assertIn("output", action_log.additional_info)
 
+    @fake_tasks()
     def test_update_action_logs_after_empty_cluster_deletion(self):
         self.env.create_cluster()
         self.env.delete_environment()
@@ -573,6 +574,7 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEqual(n.status, 'ready')
             self.assertEqual(n.progress, 100)
 
+    @fake_tasks()
     def test_deletion_empty_cluster_task_manager(self):
         # (mihgen): we synchronously call rpc receiver for empty cluster
         # that's why there is no need to mock rpc now

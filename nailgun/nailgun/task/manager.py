@@ -421,6 +421,22 @@ class ApplyChangesTaskManager(TaskManager, DeploymentCheckMixin):
 
                         if task is not None:
                             task['uids'].extend(r_task['uids'])
+                            # If we have the same task in deployment and in
+                            # resetup, then tasks priorities can be broken.
+                            # For instance we have task_parent in deployment
+                            # with priority 1000 and in the resetup with
+                            # priority 700. If we have resetup task task_child
+                            # with priority 800 and it requires task_parent,
+                            # we must have highest priority for the task_parent
+                            # in the result tasks list.
+                            if task['id']:
+                                priorities = [
+                                    p for p in (task.get('priority'),
+                                                r_task.get('priority'))
+                                    if p is not None
+                                ]
+                                if priorities:
+                                    task['priority'] = min(priorities)
                         else:
                             deployment_message['args'][stage].append(r_task)
             else:

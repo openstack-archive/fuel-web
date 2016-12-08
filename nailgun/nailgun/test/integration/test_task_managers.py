@@ -376,6 +376,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.assertEqual(action_log.additional_info["message"], "")
                 self.assertIn("output", action_log.additional_info)
 
+    @fake_tasks()
     def test_update_action_logs_after_empty_cluster_deletion(self):
         self.env.create_cluster()
         self.env.delete_environment()
@@ -623,10 +624,8 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEqual(n.status, 'ready')
             self.assertEqual(n.progress, 100)
 
+    @fake_tasks()
     def test_deletion_empty_cluster_task_manager(self):
-        # (mihgen): we synchronously call rpc receiver for empty cluster
-        # that's why there is no need to mock rpc now
-        # see task/task.py#L513 (DeletionTask.execute)
         cluster = self.env.create_cluster(api=True)
         resp = self.app.delete(
             reverse(
@@ -675,6 +674,27 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(len(tasks), 1)
 
         self.check_cluster_deletion_task(tasks[0])
+
+    @fake_tasks(fake_rpc=False)
+    def test_delete_keys_message_casted_if_cluster_deleted(self, mocked_rpc):
+        cluster = self.env.create_cluster(api=True)
+        resp = self.app.delete(
+            reverse(
+                'ClusterHandler',
+                kwargs={'obj_id': cluster['id']}),
+            headers=self.default_headers
+        )
+        self.assertEqual(202, resp.status_code)
+
+        # Validate key deletion request
+        self.assertEqual('execute_tasks',
+                         mocked_rpc.call_args[0][1][0]['method'])
+        rpc_tasks = mocked_rpc.call_args[0][1][0]['args']['tasks'][0]
+        self.assertEqual(['master'], rpc_tasks['uids'])
+        self.assertEqual(
+            'rm -rf /var/lib/fuel/keys/{0}'.format(cluster['id']),
+            rpc_tasks['parameters']['cmd']
+        )
 
     @fake_tasks(tick_interval=10, tick_count=5)
     def test_deletion_clusters_one_by_one(self):

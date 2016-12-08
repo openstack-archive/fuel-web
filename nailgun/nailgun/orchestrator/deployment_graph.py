@@ -187,7 +187,7 @@ class DeploymentGraph(nx.DiGraph):
             return True
         elif self.node[task].get('skipped'):
             logger.debug(
-                'Task %s will be skipped for %s', task)
+                'Task %s will be skipped', task)
             return True
         return False
 
@@ -413,7 +413,7 @@ class AstuteGraph(object):
     def stage_tasks_serialize(self, tasks, nodes):
         """Serialize tasks for certain stage
 
-        :param stage: oneof consts.STAGES
+        :param tasks: list of task dicts
         :param nodes: list of node db objects
         """
         serialized = []

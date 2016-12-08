@@ -396,6 +396,38 @@ class TestDeploymentAttributesSerialization90(
         node_common_attrs = network_data['nodes'][node_name]
         self.assertFalse(node_common_attrs['nova_cpu_pinning_enabled'])
 
+    def test_attributes_override_core_mask(self):
+        numa_nodes = [
+            {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
+            {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}
+        ]
+        node = self.env.create_nodes_w_interfaces_count(
+            1, 3,
+            cluster_id=self.cluster_db.id,
+            roles=['compute'])[0]
+
+        other_nic = node.interfaces[0]
+        dpdk_nic = node.interfaces[2]
+
+        self._assign_dpdk_to_nic(node, dpdk_nic, other_nic)
+
+        node.meta['numa_topology']['numa_nodes'] = numa_nodes
+        node.attributes.update({
+            'cpu_pinning': {
+                'nova': {'value': 2},
+                'dpdk': {'value': 2},
+            },
+            'dpdk': {
+                'ovs_pmd_core_mask': '0x3',
+                'ovs_core_mask': '0x1'
+            }
+        })
+        serialized_for_astute = self.serialize()
+        serialized_node = serialized_for_astute['nodes'][0]
+
+        self.assertEqual(serialized_node['dpdk']['ovs_core_mask'], '0x1')
+        self.assertEqual(serialized_node['dpdk']['ovs_pmd_core_mask'], '0x3')
+
     def test_dpdk_hugepages(self):
         numa_nodes = []
         for i in six.moves.range(3):

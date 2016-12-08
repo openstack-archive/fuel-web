@@ -1335,13 +1335,23 @@ class TestReexecuteOnDeployment(BaseIntegrationTest):
         tasks = deploy_msg['args']['pre_deployment']
         self.assertTrue(tasks)
 
-        # there's a pre-deployment task that must be reexecuted on
-        # compute nodes. so we need to look over pre-deployment tasks
-        # and ensure that task is going to be executed on computes.
-        computes = set([n.uid for n in cluster.nodes if 'compute' in n.roles])
+        # there's a post-deployment task 'pre-deployment-1'that must be
+        # reexecuted on deployed compute node. so we need to look over
+        # pre-deployment tasks and ensure that task is going to be executed
+        # on old computes placed after task on new computes
+        tasks = [t for t in tasks if t['id'] == 'pre-deployment-1']
+        computes_new = set([n.uid for n in cluster.nodes
+                            if 'compute' in n.roles and
+                            n.status == consts.NODE_STATUSES.provisioning])
+        task_new = next((t for t in tasks if computes_new.issubset(t['uids'])),
+                        None)
 
-        task = next((t for t in tasks if t['id'] == 'pre-deployment-1'), None)
-        self.assertTrue(computes.issubset(task['uids']))
+        computes_old = set([n.uid for n in cluster.nodes
+                            if 'compute' in n.roles and
+                            n.status == consts.NODE_STATUSES.ready])
+        task_old = next((t for t in tasks if computes_old.issubset(t['uids'])),
+                        None)
+        self.assertTrue(task_new['priority'] < task_old['priority'])
 
     @mock.patch('nailgun.task.task.rpc.cast')
     def test_reexecute_on_post_deployment(self, mocked_rpc):
@@ -1351,10 +1361,162 @@ class TestReexecuteOnDeployment(BaseIntegrationTest):
         tasks = deploy_msg['args']['post_deployment']
         self.assertTrue(tasks)
 
-        # there's a pre-deployment task that must be reexecuted on
-        # compute nodes. so we need to look over pre-deployment tasks
-        # and ensure that task is going to be executed on computes.
-        computes = set([n.uid for n in cluster.nodes if 'compute' in n.roles])
+        # there's a post-deployment task 'post-deployment-2'that must be
+        # reexecuted on deployed compute node. so we need to look over
+        # post-deployment tasks and ensure that task is going to be executed
+        # on old computes placed after task on new computes
+        tasks = [t for t in tasks if t['id'] == 'post-deployment-2']
+        computes_new = set([n.uid for n in cluster.nodes
+                            if 'compute' in n.roles and
+                            n.status == consts.NODE_STATUSES.provisioning])
+        task_new = next((t for t in tasks if computes_new.issubset(t['uids'])),
+                        None)
 
-        task = next((t for t in tasks if t['id'] == 'post-deployment-2'), None)
-        self.assertTrue(computes.issubset(task['uids']))
+        computes_old = set([n.uid for n in cluster.nodes
+                            if 'compute' in n.roles and
+                            n.status == consts.NODE_STATUSES.ready])
+        task_old = next((t for t in tasks if computes_old.issubset(t['uids'])),
+                        None)
+        self.assertTrue(task_new['priority'] < task_old['priority'])
+
+
+class TestPostDeploymentReexecuteTasksOrder(BaseIntegrationTest):
+
+    release_deployment_tasks = [
+        # stages
+        {'id': 'pre_deployment_start',
+         'type': 'stage'},
+        {'id': 'pre_deployment_end',
+         'type': 'stage',
+         'requires': ['pre_deployment_start']},
+        {'id': 'deploy_start',
+         'type': 'stage',
+         'requires': ['pre_deployment_end']},
+        {'id': 'deploy_end',
+         'requires': ['deploy_start'],
+         'type': 'stage'},
+        {'id': 'post_deployment_start',
+         'type': 'stage',
+         'requires': ['deploy_end']},
+        {'id': 'post_deployment_end',
+         'type': 'stage',
+         'requires': ['post_deployment_start']},
+
+        # groups
+        {'id': 'primary-controller',
+         'parameters': {'strategy': {'type': 'one_by_one'}},
+         'required_for': ['deploy_end'],
+         'requires': ['deploy_start'],
+         'role': ['primary-controller'],
+         'type': 'group'},
+        {'id': 'compute',
+         'parameters': {'strategy': {'type': 'parallel'}},
+         'required_for': ['deploy_end'],
+         'requires': ['primary-controller'],
+         'role': ['compute'],
+         'type': 'group'},
+
+        # post-deployment
+        {'id': 'base',
+         'requires': ['post_deployment_start'],
+         'required_for': ['post_deployment_end'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'reexecute_on': ['deploy_changes'],
+         'role': '*'},
+        {'id': 'main-controller',
+         'requires': ['base'],
+         'required_for': ['aggregator'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'reexecute_on': ['deploy_changes'],
+         'role': ['controller', 'primary-controller']},
+        {'id': 'main-compute',
+         'requires': ['base'],
+         'required_for': ['aggregator'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'reexecute_on': ['deploy_changes'],
+         'role': ['compute']},
+        {'id': 'aggregator',
+         'requires': ['base'],
+         'required_for': ['post_deployment_end'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'reexecute_on': ['deploy_changes'],
+         'role': '*'},
+        {'id': 'hiera-override',
+         'required_for': ['post_deployment_end'],
+         'requires': ['post_deployment_start'],
+         'type': 'puppet',
+         'reexecute_on': ['deploy_changes'],
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': '*'},
+        {'id': 'compute-sriov',
+         'required_for': ['post_deployment_end', 'override-repository'],
+         'requires': ['post_deployment_start'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': ['compute']},
+        {'id': 'override-repository',
+         'requires': ['post_deployment_start'],
+         'required_for': ['post_deployment_end', 'compute-hugepages'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': ['compute']},
+        {'id': 'compute-hugepages',
+         'requires': ['post_deployment_start'],
+         'required_for': ['post_deployment_end'],
+         'type': 'puppet',
+         'parameters': {'puppet_manifest': 'test',
+                        'puppet_modules': 'test',
+                        'timeout': 0},
+         'role': ['compute']},
+    ]
+
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_reexecute_tasks_order(self, mocked_rpc):
+        self.env.create(
+            release_kwargs={
+                'deployment_tasks': self.release_deployment_tasks,
+                'version': 'liberty-8.0',
+            },
+            cluster_kwargs={'status': consts.CLUSTER_STATUSES.operational},
+            nodes_kwargs=[
+                {'roles': ['controller'], 'primary_roles': ['controller'],
+                 'status': consts.NODE_STATUSES.ready},
+                {'roles': ['compute'], 'pending_addition': True},
+            ]
+        )
+        self.env.launch_deployment()
+        deploy_msg = mocked_rpc.call_args[0][1][1]
+        tasks = deploy_msg['args']['post_deployment']
+        self.assertTrue(tasks)
+
+        # Task 'base' has higher priority in the resetup tasks, than
+        # in the deployemnt tasks. But in result tasks priority
+        # of the 'base' task must be higher, than 'main-compute'
+        # and 'main-controller'
+        base = list(filter(lambda x: x['id'] == 'base', tasks))
+        main_ctl = list(filter(lambda x: x['id'] == 'main-controller', tasks))
+        main_comp = list(filter(lambda x: x['id'] == 'main-compute', tasks))
+        base_priority = base[0]['priority']
+        ctl_priority = main_ctl[0]['priority']
+        comp_priority = main_comp[0]['priority']
+
+        self.assertTrue(base_priority < ctl_priority)
+        self.assertTrue(base_priority < comp_priority)

@@ -149,6 +149,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 409)
 
+    @fake_tasks()
     def test_empty_cluster_deletion(self):
         cluster = self.env.create_cluster(api=True)
         resp = self.delete(cluster['id'])
@@ -157,8 +158,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(self.db.query(Node).count(), 0)
         self.assertEqual(self.db.query(Cluster).count(), 0)
 
-    @fake_tasks()
-    def test_cluster_deletion(self):
+    @mock.patch('nailgun.task.task.rpc.cast')
+    def test_cluster_deletion(self, mocked_rpc):
         cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[

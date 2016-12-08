@@ -157,20 +157,20 @@ class FakeNodesGenerator(object):
     """This class uses to generate fake nodes"""
 
     def __init__(self):
-        self.net1 = IPNetwork(NETWORK_1)
-        self.net1_ip_pool = cycle(self.net1.iter_hosts())
-        self.net2 = IPNetwork(NETWORK_2)
-        self.net2_ip_pool = cycle(self.net2.iter_hosts())
-
         self.mcounter = dict()
         self.mac_counter = 0
+        self.pool_dict = {}
 
-    def _get_network_data(self, net_name):
-        if net_name == 'net1':
-            return str(next(self.net1_ip_pool)), str(self.net1.netmask)
-        if net_name == 'net2':
-            return str(next(self.net2_ip_pool)), str(self.net2.netmask)
-        return None, None
+    def _allocate_ip(self, cidr):
+        pool = self.pool_dict.get(cidr)
+        if not pool:
+            pool = cycle(IPNetwork(cidr).iter_hosts())
+            next(pool)  # node addresses are expected to start with 2
+            self.pool_dict[cidr] = pool
+        return str(next(pool))
+
+    def _get_netmask(self, cidr):
+        return str(IPNetwork(cidr).netmask)
 
     def _generate_mac(self):
         # MAC's starts from FF:FF:FF:FF:FF:FE counting down
@@ -246,12 +246,11 @@ class FakeNodesGenerator(object):
                 })
             else:
                 new_iface['mac'] = self._generate_mac()
-                net = random.choice(['net1', 'net2', None])
+                net = random.choice([NETWORK_1, NETWORK_2, None])
                 if net:
-                    ip, netmask = self._get_network_data(net)
                     new_iface.update({
-                        'ip': ip,
-                        'netmask': netmask
+                        'ip': self._allocate_ip(net),
+                        'netmask': self._get_netmask(net)
                     })
 
             if use_offload_iface:
@@ -308,7 +307,8 @@ class FakeNodesGenerator(object):
         }
 
     def generate_fake_node(self, pk, is_online=True, is_error=False,
-                           use_offload_iface=False, min_ifaces_num=1):
+                           use_offload_iface=False, min_ifaces_num=1,
+                           cidr=None):
         """Generate one fake node
 
         :param int pk: node's database primary key
@@ -316,6 +316,7 @@ class FakeNodesGenerator(object):
         :param bool is_error: node's error status
         :param bool use_offload_iface: use offloading_modes data for
                                        node's interfaces or not
+        :param str cidr CIDR to use for IP generation
         :returns: kwargs dict that represents fake node
         """
 
@@ -325,8 +326,9 @@ class FakeNodesGenerator(object):
         hostname = 'node-{0}'.format(pk)
         platform_name = random.choice(['', 'X9SCD', 'N5110', 'X9DRW'])
         mac = self._generate_mac()
-        net = random.choice(['net1', 'net2'])
-        ip, netmask = self._get_network_data(net)
+        net = cidr or random.choice([NETWORK_1, NETWORK_2])
+        ip = self._allocate_ip(net)
+        netmask = self._get_netmask(net)
 
         return {
             'pk': pk,

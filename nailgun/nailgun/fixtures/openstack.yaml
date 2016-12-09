@@ -2363,6 +2363,7 @@
               ruby-openstack
               ruby-shadow
               ruby-stomp
+              systemd-shim
               telnet
               ubuntu-minimal
               ubuntu-standard

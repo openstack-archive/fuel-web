@@ -411,7 +411,8 @@ class TestTaskDeploy90(BaseIntegrationTest):
              if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
         )
 
-    def test_deploy_check_failed_with_dpdk_cpu_distribution(self):
+    @mock.patch("objects.Node.dpdk_enabled")
+    def test_deploy_check_failed_with_dpdk_cpu_distribution(self, _):
         node = self.env.nodes[0]
 
         objects.Node.update_attributes(node, {

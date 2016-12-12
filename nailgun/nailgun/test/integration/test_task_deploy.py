@@ -409,7 +409,8 @@ class TestTaskDeploy90(BaseIntegrationTest):
              if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
         )
 
-    def test_deploy_check_failed_with_dpdk_cpu_distribution(self):
+    @mock.patch('objects.Node.dpdk_enabled', return_value=True)
+    def test_deploy_check_failed_with_dpdk_cpu_distribution(self, _):
         node = self.env.nodes[0]
 
         objects.Node.update_attributes(node, {
@@ -426,6 +427,17 @@ class TestTaskDeploy90(BaseIntegrationTest):
             " configured DPDK interfaces.".format(node.id),
             task.message
         )
+
+    @fake_tasks()
+    @mock.patch('objects.Node.dpdk_enabled', return_value=False)
+    def test_deploy_disabled_dpdk_check_ok_without_numa_meta(self, _):
+        node = self.env.nodes[0]
+
+        node.meta.pop('numa_topology', {})
+
+        task = self.env.launch_deployment(self.cluster.id)
+
+        self.assertEqual(consts.TASK_STATUSES.ready, task.status)
 
 
 class TestTaskDeploy90AfterDeployment(BaseIntegrationTest):

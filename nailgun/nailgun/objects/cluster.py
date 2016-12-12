@@ -840,6 +840,20 @@ class Cluster(NailgunObject):
             return False
 
     @classmethod
+    def dpdk_enabled(cls, instance):
+        # Had to do this due to issues with modules imports in current
+        # nailgun __init__.py which cannot be resolved easily
+        from nailgun.objects import Node
+
+        dpdk_enabled = False
+        if Release.is_nfv_supported(instance.release):
+            for node in instance.nodes:
+                if not(Node.dpdk_enabled(node)):
+                    continue
+                dpdk_enabled = True
+        return dpdk_enabled
+
+    @classmethod
     def get_roles(cls, instance):
         """Returns a dictionary of node roles available for deployment.
 

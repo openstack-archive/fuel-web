@@ -446,7 +446,7 @@ class ClusterTransaction(DeploymentTask):
 
     @classmethod
     def mark_skipped(cls, tasks, ids_not_to_skip):
-        """Change tasks type which ids not present in ids_not_to_skip to skipped
+        """Change tasks type which ids are not ids_not_to_skip to skipped
 
         :param tasks: the list of deployment tasks to execute
         :param ids_not_to_skip: the list of task ids that will be not skipped
@@ -1537,7 +1537,8 @@ class CheckBeforeDeploymentTask(object):
         # TODO(asvechnikov): Make an appropriate versioning of tasks
         if objects.Release.is_nfv_supported(task.cluster.release):
             cls._check_sriov_properties(task)
-            cls._check_dpdk_properties(task)
+            if objects.Cluster.dpdk_enabled(task.cluster):
+                cls._check_dpdk_properties(task)
 
         if objects.Release.is_external_mongo_enabled(task.cluster.release):
             cls._check_mongo_nodes(task)
@@ -1916,6 +1917,10 @@ class CheckBeforeDeploymentTask(object):
         dpdk_enabled = False
         for node in task.cluster.nodes:
             if node.pending_deletion:
+                continue
+
+            if (not objects.NodeAttributes.is_cpu_pinning_enabled(node) and
+                    not objects.Node.dpdk_enabled):
                 continue
 
             try:

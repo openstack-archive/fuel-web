@@ -23,6 +23,7 @@ from nailgun import errors
 from nailgun import objects
 from nailgun.orchestrator.task_based_deployment import TaskProcessor
 from nailgun import rpc
+from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import mock_rpc
@@ -411,7 +412,8 @@ class TestTaskDeploy90(BaseIntegrationTest):
              if task['type'] != consts.ORCHESTRATOR_TASK_TYPES.skipped)
         )
 
-    def test_deploy_check_failed_with_dpdk_cpu_distribution(self):
+    @mock.patch('objects.Node.dpdk_enabled', return_value=True)
+    def test_deploy_check_failed_with_dpdk_cpu_distribution(self, _):
         node = self.env.nodes[0]
 
         objects.Node.update_attributes(node, {
@@ -428,6 +430,17 @@ class TestTaskDeploy90(BaseIntegrationTest):
             " configured DPDK interfaces.".format(node.id),
             task.message
         )
+
+    @mock.patch('objects.Node.dpdk_enabled', return_value=False)
+    def test_deploy_disabled_dpdk_check_ok_without_numa_meta(self, _):
+        node = self.env.nodes[0]
+
+        node.meta.pop('numa_topology', {})
+
+        task = models.Task(name=consts.TASK_NAMES.deployment,
+                           cluster=self.cluster)
+        self.assertNotRaises(
+            errors.InvalidData, CheckBeforeDeploymentTask.execute, task)
 
 
 class TestTaskDeploy90AfterDeployment(BaseIntegrationTest):

@@ -448,7 +448,7 @@ class ClusterTransaction(DeploymentTask):
 
     @classmethod
     def mark_skipped(cls, tasks, ids_not_to_skip):
-        """Change tasks type which ids not present in ids_not_to_skip to skipped
+        """Change tasks type which ids are not ids_not_to_skip to skipped
 
         :param tasks: the list of deployment tasks to execute
         :param ids_not_to_skip: the list of task ids that will be not skipped
@@ -1872,14 +1872,14 @@ class CheckBeforeDeploymentTask(object):
             if node.pending_deletion:
                 continue
 
+            if not objects.Node.dpdk_enabled(node):
+                continue
+
             try:
                 objects.NodeAttributes.distribute_node_cpus(node)
             except ValueError as e:
                 raise errors.InvalidData(
                     "Node '{}': {}".format(node.id, e.message))
-
-            if not objects.Node.dpdk_enabled(node):
-                continue
 
             dpdk_enabled = True
 

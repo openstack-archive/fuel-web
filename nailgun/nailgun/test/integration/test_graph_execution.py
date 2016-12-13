@@ -32,7 +32,7 @@ class TestGraphExecutorHandler(base.BaseIntegrationTest):
         self.cluster = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
-                {"status": consts.NODE_STATUSES.discover},
+                {"status": consts.NODE_STATUSES.provisioned},
             ],
             release_kwargs={
                 'version': 'mitaka-9.0',

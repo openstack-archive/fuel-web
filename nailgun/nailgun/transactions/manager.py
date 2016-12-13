@@ -44,6 +44,12 @@ _DEFAULT_NODE_ATTRIBUTES = {
     'on_stop': {'status': consts.NODE_STATUSES.stopped},
 }
 
+_DEFAULT_NODE_FILTER = (
+    "not $.pending_addition and not $.pending_deletion and "
+    "($.status in ['ready', 'provisioned', 'stopped'] "
+    "or $.error_type = 'deploy')"
+)
+
 
 def _get_node_attributes(graph, kind):
     r = get_in(graph, kind, 'node_attributes')
@@ -419,6 +425,9 @@ def _get_nodes_to_run(cluster, node_filter, ids=None):
     # to select only online nodes.
     nodes = objects.NodeCollection.filter_by(
         None, cluster_id=cluster.id, online=True)
+
+    if node_filter is None:
+        node_filter = _DEFAULT_NODE_FILTER
 
     if ids is None and node_filter:
         # TODO(bgaifullin) Need to implement adapter for YAQL

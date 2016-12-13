@@ -161,6 +161,7 @@ class RelatedDeploymentGraphHandler(SingleHandler):
         deployment_graph = self.single.get_for_model(obj, graph_type)
         if deployment_graph:
             self.single.delete(deployment_graph)
+            raise self.http(204)
         else:
             raise self.http(404, "Graph with type: {0} is not defined".format(
                 graph_type))

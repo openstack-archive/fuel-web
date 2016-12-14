@@ -34,6 +34,7 @@ from nailgun.objects.plugin import NodeNICInterfaceClusterPlugin
 from nailgun.objects.plugin import Plugin
 from nailgun.objects.plugin import PluginCollection
 from nailgun.settings import settings
+from nailgun.utils import dict_merge
 from nailgun.utils import dict_update
 from nailgun.utils import get_in
 
@@ -513,6 +514,10 @@ class PluginManager(object):
         for plugin_adapter in six.moves.map(wrap_plugin, enabled_plugins):
             metadata = plugin_adapter.bond_attributes_metadata
             if metadata:
+                metadata = dict_merge({
+                    'metadata': {
+                        'label': plugin_adapter.title, 'class': 'plugin'}},
+                    metadata)
                 plugins_bond_metadata[plugin_adapter.name] = metadata
 
         return plugins_bond_metadata
@@ -548,10 +553,12 @@ class PluginManager(object):
                 plugins.append(attributes.pop(k))
 
         for plugin in plugins:
-            metadata = plugin.get('metadata', {})
-            bond_plugin_id = metadata.pop('bond_plugin_id')
+            metadata = plugin.pop('metadata')
             NodeBondInterfaceClusterPlugin.\
-                set_attributes(bond_plugin_id, plugin)
+                set_attributes(
+                    metadata['bond_plugin_id'],
+                    plugin
+                )
 
     @classmethod
     def get_nic_default_attributes(cls, cluster):
@@ -566,6 +573,10 @@ class PluginManager(object):
         for plugin_adapter in six.moves.map(wrap_plugin, enabled_plugins):
             metadata = plugin_adapter.nic_attributes_metadata
             if metadata:
+                metadata = dict_merge({
+                    'metadata': {
+                        'label': plugin_adapter.title, 'class': 'plugin'}},
+                    metadata)
                 plugins_nic_metadata[plugin_adapter.name] = metadata
 
         return plugins_nic_metadata
@@ -589,10 +600,12 @@ class PluginManager(object):
                 plugins.append(attributes.pop(k))
 
         for plugin in plugins:
-            metadata = plugin.get('metadata', {})
-            nic_plugin_id = metadata.pop('nic_plugin_id')
+            metadata = plugin.pop('metadata')
             NodeNICInterfaceClusterPlugin.\
-                set_attributes(nic_plugin_id, plugin)
+                set_attributes(
+                    metadata['nic_plugin_id'],
+                    plugin
+                )
 
     @classmethod
     def add_plugin_attributes_for_interface(cls, interface):

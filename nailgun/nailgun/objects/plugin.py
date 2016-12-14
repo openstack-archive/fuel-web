@@ -29,6 +29,7 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects.serializers.plugin import PluginSerializer
 from nailgun import plugins
+from nailgun import utils as nailgun_utils
 
 
 class Plugin(NailgunObject):
@@ -556,7 +557,10 @@ class NodeNICInterfaceClusterPlugin(BasicNodeClusterPlugin):
             }
             # TODO(apopovych): resolve conflicts of same attribute names
             # for different plugins
-            nic_attributes[name].update(attributes)
+            nic_attributes[name] = nailgun_utils.dict_merge(
+                nic_attributes[name],
+                attributes
+            )
 
         return nic_attributes
 

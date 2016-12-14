@@ -692,6 +692,40 @@ class TestDeploymentLCMSerialization90(
                          if x['uid'] == self.node.uid)
         self.assertNotIn('deleted', node_info)
 
+    def test_plugin_node_attributes_serialization(self):
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute']
+        )
+        self.env.create_plugin(
+            name='test_plugin',
+            package_version='5.0.0',
+            cluster=self.cluster,
+            node_attributes_metadata={
+                'test_plugin_section': {
+                    'attribute_a': {
+                        'label': 'Node attribute A',
+                        'value': 'attribute_a_val'
+                    },
+                    'attribute_b': {
+                        'label': 'Node attribute B',
+                        'value': 'attribute_b_val'
+                    }
+                }
+            }
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, [node])['common']['nodes'][0]
+        self.assertIn('test_plugin_section', serialized_for_astute)
+        self.assertDictEqual(
+            {
+                'attribute_a': 'attribute_a_val',
+                'attribute_b': 'attribute_b_val'
+            },
+            serialized_for_astute.get('test_plugin_section', {})
+        )
+
 
 class TestDeploymentHASerializer90(
     TestSerializer90Mixin,

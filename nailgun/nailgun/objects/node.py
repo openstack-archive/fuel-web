@@ -54,6 +54,7 @@ from nailgun.objects import NIC
 from nailgun.objects import Notification
 from nailgun.objects import Release
 from nailgun.objects.serializers.node import NodeSerializer
+from nailgun.plugins.manager import PluginManager
 from nailgun.policy import cpu_distribution
 from nailgun.policy import hugepages_distribution
 from nailgun.settings import settings
@@ -1202,6 +1203,17 @@ class Node(NailgunObject):
         return hostname
 
     @classmethod
+    def get_restrictions_models(cls, instance):
+        """Return models which are used in restrictions mechanism
+
+        :param instance: nailgun.db.sqlalchemy.models.Node instance
+        :return: dict with models
+        """
+        models = {'node_attributes': cls.get_attributes(instance)}
+        models.update(Cluster.get_restrictions_models(instance.cluster))
+        return models
+
+    @classmethod
     def reset_vms_created_state(cls, node):
         if consts.VIRTUAL_NODE_TYPES.virt not in node.all_roles:
             return
@@ -1222,6 +1234,7 @@ class Node(NailgunObject):
         instance.attributes = copy.deepcopy(
             instance.cluster.release.node_attributes)
         NodeAttributes.set_default_hugepages(instance)
+        PluginManager.add_plugin_attributes_for_node(instance)
 
     @classmethod
     def dpdk_enabled(cls, instance):
@@ -1239,11 +1252,36 @@ class Node(NailgunObject):
 
     @classmethod
     def get_attributes(cls, instance):
-        return copy.deepcopy(instance.attributes)
+        attributes = copy.deepcopy(instance.attributes)
+        attributes.update(PluginManager.get_plugin_node_attributes(instance))
+        return attributes
 
     @classmethod
     def update_attributes(cls, instance, attrs):
+        PluginManager.update_plugin_node_attributes(attrs)
         instance.attributes = utils.dict_merge(instance.attributes, attrs)
+
+    @classmethod
+    def get_default_attributes(cls, instance):
+        """Get default attributes for Node.
+
+        :param instance: Node instance
+        :type instance: models.Node
+        :returns: dict -- Dict object of Node attributes
+        """
+        if not instance.cluster_id:
+            logger.warning(
+                u"Attempting to update attributes of node "
+                u"'{0}' which isn't added to any cluster".format(
+                    instance.full_name))
+            return {}
+
+        cluster = instance.cluster
+        attributes = copy.deepcopy(instance.cluster.release.node_attributes)
+        attributes.update(
+            PluginManager.get_plugins_node_default_attributes(cluster))
+
+        return attributes
 
     @classmethod
     def refresh_dpdk_properties(cls, instance):

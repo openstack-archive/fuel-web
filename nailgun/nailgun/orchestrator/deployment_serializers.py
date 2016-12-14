@@ -829,6 +829,21 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
             )
         utils.dict_update(data.setdefault('provision', {}), info)
 
+    @classmethod
+    def serialize_node_for_node_list(cls, node, role):
+        serialized_node = super(
+            DeploymentLCMSerializer,
+            cls).serialize_node_for_node_list(node, role)
+
+        for section_name, section_attributes in six.iteritems(
+                plugins.manager.PluginManager.
+                get_plugin_node_attributes(node)):
+            section_attributes.pop('metadata', None)
+            serialized_node[section_name] = {
+                k: v.get('value') for k, v in six.iteritems(section_attributes)
+            }
+        return serialized_node
+
 
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.

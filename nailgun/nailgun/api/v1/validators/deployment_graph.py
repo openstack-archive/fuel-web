@@ -25,13 +25,35 @@ class DeploymentGraphValidator(BasicValidator):
     collection_schema = schema.DEPLOYMENT_GRAPHS_SCHEMA
 
     @classmethod
+    def validate(cls, data):
+        parsed = super(DeploymentGraphValidator, cls).validate(data)
+        cls.validate_tasks_ids(parsed)
+        return parsed
+
+    @classmethod
     def validate_update(cls, data, instance):
         parsed = super(DeploymentGraphValidator, cls).validate(data)
         cls.validate_schema(
             parsed,
             cls.single_schema
         )
+        cls.validate_tasks_ids(parsed)
         return parsed
+
+    @classmethod
+    def validate_tasks_ids(cls, parsed):
+        tasks = parsed.get('tasks', [])
+        ids = set()
+        dup = set()
+        for task in tasks:
+            if task['id'] in ids:
+                dup.add(task['id'])
+            else:
+                ids.add(task['id'])
+        if dup:
+            raise errors.InvalidData(
+                "Tasks duplication found: {0}".format(', '.join(dup))
+            )
 
 
 class GraphExecuteParamsValidator(BasicValidator):

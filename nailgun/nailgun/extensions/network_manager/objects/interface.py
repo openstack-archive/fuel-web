@@ -79,8 +79,11 @@ class NIC(DPDKMixin, NailgunObject):
     @classmethod
     def get_dpdk_driver(cls, instance, dpdk_drivers):
         pci_id = instance.meta.get('pci_id', '').lower()
+        kernel_params = instance.node.kernel_params
         for driver, device_ids in six.iteritems(dpdk_drivers):
             if pci_id in device_ids:
+                if kernel_params and 'intel_iommu=on' in kernel_params:
+                    return 'vfio-pci'
                 return driver
         return None
 

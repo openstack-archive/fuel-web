@@ -134,7 +134,8 @@ class TestDeploymentAttributesSerialization90(
         return consts.DEFAULT_BRIDGES_NAMES.br_mesh
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
-    def _check_dpdk_serializing(self, drivers_mock, has_vlan_tag=False):
+    def _check_dpdk_serializing(self, drivers_mock, has_vlan_tag=False,
+                                sriov=False):
         drivers_mock.return_value = {
             'driver_1': ['test_id:1', 'test_id:2']
         }
@@ -142,6 +143,9 @@ class TestDeploymentAttributesSerialization90(
             1, 3,
             cluster_id=self.cluster_db.id,
             roles=['compute'])[0]
+
+        node.interfaces[0].attributes['sriov']['enabled']['value'] = sriov
+
         if has_vlan_tag:
             objects.NetworkGroup.get_node_network_by_name(
                 node, 'private').vlan_start = '103'
@@ -189,10 +193,16 @@ class TestDeploymentAttributesSerialization90(
         interfaces = serialised_node['network_scheme']['interfaces']
         dpdk_interface = interfaces[dpdk_interface_name]
         vendor_specific = dpdk_interface.get('vendor_specific', {})
-        self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
+        if sriov:
+            self.assertEqual(vendor_specific.get('dpdk_driver'), 'vfio-pci')
+        else:
+            self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
 
     def test_serialization_with_dpdk(self):
         self._check_dpdk_serializing()
+
+    def test_serialization_with_dpdk_sriov(self):
+        self._check_dpdk_serializing(sriov=True)
 
     def test_serialization_with_dpdk_vxlan(self):
         self._create_cluster_with_vxlan()

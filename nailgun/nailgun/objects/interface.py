@@ -18,6 +18,7 @@ import copy
 import six
 from sqlalchemy.sql import not_
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import Cluster
@@ -78,9 +79,13 @@ class NIC(DPDKMixin, NailgunObject):
 
     @classmethod
     def get_dpdk_driver(cls, instance, dpdk_drivers):
+        from nailgun.objects import Node
         pci_id = instance.meta.get('pci_id', '').lower()
+        sriov_enabled = Node.sriov_enabled(instance.node)
         for driver, device_ids in six.iteritems(dpdk_drivers):
             if pci_id in device_ids:
+                if sriov_enabled:
+                    return consts.DPDK_DRIVER_IN_SRIOV_CASE
                 return driver
         return None
 

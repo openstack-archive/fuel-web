@@ -323,6 +323,59 @@ class TestGraphHandlers(BaseIntegrationTest):
             resp.json_body
         )
 
+    def test_fail_on_task_duplication(self):
+
+        resp = self.app.put(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': self.custom_graph.id}
+            ),
+            jsonutils.dumps({
+                'name': 'updated-graph-name',
+                'tasks': [
+                    {
+                        'id': 'test-task2',
+                        'type': 'puppet'
+                    },
+                    {
+                        'id': 'test-task2',
+                        'type': 'shell'
+                    }
+                ]
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual("Tasks duplication found: test-task2",
+                         resp.json_body['message'])
+
+        resp = self.app.patch(
+            reverse(
+                'DeploymentGraphHandler',
+                kwargs={'obj_id': self.custom_graph.id}
+            ),
+            jsonutils.dumps({
+                'name': 'updated-graph-name2',
+                'on_stop': {},
+                'tasks': [
+                    {
+                        'id': 'test-task2',
+                        'type': 'puppet'
+                    },
+                    {
+                        'id': 'test-task2',
+                        'type': 'shell'
+                    }
+                ]
+            }),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual("Tasks duplication found: test-task2",
+                         resp.json_body['message'])
+
     def test_graph_delete(self):
         graph_id = self.custom_graph.id
         resp = self.app.delete(
@@ -504,6 +557,36 @@ class TestLinkedGraphHandlers(BaseIntegrationTest):
                 resp.json_body['on_error']['node_attributes']
             )
             self.assertEqual({}, resp.json_body['on_stop'])
+
+    def test_create_graph_failed_on_tasks_duplication(self):
+        for related_class, ref_graph in six.iteritems(self.custom_graphs):
+            resp = self.app.post(
+                reverse(
+                    '{0}DeploymentGraphHandler'.format(related_class),
+                    kwargs={
+                        'obj_id': ref_graph['model'].id,
+                        'graph_type': 'created-graph'
+                    }
+                ),
+                jsonutils.dumps({
+                    'name': 'custom-graph-name',
+                    'tasks': [
+                        {
+                            'id': 'test-task2',
+                            'type': 'puppet'
+                        },
+                        {
+                            'id': 'test-task2',
+                            'type': 'shell'
+                        }
+                    ]
+                }),
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(400, resp.status_code)
+            self.assertEqual("Tasks duplication found: test-task2",
+                             resp.json_body['message'])
 
     def test_create_graph_fail_on_existing(self):
         for related_class, ref_graph in six.iteritems(self.custom_graphs):

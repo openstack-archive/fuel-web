@@ -344,8 +344,9 @@ class TestDeploymentAttributesSerialization80(
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        serialized_for_astute = deployment_info_to_legacy(
-            serialized_for_astute)
+        serialized_for_astute = self._handle_facts(
+            deployment_info_to_legacy(serialized_for_astute)
+        )
         for node in serialized_for_astute:
             transformations = node['network_scheme']['transformations']
             baremetal_brs = filter(lambda t: t.get('name') ==
@@ -398,7 +399,9 @@ class TestDeploymentAttributesSerialization80(
         for node in serialized_for_astute:
             self.assertIn('plugins', node)
             self.assertItemsEqual(
-                expected_plugins_list, node['plugins'])
+                expected_plugins_list,
+                self._get_plugins_names(node['plugins'])
+            )
             self.assertTrue(all(name in node for name
                                 in expected_plugins_list))
 

@@ -2608,6 +2608,19 @@ class BaseDeploymentSerializer(BaseSerializerTest):
         """
         return facts
 
+    @staticmethod
+    def _get_plugins_names(plugins):
+        """Plugins names for non-LCM serializers
+
+        Plugins data in case of legacy serializers consist
+        of plugins names only.
+        Could be overloaded by LCM serializers.
+
+        :param plugins: array of plugins names
+        :returns: plugins names as it is
+        """
+        return plugins
+
 
 class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
 

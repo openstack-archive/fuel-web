@@ -89,6 +89,7 @@ class NodeUnassignmentHandler(BaseHandler):
         for node in nodes:
             if node.status == consts.NODE_STATUSES.discover:
                 objects.Node.remove_from_cluster(node)
+                objects.Node.update(node, {"pending_addition": False})
             else:
                 objects.Node.update(node, {"pending_deletion": True})
 

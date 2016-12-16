@@ -367,12 +367,16 @@ class TransactionsManager(object):
             resolver,
             sub_transaction.cache.get('tasks'))
 
+        context_options = {
+            'noop_run': sub_transaction.cache.get('noop_run')
+        }
+
         context = lcm.TransactionContext(
             _get_expected_state(cluster, nodes),
             _get_current_state(
                 cluster, nodes, graph['tasks'],
                 sub_transaction.cache.get('force')
-            ))
+            ), **context_options)
 
         # Attach desired state to the sub transaction, so when we continue
         # our top-level transaction, the new state will be calculated on

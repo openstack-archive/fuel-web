@@ -212,7 +212,9 @@ class DefaultTaskSerializer(NoopTaskSerializer):
             return super(DefaultTaskSerializer, self).finalize(task, node_id)
 
         task.setdefault('parameters', {}).setdefault('cwd', '/')
-        task.setdefault('fail_on_error', True)
+        fail_on_error = not(self.context.get_transaction_option(
+            'noop_run', False))
+        task.setdefault('fail_on_error', fail_on_error)
         return task
 
 

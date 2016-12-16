@@ -549,8 +549,11 @@ class ClusterTransaction(DeploymentTask):
 
         # Added cluster state
         expected_state['nodes'][None] = {}
-
-        context = lcm.TransactionContext(expected_state, current_state)
+        context_options = {
+            'noop_run': noop_run,
+        }
+        context = lcm.TransactionContext(expected_state, current_state,
+                                         **context_options)
         logger.debug("tasks serialization is started.")
         # TODO(bgaifullin) Primary roles applied in deployment_serializers
         # need to move this code from deployment serializer

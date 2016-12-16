@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+import itertools
 from mock import patch
 import netaddr
 
@@ -1907,7 +1908,10 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(
                 mcast.call_args[0][1][0]['args'][mode], True
             )
-
+            tasks = itertools.chain(
+                *mcast.call_args[0][1][0]['args']['tasks_graph'].values())
+            fail_on_error_tasks = filter(lambda x: x['fail_on_error'], tasks)
+            self.assertEqual(len(fail_on_error_tasks), 0)
             task = Task.get_by_uid(
                 resp.json_body['id'], fail_if_not_found=True
             )

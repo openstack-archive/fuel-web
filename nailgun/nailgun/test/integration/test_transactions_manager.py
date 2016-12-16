@@ -435,7 +435,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
                             {
                                 'id': 'test_task',
                                 'type': 'puppet',
-                                'fail_on_error': True,
+                                'fail_on_error': False,
                                 'parameters': {'cwd': '/'}
                             },
                         ]

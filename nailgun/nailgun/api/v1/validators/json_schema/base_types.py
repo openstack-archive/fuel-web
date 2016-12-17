@@ -243,6 +243,7 @@ ATTRIBUTE_SCHEMA = {
                 'textarea_list',
                 'custom_hugepages',
                 'number',
+                'nullable_number',
             ]
         },
         # 'value': None,  # custom validation depending on type
@@ -335,4 +336,5 @@ ATTRIBUTE_TYPE_SCHEMAS = {
         }
     },
     'number': {'value': NON_NEGATIVE_INTEGER},
+    'nullable_number': {'value': NULLABLE_NON_NEGATIVE_INTEGER},
 }

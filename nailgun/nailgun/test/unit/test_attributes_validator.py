@@ -456,6 +456,54 @@ class TestBasicAttributesValidator(base_test.BaseTestCase):
             base.BasicAttributesValidator.validate_attributes,
             yaml.load(attrs))
 
+    def test_nullable_number_value(self):
+        attrs = '''
+            mtu:
+              value:
+                label: Use Custom MTU
+                type: nullable_number
+                value: null
+                min: 0
+                max: 10
+                weight: 10
+        '''
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+
+        attrs = '''
+           mtu:
+              value:
+                label: Use Custom MTU
+                type: nullable_number
+                value: 5
+                min: 0
+                max: 10
+                weight: 10
+        '''
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+
+        attrs = '''
+           mtu:
+              value:
+                label: Use Custom MTU
+                type: nullable_number
+                value: -5
+                min: 0
+                max: 10
+                weight: 10
+        '''
+
+        self.assertRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+
     def test_restriction_strict(self):
         context = {'context': {'existing': {'value': 13}}}
 

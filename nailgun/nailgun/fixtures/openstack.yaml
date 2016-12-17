@@ -2032,9 +2032,9 @@
           label: "MTU"
           weight: 20
         value:
-          label: "MTU"
+          label: "Use Custom MTU"
           weight: 10
-          type: "number"
+          type: "nullable_number"
           value: null
           min: 42
           max: 65536
@@ -2051,9 +2051,9 @@
           restrictions:
             - "settings:common.libvirt_type.value != 'kvm'": "Only KVM hypervisor works with SR-IOV"
         numvfs:
-          label: "Number of Virtual Functions"
+          label: "Use Custom Number of Virtual Functions"
           weight: 20
-          type: "number"
+          type: "nullable_number"
           min: 1
           value: null
           restrictions:
@@ -2116,9 +2116,9 @@
           label: "MTU"
           weight: 30
         value:
-          label: "MTU"
+          label: "Use Custom MTU"
           weight: 10
-          type: "number"
+          type: "nullable_number"
           value: null
           min: 42
           max: 65536

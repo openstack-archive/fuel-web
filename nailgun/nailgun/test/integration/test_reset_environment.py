@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 from nailgun.db.sqlalchemy.models import Notification
 
 from nailgun import consts
+from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -157,3 +158,59 @@ class TestResetEnvironment(BaseIntegrationTest):
             self.assertEqual(casted_tasks[0]['method'], 'reset_environment')
             self.assertEqual(casted_tasks[1]['method'], 'execute_tasks')
             self.assertEqual(casted_tasks[2]['method'], 'execute_tasks')
+
+    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    def test_reset_environment_after_stop(self, _):
+        self.cluster = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"name": "First",
+                 "pending_addition": True},
+                {"name": "Second",
+                 "roles": ["compute"],
+                 "pending_addition": True}
+            ]
+        )
+        self.emulate_nodes_provisioning(self.env.nodes)
+        supertask = self.env.launch_deployment()
+        deploy_task = [t for t in supertask.subtasks
+                       if t.name in (consts.TASK_NAMES.deployment)][0]
+
+        NailgunReceiver.deploy_resp(
+            task_uuid=deploy_task.uuid,
+            status=consts.TASK_STATUSES.running,
+            progress=50,
+        )
+
+        stop_task = self.env.stop_deployment()
+        NailgunReceiver.stop_deployment_resp(
+            task_uuid=stop_task.uuid,
+            status=consts.TASK_STATUSES.ready,
+            progress=100,
+            nodes=[{'uid': n.uid} for n in self.env.nodes],
+        )
+
+        reset_task = self.env.reset_environment()
+
+        NailgunReceiver.reset_environment_resp(
+            task_uuid=reset_task.uuid,
+            status=consts.TASK_STATUSES.ready,
+            progress=100,
+        )
+
+        self.assertEqual(reset_task.status, consts.TASK_STATUSES.ready)
+
+        self.assertEqual(self.cluster.status, "new")
+
+        # FIXME(aroma): remove when stop action will be reworked for ha
+        # cluster. To get more details, please, refer to [1]
+        # [1]: https://bugs.launchpad.net/fuel/+bug/1529691
+        self.assertFalse(
+            self.cluster.attributes.generated['deployed_before']['value'])
+
+        for n in self.env.nodes:
+            self.assertEqual(n.status, "discover")
+            self.assertEqual(n.pending_addition, True)
+            self.assertEqual(n.roles, [])
+            self.assertNotEqual(n.pending_roles, [])
+            self.assertEqual(n.progress, 0)

@@ -832,6 +832,7 @@ class Node(NailgunObject):
             "status": consts.NODE_STATUSES.discover,
             "pending_addition": True,
             "pending_deletion": False,
+            "progress": 0
         }
         cls.update(instance, node_data)
         cls.move_roles_to_pending_roles(instance)

@@ -661,19 +661,27 @@ def _update_transaction(transaction, status, progress, message):
     data = {}
     if status:
         data['status'] = status
-    if progress:
-        data['progress'] = progress
     if message:
         data['message'] = message
+    data['progress'] = _calculate_progress(transaction, progress)
     if data:
         objects.Transaction.update(transaction, data)
 
-    if transaction.parent and progress:
+    if transaction.parent and data['progress']:
+        logger.debug("Updating parent task: %s.", transaction.parent.uuid)
         siblings = transaction.parent.subtasks
         total_progress = sum(x.progress for x in siblings)
         objects.Transaction.update(transaction.parent, {
             'progress': total_progress // len(siblings)
         })
+
+
+def _calculate_progress(transaction, progress):
+    if progress is not None:
+        return progress
+    else:
+        return helpers.TaskHelper.recalculate_deployment_task_progress(
+            transaction)
 
 
 def _update_cluster_status(transaction):

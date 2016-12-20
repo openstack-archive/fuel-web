@@ -328,6 +328,11 @@ class AttributesRestriction(RestrictionBase):
                         models, restrictions, action='disable')['result']:
                     return
 
+            if attr_type in ['text', 'number']:
+                if not data.get('nullable') and value is None:
+                    yield ("Null value is forbidden for '{}'"
+                           .format(label))
+
             if attr_type in ['text_list', 'textarea_list']:
                 err = cls.check_fields_length(data)
                 if err is not None:

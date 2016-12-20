@@ -15,7 +15,6 @@
 #    under the License.
 
 import codecs
-import cStringIO
 import csv
 from hashlib import md5
 import tempfile
@@ -47,7 +46,7 @@ class UnicodeWriter(object):
 
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
         # Redirect output to a queue
-        self.queue = cStringIO.StringIO()
+        self.queue = six.StringIO()
         self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
         self.stream = f
         self.encoder = codecs.getincrementalencoder(encoding)()

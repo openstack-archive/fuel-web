@@ -321,7 +321,10 @@ ATTRIBUTE_TYPE_SCHEMAS = {
     'password': {'value': {'type': 'string'}},
     'radio': ALLOWED_VALUES_SCHEMA,
     'select': ALLOWED_VALUES_SCHEMA,
-    'text': {'value': {'type': 'string'}},
+    'text': {
+        'value': NULLABLE_STRING,
+        'nullable': {'type': 'boolean'}
+    },
     'textarea': {'value': {'type': 'string'}},
     'text_list': MULTIPLE_TEXT_FIELDS_SCHEMA,
     'textarea_list': MULTIPLE_TEXT_FIELDS_SCHEMA,
@@ -334,5 +337,8 @@ ATTRIBUTE_TYPE_SCHEMAS = {
             }
         }
     },
-    'number': {'value': NON_NEGATIVE_INTEGER},
+    'number': {
+        'value': NULLABLE_NON_NEGATIVE_INTEGER,
+        'nullable': {'type': 'boolean'}
+    },
 }

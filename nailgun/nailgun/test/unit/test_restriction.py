@@ -272,6 +272,27 @@ class TestAttributesRestriction(base.BaseTestCase):
                     regex:
                       source: '\S'
                       error: "Empty password"
+                  nullable_text:
+                    label: "Nullable text"
+                    value: null
+                    nullable: True
+                    type: "text"
+                    regex:
+                      source: '\S'
+                      error: "Empty value"
+                  not_nullable_text:
+                    label: "Not nullable text"
+                    value: null
+                    type: "text"
+                  nullable_number:
+                    label: "Nullable number"
+                    value: null
+                    nullable: True
+                    type: "number"
+                  not_nullable_number:
+                    label: "Not nullable number"
+                    value: null
+                    type: "number"
         """
         self.attributes_data = yaml.load(attributes_metadata)
 
@@ -289,7 +310,9 @@ class TestAttributesRestriction(base.BaseTestCase):
             errs, ['Invalid username', ['Invalid tenant name'],
                    "Value ['test'] should have at least 2 items",
                    "Value ['test1', 'test2', 'test3'] "
-                   "should not have more than 2 items"])
+                   "should not have more than 2 items",
+                   "Null value is forbidden for 'Not nullable text'",
+                   "Null value is forbidden for 'Not nullable number'"])
 
     def test_check_with_valid_values(self):
         access = self.attributes_data['editable']['access']
@@ -297,6 +320,8 @@ class TestAttributesRestriction(base.BaseTestCase):
         access['tenant']['value'] = ['test']
         access['another_tenant']['value'] = ['test1', 'test2']
         access['another_tenant_2']['value'] = ['test1', 'test2']
+        access['not_nullable_text']['value'] = 'test'
+        access['not_nullable_number']['value'] = 123
 
         objects.Cluster.update_attributes(
             self.cluster, self.attributes_data)

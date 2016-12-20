@@ -312,6 +312,50 @@ class TestBasicAttributesValidator(base_test.BaseTestCase):
             errors.InvalidData,
             base.BasicAttributesValidator.validate_attributes,
             yaml.load(attrs))
+        attrs = '''
+            storage:
+              osd_pool_size:
+                description: desc
+                label: OSD Pool Size
+                type: text
+                nullable: True
+                value: '2'
+                weight: 80
+        '''
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+        attrs = '''
+            storage:
+              osd_pool_size:
+                description: desc
+                label: OSD Pool Size
+                type: text
+                nullable: True
+                value: null
+                weight: 80
+        '''
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+        attrs = '''
+            storage:
+              osd_pool_size:
+                description: desc
+                label: OSD Pool Size
+                type: text
+                value: null
+                weight: 80
+        '''
+
+        self.assertRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
 
     def test_textarea_value(self):
         attrs = '''
@@ -447,6 +491,53 @@ class TestBasicAttributesValidator(base_test.BaseTestCase):
                    label: Label
                    type: number
                    value: -1
+                   min: 0
+                   weight: 10
+        '''
+
+        self.assertRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+        attrs = '''
+           cpu_pinning:
+               nova:
+                   description: desc
+                   label: Label
+                   type: number
+                   nullable: True
+                   value: -1
+                   min: 0
+                   weight: 10
+        '''
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+        attrs = '''
+           cpu_pinning:
+               nova:
+                   description: desc
+                   label: Label
+                   type: number
+                   nullable: True
+                   value: null
+                   min: 0
+                   weight: 10
+        '''
+
+        self.assertNotRaises(
+            errors.InvalidData,
+            base.BasicAttributesValidator.validate_attributes,
+            yaml.load(attrs))
+        attrs = '''
+           cpu_pinning:
+               nova:
+                   description: desc
+                   label: Label
+                   type: number
+                   value: null
                    min: 0
                    weight: 10
         '''

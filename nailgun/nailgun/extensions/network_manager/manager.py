@@ -1390,17 +1390,24 @@ class NetworkManager(object):
         properties = {}
         if get_in(iface.attributes, 'mtu', 'value', 'value'):
             properties['mtu'] = iface.attributes['mtu']['value']['value']
-        if get_in(iface.attributes, 'offloading', 'disable', 'value'):
+        vendor_specific = get_in(iface.attributes,
+                                 'offloading', 'disable', 'value')
+        if vendor_specific:
             properties['vendor_specific'] = {
-                'disable_offloading':
-                iface.attributes['offloading']['disable']['value']
+                'disable_offloading': cls._filter_not_non_values(
+                    vendor_specific)
             }
-        if get_in(iface.attributes, 'offloading', 'modes', 'value'):
+        offloading_modes = get_in(
+            iface.attributes, 'offloading', 'modes', 'value')
+        if offloading_modes:
             properties['ethtool'] = {
-                'offload': iface.attributes['offloading']['modes']['value']
+                'offload': cls._filter_not_non_values(offloading_modes)
             }
-
         return properties
+
+    @staticmethod
+    def _filter_not_non_values(d):
+        return {k: d[k] for k in filter(lambda x: d[x] is not None, d)}
 
     @classmethod
     def find_nic_assoc_with_ng(cls, node, network_group):

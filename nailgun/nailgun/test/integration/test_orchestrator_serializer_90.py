@@ -618,8 +618,8 @@ class TestDeploymentAttributesSerialization90(
             self.assertDictEqual(
                 {
                     'offload': {'tx-checksumming': True,
-                                'tx-checksum-ipv6': False,
-                                'rx-checksumming': None}
+                                'tx-checksum-ipv6': False
+                                }
                 },
                 serialized_interfaces[nic_name].get('ethtool')
             )

@@ -311,7 +311,7 @@ class TestPluginsApi(BasePluginTest):
     def test_sync_specific_plugins(self, wrap_m):
         plugin_ids = self._create_new_and_old_version_plugins_for_sync()
         ids = plugin_ids[:1]
-        wrap_m.get_metadata.return_value = {}
+        wrap_m.return_value.get_metadata.return_value = {}
         resp = self.sync_plugins(params={'ids': ids})
         self.assertEqual(resp.status_code, 200)
 

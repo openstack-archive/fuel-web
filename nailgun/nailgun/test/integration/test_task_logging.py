@@ -142,7 +142,7 @@ class TestTasksLogging(BaseIntegrationTest):
 
         self.assertGreaterEqual(len(logger.call_args_list), 1)
         self.check_task_name_and_sanitized_data(
-            -1, logger, consts.TASK_NAMES.reset_environment)
+            -1, logger, consts.TASK_NAMES.reset_environment_supertask)
 
     @fake_tasks(god_mode=True, recover_nodes=False)
     @patch.object(TaskHelper, 'update_action_log')

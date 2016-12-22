@@ -294,7 +294,7 @@ task_output_white_list = {
     _task_output_white_list_template["delete_template"],
     consts.TASK_NAMES.cluster_deletion:
     _task_output_white_list_template["delete_template"],
-    consts.TASK_NAMES.reset_environment:
+    consts.TASK_NAMES.reset_environment_supertask:
     _task_output_white_list_template["delete_template"],
     consts.TASK_NAMES.stop_deployment:
     _task_output_white_list_template["delete_template"],

@@ -787,3 +787,42 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
         # self.assertNotIn('offloading_modes', bonds_table.c)
         # self.assertNotIn('interface_properties', bonds_table.c)
         # self.assertNotIn('bond_properties', bonds_table.c)
+
+
+class TestTransactionsNames(base.BaseAlembicMigrationTest):
+
+    def test_field_reset_environment_supertask_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'reset_environment_supertask',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_field_remove_keys_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'remove_keys',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_field_remove_ironic_bootstrap_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'remove_ironic_bootstrap',
+                    'status': 'pending'
+                }
+            ]
+        )

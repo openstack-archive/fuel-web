@@ -260,6 +260,8 @@ TASK_NAMES = Enum(
     'provision',
     'stop_deployment',
     'reset_environment',
+    'remove_keys',
+    'remove_ironic_bootstrap',
     'update',
     'spawn_vms',
 

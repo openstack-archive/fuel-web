@@ -905,18 +905,22 @@ class ResetEnvironmentTaskManager(ClearTaskHistory):
         db().add(supertask)
         al = TaskHelper.create_action_log(supertask)
 
-        remove_keys_task = supertask.create_subtask(
+        reset_environment = supertask.create_subtask(
             consts.TASK_NAMES.reset_environment
         )
 
+        remove_keys_task = supertask.create_subtask(
+            consts.TASK_NAMES.remove_keys
+        )
+
         remove_ironic_bootstrap_task = supertask.create_subtask(
-            consts.TASK_NAMES.reset_environment
+            consts.TASK_NAMES.remove_ironic_bootstrap
         )
 
         db.commit()
 
         rpc.cast('naily', [
-            tasks.ResetEnvironmentTask.message(supertask),
+            tasks.ResetEnvironmentTask.message(reset_environment),
             tasks.RemoveIronicBootstrap.message(remove_ironic_bootstrap_task),
             tasks.RemoveClusterKeys.message(remove_keys_task)
         ])

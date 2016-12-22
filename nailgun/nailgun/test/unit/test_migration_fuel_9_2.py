@@ -936,3 +936,54 @@ class TestTags(base.BaseAlembicMigrationTest):
                     role_meta.get('has_primary', False)
                 )
                 self.assertIn('tags', role_meta)
+
+
+class TestTransactionsNames(base.BaseAlembicMigrationTest):
+
+    def test_field_reset_environment_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'reset_environment',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_field_reset_nodes_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'reset_nodes',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_field_remove_keys_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'remove_keys',
+                    'status': 'pending'
+                }
+            ]
+        )
+
+    def test_field_remove_ironic_bootstrap_exist(self):
+        db.execute(
+            self.meta.tables['tasks'].insert(),
+            [
+                {
+                    'uuid': 'fake_task_uuid_0',
+                    'name': 'remove_ironic_bootstrap',
+                    'status': 'pending'
+                }
+            ]
+        )

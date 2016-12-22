@@ -73,7 +73,11 @@ class TestResetEnvironment(BaseIntegrationTest):
             cluster_db.id
         )
         tasks_after_reset = list(set([task.name for task in cluster_tasks]))
-        self.assertEqual(tasks_after_reset, ['reset_environment'])
+        self.assertItemsEqual(tasks_after_reset,
+                              ['reset_environment',
+                               'reset_nodes',
+                               'remove_ironic_bootstrap',
+                               'remove_keys'])
 
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]

@@ -1009,7 +1009,7 @@ class RemoveClusterKeys(object):
         rpc_message = make_astute_message(
             task,
             "execute_tasks",
-            "reset_environment_resp",
+            "remove_keys_resp",
             {
                 "tasks": [
                     tasks_templates.make_shell_task(
@@ -1040,7 +1040,7 @@ class RemoveIronicBootstrap(object):
         rpc_message = make_astute_message(
             task,
             "execute_tasks",
-            "reset_environment_resp",
+            "remove_ironic_bootstrap_resp",
             {
                 "tasks": [
                     tasks_templates.make_shell_task(

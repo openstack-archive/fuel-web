@@ -24,6 +24,7 @@ import six
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
+from nailgun import errors
 from nailgun.objects import DeploymentGraph
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
@@ -114,6 +115,14 @@ class Plugin(NailgunObject):
 
     @classmethod
     def update(cls, instance, data):
+        # Plugin name can't be changed. Plugins sync operation uses
+        # name for searching plugin data on the file system.
+        new_name = data.get('name')
+        if new_name is not None and instance.name != new_name:
+            raise errors.InvalidData(
+                "Plugin can't be renamed. Trying to change name "
+                "of the plugin {0}".format(instance.name))
+
         graphs = {}
         data_graphs = data.pop("graphs", [])
         for graph in data_graphs:

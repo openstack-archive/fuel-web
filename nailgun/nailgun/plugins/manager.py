@@ -657,6 +657,8 @@ class PluginManager(object):
             plugin_adapter = wrap_plugin(plugin)
             metadata = plugin_adapter.get_metadata()
             Plugin.update(plugin, metadata)
+        except errors.InvalidData:
+            raise
         except Exception as e:
             logger.error("cannot update plugin {0} in DB. Reason: {1}"
                          .format(plugin.name, str(e)))

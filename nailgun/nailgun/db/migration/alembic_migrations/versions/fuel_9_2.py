@@ -49,9 +49,11 @@ def upgrade():
     upgrade_node_nic_attributes()
     upgrade_node_bond_attributes()
     upgrade_tags_set()
+    upgrade_transaction_names()
 
 
 def downgrade():
+    downgrade_transaction_names()
     downgrade_tags_set()
     downgrade_node_bond_attributes()
     downgrade_node_nic_attributes()
@@ -234,6 +236,73 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
 }
 # version of Fuel when security group switch was added
 FUEL_SECURITY_GROUPS_VERSION = '9.0'
+
+TRANSACTION_NAMES_OLD = (
+    'super',
+
+    # Cluster changes
+    # For deployment supertask, it contains
+    # two subtasks deployment and provision
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+    'update',
+    'spawn_vms',
+
+    'node_deletion',
+    'cluster_deletion',
+    'remove_images',
+    'check_before_deployment',
+
+    # network
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+    'multicast_verification',
+    'check_repo_availability',
+    'check_repo_availability_with_setup',
+    'dry_run_deployment',
+
+    # dump
+    'dump',
+
+    'capacity_log',
+
+    # statistics
+    'create_stats_user',
+    'remove_stats_user',
+
+    # setup dhcp via dnsmasq for multi-node-groups
+    'update_dnsmasq'
+)
+
+TRANSACTION_NAMES_NEW = TRANSACTION_NAMES_OLD + (
+    'remove_keys',
+    'remove_ironic_bootstrap',
+)
+
+
+def upgrade_transaction_names():
+    migration.upgrade_enum(
+        'tasks',
+        'name',
+        'task_name',
+        TRANSACTION_NAMES_OLD,
+        TRANSACTION_NAMES_NEW
+    )
+
+
+def downgrade_transaction_names():
+    migration.upgrade_enum(
+        'tasks',
+        'name',
+        'task_name',
+        TRANSACTION_NAMES_NEW,
+        TRANSACTION_NAMES_OLD
+    )
 
 
 def update_vmware_attributes_metadata(upgrade):

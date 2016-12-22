@@ -1725,3 +1725,82 @@ class TestResetEnvironment(BaseReciverTestCase):
         }
         self.receiver.reset_environment_resp(**resp)
         mock_delete_logs.assert_called_once_with(node)
+
+    def test_task_message(self):
+        cluster = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False, "status": consts.NODE_STATUSES.ready},
+            ]
+        )
+
+        node = self.env.nodes[0]
+
+        reset_task = Task(
+            uuid=str(uuid.uuid4()),
+            name=consts.TASK_NAMES.reset_environment,
+            cluster_id=cluster.id)
+        self.db.add(reset_task)
+        self.db.flush()
+
+        reset_environment_task = reset_task.create_subtask(
+            consts.TASK_NAMES.reset_environment
+        )
+
+        remove_keys_task = reset_task.create_subtask(
+            consts.TASK_NAMES.remove_keys
+        )
+
+        remove_ironic_bootstrap_task = reset_task.create_subtask(
+            consts.TASK_NAMES.remove_ironic_bootstrap
+        )
+
+        self.db.commit()
+
+        reset_environment_message = (
+            u"Environment '{0}' was successfully reset".format(
+                reset_environment_task.cluster.name or
+                reset_environment_task.cluster_id
+            )
+        )
+        remove_keys_message = u"Keys was removed from environment {0}".format(
+            remove_keys_task.cluster.name or remove_keys_task.cluster_id)
+
+        remove_ironic_bootstrap_message = (
+            u"Ironic bootstrap was removed from environment {0}").format(
+            remove_ironic_bootstrap_task.cluster.name or
+            remove_ironic_bootstrap_task.cluster_id)
+
+        reset_environment_resp = {
+            'task_uuid': reset_environment_task.uuid,
+            'status': consts.TASK_STATUSES.ready,
+            'nodes': [
+                {'uid': node.uid},
+            ]
+        }
+
+        remove_keys_resp = {
+            'task_uuid': remove_keys_task.uuid,
+            'status': consts.TASK_STATUSES.ready,
+            'nodes': [
+                {'uid': node.uid},
+            ]
+        }
+        remove_ironic_bootstrap_resp = {
+            'task_uuid': remove_ironic_bootstrap_task.uuid,
+            'status': consts.TASK_STATUSES.ready,
+            'nodes': [
+                {'uid': node.uid},
+            ]
+        }
+        self.receiver.reset_environment_resp(**reset_environment_resp)
+        self.receiver.remove_keys_resp(**remove_keys_resp)
+        self.receiver.remove_ironic_bootstrap_resp(
+            **remove_ironic_bootstrap_resp
+        )
+        self.assertEqual(reset_environment_message,
+                         reset_environment_task.message)
+        self.assertEqual(remove_keys_message,
+                         remove_keys_task.message)
+        self.assertEqual(remove_ironic_bootstrap_message,
+                         remove_ironic_bootstrap_task.message)

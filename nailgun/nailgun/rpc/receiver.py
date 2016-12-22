@@ -796,11 +796,35 @@ class NailgunReceiver(object):
             process, len(nodes), message)
 
     @classmethod
-    def reset_environment_resp(cls, **kwargs):
-        logger.info(
-            "RPC method reset_environment_resp received: %s",
-            jsonutils.dumps(kwargs)
+    def _restore_pending_changes(cls, nodes, task, ia_nodes):
+        task.cluster.status = consts.CLUSTER_STATUSES.new
+        objects.Cluster.add_pending_changes(
+            task.cluster,
+            consts.CLUSTER_CHANGES.attributes
         )
+        objects.Cluster.add_pending_changes(
+            task.cluster,
+            consts.CLUSTER_CHANGES.networks
+        )
+        node_uids = [n["uid"] for n in itertools.chain(nodes, ia_nodes)]
+        q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
+        q_nodes = objects.NodeCollection.filter_by(
+            q_nodes,
+            cluster_id=task.cluster_id
+        )
+        q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+        # locking Nodes for update
+        update_nodes = objects.NodeCollection.lock_for_update(
+            q_nodes
+        ).all()
+
+        for node in update_nodes:
+            logs_utils.delete_node_logs(node)
+            objects.Node.reset_to_discover(node)
+
+    @classmethod
+    def _reset_resp(cls, successful_message, restore_pending_changes=False,
+                    **kwargs):
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes', [])
         ia_nodes = kwargs.get('inaccessible_nodes', [])
@@ -813,58 +837,52 @@ class NailgunReceiver(object):
             return
 
         if status == consts.TASK_STATUSES.ready:
-            # restoring pending changes
-            task.cluster.status = consts.CLUSTER_STATUSES.new
-            objects.Cluster.add_pending_changes(
-                task.cluster,
-                consts.CLUSTER_CHANGES.attributes
-            )
-            objects.Cluster.add_pending_changes(
-                task.cluster,
-                consts.CLUSTER_CHANGES.networks
-            )
-
-            node_uids = [n["uid"] for n in itertools.chain(nodes, ia_nodes)]
-            q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
-            q_nodes = objects.NodeCollection.filter_by(
-                q_nodes,
-                cluster_id=task.cluster_id
-            )
-            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
-
-            # locking Nodes for update
-            update_nodes = objects.NodeCollection.lock_for_update(
-                q_nodes
-            ).all()
-
-            for node in update_nodes:
-                logs_utils.delete_node_logs(node)
-                objects.Node.reset_to_discover(node)
-
+            if restore_pending_changes:
+                cls._restore_pending_changes(nodes, task, ia_nodes)
             if ia_nodes:
                 cls._notify_inaccessible(
                     task.cluster_id,
                     [n["uid"] for n in ia_nodes],
                     u"environment resetting"
                 )
-
-            message = (
-                u"Environment '{0}' "
-                u"was successfully reset".format(
-                    task.cluster.name or task.cluster_id
-                )
+            message = successful_message.format(
+                task.cluster.name or task.cluster_id
             )
-
             notifier.notify(
                 "done",
                 message,
                 task.cluster_id
             )
-
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
-
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
+
+    @classmethod
+    def reset_environment_resp(cls, **kwargs):
+        logger.info(
+            "RPC method reset_environment_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        message = u"Environment '{0}' was successfully reset"
+        cls._reset_resp(message, restore_pending_changes=True, **kwargs)
+
+    @classmethod
+    def remove_keys_resp(cls, **kwargs):
+        logger.info(
+            "RPC method remove_keys_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        message = u"Keys were removed from environment '{0}'"
+        cls._reset_resp(message, **kwargs)
+
+    @classmethod
+    def remove_ironic_bootstrap_resp(cls, **kwargs):
+        logger.info(
+            "RPC method remove_ironic_bootstrap_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        message = u"Ironic bootstrap was removed from environment '{0}'"
+        cls._reset_resp(message, **kwargs)
 
     @classmethod
     def _notify_inaccessible(cls, cluster_id, nodes_uids, action):

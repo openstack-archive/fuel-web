@@ -189,11 +189,23 @@ class TestPluginManager(base.BaseIntegrationTest):
     @mock.patch.object(PluginAdapterV3, 'get_metadata')
     def test_sync_metadata_for_all_plugins(self, sync_mock, list_fs_m):
         list_fs_m.return_value = ['test_plugin_1-0.1', 'test_plugin_2-0.1']
+        sync_mock.side_effect = [{'name': 'test_plugin_1', 'title': 'T1'},
+                                 {'name': 'test_plugin_2', 'title': 'T2'}]
         PluginManager.sync_plugins_metadata()
         self.assertEqual(sync_mock.call_count, 2)
 
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
+    @mock.patch.object(PluginAdapterV3, 'get_metadata')
+    def test_changing_plugin_name_denied(self, sync_mock, list_fs_m):
+        list_fs_m.return_value = ['test_plugin_1-0.1']
+        sync_mock.side_effect = [{'name': 'new_name_1', 'title': 'T1'}]
+        self.assertRaises(errors.InvalidData,
+                          PluginManager.sync_plugins_metadata)
+
     @mock.patch.object(PluginAdapterV3, 'get_metadata')
     def test_sync_metadata_for_specific_plugin(self, sync_mock):
+        sync_mock.side_effect = [{'name': self.env.plugins[0].name,
+                                  'title': 'T1'}]
         PluginManager.sync_plugins_metadata([self.env.plugins[0].id])
         self.assertEqual(sync_mock.call_count, 1)
 

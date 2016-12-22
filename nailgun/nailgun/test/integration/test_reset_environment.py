@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 from nailgun.db.sqlalchemy.models import Notification
 
 from nailgun import consts
+from nailgun import objects
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -45,6 +46,12 @@ class TestResetEnvironment(BaseIntegrationTest):
             ]
         )
         cluster_db = self.env.clusters[0]
+
+        cluster_tasks = objects.TransactionCollection.get_transactions(
+            cluster_db.id
+        )
+        self.assertEqual(cluster_tasks.count(), 0L)
+
         supertask = self.env.launch_deployment()
         self.assertEqual(supertask.status, consts.TASK_STATUSES.ready)
 
@@ -52,10 +59,23 @@ class TestResetEnvironment(BaseIntegrationTest):
             self.assertEqual(n.status, "ready")
             self.assertEqual(n.pending_addition, False)
 
+        cluster_tasks = objects.TransactionCollection.get_transactions(
+            cluster_db.id
+        )
+        tasks_before_reset = list(set([task.name for task in cluster_tasks]))
+        self.assertEqual(sorted(tasks_before_reset),
+                         ['deploy', 'deployment', 'provision'])
+
         reset_task = self.env.reset_environment()
         self.assertEqual(reset_task.status, consts.TASK_STATUSES.ready)
 
         self.assertEqual(cluster_db.status, "new")
+
+        cluster_tasks = objects.TransactionCollection.get_transactions(
+            cluster_db.id
+        )
+        tasks_after_reset = list(set([task.name for task in cluster_tasks]))
+        self.assertEqual(tasks_after_reset, ['reset_environment'])
 
         # FIXME(aroma): remove when stop action will be reworked for ha
         # cluster. To get more details, please, refer to [1]

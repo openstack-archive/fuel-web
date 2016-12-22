@@ -773,7 +773,7 @@ class StopDeploymentTaskManager(TaskManager):
         try:
             self.check_running_task([
                 consts.TASK_NAMES.stop_deployment,
-                consts.TASK_NAMES.reset_environment,
+                consts.TASK_NAMES.reset_environment_supertask,
                 consts.TASK_NAMES.cluster_deletion,
             ])
         except errors.TaskAlreadyRunning:
@@ -898,24 +898,28 @@ class ResetEnvironmentTaskManager(ClearTaskHistory):
         db().commit()
 
         supertask = Task(
-            name=consts.TASK_NAMES.reset_environment,
+            name=consts.TASK_NAMES.reset_environment_supertask,
             cluster=self.cluster
         )
         db().add(supertask)
         al = TaskHelper.create_action_log(supertask)
 
-        remove_keys_task = supertask.create_subtask(
+        reset_environment = supertask.create_subtask(
             consts.TASK_NAMES.reset_environment
         )
 
+        remove_keys_task = supertask.create_subtask(
+            consts.TASK_NAMES.remove_keys
+        )
+
         remove_ironic_bootstrap_task = supertask.create_subtask(
-            consts.TASK_NAMES.reset_environment
+            consts.TASK_NAMES.remove_ironic_bootstrap
         )
 
         db.commit()
 
         rpc.cast('naily', [
-            tasks.ResetEnvironmentTask.message(supertask),
+            tasks.ResetEnvironmentTask.message(reset_environment),
             tasks.RemoveIronicBootstrap.message(remove_ironic_bootstrap_task),
             tasks.RemoveClusterKeys.message(remove_keys_task)
         ])

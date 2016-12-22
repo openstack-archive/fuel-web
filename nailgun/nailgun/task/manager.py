@@ -860,7 +860,7 @@ class ClearTaskHistory(TaskManager):
                 TaskHelper.set_ready_if_not_finished(task)
 
         # clear tasks history
-        cluster_tasks = objects.TaskCollection.get_cluster_tasks(
+        cluster_tasks = objects.TransactionCollection.get_transactions(
             self.cluster.id
         )
         cluster_tasks.delete(synchronize_session='fetch')

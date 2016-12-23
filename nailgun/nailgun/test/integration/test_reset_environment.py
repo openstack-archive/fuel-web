@@ -215,6 +215,7 @@ class TestResetEnvironment(BaseIntegrationTest):
             task_uuid=deploy_task.uuid,
             status=consts.TASK_STATUSES.running,
             progress=50,
+            nodes=[{'uid': n.uid, 'progress': 10} for n in self.env.nodes]
         )
 
         stop_task = self.env.stop_deployment()
@@ -231,6 +232,7 @@ class TestResetEnvironment(BaseIntegrationTest):
             task_uuid=reset_task.uuid,
             status=consts.TASK_STATUSES.ready,
             progress=100,
+            nodes=[{'uid': n.uid} for n in self.env.nodes]
         )
 
         self.assertEqual(reset_task.status, consts.TASK_STATUSES.ready)

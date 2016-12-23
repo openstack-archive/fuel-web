@@ -680,9 +680,10 @@ class TestHandlers(BaseIntegrationTest):
                 'weight': 20
             },
             'value': {
-                'label': 'MTU',
+                'label': 'Use Custom MTU',
                 'weight': 10,
                 'type': 'number',
+                'nullable': True,
                 'value': 1500,
                 'min': 42,
                 'max': 65536
@@ -714,9 +715,10 @@ class TestHandlers(BaseIntegrationTest):
                 'weight': 20
             },
             'value': {
-                'label': 'MTU',
+                'label': 'Use Custom MTU',
                 'weight': 10,
                 'type': 'number',
+                'nullable': True,
                 'value': 1500,
                 'min': 42,
                 'max': 65536
@@ -1213,8 +1215,9 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
         'mtu': {
             'value': {
                 'value': None,
-                'label': 'MTU',
+                'label': 'Use Custom MTU',
                 'type': 'number',
+                'nullable': True,
                 'weight': 10,
                 'min': 42,
                 'max': 65536

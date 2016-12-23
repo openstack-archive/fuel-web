@@ -1396,14 +1396,8 @@ class NetworkManager(object):
     @classmethod
     def get_iface_properties(cls, iface):
         properties = {}
-        # 'use_custom_mtu' and 'custom_mtu' settings are a temporary solution
-        # for #1643599 and should be reverted after it will be fixed properly
-        if iface.attributes.get('mtu', {}).get(
-                'use_custom_mtu', {}).get('value'):
-            properties['mtu'] = iface.attributes['mtu']['custom_mtu']['value']
-        elif iface.attributes.get('mtu', {}).get('value', {}).get('value'):
+        if iface.attributes.get('mtu', {}).get('value', {}).get('value'):
             properties['mtu'] = iface.attributes['mtu']['value']['value']
-
         if iface.attributes.get('offloading', {}).get('disable', {}).get(
                 'value'):
             properties['vendor_specific'] = {

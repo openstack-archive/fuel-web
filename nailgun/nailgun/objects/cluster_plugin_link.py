@@ -42,3 +42,7 @@ class ClusterPluginLinkCollection(NailgunCollection):
     def create_with_cluster_id(cls, data, cluster_id):
         data['cluster_id'] = cluster_id
         return cls.create(data)
+
+    @classmethod
+    def delete_by_cluster_id(cls, cluster_id):
+        cls.filter_by(None, cluster_id=cluster_id).delete()

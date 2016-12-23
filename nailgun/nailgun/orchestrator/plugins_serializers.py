@@ -253,14 +253,14 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
     def get_centos_repo(self, plugin):
         return {
             'type': 'rpm',
-            'name': plugin.full_name,
+            'name': plugin.path_name,
             'uri': plugin.repo_url(self.cluster),
             'priority': settings.REPO_PRIORITIES['plugins']['centos']}
 
     def get_ubuntu_repo(self, plugin):
         return {
             'type': 'deb',
-            'name': plugin.full_name,
+            'name': plugin.path_name,
             'uri': plugin.repo_url(self.cluster),
             'suite': '/',
             'section': '',

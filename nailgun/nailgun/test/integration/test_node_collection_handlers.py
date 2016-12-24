@@ -367,17 +367,16 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue('cached' in response and response['cached'])
 
-    def test_agent_updates_node_by_interfaces(self):
+    def test_agent_updates_node_by_system_uuid(self):
         node = self.env.create_node(api=False)
-        interface = node.meta['interfaces'][0]
+        system_uuid = node.meta['system']['uuid']
 
         resp = self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps({
                 'mac': '00:00:00:00:00:00',
                 'meta': {
-                    'interfaces': [interface]},
-            }),
+                    'system': {'uuid': system_uuid}}}),
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
@@ -469,15 +468,10 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(response.status_code, http_code)
 
     def test_node_update_ext_mac(self):
-        meta = self.env.default_metadata()
-        node1 = self.env.create_node(
-            api=False,
-            mac=meta["interfaces"][0]["mac"],
-            meta={}
-        )
+        node1 = self.env.create_node(api=False)
         node1_json = {
             "mac": self.env.generate_random_mac(),
-            "meta": meta
+            "meta": node1.meta
         }
         # We want to be sure that new mac is not equal to old one
         self.assertNotEqual(node1.mac, node1_json["mac"])

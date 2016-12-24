@@ -255,24 +255,11 @@ class NodeValidator(base.BasicValidator):
                 log_message=True
             )
 
-        existent_node = None
-        q = db().query(Node)
-        if "mac" in d:
-            existent_node = q.filter_by(mac=d["mac"].lower()).first() \
-                or cls.validate_existent_node_mac_update(d)
-            if not existent_node:
-                raise errors.InvalidData(
-                    "Invalid MAC is specified",
-                    log_message=True
-                )
-
-        if "id" in d and d["id"]:
-            existent_node = q.get(d["id"])
-            if not existent_node:
-                raise errors.InvalidData(
-                    "Invalid ID specified",
-                    log_message=True
-                )
+        existent_node = Node.get_by_meta(d)
+        if not existent_node:
+            raise errors.InvalidData(('Could not find a node to update by'
+                                      ' looking at data provided'),
+                                     log_message=True)
 
         if not instance:
             instance = existent_node

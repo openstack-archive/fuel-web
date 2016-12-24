@@ -259,7 +259,8 @@ class NodeValidator(base.BasicValidator):
         q = db().query(Node)
         if "mac" in d:
             existent_node = q.filter_by(mac=d["mac"].lower()).first() \
-                or cls.validate_existent_node_mac_update(d)
+                or cls.validate_existent_node_mac_update(d) \
+                or models.Node.get_by_meta(d)
             if not existent_node:
                 raise errors.InvalidData(
                     "Invalid MAC is specified",

@@ -726,6 +726,8 @@ class EnvironmentManager(object):
         item = self.find_item_by_pk_model(
             self.read_fixtures(("sample_environment",)),
             1, 'nailgun.node')
+        item['fields'].setdefault('meta', {}) \
+            .setdefault('system', {})['uuid'] = str(uuid.uuid4())
         return item.get('fields').get('meta', {})
 
     def generate_random_mac(self):

@@ -726,6 +726,10 @@ class EnvironmentManager(object):
         item = self.find_item_by_pk_model(
             self.read_fixtures(("sample_environment",)),
             1, 'nailgun.node')
+        if item['fields'].get('meta'):
+            if 'system' not in item['fields']['meta']:
+                item['fields']['meta']['system'] = {}
+            item['fields']['meta']['system']['uuid'] = str(uuid.uuid4())
         return item.get('fields').get('meta', {})
 
     def generate_random_mac(self):

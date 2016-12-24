@@ -24,7 +24,6 @@ from nailgun.api.v1.validators.orchestrator_graph import \
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun import errors
 from nailgun import objects
 from nailgun import utils
@@ -116,65 +115,22 @@ class NodeValidator(base.BasicValidator):
                 "Only bootstrap nodes are allowed to be registered."
             )
 
-        if 'mac' not in data:
-            raise errors.InvalidData(
-                "No mac address specified",
-                log_message=True
-            )
+        if not data.get('mac'):
+            raise errors.InvalidData("No mac address specified",
+                                     log_message=True)
 
-        if cls.does_node_exist_in_db(data):
+        node = objects.Node.get_by_meta(data)
+        if node:
+            id_attrs = objects.Node.get_identification_attributes(node)
             raise errors.AlreadyExists(
-                "Node with mac {0} already "
-                "exists - doing nothing".format(data["mac"]),
-                log_level="info"
-            )
-
-        if cls.validate_existent_node_mac_create(data):
-            raise errors.AlreadyExists(
-                "Node with mac {0} already "
-                "exists - doing nothing".format(data["mac"]),
-                log_level="info"
-            )
+                "A node with one of the following attributes (mac: %s,"
+                " id: %s, system uuid: %s) already exists - doing nothing"
+                % id_attrs, log_level="info")
 
         if 'meta' in data:
             MetaValidator.validate_create(data['meta'])
 
         return data
-
-    @classmethod
-    def does_node_exist_in_db(cls, data):
-        mac = data['mac'].lower()
-        q = db().query(Node)
-
-        if q.filter(Node.mac == mac).first() or \
-            q.join(NodeNICInterface, Node.nic_interfaces).filter(
-                NodeNICInterface.mac == mac).first():
-            return True
-        return False
-
-    @classmethod
-    def _validate_existent_node(cls, data, validate_method):
-        if 'meta' in data:
-            data['meta'] = validate_method(data['meta'])
-            if 'interfaces' in data['meta']:
-                existent_node = db().query(Node).\
-                    join(NodeNICInterface, Node.nic_interfaces).\
-                    filter(NodeNICInterface.mac.in_(
-                        [n['mac'].lower() for n in data['meta']['interfaces']]
-                    )).first()
-                return existent_node
-
-    @classmethod
-    def validate_existent_node_mac_create(cls, data):
-        return cls._validate_existent_node(
-            data,
-            MetaValidator.validate_create)
-
-    @classmethod
-    def validate_existent_node_mac_update(cls, data):
-        return cls._validate_existent_node(
-            data,
-            MetaValidator.validate_update)
 
     @classmethod
     def validate_roles(cls, data, node, roles):
@@ -249,33 +205,29 @@ class NodeValidator(base.BasicValidator):
             d = data
         cls.validate_schema(d, node_schema.single_schema)
 
-        if not d.get("mac") and not d.get("id") and not instance:
-            raise errors.InvalidData(
-                "Neither MAC nor ID is specified",
-                log_message=True
-            )
-
-        existent_node = None
-        q = db().query(Node)
-        if "mac" in d:
-            existent_node = q.filter_by(mac=d["mac"].lower()).first() \
-                or cls.validate_existent_node_mac_update(d)
-            if not existent_node:
-                raise errors.InvalidData(
-                    "Invalid MAC is specified",
-                    log_message=True
-                )
-
-        if "id" in d and d["id"]:
-            existent_node = q.get(d["id"])
-            if not existent_node:
-                raise errors.InvalidData(
-                    "Invalid ID specified",
-                    log_message=True
-                )
-
         if not instance:
-            instance = existent_node
+            system_uuid = objects.Node.get_system_uuid(d.get('meta'))
+            if not d.get('mac') and not d.get('id') and not system_uuid:
+                raise errors.InvalidData(
+                    'Cannot find node to update - no identification params '
+                    "specified, mac or id or meta['system']['uuid'] required.",
+                    log_message=True)
+            q = db().query(Node)
+            n_by_mac_id = objects.Node.get_by_mac_or_uid(
+                mac=d.get('mac'), node_uid=d.get('id'), query=q)
+            n_by_s_uuid = objects.Node.get_by_system_uuid(d, query=q)
+            instance = n_by_mac_id or n_by_s_uuid
+            if not instance:
+                raise errors.InvalidData(
+                    'Cannot find node to update - no nodes found with mac: %s '
+                    'or id: %s or system_uuid: %s' %
+                    (d.get('mac'), d.get('id'), system_uuid))
+            if n_by_mac_id and n_by_s_uuid and n_by_mac_id != n_by_s_uuid:
+                ids1 = objects.Node.get_identification_attributes(n_by_mac_id)
+                ids2 = objects.Node.get_identification_attributes(n_by_s_uuid)
+                raise errors.InvalidData(
+                    'Cannot update node %s - system uuid %s already assigned '
+                    'to node %s' % (ids1[1], system_uuid, ids2[1]))
 
         if d.get("hostname") is not None:
             cls.validate_hostname(d["hostname"], instance)

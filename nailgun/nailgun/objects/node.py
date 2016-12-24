@@ -211,38 +211,30 @@ class Node(NailgunObject):
 
     @classmethod
     def get_by_meta(cls, meta):
-        """Search for instance using mac, node id or interfaces.
+        """Find node by mac, id or system uuid.
 
-        :param meta: dict with nodes metadata
+        :param meta: dict with node metadata
         :returns: Node instance
         """
-        node = cls.get_by_mac_or_uid(
-            mac=meta.get('mac'), node_uid=meta.get('id'))
-
-        if not node:
-            can_search_by_ifaces = all([
-                meta.get('meta'), meta['meta'].get('interfaces')])
-
-            if can_search_by_ifaces:
-                node = cls.search_by_interfaces(meta['meta']['interfaces'])
-
+        node = (cls.get_by_system_uuid(meta) or
+                cls.get_by_mac_or_uid(mac=meta.get('mac'),
+                                      node_uid=meta.get('id')))
         return node
 
     @classmethod
-    def search_by_interfaces(cls, interfaces):
-        """Search for instance using MACs on interfaces.
+    def get_by_system_uuid(cls, meta):
+        """Find node by system uuid.
 
-        :param interfaces: dict of Node interfaces
+        :param meta: dict with node metadata
         :returns: Node instance
         """
-        return db().query(cls.model).join(
-            models.NodeNICInterface,
-            cls.model.nic_interfaces
-        ).filter(
-            models.NodeNICInterface.mac.in_(
-                [n["mac"].lower() for n in interfaces]
-            )
-        ).first()
+        uuid = utils.get_in(meta, 'meta', 'system', 'uuid')
+        if uuid:
+            q = db().query(cls.model)
+            values = q.values(cls.model.id, cls.model.meta)
+            for i, m in values:
+                if uuid == m.get('system', {}).get('uuid'):
+                    return q.get(i)
 
     @classmethod
     def should_have_public_with_ip(cls, instance, roles_metadata=None):

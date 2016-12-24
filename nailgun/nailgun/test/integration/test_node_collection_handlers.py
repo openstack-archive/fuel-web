@@ -136,6 +136,43 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual('discover', resp.json_body['status'])
 
+    def test_node_create_with_identical_meta_except_system_uuid_allowed(self):
+        # self.env.default_metadata() generates a random system uuid
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': self.env.generate_random_mac(),
+                             'meta': self.env.default_metadata(),
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual('discover', resp.json_body['status'])
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': self.env.generate_random_mac(),
+                             'meta': self.env.default_metadata(),
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual('discover', resp.json_body['status'])
+
+    def test_node_create_with_fully_identical_meta_prohibited(self):
+        meta = self.env.default_metadata()
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': self.env.generate_random_mac(),
+                             'meta': meta,
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual('discover', resp.json_body['status'])
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': self.env.generate_random_mac(),
+                             'meta': meta,
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 409)
+
     def test_node_update(self):
         node = self.env.create_node(api=False)
         resp = self.app.put(
@@ -150,8 +187,9 @@ class TestHandlers(BaseIntegrationTest):
         node = self.db.query(Node).get(node.id)
         self.assertEqual('new', node.manufacturer)
 
-    def test_node_update_empty_mac_or_id(self):
+    def test_node_update_various_scenarios(self):
         node = self.env.create_node(api=False)
+        node_s_uuid = node.meta.get('system', {}).get('uuid')
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -159,9 +197,9 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(
+        self.assertRegexpMatches(
             resp.json_body["message"],
-            "Neither MAC nor ID is specified"
+            "no identification params specified"
         )
 
         resp = self.app.put(
@@ -209,6 +247,13 @@ class TestHandlers(BaseIntegrationTest):
             jsonutils.dumps([{'id': node.id,
                               'mac': node.mac,
                               'manufacturer': 'man8'}]),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps([{'meta': {'system': {'uuid': node_s_uuid}},
+                              'manufacturer': 'man9'}]),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
 
@@ -367,17 +412,16 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue('cached' in response and response['cached'])
 
-    def test_agent_updates_node_by_interfaces(self):
+    def test_agent_updates_node_by_system_uuid(self):
         node = self.env.create_node(api=False)
-        interface = node.meta['interfaces'][0]
+        system_uuid = node.meta['system']['uuid']
 
         resp = self.app.put(
             reverse('NodeAgentHandler'),
             jsonutils.dumps({
                 'mac': '00:00:00:00:00:00',
                 'meta': {
-                    'interfaces': [interface]},
-            }),
+                    'system': {'uuid': system_uuid}}}),
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
@@ -409,11 +453,10 @@ class TestHandlers(BaseIntegrationTest):
             api=False
         )
         node2_json = {
-            "mac": self.env.generate_random_mac(),
+            "mac": node1.mac,
             "meta": self.env.default_metadata(),
             "status": "discover"
         }
-        node2_json["meta"]["interfaces"][0]["mac"] = node1.mac
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
             jsonutils.dumps(node2_json),
@@ -469,15 +512,10 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(response.status_code, http_code)
 
     def test_node_update_ext_mac(self):
-        meta = self.env.default_metadata()
-        node1 = self.env.create_node(
-            api=False,
-            mac=meta["interfaces"][0]["mac"],
-            meta={}
-        )
+        node1 = self.env.create_node(api=False)
         node1_json = {
             "mac": self.env.generate_random_mac(),
-            "meta": meta
+            "meta": node1.meta
         }
         # We want to be sure that new mac is not equal to old one
         self.assertNotEqual(node1.mac, node1_json["mac"])
@@ -493,7 +531,7 @@ class TestHandlers(BaseIntegrationTest):
 
         # Here we are checking if node mac is successfully updated
         self.assertEqual(node1_json["mac"], resp.json_body[0]["mac"])
-        self.assertEqual(meta, resp.json_body[0]["meta"])
+        self.assertEqual(node1.meta, resp.json_body[0]["meta"])
 
     def test_duplicated_node_create_fails(self):
         node = self.env.create_node(api=False)

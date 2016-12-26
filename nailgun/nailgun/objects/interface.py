@@ -109,23 +109,6 @@ class NIC(DPDKMixin, NailgunObject):
         return enabled and enabled['value']
 
     @classmethod
-    def update_offloading_modes(cls, instance, new_modes, keep_states=False):
-        """Update information about offloading modes for the interface.
-
-        :param instance: Interface object
-        :param new_modes: New offloading modes
-        :param keep_states: If True, information about available modes will be
-               updated, but states configured by user will not be overwritten.
-        """
-        if keep_states:
-            old_modes_states = instance.offloading_modes_as_flat_dict(
-                instance.offloading_modes)
-            for mode in new_modes:
-                if mode["name"] in old_modes_states:
-                    mode["state"] = old_modes_states[mode["name"]]
-        instance.offloading_modes = new_modes
-
-    @classmethod
     def create_attributes(cls, instance):
         """Create attributes for interface with default values.
 

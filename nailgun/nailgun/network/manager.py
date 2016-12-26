@@ -785,8 +785,6 @@ class NetworkManager(object):
                  in iface['assigned_networks']]
             objects.NIC.assign_networks(current_iface, nets_to_assign)
             update = {}
-            if 'offloading_modes' in iface:
-                update['offloading_modes'] = iface['offloading_modes']
             if 'attributes' in iface:
                 update['attributes'] = nailgun_utils.dict_merge(
                     current_iface.attributes,
@@ -834,7 +832,6 @@ class NetworkManager(object):
 
             update = {
                 'slaves': slaves,
-                'offloading_modes': bond.get('offloading_modes', {}),
                 'attributes': bond_attributes
             }
             objects.Bond.update(bond_db, update)
@@ -1396,42 +1393,29 @@ class NetworkManager(object):
     @classmethod
     def get_iface_properties(cls, iface):
         properties = {}
-        if iface.attributes.get('mtu', {}).get('value', {}).get('value'):
+        if get_in(iface.attributes, 'mtu', 'value', 'value'):
             properties['mtu'] = iface.attributes['mtu']['value']['value']
-        if iface.attributes.get('offloading', {}).get('disable', {}).get(
-                'value'):
+
+        vendor_specific = get_in(
+            iface.attributes, 'offloading', 'disable', 'value')
+        if vendor_specific:
             properties['vendor_specific'] = {
-                'disable_offloading':
-                iface.attributes['offloading']['disable']['value']
+                'disable_offloading': cls._filter_not_non_values(
+                    vendor_specific)
             }
 
-        if iface.attributes.get('offloading', {}).get('modes', {}).get(
-                'value'):
-            modified_offloading_modes = cls._get_modified_offloading_modes(
-                iface.meta.get('offloading_modes', {}),
-                iface.attributes['offloading']['modes']['value']
-            )
-            if modified_offloading_modes:
-                properties['ethtool'] = {
-                    'offload': modified_offloading_modes
-                }
+        offloading_modes = get_in(
+            iface.attributes, 'offloading', 'modes', 'value')
+        if offloading_modes:
+            properties['ethtool'] = {
+                'offload': cls._filter_not_non_values(offloading_modes)
+            }
 
         return properties
 
-    @classmethod
-    def _get_modified_offloading_modes(cls, offloading_modes,
-                                       offloading_modes_states):
-        result = dict()
-        for mode in offloading_modes:
-            mode_state = offloading_modes_states.get(mode['name'])
-            if mode_state is not None:
-                result[mode['name']] = mode_state
-            if mode['sub'] and mode_state is not False:
-                result.update(
-                    cls._get_modified_offloading_modes(
-                        mode['sub'], offloading_modes_states)
-                )
-        return result
+    @staticmethod
+    def _filter_not_non_values(d):
+        return {k: d[k] for k in filter(lambda x: d[x] is not None, d)}
 
     @classmethod
     def find_nic_assoc_with_ng(cls, node, network_group):

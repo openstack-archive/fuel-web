@@ -26,7 +26,6 @@ from oslo_serialization import jsonutils
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.network.manager import NetworkManager
 from nailgun import objects
 from nailgun.orchestrator import stages
 from nailgun.test import base
@@ -461,29 +460,6 @@ class TestDeploymentAttributesSerialization70(
 
             self.assertEqual(roles, dict(expected_roles))
 
-    def test_offloading_modes_serialize_fields(self):
-        changed_offloading_modes = {}
-        node = self.cluster_db.nodes[0]
-        for interface in node.nic_interfaces:
-            changed_offloading_modes[interface['name']] = \
-                NetworkManager._get_modified_offloading_modes(
-                    interface.meta.get('offloading_modes', {}),
-                    interface.attributes['offloading']['modes']['value'])
-
-        for node in self.serialized_for_astute:
-            interfaces = node['network_scheme']['interfaces']
-            for iface_name in interfaces:
-                ethtool_blk = interfaces[iface_name].get('ethtool', None)
-                self.assertIsNotNone(
-                    ethtool_blk,
-                    "There is no 'ethtool' block in deployment data")
-                offload_blk = ethtool_blk.get('offload', None)
-                self.assertIsNotNone(
-                    offload_blk,
-                    "There is no 'offload' block in deployment data")
-                self.assertDictEqual(offload_blk,
-                                     changed_offloading_modes[iface_name])
-
     def test_offloading_modes_serialize(self):
         interface_offloading = {
             'name': 'eth0',
@@ -535,7 +511,10 @@ class TestDeploymentAttributesSerialization70(
             serialized_node['network_scheme']['interfaces']['eth0']
 
         self.assertDictEqual(
-            {'offload': {u'tx-checksumming': False, u'scatter-gather': True}},
+            {'offload': {
+                'tx-checksumming': False,
+                'tx-checksum-ipv6': True,
+                'scatter-gather': True}},
             serialized_interface.get('ethtool')
         )
 

@@ -72,7 +72,6 @@ class NodeInterfacesSerializer(BasicSerializer):
         'driver',
         'bus_info',
         'meta',
-        'offloading_modes',
         'pxe'
     )
     bond_fields = (
@@ -81,8 +80,7 @@ class NodeInterfacesSerializer(BasicSerializer):
         'type',
         'mode',
         'state',
-        'assigned_networks',
-        'offloading_modes'
+        'assigned_networks'
     )
 
     nic_fields_60 = (

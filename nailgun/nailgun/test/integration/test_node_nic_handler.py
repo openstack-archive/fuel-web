@@ -510,7 +510,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), 1)
         resp_nic = resp.json_body[0]
         nic = new_meta['interfaces'][0]
-        self.assertEqual(resp_nic['offloading_modes'], nic['offloading_modes'])
+        self.assertEqual(
+            nic['offloading_modes'], resp_nic['meta']['offloading_modes'])
 
     def test_NIC_change_offloading_modes(self):
         meta = self.env.default_metadata()
@@ -551,7 +552,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), 1)
         resp_nic = resp.json_body[0]
         nic = new_meta['interfaces'][0]
-        self.assertEqual(resp_nic['offloading_modes'], nic['offloading_modes'])
+        self.assertEqual(
+            nic['offloading_modes'], resp_nic['meta']['offloading_modes'])
 
         resp = self.app.get(
             reverse('NodeCollectionHandler', kwargs={'node_id': node['id']}),
@@ -581,8 +583,7 @@ class TestHandlers(BaseIntegrationTest):
                 }
             ]
         }
-        self.env.set_interfaces_in_meta(resp_node["meta"], [
-            new_nic])
+        self.env.set_interfaces_in_meta(resp_node["meta"], [new_nic])
 
         resp_node.pop('group_id')
 
@@ -599,8 +600,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(len(resp.json_body), 1)
         resp_nic = resp.json_body[0]
         self.assertEqual(
-            resp_nic['offloading_modes'],
-            new_nic['offloading_modes'])
+            new_nic['offloading_modes'], resp_nic['meta']['offloading_modes'])
 
     def test_NIC_locking_on_update_by_agent(self):
         lock_vs_status = (

@@ -1456,6 +1456,9 @@ class DPDKSerializerMixin90(object):
             vendor_specific = network_scheme['interfaces'][iface.name].get(
                 'vendor_specific', {})
             vendor_specific.update({'dpdk_driver': driver})
+            max_queues = objects.NIC.get_dpdk_queues_count(iface)
+            if max_queues > 1:
+                vendor_specific.update({'max_queues': max_queues})
             network_scheme['interfaces'][iface.name][
                 'vendor_specific'] = vendor_specific
         return network_scheme

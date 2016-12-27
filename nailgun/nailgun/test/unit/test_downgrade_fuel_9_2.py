@@ -44,14 +44,17 @@ SECURITY_GROUPS = {
         {
             'data': 'openvswitch',
             'label': 'Open vSwitch Firewall Driver',
-            'description': 'Choose this type of firewall driver if you'
-                           ' use OVS Brige for networking needs.'
+            'description': 'Choose this driver for OVS based security groups '
+                           'implementation. NOTE: Open vSwitch Firewall '
+                           'Driver requires kernel version >= 4.3 '
+                           'for non-dpdk case.'
         },
         {
             'data': 'iptables_hybrid',
-            'label': 'Iptables-based Firewall Driver',
-            'description': 'Choose this type of firewall driver if you'
-                           ' use Linux Bridge for networking needs.'
+            'label': 'Iptables-based Firewall Driver'
+                     ' (No firewall for DPDK case)',
+            'description': 'Choose this driver for iptables/linux bridge '
+                           'based security groups implementation.'
         }
     ],
     'group': 'security',

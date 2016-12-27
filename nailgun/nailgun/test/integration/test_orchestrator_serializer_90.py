@@ -135,7 +135,7 @@ class TestDeploymentAttributesSerialization90(
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def _check_dpdk_serializing(self, drivers_mock, has_vlan_tag=False,
-                                sriov=False):
+                                sriov=False, max_queues=0):
         drivers_mock.return_value = {
             'driver_1': ['test_id:1', 'test_id:2']
         }
@@ -155,6 +155,7 @@ class TestDeploymentAttributesSerialization90(
 
         self._assign_dpdk_to_nic(node, dpdk_nic, other_nic)
         dpdk_interface_name = dpdk_nic.name
+        dpdk_nic.meta['interface_properties'] = {'max_queues': max_queues}
 
         objects.Cluster.prepare_for_deployment(self.cluster_db)
 
@@ -198,6 +199,11 @@ class TestDeploymentAttributesSerialization90(
         else:
             self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
 
+        if max_queues > 1:
+            self.assertEqual(vendor_specific.get('max_queues'), max_queues)
+        else:
+            self.assertFalse(vendor_specific.get('max_queues'))
+
     def test_serialization_with_dpdk(self):
         self._check_dpdk_serializing()
 
@@ -211,6 +217,10 @@ class TestDeploymentAttributesSerialization90(
     def test_serialization_with_dpdk_vxlan_with_vlan_tag(self):
         self._create_cluster_with_vxlan()
         self._check_dpdk_serializing(has_vlan_tag=True)
+
+    def test_serialization_with_dpdk_queues(self):
+        queues_count = 2
+        self._check_dpdk_serializing(max_queues=queues_count)
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def _check_dpdk_bond_serializing(self, attributes, drivers_mock):

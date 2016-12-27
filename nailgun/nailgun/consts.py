@@ -522,3 +522,5 @@ HYPERVISORS = Enum(
     "kvm",
     "qemu"
 )
+
+DPDK_DRIVER_IN_SRIOV_CASE = 'vfio-pci'

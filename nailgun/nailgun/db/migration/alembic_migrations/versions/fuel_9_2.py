@@ -33,6 +33,7 @@ from nailgun.utils import dict_update
 from nailgun.utils import is_feature_supported
 from nailgun.utils import migration
 
+
 # revision identifiers, used by Alembic.
 revision = '3763c404ca48'
 down_revision = 'f2314e5d63c9'
@@ -48,11 +49,9 @@ def upgrade():
     upgrade_node_nic_attributes()
     upgrade_node_bond_attributes()
     upgrade_tags_set()
-    upgrade_default_repos_for_mos_ubuntu()
 
 
 def downgrade():
-    downgrade_default_repos_for_mos_ubuntu()
     downgrade_tags_set()
     downgrade_node_bond_attributes()
     downgrade_node_nic_attributes()
@@ -62,7 +61,6 @@ def downgrade():
     downgrade_cluster_roles()
     downgrade_attributes_metadata()
     downgrade_vmware_attributes_metadata()
-
 
 # version of Fuel when tags was introduced
 FUEL_TAGS_SUPPORT = '9.0'
@@ -241,75 +239,6 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
 
 # version of Fuel when security group switch was added
 FUEL_SECURITY_GROUPS_VERSION = '9.0'
-
-# new repo metadata for Mitaka 9.2 on Ubuntu 14.04
-MOS92_UPDATES_REPOS = [
-    {
-        "name": "mos9.2-updates",
-        "priority": 1050,
-        "section": "main restricted",
-        "suite": "mos9.0-updates",
-        "type": "deb",
-        'uri': "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.2/",
-    },
-    {
-        "name": "mos9.2-security",
-        "priority": 1050,
-        "section": "main restricted",
-        "suite": "mos9.0-security",
-        "type": "deb",
-        'uri': "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.2/",
-    },
-    {
-        "name": "mos9.2-holdback",
-        "priority": 1100,
-        "section": "main restricted",
-        "suite": "mos9.0-holdback",
-        "type": "deb",
-        'uri': "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.2/",
-    },
-]
-
-
-def get_attribute_metadata():
-    connection = op.get_bind()
-    select_query = sa.sql.text(
-        "SELECT id, attributes_metadata FROM releases "
-        "WHERE "
-        "name in ('Mitaka on Ubuntu 14.04', 'Mitaka on Ubuntu+UCA 14.04')")
-
-    return connection.execute(select_query)
-
-
-def set_attribute_metadata(release_id, attrs):
-    connection = op.get_bind()
-    update_query = sa.sql.text(
-        "UPDATE releases SET attributes_metadata = "
-        ":attributes_metadata WHERE id = :id")
-    connection.execute(
-        update_query,
-        id=release_id,
-        attributes_metadata=jsonutils.dumps(attrs))
-
-
-def upgrade_default_repos_for_mos_ubuntu():
-    for release_id, attributes_metadata in get_attribute_metadata():
-        attrs = jsonutils.loads(attributes_metadata)
-        attrs['editable']['repo_setup']['repos']['value']\
-            .extend(MOS92_UPDATES_REPOS)
-        set_attribute_metadata(release_id, attrs)
-
-
-def downgrade_default_repos_for_mos_ubuntu():
-    for release_id, attributes_metadata in get_attribute_metadata():
-        attrs = jsonutils.loads(attributes_metadata)
-        repos = attrs['editable']['repo_setup']['repos']['value']
-        attrs['editable']['repo_setup']['repos']['value'] = []
-        for x in repos:
-            if x['uri'] != \
-                    'http://mirror.fuel-infra.org/mos-repos/ubuntu/9.2/':
-                attrs['editable']['repo_setup']['repos']['value'].append(x)
-        set_attribute_metadata(release_id, attrs)
 
 
 def update_vmware_attributes_metadata(upgrade):

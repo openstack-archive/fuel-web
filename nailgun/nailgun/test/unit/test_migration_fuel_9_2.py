@@ -57,35 +57,6 @@ ATTRIBUTES_METADATA = {
     }
 }
 
-MOS_OS_RELEASES = ['Mitaka on Ubuntu 14.04', 'Mitaka on Ubuntu+UCA 14.04']
-
-MOS92_UPDATES_REPOS = [
-    {
-        "name": "mos9.2-updates",
-        "priority": 1050,
-        "section": "main restricted",
-        "suite": "mos9.0-updates",
-        "type": "deb",
-        'uri': "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.2/",
-    },
-    {
-        "name": "mos9.2-security",
-        "priority": 1050,
-        "section": "main restricted",
-        "suite": "mos9.0-security",
-        "type": "deb",
-        'uri': "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.2/",
-    },
-    {
-        "name": "mos9.2-holdback",
-        "priority": 1100,
-        "section": "main restricted",
-        "suite": "mos9.0-holdback",
-        "type": "deb",
-        'uri': "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.2/",
-    },
-]
-
 SECURITY_GROUPS = {
     'value': 'iptables_hybrid',
     'values': [
@@ -774,16 +745,6 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
             self.assertEqual(common.get('security_groups'), None)
-
-    def test_release_attributes_repos_update(self):
-        releases = self.meta.tables['releases']
-        results = db.execute(sa.select([releases.c.attributes_metadata],
-                             releases.c.name.in_(MOS_OS_RELEASES)))
-
-        for result in results:
-            attrs = jsonutils.loads(result[0])
-            self.assertTrue(set(MOS92_UPDATES_REPOS).issubset(
-                set(attrs['editable']['repo_setup']['repos']['value'])))
 
     def test_cluster_attributes_update(self):
         clusters_attributes = self.meta.tables['attributes']

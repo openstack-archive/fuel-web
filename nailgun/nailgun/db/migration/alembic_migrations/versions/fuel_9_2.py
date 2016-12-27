@@ -180,7 +180,8 @@ DEFAULT_RELEASE_NIC_ATTRIBUTES = {
     },
     'mtu': {
         'value': {'type': 'number', 'value': None, 'weight': 10,
-                  'label': 'Use Custom MTU', 'nullable': True},
+                  'label': 'Use Custom MTU', 'nullable': True,
+                  'min': 42, 'max': 65536},
         'metadata': {'weight': 20, 'label': 'MTU'}
     },
     'sriov': {
@@ -221,7 +222,8 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
     },
     'mtu': {
         'value': {'type': 'number', 'weight': 10, 'value': None,
-                  'label': 'Use Custom MTU', 'nullable': True},
+                  'label': 'Use Custom MTU', 'nullable': True,
+                  'min': 42, 'max': 65536},
         'metadata': {'weight': 30, 'label': 'MTU'}
     },
     'lacp': {

@@ -90,6 +90,16 @@ class NIC(DPDKMixin, NailgunObject):
         return None
 
     @classmethod
+    def get_dpdk_queues_count(cls, instance):
+        dpdk_cpu_pining = instance.node.attributes.get(
+            'cpu_pinning', {}).get('dpdk', {}).get('value', 0)
+        max_queues = instance.meta.get('interface_properties',
+                                       {}).get('max_queues', 0)
+        if dpdk_cpu_pining > max_queues:
+            return max_queues
+        return dpdk_cpu_pining
+
+    @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):
         """Checks availability of DPDK for given interface.
 
@@ -340,7 +350,8 @@ class NIC(DPDKMixin, NailgunObject):
                     'dpdk', {}).get('available', False)
             },
             'pci_id': interface_properties.get('pci_id', ''),
-            'numa_node': interface_properties.get('numa_node')
+            'numa_node': interface_properties.get('numa_node'),
+            'max_queues': interface_properties.get('max_queues')
         }
 
 

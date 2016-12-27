@@ -337,6 +337,11 @@ class AttributesRestriction(RestrictionBase):
                         models, restrictions, action='disable')['result']:
                     return
 
+            if attr_type in ['text', 'number']:
+                if not data.get('nullable', False) and value is None:
+                    yield ("Null value is forbidden for '{}'"
+                           .format(label))
+
             if attr_type in ['text_list', 'textarea_list']:
                 err = cls.check_fields_length(data)
                 if err is not None:
@@ -356,25 +361,26 @@ class AttributesRestriction(RestrictionBase):
 
     @staticmethod
     def validate_regex(data):
-        attr_regex = data.get('regex', {})
-        if attr_regex:
-            attr_value = data.get('value')
-            pattern = re.compile(attr_regex.get('source'))
-            error = attr_regex.get('error')
+        attr_value = data.get('value')
+        if attr_value is not None:
+            attr_regex = data.get('regex', {})
+            if attr_regex:
+                pattern = re.compile(attr_regex.get('source'))
+                error = attr_regex.get('error')
 
-            def test_regex(value, pattern=pattern, error=error):
-                if not pattern.search(value):
-                    return error
+                def test_regex(value, pattern=pattern, error=error):
+                    if not pattern.search(value):
+                        return error
 
-            if isinstance(attr_value, six.string_types):
-                return test_regex(attr_value)
-            elif isinstance(attr_value, list):
-                errors = map(test_regex, attr_value)
-                if compact(errors):
-                    return errors
-            else:
-                return ('Value {0} is of invalid type, cannot check '
-                        'regexp'.format(attr_value))
+                if isinstance(attr_value, six.string_types):
+                    return test_regex(attr_value)
+                elif isinstance(attr_value, list):
+                    errors = map(test_regex, attr_value)
+                    if compact(errors):
+                        return errors
+                else:
+                    return ('Value {0} is of invalid type, cannot check '
+                            'regexp'.format(attr_value))
 
     @staticmethod
     def check_fields_length(data):

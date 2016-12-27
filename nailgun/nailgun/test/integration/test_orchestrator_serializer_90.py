@@ -129,7 +129,8 @@ class TestDeploymentAttributesSerialization90(
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def _check_dpdk_serializing(self, drivers_mock, has_vlan_tag=False,
-                                sriov=False):
+                                sriov=False, max_queues=0,
+                                dpdk_cpu_pinning=0):
         drivers_mock.return_value = {
             'driver_1': ['test_id:1', 'test_id:2']
         }
@@ -149,6 +150,9 @@ class TestDeploymentAttributesSerialization90(
 
         self._assign_dpdk_to_nic(node, dpdk_nic, other_nic)
         dpdk_interface_name = dpdk_nic.name
+        dpdk_nic.meta['max_queues'] = max_queues
+        if dpdk_cpu_pinning:
+            node.attributes['cpu_pinning']['dpdk']['value'] = dpdk_cpu_pinning
 
         objects.Cluster.prepare_for_deployment(self.cluster_db)
 
@@ -193,6 +197,12 @@ class TestDeploymentAttributesSerialization90(
         else:
             self.assertEqual(vendor_specific.get('dpdk_driver'), 'driver_1')
 
+        if max_queues > 1 and dpdk_cpu_pinning > 2:
+            self.assertEqual(vendor_specific.get('max_queues'),
+                             min(max_queues, dpdk_cpu_pinning - 1))
+        else:
+            self.assertFalse('max_queues' in vendor_specific)
+
     def test_serialization_with_dpdk(self):
         self._check_dpdk_serializing()
 
@@ -206,6 +216,18 @@ class TestDeploymentAttributesSerialization90(
     def test_serialization_with_dpdk_vxlan_with_vlan_tag(self):
         self._create_cluster_with_vxlan()
         self._check_dpdk_serializing(has_vlan_tag=True)
+
+    def test_serialization_with_dpdk_queues_limited_max_queues(self):
+        max_queues = 2
+        dpdk_cpu_pinning = 4
+        self._check_dpdk_serializing(max_queues=max_queues,
+                                     dpdk_cpu_pinning=dpdk_cpu_pinning)
+
+    def test_serialization_with_dpdk_queues_limited_dpdk_cpu_pinning(self):
+        max_queues = 4
+        dpdk_cpu_pinning = 3
+        self._check_dpdk_serializing(max_queues=max_queues,
+                                     dpdk_cpu_pinning=dpdk_cpu_pinning)
 
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def _check_dpdk_bond_serializing(self, attributes, drivers_mock):

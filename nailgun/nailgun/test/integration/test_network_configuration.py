@@ -771,7 +771,8 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         "cidr": "192.168.0.0/24",
         "size": "256",
         "first": "192.168.0.129",
-        "last": "192.168.0.254"
+        "last": "192.168.0.254",
+        "gateway": "192.168.0.1"
     })
     def setUp(self):
         super(TestAdminNetworkConfiguration, self).setUp()

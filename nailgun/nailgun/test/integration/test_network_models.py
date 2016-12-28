@@ -163,6 +163,7 @@ class TestNetworkModels(BaseIntegrationTest):
 
         admin_net['cidr'] = u'191.111.0.0/26'
         admin_net['ip_ranges'] = [[u'191.111.0.5', u'191.111.0.62']]
+        admin_net['gateway'] = u'191.111.0.1'
 
         resp_neutron_net = self.env.neutron_networks_put(
             self.env.clusters[0].id, test_nets, expect_errors=True)

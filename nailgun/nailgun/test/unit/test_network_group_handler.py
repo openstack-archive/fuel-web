@@ -418,17 +418,56 @@ class TestHandlers(BaseIntegrationTest):
         self.assertRegexpMatches(resp.json_body['message'],
                                  'Network release could not be changed.')
 
-    def test_modify_admin_network_group_with_wrong_group_id(self):
+    def test_modify_admin_network_group_with_not_allow_field(self):
         admin = objects.NetworkGroup.get_admin_network_group()
         admin_network_data = {
+            'name': 'test',
             'id': admin.id,
-            'group_id': objects.Cluster.get_default_group(self.cluster).id,
-            'meta': admin.meta
         }
         resp = self.env._update_network_group(admin_network_data,
                                               expect_errors=True)
         self.assertEqual(400, resp.status_code)
-        self.assertRegexpMatches(
+        self.assertEqual(
             resp.json_body['message'],
-            'Default Admin-pxe network cannot be changed'
+            u"For Default Admin-pxe you can change only"
+            u" ['gateway', 'ip_ranges'], but not [u'name']"
         )
+
+    def test_modify_admin_network_group_with_gateway_in_ip_range(self):
+        admin = objects.NetworkGroup.get_admin_network_group()
+        admin_network_data = {
+            "id": admin.id,
+            "gateway": "10.20.0.50",
+            "ip_ranges": [["10.20.0.3", "10.20.0.254"]]
+        }
+        resp = self.env._update_network_group(admin_network_data,
+                                              expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(resp.json_body['message'],
+                         "Address intersection between gateway"
+                         " and IP range of fuelweb_admin network. "
+                         "(Network IDs: '{0}')".format(admin.id))
+
+    def test_modify_admin_network_group_with_gateway_not_in_cidr(self):
+        admin = objects.NetworkGroup.get_admin_network_group()
+        admin_network_data = {
+            "id": admin.id,
+            "gateway": "192.168.0.1",
+            "ip_ranges": [["10.20.0.3", "10.20.0.254"]]
+        }
+        resp = self.env._update_network_group(admin_network_data,
+                                              expect_errors=True)
+        self.assertEqual(400, resp.status_code)
+        self.assertEqual(resp.json_body['message'],
+                         "Gateway address does not belong to the network "
+                         "'fuelweb_admin'.")
+
+    def test_modify_admin_network_group_with_gateway_success(self):
+        admin = objects.NetworkGroup.get_admin_network_group()
+        admin_network_data = {
+            "id": admin.id,
+            "gateway": "10.20.0.1",
+            "ip_ranges": [["10.20.0.3", "10.20.0.254"]]
+        }
+        resp = self.env._update_network_group(admin_network_data)
+        self.assertEqual(200, resp.status_code)

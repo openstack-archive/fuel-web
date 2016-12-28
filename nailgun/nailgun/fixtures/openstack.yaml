@@ -2143,9 +2143,10 @@
           restrictions:
             - "settings:common.libvirt_type.value != 'kvm'": "Only KVM hypervisor works with SR-IOV"
         numvfs:
-          label: "Number of Virtual Functions"
+          label: "Custom Number of Virtual Functions"
           weight: 20
           type: "number"
+          nullable: True
           min: 1
           value: null
           restrictions:

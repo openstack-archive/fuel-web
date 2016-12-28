@@ -313,9 +313,10 @@ class TestHandlers(BaseIntegrationTest):
                     }]
                 },
                 'numvfs': {
-                    'label': 'Number of Virtual Functions',
+                    'label': 'Custom Number of Virtual Functions',
                     'weight': 20,
                     'type': 'number',
+                    'nullable': True,
                     'min': 1,
                     'value': None,
                     'restrictions': [

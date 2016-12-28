@@ -180,7 +180,8 @@ DEFAULT_RELEASE_NIC_ATTRIBUTES = {
     },
     'sriov': {
         'numvfs': {'min': 0, 'type': 'number', 'value': None,
-                   'weight': 20, 'label': 'Virtual functions'},
+                   'nullable': True, 'weight': 20,
+                   'label': 'Virtual functions'},
         'enabled': {'type': 'checkbox', 'value': False,
                     'weight': 10, 'label': 'SR-IOV enabled'},
         'physnet': {'type': 'text', 'value': '', 'weight': 30,

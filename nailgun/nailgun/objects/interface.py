@@ -43,7 +43,6 @@ class DPDKMixin(object):
     @classmethod
     def refresh_interface_dpdk_properties(cls, interface, dpdk_drivers):
         attributes = interface.attributes
-        meta = interface.meta
         dpdk_attributes = copy.deepcopy(attributes.get('dpdk', {}))
         dpdk_available = cls.dpdk_available(interface, dpdk_drivers)
 

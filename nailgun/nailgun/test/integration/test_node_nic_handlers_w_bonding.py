@@ -700,8 +700,6 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 'type': 'select',
                 'value': 'balance-rr',
                 'label': 'Mode',
-                'value': '',
-                'label': 'Mode'
             },
             'metadata': {
                 'weight': 10,
@@ -769,13 +767,6 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
             'value': {
                 'weight': 10,
                 'type': 'select',
-                'value': '',
-                'label': 'Lacp'
-            }
-        },
-        'lacp_rate': {
-            'metadata': {
-                'weight': 60,
                 'value': '',
                 'label': 'Lacp'
             }

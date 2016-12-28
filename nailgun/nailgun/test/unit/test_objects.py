@@ -2197,6 +2197,54 @@ class TestBondObject(BaseTestCase):
         objects.Bond.update(bond, copy.deepcopy(new_data))
         self.assertEqual(new_data['attributes'], bond['attributes'])
 
+    def check_offloading_modes_intersection(self, modes_1, modes_2,
+                                            expected_result):
+
+        data = {
+            'name': 'bond0',
+            'slaves': self.node.nic_interfaces,
+            'node': self.node
+        }
+
+        bond = objects.Bond.create(data)
+
+        self.node.nic_interfaces[0].meta['offloading_modes'] = modes_1
+        self.node.nic_interfaces[1].meta['offloading_modes'] = modes_2
+        self.assertEquals(
+            objects.Bond.get_available_offloading_modes(bond),
+            expected_result)
+
+    def test_get_available_offloading_modes(self):
+        different_modes = [
+            [{
+                'name': 'mode_for_nic1',
+                'state': None,
+                'sub': [
+                    {
+                        'name': 'sub_mode_for_nic1',
+                        'state': None,
+                        'sub': []
+                    }
+                ]
+            }],
+            [{
+                'name': 'mode_for_nic2',
+                'state': None,
+                'sub': []
+            }],
+
+        ]
+        self.check_offloading_modes_intersection(different_modes[0],
+                                                 different_modes[1],
+                                                 [])
+        common_mode = {'name': 'common_mode', 'state': None, 'sub': []}
+        for modes in different_modes:
+            modes.append(common_mode)
+
+        self.check_offloading_modes_intersection(different_modes[0],
+                                                 different_modes[1],
+                                                 [common_mode])
+
 
 class TestNICObject(BaseTestCase):
 

@@ -101,8 +101,9 @@ DEFAULT_NIC_ATTRIBUTES = {
         'metadata': {'weight': 20, 'label': 'MTU'}
     },
     'sriov': {
-        'numvfs': {'min': 0, 'type': 'number', 'value': None,
-                   'weight': 20, 'label': 'Virtual functions'},
+        'numvfs': {'min': 1, 'type': 'number', 'nullable': True,
+                   'value': None, 'weight': 20,
+                   'label': 'Custom Number of Virtual Functions'},
         'enabled': {'type': 'checkbox', 'value': False,
                     'weight': 10, 'label': 'SR-IOV enabled'},
         'physnet': {'type': 'text', 'value': '', 'weight': 30,

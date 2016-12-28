@@ -315,6 +315,7 @@ class TestHandlers(BaseIntegrationTest):
                     'label': 'Number of Virtual Functions',
                     'weight': 20,
                     'type': 'number',
+                    'nullable': True,
                     'min': 1,
                     'value': None,
                     'restrictions': [
@@ -1256,6 +1257,7 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
                 'label': 'Number of Virtual Functions',
                 'weight': 20,
                 'type': 'number',
+                'nullable': True,
                 'min': 1,
                 'value': None,
                 'restrictions': [

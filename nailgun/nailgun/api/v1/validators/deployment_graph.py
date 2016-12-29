@@ -52,7 +52,8 @@ class DeploymentGraphValidator(BasicValidator):
                 ids.add(task['id'])
         if dup:
             raise errors.InvalidData(
-                "Tasks duplication found: {0}".format(', '.join(dup))
+                "Tasks duplication found: {0}".format(
+                    ', '.join(sorted(dup)))
             )
 
 

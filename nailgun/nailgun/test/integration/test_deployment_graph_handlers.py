@@ -324,7 +324,32 @@ class TestGraphHandlers(BaseIntegrationTest):
         )
 
     def test_fail_on_task_duplication(self):
-
+        tasks = [
+            {
+                'id': 'test-task2',
+                'type': 'puppet'
+            },
+            {
+                'id': 'test-task2',
+                'type': 'shell'
+            },
+            {
+                'id': 'test-task2',
+                'type': 'shell'
+            },
+            {
+                'id': 'test-task3',
+                'type': 'shell'
+            },
+            {
+                'id': 'test-task3',
+                'type': 'puppet'
+            },
+            {
+                'id': 'test-task-no-dups',
+                'type': 'puppet'
+            }
+        ]
         resp = self.app.put(
             reverse(
                 'DeploymentGraphHandler',
@@ -332,22 +357,13 @@ class TestGraphHandlers(BaseIntegrationTest):
             ),
             jsonutils.dumps({
                 'name': 'updated-graph-name',
-                'tasks': [
-                    {
-                        'id': 'test-task2',
-                        'type': 'puppet'
-                    },
-                    {
-                        'id': 'test-task2',
-                        'type': 'shell'
-                    }
-                ]
+                'tasks': tasks
             }),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertEqual("Tasks duplication found: test-task2",
+        self.assertEqual("Tasks duplication found: test-task2, test-task3",
                          resp.json_body['message'])
 
         resp = self.app.patch(
@@ -358,22 +374,13 @@ class TestGraphHandlers(BaseIntegrationTest):
             jsonutils.dumps({
                 'name': 'updated-graph-name2',
                 'on_stop': {},
-                'tasks': [
-                    {
-                        'id': 'test-task2',
-                        'type': 'puppet'
-                    },
-                    {
-                        'id': 'test-task2',
-                        'type': 'shell'
-                    }
-                ]
+                'tasks': tasks
             }),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
-        self.assertEqual("Tasks duplication found: test-task2",
+        self.assertEqual("Tasks duplication found: test-task2, test-task3",
                          resp.json_body['message'])
 
     def test_graph_delete(self):

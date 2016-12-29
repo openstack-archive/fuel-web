@@ -88,6 +88,10 @@ class PluginAdapterBase(object):
         return set([rel['version'] for rel in self.plugin.releases])
 
     @property
+    def title(self):
+        return self.plugin.title
+
+    @property
     def name(self):
         return self.plugin.name
 

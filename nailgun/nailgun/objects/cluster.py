@@ -708,6 +708,7 @@ class Cluster(NailgunObject):
             objects.Node.assign_group(node)
             net_manager.assign_networks_by_default(node)
             objects.Node.set_default_attributes(node)
+            objects.Node.create_nic_attributes(node)
             objects.Node.refresh_dpdk_properties(node)
         cls.update_nodes_network_template(instance, nodes_to_add)
         db().flush()

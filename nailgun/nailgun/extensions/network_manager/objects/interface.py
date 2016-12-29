@@ -287,7 +287,7 @@ class NIC(DPDKMixin, NailgunObject):
         :type instance: NodeNICInterface model
         :param data: Data to update
         :type data: dict
-        :returns: None
+        :returns: instance of an object (model)
         """
         attributes = data.pop('attributes', None)
         if attributes:

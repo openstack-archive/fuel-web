@@ -208,15 +208,6 @@ BOND_MODES = Enum(
     )
 )
 
-BOND_PROPERTIES = Enum(
-    'mode',
-    'xmit_hash_policy',
-    'lacp_rate',
-    'lacp',
-    # not for orchestrator input
-    'type__'
-)
-
 BOND_XMIT_HASH_POLICY = Enum(
     'layer2',
     'layer2+3',

@@ -2183,19 +2183,87 @@ class TestBondObject(BaseTestCase):
             'name': 'bond0',
             'slaves': self.node.nic_interfaces,
             'node': self.node,
+            'attributes': {
+                'offloading': {
+                    'modes': {'value': {'test_mode': 'mode'}}}}
         }
         bond = objects.Bond.create(data)
-        offloading_modes = bond.offloading_modes
-        offloading_modes[0]['state'] = 'test'
-
-        data = {
-            'offloading_modes': offloading_modes
+        new_data = {
+            'attributes': {
+                'offloading': {
+                    'modes': {'value': {'test_mode': 'test'}}}}
         }
-        objects.Bond.update(bond, data)
-        self.assertEqual(data['offloading_modes'], bond.offloading_modes)
+
+        objects.Bond.update(bond, copy.deepcopy(new_data))
+        self.assertEqual(new_data['attributes'], bond['attributes'])
 
 
 class TestNICObject(BaseTestCase):
+
+    changed_modes = [
+        {
+            'name': 'mode_1',
+            'state': True,
+            'sub': [
+                {
+                    'name': 'sub_mode_1',
+                    'state': None,
+                    'sub': []
+                }
+            ]
+        },
+        {
+            'name': 'mode_2',
+            'state': None,
+            'sub': [
+                {
+                    'name': 'sub_mode_2',
+                    'state': False,
+                    'sub': []
+                }
+            ]
+        }
+    ]
+
+    expected_result = {
+        'mode_1': True,
+        'sub_mode_1': None,
+        'mode_2': None,
+        'sub_mode_2': False
+    }
+
+    deep_structure = [
+        {
+            'name': 'level_1',
+            'state': True,
+            'sub': [
+                {
+                    'name': 'level_2',
+                    'state': None,
+                    'sub': [
+                        {
+                            'name': 'level_3',
+                            'state': None,
+                            'sub': [
+                                {
+                                    'name': 'level_4',
+                                    'state': False,
+                                    'sub': []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+
+    expected_result_deep = {
+        'level_1': True,
+        'level_2': None,
+        'level_3': None,
+        'level_4': False
+    }
 
     def setUp(self):
         super(TestNICObject, self).setUp()
@@ -2204,6 +2272,16 @@ class TestNICObject(BaseTestCase):
             cluster_kwargs={'api': False},
             nodes_kwargs=[{'role': 'controller'}])
         self.cluster = self.env.clusters[0]
+
+    def test_offloading_modes_as_flat_dict(self):
+        self.assertDictEqual(
+            self.expected_result,
+            objects.NIC.offloading_modes_as_flat_dict(
+                self.changed_modes))
+        self.assertDictEqual(
+            self.expected_result_deep,
+            objects.NIC.offloading_modes_as_flat_dict(
+                self.deep_structure))
 
     def test_replace_assigned_networks(self):
         node = self.env.nodes[0]

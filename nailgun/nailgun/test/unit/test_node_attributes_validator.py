@@ -68,7 +68,8 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
                 },
                 'dpdk': {
                     'type': 'number',
-                    'value': 0,
+                    'value': 1024,
+                    'min': 1024,
                 },
             },
             'cpu_pinning': {
@@ -103,15 +104,15 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
                 'nova': {
                     'value': {
                         '2048': 1,
-                        '1048576': 1,
+                        '1048576': 0,
                     },
                 },
                 'dpdk': {
-                    'value': 2,
+                    'value': 1024,
+                    'min': 1024
                 },
             }
         }
-
         self.assertNotRaises(errors.InvalidData, validator,
                              json.dumps(data), self.node, self.cluster)
 
@@ -130,6 +131,28 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
 
         self.assertRaisesWithMessageIn(
             errors.InvalidData, 'Not enough memory for components',
+            validator, json.dumps(data), self.node, self.cluster)
+
+    @mock_cluster_attributes
+    def test_not_enough_dpdk_hugepages(self, m_dpdk_nics):
+        data = {
+            'hugepages': {
+                'nova': {
+                    'value': {
+                        '2048': 1,
+                        '1048576': 0,
+                    },
+                },
+                'dpdk': {
+                    'value': 1023,
+                    'min': 1024
+                },
+            }
+        }
+        message = ("Node {0} has not enough hugepages for dpdk."
+                   "Need to set at least {1} MB.").format(self.node.id, 1024)
+        self.assertRaisesWithMessageIn(
+            errors.InvalidData, message,
             validator, json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes

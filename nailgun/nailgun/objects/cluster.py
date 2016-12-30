@@ -951,7 +951,7 @@ class Cluster(NailgunObject):
             logger.warning("%s role doesn't exist", role_name)
             return []
 
-        return Node.get_nodes_by_role([instance.id], role_name).all()
+        return Node.get_nodes_by_role([instance.id], role_name)
 
     @classmethod
     def get_node_by_role(cls, instance, role_name):

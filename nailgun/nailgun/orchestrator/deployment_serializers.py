@@ -22,6 +22,7 @@ from distutils.version import StrictVersion
 import six
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun import extensions
 from nailgun.logger import logger
 from nailgun import objects
@@ -899,6 +900,10 @@ def _invoke_serializer(serializer, cluster, nodes,
         )
 
     objects.Cluster.set_primary_tags(cluster, nodes)
+    # commit the transaction immediately so that the updates
+    # made to nodes don't lock other updates to these nodes
+    # until this, possibly very long, transation ends.
+    db().commit()
     return serializer.serialize(
         cluster, nodes,
         ignore_customized=ignore_customized, skip_extensions=skip_extensions

@@ -100,6 +100,17 @@ TAGS_META = {
     }
 }
 
+NODE_ATTRIBUTES = {
+    'hugepages':
+        {
+            'dpdk':
+                {
+                    'value': 1024,
+                    'min': 1024
+                }
+        }
+}
+
 
 def setup_module():
     dropdb()
@@ -139,7 +150,8 @@ def prepare():
                     'config': {}
                 }
             }),
-            'attributes_metadata': jsonutils.dumps(attrs_with_sec_group)
+            'attributes_metadata': jsonutils.dumps(attrs_with_sec_group),
+            'node_attributes': jsonutils.dumps(NODE_ATTRIBUTES),
         }])
 
     release_id = result.inserted_primary_key[0]
@@ -172,6 +184,7 @@ def prepare():
             'status': 'ready',
             'roles': ['controller', 'ceph-osd'],
             'primary_tags': ['controller', 'role_y'],
+            'attributes': jsonutils.dumps(NODE_ATTRIBUTES),
             'meta': '{}',
             'mac': 'bb:aa:aa:aa:aa:aa',
             'timestamp': datetime.datetime.utcnow(),
@@ -195,7 +208,8 @@ def prepare():
             'group_id': None,
             'status': 'discover',
             'mac': 'aa:aa:aa:aa:aa:aa',
-            'timestamp': datetime.datetime.utcnow()
+            'timestamp': datetime.datetime.utcnow(),
+            'attributes': jsonutils.dumps(NODE_ATTRIBUTES),
         }]
     )
     node_id = new_node.inserted_primary_key[0]
@@ -447,3 +461,13 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
             self.assertEqual(common.get('security_groups'), None)
+
+    def test_release_node_attributes_downgrade(self):
+        releases = self.meta.tables['releases']
+        results = db.execute(
+            sa.select([releases.c.node_attributes]))
+        for node_attrs in results:
+            node_attrs = jsonutils.loads(node_attrs[0])
+            dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk',
+                                                                     {})
+            self.assertEqual(dpdk.get('min'), 0)

@@ -42,6 +42,7 @@ down_revision = 'f2314e5d63c9'
 def upgrade():
     upgrade_vmware_attributes_metadata()
     upgrade_attributes_metadata()
+    upgrade_attributes_node()
     upgrade_cluster_roles()
     upgrade_tags_meta()
     upgrade_primary_unit()
@@ -59,6 +60,7 @@ def downgrade():
     downgrade_primary_unit()
     downgrade_tags_meta()
     downgrade_cluster_roles()
+    downgrade_attributes_node()
     downgrade_attributes_metadata()
     downgrade_vmware_attributes_metadata()
 
@@ -237,6 +239,9 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
 }
+
+MIN_DPDK_HUGEPAGES_MEMORY = 1024
+
 # version of Fuel when security group switch was added
 FUEL_SECURITY_GROUPS_VERSION = '9.0'
 
@@ -340,6 +345,12 @@ def upgrade_attributes_metadata():
     upgrade_cluster_attributes(connection)
 
 
+def upgrade_attributes_node():
+    connection = op.get_bind()
+    upgrade_release_node_attributes(connection)
+    upgrade_node_attributes(connection)
+
+
 def upgrade_release_attributes_metadata(connection):
     select_query = sa.sql.text(
         'SELECT id, attributes_metadata, version FROM releases '
@@ -387,10 +398,55 @@ def upgrade_cluster_attributes(connection):
             editable=jsonutils.dumps(editable))
 
 
+def upgrade_release_node_attributes(connection):
+    select_query = sa.sql.text(
+        'SELECT id, node_attributes FROM releases '
+        'WHERE node_attributes IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE releases SET node_attributes = :node_attributes '
+        'WHERE id = :release_id')
+
+    for release_id, node_attrs in connection.execute(select_query):
+        node_attrs = jsonutils.loads(node_attrs)
+        dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
+        dpdk['min'] = MIN_DPDK_HUGEPAGES_MEMORY
+        dpdk['value'] = MIN_DPDK_HUGEPAGES_MEMORY
+        connection.execute(
+            update_query,
+            release_id=release_id,
+            node_attributes=jsonutils.dumps(node_attrs))
+
+
+def upgrade_node_attributes(connection):
+    select_query = sa.sql.text(
+        'SELECT id, attributes FROM nodes '
+        'WHERE attributes IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE nodes SET attributes = :attributes '
+        'WHERE id = :node_id')
+
+    for node_id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        dpdk = attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
+        dpdk['min'] = MIN_DPDK_HUGEPAGES_MEMORY
+        connection.execute(
+            update_query,
+            node_id=node_id,
+            attributes=jsonutils.dumps(attrs))
+
+
 def downgrade_attributes_metadata():
     connection = op.get_bind()
     downgrade_cluster_attributes(connection)
     downgrade_release_attributes_metadata(connection)
+
+
+def downgrade_attributes_node():
+    connection = op.get_bind()
+    downgrade_release_node_attributes(connection)
+    downgrade_node_attributes(connection)
 
 
 def downgrade_release_attributes_metadata(connection):
@@ -428,6 +484,44 @@ def downgrade_cluster_attributes(connection):
             update_query,
             cluster_id=cluster_id,
             editable=jsonutils.dumps(editable))
+
+
+def downgrade_release_node_attributes(connection):
+    select_query = sa.sql.text(
+        'SELECT id, node_attributes FROM releases '
+        'WHERE node_attributes IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE releases SET node_attributes = :node_attributes '
+        'WHERE id = :release_id')
+
+    for release_id, node_attrs in connection.execute(select_query):
+        node_attrs = jsonutils.loads(node_attrs)
+        dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
+        dpdk['min'] = 0
+        connection.execute(
+            update_query,
+            release_id=release_id,
+            node_attributes=jsonutils.dumps(node_attrs))
+
+
+def downgrade_node_attributes(connection):
+    select_query = sa.sql.text(
+        'SELECT id, attributes FROM nodes '
+        'WHERE attributes IS NOT NULL')
+
+    update_query = sa.sql.text(
+        'UPDATE nodes SET attributes = :attributes '
+        'WHERE id = :node_id')
+
+    for node_id, attrs in connection.execute(select_query):
+        attrs = jsonutils.loads(attrs)
+        dpdk = attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
+        dpdk['min'] = 0
+        connection.execute(
+            update_query,
+            node_id=node_id,
+            attributes=jsonutils.dumps(attrs))
 
 
 def upgrade_cluster_roles():

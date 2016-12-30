@@ -290,6 +290,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(
             resp_nic['attributes']['sriov'],
             {
+                'restrictions': [{
+                    'condition': "version:release < '9.0'",
+                    'action': 'hide'
+                }],
                 'metadata': {
                     'label': 'SR-IOV',
                     'weight': 30
@@ -359,6 +363,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(
             resp_nic['attributes']['dpdk'],
             {
+                'restrictions': [{
+                    'condition': "version:release < '9.0'",
+                    'action': 'hide'
+                }],
                 'metadata': {
                     'label': 'DPDK',
                     'weight': 40
@@ -428,6 +436,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(
             resp_nic['attributes']['dpdk'],
             {
+                'restrictions': [{
+                    'condition': "version:release < '9.0'",
+                    'action': 'hide'
+                }],
                 'metadata': {
                     'label': 'DPDK',
                     'weight': 40
@@ -1232,6 +1244,10 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
             }
         },
         'sriov': {
+            'restrictions': [{
+                'condition': "version:release < '9.0'",
+                'action': 'hide'
+            }],
             'metadata': {
                 'label': 'SR-IOV',
                 'weight': 30
@@ -1292,6 +1308,10 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
             }
         },
         'dpdk': {
+            'restrictions': [{
+                'condition': "version:release < '9.0'",
+                'action': 'hide'
+            }],
             'metadata': {
                 'label': 'DPDK',
                 'weight': 40

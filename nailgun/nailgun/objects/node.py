@@ -1563,7 +1563,8 @@ class NodeAttributes(object):
     @classmethod
     def is_dpdk_hugepages_enabled(cls, node, attributes=None):
         hugepages = cls._safe_get_hugepages(node, attributes=attributes)
-        return 'dpdk' in hugepages and bool(hugepages['dpdk']['value'])
+        return ('dpdk' in hugepages and bool(hugepages['dpdk']['value']) and
+                Node.dpdk_enabled(node))
 
     @classmethod
     def dpdk_hugepages_attrs(cls, node):
@@ -1577,7 +1578,8 @@ class NodeAttributes(object):
         """
         hugepages = cls._safe_get_hugepages(node)
 
-        if 'dpdk' not in hugepages or not hugepages['dpdk']['value']:
+        if Node.dpdk_enabled(node) and 'dpdk' not in hugepages \
+                or not hugepages['dpdk']['value']:
             return {}
 
         dpdk_memory = hugepages['dpdk']['value']

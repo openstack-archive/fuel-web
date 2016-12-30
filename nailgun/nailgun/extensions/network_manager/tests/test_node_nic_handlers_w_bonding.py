@@ -1004,4 +1004,4 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 kwargs={"node_id": self.node.id}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
-        self.assertDictEqual(self.EXPECTED_ATTRIBUTES, resp.json_body)
+        self.assertItemsEqual(self.EXPECTED_ATTRIBUTES, resp.json_body)

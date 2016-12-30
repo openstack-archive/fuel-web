@@ -167,29 +167,69 @@ SECURITY_GROUPS = {
 DEFAULT_RELEASE_NIC_ATTRIBUTES = {
     'offloading': {
         'disable': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'Disable offloading'},
-        'modes': {'value': {}, 'type': 'offloading_modes',
-                  'description': 'Offloading modes', 'weight': 20,
-                  'label': 'Offloading modes'},
+                    'weight': 10, 'label': 'Disable Offloading'},
+        'modes': {'value': {}, 'type': 'offloading_modes', 'weight': 20,
+                  'label': 'Offloading Modes'},
         'metadata': {'weight': 10, 'label': 'Offloading'}
     },
     'mtu': {
         'value': {'type': 'number', 'value': None, 'weight': 10,
-                  'label': 'Use Custom MTU', 'nullable': True},
+                  'label': 'Use Custom MTU', 'nullable': True,
+                  'min': 42, 'max': 65536},
         'metadata': {'weight': 20, 'label': 'MTU'}
     },
     'sriov': {
-        'numvfs': {'min': 0, 'type': 'number', 'value': None,
-                   'weight': 20, 'label': 'Virtual functions'},
+        'numvfs': {'min': 1, 'type': 'number', 'value': None,
+                   'weight': 20, 'label': 'Number of Virtual Functions',
+                   'restrictions': ['"nic_attributes:sriov.enabled.value == "'
+                                    'false"']
+                   },
         'enabled': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'SR-IOV enabled'},
+                    'weight': 10, 'label': 'Enable SR-IOV',
+                    'description': 'Single-root I/O Virtualization (SR-IOV) '
+                                   'is a specification that, when implemented '
+                                   'by a physical PCIe device, enables it to '
+                                   'appear as multiple separate PCIe devices. '
+                                   'This enables multiple virtualized guests '
+                                   'to share direct access to the physical '
+                                   'device, offering improved performance '
+                                   'over an equivalent virtual device.',
+                    'restrictions': [{'settings:common.libvirt_type.value != '
+                                      '\'kvm\'': '"Only KVM hypervisor works '
+                                      'with SR-IOV"'}]},
         'physnet': {'type': 'text', 'value': '', 'weight': 30,
-                    'label': 'Physical network'},
+                    'label': 'Physical Network Name',
+                    'regex': {
+                        'source': '^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$',
+                        'error': 'Invalid physical network name'
+                    },
+                    'restrictions': [
+                        'nic_attributes:sriov.enabled.value == false',
+                        {'condition': "nic_attributes:sriov.physnet.value "
+                                      "!= 'physnet2'",
+                         'message': 'Only "physnet2" will be configured by '
+                                    'Fuel in Neutron. Configuration of other '
+                                    'physical networks is up to Operator or '
+                                    'plugin. Fuel will just configure '
+                                    'appropriate pci_passthrough_whitelist '
+                                    'option in nova.conf for such interface '
+                                    'and physical networks.',
+                         'action': 'none'
+                         }
+                    ]},
         'metadata': {'weight': 30, 'label': 'SR-IOV'}
     },
     'dpdk': {
         'enabled': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'DPDK enabled'},
+                    'weight': 10, 'label': 'Enable DPDK',
+                    'description': 'The Data Plane Development Kit (DPDK) '
+                                   'provides high-performance packet '
+                                   'processing libraries and user space '
+                                   'drivers.',
+                    'restrictions': [
+                        {'settings:common.libvirt_type.value != \'kvm\'':
+                         'Only KVM hypervisor works with DPDK'}
+                    ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
 }
@@ -207,15 +247,15 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
     },
     'offloading': {
         'disable': {'type': 'checkbox', 'weight': 10, 'value': False,
-                    'label': 'Disable offloading'},
+                    'label': 'Disable Offloading'},
         'modes': {'weight': 20, 'type': 'offloading_modes',
-                  'description': 'Offloading modes', 'value': {},
-                  'label': 'Offloading modes'},
+                  'value': {}, 'label': 'Offloading Modes'},
         'metadata': {'weight': 20, 'label': 'Offloading'}
     },
     'mtu': {
         'value': {'type': 'number', 'weight': 10, 'value': None,
-                  'label': 'Use Custom MTU', 'nullable': True},
+                  'label': 'Use Custom MTU', 'nullable': True,
+                  'min': 42, 'max': 65536},
         'metadata': {'weight': 30, 'label': 'MTU'}
     },
     'lacp': {
@@ -230,8 +270,16 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
     },
     'type__': {'type': 'hidden', 'value': None},
     'dpdk': {
-        'enabled': {'type': 'checkbox', 'weight': 10, 'value': None,
-                    'label': 'DPDK enabled'},
+        'enabled': {'type': 'checkbox', 'value': False,
+                    'weight': 10, 'label': 'Enable DPDK',
+                    'description': 'The Data Plane Development Kit (DPDK) '
+                                   'provides high-performance packet '
+                                   'processing libraries and user space '
+                                   'drivers.',
+                    'restrictions': [
+                        {'settings:common.libvirt_type.value != \'kvm\'':
+                         'Only KVM hypervisor works with DPDK'}
+                    ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
 }

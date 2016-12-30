@@ -1644,19 +1644,16 @@ class CheckBeforeDeploymentTask(object):
         """Check for mongo nodes presence in env with external mongo."""
         components = objects.Attributes.merged_attrs(
             task.cluster.attributes).get("additional_components", None)
-
         if (components and components["ceilometer"]["value"] and
                 components["mongo"]["value"] and
-                len(objects.Cluster.get_nodes_by_role(
-                    task.cluster, 'mongo')) > 0):
-
+                objects.Cluster.get_nodes_by_role(
+                    task.cluster, 'mongo').count() > 0):
                     raise errors.ExtMongoCheckerError
 
         if (components and components["ceilometer"]["value"] and not
                 components["mongo"]["value"] and
-                len(objects.Cluster.get_nodes_by_role(
-                    task.cluster, 'mongo')) == 0):
-
+                objects.Cluster.get_nodes_by_role(
+                    task.cluster, 'mongo').count() == 0):
                     raise errors.MongoNodesCheckError
 
     @classmethod

@@ -1197,8 +1197,8 @@ class TestClusterObject(BaseTestCase):
         self.assertEqual(self.db.query(objects.Cluster.model).count(), 0)
 
     def test_all_controllers(self):
-        self.assertEqual(len(objects.Cluster.get_nodes_by_role(
-            self.cluster, 'controller')), 2)
+        self.assertEqual(objects.Cluster.get_nodes_by_role(
+            self.cluster, 'controller').count(), 2)
 
     def test_put_delete_template_after_deployment(self):
         allowed = [consts.CLUSTER_STATUSES.new,

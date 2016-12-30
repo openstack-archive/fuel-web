@@ -2131,6 +2131,9 @@
           min: 42
           max: 65536
       sriov:
+        restrictions:
+          - condition: "version:release < '9.0'"
+            action: "hide"
         metadata:
           label: "SR-IOV"
           weight: 30
@@ -2165,6 +2168,9 @@
               message: "Only \"physnet2\" will be configured by Fuel in Neutron. Configuration of other physical networks is up to Operator or plugin. Fuel will just configure appropriate pci_passthrough_whitelist option in nova.conf for such interface and physical networks."
               action: "none"
       dpdk:
+        restrictions:
+          - condition: "version:release < '9.0'"
+            action: "hide"
         metadata:
           label: "DPDK"
           weight: 40
@@ -2201,7 +2207,6 @@
         modes:
           label: "Offloading Modes"
           weight: 20
-          description: "Offloading modes"
           type: "offloading_modes"
           value: {}
       mtu:
@@ -2216,6 +2221,9 @@
           min: 42
           max: 65536
       dpdk:
+        restrictions:
+          - condition: "version:release < '9.0'"
+            action: "hide"
         metadata:
           label: "DPDK"
           weight: 40

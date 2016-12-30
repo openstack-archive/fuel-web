@@ -860,6 +860,19 @@ class TestVolumeManager(BaseIntegrationTest):
 
             self.assertEqual(volumes_size, disk['size'])
 
+    def test_per_volume_for_partition(self):
+        node = self.create_node('ceph-osd')
+        v = filter(lambda v: v['id'] == 'ceph',
+                   node.cluster.release.volumes_metadata['volumes'])[0]
+        v['per_volume'] = {'fs_uuid': {'generator': 'uuid'}}
+        self.env.db.flush()
+        volumes = [i for s in VolumeManager(node).gen_volumes_info()
+                   for i in s['volumes']
+                   if i.get('name') == 'ceph']
+        for v in volumes:
+            self.assertIn('fs_uuid', v)
+            self.assertEqual(len(v['fs_uuid']), 36)
+
     def test_volume_request_without_cluster(self):
         self.env.create_node(api=True)
         node = self.env.nodes[-1]

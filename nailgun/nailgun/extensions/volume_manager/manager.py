@@ -22,6 +22,7 @@ All sizes in megabytes.
 from copy import deepcopy
 from functools import partial
 import re
+import uuid
 
 from oslo_serialization import jsonutils
 import six
@@ -507,14 +508,17 @@ class Disk(object):
 
         self.free_space -= size
 
-        self.volumes.append({
+        volume = {
             'size': size,
             'type': ptype,
             'name': partition_info['id'],
             'file_system': partition_info['file_system'],
             'disk_label': partition_info.get('disk_label'),
             'partition_guid': partition_info.get('partition_guid'),
-            'mount': partition_info['mount']})
+            'mount': partition_info['mount']}
+
+        volume.update(partition_info.get('per_volume', {}))
+        self.volumes.append(volume)
 
     def remove_pv(self, name):
         """Remove PV and return back lvm_meta size to pool."""
@@ -871,6 +875,7 @@ class VolumeManager(object):
             'calc_min_ceph_journal_size': lambda: 0,
             'calc_min_mysql_size': lambda: gb_to_mb(20),
             'calc_gb_to_mb': gb_to_mb,
+            'uuid': lambda: str(uuid.uuid4()),
         }
 
         generators['calc_os_size'] = \

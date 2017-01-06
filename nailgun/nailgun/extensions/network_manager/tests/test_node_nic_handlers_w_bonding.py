@@ -967,7 +967,8 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
         },
         'plugin_a_with_bond_attributes': {
             'metadata': {
-                'label': 'Test base plugin'
+                'label': 'Test base plugin',
+                'class': 'plugin'
             },
             'plugin_name_text': {
                 'value': 'value',

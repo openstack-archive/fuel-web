@@ -21,6 +21,7 @@ from copy import deepcopy
 import six
 
 from nailgun import consts
+from nailgun.db import db
 from nailgun import extensions
 from nailgun.extensions.volume_manager import manager as volume_manager
 from nailgun.logger import logger
@@ -977,7 +978,10 @@ def _invoke_serializer(serializer, cluster, nodes,
     # TODO(apply only for specified subset of nodes)
     objects.Cluster.prepare_for_deployment(cluster, cluster.nodes)
     objects.Cluster.set_primary_tags(cluster, nodes)
-
+    # commit the transaction immediately so that the updates
+    # made to nodes don't lock other updates to these nodes
+    # until this, possibly very long, transation ends.
+    db().commit()
     return serializer.serialize(
         cluster, nodes,
         ignore_customized=ignore_customized, skip_extensions=skip_extensions

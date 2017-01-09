@@ -91,11 +91,12 @@ class NIC(DPDKMixin, NailgunObject):
 
     @classmethod
     def get_dpdk_queues_count(cls, instance):
-        dpdk_cpu_pinning = utils.get_in(instance.node.attributes,
-                                        'cpu_pinning', 'dpdk', 'value') or 0
+        from nailgun.objects import NodeAttributes
+        cpu_pinning = NodeAttributes.distribute_node_cpus(
+            instance.node)['components']
+        pmd_core_count = len(cpu_pinning.get('ovs_pmd_core_mask', []))
         max_queues = utils.get_in(instance.meta, 'max_queues') or 0
-        # dpdk for ovs_core_mask is dpdk_cpu_pinning - 1
-        return min(max_queues, dpdk_cpu_pinning - 1)
+        return min(max_queues, pmd_core_count)
 
     @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):

@@ -264,7 +264,8 @@ class TestHandlers(BaseIntegrationTest):
                      'pci_id': '1234:5678'
                  },
                  'pci_id': '8765:4321',
-                 'numa_node': 1
+                 'numa_node': 1,
+                 'max_queues': 2
              }}]
         )
         node_data = {'mac': node['mac'], 'meta': new_meta, 'is_agent': True}
@@ -381,6 +382,8 @@ class TestHandlers(BaseIntegrationTest):
         nets = ('fuelweb_admin', 'public', 'management', 'storage', 'private')
         rnets = tuple(net['name'] for net in resp_nic['assigned_networks'])
         self.assertEqual(nets, rnets)
+        self.assertEqual(
+            resp_nic['meta']['max_queues'], 2)
 
     def create_cluster_and_node_with_dpdk_support(self, segment_type,
                                                   drivers_mock):

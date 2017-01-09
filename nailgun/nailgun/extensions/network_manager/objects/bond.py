@@ -22,6 +22,7 @@ from nailgun.extensions.network_manager.objects.interface import DPDKMixin
 from nailgun.extensions.network_manager.objects.interface import NIC
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects import Release
 from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.plugins.manager import PluginManager
 from nailgun import utils
@@ -72,7 +73,7 @@ class Bond(DPDKMixin, NailgunObject):
 
     @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):
-        return all(NIC.get_dpdk_driver(iface, dpdk_drivers)
+        return all(NIC.dpdk_available(iface, dpdk_drivers)
                    for iface in instance.slaves)
 
     @classmethod
@@ -104,6 +105,76 @@ class Bond(DPDKMixin, NailgunObject):
             PluginManager.get_bond_attributes(instance))
 
         return attributes
+
+    @classmethod
+    def get_meta(cls, instance):
+        """Get immutable attributes for bond.
+
+        :param instance: NodeBondInterface instance
+        :type instance: NodeBondInterface model
+        :returns: dict -- Object of bond attributes
+        """
+        meta = {}
+        dpdk_drivers = Release.get_supported_dpdk_drivers(
+            instance.node.cluster.release)
+        meta['dpdk'] = {
+            'available': cls.dpdk_available(instance, dpdk_drivers)}
+        meta['offloading'] = {
+            'modes': Bond.get_available_offloading_modes(instance)
+        }
+        return meta
+
+    @classmethod
+    def get_available_offloading_modes(cls, instance):
+        """Get available offloading modes for bond.
+
+        This method collects information about available offloading modes
+        for each slave interface and returns their intersection.
+
+        :param instance: NodeBondInterface instance
+        :type instance: NodeBondInterface model
+        :returns: list -- Available offloading modes
+        """
+        structure = None
+        intersection_dict = {}
+        for interface in instance.slaves:
+            modes = interface.meta['offloading_modes']
+            if structure is None:
+                structure = copy.deepcopy(modes)
+                intersection_dict = \
+                    NIC.offloading_modes_as_flat_dict(structure)
+                continue
+            intersection_dict = cls._intersect_offloading_dicts(
+                intersection_dict,
+                NIC.offloading_modes_as_flat_dict(modes)
+            )
+        return cls._apply_intersection(structure, intersection_dict)
+
+    @staticmethod
+    def _intersect_offloading_dicts(dict1, dict2):
+        result = dict()
+        for mode in dict1:
+            if mode in dict2:
+                if dict1[mode] is None or dict2[mode] is None:
+                    result[mode] = None
+                else:
+                    result[mode] = dict1[mode] and dict2[mode]
+        return result
+
+    @classmethod
+    def _apply_intersection(cls, modes, intersection_dict):
+        result = list()
+        if modes is None:
+            return result
+        for mode in modes:
+            if mode["name"] not in intersection_dict:
+                continue
+            mode["state"] = intersection_dict[mode["name"]]
+            if mode["sub"]:
+                mode["sub"] = \
+                    cls._apply_intersection(mode["sub"], intersection_dict)
+            result.append(mode)
+        return result
 
     @classmethod
     def get_default_attributes(cls, cluster):

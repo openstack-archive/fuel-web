@@ -76,6 +76,11 @@ class Bond(DPDKMixin, NailgunObject):
                    for iface in instance.slaves)
 
     @classmethod
+    def get_dpdk_queues_count(cls, instance):
+        return min([NIC.get_dpdk_queues_count(interface)
+                    for interface in instance.slaves])
+
+    @classmethod
     def get_bond_interfaces_for_all_nodes(cls, cluster, networks=None):
         bond_interfaces_query = db().query(
             models.NodeBondInterface

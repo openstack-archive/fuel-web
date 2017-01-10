@@ -761,7 +761,7 @@ class PluginManager(object):
         :type plugin: plugin model
         :returns: boolean
         """
-        return ClusterPlugin.is_plugin_used(plugin.id)
+        return not ClusterPlugin.is_plugin_used(plugin.id)
 
     @classmethod
     def _get_specific_version(cls, versions, plugin_id):

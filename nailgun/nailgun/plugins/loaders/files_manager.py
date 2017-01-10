@@ -165,9 +165,10 @@ class FilesManager(object):
         if paths:
             return sorted(paths)
         raise errors.NoPluginFileFound(
-            u"Can't find file. "
+            u"Can't find file by mask '{}'. "
             u"Ensure that file is on its place and have one of the following "
             u"data files formats: {}.".format(
+                path_mask,
                 u", ".join(list(allowed_formats))
             )
         )

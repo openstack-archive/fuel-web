@@ -166,6 +166,7 @@ class PluginLoaderBase(object):
                     self._get_absolute_path(file_path)
                 )
             except errors.NoPluginFileFound as exc:
+                data[key] = None
                 file_report.warning(exc)
             except Exception as exc:
                 file_report.error(exc)

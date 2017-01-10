@@ -85,6 +85,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertEqual(None, resp.json_body)
         self.assertEqual(node.cluster, None)
         self.assertEqual(node.pending_roles, [])
+        self.assertEqual(node.pending_addition, False)
 
         # Test with invalid node ids
         for node_id in (0, node.id + 50):

@@ -878,14 +878,14 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         if os_name == consts.RELEASE_OS.centos:
             repo = {
                 'type': 'rpm',
-                'name': adapter.full_name,
+                'name': adapter.path_name,
                 'uri': adapter.repo_url(cluster),
                 'priority': settings.REPO_PRIORITIES['plugins']['centos']
             }
         elif os_name == consts.RELEASE_OS.ubuntu:
             repo = {
                 'type': 'deb',
-                'name': adapter.full_name,
+                'name': adapter.path_name,
                 'uri': adapter.repo_url(cluster),
                 'suite': '/',
                 'section': '',

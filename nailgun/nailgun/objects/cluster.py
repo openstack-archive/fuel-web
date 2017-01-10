@@ -933,7 +933,7 @@ class Cluster(NailgunObject):
 
         tags_meta = cls.get_tags_metadata(instance)
         for role, meta in six.iteritems(cls.get_roles(instance)):
-            for tag in meta.get('tags', []):
+            for tag in meta.get('tags', [role]):
                 if tags_meta[tag].get('has_primary'):
                     cls.set_primary_tag(instance, nodes, tag)
 

@@ -906,8 +906,10 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
         'dpdk': {
             'restrictions': [{
                 'condition': "version:release < '9.0'",
-                'action': 'hide'
-            }],
+                'action': 'hide'},
+                {'condition':
+                 "not ('experimental' in version:feature_groups)",
+                 'action': 'hide'}],
             'enabled': {
                 'value': False,
                 'label': 'Enable DPDK',
@@ -916,10 +918,9 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                                'libraries and user space drivers.',
                 'type': 'checkbox',
                 'weight': 10,
-                'restrictions': [{
-                    "settings:common.libvirt_type.value != 'kvm'":
-                    "Only KVM hypervisor works with DPDK"
-                }]
+                'restrictions': [
+                    {"settings:common.libvirt_type.value != 'kvm'":
+                     "Only KVM hypervisor works with DPDK"}]
             },
             'metadata': {
                 'label': 'DPDK',

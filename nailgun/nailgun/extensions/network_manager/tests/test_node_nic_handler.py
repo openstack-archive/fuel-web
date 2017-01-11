@@ -402,8 +402,10 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'restrictions': [{
                     'condition': "version:release < '9.0'",
-                    'action': 'hide'
-                }],
+                    'action': 'hide'},
+                    {'condition':
+                     "not ('experimental' in version:feature_groups)",
+                     'action': 'hide'}],
                 'metadata': {
                     'label': 'DPDK',
                     'weight': 40
@@ -1308,8 +1310,10 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
         'dpdk': {
             'restrictions': [{
                 'condition': "version:release < '9.0'",
-                'action': 'hide'
-            }],
+                'action': 'hide'},
+                {'condition':
+                 "not ('experimental' in version:feature_groups)",
+                 'action': 'hide'}],
             'metadata': {
                 'label': 'DPDK',
                 'weight': 40
@@ -1323,9 +1327,9 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
                 'weight': 10,
                 'type': 'checkbox',
                 'value': False,
-                'restrictions': [{
-                    "settings:common.libvirt_type.value != 'kvm'":
-                    "Only KVM hypervisor works with DPDK"}]
+                'restrictions': [
+                    {"settings:common.libvirt_type.value != 'kvm'":
+                     "Only KVM hypervisor works with DPDK"}]
             }
         },
         'plugin_a_with_nic_attributes': {

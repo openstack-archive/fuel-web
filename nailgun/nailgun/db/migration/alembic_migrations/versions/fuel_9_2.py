@@ -231,7 +231,10 @@ DEFAULT_RELEASE_NIC_ATTRIBUTES = {
     'dpdk': {
         'restrictions':
             [{'condition': "version:release < '9.0'",
-             'action': 'hide'}],
+             'action': 'hide'},
+             {'condition':
+              "not ('experimental' in version:feature_groups)",
+              'action': 'hide'}],
         'enabled': {'type': 'checkbox', 'value': False,
                     'weight': 10, 'label': 'Enable DPDK',
                     'description': 'The Data Plane Development Kit (DPDK) '
@@ -284,7 +287,10 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
     'dpdk': {
         'restrictions':
             [{'condition': "version:release < '9.0'",
-             'action': 'hide'}],
+             'action': 'hide'},
+             {'condition':
+              "not ('experimental' in version:feature_groups)",
+              'action': 'hide'}],
         'enabled': {'type': 'checkbox', 'value': False,
                     'weight': 10, 'label': 'Enable DPDK',
                     'description': 'The Data Plane Development Kit (DPDK) '

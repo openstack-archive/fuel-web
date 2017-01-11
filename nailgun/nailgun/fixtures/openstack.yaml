@@ -2171,6 +2171,8 @@
         restrictions:
           - condition: "version:release < '9.0'"
             action: "hide"
+          - condition: "not ('experimental' in version:feature_groups)"
+            action: "hide"
         metadata:
           label: "DPDK"
           weight: 40
@@ -2224,6 +2226,8 @@
       dpdk:
         restrictions:
           - condition: "version:release < '9.0'"
+            action: "hide"
+          - condition: "not ('experimental' in version:feature_groups)"
             action: "hide"
         metadata:
           label: "DPDK"

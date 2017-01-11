@@ -222,6 +222,19 @@ NODE_OFFLOADING_MODES = [
     }
 ]
 
+NODE_ATTRIBUTES = {
+    'hugepages':
+        {
+            'dpdk':
+                {
+                    'value': 0,
+                    'min': 0
+                }
+        }
+}
+
+MIN_DPDK_HUGEPAGES_VALUE = 1024
+
 
 def setup_module():
     dropdb()
@@ -247,6 +260,7 @@ def prepare():
             'state': 'available',
             'networks_metadata': '{}',
             'attributes_metadata': jsonutils.dumps(ATTRIBUTES_METADATA),
+            'node_attributes': jsonutils.dumps(NODE_ATTRIBUTES),
             'deployment_tasks': '{}',
             'roles': jsonutils.dumps([
                 'controller',
@@ -336,6 +350,7 @@ def prepare():
                 'status': 'ready',
                 'roles': ['controller', 'ceph-osd'],
                 'primary_roles': ['controller'],
+                'attributes': jsonutils.dumps(NODE_ATTRIBUTES),
                 'meta': '{}',
                 'mac': mac,
                 'timestamp': datetime.datetime.utcnow(),
@@ -369,6 +384,7 @@ def prepare():
             'group_id': None,
             'status': 'ready',
             'roles': ['controller', 'ceph-osd'],
+            'attributes': jsonutils.dumps(NODE_ATTRIBUTES),
             'meta': jsonutils.dumps({
                 'interfaces': [
                     {
@@ -587,6 +603,25 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
             editable = jsonutils.loads(editable[0])
             common = editable.setdefault('common', {})
             self.assertEqual(common.get('security_groups'), None)
+
+    def test_release_node_attributes_update(self):
+        releases = self.meta.tables['releases']
+        results = db.execute(
+            sa.select([releases.c.node_attributes]))
+        for node_attrs in results:
+            node_attrs = jsonutils.loads(node_attrs[0])
+            dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk',
+                                                                     {})
+            self.assertEqual(dpdk.get('min'), MIN_DPDK_HUGEPAGES_VALUE)
+
+    def test_node_attributes_update(self):
+        nodes = self.meta.tables['nodes']
+        results = db.execute(
+            sa.select([nodes.c.attributes]))
+        for attrs in results:
+            attrs = jsonutils.loads(attrs[0])
+            dpdk = attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
+            self.assertEqual(dpdk.get('min'), MIN_DPDK_HUGEPAGES_VALUE)
 
     def get_release_ids(self, start_version, available=True):
         """Get release ids

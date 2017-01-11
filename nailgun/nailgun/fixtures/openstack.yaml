@@ -2176,6 +2176,8 @@
           value: False
           restrictions:
             - "settings:common.libvirt_type.value != 'kvm'": "Only KVM hypervisor works with DPDK"
+            - condition: "not ('experimental' in version:feature_groups)"
+              action: "hide"
     bond_attributes:
       type__:
         type: 'hidden'
@@ -2228,6 +2230,8 @@
           value: False
           restrictions:
             - "settings:common.libvirt_type.value != 'kvm'": "Only KVM hypervisor works with DPDK"
+            - condition: "not ('experimental' in version:feature_groups)"
+              action: "hide"
       lacp:
         metadata:
           label: "Lacp"

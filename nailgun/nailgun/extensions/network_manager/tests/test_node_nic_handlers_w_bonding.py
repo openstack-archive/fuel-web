@@ -912,10 +912,13 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                                'libraries and user space drivers.',
                 'type': 'checkbox',
                 'weight': 10,
-                'restrictions': [{
-                    "settings:common.libvirt_type.value != 'kvm'":
-                    "Only KVM hypervisor works with DPDK"
-                }]
+                'restrictions': [
+                    {"settings:common.libvirt_type.value != 'kvm'":
+                     "Only KVM hypervisor works with DPDK"},
+                    {'condition':
+                     "not ('experimental' in version:feature_groups)",
+                     'action': 'hide'}
+                ]
             },
             'metadata': {
                 'label': 'DPDK',

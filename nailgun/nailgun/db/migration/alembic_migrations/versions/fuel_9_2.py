@@ -232,7 +232,10 @@ DEFAULT_RELEASE_NIC_ATTRIBUTES = {
                                    'drivers.',
                     'restrictions': [
                         {'settings:common.libvirt_type.value != \'kvm\'':
-                         'Only KVM hypervisor works with DPDK'}
+                         'Only KVM hypervisor works with DPDK'},
+                        {'condition':
+                         "not ('experimental' in version:feature_groups)",
+                         'action': 'hide'}
                     ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
@@ -282,7 +285,10 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
                                    'drivers.',
                     'restrictions': [
                         {'settings:common.libvirt_type.value != \'kvm\'':
-                         'Only KVM hypervisor works with DPDK'}
+                         'Only KVM hypervisor works with DPDK'},
+                        {'condition':
+                         "not ('experimental' in version:feature_groups)",
+                         'action': 'hide'}
                     ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }

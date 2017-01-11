@@ -2522,8 +2522,8 @@
           description: "DPDK Huge Pages per NUMA node in MB"
           label: "DPDK Huge Pages"
           type: "number"
-          value: 0
-          min: 0
+          value: 1024
+          min: 1024
           restrictions:
             - condition: "not ('experimental' in version:feature_groups)"
               action: "hide"

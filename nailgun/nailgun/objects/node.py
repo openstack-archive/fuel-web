@@ -1702,7 +1702,7 @@ class NodeAttributes(object):
         """
         hugepages = cls._safe_get_hugepages(node)
 
-        if (not Node.dpdk_enabled(node) and 'dpdk' not in hugepages or
+        if (not Node.dpdk_enabled(node) or 'dpdk' not in hugepages or
                 not hugepages['dpdk']['value']):
             return {}
 

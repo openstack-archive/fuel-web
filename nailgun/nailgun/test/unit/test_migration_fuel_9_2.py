@@ -147,7 +147,13 @@ DEFAULT_NIC_ATTRIBUTES = {
                         {'settings:common.libvirt_type.value != \'kvm\'':
                          'Only KVM hypervisor works with DPDK'}
                     ]},
-        'metadata': {'weight': 40, 'label': 'DPDK'}
+        'metadata': {
+            'weight': 40, 'label': 'DPDK',
+            'restrictions': [{
+                'condition': "not ('experimental' in version:feature_groups)",
+                'action': "hide"
+            }]
+        }
     }
 }
 
@@ -197,7 +203,13 @@ DEFAULT_BOND_ATTRIBUTES = {
                         {'settings:common.libvirt_type.value != \'kvm\'':
                          'Only KVM hypervisor works with DPDK'}
                     ]},
-        'metadata': {'weight': 40, 'label': 'DPDK'}
+        'metadata': {
+            'weight': 40, 'label': 'DPDK',
+            'restrictions': [{
+                'condition': "not ('experimental' in version:feature_groups)",
+                'action': "hide"
+            }]
+        }
     }
 }
 

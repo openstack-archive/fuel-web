@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # fuel documentation build configuration file
 #

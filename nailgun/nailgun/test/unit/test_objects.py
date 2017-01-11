@@ -2476,3 +2476,16 @@ class TestNodeStatus(BaseTestCase):
         self.assertEqual(
             consts.NODE_STATUSES.error, objects.Node.get_status(node)
         )
+
+
+class TestPlugin(BaseTestCase):
+
+    def test_name_unchangeable(self):
+        self.env.create_plugin(
+            name='name',
+            package_version='4.0.0',
+            fuel_version=['9.2']
+        )
+        plugin = objects.PluginCollection.all()[0]
+        self.assertRaises(errors.InvalidData, objects.Plugin.update,
+                          plugin, {'name': 'new_name'})

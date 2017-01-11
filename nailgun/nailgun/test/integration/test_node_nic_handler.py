@@ -361,7 +361,12 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'metadata': {
                     'label': 'DPDK',
-                    'weight': 40
+                    'weight': 40,
+                    'restrictions': [{
+                        'condition':
+                            "not ('experimental' in version:feature_groups)",
+                        'action': "hide"
+                    }]
                 },
                 'enabled': {
                     'label': 'Enable DPDK',
@@ -430,7 +435,12 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'metadata': {
                     'label': 'DPDK',
-                    'weight': 40
+                    'weight': 40,
+                    'restrictions': [{
+                        'condition':
+                            "not ('experimental' in version:feature_groups)",
+                        'action': "hide"
+                    }]
                 },
                 'enabled': {
                     'label': 'Enable DPDK',
@@ -1294,7 +1304,12 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
         'dpdk': {
             'metadata': {
                 'label': 'DPDK',
-                'weight': 40
+                'weight': 40,
+                'restrictions': [{
+                    'condition':
+                        "not ('experimental' in version:feature_groups)",
+                    'action': "hide"
+                }]
             },
             'enabled': {
                 'label': 'Enable DPDK',

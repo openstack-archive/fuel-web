@@ -411,7 +411,10 @@ class TestHandlers(BaseIntegrationTest):
                     'value': False,
                     'restrictions': [{
                         "settings:common.libvirt_type.value != 'kvm'":
-                        "Only KVM hypervisor works with DPDK"}]
+                        "Only KVM hypervisor works with DPDK"},
+                        {'condition':
+                         "not ('experimental' in version:feature_groups)",
+                         'action': 'hide'}]
                 }
             })
         self.assertEqual(
@@ -1307,9 +1310,13 @@ class TestNICAttributesHandlers(BaseIntegrationTest):
                 'weight': 10,
                 'type': 'checkbox',
                 'value': False,
-                'restrictions': [{
-                    "settings:common.libvirt_type.value != 'kvm'":
-                    "Only KVM hypervisor works with DPDK"}]
+                'restrictions': [
+                    {"settings:common.libvirt_type.value != 'kvm'":
+                     "Only KVM hypervisor works with DPDK"},
+                    {'condition':
+                     "not ('experimental' in version:feature_groups)",
+                     'action': 'hide'}
+                ]
             }
         },
         'plugin_a_with_nic_attributes': {

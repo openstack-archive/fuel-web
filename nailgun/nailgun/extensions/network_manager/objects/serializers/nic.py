@@ -104,6 +104,7 @@ class NodeInterfacesSerializer(BasicSerializer):
         data_dict = BasicSerializer.serialize(instance, fields=fields)
         data_dict['slaves'] = [{'name': s.name} for s in instance.slaves]
         data_dict['attributes'] = Bond.get_attributes(instance)
+        data_dict['meta'] = Bond.get_meta(instance)
 
         return data_dict
 

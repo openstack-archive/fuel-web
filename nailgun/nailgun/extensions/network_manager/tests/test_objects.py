@@ -248,11 +248,6 @@ class TestNICObject(BaseTestCase):
     def _prepare_dpdk_settings(self, dpdk_cpu_pinning, max_queues):
         node = self.env.nodes[0]
         dpdk_nic = node.nic_interfaces[0]
-
-        numa_topology = {'numa_nodes': [
-            {'id': 0, 'cpus': [1, 2, 3, 4]}
-        ]}
-        node.meta['numa_topology'] = numa_topology
         node.attributes['cpu_pinning'] = {
             'dpdk': {
                 'value': dpdk_cpu_pinning

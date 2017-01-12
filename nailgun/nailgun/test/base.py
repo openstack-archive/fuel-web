@@ -1045,6 +1045,10 @@ class EnvironmentManager(object):
                 {'repository_path': 'repositories/ubuntu',
                  'version': 'newton-10.0', 'os': 'ubuntu',
                  'mode': ['ha'],
+                 'deployment_scripts_path': 'deployment_scripts/'},
+                {'repository_path': 'repositories/ubuntu',
+                 'version': 'ocata-11.0', 'os': 'ubuntu',
+                 'mode': ['ha'],
                  'deployment_scripts_path': 'deployment_scripts/'}
             ]
         }

@@ -38,6 +38,7 @@ from nailgun.test.integration import test_orchestrator_serializer_80
 class TestSerializer90Mixin(object):
     env_version = "mitaka-9.0"
     task_deploy = True
+    dpdk_bridge_provider = consts.NEUTRON_L23_PROVIDERS.ovs
 
     @classmethod
     def create_serializer(cls, cluster):
@@ -67,7 +68,7 @@ class TestSerializer90Mixin(object):
 
     @staticmethod
     def _handle_facts(facts):
-        """Handle deployment facts fro LCM serializers
+        """Handle deployment facts for LCM serializers
 
         As we are running 7.0 tests against 9.0 environments where
         LCM serializer is used it's not expected to have master node
@@ -160,7 +161,8 @@ class TestDeploymentAttributesSerialization90(
 
         serialized_for_astute = self.serializer.serialize(
             self.cluster_db, self.cluster_db.nodes)
-        self.assertEqual(len(serialized_for_astute['nodes']), 1)
+        self.assertEqual(len(self._handle_facts(
+            serialized_for_astute['nodes'])), 1)
         serialized_node = serialized_for_astute['nodes'][0]
         dpdk = serialized_node.get('dpdk')
 
@@ -182,6 +184,7 @@ class TestDeploymentAttributesSerialization90(
                            transformations)
         self.assertEqual(private_br.get('vendor_specific'),
                          vendor_specific)
+        self.assertEqual(private_br.get('provider'), self.dpdk_bridge_provider)
         self.assertEqual(len(all_ports) - len(dpdk_ports),
                          len(other_nic.assigned_networks_list))
         self.assertEqual(len(dpdk_ports), 1)
@@ -277,7 +280,8 @@ class TestDeploymentAttributesSerialization90(
         self.env.node_nics_put(node.id, interfaces)
 
         serialized_for_astute = self.serialize()
-        self.assertEqual(len(serialized_for_astute['nodes']), 1)
+        self.assertEqual(len(self._handle_facts(
+            serialized_for_astute['nodes'])), 1)
         serialized_node = serialized_for_astute['nodes'][0]
         dpdk = serialized_node.get('dpdk')
 
@@ -825,7 +829,7 @@ class TestDeploymentLCMSerialization90(
     def test_plugins_in_serialized(self):
         releases = [
             {'repository_path': 'repositories/ubuntu',
-             'version': 'mitaka-9.0', 'os': 'ubuntu',
+             'version': self.env_version, 'os': 'ubuntu',
              'mode': ['ha', 'multinode'],
              'deployment_scripts_path': 'deployment_scripts/'}
         ]

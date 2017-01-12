@@ -539,6 +539,33 @@ def prepare():
             ])
         }]
     )
+
+    db.execute(
+        meta.tables['plugins'].insert(),
+        [{
+            'name': 'test_tags',
+            'title': 'Test tags plugin',
+            'version': '2.0.0',
+            'description': 'Test plugin A for Fuel',
+            'homepage': 'http://fuel_plugins.test_plugin.com',
+            'package_version': '5.0.0',
+            'groups': jsonutils.dumps(['tgroup']),
+            'authors': jsonutils.dumps(['tauthor']),
+            'licenses': jsonutils.dumps(['tlicense']),
+            'releases': jsonutils.dumps([
+                {'repository_path': 'repositories/ubuntu'}
+            ]),
+            'deployment_tasks': jsonutils.dumps([]),
+            'fuel_version': jsonutils.dumps(['9.2']),
+            'network_roles_metadata': jsonutils.dumps([]),
+            'roles_metadata': jsonutils.dumps({
+                'plugin-tags-controller': {
+                    'name': 'Plugin Tags Controller',
+                },
+            }),
+        }]
+    )
+
     db.commit()
 
 
@@ -844,7 +871,7 @@ class TestTags(base.BaseAlembicMigrationTest):
         primary_tags = db.execute(query).fetchone()[0]
         self.assertItemsEqual(primary_tags, ['controller', 'role_y'])
 
-    def test_tags_meta_migration(self):
+    def test_tags_releases_meta_migration(self):
         releases = self.meta.tables['releases']
         query = sa.select([releases.c.roles_metadata,
                            releases.c.tags_metadata])
@@ -856,3 +883,18 @@ class TestTags(base.BaseAlembicMigrationTest):
                     tags_meta[role_name].get('has_primary', False),
                     role_meta.get('has_primary', False)
                 )
+                self.assertIn('tags', role_meta)
+
+    def test_tags_plugins_meta_migration(self):
+        plugins = self.meta.tables['plugins']
+        query = sa.select([plugins.c.roles_metadata,
+                           plugins.c.tags_metadata])
+        for roles_meta, tags_meta in db.execute(query):
+            tags_meta = jsonutils.loads(tags_meta)
+            for role_name, role_meta in six.iteritems(
+                    jsonutils.loads(roles_meta)):
+                self.assertEqual(
+                    tags_meta[role_name].get('has_primary', False),
+                    role_meta.get('has_primary', False)
+                )
+                self.assertIn('tags', role_meta)

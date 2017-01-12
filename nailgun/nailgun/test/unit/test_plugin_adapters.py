@@ -161,6 +161,12 @@ class TestPluginBase(base.BaseTestCase):
                 self.assertEqual(
                     getattr(self.plugin, key), val)
 
+    def test_tags_saved_on_plugins_update(self):
+        Plugin.update(self.plugin,
+                      {'roles_metadata': self.plugin.roles_metadata})
+        for role, meta in self.plugin.roles_metadata.items():
+            self.assertIn('tags', meta)
+
     def test_get_deployment_tasks(self):
         dg = DeploymentGraph.get_for_model(self.plugin_adapter.plugin)
         DeploymentGraph.update(

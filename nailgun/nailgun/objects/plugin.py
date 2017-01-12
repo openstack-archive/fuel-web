@@ -130,6 +130,8 @@ class Plugin(NailgunObject):
             graphs[graph.pop('type')] = graph
 
         data.pop("deployment_tasks", [])    # could not be updated
+        # We must save tags info in the roles_metadata on the update
+        data = cls._process_tags(data)
         super(Plugin, cls).update(instance, data)
 
         for graph_type, graph_data in six.iteritems(graphs):

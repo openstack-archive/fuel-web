@@ -804,8 +804,7 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         result['repositories'] = [repo]
         return result
 
-    def inject_configs(self, node, output):
-        node_config = output.setdefault('configuration', {})
+    def inject_configs(self, node, node_config):
         for config in self._configs:
             if config.config_type == consts.OPENSTACK_CONFIG_TYPES.cluster:
                 utils.dict_update(node_config, config.configuration, 1)

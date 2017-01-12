@@ -830,6 +830,27 @@ class TestDeploymentLCMSerialization90(
             serialized['nodes'][0]['configuration']
         )
 
+    def test_openstack_configuration_options_in_serialized(self):
+        conf_options = {
+            'apply_on_deploy': False
+        }
+        self.env.create_openstack_config(
+            cluster_id=self.cluster_db.id,
+            configuration={
+                'glance_config': 'value1',
+                'nova_config': 'value1',
+                'ceph_config': 'value1',
+                'configuration_options': conf_options
+            }
+        )
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized = self.serializer.serialize(self.cluster_db, [self.node])
+        node_info = serialized['nodes'][0]
+        self.assertIn('configuration', node_info)
+        self.assertIn('configuration_options', node_info)
+        self.assertNotIn('configuration_options', node_info['configuration'])
+        self.assertEqual(conf_options, node_info['configuration_options'])
+
     def test_cluster_attributes_in_serialized(self):
         objects.Cluster.prepare_for_deployment(self.cluster_db)
         serialized = self.serializer.serialize(self.cluster_db, [self.node])

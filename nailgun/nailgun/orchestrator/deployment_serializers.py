@@ -806,19 +806,38 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
 
     def inject_configs(self, node, output):
         node_config = output.setdefault('configuration', {})
+        node_config_opts = output.setdefault('configuration_options', {})
+
         for config in self._configs:
+            # OpenstackConfig.configuration is MutableDict, so we copy
+            # data for preventing changes in the DB
+            config_data = deepcopy(config.configuration)
+            # TODO(akislitsky) refactor CLI and OpenstackConfig object
+            # to allow serialize arbitrary data. Old configs data should be
+            # modified to the structure {'configuration': old_configuration}.
+            # Then new config data will have the structure:
+            # {'configuration': old_configuration,
+            #  'configuration_options': ...,
+            #  'any_key': any_value
+            # }
+            # and new structure will be serialized to the node config.
+            config_data_opts = config_data.pop('configuration_options', {})
             if config.config_type == consts.OPENSTACK_CONFIG_TYPES.cluster:
-                utils.dict_update(node_config, config.configuration, 1)
+                utils.dict_update(node_config, config_data, 1)
+                utils.dict_update(node_config_opts, config_data_opts, 1)
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.role:
                 # (asaprykin): objects.Node.all_roles() has a side effect,
                 # it replaces "<rolename>" with "primary-<rolename>"
                 # in case of primary role.
                 for role in node.all_roles:
                     if NameMatchingPolicy.create(config.node_role).match(role):
-                        utils.dict_update(node_config, config.configuration, 1)
+                        utils.dict_update(node_config, config_data, 1)
+                        utils.dict_update(node_config_opts,
+                                          config_data_opts, 1)
             elif config.config_type == consts.OPENSTACK_CONFIG_TYPES.node:
                 if config.node_id == node.id:
-                    utils.dict_update(node_config, config.configuration, 1)
+                    utils.dict_update(node_config, config_data, 1)
+                    utils.dict_update(node_config_opts, config_data_opts, 1)
 
     def inject_provision_info(self, node, data):
         # TODO(bgaifullin) serialize_node_info should be reworked

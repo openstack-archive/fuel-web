@@ -1,0 +1,13 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Mikhail Zhnichkov <mzhnichkov@mirantis.com>
+Code-Review+1: Fedor Zhadaev <fzhadaev@mirantis.com>
+Code-Review+1: Alexey Shtokolov <ashtokolov@mirantis.com>
+Code-Review+1: Vladimir Sharshov <vsharshov@mirantis.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Workflow+1: Aleksey Kasatkin <akasatkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 13 Jan 2017 08:59:31 +0000
+Reviewed-on: https://review.openstack.org/419444
+Project: openstack/fuel-web
+Branch: refs/heads/stable/newton

@@ -62,13 +62,12 @@ def prepare_syslog_dir(node, prefix=settings.SYSLOG_DIR):
 
     try:
         # rename bootstrap directory into fqdn
+        subprocess.check_call(["/usr/bin/pkill", "-STOP", "rsyslog"])
         if os.path.islink(old):
             logger.debug("Old %s exists and it is link. "
                          "Trying to unlink", old)
             os.unlink(old)
         if os.path.isdir(old):
-            subprocess.check_call(["/usr/bin/pkill", "-STOP", "rsyslog"])
-
             logger.debug("Old %s exists and it is directory. "
                          "Trying to rename into %s", old, new)
             os.rename(old, new)

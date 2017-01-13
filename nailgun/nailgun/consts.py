@@ -259,7 +259,12 @@ TASK_NAMES = Enum(
     'deployment',
     'provision',
     'stop_deployment',
+    # reset_environment supertask contains three subtasks:
+    # reset_nodes, remove_keys and remove_ironic_bootstrap
     'reset_environment',
+    'reset_nodes',
+    'remove_keys',
+    'remove_ironic_bootstrap',
     'update',
     'spawn_vms',
 

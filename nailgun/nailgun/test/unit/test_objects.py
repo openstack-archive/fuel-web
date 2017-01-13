@@ -2380,6 +2380,47 @@ class TestNICObject(BaseTestCase):
         self.assertEqual(len(mac_list), 1)
         self.assertEqual(mac_list[0], expected_mac)
 
+    def _prepare_dpdk_settings(self, dpdk_cpu_pinning, max_queues):
+        node = self.env.nodes[0]
+        dpdk_nic = node.nic_interfaces[0]
+        node.attributes['cpu_pinning'] = {
+            'dpdk': {
+                'value': dpdk_cpu_pinning
+            }
+        }
+        objects.NIC.update(dpdk_nic, {
+            'meta': {
+                'dpdk': {
+                    'available': True
+                },
+                'max_queues': max_queues,
+            },
+            'attributes': {
+                'dpdk': {
+                    'enabled': {
+                        'value': True
+                    }
+                }
+            }
+        })
+        return dpdk_nic
+
+    def test_get_dpdk_queues_count_limited_pmd_core_count(self):
+        dpdk_cpu_pinning = 4
+        max_queues = 10
+        dpdk_queues_count = dpdk_cpu_pinning - 1
+        dpdk_nic = self._prepare_dpdk_settings(dpdk_cpu_pinning, max_queues)
+        self.assertEqual(objects.NIC.get_dpdk_queues_count(dpdk_nic),
+                         dpdk_queues_count)
+
+    def test_get_dpdk_queues_count_limited_max_queues(self):
+        dpdk_cpu_pinning = 4
+        max_queues = 2
+        dpdk_queues_count = max_queues
+        dpdk_nic = self._prepare_dpdk_settings(dpdk_cpu_pinning, max_queues)
+        self.assertEqual(objects.NIC.get_dpdk_queues_count(dpdk_nic),
+                         dpdk_queues_count)
+
 
 class TestIPAddrObject(BaseTestCase):
 

@@ -1526,7 +1526,6 @@ class NodeAttributes(object):
         if not attributes:
             attributes = Node.get_attributes(node)
         hugepages = attributes.get('hugepages', {})
-
         return hugepages
 
     @classmethod

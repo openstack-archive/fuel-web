@@ -860,8 +860,6 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
             'value': {
                 'weight': 10,
                 'type': 'select',
-                'value': 'balance-rr',
-                'label': 'Mode',
                 'value': '',
                 'label': 'Mode'
             },
@@ -885,8 +883,7 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 'weight': 20,
                 'type': 'offloading_modes',
                 'value': {},
-                'label': 'Offloading Modes',
-                'description': 'Offloading modes'
+                'label': 'Offloading Modes'
             }
         },
         'mtu': {
@@ -931,13 +928,6 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
             'value': {
                 'weight': 10,
                 'type': 'select',
-                'value': '',
-                'label': 'Lacp'
-            }
-        },
-        'lacp_rate': {
-            'metadata': {
-                'weight': 60,
                 'value': '',
                 'label': 'Lacp'
             }

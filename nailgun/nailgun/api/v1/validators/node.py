@@ -473,7 +473,8 @@ class NodeAttributesValidator(base.BasicAttributesValidator):
             )
         dpdk_hugepages = utils.get_in(attrs, 'hugepages', 'dpdk', 'value')
         min_dpdk_hugepages = utils.get_in(attrs, 'hugepages', 'dpdk', 'min')
-        if dpdk_hugepages < min_dpdk_hugepages:
+        if (dpdk_hugepages < min_dpdk_hugepages and
+                objects.Node.dpdk_enabled(node)):
             raise errors.InvalidData(
                 "Node {0} does not have enough hugepages for dpdk."
                 "Need to allocate at least {1} MB.".format(node.id,

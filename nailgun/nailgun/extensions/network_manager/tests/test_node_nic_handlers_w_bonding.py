@@ -885,7 +885,8 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 'weight': 20,
                 'type': 'offloading_modes',
                 'value': {},
-                'label': 'Offloading Modes'
+                'label': 'Offloading Modes',
+                'description': 'Offloading modes'
             }
         },
         'mtu': {
@@ -904,10 +905,6 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
             }
         },
         'dpdk': {
-            'restrictions': [{
-                'condition': "version:release < '9.0'",
-                'action': 'hide'
-            }],
             'enabled': {
                 'value': False,
                 'label': 'Enable DPDK',
@@ -1007,4 +1004,4 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 kwargs={"node_id": self.node.id}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(self.EXPECTED_ATTRIBUTES, resp.json_body)
+        self.assertDictEqual(self.EXPECTED_ATTRIBUTES, resp.json_body)

@@ -1459,6 +1459,8 @@ class DPDKSerializerMixin90(object):
             max_queues = objects.NIC.get_dpdk_queues_count(iface)
             if max_queues > 1:
                 vendor_specific.update({'max_queues': max_queues})
+            if iface.driver == 'i40e':
+                objects.NIC.set_mtu_for_i40e_driver(iface)
             network_scheme['interfaces'][iface.name][
                 'vendor_specific'] = vendor_specific
         return network_scheme

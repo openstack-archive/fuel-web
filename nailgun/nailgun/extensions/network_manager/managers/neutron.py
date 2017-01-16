@@ -32,6 +32,7 @@ from nailgun.extensions.network_manager.manager import AssignIPs70Mixin
 from nailgun.extensions.network_manager.manager import AssignIPsLegacyMixin
 from nailgun.extensions.network_manager.manager import NetworkManager
 from nailgun import objects
+from nailgun import utils
 
 from nailgun.extensions.network_manager.serializers.neutron_serializers \
     import NeutronNetworkTemplateSerializer70
@@ -553,4 +554,26 @@ class NeutronManager70(
 
 
 class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):
-    pass
+    @classmethod
+    def get_iface_properties(cls, iface):
+        result = super(NeutronManager80, cls).get_iface_properties(iface)
+
+        if (iface.type == 'ether' and iface.driver == 'i40e' and
+                objects.NIC.dpdk_enabled(iface)):
+            # On NIC with i40e driver MTU should be increased manually
+            # because driver does not do this
+            mtu = utils.get_in(result, 'mtu', 'value', 'value')
+            if mtu:
+                result.update({
+                    'mtu': {
+                        'value': {
+                            'value': mtu + consts.SIZE_OF_VLAN_TAG}
+                    }})
+            else:
+                result.update({
+                    'mtu': {
+                        'value': {
+                            'value':
+                                consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG}
+                    }})
+        return result

@@ -131,7 +131,7 @@ class TestDeploymentAttributesSerialization90(
     @mock.patch('nailgun.objects.Release.get_supported_dpdk_drivers')
     def _check_dpdk_serializing(self, drivers_mock, has_vlan_tag=False,
                                 sriov=False, max_queues=0,
-                                dpdk_cpu_pinning=0):
+                                dpdk_cpu_pinning=0, nic_driver=None):
         drivers_mock.return_value = {
             'driver_1': ['test_id:1', 'test_id:2']
         }
@@ -154,6 +154,8 @@ class TestDeploymentAttributesSerialization90(
         dpdk_nic.meta['max_queues'] = max_queues
         if dpdk_cpu_pinning:
             node.attributes['cpu_pinning']['dpdk']['value'] = dpdk_cpu_pinning
+        if nic_driver:
+            dpdk_nic.driver = nic_driver
 
         objects.Cluster.prepare_for_deployment(self.cluster_db)
 
@@ -205,6 +207,9 @@ class TestDeploymentAttributesSerialization90(
                              min(max_queues, dpdk_cpu_pinning - 1))
         else:
             self.assertFalse('max_queues' in vendor_specific)
+        if nic_driver:
+            self.assertEqual(dpdk_interface['mtu']['value']['value'],
+                             consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG)
 
     def test_serialization_with_dpdk(self):
         self._check_dpdk_serializing()
@@ -219,6 +224,12 @@ class TestDeploymentAttributesSerialization90(
     def test_serialization_with_dpdk_vxlan_with_vlan_tag(self):
         self._create_cluster_with_vxlan()
         self._check_dpdk_serializing(has_vlan_tag=True)
+
+    def test_serialization_with_dpdk_with_i40e_driver(self):
+        driver = 'i40e'
+        dpdk_cpu_pinning = 4
+        self._check_dpdk_serializing(nic_driver=driver,
+                                     dpdk_cpu_pinning=dpdk_cpu_pinning)
 
     def test_serialization_with_dpdk_queues_limited_max_queues(self):
         max_queues = 2

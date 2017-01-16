@@ -435,7 +435,6 @@ def upgrade_release_node_attributes(connection):
         node_attrs = jsonutils.loads(node_attrs)
         dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
         dpdk['min'] = MIN_DPDK_HUGEPAGES_MEMORY
-        dpdk['value'] = MIN_DPDK_HUGEPAGES_MEMORY
         connection.execute(
             update_query,
             release_id=release_id,

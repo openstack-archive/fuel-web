@@ -1526,7 +1526,8 @@ class NodeAttributes(object):
         if not attributes:
             attributes = Node.get_attributes(node)
         hugepages = attributes.get('hugepages', {})
-
+        if not Node.dpdk_enabled(node):
+            hugepages.pop('dpdk', None)
         return hugepages
 
     @classmethod

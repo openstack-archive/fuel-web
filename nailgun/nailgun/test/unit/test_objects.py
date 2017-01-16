@@ -1881,6 +1881,7 @@ class TestClusterObjectGetNetworkManager(BaseTestCase):
             ('2014.2.2-6.1', neutron.NeutronManager61),
             ('2015.6.7-7.0', neutron.NeutronManager70),
             ('2016.1.1-8.0', neutron.NeutronManager80),
+            ('mitaka-9.0', neutron.NeutronManager90)
         ):
             self.check_neutron_network_manager(
                 consts.CLUSTER_NET_PROVIDERS.neutron,

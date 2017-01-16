@@ -698,8 +698,8 @@ class DeploymentHASerializer90(DeploymentHASerializer80):
             cpu_pinning.pop('ovs_pmd_core_mask', [])
         )
         # Allow user to override CPU distribution using attributes
-        serialized_node.get('dpdk').update(objects.Node.get_attributes(node)
-                                           .get('dpdk', {}))
+        dpdk = objects.Node.get_attributes(node).get('dpdk', {})
+        serialized_node['dpdk'] = serialized_node.get('dpdk', {}).update(dpdk)
         serialized_node['cpu_pinning'] = cpu_pinning
 
     def generate_node_hugepages(self, node, serialized_node):

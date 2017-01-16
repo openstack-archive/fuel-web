@@ -122,6 +122,26 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
                              json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes
+    @mock.patch.object(objects.Node, 'dpdk_enabled', return_value=False)
+    def test_valid_hugepages_non_dpdk(self, m_dpdk_nics, m_dpdk_enabled):
+        data = {
+            'hugepages': {
+                'nova': {
+                    'value': {
+                        '2048': 1,
+                        '1048576': 1,
+                    },
+                },
+                'dpdk': {
+                    'value': 1024,
+                    'min': 1024
+                },
+            }
+        }
+        self.assertNotRaises(errors.InvalidData, validator,
+                             json.dumps(data), self.node, self.cluster)
+
+    @mock_cluster_attributes
     def test_too_much_hugepages(self, m_dpdk_nics):
         data = {
             'hugepages': {

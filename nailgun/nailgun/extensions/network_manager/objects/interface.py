@@ -100,6 +100,15 @@ class NIC(DPDKMixin, NailgunObject):
         return min(max_queues, pmd_core_count)
 
     @classmethod
+    def get_correct_mtu_for_i40e_driver(cls, instance):
+        if instance.driver != 'i40e':
+            return None
+        mtu = utils.get_in(instance.attributes, 'mtu', 'value', 'value')
+        if mtu:
+            return mtu + 4
+        return consts.DEFAULT_MTU + 4
+
+    @classmethod
     def dpdk_available(cls, instance, dpdk_drivers):
         """Checks availability of DPDK for given interface.
 

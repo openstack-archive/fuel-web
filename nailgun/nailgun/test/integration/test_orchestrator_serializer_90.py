@@ -421,6 +421,34 @@ class TestDeploymentAttributesSerialization90(
         node_common_attrs = network_data['nodes'][node_name]
         self.assertFalse(node_common_attrs['nova_cpu_pinning_enabled'])
 
+    def test_pinning_cpu_for_nova(self):
+        numa_nodes = [
+            {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},
+            {'id': 1, 'memory': 2 ** 31, 'cpus': [5, 6, 7, 8]}
+        ]
+        node = self.env.create_node(
+            cluster_id=self.cluster_db.id,
+            roles=['compute'])
+
+        node.meta['numa_topology']['numa_nodes'] = numa_nodes
+        node.attributes.update({
+            'cpu_pinning': {
+                'nova': {'value': 2},
+            }
+        })
+        objects.Cluster.prepare_for_deployment(self.cluster_db)
+        serialized_for_astute = self.serializer.serialize(
+            self.cluster_db, self.cluster_db.nodes)
+
+        serialized_node = serialized_for_astute['nodes'][0]
+
+        self.assertNotIn('cpu_pinning', serialized_node.get('dpdk', {}))
+        self.assertEqual(serialized_node['nova']['cpu_pinning'], [1, 2])
+        node_name = objects.Node.get_slave_name(node)
+        network_data = serialized_for_astute['common']['network_metadata']
+        node_common_attrs = network_data['nodes'][node_name]
+        self.assertTrue(node_common_attrs['nova_cpu_pinning_enabled'])
+
     def test_attributes_override_core_mask(self):
         numa_nodes = [
             {'id': 0, 'memory': 2 ** 31, 'cpus': [1, 2, 3, 4]},

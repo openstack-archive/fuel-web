@@ -524,3 +524,46 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
         kernel_opts = serialized_node['ks_meta']['pm_data']['kernel_params']
 
         self.assertIn(" isolcpus=0,1", kernel_opts)
+
+    def test_serialize_node_cpu_pinning_with_dpdk(self):
+        self.env.create(
+            api=False,
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {'roles': ['compute']}])
+
+        node = self.env.nodes[0]
+        node.attributes['cpu_pinning']['nova']['value'] = 2
+        node.attributes['dpdk'] = {'test': 'test value'}
+
+        serialized_info = self.serializer.serialize(node.cluster, [node])
+
+        serialized_node = serialized_info['nodes'][0]
+        self.assertIn('dpdk', serialized_node)
+        self.assertIn('ovs_core_mask', serialized_node['dpdk'])
+        self.assertIn('ovs_pmd_core_mask', serialized_node['dpdk'])
+        self.assertEqual(serialized_node['dpdk']['test'], 'test value')
+
+    def test_serialize_node_cpu_pinning_with_dpdk_equal_none(self):
+        self.env.create(
+            api=False,
+            release_kwargs={
+                'operating_system': consts.RELEASE_OS.ubuntu,
+                'version': 'mitaka-9.0',
+            },
+            nodes_kwargs=[
+                {'roles': ['compute']}])
+
+        node = self.env.nodes[0]
+        node.attributes['cpu_pinning']['nova']['value'] = 2
+        node.attributes['dpdk'] = None
+
+        serialized_info = self.serializer.serialize(node.cluster, [node])
+
+        serialized_node = serialized_info['nodes'][0]
+        self.assertIn('dpdk', serialized_node)
+        self.assertIn('ovs_core_mask', serialized_node['dpdk'])
+        self.assertIn('ovs_pmd_core_mask', serialized_node['dpdk'])

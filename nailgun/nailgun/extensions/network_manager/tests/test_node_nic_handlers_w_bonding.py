@@ -885,8 +885,7 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 'weight': 20,
                 'type': 'offloading_modes',
                 'value': {},
-                'label': 'Offloading Modes',
-                'description': 'Offloading modes'
+                'label': 'Offloading Modes'
             }
         },
         'mtu': {
@@ -1004,4 +1003,4 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
                 kwargs={"node_id": self.node.id}),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
-        self.assertDictEqual(self.EXPECTED_ATTRIBUTES, resp.json_body)
+        self.assertEqual(self.EXPECTED_ATTRIBUTES, resp.json_body)

@@ -50,11 +50,13 @@ def upgrade():
     upgrade_node_nic_attributes()
     upgrade_node_bond_attributes()
     upgrade_tags_set()
+    upgrade_networks_metadata()
     upgrade_transaction_names()
 
 
 def downgrade():
     downgrade_transaction_names()
+    downgrade_networks_metadata()
     downgrade_tags_set()
     downgrade_node_bond_attributes()
     downgrade_node_nic_attributes()
@@ -171,10 +173,9 @@ SECURITY_GROUPS = {
 DEFAULT_RELEASE_NIC_ATTRIBUTES = {
     'offloading': {
         'disable': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'Disable offloading'},
-        'modes': {'value': {}, 'type': 'offloading_modes',
-                  'description': 'Offloading modes', 'weight': 20,
-                  'label': 'Offloading modes'},
+                    'weight': 10, 'label': 'Disable Offloading'},
+        'modes': {'value': {}, 'type': 'offloading_modes', 'weight': 20,
+                  'label': 'Offloading Modes'},
         'metadata': {'weight': 10, 'label': 'Offloading'}
     },
     'mtu': {
@@ -182,20 +183,62 @@ DEFAULT_RELEASE_NIC_ATTRIBUTES = {
                   'label': 'Use Custom MTU', 'nullable': True,
                   'min': 42, 'max': 65536},
         'metadata': {'weight': 20, 'label': 'MTU'}
-    },
+    }
+}
+
+DEFAULT_RELEASE_NIC_NFV_ATTRIBUTES = {
     'sriov': {
-        'numvfs': {'min': 1, 'type': 'number', 'value': None,
-                   'nullable': True, 'weight': 20,
-                   'label': 'Custom Number of Virtual Functions'},
+        'numvfs': {'min': 1, 'type': 'number', 'value': None, 'nullable': True,
+                   'weight': 20, 'label': 'Custom Number of Virtual Functions',
+                   'restrictions': ['"nic_attributes:sriov.enabled.value == "'
+                                    'false"']
+                   },
         'enabled': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'SR-IOV enabled'},
+                    'weight': 10, 'label': 'Enable SR-IOV',
+                    'description': 'Single-root I/O Virtualization (SR-IOV) '
+                                   'is a specification that, when implemented '
+                                   'by a physical PCIe device, enables it to '
+                                   'appear as multiple separate PCIe devices. '
+                                   'This enables multiple virtualized guests '
+                                   'to share direct access to the physical '
+                                   'device, offering improved performance '
+                                   'over an equivalent virtual device.',
+                    'restrictions': [{'settings:common.libvirt_type.value != '
+                                      '\'kvm\'': '"Only KVM hypervisor works '
+                                      'with SR-IOV"'}]},
         'physnet': {'type': 'text', 'value': '', 'weight': 30,
-                    'label': 'Physical network'},
+                    'label': 'Physical Network Name',
+                    'regex': {
+                        'source': '^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$',
+                        'error': 'Invalid physical network name'
+                    },
+                    'restrictions': [
+                        'nic_attributes:sriov.enabled.value == false',
+                        {'condition': "nic_attributes:sriov.physnet.value "
+                                      "!= 'physnet2'",
+                         'message': 'Only "physnet2" will be configured by '
+                                    'Fuel in Neutron. Configuration of other '
+                                    'physical networks is up to Operator or '
+                                    'plugin. Fuel will just configure '
+                                    'appropriate pci_passthrough_whitelist '
+                                    'option in nova.conf for such interface '
+                                    'and physical networks.',
+                         'action': 'none'
+                         }
+                    ]},
         'metadata': {'weight': 30, 'label': 'SR-IOV'}
     },
     'dpdk': {
         'enabled': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'DPDK enabled'},
+                    'weight': 10, 'label': 'Enable DPDK',
+                    'description': 'The Data Plane Development Kit (DPDK) '
+                                   'provides high-performance packet '
+                                   'processing libraries and user space '
+                                   'drivers.',
+                    'restrictions': [
+                        {'settings:common.libvirt_type.value != \'kvm\'':
+                         'Only KVM hypervisor works with DPDK'}
+                    ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
 }
@@ -213,10 +256,9 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
     },
     'offloading': {
         'disable': {'type': 'checkbox', 'weight': 10, 'value': False,
-                    'label': 'Disable offloading'},
+                    'label': 'Disable Offloading'},
         'modes': {'weight': 20, 'type': 'offloading_modes',
-                  'description': 'Offloading modes', 'value': {},
-                  'label': 'Offloading modes'},
+                  'value': {}, 'label': 'Offloading Modes'},
         'metadata': {'weight': 20, 'label': 'Offloading'}
     },
     'mtu': {
@@ -235,10 +277,24 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
                   'label': 'Mode'},
         'metadata': {'weight': 10, 'label': 'Mode'}
     },
-    'type__': {'type': 'hidden', 'value': None},
+    'type__': {'type': 'hidden', 'value': None}
+}
+
+DEFAULT_RELEASE_BOND_NFV_ATTRIBUTES = {
     'dpdk': {
-        'enabled': {'type': 'checkbox', 'weight': 10, 'value': None,
-                    'label': 'DPDK enabled'},
+        'restrictions':
+            [{'condition': "version:release < '9.0'",
+             'action': 'hide'}],
+        'enabled': {'type': 'checkbox', 'value': False,
+                    'weight': 10, 'label': 'Enable DPDK',
+                    'description': 'The Data Plane Development Kit (DPDK) '
+                                   'provides high-performance packet '
+                                   'processing libraries and user space '
+                                   'drivers.',
+                    'restrictions': [
+                        {'settings:common.libvirt_type.value != \'kvm\'':
+                         'Only KVM hypervisor works with DPDK'}
+                    ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
 }
@@ -246,6 +302,20 @@ DEFAULT_RELEASE_BOND_ATTRIBUTES = {
 # minimal RAM amount for OVS+DPDK in MB
 MIN_DPDK_HUGEPAGES_MEMORY = 1024
 
+
+NEW_BONDING_AVAILABILITY = [
+    {'dpdkovs': "'experimental' in version:feature_groups and "
+                "interface:pxe == false and nic_attributes:dpdk.enabled.value "
+                "and not nic_attributes:sriov.enabled.value"},
+    {'linux': "not nic_attributes:sriov.enabled.value"}
+]
+
+OLD_BONDING_AVAILABILITY = [
+    {'dpdkovs': "'experimental' in version:feature_groups and interface:pxe =="
+                " false and interface:interface_properties.dpdk.enabled.value "
+                "and not interface:interface_properties.sriov.enabled.value"},
+    {'linux': "not interface:attributes.sriov.enabled.value"}
+]
 # version of Fuel when security group switch was added
 FUEL_SECURITY_GROUPS_VERSION = '9.0'
 
@@ -707,13 +777,24 @@ def downgrade_primary_unit():
 
 def upgrade_release_with_nic_and_bond_attributes():
     connection = op.get_bind()
-    connection.execute(
-        sa.sql.text(
-            "UPDATE releases SET nic_attributes = :nic_attributes, "
-            "bond_attributes = :bond_attributes"),
-        nic_attributes=jsonutils.dumps(DEFAULT_RELEASE_NIC_ATTRIBUTES),
-        bond_attributes=jsonutils.dumps(DEFAULT_RELEASE_BOND_ATTRIBUTES)
-    )
+    select_query = sa.sql.text(
+        "SELECT id, version FROM releases")
+    update_query = sa.sql.text(
+        "UPDATE releases SET nic_attributes = :nic_attributes, "
+        "bond_attributes = :bond_attributes WHERE id = :id")
+
+    for id, version in connection.execute(select_query):
+        new_nic_attrs = copy.deepcopy(DEFAULT_RELEASE_NIC_ATTRIBUTES)
+        new_bond_attrs = copy.deepcopy(DEFAULT_RELEASE_BOND_ATTRIBUTES)
+        if is_feature_supported(version, FUEL_DPDK_HUGEPAGES_VERSION):
+            new_nic_attrs.update(DEFAULT_RELEASE_NIC_NFV_ATTRIBUTES)
+            new_bond_attrs.update(DEFAULT_RELEASE_BOND_NFV_ATTRIBUTES)
+        connection.execute(
+            update_query,
+            id=id,
+            nic_attributes=jsonutils.dumps(new_nic_attrs),
+            bond_attributes=jsonutils.dumps(new_bond_attrs)
+        )
 
 
 def downgrade_release_with_nic_and_bond_attributes():
@@ -757,18 +838,22 @@ def upgrade_node_nic_attributes():
                 result.update(_offloading_modes_as_flat_dict(mode['sub']))
         return result
 
-    def _create_nic_attributes(interface_properties, offloading_modes):
+    def _create_nic_attributes(interface_properties, offloading_modes,
+                               support_nfv=False):
         nic_attributes = copy.deepcopy(DEFAULT_RELEASE_NIC_ATTRIBUTES)
         nic_attributes['mtu']['value']['value'] = \
             interface_properties.get('mtu')
-        nic_attributes['sriov']['enabled']['value'] = \
-            interface_properties.get('sriov', {}).get('enabled', False)
-        nic_attributes['sriov']['numvfs']['value'] = \
-            interface_properties.get('sriov', {}).get('sriov_numvfs')
-        nic_attributes['sriov']['physnet']['value'] = \
-            interface_properties.get('sriov', {}).get('physnet', 'physnet2')
-        nic_attributes['dpdk']['enabled']['value'] = \
-            interface_properties.get('dpdk', {}).get('enabled', False)
+        if support_nfv:
+            nic_attributes.update(DEFAULT_RELEASE_NIC_NFV_ATTRIBUTES)
+            nic_attributes['sriov']['enabled']['value'] = \
+                interface_properties.get('sriov', {}).get('enabled', False)
+            nic_attributes['sriov']['numvfs']['value'] = \
+                interface_properties.get('sriov', {}).get('sriov_numvfs')
+            nic_attributes['sriov']['physnet']['value'] = \
+                interface_properties.get('sriov', {}).get('physnet',
+                                                          'physnet2')
+            nic_attributes['dpdk']['enabled']['value'] = \
+                interface_properties.get('dpdk', {}).get('enabled', False)
         nic_attributes['offloading']['disable']['value'] = \
             interface_properties.get('disable_offloading', False)
         offloading_modes = _offloading_modes_as_flat_dict(offloading_modes)
@@ -776,7 +861,11 @@ def upgrade_node_nic_attributes():
 
         return nic_attributes
 
-    nodes_query = sa.sql.text("SELECT id, meta, cluster_id FROM nodes")
+    nodes_query = sa.sql.text("SELECT nodes.id, meta, cluster_id, version "
+                              "FROM nodes INNER JOIN clusters "
+                              "ON clusters.id = nodes.cluster_id "
+                              "INNER JOIN releases "
+                              "ON releases.id = clusters.release_id")
     select_interface_query = sa.sql.text("""
         SELECT id, interface_properties, offloading_modes
         FROM node_nic_interfaces
@@ -786,7 +875,8 @@ def upgrade_node_nic_attributes():
         SET attributes = :attributes, meta = :meta
         WHERE id = :id""")
     connection = op.get_bind()
-    for node_id, node_meta, cluster_id in connection.execute(nodes_query):
+    query_result = connection.execute(nodes_query)
+    for node_id, node_meta, cluster_id, version in query_result:
         node_meta = jsonutils.loads(node_meta or "{}")
         for node_interface in node_meta.get('interfaces', []):
             for iface_id, interface_properties, offloading_modes in \
@@ -800,7 +890,9 @@ def upgrade_node_nic_attributes():
                     iface_properties = jsonutils.loads(interface_properties)
                     nic_attributes = _create_nic_attributes(
                         iface_properties,
-                        jsonutils.loads(offloading_modes)
+                        jsonutils.loads(offloading_modes),
+                        is_feature_supported(version,
+                                             FUEL_DPDK_HUGEPAGES_VERSION)
                     )
                     interface_meta['dpdk']['available'] = \
                         iface_properties.get('dpdk', {}).get(
@@ -925,8 +1017,12 @@ def upgrade_node_bond_attributes():
         return result
 
     bond_interface_query = sa.sql.text("""
-        SELECT id, mode, bond_properties, interface_properties
-        FROM node_bond_interfaces""")
+        SELECT node_bond_interfaces.id, node_bond_interfaces.mode,
+        bond_properties, interface_properties, version
+        FROM node_bond_interfaces
+        INNER JOIN nodes ON nodes.id = node_bond_interfaces.node_id
+        INNER JOIN clusters ON clusters.id = nodes.cluster_id
+        INNER JOIN releases ON releases.id = clusters.release_id """)
     bond_slaves_offloading_modes_query = sa.sql.text(
         "SELECT attributes FROM node_nic_interfaces "
         "WHERE parent_id = :parent_id")
@@ -944,8 +1040,11 @@ def upgrade_node_bond_attributes():
         attributes['mtu']['value']['value'] = interface_properties.get('mtu')
         attributes['offloading']['disable']['value'] = \
             interface_properties.get('disable_offloading', False)
-        attributes['dpdk']['enabled']['value'] = \
-            interface_properties.get('dpdk', {}).get('enabled')
+        if is_feature_supported(result['version'],
+                                FUEL_DPDK_HUGEPAGES_VERSION):
+            attributes.update(DEFAULT_RELEASE_BOND_NFV_ATTRIBUTES)
+            attributes['dpdk']['enabled']['value'] = \
+                interface_properties.get('dpdk', {}).get('enabled')
 
         attributes['type__']['value'] = bond_properties.get('type__')
         attributes['mode']['value']['value'] = \
@@ -1123,3 +1222,32 @@ def downgrade_role_tags():
             connection.execute(sa.text(q_update_role_tags_meta.format(table)),
                                roles_meta=jsonutils.dumps(roles_meta),
                                obj_id=obj_id)
+
+
+def upgrade_networks_metadata():
+    update_bonding_availability(NEW_BONDING_AVAILABILITY)
+
+
+def downgrade_networks_metadata():
+    update_bonding_availability(OLD_BONDING_AVAILABILITY)
+
+
+def update_bonding_availability(bonding_availability):
+    connection = op.get_bind()
+    select_query = sa.sql.text(
+        "SELECT id, version, networks_metadata FROM releases "
+        "WHERE networks_metadata IS NOT NULL")
+    update_query = sa.sql.text(
+        "UPDATE releases SET networks_metadata = :networks_metadata "
+        "WHERE id = :id")
+    for id, version, nets in connection.execute(select_query):
+        if not is_feature_supported(version, FUEL_DPDK_HUGEPAGES_VERSION):
+            continue
+        nets = jsonutils.loads(nets)
+        if 'bonding' in nets and 'availability' in nets['bonding']:
+            nets['bonding']['availability'] = bonding_availability
+
+        connection.execute(
+            update_query,
+            id=id,
+            networks_metadata=jsonutils.dumps(nets))

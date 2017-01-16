@@ -523,7 +523,7 @@ class TestDeploymentAttributesSerialization90(
         serialized_node = self.serialize()['nodes'][0]
         self.assertNotIn('hugepages', serialized_node)
 
-    def test_attributes_hugepages_distribution(self):
+    def _check_attributes_hugepages_distribution(self, dpdk_enable=True):
         meta = {
             'numa_topology': {
                 'supported_hugepages': [2048, 1048576],
@@ -550,6 +550,12 @@ class TestDeploymentAttributesSerialization90(
                 }
             }
         })
+        dpdk_nic = node.interfaces[0]
+        other_nic = node.interfaces[1]
+        if not dpdk_enable:
+            node.attributes['hugepages']['dpdk']['value'] = 0
+        else:
+            self._assign_dpdk_to_nic(node, dpdk_nic, other_nic)
 
         serialized_node = self.serialize()['nodes'][0]
 
@@ -557,8 +563,16 @@ class TestDeploymentAttributesSerialization90(
             {'numa_id': 0, 'size': 2048, 'count': 512},
             {'numa_id': 1, 'size': 2048, 'count': 512},
         ]
+        if not dpdk_enable:
+            expected = [{'numa_id': 0, 'size': 2048, 'count': 512}]
 
         self.assertEqual(serialized_node['hugepages'], expected)
+
+    def test_attributes_hugepages_distribution_non_dpdk(self):
+        self._check_attributes_hugepages_distribution(dpdk_enable=False)
+
+    def test_attributes_hugepages_distribution_with_dpdk(self):
+        self._check_attributes_hugepages_distribution()
 
     def test_cpu_pinning_disabled(self):
         nodes_roles = [['compute'], ['controller']]

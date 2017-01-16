@@ -105,7 +105,7 @@ NODE_ATTRIBUTES = {
         {
             'dpdk':
                 {
-                    'value': 1024,
+                    'value': 0,
                     'min': 1024
                 }
         }

@@ -1105,3 +1105,12 @@ NTP_UPSTREAM:
 
 # deadlocks detection settings
 LOG_DEADLOCKS_WARNINGS: 1
+
+# list of interface macs (lowercase) which are known to be non-unique
+# such macs will be ignored when searching for node by interfaces
+# this helps when some of macs in the cluster are identical
+NON_UNIQUE_MACS:
+  - '00:00:00:00:00:00'
+  - '00:00:00:00:00:01'
+  - 'ff:ff:ff:ff:ff:ff' 
+

@@ -1,0 +1,13 @@
+Code-Review+1: Anastasia Balobashina <atolochkova@mirantis.com>
+Code-Review+1: Julia Aranovich <jkirnosova@mirantis.com>
+Code-Review+1: Andriy Popovych <apopovych@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Ihor Kalnytskyi <ikalnitsky@mirantis.com>
+Workflow+1: Ihor Kalnytskyi <ikalnitsky@mirantis.com>
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 17 Jan 2017 12:59:31 +0000
+Reviewed-on: https://review.openstack.org/420778
+Project: openstack/fuel-web
+Branch: refs/heads/master

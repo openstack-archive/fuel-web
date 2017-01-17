@@ -28,7 +28,7 @@ validator = node_validator.NodeAttributesValidator.validate
 
 def mock_cluster_attributes(func):
     def wrapper(*args, **kwargs):
-        cluster_attr_mock = mock.patch.object(
+        attr_mock = mock.patch.object(
             objects.Cluster,
             'get_editable_attributes',
             return_value={
@@ -39,12 +39,7 @@ def mock_cluster_attributes(func):
                 }
             }
         )
-        node_dpdk_mock = mock.patch.object(
-            objects.Node,
-            'dpdk_enabled',
-            return_value=True
-        )
-        with cluster_attr_mock, node_dpdk_mock:
+        with attr_mock:
             func(*args, **kwargs)
 
     return wrapper
@@ -59,8 +54,8 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
         meta['numa_topology'] = {
             "supported_hugepages": [2048, 1048576],
             "numa_nodes": [
-                {"id": 0, "cpus": [0, 1], 'memory': 3 * 1024 ** 3},
-                {"id": 1, "cpus": [2, 3], 'memory': 3 * 1024 ** 3},
+                {"id": 0, "cpus": [0, 1], 'memory': 2 * 1024 ** 3},
+                {"id": 1, "cpus": [2, 3], 'memory': 2 * 1024 ** 3},
             ]
         }
         meta['cpu']['total'] = 4
@@ -73,8 +68,7 @@ class BaseNodeAttributeValidatorTest(base.BaseTestCase):
                 },
                 'dpdk': {
                     'type': 'number',
-                    'value': 1024,
-                    'min': 1024,
+                    'value': 0,
                 },
             },
             'cpu_pinning': {
@@ -113,11 +107,11 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
                     },
                 },
                 'dpdk': {
-                    'value': 1024,
-                    'min': 1024
+                    'value': 2,
                 },
             }
         }
+
         self.assertNotRaises(errors.InvalidData, validator,
                              json.dumps(data), self.node, self.cluster)
 
@@ -136,29 +130,6 @@ class TestNodeAttributesValidatorHugepages(BaseNodeAttributeValidatorTest):
 
         self.assertRaisesWithMessageIn(
             errors.InvalidData, 'Not enough memory for components',
-            validator, json.dumps(data), self.node, self.cluster)
-
-    @mock_cluster_attributes
-    def test_not_enough_dpdk_hugepages(self, m_dpdk_nics):
-        data = {
-            'hugepages': {
-                'nova': {
-                    'value': {
-                        '2048': 1,
-                        '1048576': 0,
-                    },
-                },
-                'dpdk': {
-                    'value': 1023,
-                    'min': 1024
-                },
-            }
-        }
-        message = ("Node {0} does not have enough hugepages for dpdk."
-                   "Need to allocate at least {1} MB.").format(self.node.id,
-                                                               1024)
-        self.assertRaisesWithMessageIn(
-            errors.InvalidData, message,
             validator, json.dumps(data), self.node, self.cluster)
 
     @mock_cluster_attributes

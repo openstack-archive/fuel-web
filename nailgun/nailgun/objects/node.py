@@ -349,12 +349,14 @@ class Node(NailgunObject):
         :param interfaces: dict of Node interfaces
         :returns: Node instance
         """
+        # ignore MACs which are known to be non-unique
         return db().query(cls.model).join(
             models.NodeNICInterface,
             cls.model.nic_interfaces
         ).filter(
             models.NodeNICInterface.mac.in_(
-                [n["mac"].lower() for n in interfaces]
+                [n["mac"].lower() for n in interfaces
+                 if n["mac"].lower() not in settings.NON_UNIQUE_MACS]
             )
         ).first()
 

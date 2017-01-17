@@ -81,17 +81,12 @@ SECURITY_GROUPS = {
     'type': 'radio',
 }
 
-# version of Fuel when security group switch was added
-RELEASE_VERSION = '9.0'
-
-
 DEFAULT_NIC_ATTRIBUTES = {
     'offloading': {
         'disable': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'Disable offloading'},
-        'modes': {'value': {}, 'type': 'offloading_modes',
-                  'description': 'Offloading modes', 'weight': 20,
-                  'label': 'Offloading modes'},
+                    'weight': 10, 'label': 'Disable Offloading'},
+        'modes': {'value': {}, 'type': 'offloading_modes', 'weight': 20,
+                  'label': 'Offloading Modes'},
         'metadata': {'weight': 10, 'label': 'Offloading'}
     },
     'mtu': {
@@ -101,18 +96,57 @@ DEFAULT_NIC_ATTRIBUTES = {
         'metadata': {'weight': 20, 'label': 'MTU'}
     },
     'sriov': {
-        'numvfs': {'min': 1, 'type': 'number', 'nullable': True,
-                   'value': None, 'weight': 20,
-                   'label': 'Custom Number of Virtual Functions'},
+        'numvfs': {'min': 1, 'type': 'number', 'value': None, 'nullable': True,
+                   'weight': 20, 'label': 'Custom Number of Virtual Functions',
+                   'restrictions': ['"nic_attributes:sriov.enabled.value == "'
+                                    'false"']
+                   },
         'enabled': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'SR-IOV enabled'},
+                    'weight': 10, 'label': 'Enable SR-IOV',
+                    'description': 'Single-root I/O Virtualization (SR-IOV) '
+                                   'is a specification that, when implemented '
+                                   'by a physical PCIe device, enables it to '
+                                   'appear as multiple separate PCIe devices. '
+                                   'This enables multiple virtualized guests '
+                                   'to share direct access to the physical '
+                                   'device, offering improved performance '
+                                   'over an equivalent virtual device.',
+                    'restrictions': [{'settings:common.libvirt_type.value != '
+                                      '\'kvm\'': '"Only KVM hypervisor works '
+                                      'with SR-IOV"'}]},
         'physnet': {'type': 'text', 'value': '', 'weight': 30,
-                    'label': 'Physical network'},
+                    'label': 'Physical Network Name',
+                    'regex': {
+                        'source': '^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$',
+                        'error': 'Invalid physical network name'
+                    },
+                    'restrictions': [
+                        'nic_attributes:sriov.enabled.value == false',
+                        {'condition': "nic_attributes:sriov.physnet.value "
+                                      "!= 'physnet2'",
+                         'message': 'Only "physnet2" will be configured by '
+                                    'Fuel in Neutron. Configuration of other '
+                                    'physical networks is up to Operator or '
+                                    'plugin. Fuel will just configure '
+                                    'appropriate pci_passthrough_whitelist '
+                                    'option in nova.conf for such interface '
+                                    'and physical networks.',
+                         'action': 'none'
+                         }
+                    ]},
         'metadata': {'weight': 30, 'label': 'SR-IOV'}
     },
     'dpdk': {
         'enabled': {'type': 'checkbox', 'value': False,
-                    'weight': 10, 'label': 'DPDK enabled'},
+                    'weight': 10, 'label': 'Enable DPDK',
+                    'description': 'The Data Plane Development Kit (DPDK) '
+                                   'provides high-performance packet '
+                                   'processing libraries and user space '
+                                   'drivers.',
+                    'restrictions': [
+                        {'settings:common.libvirt_type.value != \'kvm\'':
+                         'Only KVM hypervisor works with DPDK'}
+                    ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
 }
@@ -130,10 +164,9 @@ DEFAULT_BOND_ATTRIBUTES = {
     },
     'offloading': {
         'disable': {'type': 'checkbox', 'weight': 10, 'value': False,
-                    'label': 'Disable offloading'},
+                    'label': 'Disable Offloading'},
         'modes': {'weight': 20, 'type': 'offloading_modes',
-                  'description': 'Offloading modes', 'value': {},
-                  'label': 'Offloading modes'},
+                  'value': {}, 'label': 'Offloading Modes'},
         'metadata': {'weight': 20, 'label': 'Offloading'}
     },
     'mtu': {
@@ -154,8 +187,16 @@ DEFAULT_BOND_ATTRIBUTES = {
     },
     'type__': {'type': 'hidden', 'value': None},
     'dpdk': {
-        'enabled': {'type': 'checkbox', 'weight': 10, 'value': None,
-                    'label': 'DPDK enabled'},
+        'enabled': {'type': 'checkbox', 'value': False,
+                    'weight': 10, 'label': 'Enable DPDK',
+                    'description': 'The Data Plane Development Kit (DPDK) '
+                                   'provides high-performance packet '
+                                   'processing libraries and user space '
+                                   'drivers.',
+                    'restrictions': [
+                        {'settings:common.libvirt_type.value != \'kvm\'':
+                         'Only KVM hypervisor works with DPDK'}
+                    ]},
         'metadata': {'weight': 40, 'label': 'DPDK'}
     }
 }
@@ -360,8 +401,6 @@ def prepare():
         }]
     )
     plugin_id = result.inserted_primary_key[0]
-
-    cluster_id = 1
 
     db.execute(
         meta.tables['cluster_plugins'].insert(),
@@ -619,18 +658,6 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
 
 class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
 
-    def test_upgrade_release_with_nic_attributes(self):
-        releases_table = self.meta.tables['releases']
-        result = db.execute(
-            sa.select([releases_table.c.nic_attributes,
-                       releases_table.c.bond_attributes],
-                      releases_table.c.id == 1)
-        ).fetchone()
-        self.assertEqual(DEFAULT_NIC_ATTRIBUTES,
-                         jsonutils.loads(result['nic_attributes']))
-        self.assertEqual(DEFAULT_BOND_ATTRIBUTES,
-                         jsonutils.loads(result['bond_attributes']))
-
     def test_upgrade_node_nic_attributes_with_empty_properties(self):
         interfaces_table = self.meta.tables['node_nic_interfaces']
         result = db.execute(
@@ -752,6 +779,19 @@ class TestNodeNICAndBondAttributesMigration(base.BaseAlembicMigrationTest):
 
 
 class TestAttributesUpdate(base.BaseAlembicMigrationTest):
+
+    def test_upgrade_release_with_nic_attributes(self):
+        releases_table = self.meta.tables['releases']
+        result = db.execute(
+            sa.select([releases_table.c.nic_attributes,
+                       releases_table.c.bond_attributes],
+                      releases_table.c.id.in_(
+                          self.get_release_ids(RELEASE_VERSION)))
+        ).fetchone()
+        self.assertEqual(DEFAULT_NIC_ATTRIBUTES,
+                         jsonutils.loads(result['nic_attributes']))
+        self.assertEqual(DEFAULT_BOND_ATTRIBUTES,
+                         jsonutils.loads(result['bond_attributes']))
 
     def test_release_attributes_update(self):
         releases = self.meta.tables['releases']

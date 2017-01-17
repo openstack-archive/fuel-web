@@ -349,12 +349,17 @@ class Node(NailgunObject):
         :param interfaces: dict of Node interfaces
         :returns: Node instance
         """
+        # ignore MACs which are known to be non-unique
+        blacklist = ['00:00:00:00:00:00',
+                     'ff:ff:ff:ff:ff:ff',
+                     '00:00:00:00:00:01']
         return db().query(cls.model).join(
             models.NodeNICInterface,
             cls.model.nic_interfaces
         ).filter(
             models.NodeNICInterface.mac.in_(
-                [n["mac"].lower() for n in interfaces]
+                [n["mac"].lower() for n in interfaces
+                 if n["mac"].lower() not in blacklist]
             )
         ).first()
 

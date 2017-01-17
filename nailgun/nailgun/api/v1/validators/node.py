@@ -28,6 +28,7 @@ from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun import errors
 from nailgun import objects
 from nailgun import utils
+from nailgun.settings import settings
 
 
 class MetaInterfacesValidator(base.BasicValidator):
@@ -160,7 +161,8 @@ class NodeValidator(base.BasicValidator):
                 existent_node = db().query(Node).\
                     join(NodeNICInterface, Node.nic_interfaces).\
                     filter(NodeNICInterface.mac.in_(
-                        [n['mac'].lower() for n in data['meta']['interfaces']]
+                        [n['mac'].lower() for n in data['meta']['interfaces']
+                         if n['mac'].lower() not in settings.NON_UNIQUE_MACS]
                     )).first()
                 return existent_node
 

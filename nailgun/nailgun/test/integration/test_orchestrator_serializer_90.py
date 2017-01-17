@@ -488,8 +488,9 @@ class TestDeploymentAttributesSerialization90(
             numa_nodes.append({
                 'id': i,
                 'cpus': [i],
-                'memory': 2 * 1024 ** 3
+                'memory': 1024 ** 3
             })
+
         meta = {
             'numa_topology': {
                 'supported_hugepages': [2048],
@@ -500,21 +501,17 @@ class TestDeploymentAttributesSerialization90(
             cluster_id=self.cluster_db.id,
             roles=['compute'],
             meta=meta)
-
-        node.interfaces[0].attributes.get('dpdk', {}).get(
-            'enabled', {})['value'] = True
-
         node.attributes.update({
             'hugepages': {
                 'dpdk': {
-                    'value': 1024},
+                    'value': 128},
                 'nova': {
                     'value': {'2048': 1}}}}
         )
         serialized_for_astute = self.serialize()
         serialized_node = serialized_for_astute['nodes'][0]
         self.assertEquals(
-            [1024, 1024, 1024],
+            [128, 128, 128],
             serialized_node['dpdk']['ovs_socket_mem'])
         self.assertTrue(serialized_node['nova']['enable_hugepages'])
 

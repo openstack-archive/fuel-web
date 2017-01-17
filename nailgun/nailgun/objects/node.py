@@ -240,7 +240,8 @@ class Node(NailgunObject):
             cls.model.nic_interfaces
         ).filter(
             models.NodeNICInterface.mac.in_(
-                [n["mac"].lower() for n in interfaces]
+                [n["mac"].lower() for n in interfaces
+                 if n["mac"].lower() not in settings.NON_UNIQUE_MACS]
             )
         ).first()
 

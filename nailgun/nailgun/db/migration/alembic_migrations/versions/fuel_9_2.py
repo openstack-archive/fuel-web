@@ -296,7 +296,6 @@ DEFAULT_RELEASE_BOND_NFV_ATTRIBUTES = {
     }
 }
 
-# minimal RAM amount for OVS+DPDK in MB
 MIN_DPDK_HUGEPAGES_MEMORY = 1024
 
 
@@ -542,16 +541,14 @@ def upgrade_cluster_attributes(connection):
 
 def upgrade_release_node_attributes(connection):
     select_query = sa.sql.text(
-        'SELECT id, node_attributes, version FROM releases '
+        'SELECT id, node_attributes FROM releases '
         'WHERE node_attributes IS NOT NULL')
 
     update_query = sa.sql.text(
         'UPDATE releases SET node_attributes = :node_attributes '
         'WHERE id = :release_id')
 
-    for release_id, node_attrs, version in connection.execute(select_query):
-        if not is_feature_supported(version, FUEL_DPDK_HUGEPAGES_VERSION):
-            continue
+    for release_id, node_attrs in connection.execute(select_query):
         node_attrs = jsonutils.loads(node_attrs)
         dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
         dpdk['min'] = MIN_DPDK_HUGEPAGES_MEMORY
@@ -564,18 +561,14 @@ def upgrade_release_node_attributes(connection):
 
 def upgrade_node_attributes(connection):
     select_query = sa.sql.text(
-        'SELECT nodes.id, attributes, version FROM nodes INNER JOIN clusters '
-        'ON clusters.id = nodes.cluster_id INNER JOIN releases '
-        'ON releases.id = clusters.release_id '
-        'WHERE nodes.attributes IS NOT NULL')
+        'SELECT id, attributes FROM nodes '
+        'WHERE attributes IS NOT NULL')
 
     update_query = sa.sql.text(
         'UPDATE nodes SET attributes = :attributes '
         'WHERE id = :node_id')
 
-    for node_id, attrs, version in connection.execute(select_query):
-        if not is_feature_supported(version, FUEL_DPDK_HUGEPAGES_VERSION):
-            continue
+    for node_id, attrs in connection.execute(select_query):
         attrs = jsonutils.loads(attrs)
         dpdk = attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
         dpdk['min'] = MIN_DPDK_HUGEPAGES_MEMORY

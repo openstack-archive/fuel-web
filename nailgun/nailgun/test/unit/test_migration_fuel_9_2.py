@@ -261,8 +261,6 @@ MIN_DPDK_HUGEPAGES_VALUE = 1024
 RELEASE_VERSION = '9.0'
 # version of Fuel when tags was introduced
 FUEL_TAGS_SUPPORT = '9.0'
-# version of Fuel when DPDK hugepages was introduced
-FUEL_DPDK_HUGEPAGES_VERSION = '9.0'
 
 NEW_ROLES_META = {
     'controller': {
@@ -666,56 +664,21 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
     def test_release_node_attributes_update(self):
         releases = self.meta.tables['releases']
         results = db.execute(
-            sa.select([releases.c.node_attributes],
-                      releases.c.id.in_(
-                          self.get_release_ids(RELEASE_VERSION))))
+            sa.select([releases.c.node_attributes]))
         for node_attrs in results:
             node_attrs = jsonutils.loads(node_attrs[0])
             dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk',
                                                                      {})
             self.assertEqual(dpdk.get('min'), MIN_DPDK_HUGEPAGES_VALUE)
-
-    def test_release_node_attributes_no_update(self):
-        releases = self.meta.tables['releases']
-        releases_list = self.get_release_ids(RELEASE_VERSION, available=False)
-        results = db.execute(
-            sa.select([releases.c.node_attributes],
-                      releases.c.id.in_(releases_list)))
-        for node_attrs in results:
-            node_attrs = jsonutils.loads(node_attrs[0])
-            dpdk = node_attrs.setdefault('hugepages', {}).setdefault('dpdk',
-                                                                     {})
-            self.assertEqual(dpdk.get('min'), 0)
 
     def test_node_attributes_update(self):
         nodes = self.meta.tables['nodes']
-        clusters = self.meta.tables['clusters']
-        releases_list = self.get_release_ids(RELEASE_VERSION)
         results = db.execute(
-            sa.select([nodes.c.attributes],
-                      clusters.c.release_id.in_(releases_list)
-                      ).select_from(sa.join(clusters, nodes,
-                                            clusters.c.id ==
-                                            nodes.c.cluster_id)))
+            sa.select([nodes.c.attributes]))
         for attrs in results:
             attrs = jsonutils.loads(attrs[0])
             dpdk = attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
             self.assertEqual(dpdk.get('min'), MIN_DPDK_HUGEPAGES_VALUE)
-
-    def test_node_attributes_no_update(self):
-        nodes = self.meta.tables['nodes']
-        clusters = self.meta.tables['clusters']
-        releases_list = self.get_release_ids(RELEASE_VERSION, available=False)
-        results = db.execute(
-            sa.select([nodes.c.attributes],
-                      clusters.c.release_id.in_(releases_list)
-                      ).select_from(sa.join(clusters, nodes,
-                                            clusters.c.id ==
-                                            nodes.c.cluster_id)))
-        for attrs in results:
-            attrs = jsonutils.loads(attrs[0])
-            dpdk = attrs.setdefault('hugepages', {}).setdefault('dpdk', {})
-            self.assertEqual(dpdk.get('min'), 0)
 
     def test_upgrade_release_with_nic_attributes(self):
         releases_table = self.meta.tables['releases']

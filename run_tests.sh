@@ -55,7 +55,7 @@ function process_options {
 }
 
 # settings
-ROOT=$(dirname `readlink -f $0`)
+ROOT=$(dirname `greadlink -f $0`)
 NAILGUN_ROOT=$ROOT/nailgun
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
@@ -95,7 +95,7 @@ function run_tests {
   # If tests was specified in command line then run only these tests
   if [ $certain_tests -eq 1 ]; then
     for testfile in $testrargs; do
-      local testfile=`readlink -f $testfile`
+      local testfile=`greadlink -f $testfile`
       local tf=`echo $testfile | cut -d':' -f1`
       if [ ! -e $tf ]; then
           echo "ERROR: File or directory $tf not found"

@@ -21,10 +21,11 @@ from nailgun.api.v1.validators.json_schema import base_types
 from nailgun.api.v1.validators.json_schema import node_schema
 from nailgun.api.v1.validators.orchestrator_graph import \
     TaskDeploymentValidator
-from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
+from nailgun.settings import settings
+from nailgun import consts
 from nailgun import errors
 from nailgun import objects
 from nailgun import utils
@@ -160,7 +161,8 @@ class NodeValidator(base.BasicValidator):
                 existent_node = db().query(Node).\
                     join(NodeNICInterface, Node.nic_interfaces).\
                     filter(NodeNICInterface.mac.in_(
-                        [n['mac'].lower() for n in data['meta']['interfaces']]
+                        [n['mac'].lower() for n in data['meta']['interfaces']
+                         if n['mac'].lower() not in settings.NON_UNIQUE_MACS]
                     )).first()
                 return existent_node
 

@@ -528,7 +528,6 @@ class TestProvisioningSerializer90(BaseIntegrationTest):
 
         node = self.env.nodes[0]
         node.attributes['hugepages']['nova']['value'] = {'2048': 5}
-        node.attributes['hugepages']['dpdk']['value'] = 0
 
         serialized_info = self.serializer.serialize(node.cluster, [node])
 

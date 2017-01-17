@@ -383,6 +383,27 @@ class TestHandlers(BaseIntegrationTest):
 
         self.assertEqual(resp.status_code, 200)
 
+    def test_node_create_with_non_unique_macs_in_meta(self):
+        # create a node with non-unique macs
+        meta = self.env.default_metadata()
+        for interface in meta['interfaces']:
+            interface['mac'] = settings.NON_UNIQUE_MACS[0]
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': 'de:ad:be:ef:00:00',
+                             'meta': meta,
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 201)
+        # create another node with the same non-unique macs
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': 'de:ad:be:ef:00:01',
+                             'meta': meta,
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 201)
+
     def test_node_create_ip_not_in_admin_range(self):
         node = self.env.create_node(api=False)
 

@@ -1452,7 +1452,7 @@ class EnvironmentManager(object):
                              expect_errors)
 
     def _create_network_group(self, expect_errors=False, cluster=None,
-                              **kwargs):
+                              group_id=None, **kwargs):
         if not cluster:
             cluster = self.clusters[0]
         ng = {
@@ -1461,7 +1461,7 @@ class EnvironmentManager(object):
             "vlan_start": 50,
             "cidr": "10.3.0.0/24",
             "gateway": "10.3.0.1",
-            "group_id": Cluster.get_default_group(cluster).id,
+            "group_id": group_id or Cluster.get_default_group(cluster).id,
             "meta": {
                 "notation": consts.NETWORK_NOTATION.cidr,
                 "use_gateway": True,

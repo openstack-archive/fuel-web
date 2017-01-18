@@ -29,9 +29,9 @@ from nailgun.api.v1.validators.node_group import NodeGroupValidator
 
 from nailgun import consts
 from nailgun.db import db
-
 from nailgun import errors
 from nailgun import objects
+from nailgun.objects import Node
 from nailgun.task.manager import UpdateDnsmasqTaskManager
 
 
@@ -57,6 +57,13 @@ class NodeGroupHandler(SingleHandler):
             instance=node_group
         )
 
+        for node in node_group.nodes:
+            Node.set_error_status_and_file_notification(
+                node,
+                consts.NODE_ERRORS.discover,
+                "Node '{0}' nodegroup was deleted which means that it may"
+                "not be able to boot correctly"
+            )
         db().delete(node_group)
         db().flush()
         try:

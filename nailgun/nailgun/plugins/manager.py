@@ -710,7 +710,7 @@ class PluginManager(object):
         :returns: deserialized file
         """
         with io.open(path, encoding='utf-8') as f:
-            data = yaml.load(f)
+            data = yaml.safe_load(f)
 
         return data
 

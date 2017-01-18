@@ -42,7 +42,7 @@ class PluginAdapterBase(object):
     def __init__(self, plugin):
         self.plugin = plugin
         self.plugin_path = os.path.join(settings.PLUGINS_PATH, self.path_name)
-        self.loader = self.loader_class(self.plugin_path)
+        self.loader = self.loader_class(plugin_path=self.plugin_path)
 
     @property
     def attributes_processors(self):

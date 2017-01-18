@@ -35,18 +35,16 @@ def deserializer_json(raw_data, *args, **kwargs):
     return json.load(raw_data, *args, **kwargs)
 
 
-def deserializer_yaml(raw_data, loader=yaml.Loader, *args, **kwargs):
+def deserializer_yaml(raw_data, *args, **kwargs):
     """Load YAML data from file object.
 
     :param raw_data: raw data
     :type raw_data: basestring
-    :param loader: YAML-specific loader
-    :type loader: yaml.Loader
 
     :return: data
     :rtype: list|dict
     """
-    result = yaml.load(raw_data, Loader=loader)
+    result = yaml.safe_load(raw_data)
     return result
 
 

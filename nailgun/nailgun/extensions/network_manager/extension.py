@@ -182,6 +182,13 @@ class NetworkManagerExtension(BaseExtension):
 
     @classmethod
     def on_nodegroup_delete(cls, ng):
+        for node in ng.nodes:
+            objects.Node.set_error_status_and_file_notification(
+                node,
+                consts.NODE_ERRORS.discover,
+                "Node '{0}' nodegroup was deleted which means that it may"
+                "not be able to boot correctly".format(node.hostname)
+            )
         try:
             task = UpdateDnsmasqTaskManager().execute()
         except errors.TaskAlreadyRunning:

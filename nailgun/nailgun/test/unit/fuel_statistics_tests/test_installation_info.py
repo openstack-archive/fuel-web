@@ -94,6 +94,7 @@ class TestInstallationInfo(BaseTestCase):
             release, expected_attributes)
 
     def test_get_attributes_ubuntu_uca(self):
+        self.skipTest('UCA is unavailable in current release.')
         self.env.upload_fixtures(['openstack'])
         releases = ReleaseCollection.filter_by(
             None, operating_system=consts.RELEASE_OS.ubuntu).order_by(

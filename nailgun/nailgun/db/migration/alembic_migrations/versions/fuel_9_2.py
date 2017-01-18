@@ -51,9 +51,11 @@ def upgrade():
     upgrade_tags_set()
     upgrade_networks_metadata()
     upgrade_transaction_names()
+    upgrade_deactivate_uca_release()
 
 
 def downgrade():
+    downgrade_deactivate_uca_release()
     downgrade_transaction_names()
     downgrade_networks_metadata()
     downgrade_tags_set()
@@ -1159,3 +1161,17 @@ def update_bonding_availability(bonding_availability):
             update_query,
             id=id,
             networks_metadata=jsonutils.dumps(nets))
+
+
+def upgrade_deactivate_uca_release():
+    connection = op.get_bind()
+    connection.execute(
+        sa.sql.text("UPDATE releases SET state = 'unavailable' "
+                    "where name = 'Mitaka on Ubuntu+UCA 14.04' "))
+
+
+def downgrade_deactivate_uca_release():
+    connection = op.get_bind()
+    connection.execute(
+        sa.sql.text("UPDATE releases SET state = 'available' "
+                    "where name = 'Mitaka on Ubuntu+UCA 14.04' "))

@@ -124,26 +124,31 @@ def prepare():
     }
     result = db.execute(meta.tables['plugins'].insert(), [plugin])
 
-    result = db.execute(
-        meta.tables['releases'].insert(),
-        [{
-            'name': 'test_name',
-            'version': 'mitaka-9.0',
-            'operating_system': 'ubuntu',
-            'state': 'available',
-            'roles_metadata': jsonutils.dumps(ROLES_META),
-            'tags_metadata': jsonutils.dumps(TAGS_META),
-            'networks_metadata': jsonutils.dumps({
-                'neutron': {
-                    'networks': [],
-                    'config': {}
-                }
-            }),
-            'attributes_metadata': jsonutils.dumps(attrs_with_sec_group)
-        }])
+    release_ids = []
+    for release_name, release_state in zip(
+            ('test_name', 'Mitaka on Ubuntu+UCA 14.04'),
+            ('available', 'unavailable')):
+        result = db.execute(
+            meta.tables['releases'].insert(),
+            [{
+                'name': release_name,
+                'version': 'mitaka-9.0',
+                'operating_system': 'ubuntu',
+                'state': release_state,
+                'roles_metadata': jsonutils.dumps(ROLES_META),
+                'tags_metadata': jsonutils.dumps(TAGS_META),
+                'networks_metadata': jsonutils.dumps({
+                    'neutron': {
+                        'networks': [],
+                        'config': {}
+                    }
+                }),
+                'attributes_metadata': jsonutils.dumps(attrs_with_sec_group)
+            }])
 
-    release_id = result.inserted_primary_key[0]
+        release_ids.append(result.inserted_primary_key[0])
 
+    release_id = release_ids[0]
     result = db.execute(
         meta.tables['clusters'].insert(),
         [{
@@ -447,3 +452,11 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
             self.assertEqual(common.get('security_groups'), None)
+
+    def test_eactivate_uca_release(self):
+        releases_table = self.meta.tables['releases']
+        result = db.execute(
+            sa.select([releases_table.c.state],
+                      releases_table.c.name == 'Mitaka on Ubuntu+UCA 14.04'
+            )).fetchone()
+        self.assertEqual(result['state'], 'available')

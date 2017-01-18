@@ -291,7 +291,7 @@ def setup_module():
 def prepare():
     meta = base.reflect_db_metadata()
     for release_name, env_version, cluster_name, uuid, mac in zip(
-            ('release_1', 'release_2'),
+            ('release_1', 'Mitaka on Ubuntu+UCA 14.04'),
             ('liberty-8.0', 'mitaka-9.0'),
             ('cluster_1', 'cluster_2'),
             ('fcd49872-3917-4a18-98f9-3f5acfe3fde',
@@ -880,6 +880,14 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
                                                            start_version)):
                 release_ids.append(release_id)
         return release_ids
+
+    def test_deactivate_uca_release(self):
+        releases_table = self.meta.tables['releases']
+        results = list(db.execute(
+            sa.select([releases_table.c.name, releases_table.c.state])))
+        self.assertListEqual(results,
+                             [('release_1', 'available'),
+                              ('Mitaka on Ubuntu+UCA 14.04', 'unavailable')])
 
 
 class TestTags(base.BaseAlembicMigrationTest):

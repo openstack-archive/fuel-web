@@ -57,6 +57,19 @@ class NodeGroupHandler(SingleHandler):
             instance=node_group
         )
 
+        netmanager = objects.Cluster.get_network_manager(ng.cluster)
+        default_admin_net = objects.NetworkGroup.get_default_admin_network()
+        for node in ng.nodes:
+            objects.Node.remove_from_cluster(node)
+            if not netmanager.is_same_network(node.ip, default_admin_net.cidr):
+                objects.Node.set_error_status_and_file_notification(
+                    node,
+                    consts.NODE_ERRORS.discover,
+                    "Node '{0}' nodegroup was deleted which means that it may "
+                    "not be able to boot correctly unless it is a member of "
+                    "another node group admin network".format(node.hostname)
+                )
+
         db().delete(node_group)
         db().flush()
         try:

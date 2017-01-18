@@ -25,6 +25,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun import errors
 from nailgun import objects
+from nailgun.settings import settings
 from nailgun import utils
 
 
@@ -158,7 +159,8 @@ class NodeValidator(base.BasicValidator):
                 existent_node = db().query(Node).\
                     join(NodeNICInterface, Node.nic_interfaces).\
                     filter(NodeNICInterface.mac.in_(
-                        [n['mac'].lower() for n in data['meta']['interfaces']]
+                        [n['mac'].lower() for n in data['meta']['interfaces']
+                         if n['mac'].lower() not in settings.NON_UNIQUE_MACS]
                     )).first()
                 return existent_node
 
@@ -231,8 +233,10 @@ class NodeValidator(base.BasicValidator):
         existent_node = None
         q = db().query(Node)
         if "mac" in d:
-            existent_node = q.filter_by(mac=d["mac"].lower()).first() \
-                or cls.validate_existent_node_mac_update(d)
+            existent_node = q.filter_by(mac=d["mac"].lower()).first()
+            bad_mac = d["mac"].lower() in settings.NON_UNIQUE_MACS
+            if not existent_node and not bad_mac:
+                existent_node = cls.validate_existent_node_mac_update(d)
             if not existent_node:
                 raise errors.InvalidData(
                     "Invalid MAC is specified",

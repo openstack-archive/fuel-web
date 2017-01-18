@@ -52,7 +52,6 @@ class NodeGroupHandler(SingleHandler):
             self.validator.validate_delete,
             instance=node_group
         )
-
         try:
             self.single.delete(node_group)
         except errors.TaskAlreadyRunning as exc:

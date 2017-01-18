@@ -21,6 +21,7 @@ from oslo_serialization import jsonutils
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
+from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -382,6 +383,73 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
+
+    def test_agent_node_create_and_update_with_non_unique_macs_in_meta(self):
+        meta = self.env.default_metadata()
+        uniq_mac1 = 'de:ad:be:ef:00:01'
+        uniq_mac2 = 'de:ad:be:ef:00:02'
+        uniq_mac3 = 'de:ad:be:ef:00:03'
+        uniq_mac4 = 'de:ad:be:ef:00:04'
+        # this test requires at least 2 interface structures in meta
+        self.assertEqual(len(meta['interfaces']) >= 2, True)
+        # we need only 2 interfaces for this test
+        meta['interfaces'] = meta['interfaces'][:2]
+        # the first interface will have a unique mac
+        meta['interfaces'][0]['mac'] = uniq_mac1
+        # the second will have a non-unique mac from settings
+        meta['interfaces'][1]['mac'] = settings.NON_UNIQUE_MACS[0]
+        # create a node with one unique and one non-unique mac
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': uniq_mac1,
+                             'meta': meta,
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 201)
+        node_id = resp.json_body['id']
+
+        # fail to create another node with the same unique mac in meta
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': uniq_mac1,
+                             'meta': meta,
+                             'status': 'discover'}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 409)
+
+        # create another node with a new unique and the same non-unique mac
+        meta['interfaces'][0]['mac'] = uniq_mac2
+        resp = self.app.post(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps({'mac': uniq_mac2,
+                             'meta': meta,
+                             'status': 'discover'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 201)
+
+        # update a node by incorrect mac and meta with a correct unique mac
+        meta['interfaces'][0]['mac'] = uniq_mac1
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'mac': uniq_mac3,
+                             'meta': meta,
+                             'manufacturer': 'man1'}),
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json_body['id'], node_id)
+
+        # fail to update a node by incorrect mac and meta with a correct but
+        # non-unique mac
+        meta['interfaces'].pop(0)
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'mac': uniq_mac4,
+                             'meta': meta,
+                             'manufacturer': 'man2'}),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEqual(resp.status_code, 400)
 
     def test_node_create_ip_not_in_admin_range(self):
         node = self.env.create_node(api=False)

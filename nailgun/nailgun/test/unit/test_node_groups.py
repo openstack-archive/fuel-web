@@ -26,6 +26,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun import errors
 from nailgun import objects
+from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -37,7 +38,7 @@ class TestNodeGroups(BaseIntegrationTest):
     def setUp(self):
         super(TestNodeGroups, self).setUp()
         self.cluster = self.env.create(
-            release_kwargs={'version': '1111-8.0'},
+            release_kwargs={'version': '1111-9.0'},
             cluster_kwargs={
                 'api': False,
                 'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
@@ -158,6 +159,42 @@ class TestNodeGroups(BaseIntegrationTest):
 
         self.assertEqual(err.exception.message,
                          'Default node group cannot be deleted.')
+
+    @patch('nailgun.task.task.rpc.cast')
+    @patch('objects.Notification.create')
+    def test_delete_non_default_node_group_reset_node_to_error(
+            self, _, notify):
+        node_group = self.env.create_node_group(api=False,
+                                                cluster_id=self.cluster.id)
+        self.env._create_network_group(cluster=self.cluster,
+                                       group_id=node_group.id)
+        node2 = self.env.create_node(group_id=node_group.id,
+                                     roles=['compute'],
+                                     status=consts.NODE_STATUSES.provisioned,
+                                     cluster_id=self.cluster.id,
+                                     ip='10.3.0.42')
+        task = self.env.launch_deployment()
+        NailgunReceiver.deploy_resp(
+            task_uuid=task.uuid,
+            status=consts.TASK_STATUSES.ready,
+            progress=100,
+            nodes=[{'uid': n.uid, 'status': consts.NODE_STATUSES.ready,
+                    'progress': 100}
+                   for n in self.env.nodes],
+        )
+        reset_task = self.env.reset_environment()
+        NailgunReceiver.reset_environment_resp(
+            task_uuid=reset_task.uuid,
+            status=consts.TASK_STATUSES.ready,
+            progress=100,
+            nodes=[{'uid': n.uid}
+                   for n in self.env.nodes],
+        )
+        self.env.delete_node_group(node_group.id)
+        self.assertEqual(node2.status, consts.NODE_STATUSES.error)
+        self.assertEqual(node2.error_type, consts.NODE_ERRORS.discover)
+        self.assertIsNone(node2.cluster)
+        notify.assert_called()
 
     def test_delete_non_default_node_group_error(self):
         node_group = self.env.create_node_group(api=False,

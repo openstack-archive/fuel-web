@@ -123,7 +123,7 @@ DEFAULT_NIC_ATTRIBUTES = {
     'sriov': {
         'numvfs': {'min': 1, 'type': 'number', 'value': None, 'nullable': True,
                    'weight': 20, 'label': 'Custom Number of Virtual Functions',
-                   'restrictions': ['"nic_attributes:sriov.enabled.value == "'
+                   'restrictions': ['nic_attributes:sriov.enabled.value == "'
                                     'false"']
                    },
         'enabled': {'type': 'checkbox', 'value': False,

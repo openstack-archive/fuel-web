@@ -451,6 +451,79 @@ class CollectionHandler(BaseHandler):
     validator = BasicValidator
     eager = ()
 
+    def get_scope(self):
+        """Get request scope from HTTP request params
+
+        :returns: dict with request scope settings
+        """
+        def _get_limit():
+            limit = web.input(limit=None).limit
+            try:
+                return int(limit)
+            except (TypeError, ValueError):
+                return None
+
+        def _get_offset():
+            offset = web.input(offset=None).offset
+            try:
+                return int(offset)
+            except (TypeError, ValueError):
+                return 0
+
+        def _get_order_by():
+            order_by = web.input(order_by=None).order_by
+            try:
+                return [s.strip() for s in order_by.strip().split(',')]
+            except AttributeError:
+                return None
+
+        scope = {'limit': _get_limit(),
+                 'offset': _get_offset() if _get_limit() != 0 else 0,
+                 'order_by': _get_order_by()}
+        return scope
+
+    def get_scoped_query_and_range(self, scope=None, filter_by=None):
+        """Get filtered+paged collection query and tuple for Content-Range
+
+        Return a scoped query and if the query represents a subset of
+        collection's objects then also return values to later set
+        Content-Range header
+        If scope is not set, return query to all collection's objects
+        (see NailgunCollection.scope)
+        Allows getting object count via content range by specifying
+        scope['limit']=0
+
+        :param scope: scope dict (see structure in get_scope)
+        :type param_name: dict
+        :param filter_by: filter dict passed to
+        :type param_name: dict
+        :returns: SQLAlchemy query and tuple with content range
+        """
+        scope = scope or self.get_scope()
+        query = None
+        content_range = None
+        if self.collection and self.collection.single.model:
+            query, limits = self.collection.scope(scope, filter_by)
+            if limits:
+                if limits['valid']:
+                    content_range = (limits['from'],
+                                     limits['to'],
+                                     limits['total'])
+                else:
+                    # dsutyagin: should raise 416 but it's N/A in webpy
+                    raise self.http(406)
+        return query, content_range
+
+    def set_content_range(self, content_range):
+        """Set Content-Range header to indicate partial data
+
+        :param content_range: tuple with 3 integers:
+        1 - index of the first element in query
+        2 - index of the last element in query
+        3 - total number of elements in query
+        """
+        web.header('Content-Range', 'objects %s-%s/%s' % content_range)
+
     @handle_errors
     @validate
     @serialize
@@ -458,8 +531,12 @@ class CollectionHandler(BaseHandler):
         """:returns: Collection of JSONized REST objects.
 
         :http: * 200 (OK)
+               * 406 (requested range not satisfiable)
         """
-        q = self.collection.eager(None, self.eager)
+        query, content_range = self.get_scoped_query_and_range()
+        if content_range:
+            self.set_content_range(content_range)
+        q = self.collection.eager(query, self.eager)
         return self.collection.to_list(q)
 
     @handle_errors

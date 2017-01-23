@@ -20,8 +20,12 @@ import urllib
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import Pagination
 from nailgun.api.v1.handlers.base import serialize
+
+from nailgun.objects import NodeCollection
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -185,3 +189,88 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_get_requested_default(self):
         self.check_get_requested_mime({}, 'application/json')
+
+    def test_pagination_class(self):
+        # test empty query
+        web.ctx.env = {'REQUEST_METHOD': 'GET'}
+        scope = Pagination()
+        self.assertEqual(scope.limit, None)
+        self.assertEqual(scope.offset, None)
+        self.assertEqual(scope.order_by, None)
+        # test value retrieval from web + order_by cleanup
+        q = 'limit=1&offset=5&order_by=-id, timestamp ,   somefield '
+        web.ctx.env['QUERY_STRING'] = q
+        scope = Pagination()
+        self.assertEqual(scope.limit, 1)
+        self.assertEqual(scope.offset, 5)
+        self.assertEqual(set(scope.order_by),
+                         set(['-id', 'timestamp', 'somefield']))
+        # test incorrect values raise 400
+        web.ctx.env['QUERY_STRING'] = 'limit=qwe'
+        self.assertRaises(web.HTTPError, Pagination)
+        web.ctx.env['QUERY_STRING'] = 'offset=asd'
+        self.assertRaises(web.HTTPError, Pagination)
+        web.ctx.env['QUERY_STRING'] = 'limit='
+        self.assertRaises(web.HTTPError, Pagination)
+        web.ctx.env['QUERY_STRING'] = 'offset=-2'
+        self.assertRaises(web.HTTPError, Pagination)
+        # test constructor, limit = 0 -> 0, offset '0' -> 0, bad order_by
+        scope = Pagination(0, '0', ', ,,,  ,')
+        self.assertEqual(scope.limit, 0)
+        self.assertEqual(scope.offset, 0)
+        self.assertEqual(scope.order_by, None)
+
+    def test_pagination_of_node_collection(self):
+        def assert_scope_and_content_range(q, cr, sz, first, last, ttl, valid):
+            self.assertEqual(q.count(), sz)
+            self.assertEqual(cr.first, first)
+            self.assertEqual(cr.last, last)
+            self.assertEqual(cr.total, ttl)
+            self.assertEqual(cr.valid, valid)
+
+        self.env.create_nodes(5)
+        # test scope limited to 2 first items
+        scope = Pagination(limit=2)
+        q, cr = NodeCollection.scope(scope)
+        assert_scope_and_content_range(q, cr, 2, 1, 2, 5, True)
+        # test invalid scope
+        scope = Pagination(offset=5)
+        q, cr = NodeCollection.scope(scope)
+        assert_scope_and_content_range(q, cr, 0, 0, 0, 5, False)
+        # test limit=0, offset ignored
+        scope = Pagination(limit=0, offset=999)
+        q, cr = NodeCollection.scope(scope)
+        assert_scope_and_content_range(q, cr, 0, 0, 0, 5, True)
+        # test limit+offset+order_by
+        scope = Pagination(limit=2, offset=2, order_by='-id')
+        q, cr = NodeCollection.scope(scope)
+        assert_scope_and_content_range(q, cr, 2, 3, 4, 5, True)
+        ids = sorted([i.id for i in self.env.nodes])
+        n = q.all()
+        self.assertEqual(n[0].id == ids[2])
+        self.assertEqual(n[1].id == ids[1])
+
+    def test_collection_handler(self):
+        FakeHandler = CollectionHandler
+        # setting a collection is mandatory, CollectionHandler is not ready
+        # to use "as-is"
+        FakeHandler.collection = NodeCollection
+        urls = ("/collection_test", "collection_test")
+        app = web.application(urls, {'collection_test': FakeHandler})
+        resp = app.request(urls[0])
+        self.assertEqual(resp.status, '200 OK')
+
+    def test_content_range_header(self):
+        self.env.create_nodes(5)
+        FakeHandler = CollectionHandler
+        FakeHandler.collection = NodeCollection
+        urls = ("/collection_test", "collection_test")
+        app = web.application(urls, {'collection_test': FakeHandler})
+        # test paginated query
+        resp = app.request("/collection_test?limit=3&offset=1")
+        self.assertEqual(resp.status, '200 OK')
+        self.assertIn('Content-Range', resp.headers)
+        self.assertEqual(resp.headers['Content-Range'], 'objects 2-4/5')
+        # test invalid range (offset = 6 >= number of nodes ---> no data)
+        resp = app.request("/collection_test?limit=3&offset=5&order_by=id")
+        self.assertEqual(resp.status, '406 Not Acceptable')

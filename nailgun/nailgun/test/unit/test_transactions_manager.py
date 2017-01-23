@@ -464,3 +464,33 @@ class TestGetCurrentState(BaseUnitTest):
         }
 
         self.assertEqual(expected_state, current_state)
+
+
+class TestPrepareNodes(BaseUnitTest):
+    def test_apply_only_for_involved_nodes(self):
+        nodes = [
+            mock.MagicMock(
+                uid=1, progress=0, error_type='deployment', error_msg='test'
+            ),
+            mock.MagicMock(
+                uid=2, progress=0, error_type='provision', error_msg='test2'
+            ),
+        ]
+        manager._prepare_nodes(nodes, False, {2})
+        self.assertEqual(0, nodes[0].progress)
+        self.assertEqual('deployment', nodes[0].error_type)
+        self.assertEqual('test', nodes[0].error_msg)
+        self.assertEqual(1, nodes[1].progress)
+        self.assertIsNone(nodes[1].error_type)
+        self.assertIsNone(nodes[1].error_msg)
+
+    def test_not_reset_error_if_dry_run(self):
+        nodes = [
+            mock.MagicMock(
+                uid=1, progress=0, error_type='deployment', error_msg='test'
+            )
+        ]
+        manager._prepare_nodes(nodes, True, {1})
+        self.assertEqual(1, nodes[0].progress)
+        self.assertEqual('deployment', nodes[0].error_type)
+        self.assertEqual('test', nodes[0].error_msg)

@@ -308,13 +308,13 @@ def handle_errors(func, cls, *args, **kwargs):
             http_error.data = json_resp(http_error.data)
         raise
     except errors.NailgunException as exc:
-        logger.exception('NailgunException occured')
+        logger.exception('NailgunException occurred')
         http_error = BaseHandler.http(400, exc.message)
         web.header('Content-Type', 'text/plain')
         raise http_error
     # intercepting all errors to avoid huge HTML output
     except Exception as exc:
-        logger.exception('Unexpected exception occured')
+        logger.exception('Unexpected exception occurred')
         http_error = BaseHandler.http(
             500,
             (

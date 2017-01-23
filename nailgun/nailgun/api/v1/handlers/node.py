@@ -53,7 +53,7 @@ class NodeHandler(SingleHandler):
         """:returns: JSONized Node object.
 
         :http: * 200 (OK)
-               * 400 (error occured while processing of data)
+               * 400 (error occurred while processing of data)
                * 404 (Node not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)

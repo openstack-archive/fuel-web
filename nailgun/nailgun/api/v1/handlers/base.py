@@ -459,7 +459,31 @@ class CollectionHandler(BaseHandler):
 
         :http: * 200 (OK)
         """
-        q = self.collection.eager(None, self.eager)
+        def _get_limit():
+            limit = web.input(limit=None).limit
+            try:
+                return int(limit)
+            except (TypeError, ValueError):
+                return None
+
+        def _get_order_by():
+            order_by = web.input(order_by=None).order_by
+            try:
+                return order_by.split(',')
+            except AttributeError:
+                return None
+
+        iterable = None
+        limit = _get_limit()
+        order_by = _get_order_by()
+        if order_by:
+            iterable = self.collection.order_by(None, order_by)
+        if limit:
+            if iterable:
+                iterable = iterable.limit(limit)
+            else:
+                iterable = self.collection.all().limit(limit)
+        q = self.collection.eager(iterable, self.eager)
         return self.collection.to_list(q)
 
     @handle_errors

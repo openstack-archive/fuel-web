@@ -568,8 +568,12 @@ class TestNodeObject(BaseIntegrationTest):
         )
 
         # Checking nothing to be sorted
-        nodes = objects.NodeCollection.order_by(None, 'id')
-        self.assertEquals(None, nodes)
+
+        # dsutyagin: this check has been disabled because now order_by
+        # with an empty iterable orders collection.all()
+
+        # nodes = objects.NodeCollection.order_by(None, 'id')
+        # self.assertEquals(None, nodes)
 
         iterable = ['b', 'a']
         nodes = objects.NodeCollection.order_by(iterable, ())

@@ -245,8 +245,11 @@ class NailgunCollection(object):
             desc ordering applies, else asc.
         :type order_by: tuple of strings or string
         """
-        if iterable is None or not order_by:
-            return iterable
+        if iterable is None:
+            if not order_by or not cls.single.model:
+                return
+            else:
+                iterable = cls.all()
         if not isinstance(order_by, (list, tuple)):
             order_by = (order_by,)
         if cls._is_query(iterable):

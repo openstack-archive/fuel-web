@@ -21,6 +21,7 @@ import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import Scope
 from nailgun.api.v1.handlers.base import serialize
 
 from nailgun.test.base import BaseIntegrationTest
@@ -185,3 +186,34 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_get_requested_default(self):
         self.check_get_requested_mime({}, 'application/json')
+
+    def test_scope(self):
+        # test empty query
+        web.ctx.env = {'REQUEST_METHOD': 'GET'}
+        scope = Scope()
+        self.assertEqual(scope.limit, None)
+        self.assertEqual(scope.offset, 0)
+        self.assertEqual(scope.order_by, None)
+        # test value retrieval from web + order_by cleanup
+        q = 'limit=1&offset=5&order_by=-id, timestamp ,   somefield '
+        web.ctx.env['QUERY_STRING'] = q
+        scope = Scope()
+        self.assertEqual(scope.limit, 1)
+        self.assertEqual(scope.offset, 5)
+        self.assertEqual(set(scope.order_by),
+                         set(['-id', 'timestamp', 'somefield']))
+        # test incorrect values ignored
+        web.ctx.env['QUERY_STRING'] = 'limit=qwe,offset=asd,order_by='
+        scope = Scope()
+        self.assertEqual(scope.limit, None)
+        self.assertEqual(scope.offset, 0)
+        self.assertEqual(scope.order_by, None)
+        # test constructor with arguments and incorrect order_by
+        scope = Scope(1, 2, ', ,,,  ,')
+        self.assertEqual(scope.limit, 1)
+        self.assertEqual(scope.offset, 2)
+        self.assertEqual(scope.order_by, None)
+        # offset = 0 if limit = 0
+        scope = Scope(0, 5, '')
+        self.assertEqual(scope.limit, 0)
+        self.assertEqual(scope.offset, 0)

@@ -20,8 +20,12 @@ import urllib
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import handle_errors
+from nailgun.api.v1.handlers.base import Pagination
 from nailgun.api.v1.handlers.base import serialize
+
+from nailgun.objects import NodeCollection
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
@@ -185,3 +189,44 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_get_requested_default(self):
         self.check_get_requested_mime({}, 'application/json')
+
+    def test_pagination_class(self):
+        # test empty query
+        web.ctx.env = {'REQUEST_METHOD': 'GET'}
+        scope = Pagination()
+        self.assertEqual(scope.limit, None)
+        self.assertEqual(scope.offset, 0)
+        self.assertEqual(scope.order_by, None)
+        # test value retrieval from web + order_by cleanup
+        q = 'limit=1&offset=5&order_by=-id, timestamp ,   somefield '
+        web.ctx.env['QUERY_STRING'] = q
+        scope = Pagination()
+        self.assertEqual(scope.limit, 1)
+        self.assertEqual(scope.offset, 5)
+        self.assertEqual(set(scope.order_by),
+                         set(['-id', 'timestamp', 'somefield']))
+        # test incorrect values ignored
+        web.ctx.env['QUERY_STRING'] = 'limit=qwe,offset=asd,order_by='
+        scope = Pagination()
+        self.assertEqual(scope.limit, None)
+        self.assertEqual(scope.offset, 0)
+        self.assertEqual(scope.order_by, None)
+        # test constructor with arguments and incorrect order_by
+        scope = Pagination(1, 2, ', ,,,  ,')
+        self.assertEqual(scope.limit, 1)
+        self.assertEqual(scope.offset, 2)
+        self.assertEqual(scope.order_by, None)
+        # offset = 0 if limit = 0
+        scope = Pagination(0, 5, '')
+        self.assertEqual(scope.limit, 0)
+        self.assertEqual(scope.offset, 0)
+
+    def test_collection_handler(self):
+        FakeHandler = CollectionHandler
+        # setting a collection is mandatory, CollectionHandler is not ready
+        # to use "as-is"
+        FakeHandler.collection = NodeCollection
+        urls = ("/collection_test", "collection_test")
+        app = web.application(urls, {'collection_test': FakeHandler})
+        resp = app.request(urls[0])
+        self.assertEquals(resp.status, '200 OK')

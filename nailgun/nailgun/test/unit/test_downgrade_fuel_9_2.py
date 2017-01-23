@@ -299,7 +299,7 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
         for editable in results:
             editable = jsonutils.loads(editable[0])
             common = editable.setdefault('common', {})
-            self.assertEqual(common.get('security_groups'), None)
+            self.assertIsNone(common.get('security_groups'))
 
     def test_release_attributes_downgrade(self):
         releases = self.meta.tables['releases']
@@ -308,7 +308,7 @@ class TestAttributesDowngrade(base.BaseAlembicMigrationTest):
         for attrs in results:
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
-            self.assertEqual(common.get('security_groups'), None)
+            self.assertIsNone(common.get('security_groups'))
 
 
 class TestTags(base.BaseAlembicMigrationTest):

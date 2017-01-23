@@ -464,7 +464,7 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_net1 = objects.NetworkGroup.get_admin_network_group(node=node0)
         admin_net2 = objects.NetworkGroup.get_admin_network_group(node=node1)
 
-        self.assertEqual(admin_net1.group_id, None)
+        self.assertIsNone(admin_net1.group_id)
         self.assertEqual(admin_net2.group_id, node_group.json_body['id'])
 
     def test_get_admin_network_group_with_admin_net(self):

@@ -163,7 +163,7 @@ class TestFuyaqlController(base.BaseUnitTest):
         self.assertRaises(self.controller.evaluate('changed($.roles)'))
 
     def test_get_task(self, obj_mock):
-        self.assertEqual(self.controller._get_task(None), None)
+        self.assertIsNone(self.controller._get_task(None))
 
         obj_mock.Transaction.get_by_uid.return_value = None
         self.assertFalse(self.controller._get_task(1))
@@ -214,13 +214,13 @@ class TestFuyaqlController(base.BaseUnitTest):
             {'1': {'a': 2}},
             self.controller._infos[self.controller.EXPECTED],
         )
-        self.assertEqual(self.controller._node_id, None)
+        self.assertIsNone(self.controller._node_id)
 
         self.controller._node_id = 8
         self.controller._set_info(self.controller.EXPECTED, None)
         self.assertEqual(self.controller._infos[self.controller.EXPECTED],
                          self.new_context)
-        self.assertEqual(self.controller._node_id, None)
+        self.assertIsNone(self.controller._node_id)
 
         serialized.assert_called_once_with(
             self.controller._cluster,

@@ -169,6 +169,15 @@ class NailgunCollection(object):
     #: Single object class
     single = NailgunObject
 
+    class ContentRange(object):
+        """Structure to set Content-Range header"""
+
+        def __init__(self, first, last, total, valid):
+            self.first = first
+            self.last = last
+            self.total = total
+            self.valid = valid
+
     @classmethod
     def _is_iterable(cls, obj):
         return isinstance(
@@ -190,6 +199,54 @@ class NailgunCollection(object):
         :returns: iterable (SQLAlchemy query)
         """
         return db().query(cls.single.model)
+
+    @classmethod
+    def scope(cls, scope=None, filter_by=None):
+        """Return a query to collection's objects and ContentRange object
+
+        Return a filtered and paged query, according to the provided scope
+        (see CollectionHandler.get_scope)
+        Also return ContentRange - object with index of first element, last
+        element and total count of elements in query(after filtering), and
+        a 'valid' parameter to indicate that the paging scope (limit + offset)
+        is valid or not (resulted in no data while there was data to provide)
+
+        :param scope: Scope object (see api.v1.handlers.base.Scope)
+        :param filter_by: dict to filter objects {field1: value1, ...}
+        :returns: SQLAlchemy query and ContentRange object
+        """
+        query = cls.all()
+        content_range = None
+        if filter_by:
+            query = query.filter_by(**filter_by)
+        query_full = query
+        if scope:
+            if scope.order_by:
+                query = cls.order_by(query, scope.order_by)
+            if scope.offset:
+                query = query.offset(scope.offset)
+            if scope.limit is not None:
+                # limit == 0 is allowed and will result in an empty query
+                query = query.limit(scope.limit)
+            if scope.offset or scope.limit is not None:
+                total = query_full.count()
+                selected = query.count()
+                if total > selected:
+                    # if total > selected then we need to report content range
+                    if scope.limit is not None:
+                        if scope.limit > 0:
+                            # first element index=1
+                            first = scope.offset + 1
+                            last = min(first + scope.limit, total)
+                        else:
+                            # limit=0 -> no data, report first and last as 0
+                            first = last = 0
+                    else:
+                        first = scope.offset + 1
+                        last = total
+                    valid = selected > 0 or scope.limit == 0
+                    content_range = cls.ContentRange(first, last, total, valid)
+        return query, content_range
 
     @classmethod
     def _query_order_by(cls, query, order_by):
@@ -236,6 +293,23 @@ class NailgunCollection(object):
         return sorted(iterable, key=key)
 
     @classmethod
+    def get_iterable(cls, iterable, require=True):
+        """Return either iterable or cls.all() when possible
+
+        :param iterable: model objects collection
+        :returns: original iterable or an SQLAlchemy query
+        """
+        if iterable is not None:
+            if cls._is_iterable(iterable) or cls._is_query(iterable):
+                return iterable
+            else:
+                raise TypeError("'%s' object is not iterable" % type(iterable))
+        elif cls.single.model:
+            return cls.all()
+        elif require:
+            raise ValueError('iterable not provided and single.model not set')
+
+    @classmethod
     def order_by(cls, iterable, order_by):
         """Order given iterable by specified order_by.
 
@@ -244,15 +318,17 @@ class NailgunCollection(object):
             ORDER BY criterion to SQLAlchemy query. If name starts with '-'
             desc ordering applies, else asc.
         :type order_by: tuple of strings or string
+        :returns: ordered iterable (SQLAlchemy query)
         """
-        if iterable is None or not order_by:
+        if not iterable or not order_by:
             return iterable
+        use_iterable = cls.get_iterable(iterable)
         if not isinstance(order_by, (list, tuple)):
             order_by = (order_by,)
-        if cls._is_query(iterable):
-            return cls._query_order_by(iterable, order_by)
-        else:
-            return cls._iterable_order_by(iterable, order_by)
+        if cls._is_query(use_iterable):
+            return cls._query_order_by(use_iterable, order_by)
+        elif cls._is_iterable(use_iterable):
+            return cls._iterable_order_by(use_iterable, order_by)
 
     @classmethod
     def filter_by(cls, iterable, **kwargs):
@@ -266,10 +342,7 @@ class NailgunCollection(object):
             else asc.
         :returns: filtered iterable (SQLAlchemy query)
         """
-        if iterable is not None:
-            use_iterable = iterable
-        else:
-            use_iterable = cls.all()
+        use_iterable = cls.get_iterable(iterable)
         if cls._is_query(use_iterable):
             return use_iterable.filter_by(**kwargs)
         elif cls._is_iterable(use_iterable):
@@ -291,7 +364,7 @@ class NailgunCollection(object):
         :param iterable: iterable (SQLAlchemy query)
         :returns: filtered iterable (SQLAlchemy query)
         """
-        use_iterable = iterable or cls.all()
+        use_iterable = cls.get_iterable(iterable)
         if cls._is_query(use_iterable):
             conditions = []
             for key, value in six.iteritems(kwargs):
@@ -306,8 +379,6 @@ class NailgunCollection(object):
                 ),
                 use_iterable
             )
-        else:
-            raise TypeError("First argument should be iterable")
 
     @classmethod
     def lock_for_update(cls, iterable):
@@ -318,15 +389,13 @@ class NailgunCollection(object):
         :param iterable: iterable (SQLAlchemy query)
         :returns: filtered iterable (SQLAlchemy query)
         """
-        use_iterable = iterable or cls.all()
+        use_iterable = cls.get_iterable(iterable)
         if cls._is_query(use_iterable):
             return use_iterable.with_lockmode('update')
         elif cls._is_iterable(use_iterable):
             # we can't lock abstract iterable, so returning as is
             # for compatibility
             return use_iterable
-        else:
-            raise TypeError("First argument should be iterable")
 
     @classmethod
     def filter_by_list(cls, iterable, field_name, list_of_values,
@@ -341,7 +410,7 @@ class NailgunCollection(object):
         :returns: filtered iterable (SQLAlchemy query)
         """
         field_getter = operator.attrgetter(field_name)
-        use_iterable = iterable or cls.all()
+        use_iterable = cls.get_iterable(iterable)
         if cls._is_query(use_iterable):
             result = use_iterable.filter(
                 field_getter(cls.single.model).in_(list_of_values)
@@ -353,8 +422,6 @@ class NailgunCollection(object):
                 lambda i: field_getter(i) in list_of_values,
                 use_iterable
             )
-        else:
-            raise TypeError("First argument should be iterable")
 
     @classmethod
     def filter_by_id_list(cls, iterable, uid_list):
@@ -382,7 +449,7 @@ class NailgunCollection(object):
         :param options: list of sqlalchemy eagerload types
         :returns: iterable (SQLAlchemy query)
         """
-        use_iterable = iterable or cls.all()
+        use_iterable = cls.get_iterable(iterable)
         if options:
             return use_iterable.options(*options)
         return use_iterable
@@ -404,13 +471,11 @@ class NailgunCollection(object):
 
     @classmethod
     def count(cls, iterable=None):
-        use_iterable = iterable or cls.all()
+        use_iterable = cls.get_iterable(iterable)
         if cls._is_query(use_iterable):
             return use_iterable.count()
         elif cls._is_iterable(use_iterable):
             return len(list(iterable))
-        else:
-            raise TypeError("First argument should be iterable")
 
     @classmethod
     def to_list(cls, iterable=None, fields=None, serializer=None):
@@ -423,7 +488,7 @@ class NailgunCollection(object):
         :param serializer: the custom serializer
         :returns: collection of objects as a list of dicts
         """
-        use_iterable = cls.all() if iterable is None else iterable
+        use_iterable = cls.get_iterable(iterable)
         return [
             cls.single.to_dict(o, fields=fields, serializer=serializer)
             for o in use_iterable
@@ -465,7 +530,7 @@ class NailgunCollection(object):
         :param options: list of sqlalchemy mapper options
         :returns: iterable (SQLAlchemy query)
         """
-        use_iterable = iterable or cls.all()
+        use_iterable = cls.get_iterable(iterable)
         if args:
             return use_iterable.options(*args)
         return use_iterable

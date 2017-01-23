@@ -624,7 +624,7 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
         for attrs in results:
             attrs = jsonutils.loads(attrs[0])
             common = attrs.setdefault('editable', {}).setdefault('common', {})
-            self.assertEqual(common.get('security_groups'), None)
+            self.assertIsNone(common.get('security_groups'))
 
     def test_cluster_attributes_update(self):
         clusters_attributes = self.meta.tables['attributes']
@@ -654,7 +654,7 @@ class TestAttributesUpdate(base.BaseAlembicMigrationTest):
         for editable in results:
             editable = jsonutils.loads(editable[0])
             common = editable.setdefault('common', {})
-            self.assertEqual(common.get('security_groups'), None)
+            self.assertIsNone(common.get('security_groups'))
 
     def test_upgrade_release_with_nic_attributes(self):
         releases_table = self.meta.tables['releases']

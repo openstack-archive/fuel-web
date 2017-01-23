@@ -123,6 +123,15 @@ class BaseHandler(object):
                     data=self.message
                 )
 
+        class _range_not_satisfiable(web.HTTPError):
+            message = 'Requested Range Not Satisfiable'
+
+            def __init__(self):
+                super(_range_not_satisfiable, self).__init__(
+                    status='416 Range Not Satisfiable',
+                    data=self.message
+                )
+
         exc_status_map = {
             200: web.ok,
             201: web.created,
@@ -141,6 +150,7 @@ class BaseHandler(object):
             409: web.conflict,
             410: web.gone,
             415: web.unsupportedmediatype,
+            416: _range_not_satisfiable,
 
             500: web.internalerror,
         }
@@ -445,11 +455,85 @@ class SingleHandler(BaseHandler):
         raise self.http(204)
 
 
+class Pagination(object):
+    """Get pagination scope from init or HTTP request arguments"""
+
+    def convert(self, x):
+        """ret. None if x=None, else ret. x as int>=0; else raise 400"""
+
+        val = x
+        if val is not None:
+            if type(val) is not int:
+                try:
+                    val = int(x)
+                except ValueError:
+                    raise BaseHandler.http(400, 'Cannot convert "%s" to int'
+                                           % x)
+            # raise on negative values
+            if val < 0:
+                raise BaseHandler.http(400, 'Negative limit/offset not \
+                                       allowed')
+            return val
+
+    def get_order_by(self, order_by):
+        if order_by:
+            order_by = [s.strip() for s in order_by.split(',') if s.strip()]
+        return order_by if order_by else None
+
+    def __init__(self, limit=None, offset=None, order_by=None):
+        if limit is not None or offset is not None or order_by is not None:
+            # init with provided arguments
+            self.limit = self.convert(limit)
+            self.offset = self.convert(offset)
+            self.order_by = self.get_order_by(order_by)
+        else:
+            # init with HTTP arguments
+            self.limit = self.convert(web.input(limit=None).limit)
+            self.offset = self.convert(web.input(offset=None).offset)
+            self.order_by = self.get_order_by(web.input(order_by=None)
+                                              .order_by)
+
+
 class CollectionHandler(BaseHandler):
 
     collection = None
     validator = BasicValidator
     eager = ()
+
+    def get_scoped_query_and_range(self, pagination=None, filter_by=None):
+        """Get filtered+paged collection query and collection.ContentRange obj
+
+        Return a scoped query, and if pagination is requested then also return
+        ContentRange object (see NailgunCollection.content_range) to allow to
+        set Content-Range header (outside of this functon).
+        If pagination is not set/requested, return query to all collection's
+        objects.
+        Allows getting object count without getting objects - via
+        content_range if pagination.limit=0.
+
+        :param pagination: Pagination object
+        :param filter_by: filter dict passed to query.filter_by(\*\*dict)
+        :type filter_by: dict
+        :returns: SQLAlchemy query and ContentRange object
+        """
+        pagination = pagination or Pagination()
+        query = None
+        content_range = None
+        if self.collection and self.collection.single.model:
+            query, content_range = self.collection.scope(pagination, filter_by)
+            if content_range:
+                if not content_range.valid:
+                    raise self.http(416, 'Requested range "%s" cannot be '
+                                    'satisfied' % content_range)
+        return query, content_range
+
+    def set_content_range(self, content_range):
+        """Set Content-Range header to indicate partial data
+
+        :param content_range: NailgunCollection.content_range named tuple
+        """
+        txt = 'objects {x.first}-{x.last}/{x.total}'.format(x=content_range)
+        web.header('Content-Range', txt)
 
     @handle_errors
     @validate
@@ -458,8 +542,13 @@ class CollectionHandler(BaseHandler):
         """:returns: Collection of JSONized REST objects.
 
         :http: * 200 (OK)
+               * 400 (Bad Request)
+               * 406 (requested range not satisfiable)
         """
-        q = self.collection.eager(None, self.eager)
+        query, content_range = self.get_scoped_query_and_range()
+        if content_range:
+            self.set_content_range(content_range)
+        q = self.collection.eager(query, self.eager)
         return self.collection.to_list(q)
 
     @handle_errors

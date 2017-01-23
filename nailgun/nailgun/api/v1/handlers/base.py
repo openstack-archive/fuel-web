@@ -458,8 +458,53 @@ class CollectionHandler(BaseHandler):
         """:returns: Collection of JSONized REST objects.
 
         :http: * 200 (OK)
+               * 406 (requested range not satisfiable)
         """
-        q = self.collection.eager(None, self.eager)
+        def _get_limit():
+            limit = web.input(limit=None).limit
+            try:
+                return int(limit)
+            except (TypeError, ValueError):
+                return 0
+
+        def _get_offset():
+            offset = web.input(offset=None).offset
+            try:
+                return int(offset)
+            except (TypeError, ValueError):
+                return 0
+
+        def _get_order_by():
+            order_by = web.input(order_by=None).order_by
+            try:
+                return order_by.rstrip().split(',')
+            except AttributeError:
+                return None
+
+        iterable = self.get_iterable(None, require=False)
+        iterable_all = iterable
+        if iterable:
+            limit = _get_limit()
+            offset = _get_offset()
+            order_by = _get_order_by()
+            if order_by:
+                iterable = iterable.order_by(None, order_by)
+            if offset:
+                iterable = iterable.offset(offset)
+            if limit:
+                iterable = iterable.limit(limit)
+            if offset or limit:
+                total = iterable_all.count()
+                selected = iterable.count()
+                if total > selected:
+                    if selected > 0:
+                        web.header('Content-Range',
+                                   'objects %s-%s/%s' %
+                                   (offset, offset + limit, total))
+                    else:
+                        # dsutyagin: should raise 416 but it's N/A in webpy
+                        raise self.http(406)
+        q = self.collection.eager(iterable, self.eager)
         return self.collection.to_list(q)
 
     @handle_errors

@@ -445,11 +445,84 @@ class SingleHandler(BaseHandler):
         raise self.http(204)
 
 
+class Pagination(object):
+    """Get pagination scope from HTTP request arguments or init args"""
+
+    def convert(self, x):
+        val = x
+        if val is not None:
+            if type(val) is not int:
+                try:
+                    val = int(x)
+                except ValueError:
+                    raise BaseHandler.http(400, 'Cannot convert "%s" to int'
+                                           % x)
+            # raise on negative values
+            if val < 0:
+                raise BaseHandler.http(400, 'Negative limit/offset not \
+                                       allowed')
+
+    def get_limit(self, limit):
+        # dsutyagin: limit = 0 is allowed to get object count
+        # via Content-Range header without getting objects themselves
+        limit = limit if (limit or limit == 0) else web.input(limit=None).limit
+        return self.convert(limit)
+
+    def get_offset(self, offset):
+        return self.convert(offset or web.input(offset=None).offset)
+
+    def get_order_by(self, order_by):
+        order_by = order_by or web.input(order_by=None).order_by
+        if order_by:
+            order_by = [s.strip() for s in order_by.split(',') if s.strip()]
+        return order_by if order_by else None
+
+    def __init__(self, limit=None, offset=None, order_by=None):
+        self.limit = self.get_limit(limit)
+        self.offset = self.get_offset(offset)
+        self.order_by = self.get_order_by(order_by)
+
+
 class CollectionHandler(BaseHandler):
 
     collection = None
     validator = BasicValidator
     eager = ()
+
+    def get_scoped_query_and_range(self, scope=None, filter_by=None):
+        """Get filtered+paged collection query and collection.ContentRange obj
+
+        Return a scoped query, and if the query represents a subset of
+        collection's objects then also return ContentRange object to allow
+        setting Content-Range header (outside of this functon)
+        If scope is not set, return query to all collection's objects
+        (see NailgunCollection.Scope)
+        Allows getting object count via ContentRange by setting scope.limit=0
+
+        :param scope: Scope object
+        :type scope: CollectionHandler.Scope
+        :param filter_by: filter dict passed to query.filter_by(\*\*dict)
+        :type filter_by: dict
+        :returns: SQLAlchemy query and tuple with content range
+        """
+        scope = scope or Pagination()
+        query = None
+        content_range = None
+        if self.collection and self.collection.single.model:
+            query, content_range = self.collection.scope(scope, filter_by)
+            if content_range:
+                if not content_range.valid:
+                    # dsutyagin: should raise 416 but it's N/A in webpy
+                    raise self.http(406)
+        return query, content_range
+
+    def set_content_range(self, content_range):
+        """Set Content-Range header to indicate partial data
+
+        :param content_range: collection.ContentRange object
+        """
+        txt = 'objects {x.first}-{x.last}/{x.total}'.format(x=content_range)
+        web.header('Content-Range', txt)
 
     @handle_errors
     @validate
@@ -458,8 +531,12 @@ class CollectionHandler(BaseHandler):
         """:returns: Collection of JSONized REST objects.
 
         :http: * 200 (OK)
+               * 406 (requested range not satisfiable)
         """
-        q = self.collection.eager(None, self.eager)
+        query, content_range = self.get_scoped_query_and_range()
+        if content_range:
+            self.set_content_range(content_range)
+        q = self.collection.eager(query, self.eager)
         return self.collection.to_list(q)
 
     @handle_errors

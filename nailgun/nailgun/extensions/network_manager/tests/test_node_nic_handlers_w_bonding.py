@@ -897,8 +897,9 @@ class TestBondAttributesDefaultsHandler(BaseIntegrationTest):
             'value': {
                 'weight': 10,
                 'type': 'number',
+                'nullable': True,
                 'value': None,
-                'label': 'MTU',
+                'label': 'Use Custom MTU',
                 'min': 42,
                 'max': 65536
             }

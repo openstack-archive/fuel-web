@@ -2124,9 +2124,10 @@
           label: "MTU"
           weight: 20
         value:
-          label: "MTU"
+          label: "Use Custom MTU"
           weight: 10
           type: "number"
+          nullable: True
           value: null
           min: 42
           max: 65536
@@ -2209,9 +2210,10 @@
           label: "MTU"
           weight: 30
         value:
-          label: "MTU"
+          label: "Use Custom MTU"
           weight: 10
           type: "number"
+          nullable: True
           value: null
           min: 42
           max: 65536

@@ -623,10 +623,6 @@ class Node(NailgunObject):
 
         if new_meta:
             instance.update_meta(new_meta)
-            # The call to update_interfaces will execute a select query for
-            # the current instance. This appears to overwrite the object in the
-            # current session and we lose the meta changes.
-            db().flush()
             is_agent = bool(data.pop('is_agent', None))
             if cls.is_interfaces_configuration_locked(instance, is_agent):
                 logger.debug("Interfaces are locked for update on node %s",

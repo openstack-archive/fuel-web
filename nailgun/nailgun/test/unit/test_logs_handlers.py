@@ -366,6 +366,7 @@ class TestLogs(BaseIntegrationTest):
                                         bufsize=bufsize)),
                     lines
                 )
+        f.close()
 
     def _format_log_entry(self, log_entry):
         return ':'.join(log_entry) + '\n'

@@ -343,29 +343,29 @@ class TestLogs(BaseIntegrationTest):
 
         # Some special cases not caught by the tests above -- test with
         # different from_byte's
-        f = tempfile.TemporaryFile(mode='r+')
-        written = '\n'.join(contents)
-        f.write(written)
+        with tempfile.TemporaryFile(mode='r+') as f:
+            written = '\n'.join(contents)
+            f.write(written)
 
-        for from_byte in range(1, len(written)):
-            lines = written[:from_byte].split('\n')
-            if lines[-1] == '':
-                lines = lines[:-1]
-            append_newline = written[from_byte - 1] == '\n'
-            if append_newline:
-                lines = ['{0}\n'.format(line) for line in lines]
-            else:
-                lines[:-1] = ['{0}\n'.format(line) for line in lines[:-1]]
+            for from_byte in range(1, len(written)):
+                lines = written[:from_byte].split('\n')
+                if lines[-1] == '':
+                    lines = lines[:-1]
+                append_newline = written[from_byte - 1] == '\n'
+                if append_newline:
+                    lines = ['{0}\n'.format(line) for line in lines]
+                else:
+                    lines[:-1] = ['{0}\n'.format(line) for line in lines[:-1]]
 
-            lines = list(reversed(lines))
+                lines = list(reversed(lines))
 
-            for bufsize in range(1, 30):
-                self.assertEqual(
-                    list(read_backwards(f,
-                                        from_byte=from_byte,
-                                        bufsize=bufsize)),
-                    lines
-                )
+                for bufsize in range(1, 30):
+                    self.assertEqual(
+                        list(read_backwards(f,
+                                            from_byte=from_byte,
+                                            bufsize=bufsize)),
+                        lines
+                    )
 
     def _format_log_entry(self, log_entry):
         return ':'.join(log_entry) + '\n'

@@ -45,6 +45,31 @@ class NotificationCollectionHandler(CollectionHandler):
     @handle_errors
     @validate
     @serialize
+    def GET(self):
+        """:returns: Collection of JSONized Notification objects.
+
+        To get only unread notifications, specify unread=1 in request
+        To get only read notifications, specify unread=0 in request
+
+        :http: * 200 (OK)
+               * 406 (requested range not satisfiable)
+        """
+        unread = web.input(unread=None).unread
+        filter_by = None
+        if unread:
+            if unread == 0:
+                filter_by = {'status': 'read'}
+            else:
+                filter_by = {'status': 'unread'}
+        query, rng = self.get_scoped_query_and_range(filter_by=filter_by)
+        if rng:
+            self.set_content_range(rng)
+        q = self.collection.eager(query, self.eager)
+        return self.collection.to_list(q)
+
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: Collection of JSONized Notification objects.
 

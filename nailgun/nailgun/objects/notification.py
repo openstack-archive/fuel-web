@@ -16,17 +16,17 @@
 
 from datetime import datetime
 
-from nailgun.db.sqlalchemy import models
+from sqlalchemy import func
 
+from nailgun import consts
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 from nailgun import errors
 from nailgun.logger import logger
-
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-
-from nailgun.objects import Task
-
 from nailgun.objects.serializers.notification import NotificationSerializer
+from nailgun.objects import Task
 
 
 class Notification(NailgunObject):
@@ -86,6 +86,24 @@ class Notification(NailgunObject):
         notif_dict['time'] = instance.datetime.strftime('%H:%M:%S')
         notif_dict['date'] = instance.datetime.strftime('%d-%m-%Y')
         return notif_dict
+
+    @classmethod
+    def get_statuses_with_count(cls):
+        """Counts notifications statuses in DB
+
+        Calculates number of notifications and adds total count to the
+        result. All notifications statuses described in the
+        consts.NOTIFICATION_STATUSES will be present in the result.
+
+        :return: dict with structure {'total': count, 'unread': count, ...}
+        """
+        result = dict.fromkeys(consts.NOTIFICATION_STATUSES, 0)
+        query = db().query(cls.model.status, func.count(cls.model.status)).\
+            group_by(cls.model.status)
+        for status, num in query.all():
+            result[status] = num
+        result['total'] = sum(result.values())
+        return result
 
 
 class NotificationCollection(NailgunCollection):

@@ -1226,7 +1226,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         self.task_manager.execute(self.env.nodes)
         self.assertRaisesRegexp(
-            errors.DeploymentAlreadyStarted,
+            errors.TaskAlreadyRunning,
             'Cannot perform the actions because there are running tasks',
             self.task_manager.execute,
             self.env.nodes)

@@ -1253,7 +1253,7 @@ class NodeDeletionTaskManager(BaseDeploymentTaskManager):
         try:
             self.check_running_task()
         except errors.TaskAlreadyRunning:
-            raise errors.DeploymentAlreadyStarted(
+            raise errors.TaskAlreadyRunning(
                 'Cannot perform the actions because there are running tasks.'
             )
 

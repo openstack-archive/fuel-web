@@ -85,7 +85,8 @@ class NodeHandler(SingleHandler):
                * 202 (node is successfully scheduled for deletion)
                * 400 (data validation failed)
                * 404 (node not found in db)
-               * 403 (on of the controllers is in error state)
+               * 403 (one of the controllers is in error state or task can't
+                      be started due to already running tasks)
         """
 
         node = self.get_object_or_404(self.single, obj_id)
@@ -93,7 +94,8 @@ class NodeHandler(SingleHandler):
 
         try:
             task = task_manager.execute([node], mclient_remove=False)
-        except errors.ControllerInErrorState as e:
+        except (errors.TaskAlreadyRunning,
+                errors.ControllerInErrorState) as e:
             raise self.http(403, e.message)
 
         self.raise_task(task)
@@ -170,7 +172,8 @@ class NodeCollectionHandler(CollectionHandler):
                * 202 (nodes are successfully scheduled for deletion)
                * 400 (data validation failed)
                * 404 (nodes not found in db)
-               * 403 (on of the controllers is in error state)
+               * 403 (one of the controllers is in error state or task can't
+                      be started due to already running tasks)
         """
         # TODO(pkaminski): web.py does not support parsing of array arguments
         # in the queryset so we specify the input as comma-separated list
@@ -187,7 +190,8 @@ class NodeCollectionHandler(CollectionHandler):
         # NOTE(aroma): ditto as in comments for NodeHandler's PUT method;
         try:
             task = task_manager.execute(nodes, mclient_remove=False)
-        except errors.ControllerInErrorState as e:
+        except (errors.TaskAlreadyRunning,
+                errors.ControllerInErrorState) as e:
             raise self.http(403, e.message)
 
         self.raise_task(task)

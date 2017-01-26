@@ -110,6 +110,8 @@ from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
 from nailgun.api.v1.handlers.node import NodeNICsHandler
 
 from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
+from nailgun.api.v1.handlers.notifications import \
+    NotificationCollectionStatusHandler
 from nailgun.api.v1.handlers.notifications import NotificationHandler
 
 from nailgun.api.v1.handlers.orchestrator import DefaultDeploymentInfo
@@ -399,6 +401,8 @@ urls = (
     NotificationCollectionHandler,
     r'/notifications/(?P<obj_id>\d+)/?$',
     NotificationHandler,
+    r'/notifications/statuses/?$',
+    NotificationCollectionStatusHandler,
 
     r'/dump/(?P<snapshot_name>[A-Za-z0-9-_.]+)$',
     SnapshotDownloadHandler,

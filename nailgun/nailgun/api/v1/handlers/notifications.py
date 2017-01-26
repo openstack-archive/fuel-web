@@ -45,6 +45,25 @@ class NotificationCollectionHandler(CollectionHandler):
     @handle_errors
     @validate
     @serialize
+    def GET(self):
+        """:returns: Collection of JSONized Notification objects.
+
+        :http: * 200 (OK)
+               * 406 (requested range not satisfiable)
+        """
+        unread = None
+        get_unread = web.input(get_unread=None).get_unread
+        if get_unread:
+            unread = {'status': 'unread'}
+        query, rng = self.get_scoped_query_and_range(filter_by=unread)
+        if rng:
+            self.set_content_range(rng)
+        q = self.collection.eager(query, self.eager)
+        return self.collection.to_list(q)
+
+    @handle_errors
+    @validate
+    @serialize
     def PUT(self):
         """:returns: Collection of JSONized Notification objects.
 

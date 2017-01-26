@@ -93,7 +93,8 @@ class NodeHandler(SingleHandler):
 
         try:
             task = task_manager.execute([node], mclient_remove=False)
-        except errors.ControllerInErrorState as e:
+        except (errors.DeletionAlreadyStarted,
+                errors.ControllerInErrorState) as e:
             raise self.http(403, e.message)
 
         self.raise_task(task)
@@ -187,7 +188,8 @@ class NodeCollectionHandler(CollectionHandler):
         # NOTE(aroma): ditto as in comments for NodeHandler's PUT method;
         try:
             task = task_manager.execute(nodes, mclient_remove=False)
-        except errors.ControllerInErrorState as e:
+        except (errors.DeletionAlreadyStarted,
+                errors.ControllerInErrorState) as e:
             raise self.http(403, e.message)
 
         self.raise_task(task)

@@ -88,6 +88,19 @@ class TestNodeDeletion(BaseIntegrationTest):
         node_query = self.db.query(Node).filter_by(cluster_id=self.cluster.id)
         self.assertEquals(node_query.count(), 0)
 
+    def test_delete_nodes_message(self):
+        url = reverse('NodeCollectionHandler')
+        query_str = 'ids={0}'.format(','.join(map(str, self.node_ids)))
+        self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers
+        )
+        resp = self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers, expect_errors=True
+        )
+        self.assertIn('message', resp)
+
     @mock_rpc(pass_mock=True)
     def test_mclient_remove_is_false_on_node_deletion(self, mrpc):
         url = reverse(

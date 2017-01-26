@@ -462,3 +462,66 @@ class TestTransactionSerializer(BaseUnitTest):
             9,
             lcm.TransactionSerializer.calculate_fault_tolerance('-1 ', 10)
         )
+
+
+class TestConcurrencyPolicy(BaseUnitTest):
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings'
+        '.LCM_SERIALIZERS_CONCURRENCY_FACTOR',
+        new=2
+    )
+    def test_concurrency_factor(self):
+        policy = lcm.transaction_serializer.get_concurrency_policy()
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.MultiProcessingConcurrencyPolicy
+        )
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        return_value=1
+    )
+    def test_one_cpu(self, cpu_count):
+        policy = lcm.transaction_serializer.get_concurrency_policy()
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        return_value=0
+    )
+    def test_zero_cpu(self, cpu_count):
+        policy = lcm.transaction_serializer.get_concurrency_policy()
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        side_effect=NotImplementedError
+    )
+    def test_cpu_count_not_implemented(self, cpu_count):
+        policy = lcm.transaction_serializer.get_concurrency_policy()
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    def test_workers_num(self):
+        cpus = 10
+        with mock.patch('nailgun.lcm.transaction_serializer.'
+                        'multiprocessing.cpu_count',
+                        return_value=cpus) as cpu_count:
+            policy = lcm.transaction_serializer.get_concurrency_policy()
+            self.assertIsInstance(
+                policy,
+                lcm.transaction_serializer.MultiProcessingConcurrencyPolicy
+            )
+            self.assertEqual(cpus - 1, policy.workers_num)
+            self.assertTrue(cpu_count.is_called)

@@ -132,7 +132,9 @@ def get_concurrency_policy():
     cpu_num = settings.LCM_SERIALIZERS_CONCURRENCY_FACTOR
     if not cpu_num:
         try:
-            cpu_num = multiprocessing.cpu_count()
+            # On scale we have CPU starvation on serialization
+            # thus we need to save one CPU for handling API calls
+            cpu_num = max(multiprocessing.cpu_count() - 1, 1)
         except NotImplementedError:
             cpu_num = 1
 

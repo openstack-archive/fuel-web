@@ -59,3 +59,28 @@ class NotificationCollectionHandler(CollectionHandler):
             self.collection.single.update(notif, nd)
             notifications_updated.append(notif)
         return self.collection.to_list(notifications_updated)
+
+
+class NotificationStatusesHandler(CollectionHandler):
+
+    collection = objects.NotificationCollection
+    validator = NotificationValidator
+
+    @handle_errors
+    @validate
+    @serialize
+    def GET(self):
+        """:returns: Notifications statuses count
+
+        :http: * 200 (OK)
+        """
+        return self.collection.single.get_statuses_count()
+
+    @handle_errors
+    @validate
+    def POST(self):
+        """Update notification statuses is not allowed
+
+        :http: * 405 (Method not allowed)
+        """
+        raise self.http(405)

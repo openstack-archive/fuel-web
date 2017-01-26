@@ -101,3 +101,41 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(404, resp.status_code)
+
+    def test_notification_statuses(self):
+        resp = self.app.get(
+            reverse(
+                'NotificationStatusesHandler',
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual({}, resp.json_body)
+
+        self.env.create_notification()
+        resp = self.app.get(
+            reverse(
+                'NotificationStatusesHandler',
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual({'unread': 1}, resp.json_body)
+
+        self.env.create_notification(status='read')
+        self.env.create_notification(status='read')
+        resp = self.app.get(
+            reverse(
+                'NotificationStatusesHandler',
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual({'unread': 1, 'read': 2}, resp.json_body)
+
+    def test_notification_statuses_post_not_allowed(self):
+        resp = self.app.post(
+            reverse(
+                'NotificationStatusesHandler',
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(405, resp.status_code)

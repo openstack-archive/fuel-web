@@ -87,6 +87,7 @@ from nailgun.api.v1.handlers.plugin_link import PluginLinkHandler
 
 from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
 from nailgun.api.v1.handlers.notifications import NotificationHandler
+from nailgun.api.v1.handlers.notifications import NotificationStatusesHandler
 
 from nailgun.api.v1.handlers.orchestrator import DefaultDeploymentInfo
 from nailgun.api.v1.handlers.orchestrator import DefaultPostPluginsHooksInfo
@@ -336,6 +337,8 @@ urls = (
     NotificationCollectionHandler,
     r'/notifications/(?P<obj_id>\d+)/?$',
     NotificationHandler,
+    r'/notifications/statuses?$',
+    NotificationStatusesHandler,
 
     r'/dump/(?P<snapshot_name>[A-Za-z0-9-_.]+)$',
     SnapshotDownloadHandler,

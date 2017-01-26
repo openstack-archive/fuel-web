@@ -88,6 +88,44 @@ class TestNodeDeletion(BaseIntegrationTest):
         node_query = self.db.query(Node).filter_by(cluster_id=self.cluster.id)
         self.assertEquals(node_query.count(), 0)
 
+    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    def test_delete_nodes_error_message(self, _):
+        url = reverse('NodeCollectionHandler')
+        query_str = 'ids={0}'.format(','.join(map(str, self.node_ids)))
+        self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers
+        )
+        resp = self.app.delete(
+            '{0}?{1}'.format(url, query_str),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertIn('message', resp.json_body)
+        self.assertEqual(403, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Cannot perform the actions because there are running tasks.'
+        )
+
+    @fake_tasks(fake_rpc=False, mock_rpc=True)
+    def test_delete_node_error_message(self, _):
+        self.app.delete(
+            reverse('NodeHandler', {'obj_id': self.node_ids[0]}),
+            headers=self.default_headers
+        )
+        resp = self.app.delete(
+            reverse('NodeHandler', {'obj_id': self.node_ids[0]}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertIn('message', resp.json_body)
+        self.assertEqual(403, resp.status_code)
+        self.assertEqual(
+            resp.json_body['message'],
+            'Cannot perform the actions because there are running tasks.'
+        )
+
     @mock_rpc(pass_mock=True)
     def test_mclient_remove_is_false_on_node_deletion(self, mrpc):
         url = reverse(

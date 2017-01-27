@@ -16,8 +16,10 @@
 
 import copy
 
+import mock
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
@@ -231,7 +233,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_update_agent_discover(self):
         self.env.create_node(
             api=False,
-            status='provisioning',
+            status=consts.NODE_STATUSES.error,
             meta=self.env.default_metadata()
         )
         node_db = self.env.nodes[0]
@@ -239,18 +241,62 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeAgentHandler'),
             jsonutils.dumps(
                 {'mac': node_db.mac,
-                 'status': 'discover', 'manufacturer': 'new'}
+                 'status': consts.NODE_STATUSES.discover,
+                 'manufacturer': 'new'}
             ),
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 200)
-        resp = self.app.get(
+        self.app.get(
             reverse('NodeCollectionHandler'),
             headers=self.default_headers
         )
         node_db = self.db.query(Node).get(node_db.id)
         self.assertEqual('new', node_db.manufacturer)
-        self.assertEqual('provisioning', node_db.status)
+        self.assertEqual(consts.NODE_STATUSES.error, node_db.status)
+
+    def test_node_in_statuses_not_updated(self):
+        statuses = (consts.NODE_STATUSES.provisioning,
+                    consts.NODE_STATUSES.deploying,
+                    consts.NODE_STATUSES.removing)
+        for status in statuses:
+            self.env.create_node(api=False, status=status)
+        with mock.patch('nailgun.objects.node.Node.update_by_agent') \
+                as updater:
+            for node in self.env.nodes:
+                resp = self.app.put(
+                    reverse('NodeAgentHandler'),
+                    jsonutils.dumps(
+                        {'mac': node.mac,
+                         'status': 'discover', 'manufacturer': 'new'}
+                    ),
+                    headers=self.default_headers
+                )
+                self.assertFalse(updater.called)
+                self.assertEqual(200, resp.status_code)
+
+    def test_node_in_statuses_updated(self):
+        statuses = set(consts.NODE_STATUSES)
+        statuses.remove(consts.NODE_STATUSES.provisioning)
+        statuses.remove(consts.NODE_STATUSES.deploying)
+        statuses.remove(consts.NODE_STATUSES.removing)
+        for status in statuses:
+            self.env.create_node(api=False, status=status)
+        expected_call_count = 0
+        with mock.patch('nailgun.objects.node.Node.update_by_agent') \
+                as updater:
+            for node in self.env.nodes:
+                resp = self.app.put(
+                    reverse('NodeAgentHandler'),
+                    jsonutils.dumps(
+                        {'mac': node.mac,
+                         'status': 'discover', 'manufacturer': 'new'}
+                    ),
+                    headers=self.default_headers
+                )
+                self.assertEqual(200, resp.status_code)
+                expected_call_count += 1
+                self.assertEqual(expected_call_count, updater.call_count)
 
     def test_stopped_node_network_update_restricted_for_agent(self):
         node = self.env.create_node(

@@ -42,10 +42,10 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
-from nailgun.task.manager import NodeDeletionTaskManager
-
 from nailgun.logger import logger
 from nailgun import notifier
+from nailgun.task.manager import NodeDeletionTaskManager
+from nailgun.task.manager import TaskManager
 
 
 class NodeHandler(SingleHandler):
@@ -232,6 +232,11 @@ class NodeAgentHandler(BaseHandler):
             logger.info(msg)
             notifier.notify("discover", msg, node_id=node.id)
         db().flush()
+
+        tm = TaskManager()
+        if tm.check_running_task(task_names=[consts.TASK_NAMES.deploy]):
+            logger.info("Deploy is running, node data update would be skipped")
+            return {"id": node.id}
 
         if 'agent_checksum' in nd and (
             node.agent_checksum == nd['agent_checksum']

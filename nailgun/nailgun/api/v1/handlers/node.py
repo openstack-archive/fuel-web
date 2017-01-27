@@ -233,6 +233,13 @@ class NodeAgentHandler(BaseHandler):
             notifier.notify("discover", msg, node_id=node.id)
         db().flush()
 
+        if objects.Node.get_status(node) in (consts.NODE_STATUSES.deploying,
+                                             consts.NODE_STATUSES.provisioning,
+                                             consts.NODE_STATUSES.removing):
+            logger.info("Node %s data update would be skipped due to current "
+                        "node status: %s", node.id, node.status)
+            return {"id": node.id}
+
         if 'agent_checksum' in nd and (
             node.agent_checksum == nd['agent_checksum']
         ):

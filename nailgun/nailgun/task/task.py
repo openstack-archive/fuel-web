@@ -923,8 +923,9 @@ class DeleteIBPImagesTask(object):
     def execute(cls, cluster, image_data):
         task = Task(name=consts.TASK_NAMES.remove_images, cluster=cluster)
         db().add(task)
+        message = cls.message(task, image_data)
         db().commit()
-        rpc.cast('naily', cls.message(task, image_data))
+        rpc.cast('naily', message)
 
 
 class StopDeploymentTask(object):

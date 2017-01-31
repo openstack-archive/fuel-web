@@ -51,3 +51,20 @@ class NodeSerializer(BasicSerializer):
         data_dict['fqdn'] = Node.get_node_fqdn(instance)
         data_dict['status'] = Node.get_status(instance)
         return data_dict
+
+
+class NodeSerializerForDeployment(BasicSerializer):
+    fields = (
+        'id',
+        'name',
+        'status',
+        'pending_deletion',
+        'pending_addition',
+        'error_type',
+        'roles',
+        'pending_roles',
+        'attributes',
+        'meta',
+        'hostname',
+        'labels'
+    )

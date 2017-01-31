@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun import consts
-from nailgun import objects
-
 from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.api.v1.validators.json_schema import notification
+from nailgun import consts
 from nailgun import errors
+from nailgun import objects
 
 
 class NotificationValidator(BasicValidator):
@@ -90,3 +90,9 @@ class NotificationValidator(BasicValidator):
         without any validations.
         """
         pass
+
+    @classmethod
+    def validate_mark_all(cls, data):
+        parsed = super(NotificationValidator, cls).validate(data)
+        cls.validate_schema(parsed, notification.MARK_ALL_NOTIFICATIONS)
+        return parsed

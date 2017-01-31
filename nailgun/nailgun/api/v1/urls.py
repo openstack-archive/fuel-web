@@ -86,6 +86,8 @@ from nailgun.api.v1.handlers.plugin_link import PluginLinkCollectionHandler
 from nailgun.api.v1.handlers.plugin_link import PluginLinkHandler
 
 from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
+from nailgun.api.v1.handlers.notifications import \
+    NotificationCollectionMarkAllHandler
 from nailgun.api.v1.handlers.notifications import NotificationHandler
 
 from nailgun.api.v1.handlers.orchestrator import DefaultDeploymentInfo
@@ -334,6 +336,8 @@ urls = (
 
     r'/notifications/?$',
     NotificationCollectionHandler,
+    r'/notifications/mark_all/?$',
+    NotificationCollectionMarkAllHandler,
     r'/notifications/(?P<obj_id>\d+)/?$',
     NotificationHandler,
 

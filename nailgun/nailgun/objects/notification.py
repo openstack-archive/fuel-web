@@ -16,17 +16,14 @@
 
 from datetime import datetime
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-
 from nailgun import errors
 from nailgun.logger import logger
-
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-
-from nailgun.objects import Task
-
 from nailgun.objects.serializers.notification import NotificationSerializer
+from nailgun.objects import Task
 
 
 class Notification(NailgunObject):
@@ -91,3 +88,8 @@ class Notification(NailgunObject):
 class NotificationCollection(NailgunCollection):
 
     single = Notification
+
+    @classmethod
+    def update_statuses(cls, status):
+        db().query(cls.single.model).update(
+            {cls.single.model.status: status}, synchronize_session=False)

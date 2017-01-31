@@ -25,7 +25,6 @@ import time
 import yaml
 
 from copy import deepcopy
-from distutils.version import StrictVersion
 from itertools import chain
 from random import choice
 
@@ -348,33 +347,3 @@ def parse_bool(value):
         return False
     raise ValueError('Invalid value: {0}'.format(value))
 
-
-def get_environment_version(version):
-    """Returns environment version based on release version.
-
-    A release version consists of 'OSt' and 'MOS' versions:
-        '2014.1.1-5.0.2'
-
-    so we need to extract 'MOS' version and returns it as result.
-
-    :param: version: release version
-    :returns: an environment version
-    """
-    # unfortunately, Fuel 5.0 didn't have an env version in release_version
-    # so we need to handle that special case
-    if version == '2014.1':
-        version = '5.0'
-    else:
-        try:
-            version = version.split('-')[1]
-        except IndexError:
-            version = ''
-    return version
-
-
-def is_feature_supported(rel_version, support_version):
-    version = get_environment_version(rel_version)
-    try:
-        return StrictVersion(version) >= StrictVersion(support_version)
-    except (AttributeError, ValueError):
-        return False

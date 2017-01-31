@@ -89,3 +89,41 @@ class NotificationCollectionStatsHandler(CollectionHandler):
         :http: * 405 (Method not allowed)
         """
         raise self.http(405)
+
+
+class NotificationCollectionMarkAllHandler(CollectionHandler):
+
+    collection = objects.NotificationCollection
+    validator = NotificationValidator
+
+    @handle_errors
+    @validate
+    def GET(self):
+        """GET method for mark all operation not allowed
+
+        :http: * 405 (Method not allowed)
+        """
+        raise self.http(405)
+
+    @handle_errors
+    @validate
+    def POST(self):
+        """POST method for mark all operation not allowed
+
+        :http: * 405 (Method not allowed)
+        """
+        raise self.http(405)
+
+    @handle_errors
+    @validate
+    @serialize
+    def PUT(self):
+        """Updates status of all notifications
+
+        :http: * 200 (OK)
+               * 400 (Invalid data)
+        """
+        web_data = web.data()
+        data = self.validator.validate_mark_all(web_data)
+        status = data['status']
+        self.collection.update_statuses(status)

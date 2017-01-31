@@ -211,7 +211,7 @@ class AttributesGenerator(object):
         except Exception:
             length = 24
         chars = string.letters + string.digits
-        return u''.join([choice(chars) for _ in xrange(length)])
+        return u''.join([choice(chars) for _ in range(length)])
 
     @classmethod
     def hexstring(cls, arg=None):

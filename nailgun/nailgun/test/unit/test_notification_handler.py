@@ -16,6 +16,7 @@
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
@@ -101,3 +102,39 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(404, resp.status_code)
+
+    def test_notification_status(self):
+        self.env.create_notification(status=consts.NOTIFICATION_STATUSES.read)
+        self.env.create_notification(
+            status=consts.NOTIFICATION_STATUSES.unread)
+        self.env.create_notification(
+            status=consts.NOTIFICATION_STATUSES.unread)
+
+        expected_status = consts.NOTIFICATION_STATUSES.unread
+        resp = self.app.put(
+            reverse('NotificationStatusHandler'),
+            params=jsonutils.dumps({'status': expected_status}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+        # Checking statuses are changed
+        resp = self.app.get(
+            reverse('NotificationCollectionHandler'),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        for notif in resp.json_body:
+            self.assertEqual(expected_status, notif['status'])
+
+    def test_notification_status_not_allowed_methods(self):
+        methods = ('get', 'post', 'delete', 'patch', 'head')
+        url = reverse('NotificationStatusHandler')
+        for m in methods:
+            method = getattr(self.app, m)
+            resp = method(
+                url,
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.assertEqual(405, resp.status_code)

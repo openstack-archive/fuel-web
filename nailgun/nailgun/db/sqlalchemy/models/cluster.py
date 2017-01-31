@@ -127,9 +127,6 @@ class Cluster(Base):
     roles_metadata = Column(MutableDict.as_mutable(JSON),
                             default={},
                             server_default='{}')
-    tags_metadata = Column(MutableDict.as_mutable(JSON),
-                           server_default='{}',
-                           nullable=False)
 
     @property
     def changes(self):

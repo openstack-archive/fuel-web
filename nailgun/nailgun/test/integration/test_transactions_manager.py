@@ -578,7 +578,7 @@ class TestTransactionManager(base.BaseIntegrationTest):
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     @mock.patch('nailgun.transactions.manager.rpc')
-    def test_execute_for_primary_tags(self, rpc_mock):
+    def test_execute_for_primary_roles(self, rpc_mock):
         self.graph.tasks.append(objects.DeploymentGraphTask.create(
             {
                 'id': 'test_task_2',

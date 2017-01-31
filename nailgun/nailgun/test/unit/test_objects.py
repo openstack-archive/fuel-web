@@ -209,7 +209,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(new_cluster.id, node.cluster_id)
         self.assertEqual(new_group.id, node.group_id)
         self.assertEqual([], node.roles)
-        self.assertEqual([], node.primary_tags)
+        self.assertEqual([], node.primary_roles)
         self.assertItemsEqual(roles, node.pending_roles)
         self.assertEqual(node.attributes, cluster.release.node_attributes)
 
@@ -257,7 +257,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(new_cluster.id, node.cluster_id)
         self.assertEqual(new_group.id, node.group_id)
         self.assertEqual([], node.roles)
-        self.assertEqual([], node.primary_tags)
+        self.assertEqual([], node.primary_roles)
         self.assertItemsEqual(roles, node.pending_roles)
         self.assertIsNotNone(node.network_template)
         endpoints = node.network_template['templates']['common']['endpoints']

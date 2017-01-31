@@ -766,12 +766,11 @@ class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):
                 'net_segment_type': consts.NEUTRON_SEGMENT_TYPES.vlan,
             },
             nodes_kwargs=[
-                {'roles': ['controller'], 'primary_tags': ['controller'],
+                {'roles': ['controller'], 'primary_roles': ['controller'],
                  'pending_addition': True}
             ]
         )
 
-        objects.Cluster.set_primary_tags(self.cluster, self.cluster.nodes)
         self.plugin_data = {
             'package_version': '3.0.0',
             'releases': [
@@ -1129,10 +1128,8 @@ class TestRolesSerializationWithPlugins(BaseDeploymentSerializer,
         objects.Cluster.prepare_for_deployment(self.cluster)
 
         serializer = self._get_serializer(self.cluster)
-        with mock.patch('nailgun.objects.node.Node.all_tags',
-                        mock.Mock(return_value=['test_role'])):
-            serialized_data = serializer.serialize(
-                self.cluster, self.cluster.nodes)
+        serialized_data = serializer.serialize(
+            self.cluster, self.cluster.nodes)
         serialized_data = deployment_info_to_legacy(serialized_data)
         self.assertItemsEqual(serialized_data[0]['tasks'], [{
             'parameters': {
@@ -1871,7 +1868,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
     def check_vendor_specific_is_not_set(self, use_net_template=False):
         node = self.env.create_node(
             cluster_id=self.cluster.id,
-            roles=['controller'], primary_tags=['controller']
+            roles=['controller'], primary_roles=['controller']
         )
         objects.Cluster.set_network_template(
             self.cluster,

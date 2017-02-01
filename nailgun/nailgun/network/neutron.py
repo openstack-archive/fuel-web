@@ -567,15 +567,10 @@ class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):
             mtu = utils.get_in(result, 'mtu', 'value', 'value')
             if mtu:
                 result.update({
-                    'mtu': {
-                        'value': {
-                            'value': mtu + consts.SIZE_OF_VLAN_TAG}
-                    }})
+                    'mtu':  mtu + consts.SIZE_OF_VLAN_TAG
+                })
             else:
                 result.update({
-                    'mtu': {
-                        'value': {
-                            'value':
-                                consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG}
-                    }})
+                    'mtu': consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG
+                })
         return result

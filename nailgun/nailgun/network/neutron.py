@@ -573,9 +573,6 @@ class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):
                     }})
             else:
                 result.update({
-                    'mtu': {
-                        'value': {
-                            'value':
-                                consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG}
-                    }})
+                    'mtu': consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG
+                })
         return result

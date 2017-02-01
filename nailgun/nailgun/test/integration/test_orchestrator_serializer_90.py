@@ -210,7 +210,7 @@ class TestDeploymentAttributesSerialization90(
         else:
             self.assertFalse('max_queues' in vendor_specific)
         if nic_driver:
-            self.assertEqual(dpdk_interface['mtu']['value']['value'],
+            self.assertEqual(dpdk_interface['mtu'],
                              consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG)
 
     def test_serialization_with_dpdk(self):

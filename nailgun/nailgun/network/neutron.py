@@ -32,7 +32,6 @@ from nailgun.network.manager import AssignIPs70Mixin
 from nailgun.network.manager import AssignIPsLegacyMixin
 from nailgun.network.manager import NetworkManager
 from nailgun import objects
-from nailgun import utils
 
 from nailgun.orchestrator.neutron_serializers import \
     NeutronNetworkTemplateSerializer70
@@ -564,18 +563,13 @@ class NeutronManager80(AllocateVIPs80Mixin, NeutronManager70):
             # On NIC with i40e driver MTU should be increased manually
             # because driver automatically sets value 4 less
             # LP 1587310
-            mtu = utils.get_in(result, 'mtu', 'value', 'value')
+            mtu = result.get('mtu')
             if mtu:
                 result.update({
-                    'mtu': {
-                        'value': {
-                            'value': mtu + consts.SIZE_OF_VLAN_TAG}
-                    }})
+                    'mtu': mtu + consts.SIZE_OF_VLAN_TAG
+                })
             else:
                 result.update({
-                    'mtu': {
-                        'value': {
-                            'value':
-                                consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG}
-                    }})
+                    'mtu': consts.DEFAULT_MTU + consts.SIZE_OF_VLAN_TAG
+                })
         return result

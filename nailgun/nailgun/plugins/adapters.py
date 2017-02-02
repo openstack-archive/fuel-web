@@ -436,8 +436,6 @@ class PluginAdapterV5(PluginAdapterV4):
 
         "components": "components_metadata",
 
-        "vmware_attributes": "vmware_attributes_metadata",
-
         "os": "operating_system"
     }
 

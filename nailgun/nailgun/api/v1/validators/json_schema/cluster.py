@@ -64,14 +64,7 @@ collection_schema = {
     "type": "object",
     "items": single_schema["properties"]
 }
+<<<<<<< HEAD
 
-vmware_attributes_schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Vmware attributes",
-    "description": "Serialized VmwareAttributes object",
-    "type": "object",
-    "required": ["editable"],
-    "properties": {
-        "editable": {"type": "object"}
-    }
-}
+=======
+>>>>>>> 7134804... remove vmware

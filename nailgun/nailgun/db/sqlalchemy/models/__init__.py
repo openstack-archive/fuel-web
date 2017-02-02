@@ -33,7 +33,6 @@ from nailgun.db.sqlalchemy.models.deployment_graph import \
 from nailgun.db.sqlalchemy.models.cluster import Attributes
 from nailgun.db.sqlalchemy.models.cluster import Cluster
 from nailgun.db.sqlalchemy.models.cluster import ClusterChanges
-from nailgun.db.sqlalchemy.models.cluster import VmwareAttributes
 
 from nailgun.db.sqlalchemy.models.release import Release
 

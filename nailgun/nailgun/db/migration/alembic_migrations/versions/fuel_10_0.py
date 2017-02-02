@@ -20,24 +20,41 @@ Create Date: 2016-04-08 15:20:43.989472
 
 """
 
+
 from alembic import op
+from nailgun.db.sqlalchemy.models import fields
+from nailgun.utils.migration import upgrade_enum
 from oslo_serialization import jsonutils
 import sqlalchemy as sa
-
-from nailgun.db.sqlalchemy.models import fields
 
 
 # revision identifiers, used by Alembic.
 revision = 'c6edea552f1e'
 down_revision = '3763c404ca48'
 
+cluster_changes_old = (
+    'networks',
+    'attributes',
+    'disks',
+    'interfaces',
+    'vmware_attributes'
+)
+cluster_changes_new = (
+    'networks',
+    'attributes',
+    'disks',
+    'interfaces',
+)
+
 
 def upgrade():
     upgrade_plugin_links_constraints()
     upgrade_release_required_component_types()
+    upgrade_remove_vmware()
 
 
 def downgrade():
+    downgrade_remove_vmware()
     downgrade_release_required_component_types()
     downgrade_plugin_links_constraints()
 
@@ -107,3 +124,60 @@ def upgrade_release_required_component_types():
 
 def downgrade_release_required_component_types():
     op.drop_column('releases', 'required_component_types')
+
+
+def upgrade_remove_vmware():
+    connection = op.get_bind()
+    op.drop_constraint(
+        'vmware_attributes_cluster_id_fkey',
+        'vmware_attributes',
+        type_='foreignkey'
+    )
+    op.drop_table('vmware_attributes')
+    op.drop_column('releases', 'vmware_attributes_metadata')
+    delete = sa.sql.text(
+        """DELETE FROM cluster_changes
+        WHERE name = 'vmware_attributes'""")
+    connection.execute(delete)
+    upgrade_enum(
+        "cluster_changes",          # table
+        "name",                     # column
+        "possible_changes",         # ENUM name
+        cluster_changes_old,        # old options
+        cluster_changes_new         # new options
+    )
+
+
+def downgrade_remove_vmware():
+    op.add_column(
+        'releases',
+        sa.Column('vmware_attributes_metadata', fields.JSON(), nullable=True))
+
+    op.create_table(
+        'vmware_attributes',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('cluster_id', sa.Integer()),
+        sa.Column('editable', fields.JSON()),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.PrimaryKeyConstraint('id'))
+
+    upgrade_enum(
+        "cluster_changes",          # table
+        "name",                     # column
+        "possible_changes",         # ENUM name
+        cluster_changes_new,        # new options
+        cluster_changes_old         # old options
+    )
+
+    op.drop_constraint(
+        'vmware_attributes_cluster_id_fkey',
+        'vmware_attributes',
+        type_='foreignkey'
+    )
+
+    op.create_foreign_key(
+        'vmware_attributes_cluster_id_fkey',
+        'vmware_attributes', 'clusters',
+        ['cluster_id'], ['id'],
+        ondelete='CASCADE'
+    )

@@ -25,7 +25,6 @@ import six
 
 from nailgun import errors
 from nailgun.expression import Expression
-from nailgun.utils import camel_to_snake_case
 from nailgun.utils import compact
 from nailgun.utils import flatten
 
@@ -394,86 +393,6 @@ class AttributesRestriction(RestrictionBase):
         if max_items_num is not None and len(attr_value) > max_items_num:
             return ('Value {0} should not have more than {1} '
                     'items'.format(attr_value, max_items_num))
-
-
-class VmwareAttributesRestriction(RestrictionBase):
-
-    @classmethod
-    def check_data(cls, models, metadata, data):
-        """Check cluster vmware attributes data
-
-        :param models: objects which represent models in restrictions
-        :type models: dict
-        :param metadata: vmware attributes metadata object
-        :type metadata: list|dict
-        :param data: vmware attributes data(value) object
-        :type data: list|dict
-        :returns: func -- generator which produces errors
-        """
-        root_key = camel_to_snake_case(cls.__name__)
-
-        def find_errors(metadata=metadata, path_key=root_key):
-            """Generator for vmware attributes errors
-
-            for each attribute in 'metadata' gets relevant values from vmware
-            'value' and checks them with restrictions and regexs
-            """
-            if isinstance(metadata, dict):
-                restr = cls.check_restrictions(
-                    models, metadata.get('restrictions', []))
-                if restr.get('result'):
-                    # TODO(apopovych): handle restriction message?
-                    return
-                else:
-                    for mkey, mvalue in six.iteritems(metadata):
-                        if mkey == 'name':
-                            value_path = path_key.replace(
-                                root_key, '').replace('.fields', '')
-                            values = cls._get_values(value_path, data)
-                            attr_regex = metadata.get('regex', {})
-                            if attr_regex:
-                                pattern = re.compile(attr_regex.get('source'))
-                                for value in values():
-                                    if not pattern.match(value):
-                                        yield attr_regex.get('error')
-                        for err in find_errors(
-                                mvalue, '.'.join([path_key, mkey])):
-                            yield err
-            elif isinstance(metadata, list):
-                for i, item in enumerate(metadata):
-                    current_key = item.get('name') or str(i)
-                    for err in find_errors(
-                            item, '.'.join([path_key, current_key])):
-                        yield err
-
-        return list(find_errors())
-
-    @classmethod
-    def _get_values(cls, path, data):
-        """Generator for all values from data selected by given path
-
-        :param path: path to all releted values
-        :type path: string
-        :param data: vmware attributes value
-        :type data: list|dict
-        """
-        keys = path.split('.')
-        key = keys[-1]
-
-        def find(data=data):
-            if isinstance(data, dict):
-                for k, v in six.iteritems(data):
-                    if k == key:
-                        yield v
-                    elif k in keys:
-                        for result in find(v):
-                            yield result
-            elif isinstance(data, list):
-                for d in data:
-                    for result in find(d):
-                        yield result
-
-        return find
 
 
 class ComponentsRestrictions(object):

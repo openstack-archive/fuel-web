@@ -176,7 +176,6 @@ class Cluster(NailgunObject):
         cls.create_default_group(cluster)
 
         cls.create_attributes(cluster, enabled_editable_attributes)
-        cls.create_vmware_attributes(cluster)
         cls.create_default_extensions(cluster)
 
         # default graph should be created in any case
@@ -184,8 +183,6 @@ class Cluster(NailgunObject):
 
         cls.add_pending_changes(
             cluster, consts.CLUSTER_CHANGES.attributes)
-        cls.add_pending_changes(
-            cluster, consts.CLUSTER_CHANGES.vmware_attributes)
 
         ClusterPlugin.add_compatible_plugins(cluster)
         PluginManager.enable_plugins_by_components(cluster)
@@ -1330,20 +1327,6 @@ class Cluster(NailgunObject):
         return volumes_metadata
 
     @classmethod
-    def create_vmware_attributes(cls, instance):
-        """Store VmwareAttributes instance into DB."""
-        vmware_metadata = instance.release.vmware_attributes_metadata
-        if vmware_metadata:
-            return VmwareAttributes.create(
-                {
-                    "editable": vmware_metadata.get("editable"),
-                    "cluster_id": instance.id
-                }
-            )
-
-        return None
-
-    @classmethod
     def get_create_data(cls, instance):
         """Return common parameters cluster was created with.
 
@@ -1362,52 +1345,6 @@ class Cluster(NailgunObject):
         data.update(cls.get_network_manager(instance).
                     get_network_config_create_data(instance))
         return data
-
-    @classmethod
-    def get_vmware_attributes(cls, instance):
-        """Get VmwareAttributes instance from DB.
-
-        Now we have relation with cluster 1:1.
-        """
-        return db().query(models.VmwareAttributes).filter(
-            models.VmwareAttributes.cluster_id == instance.id
-        ).first()
-
-    @classmethod
-    def get_default_vmware_attributes(cls, instance):
-        """Get metadata from release with empty value section."""
-        editable = instance.release.vmware_attributes_metadata.get("editable")
-        editable = traverse(
-            editable,
-            formatter_context={'cluster': instance, 'settings': settings},
-            keywords={'generator': AttributesGenerator.evaluate}
-        )
-        return editable
-
-    @classmethod
-    def update_vmware_attributes(cls, instance, data):
-        """Update Vmware attributes.
-
-        Actually we allways update only value section in editable.
-        """
-        metadata = instance.vmware_attributes.editable['metadata']
-        value = data.get('editable', {}).get('value')
-        vmware_attr = {
-            'metadata': metadata,
-            'value': value
-        }
-        setattr(instance.vmware_attributes, 'editable', vmware_attr)
-        cls.add_pending_changes(instance, "vmware_attributes")
-        db().flush()
-        vmware_attr.pop('metadata')
-
-        return vmware_attr
-
-    @classmethod
-    def is_vmware_enabled(cls, instance):
-        """Check if current cluster supports vmware configuration."""
-        attributes = cls.get_editable_attributes(instance)
-        return attributes.get('common', {}).get('use_vcenter', {}).get('value')
 
     @staticmethod
     def adjust_nodes_lists_on_controller_removing(instance, nodes_to_delete,
@@ -1708,26 +1645,3 @@ class ClusterCollection(NailgunCollection):
 
     #: Single Cluster object class
     single = Cluster
-
-
-class VmwareAttributes(NailgunObject):
-    model = models.VmwareAttributes
-
-    @staticmethod
-    def get_nova_computes_attrs(attributes):
-        return attributes.get('value', {}).get(
-            'availability_zones', [{}])[0].get('nova_computes', [])
-
-    @classmethod
-    def get_nova_computes_target_nodes(cls, instance):
-        """Get data of targets node for all nova computes.
-
-        :param instance: nailgun.db.sqlalchemy.models.Cluster instance
-        :returns: list of dicts that represents nova compute targets
-        """
-        nova_compute_target_nodes = []
-        for nova_compute in cls.get_nova_computes_attrs(instance.editable):
-            target = nova_compute['target_node']['current']
-            if target['id'] != 'controllers':
-                nova_compute_target_nodes.append(target)
-        return nova_compute_target_nodes

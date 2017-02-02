@@ -22,7 +22,6 @@ from nailgun import consts
 from nailgun.db.sqlalchemy import models
 from nailgun.objects import Cluster
 from nailgun.objects import ReleaseCollection
-from nailgun.objects import VmwareAttributes
 from nailgun.settings import settings
 from nailgun.statistics.fuel_statistics.installation_info \
     import InstallationInfo
@@ -127,29 +126,6 @@ class TestInstallationInfo(BaseTestCase):
         for attrs in variants:
             result = info.get_attributes(attrs, info.attributes_white_list)
             self.assertDictEqual({}, result)
-
-    def test_clusters_info_no_vmware_attributes_exception(self):
-        self.env.upload_fixtures(['openstack'])
-        info = InstallationInfo()
-        release = ReleaseCollection.filter_by(
-            None, operating_system=consts.RELEASE_OS.ubuntu)
-        nodes_params = [
-            {'roles': ['compute']},
-            {'roles': ['compute']},
-            {'roles': ['controller']}
-        ]
-        cluster = self.env.create(
-            cluster_kwargs={
-                'release_id': release[0].id,
-                'mode': consts.CLUSTER_MODES.ha_compact,
-                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron},
-            nodes_kwargs=nodes_params
-        )
-        self.env.create_node(
-            {'status': consts.NODE_STATUSES.discover})
-        VmwareAttributes.delete(cluster.vmware_attributes)
-        self.env.db.flush()
-        self.assertNotRaises(AttributeError, info.get_clusters_info)
 
     def test_clusters_info(self):
         self.env.upload_fixtures(['openstack'])
@@ -433,7 +409,6 @@ class TestInstallationInfo(BaseTestCase):
             ('syslog', 'syslog_server'), ('workloads_collector', 'password'),
             ('workloads_collector', 'tenant'),
             ('workloads_collector', 'user'),
-            ('common', 'use_vcenter'),  # removed attribute
             ('murano_settings', 'murano_repo_url'),
             ('use_fedora_lt', 'kernel'),
             ('public_ssl', 'cert_data'), ('public_ssl', 'hostname'),
@@ -463,25 +438,6 @@ class TestInstallationInfo(BaseTestCase):
         # If test failed here it means, that you have added cluster
         # attributes and they are not added into
         # InstallationInfo.attributes_white_list
-        # If you don't know what should be added into white list, contact
-        # fuel-stats team please.
-        for path in expected_paths:
-            self.assertIn(path, actual_paths)
-
-    def test_all_cluster_vmware_attributes_in_white_list(self):
-        cluster = self.env.create(nodes_kwargs=[{'roles': ['compute']}])
-        self.env.create_node(status=consts.NODE_STATUSES.discover)
-
-        expected_paths = self._find_leafs_paths(
-            cluster.vmware_attributes.editable,
-            leafs_names=('vsphere_cluster', 'enable'))
-
-        # Removing leaf name from expected paths
-        actual_paths = [rule.path[:-1] for rule in
-                        InstallationInfo.vmware_attributes_white_list]
-        # If test failed here it means, that you have added cluster vmware
-        # attributes and they are not added into
-        # InstallationInfo.vmware_attributes_white_list
         # If you don't know what should be added into white list, contact
         # fuel-stats team please.
         for path in expected_paths:
@@ -552,7 +508,6 @@ class TestInstallationInfo(BaseTestCase):
     def test_white_list_unique_names(self):
         white_list_attrs = (
             'attributes_white_list',
-            'vmware_attributes_white_list',
             'plugin_info_white_list',
             'node_info_white_list'
         )

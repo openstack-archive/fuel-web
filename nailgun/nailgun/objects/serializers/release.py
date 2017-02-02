@@ -31,7 +31,6 @@ class ReleaseSerializer(BasicSerializer):
         "tags_metadata",
         "state",
         "attributes_metadata",
-        "vmware_attributes_metadata",
         "components_metadata"
     )
 

@@ -2433,138 +2433,6 @@ class BaseDeploymentSerializer(BaseSerializerTest):
                 self.env.nodes[0], 'role')['user_node_name'],
             self.node_name)
 
-    def check_generate_test_vm_image_data(self):
-        img_name = 'TestVM-VMDK'
-        disk_format = 'vmdk'
-        img_path = '/opt/vm/cirros-i386-disk.vmdk'
-        properties_data = {
-            'vmware_disktype': 'sparse',
-            'vmware_adaptertype': 'lsiLogic',
-            'hypervisor_type': 'vmware'
-        }
-        glance_properties = []
-        for k, v in six.iteritems(properties_data):
-            glance_properties.append('--property {k}={v}'.format(k=k, v=v))
-
-        self.assertEqual(
-            len(self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image']), 2)
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['img_name'],
-            img_name)
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['disk_format'],
-            disk_format)
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['img_path'],
-            img_path)
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['glance_properties'],
-            ' '.join(glance_properties))
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['properties'],
-            properties_data)
-
-    def check_generate_vmware_attributes_data(self):
-        cluster_db = self.db.query(Cluster).get(self.cluster['id'])
-        cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
-        cluster_attrs.get('common', {}).setdefault('use_vcenter', {})
-        cluster_attrs['common']['use_vcenter']['value'] = True
-
-        objects.Cluster.update_attributes(
-            cluster_db, {'editable': cluster_attrs})
-        setattr(
-            cluster_db.vmware_attributes,
-            'editable',
-            self.vm_data[0]['editable'])
-        self.db.flush()
-
-        result = self.serializer.serialize_node(
-            self.env.nodes[0], 'controller'
-        )
-
-        self.assertEqual(len(result['vcenter']['computes']), 4)
-
-        self.assertIn(
-            result['vcenter']['computes'][0]['service_name'],
-            ['Compute 1', 'Compute 3'])
-
-        self.assertIn(
-            result['vcenter']['computes'][1]['service_name'],
-            ['Compute 1', 'Compute 3'])
-
-        # check compute parameters
-        self.assertEqual(
-            result['vcenter']['computes'][0]['availability_zone_name'],
-            "Zone 1")
-        self.assertEqual(
-            result['vcenter']['computes'][0]['vc_host'],
-            "1.2.3.4")
-        self.assertEqual(
-            result['vcenter']['computes'][0]['vc_user'],
-            "admin")
-        self.assertEqual(
-            result['vcenter']['computes'][0]['vc_password'],
-            "secret")
-        self.assertTrue(result['vcenter']['computes'][0]['vc_insecure'])
-        self.assertEqual(
-            result['vcenter']['computes'][0]['vc_ca_file'],
-            "file_blob")
-        self.assertEqual(
-            result['vcenter']['computes'][0]['vc_cluster'],
-            "cluster1")
-
-        # Be sure that "$" was converted to "$$"
-        self.assertEqual(
-            result['vcenter']['computes'][2]['vc_user'],
-            "user$$")
-        self.assertEqual(
-            result['vcenter']['computes'][2]['vc_password'],
-            "pass$$word")
-        self.assertEqual(
-            result['vcenter']['computes'][2]['datastore_regex'],
-            "^openstack-[0-9]$$")
-
-        self.assertTrue(result['use_vcenter'])
-        self.assertEqual(result['vcenter']['esxi_vlan_interface'], "eth0")
-
-        # check cinder parameters
-        self.assertEqual(len(result['cinder']['instances']), 2)
-        self.assertEqual(
-            result['cinder']['instances'][0]['availability_zone_name'],
-            "Zone 1")
-        self.assertEqual(
-            result['cinder']['instances'][0]['vc_host'],
-            "1.2.3.4")
-        self.assertEqual(
-            result['cinder']['instances'][0]['vc_user'],
-            "admin")
-        self.assertEqual(
-            result['cinder']['instances'][0]['vc_password'],
-            "secret")
-        self.assertTrue(result['cinder']['instances'][0]['vc_insecure'])
-        self.assertEqual(
-            result['cinder']['instances'][0]['vc_ca_file'],
-            "file_blob")
-
-        self.assertEqual(result['glance']['vc_host'], "1.2.3.4")
-        self.assertEqual(result['glance']['vc_user'], "admin")
-        self.assertEqual(result['glance']['vc_password'], "secret")
-        self.assertEqual(result['glance']['vc_datacenter'], "test_datacenter")
-        self.assertEqual(result['glance']['vc_datastore'], "test_datastore")
-        self.assertTrue(result['glance']['vc_insecure'])
-        self.assertEqual(result['glance']['vc_ca_file'], "file_blob")
-
     def check_no_murano_data(self):
         glance_properties = self.serializer.generate_test_vm_image_data(
             self.env.nodes[0])['test_vm_image']['glance_properties']
@@ -2616,16 +2484,12 @@ class TestDeploymentMultinodeSerializer61(BaseDeploymentSerializer):
         self.cluster = self.create_env(consts.CLUSTER_MODES.multinode)
         objects.Cluster.prepare_for_deployment(self.env.clusters[-1])
         self.serializer = DeploymentMultinodeSerializer61(self.cluster)
-        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def test_serialize_node(self):
         self.check_serialize_node()
 
     def test_serialize_node_for_node_list(self):
         self.check_serialize_node_for_node_list()
-
-    def test_generate_vmware_attributes_data(self):
-        self.check_generate_vmware_attributes_data()
 
     def test_glance_properties(self):
         self.check_no_murano_data()
@@ -2685,34 +2549,15 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
         self.cluster = self.create_env(consts.CLUSTER_MODES.ha_compact)
         objects.Cluster.prepare_for_deployment(self.env.clusters[-1])
         self.serializer = DeploymentHASerializer61(self.cluster)
-        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def check_generate_test_vm_image_data(self):
         kvm_img_name = 'TestVM'
         kvm_img_disk_format = 'qcow2'
         kvm_img_path = '/opt/vm/cirros-x86_64-disk.img'
-        vmdk_img_name = 'TestVM-VMDK'
-        vmdk_disk_format = 'vmdk'
-        vmdk_img_path = '/opt/vm/cirros-i386-disk.vmdk'
 
         self.assertEqual(
             len(self.serializer.generate_test_vm_image_data(
                 self.env.nodes[0])['test_vm_image']), 2)
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['img_name'],
-            vmdk_img_name)
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['disk_format'],
-            vmdk_disk_format)
-
-        self.assertEqual(
-            self.serializer.generate_test_vm_image_data(
-                self.env.nodes[0])['test_vm_image'][0]['img_path'],
-            vmdk_img_path)
 
         self.assertEqual(
             self.serializer.generate_test_vm_image_data(
@@ -2734,19 +2579,6 @@ class TestDeploymentHASerializer61(BaseDeploymentSerializer):
 
     def test_serialize_node_for_node_list(self):
         self.check_serialize_node_for_node_list()
-
-    def test_generate_test_vm_image_data(self):
-        cluster_db = self.db.query(Cluster).get(self.cluster['id'])
-        cluster_attrs = objects.Cluster.get_editable_attributes(cluster_db)
-        cluster_attrs['common'].setdefault('use_vcenter', {})
-        cluster_attrs['common']['use_vcenter']['value'] = True
-
-        objects.Cluster.update_attributes(
-            cluster_db, {'editable': cluster_attrs})
-        self.check_generate_test_vm_image_data()
-
-    def test_generate_vmware_attributes_data(self):
-        self.check_generate_vmware_attributes_data()
 
     def test_glance_properties(self):
         self.check_no_murano_data()

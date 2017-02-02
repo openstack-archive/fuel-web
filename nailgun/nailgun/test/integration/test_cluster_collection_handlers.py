@@ -149,7 +149,6 @@ class TestHandlers(BaseIntegrationTest):
                 }
             }
         }
-        release.vmware_attributes_metadata = {}
         self.db.add(release)
         self.db.commit()
         resp = self.app.post(

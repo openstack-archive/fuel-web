@@ -33,8 +33,6 @@ from nailgun.utils.resolvers import NameMatchingPolicy
 from nailgun.utils.resolvers import TagResolver
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
-from nailgun.orchestrator.base_serializers import \
-    VmwareDeploymentSerializerMixin
 from nailgun.orchestrator.provisioning_serializers import \
     ProvisionLCMSerializer
 
@@ -266,18 +264,6 @@ class DeploymentMultinodeSerializer(object):
 
         properties_data = {}
 
-        # Alternate VMWare specific values.
-        if c_attrs['editable']['common']['libvirt_type']['value'] == 'vcenter':
-            image_data.update({
-                'disk_format': 'vmdk',
-                'img_path': '{0}cirros-i386-disk.vmdk'.format(img_dir),
-            })
-            properties_data = {
-                'vmware_disktype': 'sparse',
-                'vmware_adaptertype': 'lsiLogic',
-                'hypervisor_type': 'vmware'
-            }
-
         # NOTE(aschultz): properties was added as part of N and should be
         # used infavor of glance_properties
         image_data['glance_properties'] = self.generate_properties_arguments(
@@ -426,8 +412,7 @@ class DeploymentHASerializer60(DeploymentHASerializer50):
         neutron_serializers.NeutronNetworkDeploymentSerializer60
 
 
-class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
-                                      VmwareDeploymentSerializerMixin):
+class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
 
     nova_network_serializer = \
         nova_serializers.NovaNetworkDeploymentSerializer61
@@ -438,7 +423,6 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
         base = super(DeploymentMultinodeSerializer61, self)
         serialized_node = base.serialize_node(node, role)
         serialized_node['user_node_name'] = node.name
-        serialized_node.update(self.generate_vmware_data(node))
 
         return serialized_node
 
@@ -451,8 +435,7 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
         return serialized_node
 
 
-class DeploymentHASerializer61(DeploymentHASerializer,
-                               VmwareDeploymentSerializerMixin):
+class DeploymentHASerializer61(DeploymentHASerializer):
 
     nova_network_serializer = \
         nova_serializers.NovaNetworkDeploymentSerializer61
@@ -463,7 +446,6 @@ class DeploymentHASerializer61(DeploymentHASerializer,
         base = super(DeploymentHASerializer61, self)
         serialized_node = base.serialize_node(node, role)
         serialized_node['user_node_name'] = node.name
-        serialized_node.update(self.generate_vmware_data(node))
 
         return serialized_node
 
@@ -474,49 +456,6 @@ class DeploymentHASerializer61(DeploymentHASerializer,
             cls).serialize_node_for_node_list(node, role)
         serialized_node['user_node_name'] = node.name
         return serialized_node
-
-    # Alternate VMWare specific values.
-    # FiXME(who): srogov
-    # This a temporary workaround to keep existing functioanality
-    # after fully implementation of the multi HV support and astute part
-    # for multiple images support, it is need to change
-    # dict image_data['test_vm_image'] to list of dicts
-    def generate_test_vm_image_data(self, node):
-        attrs = node.cluster.attributes
-        image_data = super(
-            DeploymentHASerializer61,
-            self).generate_test_vm_image_data(node)
-
-        images_data = {}
-        images_data['test_vm_image'] = []
-        if attrs.get('editable', {}).get('common', {}). \
-           get('use_vcenter', {}).get('value') is True:
-            image_vmdk_data = deepcopy(image_data['test_vm_image'])
-            img_path = image_vmdk_data['img_path']. \
-                replace('x86_64-disk.img', 'i386-disk.vmdk')
-            image_vmdk_data.update({
-                'img_name': 'TestVM-VMDK',
-                'disk_format': 'vmdk',
-                'img_path': img_path,
-            })
-            properties_data = {
-                'vmware_disktype': 'sparse',
-                'vmware_adaptertype': 'lsiLogic',
-                'hypervisor_type': 'vmware'
-            }
-            glance_properties = self.generate_properties_arguments(
-                properties_data)
-
-            # NOTE(aschultz): properties was added as part of N and should be
-            # used infavor of glance_properties
-            image_vmdk_data['glance_properties'] = glance_properties
-            image_vmdk_data['properties'] = properties_data
-            images_data['test_vm_image'].append(image_vmdk_data)
-            images_data['test_vm_image'].append(image_data['test_vm_image'])
-        else:
-            images_data = image_data
-
-        return images_data
 
 
 class DeploymentHASerializer70(DeploymentHASerializer61):

@@ -19,13 +19,11 @@ import yaml
 
 from nailgun import errors
 from nailgun import objects
-from nailgun.settings import settings
 from nailgun.test import base
 from nailgun.utils.restrictions import AttributesRestriction
 from nailgun.utils.restrictions import ComponentsRestrictions
 from nailgun.utils.restrictions import LimitsMixin
 from nailgun.utils.restrictions import RestrictionBase
-from nailgun.utils.restrictions import VmwareAttributesRestriction
 
 
 DATA = """
@@ -334,148 +332,6 @@ class TestAttributesRestriction(base.BaseTestCase):
 
         errs = AttributesRestriction.check_data(models, attributes)
         self.assertListEqual(errs, [])
-
-
-class TestVmwareAttributesRestriction(base.BaseTestCase):
-
-    def setUp(self):
-        super(TestVmwareAttributesRestriction, self).setUp()
-        self.cluster = self.env.create(
-            cluster_kwargs={
-                'api': False
-            }
-        )
-        self.vm_data = self.env.read_fixtures(['vmware_attributes'])[0]
-
-    def _get_models(self, attributes, vmware_attributes):
-        return {
-            'settings': attributes,
-            'default': vmware_attributes['editable'],
-            'current_vcenter': vmware_attributes['editable']['value'].get(
-                'availability_zones')[0],
-            'glance': vmware_attributes['editable']['value'].get('glance'),
-            'cluster': self.cluster,
-            'version': settings.VERSION,
-            'networking_parameters': self.cluster.network_config
-        }
-
-    def test_check_data_with_empty_values_without_restrictions(self):
-        attributes = objects.Cluster.get_editable_attributes(self.cluster)
-        attributes['common']['use_vcenter']['value'] = True
-        attributes['storage']['images_vcenter']['value'] = True
-        vmware_attributes = self.vm_data.copy()
-        empty_values = {
-            "availability_zones": [
-                {
-                    "az_name": "",
-                    "vcenter_host": "",
-                    "vcenter_username": "",
-                    "vcenter_password": "",
-                    "vcenter_security_disabled": "",
-                    "vcenter_ca_file": {},
-                    "nova_computes": [
-                        {
-                            "vsphere_cluster": "",
-                            "service_name": "",
-                            "datastore_regex": ""
-                        }
-                    ]
-                }
-            ],
-            "network": {
-                "esxi_vlan_interface": ""
-            },
-            "glance": {
-                "vcenter_host": "",
-                "vcenter_username": "",
-                "vcenter_password": "",
-                "datacenter": "",
-                "datastore": "",
-                "vcenter_security_disabled": "",
-                "ca_file": {}
-            }
-        }
-        # Update value with empty value
-        vmware_attributes['editable']['value'] = empty_values
-        models = self._get_models(attributes, vmware_attributes)
-
-        errs = VmwareAttributesRestriction.check_data(
-            models=models,
-            metadata=vmware_attributes['editable']['metadata'],
-            data=vmware_attributes['editable']['value'])
-        self.assertItemsEqual(
-            errs,
-            ['Empty cluster', 'Empty host', 'Empty username',
-             'Empty password', 'Empty datacenter', 'Empty datastore'])
-
-    def test_check_data_with_invalid_values_without_restrictions(self):
-        # Disable restrictions
-        attributes = objects.Cluster.get_editable_attributes(self.cluster)
-        attributes['common']['use_vcenter']['value'] = True
-        attributes['storage']['images_vcenter']['value'] = True
-        # value data taken from fixture one cluster of
-        # nova computes left empty
-        vmware_attributes = self.vm_data.copy()
-        models = self._get_models(attributes, vmware_attributes)
-
-        errs = VmwareAttributesRestriction.check_data(
-            models=models,
-            metadata=vmware_attributes['editable']['metadata'],
-            data=vmware_attributes['editable']['value'])
-        self.assertItemsEqual(errs, ['Empty cluster'])
-
-    def test_check_data_with_invalid_values_and_with_restrictions(self):
-        attributes = objects.Cluster.get_editable_attributes(self.cluster)
-        # fixture have restrictions enabled for glance that's why
-        # only 'Empty cluster' should returned
-        vmware_attributes = self.vm_data.copy()
-        models = self._get_models(attributes, vmware_attributes)
-
-        errs = VmwareAttributesRestriction.check_data(
-            models=models,
-            metadata=vmware_attributes['editable']['metadata'],
-            data=vmware_attributes['editable']['value'])
-        self.assertItemsEqual(errs, ['Empty cluster'])
-
-    def test_check_data_with_valid_values_and_with_restrictions(self):
-        attributes = objects.Cluster.get_editable_attributes(self.cluster)
-        vmware_attributes = self.vm_data.copy()
-        # Set valid data for clusters
-        for i, azone in enumerate(
-                vmware_attributes['editable']['value']['availability_zones']):
-            for j, ncompute in enumerate(azone['nova_computes']):
-                ncompute['vsphere_cluster'] = 'cluster-{0}-{1}'.format(i, j)
-
-        models = self._get_models(attributes, vmware_attributes)
-
-        errs = VmwareAttributesRestriction.check_data(
-            models=models,
-            metadata=vmware_attributes['editable']['metadata'],
-            data=vmware_attributes['editable']['value'])
-        self.assertItemsEqual(errs, [])
-
-    def test_check_data_with_valid_values_and_without_restrictions(self):
-        # Disable restrictions
-        attributes = objects.Cluster.get_editable_attributes(self.cluster)
-        attributes['common']['use_vcenter']['value'] = True
-        attributes['storage']['images_vcenter']['value'] = True
-        vmware_attributes = self.vm_data.copy()
-        # Set valid data for clusters
-        for i, azone in enumerate(
-                vmware_attributes['editable']['value']['availability_zones']):
-            for j, ncompute in enumerate(azone['nova_computes']):
-                ncompute['vsphere_cluster'] = 'cluster-{0}-{1}'.format(i, j)
-        # Set valid data for glance
-        glance = vmware_attributes['editable']['value']['glance']
-        glance['datacenter'] = 'test_datacenter'
-        glance['datastore'] = 'test_datastore'
-        models = self._get_models(attributes, vmware_attributes)
-
-        errs = VmwareAttributesRestriction.check_data(
-            models=models,
-            metadata=vmware_attributes['editable']['metadata'],
-            data=vmware_attributes['editable']['value'])
-        self.assertItemsEqual(errs, [])
 
 
 class TestComponentsRestrictions(base.BaseTestCase):

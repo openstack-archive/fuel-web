@@ -38,7 +38,6 @@ from nailgun.api.v1.validators.cluster import ClusterAttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterChangesValidator
 from nailgun.api.v1.validators.cluster import ClusterStopDeploymentValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
-from nailgun.api.v1.validators.cluster import VmwareAttributesValidator
 
 from nailgun.api.v1.validators.extension import ExtensionValidator
 from nailgun import errors
@@ -435,120 +434,6 @@ class ClusterOwnDeploymentTasksHandler(BaseHandler):
         return tasks
 
 
-class VmwareAttributesHandler(BaseHandler):
-    """Vmware attributes handler"""
-
-    fields = (
-        "editable",
-    )
-
-    validator = VmwareAttributesValidator
-
-    @handle_errors
-    @validate
-    @serialize
-    def GET(self, cluster_id):
-        """:returns: JSONized Cluster vmware attributes.
-
-        :http: * 200 (OK)
-               * 400 (cluster doesn't accept vmware configuration)
-               * 404 (cluster not found in db |
-                      cluster has no vmware attributes)
-        """
-        cluster = self.get_object_or_404(
-            objects.Cluster, cluster_id,
-            log_404=(
-                "error",
-                "There is no cluster "
-                "with id '{0}' in DB.".format(cluster_id)
-            )
-        )
-        if not objects.Cluster.is_vmware_enabled(cluster):
-            raise self.http(400, "Cluster doesn't support vmware "
-                                 "configuration")
-
-        attributes = objects.Cluster.get_vmware_attributes(cluster)
-        if not attributes:
-            raise self.http(404, "No vmware attributes found")
-
-        return self.render(attributes)
-
-    @handle_errors
-    @validate
-    @serialize
-    def PUT(self, cluster_id):
-        """:returns: JSONized Cluster vmware attributes.
-
-        :http: * 200 (OK)
-               * 400 (wrong attributes data specified |
-                      cluster doesn't accept vmware configuration)
-               * 403 (attributes can't be changed)
-               * 404 (cluster not found in db |
-                      cluster has no vmware attributes)
-        """
-        cluster = self.get_object_or_404(
-            objects.Cluster, cluster_id,
-            log_404=(
-                "error",
-                "There is no cluster "
-                "with id '{0}' in DB.".format(cluster_id)
-            )
-        )
-        if not objects.Cluster.is_vmware_enabled(cluster):
-            raise self.http(400, "Cluster doesn't support vmware "
-                                 "configuration")
-
-        attributes = objects.Cluster.get_vmware_attributes(cluster)
-        if not attributes:
-            raise self.http(404, "No vmware attributes found")
-
-        if cluster.is_locked and \
-                not objects.Cluster.has_compute_vmware_changes(cluster):
-            raise self.http(403, "Environment attributes can't be changed "
-                                 "after or during deployment.")
-
-        data = self.checked_data(instance=attributes)
-        attributes = objects.Cluster.update_vmware_attributes(cluster, data)
-
-        return {"editable": attributes}
-
-
-class VmwareAttributesDefaultsHandler(BaseHandler):
-    """Vmware default attributes handler"""
-
-    @handle_errors
-    @validate
-    @serialize
-    def GET(self, cluster_id):
-        """:returns: JSONized default Cluster vmware attributes.
-
-        :http: * 200 (OK)
-               * 400 (cluster doesn't accept vmware configuration)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(
-            objects.Cluster, cluster_id,
-            log_404=(
-                "error",
-                "There is no cluster "
-                "with id '{0}' in DB.".format(cluster_id)
-            )
-        )
-        if not objects.Cluster.is_vmware_enabled(cluster):
-            raise self.http(400, "Cluster doesn't support vmware "
-                                 "configuration")
-
-        attributes = objects.Cluster.get_default_vmware_attributes(cluster)
-
-        return {"editable": attributes}
-
-
-class ClusterDeploymentGraphHandler(RelatedDeploymentGraphHandler):
-    """Cluster Handler for deployment graph configuration."""
-
-    related = objects.Cluster
-
-
 class ClusterDeploymentGraphCollectionHandler(
         RelatedDeploymentGraphCollectionHandler):
     """Cluster Handler for deployment graphs configuration."""
@@ -618,3 +503,9 @@ class ClusterExtensionsHandler(BaseHandler):
 
         remove_extensions_from_object(cluster, data)
         raise self.http(204)
+
+
+class ClusterDeploymentGraphHandler(RelatedDeploymentGraphHandler):
+    """Cluster Handler for deployment graph configuration."""
+
+    related = objects.Cluster

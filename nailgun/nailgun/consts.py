@@ -313,8 +313,7 @@ CLUSTER_CHANGES = Enum(
     'networks',
     'attributes',
     'disks',
-    'interfaces',
-    'vmware_attributes'
+    'interfaces'
 )
 
 PROVISION_METHODS = Enum(

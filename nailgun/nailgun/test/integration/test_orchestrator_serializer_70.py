@@ -266,7 +266,6 @@ class BaseTestDeploymentAttributesSerialization70(BaseDeploymentSerializer,
             self.cluster_db, self.cluster_db.nodes)
         self.serialized_for_astute = deployment_info_to_legacy(
             self.serialized_for_astute)
-        self.vm_data = self.env.read_fixtures(['vmware_attributes'])
 
     def create_env(self, mode):
         release = self.patch_net_roles_for_release()
@@ -507,20 +506,6 @@ class TestDeploymentAttributesSerialization70(
                 self.assertEqual(v['network_roles'], dict(network_roles))
             self.check_vips_serialized(node_data)
 
-    def test_generate_vmware_attributes_data(self):
-        self.check_generate_vmware_attributes_data()
-
-        result = self.serializer.serialize_node(
-            self.env.nodes[0], 'compute-vmware'
-        )
-
-        self.assertEqual(
-            result['vcenter']['computes'][0]['target_node'],
-            "test_target_node")
-        self.assertEqual(
-            result['vcenter']['computes'][2]['target_node'],
-            "controllers")
-
 
 class TestDeploymentAttributesSerializationSegmentationGre70(
     TestDeploymentAttributesSerialization70
@@ -669,20 +654,6 @@ class TestDeploymentSerializationForNovaNetwork70(
                     network_roles
                 )
             self.check_vips_serialized(node_data)
-
-    def test_generate_vmware_attributes_data(self):
-        self.check_generate_vmware_attributes_data()
-
-        result = self.serializer.serialize_node(
-            self.env.nodes[0], 'compute-vmware'
-        )
-
-        self.assertEqual(
-            result['vcenter']['computes'][0]['target_node'],
-            "test_target_node")
-        self.assertEqual(
-            result['vcenter']['computes'][2]['target_node'],
-            "controllers")
 
 
 class TestPluginDeploymentTasksInjection70(base.BaseIntegrationTest):

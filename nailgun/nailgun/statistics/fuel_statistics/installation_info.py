@@ -168,17 +168,6 @@ class InstallationInfo(object):
                       'brute_force_protection', bool),
     )
 
-    vmware_attributes_white_list = (
-        # ((path, to, property), 'map_to_name', transform_function)
-        WhiteListRule(('value', 'availability_zones', 'cinder', 'enable'),
-                      'vmware_az_cinder_enable', None),
-        # We add 'vsphere_cluster' into path for enter into nested list.
-        # Private value of 'vsphere_cluster' is not collected, we only
-        # computes length of the nested list
-        WhiteListRule(('value', 'availability_zones', 'nova_computes',
-                       'vsphere_cluster'), 'vmware_az_nova_computes_num', len),
-    )
-
     plugin_info_white_list = (
         # ((path, to, property), 'map_to_name', transform_function)
         WhiteListRule(('id',), 'id', None),
@@ -278,9 +267,6 @@ class InstallationInfo(object):
             release = cluster.release
             nodes_num = NodeCollection.filter_by(
                 None, cluster_id=cluster.id).count()
-            vmware_attributes_editable = None
-            if cluster.vmware_attributes:
-                vmware_attributes_editable = cluster.vmware_attributes.editable
             cluster_info = {
                 'id': cluster.id,
                 'nodes_num': nodes_num,
@@ -297,10 +283,6 @@ class InstallationInfo(object):
                 'attributes': self.get_attributes(
                     Cluster.get_editable_attributes(cluster),
                     self.attributes_white_list
-                ),
-                'vmware_attributes': self.get_attributes(
-                    vmware_attributes_editable,
-                    self.vmware_attributes_white_list
                 ),
                 'plugin_links': self.get_plugin_links(
                     cluster.plugin_links),

@@ -55,8 +55,7 @@ JSON_TASKS = [
         'type': 'puppet',
         'version': '2.0.0',
         'groups': ['primary-controller', 'controller', 'compute',
-                   'compute-vmware', 'cinder', 'cinder-vmware',
-                   'primary-mongo', 'mongo', 'ceph-osd', 'virt'],
+                   'cinder', 'primary-mongo', 'mongo', 'ceph-osd', 'virt'],
         'requires': ['firewall'],
         'condition': "(settings:public_ssl.horizon.value == true or settings:"
                      "public_ssl.services.value == true) and settings:"
@@ -124,8 +123,7 @@ EXPECTED_TASKS = [
         'type': 'puppet',
         'version': '2.0.0',
         'groups': ['primary-controller', 'controller', 'compute',
-                   'compute-vmware', 'cinder', 'cinder-vmware',
-                   'primary-mongo', 'mongo', 'ceph-osd', 'virt'],
+                   'cinder', 'primary-mongo', 'mongo', 'ceph-osd', 'virt'],
         'requires': ['firewall'],
         'condition': "(settings:public_ssl.horizon.value == true or "
                      "settings:public_ssl.services.value == true) "

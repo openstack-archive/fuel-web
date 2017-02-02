@@ -44,8 +44,6 @@ from nailgun.api.v1.handlers.cluster import \
     ClusterReleaseDeploymentTasksHandler
 from nailgun.api.v1.handlers.cluster import ClusterResetHandler
 from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
-from nailgun.api.v1.handlers.cluster import VmwareAttributesDefaultsHandler
-from nailgun.api.v1.handlers.cluster import VmwareAttributesHandler
 from nailgun.api.v1.handlers.component import ComponentCollectionHandler
 
 from nailgun.api.v1.handlers.cluster_plugin_link \
@@ -266,11 +264,6 @@ urls = (
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
-
-    r'/clusters/(?P<cluster_id>\d+)/vmware_attributes/?$',
-    VmwareAttributesHandler,
-    r'/clusters/(?P<cluster_id>\d+)/vmware_attributes/defaults/?$',
-    VmwareAttributesDefaultsHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/plugin_links/?$',
     ClusterPluginLinkCollectionHandler,

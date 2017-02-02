@@ -59,8 +59,6 @@ class Release(Base):
         MutableDict.as_mutable(JSON), server_default='{}', nullable=False)
     network_roles_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
-    vmware_attributes_metadata = Column(
-        MutableDict.as_mutable(JSON), default={})
     components_metadata = Column(
         MutableList.as_mutable(JSON), default=[], server_default='[]')
     required_component_types = Column(MutableList.as_mutable(JSON), default=[],

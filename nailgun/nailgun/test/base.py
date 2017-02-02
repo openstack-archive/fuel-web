@@ -331,7 +331,6 @@ class EnvironmentManager(object):
             'name': 'cluster-api-' + str(randint(0, 1000000)),
         }
         editable_attributes = kwargs.pop('editable_attributes', None)
-        vmware_attributes = kwargs.pop('vmware_attributes', None)
 
         if kwargs:
             cluster_data.update(kwargs)
@@ -364,8 +363,7 @@ class EnvironmentManager(object):
         if editable_attributes:
             Cluster.patch_attributes(cluster_db,
                                      {'editable': editable_attributes})
-        if vmware_attributes:
-            Cluster.update_vmware_attributes(cluster_db, vmware_attributes)
+
         return cluster_db
 
     def create_node(
@@ -1069,10 +1067,6 @@ class EnvironmentManager(object):
 
         default_components[0].update(kwargs)
         return default_components
-
-    def get_default_vmware_attributes_metadata(self):
-        return self.read_fixtures(
-            ['openstack'])[0]['fields']['vmware_attributes_metadata']
 
     def upload_fixtures(self, fxtr_names):
         for fxtr_path in self.fxtr_paths_by_names(fxtr_names):

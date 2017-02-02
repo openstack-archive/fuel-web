@@ -34,7 +34,6 @@ from nailgun.objects.release import ReleaseCollection
 from nailgun.objects.cluster import Attributes
 from nailgun.objects.cluster import Cluster
 from nailgun.objects.cluster import ClusterCollection
-from nailgun.objects.cluster import VmwareAttributes
 
 from nailgun.objects.task import Task
 from nailgun.objects.task import TaskCollection

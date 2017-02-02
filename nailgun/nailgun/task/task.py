@@ -57,7 +57,6 @@ from nailgun.task.helpers import TaskHelper
 from nailgun.task.legacy_tasks_adapter import adapt_legacy_tasks
 from nailgun.utils import logs as logs_utils
 from nailgun.utils.resolvers import TagResolver
-from nailgun.utils.restrictions import VmwareAttributesRestriction
 
 
 def make_astute_message(task, method, respond_to, args):
@@ -1521,7 +1520,6 @@ class CheckBeforeDeploymentTask(object):
         cls._check_nodes_roles(task)
         cls._check_ceph(task)
         cls._check_public_network(task)
-        cls._check_vmware_consistency(task)
         cls._validate_network_template(task)
 
         # TODO(asvechnikov): Make an appropriate versioning of tasks
@@ -1659,101 +1657,6 @@ class CheckBeforeDeploymentTask(object):
                     task.cluster, 'mongo')) == 0):
 
                     raise errors.MongoNodesCheckError
-
-    @classmethod
-    def _check_vmware_consistency(cls, task):
-        """Checks vmware attributes consistency and proper values."""
-        attributes = objects.Cluster.get_editable_attributes(task.cluster)
-        vmware_attributes = task.cluster.vmware_attributes
-        # Old(< 6.1) clusters haven't vmware support
-        if vmware_attributes:
-            cinder_nodes = [node for node in task.cluster.nodes if
-                            'cinder' in node.all_roles]
-
-            if not cinder_nodes:
-                logger.info('There is no any node with "cinder" role provided')
-
-            compute_vmware_nodes = [node for node in task.cluster.nodes if
-                                    'compute-vmware' in node.all_roles]
-            if compute_vmware_nodes:
-                cls._check_vmware_nova_computes(compute_vmware_nodes,
-                                                vmware_attributes)
-
-            models = {
-                'settings': attributes,
-                'default': vmware_attributes.editable,
-                'cluster': task.cluster,
-                'current_vcenter': vmware_attributes.editable['value'].get(
-                    'availability_zones')[0],
-                'glance': vmware_attributes.editable['value'].get('glance'),
-                'version': settings.VERSION,
-                'networking_parameters': task.cluster.network_config
-            }
-
-            errors_msg = VmwareAttributesRestriction.check_data(
-                models=models,
-                metadata=vmware_attributes.editable['metadata'],
-                data=vmware_attributes.editable['value'])
-
-            if errors_msg:
-                raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
-
-    @classmethod
-    def _check_vmware_nova_computes(cls, compute_vmware_nodes, attributes):
-        """Check that nova computes settings is correct for cluster nodes
-
-        :param compute_vmware_nodes: all node with role compute-vmware that
-                                     belongs to cluster
-        :type compute_vmware_nodes: list of nailgun.db.sqlalchemy.models.Node
-                                    instances
-        :param attributes: cluster vmware_attributes
-        :type attributes: nailgun.db.sqlalchemy.models.VmwareAttributes
-        :raises: errors.CheckBeforeDeploymentError
-        """
-        compute_nodes_targets = \
-            objects.VmwareAttributes.get_nova_computes_target_nodes(attributes)
-        compute_nodes_hostnames = set([t['id'] for t in compute_nodes_targets])
-
-        errors_msg = []
-        cluster_nodes_hostname = set()
-        not_deleted_nodes_from_computes = set()
-        not_assigned_nodes_to_computes = set()
-        for node in compute_vmware_nodes:
-            node_hostname = node.hostname
-            if node.pending_deletion:
-                if node_hostname in compute_nodes_hostnames:
-                    not_deleted_nodes_from_computes.add(node.name)
-            elif node_hostname not in compute_nodes_hostnames:
-                not_assigned_nodes_to_computes.add(node.name)
-
-            cluster_nodes_hostname.add(node_hostname)
-
-        if not_assigned_nodes_to_computes:
-            errors_msg.append(
-                "The following compute-vmware nodes are not assigned to "
-                "any vCenter cluster: {0}".format(
-                    ', '.join(sorted(not_assigned_nodes_to_computes))
-                )
-            )
-        if not_deleted_nodes_from_computes:
-            errors_msg.append(
-                "The following nodes are prepared for deletion and "
-                "couldn't be assigned to any vCenter cluster: {0}".format(
-                    ', '.join(sorted(not_deleted_nodes_from_computes))
-                ),
-            )
-
-        alien_nodes_names = [t['label'] for t in compute_nodes_targets if
-                             t['id'] not in cluster_nodes_hostname]
-        if alien_nodes_names:
-            errors_msg.append(
-                "The following nodes don't belong to compute-vmware nodes of "
-                "environment and couldn't be assigned to any vSphere cluster: "
-                "{0}".format(', '.join(sorted(alien_nodes_names)))
-            )
-
-        if errors_msg:
-            raise errors.CheckBeforeDeploymentError('\n'.join(errors_msg))
 
     @classmethod
     def _validate_network_template(cls, task):

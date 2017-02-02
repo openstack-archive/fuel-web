@@ -33,8 +33,6 @@ from nailgun.utils.resolvers import NameMatchingPolicy
 from nailgun.utils.resolvers import TagResolver
 
 from nailgun.orchestrator.base_serializers import MuranoMetadataSerializerMixin
-from nailgun.orchestrator.base_serializers import \
-    VmwareDeploymentSerializerMixin
 from nailgun.orchestrator.provisioning_serializers import \
     ProvisionLCMSerializer
 
@@ -426,8 +424,7 @@ class DeploymentHASerializer60(DeploymentHASerializer50):
         neutron_serializers.NeutronNetworkDeploymentSerializer60
 
 
-class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
-                                      VmwareDeploymentSerializerMixin):
+class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer):
 
     nova_network_serializer = \
         nova_serializers.NovaNetworkDeploymentSerializer61
@@ -438,7 +435,6 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
         base = super(DeploymentMultinodeSerializer61, self)
         serialized_node = base.serialize_node(node, role)
         serialized_node['user_node_name'] = node.name
-        serialized_node.update(self.generate_vmware_data(node))
 
         return serialized_node
 
@@ -451,8 +447,7 @@ class DeploymentMultinodeSerializer61(DeploymentMultinodeSerializer,
         return serialized_node
 
 
-class DeploymentHASerializer61(DeploymentHASerializer,
-                               VmwareDeploymentSerializerMixin):
+class DeploymentHASerializer61(DeploymentHASerializer):
 
     nova_network_serializer = \
         nova_serializers.NovaNetworkDeploymentSerializer61
@@ -463,7 +458,6 @@ class DeploymentHASerializer61(DeploymentHASerializer,
         base = super(DeploymentHASerializer61, self)
         serialized_node = base.serialize_node(node, role)
         serialized_node['user_node_name'] = node.name
-        serialized_node.update(self.generate_vmware_data(node))
 
         return serialized_node
 

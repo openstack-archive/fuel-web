@@ -9,7 +9,7 @@ anyjson>=0.3.3
 decorator>=3.4.0
 fysom>=1.0.11
 iso8601>=0.1.9
-jsonschema>=2.3.0,<3.0.0,!=2.5.0
+jsonschema>=2.3.0,<2.6.0,!=2.5.0
 kombu>=3.0.16
 netaddr>=0.7.12,!=0.7.16
 oslo.config>=2.3.0

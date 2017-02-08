@@ -109,3 +109,8 @@ class Notification(NailgunObject):
 class NotificationCollection(NailgunCollection):
 
     single = Notification
+
+    @classmethod
+    def update_statuses(cls, status):
+        db().query(cls.single.model).update(
+            {cls.single.model.status: status}, synchronize_session=False)

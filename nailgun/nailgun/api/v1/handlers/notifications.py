@@ -19,15 +19,14 @@ Handlers dealing with notifications
 """
 import web
 
+from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
-from nailgun.api.v1.handlers.base import SingleHandler
-
-from nailgun import objects
-
 from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import serialize
+from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.validators.notification import NotificationValidator
+from nailgun import objects
 
 
 class NotificationHandler(SingleHandler):
@@ -89,3 +88,22 @@ class NotificationCollectionStatsHandler(CollectionHandler):
         :http: * 405 (Method not allowed)
         """
         raise self.http(405)
+
+
+class NotificationStatusHandler(BaseHandler):
+
+    validator = NotificationValidator
+
+    @handle_errors
+    @validate
+    @serialize
+    def PUT(self):
+        """Updates status of all notifications
+
+        :http: * 200 (OK)
+               * 400 (Invalid data)
+        """
+        web_data = web.data()
+        data = self.validator.validate_change_status(web_data)
+        status = data['status']
+        objects.NotificationCollection.update_statuses(status)

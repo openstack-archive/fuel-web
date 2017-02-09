@@ -2202,7 +2202,6 @@
         modes:
           label: "Offloading Modes"
           weight: 20
-          description: "Offloading modes"
           type: "offloading_modes"
           value: {}
       mtu:

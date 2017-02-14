@@ -14,13 +14,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from distutils.version import StrictVersion
+import datetime
 import multiprocessing
+import os
+from Queue import Queue
+import shutil
+import tempfile
 
+import distributed
+from distutils.version import StrictVersion
 import six
+import toolz
 
 from nailgun import consts
 from nailgun import errors
+from nailgun.lcm.task_serializer import Context
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -128,7 +136,308 @@ class MultiProcessingConcurrencyPolicy(object):
             pool.join()
 
 
-def get_concurrency_policy():
+def _distributed_serialize_tasks_for_node(formatter_contexts_idx,
+                                          node_and_tasks, scattered_data):
+    """Remote serialization call for DistributedProcessingPolicy
+
+    Code of the function is copied to the workers and executed there, thus
+    we are including all required imports inside the function.
+
+    :param formatter_contexts_idx: dict of formatter contexts with node_id
+    value as key
+    :param node_and_tasks: list of node_id, task_data tuples
+    :param scattered_data: feature object, that points to data copied to
+    workers
+    :return: [(node_id, serialized), error]
+    """
+
+    try:
+        factory = TasksSerializersFactory(scattered_data['context'])
+
+        # Restoring settings
+        settings.config = scattered_data['settings_config']
+        for k in formatter_contexts_idx:
+            formatter_contexts_idx[k]['SETTINGS'] = settings
+
+    except Exception as e:
+        logger.exception("Distributed serialization failed")
+        return [((None, None), e)]
+
+    result = []
+
+    for node_and_task in node_and_tasks:
+
+        node_id = None
+        try:
+            node_id, task = node_and_task
+
+            logger.debug("Starting distributed node %s task %s serialization",
+                         node_id, task['id'])
+
+            formatter_context = formatter_contexts_idx[node_id]
+
+            serializer = factory.create_serializer(task)
+            serialized = serializer.serialize(
+                node_id, formatter_context=formatter_context)
+
+            logger.debug("Distributed node %s task %s serialization "
+                         "result: %s", node_id, task['id'], serialized)
+
+            result.append(((node_id, serialized), None))
+        except Exception as e:
+            logger.exception("Distributed serialization failed")
+            result.append(((node_id, None), e))
+            break
+
+    logger.debug("Processed tasks count: %s", len(result))
+    return result
+
+
+class DistributedProcessingPolicy(object):
+
+    def __init__(self):
+        self.sent_jobs = Queue()
+        self.sent_jobs_count = 0
+
+    def _consume_jobs(self, chunk_size=None):
+        """Consumes jobs
+
+        If chunk_size is set function consumes specified number of
+        Finished tasks or less if sent_jobs_ids queue became empty.
+        If chunk_size is None function consumes jobs until
+        sent_jobs_ids queue became empty.
+        Jobs with statuses Cancelled, Abandoned, Terminated will be
+        resent and their ids added to sent_jobs_ids queue
+
+        :param chunk_size: size of consuming chunk
+        :return: generator on job results
+        """
+        logger.debug("Consuming jobs started")
+
+        jobs_to_consume = []
+        while not self.sent_jobs.empty():
+            job = self.sent_jobs.get()
+            jobs_to_consume.append(job)
+
+            if chunk_size is not None:
+                chunk_size -= 1
+                if chunk_size <= 0:
+                    break
+
+        for ready_job in distributed.as_completed(jobs_to_consume):
+            results = ready_job.result()
+            self.sent_jobs_count -= 1
+
+            for result in results:
+                (node_id, serialized), exc = result
+                logger.debug("Got ready task for node %s, serialized: %s, "
+                             "error: %s", node_id, serialized, exc)
+                if exc is not None:
+                    raise exc
+                yield node_id, serialized
+
+        logger.debug("Consuming jobs finished")
+
+    def _get_formatter_context(self, task_context, formatter_contexts_idx,
+                               node_id):
+        try:
+            return formatter_contexts_idx[node_id]
+        except KeyError:
+            pass
+
+        logger.debug("Calculating formatter context for node %s", node_id)
+        formatter_context = task_context.get_formatter_context(
+            node_id)
+        # Settings file is already sent to the workers
+        formatter_context.pop('SETTINGS', None)
+        formatter_contexts_idx[node_id] = formatter_context
+
+        return formatter_context
+
+    def _upload_nailgun_code(self, job_cluster):
+        """Creates zip of current nailgun code and uploads it to workers
+
+        TODO(akislitsky): add workers scope when it will be implemented
+        in the distributed library
+
+        :param job_cluster: distributed.Client
+        """
+        logger.debug("Compressing nailgun code")
+        file_dir = os.path.dirname(__file__)
+        nailgun_root_dir = os.path.realpath(os.path.join(file_dir, '..', '..'))
+        archive = os.path.join(tempfile.gettempdir(), 'nailgun')
+        result = shutil.make_archive(archive, 'zip', nailgun_root_dir,
+                                     'nailgun')
+        logger.debug("Nailgun code saved to: %s", result)
+
+        logger.debug("Uploading nailgun archive %s to workers", result)
+        job_cluster.upload_file(result)
+
+    def _scatter_data(self, job_cluster, context, workers):
+        logger.debug("Scattering data to workers started")
+        shared_data = {'context': context, 'settings_config': settings.config}
+        scattered = job_cluster.scatter(shared_data, broadcast=True,
+                                        workers=workers)
+        # Waiting data is scattered to workers
+        distributed.wait(scattered.values())
+        logger.debug("Scattering data to workers finished")
+
+        return scattered
+
+    def _get_allowed_nodes_statuses(self, context):
+        """Extracts node statuses that allows distributed serialization"""
+        common = context.new.get('common', {})
+        cluster = common.get('cluster', {})
+        logger.debug("Getting allowed nodes statuses to use as serialization "
+                     "workers for cluster %s", cluster.get('id'))
+        check_fields = {
+            'ds_use_ready': consts.NODE_STATUSES.ready,
+            'ds_use_provisioned': consts.NODE_STATUSES.provisioned,
+            'ds_use_discover': consts.NODE_STATUSES.discover,
+            'ds_use_error': consts.NODE_STATUSES.error
+        }
+        statuses = set()
+        for field, node_status in check_fields.items():
+            if common.get(field):
+                statuses.add(node_status)
+
+        logger.debug("Allowed nodes statuses to use as serialization workers "
+                     "for cluster %s are: %s", cluster.get('id'), statuses)
+        return statuses
+
+    def _get_allowed_nodes_ips(self, context):
+        """Filters online nodes from cluster by their status
+
+        In the cluster settings we select nodes statuses allowed for
+        using in the distributed serialization. Accordingly to selected
+        statuses nodes are going to be filtered.
+
+        :param context: TransactionContext
+        :return: set of allowed nodes ips
+        """
+        ips = set()
+        allowed_statuses = self._get_allowed_nodes_statuses(context)
+        for node in six.itervalues(context.new.get('nodes', {})):
+            if node.get('status') in allowed_statuses:
+                ips.add(node.get('ip'))
+        ips.add(settings.MASTER_IP)
+        return ips
+
+    def _get_allowed_workers(self, job_cluster, allowed_ips):
+        """Calculates workers addresses for distributed serialization
+
+        Only workers that placed on the allowed nodes must be selected
+        for the serialization.
+
+        :param job_cluster: distributed.Client
+        :param allowed_ips: allowed for serialization nodes ips
+        :return: list of workers addresses in format 'ip:port'
+        """
+        logger.debug("Getting allowed workers")
+        workers = {}
+
+        # Worker has address like tcp://ip:port
+        info = job_cluster.scheduler_info()
+        for worker_addr in six.iterkeys(info['workers']):
+            ip_port = worker_addr.split('//')[1]
+            ip = ip_port.split(':')[0]
+            if ip not in allowed_ips:
+                continue
+            try:
+                pool = workers[ip]
+                pool.add(ip_port)
+            except KeyError:
+                workers[ip] = set([ip_port])
+
+        return list(toolz.itertoolz.concat(six.itervalues(workers)))
+
+    def execute(self, context, _, tasks):
+        """Executes task serialization on distributed nodes
+
+        :param context: the transaction context
+        :param _: serializers factory
+        :param tasks: the tasks to serialize
+        :return sequence of serialized tasks
+        """
+        logger.debug("Performing distributed tasks processing")
+        sched_address = '{0}:{1}'.format(settings.MASTER_IP,
+                                         settings.LCM_DS_JOB_SHEDULER_PORT)
+        job_cluster = distributed.Client(sched_address)
+
+        allowed_ips = self._get_allowed_nodes_ips(context)
+        workers = self._get_allowed_workers(job_cluster, allowed_ips)
+        logger.debug("Allowed workers list for serialization: %s", workers)
+        workers_ips = set([ip_port.split(':')[0] for ip_port in workers])
+        logger.debug("Allowed workers ips list for serialization: %s",
+                     workers_ips)
+
+        task_context = Context(context)
+        formatter_contexts_idx = {}
+        workers_num = len(workers)
+        max_jobs_in_queue = workers_num * settings.LCM_DS_NODE_LOAD_COEFF
+        logger.debug("Max jobs allowed in queue: %s", max_jobs_in_queue)
+
+        start = datetime.datetime.utcnow()
+        tasks_count = 0
+
+        try:
+            self._upload_nailgun_code(job_cluster)
+            scattered = self._scatter_data(job_cluster, context, workers)
+
+            for tasks_chunk in toolz.partition_all(
+                    settings.LCM_DS_TASKS_PER_JOB, tasks):
+
+                formatter_contexts_for_tasks = {}
+
+                # Collecting required contexts for tasks
+                for task in tasks_chunk:
+                    node_id, task_data = task
+                    formatter_context = self._get_formatter_context(
+                        task_context, formatter_contexts_idx, node_id)
+                    if node_id not in formatter_contexts_for_tasks:
+                        formatter_contexts_for_tasks[node_id] = \
+                            formatter_context
+
+                logger.debug("Submitting job for tasks chunk: %s", tasks_chunk)
+                job = job_cluster.submit(
+                    _distributed_serialize_tasks_for_node,
+                    formatter_contexts_for_tasks,
+                    tasks_chunk,
+                    scattered,
+                    workers=workers_ips
+                )
+
+                self.sent_jobs.put(job)
+                self.sent_jobs_count += 1
+
+                # We are limit the max number of tasks by the number of nodes
+                # which are used in the serialization
+                if self.sent_jobs_count >= max_jobs_in_queue:
+                    for result in self._consume_jobs(chunk_size=workers_num):
+                        tasks_count += 1
+                        yield result
+
+            # We have no tasks any more but have unconsumed jobs
+            for result in self._consume_jobs():
+                tasks_count += 1
+                yield result
+        finally:
+            end = datetime.datetime.utcnow()
+            logger.debug("Distributed tasks processing finished. "
+                         "Total time: %s. Tasks processed: %s",
+                         end - start, tasks_count)
+            job_cluster.shutdown()
+
+
+def is_distributed_processing_enabled(context):
+    common = context.new.get('common', {})
+    return common.get('serialization_policy') == \
+        consts.SERIALIZATION_POLICY.distributed
+
+
+def get_processing_policy(context):
+    if is_distributed_processing_enabled(context):
+        return DistributedProcessingPolicy()
     cpu_num = settings.LCM_SERIALIZERS_CONCURRENCY_FACTOR
     if not cpu_num:
         try:
@@ -162,7 +471,7 @@ class TransactionSerializer(object):
         # ids of nodes in this group and how many nodes in this group can fail
         # and deployment will not be interrupted
         self.fault_tolerance_groups = []
-        self.concurrency_policy = get_concurrency_policy()
+        self.processing_policy = get_processing_policy(context)
 
     @classmethod
     def serialize(cls, context, tasks, resolver):
@@ -216,7 +525,7 @@ class TransactionSerializer(object):
         :param tasks: the deployment tasks
         :return the mapping tasks per node
         """
-        serialized = self.concurrency_policy.execute(
+        serialized = self.processing_policy.execute(
             self.context,
             self.serializer_factory_class,
             self.expand_tasks(tasks)

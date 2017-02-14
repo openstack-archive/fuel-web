@@ -1151,6 +1151,19 @@
             group: "security"
             weight: 20
             type: "radio"
+          serialization_policy:
+            value: "default"
+            values:
+              - data: "default"
+                label: "Default serialization"
+                description: "Run serialization on master node only"
+              - data: "distributed"
+                label: "Distributed serialization"
+                description: "Run serialization on master node, cluster nodes and bootstrap nodes"
+            label: "Serialization policy"
+            group: "general"
+            weight: 30
+            type: "radio"
         public_network_assignment:
           metadata:
             weight: 10
@@ -2433,6 +2446,7 @@
               curl
               daemonize
               debconf-utils
+              fuel-nailgun
               gdisk
               grub-pc
               hwloc
@@ -2453,6 +2467,7 @@
               openssh-server
               puppet
               python-amqp
+              python-dispy
               ruby-augeas
               ruby-ipaddress
               ruby-json

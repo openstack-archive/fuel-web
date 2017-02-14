@@ -14,15 +14,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 from distutils.version import StrictVersion
 import multiprocessing
+from Queue import Queue
+import threading
 
+import dispy
 import six
 
 from nailgun import consts
 from nailgun import errors
 from nailgun.lcm.task_serializer import TasksSerializersFactory
+from nailgun.lcm import TransactionContext
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.settings import settings
 from nailgun.utils.resolvers import NameMatchingPolicy
 
@@ -128,7 +134,171 @@ class MultiProcessingConcurrencyPolicy(object):
             pool.join()
 
 
-def get_concurrency_policy():
+def _rpc_serialize_task_for_node(context, node_id_task):
+    try:
+        from nailgun.lcm.task_serializer import TasksSerializersFactory
+        from nailgun.logger import logger
+        logger.debug("RPC task serialization initiated")
+        node_id, task = node_id_task
+        logger.debug("RPC task for node_id: %s task: %s", node_id, task)
+        logger.debug("RPC task factory creating")
+        factory = TasksSerializersFactory(context)
+        logger.debug("RPC task serializer creation")
+        task_serializer = factory.create_serializer(task)
+        logger.debug("RPC task serialization initiated")
+        serialized = task_serializer.serialize(node_id)
+        logger.debug("RPC serialized task: %s", serialized)
+        return node_id, serialized, None
+    except Exception as e:
+        logger.exception("RPC task serialization failed: %s", e)
+        return node_id, None, e
+
+
+class DistributedProcessingPolicy(object):
+
+    def __init__(self, transaction):
+        self.lower_bound = settings.LCM_DS_JOBS_LOWER_BOUND
+        self.upper_bound = settings.LCM_DS_JOBS_UPPER_BOUND
+        # Use Condition variable to protect access to pending_jobs,
+        # as '_job_callback' is executed in another thread
+        self.jobs_cond = threading.Condition()
+        self.pending_jobs = {}
+        self.ready_jobs = Queue()
+        self.transaction = transaction
+
+    def _job_callback(self, job):
+        logger.debug("Callback for job '%s' called. Job has status '%s'",
+                     job.id, job.status)
+        if job.status in (dispy.DispyJob.Finished, dispy.DispyJob.Terminated,
+                          dispy.DispyJob.Cancelled, dispy.DispyJob.Abandoned):
+            # 'pending_jobs' is shared between two threads, so access it with
+            # 'jobs_cond' (see below)
+            self.jobs_cond.acquire()
+            if job.id:  # job may have finished before 'main' assigned id
+                done = self.pending_jobs.pop(job.id, None)
+                if done:
+                    logger.debug("Callback for job '%s' done with %s. "
+                                 "Pending jobs count: %s", job.id, job.result,
+                                 len(self.pending_jobs))
+                    logger.debug("Adding result of job '%s' to the "
+                                 "ready_jobs queue. Job result: %s",
+                                 job.id, job.result)
+                    self.ready_jobs.put(job.result)
+                else:
+                    logger.warning("Callback for job '%s' called when job "
+                                   "is already removed from pending. "
+                                   "Pending jobs count: %s",
+                                   job.id, len(self.pending_jobs))
+
+                if len(self.pending_jobs) <= self.lower_bound:
+                    self.jobs_cond.notify()
+            self.jobs_cond.release()
+
+    def _create_job_cluster(self):
+        now = datetime.datetime.utcnow()
+        recover_file = settings.LCM_DS_RECOVER_FILE_TPL.format(
+            now.strftime('%Y%m%d%H%M%S%f')
+        )
+
+        # Adding cluster nodes to the JobCluster nodes
+        nodes = settings.LCM_DS_NODES
+        for node in self.transaction.cluster.nodes:
+            logger.debug("Adding slave node %s to the job cluster", node.ip)
+            nodes.append(node.ip)
+
+        # Adding bootstrap nodes to the JobCluster nodes
+        bootstrap = objects.NodeCollection.filter_by(None, cluster_id=None)
+        for node in bootstrap:
+            logger.debug("Adding bootstrap node %s to the job cluster",
+                         node.ip)
+            nodes.append(node.ip)
+
+        nodes = settings.LCM_DS_NODES
+
+        return dispy.JobCluster(
+            _rpc_serialize_task_for_node,
+            callback=self._job_callback,
+            loglevel=logger.level,
+            pulse_interval=settings.LCM_DS_JOB_PULSE,
+            ping_interval=settings.LCM_DS_NODE_PING,
+            reentrant=True,
+            nodes=nodes,
+            port=settings.LCM_DS_JOB_CLUSTER_PORT,
+            depends=[TransactionContext],
+            recover_file=recover_file)
+
+    def _get_ready_jobs(self):
+        while not self.ready_jobs.empty():
+            node_id, serialized, exc = self.ready_jobs.get()
+            logger.debug("Got ready job on node %s, serialized: %s, error: %s",
+                         node_id, serialized, exc)
+            self.ready_jobs.task_done()
+            if exc is not None:
+                raise exc
+            yield node_id, serialized
+
+    def execute(self, context, _, tasks):
+        """Executes task serialization on distributed nodes
+
+        :param context: the transaction context
+        :param _: the serializers factory
+        :param tasks: the tasks to serialize
+        :return sequence of serialized tasks
+        """
+        logger.debug("Performing distributed tasks processing")
+        job_cluster = self._create_job_cluster()
+
+        for task in tasks:
+            node_id, task_data = task
+            task_id = task_data['id']
+            try:
+                logger.debug("Creating job for task: '%s'", task_id)
+                job = job_cluster.submit(context, task)
+                self.jobs_cond.acquire()
+                job.id = task_id
+                # there is a chance the job may have finished and job_callback
+                # called by this time, so put it in 'pending_jobs' only if job
+                # is pending
+                if job.status in (dispy.DispyJob.Created,
+                                  dispy.DispyJob.Running):
+                    self.pending_jobs[task_id] = job
+                    logger.debug("Job '%s' submitted. Pending jobs count: %s",
+                                 job.id, len(self.pending_jobs))
+
+                    if len(self.pending_jobs) >= self.upper_bound:
+                        while len(self.pending_jobs) > self.lower_bound:
+                            self.jobs_cond.wait()
+
+                    for ready_job in self._get_ready_jobs():
+                        yield ready_job
+
+                self.jobs_cond.release()
+
+            except Exception as e:
+                logger.exception("Task processing failed: %s", task_data['id'])
+                raise errors.DeploymentException(e)
+
+        logger.debug("Distributed tasks processing finished")
+        job_cluster.wait()
+        job_cluster.print_status()
+        job_cluster.close()
+        logger.debug("Job cluster destroyed")
+
+        for ready_job in self._get_ready_jobs():
+            yield ready_job
+
+
+def is_distributed_processing_enabled(transaction):
+    if settings.LCM_DS_ENABLED:
+        return True
+    attrs = objects.Cluster.get_editable_attributes(transaction.cluster)
+    policy = attrs.get('common', {}).get('serialization_policy', {})
+    return policy.get('value') == consts.SERIALIZATION_POLICY.distributed
+
+
+def get_concurrency_policy(transaction):
+    if is_distributed_processing_enabled(transaction):
+        return DistributedProcessingPolicy(transaction)
     cpu_num = settings.LCM_SERIALIZERS_CONCURRENCY_FACTOR
     if not cpu_num:
         try:
@@ -153,7 +323,7 @@ class TransactionSerializer(object):
         consts.ORCHESTRATOR_TASK_TYPES.skipped
     )
 
-    def __init__(self, context, resolver):
+    def __init__(self, transaction, context, resolver):
         self.resolver = resolver
         self.context = context
         self.tasks_graph = {}
@@ -162,18 +332,19 @@ class TransactionSerializer(object):
         # ids of nodes in this group and how many nodes in this group can fail
         # and deployment will not be interrupted
         self.fault_tolerance_groups = []
-        self.concurrency_policy = get_concurrency_policy()
+        self.concurrency_policy = get_concurrency_policy(transaction)
 
     @classmethod
-    def serialize(cls, context, tasks, resolver):
+    def serialize(cls, transaction, context, tasks, resolver):
         """Resolves roles and dependencies for tasks.
 
+        :param transaction: transaction
         :param context: the deployment context
         :param tasks: the deployment tasks
         :param resolver: the nodes tag resolver
         :return: the list of serialized task per node
         """
-        serializer = cls(context, resolver)
+        serializer = cls(transaction, context, resolver)
         serializer.process_tasks(tasks)
         serializer.resolve_dependencies()
         tasks_graph = serializer.tasks_graph

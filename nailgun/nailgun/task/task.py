@@ -568,6 +568,7 @@ class ClusterTransaction(DeploymentTask):
             tasks = adapt_legacy_tasks(tasks, plugin_tasks, resolver)
 
         directory, graph, metadata = lcm.TransactionSerializer.serialize(
+            transaction,
             context,
             tasks,
             resolver,

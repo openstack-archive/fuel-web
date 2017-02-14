@@ -14,20 +14,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import exceptions
 import mock
 import multiprocessing.dummy
 
 from nailgun import consts
 from nailgun import errors
 from nailgun import lcm
+from nailgun import objects
+from nailgun.settings import settings
+from nailgun.test.base import BaseTestCase
 from nailgun.utils.resolvers import TagResolver
 
-from nailgun.test.base import BaseUnitTest
 
-
-class TestTransactionSerializer(BaseUnitTest):
+class TestTransactionSerializer(BaseTestCase):
     @classmethod
     def setUpClass(cls):
+        super(TestTransactionSerializer, cls).setUpClass()
         cls.tasks = [
             {
                 'id': 'task1', 'roles': ['controller'],
@@ -112,9 +115,15 @@ class TestTransactionSerializer(BaseUnitTest):
             m_objects.Node.all_tags = lambda x: x.roles
             cls.resolver = TagResolver(cls.nodes)
 
+    def setUp(self):
+        super(TestTransactionSerializer, self).setUp()
+        self.cluster = self.env.create_cluster(api=False)
+        self.transaction = objects.Transaction.create(
+            {'cluster_id': self.cluster.id})
+
     def test_serialize_integration(self):
         serialized = lcm.TransactionSerializer.serialize(
-            self.context, self.tasks, self.resolver
+            self.transaction, self.context, self.tasks, self.resolver
         )[1]
         # controller
         self.datadiff(
@@ -191,7 +200,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_resolve_nodes(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         self.assertEqual(
             [None],
@@ -219,7 +228,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_dependencies_de_duplication(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         serializer.tasks_graph = {
             None: {},
@@ -277,7 +286,7 @@ class TestTransactionSerializer(BaseUnitTest):
             'tasks': ['task4', 'task2']
         })
         serialized = lcm.TransactionSerializer.serialize(
-            self.context, tasks, self.resolver
+            self.transaction, self.context, tasks, self.resolver
         )
         tasks_per_node = serialized[1]
         self.datadiff(
@@ -326,7 +335,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_expand_dependencies(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         serializer.tasks_graph = {
             '1': {'task1': {}},
@@ -342,7 +351,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_expand_cross_dependencies(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         serializer.tasks_graph = {
             '1': {'task1': {}, 'task2': {}},
@@ -380,7 +389,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_need_update_task(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         self.assertTrue(serializer.need_update_task(
             {}, {"id": "task1", "type": "puppet"}
@@ -461,4 +470,379 @@ class TestTransactionSerializer(BaseUnitTest):
         self.assertEqual(
             9,
             lcm.TransactionSerializer.calculate_fault_tolerance('-1 ', 10)
+        )
+
+    def _enable_distributed_serialization(self):
+        attrs = objects.Cluster.get_editable_attributes(self.cluster)
+        attr_policy = attrs['common']['serialization_policy']
+        attr_policy['value'] = consts.SERIALIZATION_POLICY.distributed
+        objects.Cluster.update_attributes(self.cluster, {'editable': attrs})
+
+    @mock.patch('nailgun.lcm.transaction_serializer.distributed.wait')
+    @mock.patch('nailgun.lcm.transaction_serializer.distributed.as_completed')
+    def test_distributed_serialization(self, _, as_completed):
+        self._enable_distributed_serialization()
+
+        with mock.patch(
+                'nailgun.lcm.transaction_serializer.distributed.Client'
+        ) as job_cluster:
+            job = mock.Mock()
+            job.result.return_value = [
+                (('1', {"id": "task1", "type": "skipped"}), None)
+            ]
+
+            submit = mock.Mock()
+            submit.return_value = job
+
+            as_completed.return_value = [job]
+
+            job_cluster.return_value.submit = submit
+            job_cluster.return_value.scheduler_info.return_value = \
+                {'workers': {'tcp://worker': {}}}
+
+            lcm.TransactionSerializer.serialize(
+                self.transaction, self.context,
+                self.tasks, self.resolver)
+            self.assertTrue(submit.called)
+            # 4 controller task + 1 compute + 1 cinder
+            self.assertTrue(6, submit.call_count)
+
+    @mock.patch('nailgun.lcm.transaction_serializer.distributed.wait')
+    @mock.patch('nailgun.lcm.transaction_serializer.distributed.as_completed')
+    @mock.patch('nailgun.lcm.transaction_serializer.'
+                'DistributedProcessingPolicy._get_formatter_context')
+    def test_distributed_serialization_workers_scope(self, formatter_context,
+                                                     as_completed, _):
+        self._enable_distributed_serialization()
+
+        node_id = '1'
+        task = {
+            'id': 'task1', 'roles': ['controller'],
+            'type': 'puppet', 'version': '2.0.0'
+        }
+
+        with mock.patch(
+                'nailgun.lcm.transaction_serializer.distributed.Client'
+        ) as job_cluster:
+
+            # Mocking job processing
+            job = mock.Mock()
+            job.result.return_value = [((node_id, task), None)]
+
+            submit = mock.Mock()
+            submit.return_value = job
+
+            as_completed.return_value = [job]
+
+            scatter = mock.Mock()
+            job_cluster.return_value.scatter = scatter
+
+            job_cluster.return_value.scatter.return_value = {}
+            job_cluster.return_value.submit = submit
+
+            formatter_context.return_value = {node_id: {}}
+
+            # Configuring available workers
+            job_cluster.return_value.scheduler_info.return_value = \
+                {
+                    'workers': {
+                        'tcp://{0}'.format(settings.MASTER_IP): {},
+                        'tcp://192.168.0.1:33334': {},
+                        'tcp://127.0.0.2:33335': {},
+                    }
+                }
+
+            # Performing serialization
+            lcm.TransactionSerializer.serialize(self.transaction, self.context,
+                                                [task], self.resolver)
+
+            # Checking data is scattered only to expected workers
+            scatter.assert_called_once()
+            scatter.assert_called_with(
+                {'context': self.context, 'settings_config': settings.config},
+                broadcast=True,
+                workers=[settings.MASTER_IP]
+            )
+
+            # Checking submit job only to expected workers
+            submit.assert_called_once()
+            serializer = lcm.transaction_serializer
+            submit.assert_called_with(
+                serializer._distributed_serialize_tasks_for_node,
+                {node_id: formatter_context()},
+                ((node_id, task),),
+                job_cluster().scatter(),
+                workers=set([settings.MASTER_IP])
+            )
+
+    def test_distributed_serialization_get_allowed_nodes(self):
+        policy = lcm.transaction_serializer.DistributedProcessingPolicy(
+            self.transaction)
+
+        node_err = self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.error)
+        node_prov = self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.provisioned)
+        node_discover = self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.discover)
+        node_ready = self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.ready)
+
+        # Creating non-selectable nodes
+        self.env.create_node(api=False, online=True)
+        self.env.create_node(api=False, online=False)
+        self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.discover,
+            online=False)
+        self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.ready,
+            online=False)
+        self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.provisioned,
+            online=False)
+        self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.error,
+            online=False)
+
+        # Creating another cluster
+        another_cluster = self.env.create_cluster(api=False)
+        self.env.create_node(api=False, cluster_id=another_cluster.id)
+
+        self._enable_distributed_serialization()
+
+        # By default we use discover, error and provisioned nodes as workers
+        # Checking no offline nodes, nodes from another cluster and with wrong
+        # status
+        actual = policy._get_allowed_nodes()
+        self.assertItemsEqual(
+            [node_discover, node_err, node_prov],
+            actual
+        )
+
+        # Changing workers configuration
+        attrs = objects.Cluster.get_editable_attributes(self.cluster)
+        ds_use_ready = attrs['common']['ds_use_ready']
+        ds_use_ready['value'] = True
+        ds_use_error = attrs['common']['ds_use_error']
+        ds_use_error['value'] = False
+        objects.Cluster.update_attributes(self.cluster, {'editable': attrs})
+
+        actual = policy._get_allowed_nodes()
+        self.assertItemsEqual(
+            [node_discover, node_ready, node_prov],
+            actual
+        )
+
+    def test_distributed_serialization_get_allowed_nodes_ips(self):
+        policy = lcm.transaction_serializer.DistributedProcessingPolicy(
+            self.transaction)
+
+        node_discover = self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.discover)
+        self.env.create_node(
+            api=False, cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.ready)
+
+        expected = [settings.MASTER_IP, node_discover.ip]
+        actual = policy._get_allowed_nodes_ips()
+        self.assertItemsEqual(expected, actual)
+
+    def test_distributed_serialization_get_allowed_nodes_statuses(self):
+        policy = lcm.transaction_serializer.DistributedProcessingPolicy(
+            self.transaction)
+        expected = [consts.NODE_STATUSES.discover,
+                    consts.NODE_STATUSES.error,
+                    consts.NODE_STATUSES.provisioned]
+        actual = policy._get_allowed_nodes_statuses()
+        self.assertItemsEqual(expected, actual)
+
+    def test_distributed_serialization_get_allowed_workers(self):
+        policy = lcm.transaction_serializer.DistributedProcessingPolicy(
+            self.transaction)
+
+        with mock.patch(
+                'nailgun.lcm.transaction_serializer.distributed.Client'
+        ) as job_cluster:
+            job_cluster.scheduler_info.return_value = \
+                {'workers': {
+                    'tcp://10.20.0.2:1': {},
+                    'tcp://10.20.0.2:2': {},
+                    'tcp://10.20.0.3:1': {},
+                    'tcp://10.20.0.3:2': {},
+                    'tcp://10.20.0.3:3': {},
+                    'tcp://10.20.0.4:1': {},
+                    'tcp://10.20.0.5:1': {}
+                }}
+            allowed_ips = set(['10.20.0.2', '10.20.0.3', '10.20.0.5'])
+
+            expected = ['10.20.0.2:1', '10.20.0.2:2', '10.20.0.3:1',
+                        '10.20.0.3:2', '10.20.0.3:3', '10.20.0.5:1']
+            actual = policy._get_allowed_workers(job_cluster, allowed_ips)
+            self.assertItemsEqual(expected, actual)
+
+    def test_distributed_serialization_serialize_task(self):
+        task = {
+            'id': 'task1', 'roles': ['controller'],
+            'type': 'puppet', 'version': '2.0.0',
+            'parameters': {
+                'master_ip': '{MN_IP}',
+                'host': {'yaql_exp': '$.public_ssl.hostname'},
+                'attr': {'yaql_exp': '$node.attributes.a_str'}
+            }
+        }
+
+        formatter_contexts_idx = {
+            '1': {'MN_IP': '10.0.0.1'},
+            '2': {}
+        }
+        scattered_data = {
+            'settings_config': settings.config,
+            'context': self.context
+        }
+
+        serializer = lcm.transaction_serializer
+        actual = serializer._distributed_serialize_tasks_for_node(
+            formatter_contexts_idx, [('1', task), ('2', task)], scattered_data)
+
+        expected = [
+            (
+                (
+                    '1',
+                    {
+                        'id': 'task1',
+                        'type': 'puppet',
+                        'parameters': {
+                            'cwd': '/',
+                            'master_ip': '10.0.0.1',
+                            'host': 'localhost',
+                            'attr': 'text1'
+                        },
+                        'fail_on_error': True
+                    }
+                ),
+                None
+            ),
+            (
+                (
+                    '2',
+                    {
+                        'id': 'task1',
+                        'type': 'puppet',
+                        'parameters': {
+                            'cwd': '/',
+                            'master_ip': '{MN_IP}',
+                            'host': 'localhost',
+                            'attr': 'text2'
+                        },
+                        'fail_on_error': True
+                    }
+                ),
+                None
+            )
+        ]
+
+        self.assertItemsEqual(expected, actual)
+
+    def test_distributed_serialization_serialize_task_failure(self):
+        task = {
+            'id': 'task1', 'roles': ['controller'],
+            'type': 'puppet', 'version': '2.0.0',
+            'parameters': {
+                'fake': {'yaql_exp': '$.some.fake_param'}
+            }
+        }
+
+        formatter_contexts_idx = {'2': {}}
+        scattered_data = {
+            'settings_config': settings.config,
+            'context': self.context
+        }
+
+        serializer = lcm.transaction_serializer
+        result = serializer._distributed_serialize_tasks_for_node(
+            formatter_contexts_idx, [('2', task)], scattered_data)
+        (_, __), err = result[0]
+        self.assertIsInstance(err, exceptions.KeyError)
+
+
+class TestConcurrencyPolicy(BaseTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestConcurrencyPolicy, self).setUp(*args, **kwargs)
+        self.cluster = self.env.create_cluster(api=False)
+        self.transaction = objects.Transaction.create(
+            {'cluster_id': self.cluster.id})
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        return_value=1
+    )
+    def test_one_cpu(self, cpu_count):
+        policy = lcm.transaction_serializer.get_processing_policy(
+            self.transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        return_value=0
+    )
+    def test_zero_cpu(self, cpu_count):
+        policy = lcm.transaction_serializer.get_processing_policy(
+            self.transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        side_effect=NotImplementedError
+    )
+    def test_cpu_count_not_implemented(self, cpu_count):
+        policy = lcm.transaction_serializer.get_processing_policy(
+            self.transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    def test_distributed_serialization_enabled_in_cluster(self):
+        cluster = self.env.create_cluster(api=False)
+        transaction = objects.Transaction.create(
+            {'cluster_id': cluster.id})
+
+        # Checking distributed is not enabled in settings
+        policy = lcm.transaction_serializer.get_processing_policy(
+            transaction)
+        self.assertNotIsInstance(
+            policy,
+            lcm.transaction_serializer.DistributedProcessingPolicy
+        )
+
+        # Checking distributed serialization policy is used after
+        # enabling in cluster settings
+        attrs = objects.Cluster.get_editable_attributes(cluster)
+        policy = attrs['common']['serialization_policy']
+        policy['value'] = consts.SERIALIZATION_POLICY.distributed
+        objects.Cluster.update_attributes(cluster, {'editable': attrs})
+        policy = lcm.transaction_serializer.get_processing_policy(
+            transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.DistributedProcessingPolicy
         )

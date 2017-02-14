@@ -71,7 +71,7 @@ class TestMakeAstuteMessage(BaseUnitTest):
             result
         )
         lcm_mock.TransactionSerializer.serialize.assert_called_once_with(
-            context, graph['tasks'], resolver
+            tx, context, graph['tasks'], resolver
         )
         obj_mock.DeploymentHistoryCollection.create.assert_called_once_with(
             tx, tasks_graph

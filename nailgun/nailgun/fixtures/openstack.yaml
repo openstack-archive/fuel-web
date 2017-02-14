@@ -1151,6 +1151,19 @@
             group: "security"
             weight: 20
             type: "radio"
+          serialization_policy:
+            value: "default"
+            values:
+              - data: "default"
+                label: "Default serialization"
+                description: "Run serialization on master node only"
+              - data: "distributed"
+                label: "Distributed serialization"
+                description: "Run serialization on master and cluster nodes. This type of serialization is useful for clusters with nodes count greater than 150."
+            label: "Serialization policy"
+            group: "general"
+            weight: 30
+            type: "radio"
         public_network_assignment:
           metadata:
             weight: 10

@@ -532,3 +532,7 @@ DPDK_DRIVER_IN_SRIOV_CASE = 'vfio-pci'
 DEFAULT_MTU = 1500
 
 SIZE_OF_VLAN_TAG = 4
+
+SERIALIZATION_POLICY = Enum(
+    'distributed'
+)

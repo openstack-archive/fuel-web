@@ -38,7 +38,21 @@ class NailgunSettings(object):
         if test_config:
             settings_files.append(test_config)
 
-        self.config = {}
+        # If settings.yaml doesn't exist we should have default
+        # config structure. Nailgun without settings is used
+        # when we distribute source code to the workers for
+        # distributed serialization
+        self.config = {
+            'VERSION': {},
+            'DATABASE': {
+                'engine': 'postgresql',
+                'name': '',
+                'host': '',
+                'port': '0',
+                'user': '',
+                'passwd': ''
+            }
+        }
         for sf in settings_files:
             try:
                 logger.debug("Trying to read config file %s" % sf)
@@ -47,9 +61,9 @@ class NailgunSettings(object):
                 logger.error("Error while reading config file %s: %s" %
                              (sf, str(e)))
 
-        self.config['VERSION']['api'] = self.config['API']
+        self.config['VERSION']['api'] = self.config.get('API')
         self.config['VERSION']['feature_groups'] = \
-            self.config['FEATURE_GROUPS']
+            self.config.get('FEATURE_GROUPS')
 
         fuel_release = self.get_file_content(consts.FUEL_RELEASE_FILE)
         if fuel_release:
@@ -61,7 +75,7 @@ class NailgunSettings(object):
             self.config['VERSION']['openstack_version'] = \
                 fuel_openstack_version
 
-        if int(self.config.get("DEVELOPMENT")):
+        if int(self.config.get("DEVELOPMENT", 0)):
             logger.info("DEVELOPMENT MODE ON:")
             here = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), '..')

@@ -59,7 +59,7 @@ def _get_node_attributes(graph, kind):
 
 def make_astute_message(transaction, context, graph, node_resolver):
     directory, tasks, metadata = lcm.TransactionSerializer.serialize(
-        context, graph['tasks'], node_resolver
+        transaction, context, graph['tasks'], node_resolver
     )
 
     metadata['node_statuses_transitions'] = {

@@ -14,15 +14,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 from distutils.version import StrictVersion
 import multiprocessing
+import os
+import pickle
+from Queue import Queue
+import threading
+import yaml
 
+import dispy
 import six
 
 from nailgun import consts
 from nailgun import errors
+from nailgun.lcm.task_serializer import Context
 from nailgun.lcm.task_serializer import TasksSerializersFactory
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.settings import settings
 from nailgun.utils.resolvers import NameMatchingPolicy
 
@@ -128,7 +137,309 @@ class MultiProcessingConcurrencyPolicy(object):
             pool.join()
 
 
-def get_concurrency_policy():
+def _load_context(transaction_id, working_dir):
+    """Loads transaction context from file passed to the dispy worker
+
+    :param transaction_id: id of transaction
+    :param working_dir: working dir of the dispy worker
+    :return: transaction context
+    """
+    file_name = '{0}_context.p'.format(transaction_id)
+    context_file = os.path.join(working_dir, file_name)
+    with open(context_file) as f:
+        return pickle.load(f)
+
+
+def _load_settings(transaction_id, working_dir):
+    """Loads settings from file passed to the dispy worker
+
+    :param transaction_id: id of transaction
+    :param working_dir: working dir of the dispy worker
+    :return: dict of settings
+    """
+    file_name = '{0}_settings.yaml'.format(transaction_id)
+    context_file = os.path.join(working_dir, file_name)
+    with open(context_file) as f:
+        return yaml.safe_load(f)
+
+
+def _rpc_serialize_task_for_node(transaction_id, formatter_context,
+                                 node_and_task, working_dir):
+    """Remote serialization call for DistributedProcessingPolicy
+
+    Code of the function is copied to the workers and executed there, thus
+    we are including all required imports inside the function.
+
+    :param transaction_id: id of the transaction
+    :param formatter_context: formatter context
+    :param node_and_task: tuple of node_id and task data
+    :param working_dir: directory where sent to the worker files are stored
+    :return: (node_id, serialized), error
+    """
+
+    from nailgun.lcm.task_serializer import TasksSerializersFactory
+    from nailgun.lcm.transaction_serializer import _load_context
+    from nailgun.lcm.transaction_serializer import _load_settings
+    from nailgun.settings import settings
+
+    try:
+        node_id, task = node_and_task
+
+        # Restoring settings
+        settings_data = _load_settings(transaction_id, working_dir)
+        settings.update(settings_data)
+        formatter_context['SETTINGS'] = settings
+
+        # Loading context
+        context = _load_context(transaction_id, working_dir)
+        factory = TasksSerializersFactory(context)
+        serializer = factory.create_serializer(task)
+
+        serialized = serializer.serialize(
+            node_id, formatter_context=formatter_context)
+
+        return (node_id, serialized), None
+
+    except Exception as e:
+        return (node_id, None), e
+
+
+class DistributedProcessingPolicy(object):
+
+    def __init__(self, transaction):
+        self.upper_bound = settings.LCM_DS_JOBS_UPPER_BOUND
+        self.lower_bound = settings.LCM_DS_JOBS_LOWER_BOUND
+        # Use Condition variable to protect access to pending_jobs,
+        # as '_job_callback' is executed in another thread
+        self.jobs_cond = threading.Condition()
+        self.pending_jobs = {}
+        self.ready_jobs = Queue()
+        self.transaction = transaction
+        self.job_cluster = None
+        self.context = None
+
+    def _job_callback(self, job):
+        logger.debug("Callback for job '%s' called. Job has status '%s'",
+                     job.id, job.status)
+        if job.status in (dispy.DispyJob.Finished, dispy.DispyJob.Terminated,
+                          dispy.DispyJob.Cancelled, dispy.DispyJob.Abandoned):
+
+            # 'pending_jobs' is shared between two threads, so access it with
+            # 'jobs_cond' (see below)
+            self.jobs_cond.acquire()
+
+            try:
+                if job.id:  # Job may have finished before 'main' assigned id
+                    done = self.pending_jobs.pop(job.id, None)
+                    if done is not None:
+                        logger.debug("Callback for job '%s' done with %s. "
+                                     "Pending jobs count: %s",
+                                     job.id, job.result,
+                                     len(self.pending_jobs))
+                        logger.debug("Adding result of job '%s' to the "
+                                     "ready_jobs queue. Job result: %s",
+                                     job.id, job.result)
+                        self.ready_jobs.put(job.result)
+                    else:
+                        logger.warning("Callback for job '%s' called when job "
+                                       "is already removed from pending. "
+                                       "Pending jobs count: %s",
+                                       job.id, len(self.pending_jobs))
+
+                    if len(self.pending_jobs) <= self.lower_bound:
+                        self.jobs_cond.notify()
+                else:
+                    logger.debug("Callback is called for job without id. "
+                                 "Adding directly to the ready_jobs queue. "
+                                 "Job result: %s", job.result)
+                    self.ready_jobs.put(job.result)
+            finally:
+                self.jobs_cond.release()
+
+    def _save_context(self, context):
+        file_name = '{0}_context.p'.format(self.transaction.id)
+        context_file = os.path.join(settings.LCM_DS_WORKING_DIR, file_name)
+        with open(context_file, mode='w') as f:
+            pickle.dump(context, f)
+
+    def _save_settings(self, settings_data):
+        file_name = '{0}_settings.yaml'.format(self.transaction.id)
+        context_file = os.path.join(settings.LCM_DS_WORKING_DIR, file_name)
+        with open(context_file, mode='w') as f:
+            yaml.safe_dump(settings_data, f)
+
+    def _create_job_cluster(self, context):
+        now = datetime.datetime.utcnow()
+        recover_name = settings.LCM_DS_RECOVER_FILE_TPL.format(
+            self.transaction.id, now.strftime('%Y%m%d%H%M%S%f')
+        )
+        recover_file = os.path.join(settings.LCM_DS_WORKING_DIR, recover_name)
+
+        # Adding cluster nodes to the JobCluster
+        if settings.LCM_DS_NODES:
+            nodes = settings.LCM_DS_NODES
+        else:
+            nodes = ['localhost']
+            for node in self.transaction.cluster.nodes:
+                logger.debug("Adding slave node %s to the job cluster",
+                             node.ip)
+                nodes.append(node.ip)
+
+        self._save_context(context)
+        self._save_settings(settings.config)
+
+        self.job_cluster = dispy.JobCluster(
+            _rpc_serialize_task_for_node,
+            callback=self._job_callback,
+            loglevel=logger.level,
+            pulse_interval=settings.LCM_DS_JOB_PULSE,
+            ping_interval=settings.LCM_DS_NODE_PING,
+            reentrant=True,
+            nodes=nodes,
+            port=settings.LCM_DS_JOB_CLUSTER_PORT,
+            recover_file=recover_file,
+            cluster_status=self._cluster_status
+        )
+
+    def _destroy_job_cluster(self):
+        """Destroys job cluster"""
+        self.job_cluster.wait()
+        self.job_cluster.print_status()
+        self.job_cluster.close()
+        self.job_cluster = None
+        logger.debug("Job cluster destroyed")
+
+    def _send_file(self, file_name, node):
+        """Sends file to the dispy worker
+
+        :param file_name: file to be sent to the dispy worker
+        :param node: dispy worker
+        """
+        result = self.job_cluster.send_file(
+            os.path.join(settings.LCM_DS_WORKING_DIR, file_name),
+            node
+        )
+        if result != 0:
+            raise errors.NailgunException(
+                "Sending file '%s' to the node: %s failed",
+                file_name, node
+            )
+
+    def _cluster_status(self, status, node, job):
+        """Callback is called on changing cluster status
+
+        :param status: cluster status
+        :param node: node
+        :param job: job
+        :return:
+        """
+        if status == dispy.DispyNode.Initialized:
+            node_name = '{0} {1}'.format(node.name, node.ip_addr)
+            logger.debug("Handling node %s initialization", node_name)
+
+            # Sending context and settings to the slaves only
+            if node.ip_addr != '127.0.0.1':
+                logger.debug("Sending context to the node: %s", node_name)
+                file_name = '{0}_context.p'.format(self.transaction.id)
+                self._send_file(file_name, node)
+
+                logger.debug("Sending settings to the node: %s", node_name)
+                file_name = '{0}_settings.yaml'.format(self.transaction.id)
+                self._send_file(file_name, node)
+
+    def _get_ready_jobs(self):
+        while not self.ready_jobs.empty():
+            (node_id, serialized), exc = self.ready_jobs.get()
+            logger.debug("Got ready job on node %s, serialized: %s, error: %s",
+                         node_id, serialized, exc)
+            self.ready_jobs.task_done()
+            if exc is not None:
+                raise exc
+            yield node_id, serialized
+
+    def execute(self, context, _, tasks):
+        """Executes task serialization on distributed nodes
+
+        :param context: the transaction context
+        :param _: the serializers factory
+        :param tasks: the tasks to serialize
+        :return sequence of serialized tasks
+        """
+        logger.debug("Performing distributed tasks processing")
+        self._create_job_cluster(context)
+
+        task_context = Context(context)
+        formatter_contexts_idx = {}
+
+        try:
+            for task in tasks:
+                node_id, task_data = task
+                task_id = task_data['id']
+                job_id = '{0}-{1}'.format(node_id, task_id)
+
+                # Checking formatter context is already calculated
+                if node_id not in formatter_contexts_idx:
+                    formatter_context = task_context.get_formatter_context(
+                        node_id)
+                    # Settings file is already sent to the workers
+                    formatter_context.pop('SETTINGS', None)
+                    formatter_contexts_idx['node_id'] = formatter_context
+                else:
+                    formatter_context = formatter_contexts_idx['node_id']
+
+                logger.debug("Creating job for task: '%s' on node: %s",
+                             task_id, node_id)
+                job = self.job_cluster.submit(
+                    self.transaction.id, formatter_context, task,
+                    settings.LCM_DS_WORKING_DIR)
+
+                self.jobs_cond.acquire()
+                try:
+                    job.id = job_id
+                    # There is a chance the job may have finished and
+                    # job_callback called by this time, so put it in
+                    # 'pending_jobs' only if job is pending
+                    if job.status in (dispy.DispyJob.Created,
+                                      dispy.DispyJob.Running):
+                        self.pending_jobs[job_id] = job
+                        logger.debug(
+                            "Job '%s' submitted. Pending jobs count: %s",
+                            job.id, len(self.pending_jobs)
+                        )
+
+                        if len(self.pending_jobs) >= self.upper_bound:
+                            while len(self.pending_jobs) > self.lower_bound:
+                                self.jobs_cond.wait()
+
+                        for ready_job in self._get_ready_jobs():
+                            yield ready_job
+
+                except Exception:
+                    logger.exception("Task processing failed: %s",
+                                     task_data['id'])
+                    raise
+                finally:
+                    self.jobs_cond.release()
+
+        finally:
+            logger.debug("Distributed tasks processing finished")
+            self._destroy_job_cluster()
+
+        for ready_job in self._get_ready_jobs():
+            yield ready_job
+
+
+def is_distributed_processing_enabled(transaction):
+    if settings.LCM_DS_ENABLED:
+        return True
+    attrs = objects.Cluster.get_editable_attributes(transaction.cluster)
+    policy = attrs.get('common', {}).get('serialization_policy', {})
+    return policy.get('value') == consts.SERIALIZATION_POLICY.distributed
+
+
+def get_processing_policy(transaction):
+    if is_distributed_processing_enabled(transaction):
+        return DistributedProcessingPolicy(transaction)
     cpu_num = settings.LCM_SERIALIZERS_CONCURRENCY_FACTOR
     if not cpu_num:
         try:
@@ -153,7 +464,7 @@ class TransactionSerializer(object):
         consts.ORCHESTRATOR_TASK_TYPES.skipped
     )
 
-    def __init__(self, context, resolver):
+    def __init__(self, transaction, context, resolver):
         self.resolver = resolver
         self.context = context
         self.tasks_graph = {}
@@ -162,18 +473,19 @@ class TransactionSerializer(object):
         # ids of nodes in this group and how many nodes in this group can fail
         # and deployment will not be interrupted
         self.fault_tolerance_groups = []
-        self.concurrency_policy = get_concurrency_policy()
+        self.processing_policy = get_processing_policy(transaction)
 
     @classmethod
-    def serialize(cls, context, tasks, resolver):
+    def serialize(cls, transaction, context, tasks, resolver):
         """Resolves roles and dependencies for tasks.
 
+        :param transaction: transaction
         :param context: the deployment context
         :param tasks: the deployment tasks
         :param resolver: the nodes tag resolver
         :return: the list of serialized task per node
         """
-        serializer = cls(context, resolver)
+        serializer = cls(transaction, context, resolver)
         serializer.process_tasks(tasks)
         serializer.resolve_dependencies()
         tasks_graph = serializer.tasks_graph
@@ -216,7 +528,7 @@ class TransactionSerializer(object):
         :param tasks: the deployment tasks
         :return the mapping tasks per node
         """
-        serialized = self.concurrency_policy.execute(
+        serialized = self.processing_policy.execute(
             self.context,
             self.serializer_factory_class,
             self.expand_tasks(tasks)

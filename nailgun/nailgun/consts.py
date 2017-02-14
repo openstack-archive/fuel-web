@@ -529,3 +529,7 @@ HYPERVISORS = Enum(
 )
 
 DPDK_DRIVER_IN_SRIOV_CASE = 'vfio-pci'
+
+SERIALIZATION_POLICY = Enum(
+    'distributed'
+)

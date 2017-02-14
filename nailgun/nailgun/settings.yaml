@@ -177,6 +177,29 @@ YAQL_MEMORY_QUOTA: 104857600
 
 LCM_CHECK_TASK_VERSION: False
 
+# LCM distributed serialization configuration
+LCM_DS_ENABLED: False
+# Listen port on the master node
+LCM_DS_JOB_CLUSTER_PORT: 8002
+# Checking job execution interval (seconds)
+LCM_DS_JOB_PULSE: 10
+# Searching new nodes interval (seconds)
+LCM_DS_NODE_PING: 5
+# If nodes list for distributed serialization is not empty only nodes
+# from the list will be used for distributed serialization.
+# Format of node defintion is: {'host': ip_or_name, 'port': 32871, 'cpus': 10}}.
+# Parameters port and cpus are optional
+LCM_DS_NODES: []
+# Recovery file name template
+LCM_DS_RECOVER_FILE_TPL: '{0}_dispy_recovery_{1}'
+# Working dir for dispy
+LCM_DS_WORKING_DIR: '/var/lib/dispy'
+# Pending jobs queue size limitation. Depens on the number of processors in the cluster
+# TODO(akislitsky): implement dynamic calculation of the queue size limits
+LCM_DS_JOBS_LOWER_BOUND: 35
+LCM_DS_JOBS_UPPER_BOUND: 50
+
+
 DPDK_MAX_CPUS_PER_NIC: 4
 
 TRUNCATE_LOG_ENTRIES: 100

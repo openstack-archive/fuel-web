@@ -20,14 +20,16 @@ import multiprocessing.dummy
 from nailgun import consts
 from nailgun import errors
 from nailgun import lcm
+from nailgun import objects
 from nailgun.utils.resolvers import TagResolver
 
-from nailgun.test.base import BaseUnitTest
+from nailgun.test.base import BaseTestCase
 
 
-class TestTransactionSerializer(BaseUnitTest):
+class TestTransactionSerializer(BaseTestCase):
     @classmethod
     def setUpClass(cls):
+        super(TestTransactionSerializer, cls).setUpClass()
         cls.tasks = [
             {
                 'id': 'task1', 'roles': ['controller'],
@@ -112,9 +114,15 @@ class TestTransactionSerializer(BaseUnitTest):
             m_objects.Node.all_tags = lambda x: x.roles
             cls.resolver = TagResolver(cls.nodes)
 
+    def setUp(self):
+        super(TestTransactionSerializer, self).setUp()
+        self.cluster = self.env.create_cluster(api=False)
+        self.transaction = objects.Transaction.create(
+            {'cluster_id': self.cluster.id})
+
     def test_serialize_integration(self):
         serialized = lcm.TransactionSerializer.serialize(
-            self.context, self.tasks, self.resolver
+            self.transaction, self.context, self.tasks, self.resolver
         )[1]
         # controller
         self.datadiff(
@@ -191,7 +199,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_resolve_nodes(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         self.assertEqual(
             [None],
@@ -219,7 +227,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_dependencies_de_duplication(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         serializer.tasks_graph = {
             None: {},
@@ -277,7 +285,7 @@ class TestTransactionSerializer(BaseUnitTest):
             'tasks': ['task4', 'task2']
         })
         serialized = lcm.TransactionSerializer.serialize(
-            self.context, tasks, self.resolver
+            self.transaction, self.context, tasks, self.resolver
         )
         tasks_per_node = serialized[1]
         self.datadiff(
@@ -326,7 +334,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_expand_dependencies(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         serializer.tasks_graph = {
             '1': {'task1': {}},
@@ -342,7 +350,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_expand_cross_dependencies(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         serializer.tasks_graph = {
             '1': {'task1': {}, 'task2': {}},
@@ -380,7 +388,7 @@ class TestTransactionSerializer(BaseUnitTest):
 
     def test_need_update_task(self):
         serializer = lcm.TransactionSerializer(
-            self.context, self.resolver
+            self.transaction, self.context, self.resolver
         )
         self.assertTrue(serializer.need_update_task(
             {}, {"id": "task1", "type": "puppet"}
@@ -461,4 +469,90 @@ class TestTransactionSerializer(BaseUnitTest):
         self.assertEqual(
             9,
             lcm.TransactionSerializer.calculate_fault_tolerance('-1 ', 10)
+        )
+
+
+class TestConcurrencyPolicy(BaseTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestConcurrencyPolicy, self).setUp(*args, **kwargs)
+        self.cluster = self.env.create_cluster(api=False)
+        self.transaction = objects.Transaction.create(
+            {'cluster_id': self.cluster.id})
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        return_value=1
+    )
+    def test_one_cpu(self, cpu_count):
+        policy = lcm.transaction_serializer.get_concurrency_policy(
+            self.transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        return_value=0
+    )
+    def test_zero_cpu(self, cpu_count):
+        policy = lcm.transaction_serializer.get_concurrency_policy(
+            self.transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.multiprocessing.cpu_count',
+        side_effect=NotImplementedError
+    )
+    def test_cpu_count_not_implemented(self, cpu_count):
+        policy = lcm.transaction_serializer.get_concurrency_policy(
+            self.transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.SingleWorkerConcurrencyPolicy
+        )
+        self.assertTrue(cpu_count.is_called)
+
+    @mock.patch(
+        'nailgun.lcm.transaction_serializer.settings.LCM_DS_ENABLED',
+        new=True
+    )
+    def test_distributed_serialization_enabled_in_settings(self):
+        policy = lcm.transaction_serializer.get_concurrency_policy(
+            self.transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.DistributedProcessingPolicy
+        )
+
+    def test_distributed_serialization_enabled_in_cluster(self):
+        cluster = self.env.create_cluster(api=False)
+        transaction = objects.Transaction.create(
+            {'cluster_id': cluster.id})
+
+        # Checking distributed is not enabled in settings
+        policy = lcm.transaction_serializer.get_concurrency_policy(
+            transaction)
+        self.assertNotIsInstance(
+            policy,
+            lcm.transaction_serializer.DistributedProcessingPolicy
+        )
+
+        # Checking distributed serialization policy is used after
+        # enabling in cluster settings
+        attrs = objects.Cluster.get_editable_attributes(cluster)
+        policy = attrs['common']['serialization_policy']
+        policy['value'] = consts.SERIALIZATION_POLICY.distributed
+        objects.Cluster.update_attributes(cluster, {'editable': attrs})
+        policy = lcm.transaction_serializer.get_concurrency_policy(
+            transaction)
+        self.assertIsInstance(
+            policy,
+            lcm.transaction_serializer.DistributedProcessingPolicy
         )

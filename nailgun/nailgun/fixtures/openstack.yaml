@@ -1047,6 +1047,19 @@
               - "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
               - "settings:storage.images_ceph.value == true and settings:storage.objects_ceph.value == false": "Ironic requires Swift or RadosGW for Glance images."
         common:
+          serialization_policy:
+            value: "default"
+            values:
+              - data: "default"
+                label: "Default serialization"
+                description: "Choose this type of serialization to run serialization on master node only"
+              - data: "distributed"
+                label: "Distributed serialization"
+                description: "Choose this type of serialization to run on serialization on all available slaves and bootstrap nodes"
+            label: "Serialization policy"
+            group: "general"
+            weight: 30
+            type: "radio"
           metadata:
             label: "Common"
             weight: 10

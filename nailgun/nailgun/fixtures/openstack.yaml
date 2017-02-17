@@ -2426,6 +2426,7 @@
             value: |
               acl
               anacron
+              auditd
               bash-completion
               bridge-utils
               bsdmainutils

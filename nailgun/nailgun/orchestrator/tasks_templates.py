@@ -214,6 +214,7 @@ def make_provisioning_images_task(
         'image_data': provision_data['image_data'],
         'codename': provision_data['codename'],
         'output': settings.PROVISIONING_IMAGES_PATH,
+        'use_configdrive': False
     }
 
     if packages:

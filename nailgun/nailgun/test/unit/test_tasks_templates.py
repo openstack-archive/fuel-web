@@ -158,7 +158,8 @@ class TestMakeTask(base.BaseTestCase):
                 }
             ],
             "codename": "trusty",
-            "packages": packages
+            "packages": packages,
+            "use_configdrive": False
         }
 
         self.assertEqual(result["type"], "shell")

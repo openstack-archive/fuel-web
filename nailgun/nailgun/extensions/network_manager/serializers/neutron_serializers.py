@@ -1069,6 +1069,19 @@ class NeutronNetworkDeploymentSerializer70(
         return network_scheme
 
     @classmethod
+    def _dhcp_params(cls, node):
+        net_manager = objects.Cluster.get_network_manager(node.cluster)
+        admin_ip = net_manager.get_admin_ip_for_node(node)
+        params = {
+            'name': objects.Node.get_node_fqdn(node),
+            'ip_address': admin_ip,
+            'mac': [],
+        }
+        for interface in node.nic_interfaces:
+            params['mac'].append(interface.mac)
+        return params
+
+    @classmethod
     def generate_network_metadata(cls, cluster):
         nodes = dict()
         nm = objects.Cluster.get_network_manager(cluster)
@@ -1087,7 +1100,8 @@ class NeutronNetworkDeploymentSerializer70(
                 "user_node_name": node.name,
                 "swift_zone": node.uid,
                 "node_roles": node_roles,
-                "network_roles": network_roles
+                "network_roles": network_roles,
+                "dhcp": cls._dhcp_params(node)
             }
 
         return dict(

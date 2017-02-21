@@ -159,12 +159,6 @@
             "package_version": "2.0.0",
             "attributes_metadata": {
                 "metadata": {
-                    "restrictions": [
-                        {
-                            "condition": "settings:common.use_vcenter.value == true",
-                            "action": "hide"
-                        }
-                    ]
                 },
                 "zabbix_text_1": {
                     "value": "value 1.1",

@@ -141,7 +141,7 @@ Release:   %{release}
 License:   GPLv2
 BuildRoot: %{_tmppath}/%{name}-%{version}
 URL:       http://mirantis.com
-Requires:  rubygem-ohai
+Requires:  ruby
 
 %description -n fencing-agent
 Fuel fencing agent

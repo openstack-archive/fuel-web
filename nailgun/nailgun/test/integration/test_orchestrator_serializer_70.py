@@ -470,7 +470,8 @@ class TestDeploymentAttributesSerialization70(
                 self.assertItemsEqual(
                     v,
                     ['uid', 'fqdn', 'name', 'user_node_name',
-                     'swift_zone', 'node_roles', 'network_roles']
+                     'swift_zone', 'node_roles', 'network_roles',
+                     'dhcp_binding_params']
                 )
                 node = objects.Node.get_by_uid(v['uid'])
                 ip_by_net = neutron_serializer.get_network_to_ip_mapping(node)
@@ -504,6 +505,16 @@ class TestDeploymentAttributesSerialization70(
                         [ip_by_net['private']] * len(self.private))
 
                 self.assertEqual(v['network_roles'], dict(network_roles))
+                net_manager = objects.Cluster.get_network_manager(node.cluster)
+                admin_ip = net_manager.get_admin_ip_for_node(node)
+                admin_mac = net_manager.get_admin_interface(node).mac
+                dhcp_binding_params = {
+                    'name': objects.Node.get_node_fqdn(node),
+                    'ip_address': admin_ip,
+                    'mac': admin_mac,
+                }
+
+                self.assertEqual(v['dhcp_binding_params'], dhcp_binding_params)
             self.check_vips_serialized(node_data)
 
 
@@ -653,6 +664,7 @@ class TestDeploymentSerializationForNovaNetwork70(
                     node_attrs['network_roles'],
                     network_roles
                 )
+
             self.check_vips_serialized(node_data)
 
 
@@ -1527,7 +1539,8 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 self.assertItemsEqual(
                     node_attrs,
                     ['uid', 'fqdn', 'name', 'user_node_name',
-                     'swift_zone', 'node_roles', 'network_roles']
+                     'swift_zone', 'node_roles', 'network_roles',
+                     'dhcp_binding_params']
                 )
                 node = objects.Node.get_by_uid(node_attrs['uid'])
                 self.assertEqual(objects.Node.get_slave_name(node), node_name)
@@ -1537,6 +1550,17 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 self.assertEqual(node_attrs['name'], node_name)
                 self.assertEqual(node_attrs['user_node_name'], node.name)
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
+                net_manager = objects.Cluster.get_network_manager(node.cluster)
+                admin_ip = net_manager.get_admin_ip_for_node(node)
+                admin_mac = net_manager.get_admin_interface(node).mac
+                dhcp_binding_params = {
+                    'name': objects.Node.get_node_fqdn(node),
+                    'ip_address': admin_ip,
+                    'mac': admin_mac,
+                }
+
+                self.assertEqual(node_attrs['dhcp_binding_params'],
+                                 dhcp_binding_params)
 
     def test_multiple_node_roles_network_metadata_roles(self):
         nm = objects.Cluster.get_network_manager(self.cluster)

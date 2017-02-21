@@ -2155,6 +2155,8 @@
               openssh-server
               puppet
               python-amqp
+              python-asyncoro
+              python-dispy
               ruby-augeas
               ruby-ipaddress
               ruby-json

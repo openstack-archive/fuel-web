@@ -2446,6 +2446,7 @@
               curl
               daemonize
               debconf-utils
+              fuel-nailgun
               gdisk
               grub-pc
               hwloc
@@ -2466,6 +2467,8 @@
               openssh-server
               puppet
               python-amqp
+              python-asyncoro
+              python-dispy
               ruby-augeas
               ruby-ipaddress
               ruby-json

@@ -471,7 +471,7 @@ class TestDeploymentAttributesSerialization70(
                 self.assertItemsEqual(
                     v,
                     ['uid', 'fqdn', 'name', 'user_node_name',
-                     'swift_zone', 'node_roles', 'network_roles']
+                     'swift_zone', 'node_roles', 'network_roles', 'dhcp']
                 )
                 node = objects.Node.get_by_uid(v['uid'])
                 ip_by_net = neutron_serializer.get_network_to_ip_mapping(node)
@@ -505,6 +505,17 @@ class TestDeploymentAttributesSerialization70(
                         [ip_by_net['private']] * len(self.private))
 
                 self.assertEqual(v['network_roles'], dict(network_roles))
+                net_manager = objects.Cluster.get_network_manager(node.cluster)
+                admin_ip = net_manager.get_admin_ip_for_node(node)
+                dhcp_params = {
+                    'name': objects.Node.get_node_fqdn(node),
+                    'ip_address': admin_ip,
+                    'mac': [],
+                }
+                for interface in node.nic_interfaces:
+                    params['mac'].append(interface.mac)
+
+                self.assertEqual(v['dhcp'], dict(dhcp_params))
             self.check_vips_serialized(node_data)
 
     def test_generate_vmware_attributes_data(self):
@@ -619,7 +630,7 @@ class TestDeploymentSerializationForNovaNetwork70(
                 self.assertItemsEqual(
                     node_attrs,
                     ['uid', 'fqdn', 'name', 'user_node_name',
-                     'swift_zone', 'node_roles', 'network_roles']
+                     'swift_zone', 'node_roles', 'network_roles', 'dhcp']
                 )
                 self.assertEqual(objects.Node.get_slave_name(node), node_name)
                 self.assertEqual(node_attrs['uid'], node.uid)
@@ -668,6 +679,19 @@ class TestDeploymentSerializationForNovaNetwork70(
                     node_attrs['network_roles'],
                     network_roles
                 )
+
+                net_manager = objects.Cluster.get_network_manager(node.cluster)
+                admin_ip = net_manager.get_admin_ip_for_node(node)
+                dhcp_params = {
+                    'name': objects.Node.get_node_fqdn(node),
+                    'ip_address': admin_ip,
+                    'mac': [],
+                }
+                for interface in node.nic_interfaces:
+                    params['mac'].append(interface.mac)
+
+                self.assertEqual(v['dhcp'], dict(dhcp_params))
+
             self.check_vips_serialized(node_data)
 
     def test_generate_vmware_attributes_data(self):

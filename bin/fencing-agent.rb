@@ -18,7 +18,7 @@ begin
   require 'rubygems'
 rescue LoadError
 end
-require 'ohai/system'
+require 'socket'
 require 'logger'
 require 'open3'
 require 'rexml/document'
@@ -33,14 +33,12 @@ ENV['PATH'] = "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 class FenceAgent
   def initialize(logger)
     @logger = logger
-    @os = Ohai::System.new()
-    @os.all_plugins
   end
 
   def system_info
     {
-      :fqdn => (@os[:fqdn].strip rescue @os[:hostname].strip rescue nil),
-      :hostname => (@os[:hostname].strip rescue nil),
+      :fqdn => (Socket.gethostname rescue nil),
+      :hostname => (Socket.gethostname.split('.').first rescue nil),
     }.delete_if { |key, value| value.nil? or value.empty? or value == "Not Specified" }
   end
 

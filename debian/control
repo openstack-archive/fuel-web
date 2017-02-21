@@ -9,8 +9,7 @@ Homepage: mirantis.com
 
 Package: fencing-agent
 Architecture: all
-Depends: ohai,
-  ruby-httpclient,
+Depends: ruby-httpclient,
   ruby-rethtool,
   ruby-cstruct,
   ruby-json,

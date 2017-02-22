@@ -191,7 +191,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True},
-            {'roles': ['mongo'], 'pending_addition': True},
             {'roles': [], 'pending_roles': ['cinder'],
              'pending_addition': True}]
 
@@ -209,11 +208,10 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         return cluster_db
 
     def assert_roles_flattened(self, nodes):
-        self.assertEqual(len(nodes), 7)
+        self.assertEqual(len(nodes), 6)
         self.assert_nodes_with_role(nodes, 'controller', 1)
         self.assert_nodes_with_role(nodes, 'compute', 2)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
-        self.assert_nodes_with_role(nodes, 'mongo', 1)
 
     def test_serialize_nodes(self):
         serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
@@ -292,7 +290,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['controller', 'cinder']},
             {'roles': ['compute', 'cinder']},
             {'roles': ['compute']},
-            {'roles': ['mongo']},
             {'roles': ['cinder']}]
         for i in range(len(expected_list)):
             expected_list[i]['attrs'] = {'uid': str(node_uids[i])}
@@ -413,9 +410,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_set_deployment_priorities(self):
         nodes = [
-            {'role': 'mongo'},
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
             {'role': 'controller'},
             {'role': 'ceph-osd'}
         ]
@@ -425,11 +419,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             AstuteGraph(self.cluster_mock))
         serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'mongo', 'priority': 100},
-            {'role': 'mongo', 'priority': 200},
-            {'role': 'primary-mongo', 'priority': 300},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'ceph-osd', 'priority': 500}
+            {'role': 'controller', 'priority': 100},
+            {'role': 'ceph-osd', 'priority': 200}
         ]
         self.add_default_params(expected_priorities)
         self.assertEqual(expected_priorities, nodes)
@@ -446,7 +437,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'fail_if_error': False, 'role': 'cinder'},
             {'fail_if_error': False, 'role': 'compute'},
             {'fail_if_error': False, 'role': 'compute'},
-            {'fail_if_error': True, 'role': 'primary-mongo'},
             {'fail_if_error': False, 'role': 'cinder'}
         ]
 
@@ -1247,7 +1237,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
                 {'roles': ['controller', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True},
-                {'roles': ['mongo'], 'pending_addition': True},
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
@@ -1261,8 +1250,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def test_set_deployment_priorities(self):
         nodes = [
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
             {'role': 'controller'},
             {'role': 'controller'},
@@ -1271,20 +1258,16 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'mongo', 'priority': 100},
-            {'role': 'primary-mongo', 'priority': 200},
-            {'role': 'primary-controller', 'priority': 300},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 500},
-            {'role': 'ceph-osd', 'priority': 600},
+            {'role': 'primary-controller', 'priority': 100},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 300},
+            {'role': 'ceph-osd', 'priority': 400},
         ]
         self.add_default_params(expected_priorities)
         self.assertEqual(expected_priorities, nodes)
 
     def test_set_deployment_priorities_many_cntrls(self):
         nodes = [
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
             {'role': 'controller'},
             {'role': 'controller'},
@@ -1299,18 +1282,16 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'mongo', 'priority': 100},
-            {'role': 'primary-mongo', 'priority': 200},
-            {'role': 'primary-controller', 'priority': 300},
+            {'role': 'primary-controller', 'priority': 100},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 300},
             {'role': 'controller', 'priority': 400},
             {'role': 'controller', 'priority': 500},
             {'role': 'controller', 'priority': 600},
             {'role': 'controller', 'priority': 700},
             {'role': 'controller', 'priority': 800},
             {'role': 'controller', 'priority': 900},
-            {'role': 'controller', 'priority': 1000},
-            {'role': 'controller', 'priority': 1100},
-            {'role': 'ceph-osd', 'priority': 1200}
+            {'role': 'ceph-osd', 'priority': 1000}
         ]
         self.add_default_params(expected_priorities)
         self.assertEqual(expected_priorities, nodes)
@@ -1325,7 +1306,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'fail_if_error': False, 'role': 'cinder'},
             {'fail_if_error': False, 'role': 'compute'},
             {'fail_if_error': False, 'role': 'compute'},
-            {'fail_if_error': True, 'role': 'primary-mongo'},
             {'fail_if_error': False, 'role': 'cinder'}
         ]
 
@@ -1363,8 +1343,8 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEqual(attrs['management_vip'], '192.168.0.8')
-        self.assertEqual(attrs['public_vip'], '172.16.0.9')
+        self.assertEqual(attrs['management_vip'], '192.168.0.7')
+        self.assertEqual(attrs['public_vip'], '172.16.0.8')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)
@@ -1374,10 +1354,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         # primary_controller
         controllers = self.filter_by_role(attrs['nodes'], 'primary-controller')
         self.assertEqual(controllers[0]['role'], 'primary-controller')
-
-        # primary_mongo
-        mongo_nodes = self.filter_by_role(attrs['nodes'], 'primary-mongo')
-        self.assertEqual(mongo_nodes[-1]['role'], 'primary-mongo')
 
         # mountpoints and mp attrs
         self.assertEqual(
@@ -1397,8 +1373,6 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
 
     def test_set_deployment_priorities(self):
         nodes = [
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
             {'role': 'controller'},
             {'role': 'controller'},
@@ -1407,20 +1381,16 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'mongo', 'priority': 100},
-            {'role': 'primary-mongo', 'priority': 200},
-            {'role': 'primary-controller', 'priority': 300},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'ceph-osd', 'priority': 500},
+            {'role': 'primary-controller', 'priority': 100},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'ceph-osd', 'priority': 300},
         ]
         self.add_default_params(expected_priorities)
         self.assertEqual(expected_priorities, nodes)
 
     def test_set_deployment_priorities_many_cntrls(self):
         nodes = [
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
             {'role': 'primary-controller'},
             {'role': 'controller'},
             {'role': 'controller'},
@@ -1435,18 +1405,16 @@ class TestNovaOrchestratorHASerializer51(TestNovaOrchestratorHASerializer):
         self.add_default_params(nodes)
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'mongo', 'priority': 100},
-            {'role': 'primary-mongo', 'priority': 200},
-            {'role': 'primary-controller', 'priority': 300},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 400},
-            {'role': 'controller', 'priority': 500},
-            {'role': 'controller', 'priority': 500},
-            {'role': 'ceph-osd', 'priority': 600}
+            {'role': 'primary-controller', 'priority': 100},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 200},
+            {'role': 'controller', 'priority': 300},
+            {'role': 'controller', 'priority': 300},
+            {'role': 'ceph-osd', 'priority': 400}
         ]
         self.add_default_params(expected_priorities)
         self.assertEqual(expected_priorities, nodes)
@@ -2295,44 +2263,6 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
                 'editable': {'storage': {'images_ceph': {'value': True}}}}),
             headers=self.default_headers)
         self.cluster = self.db.query(Cluster).get(cluster['id'])
-
-
-class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
-
-    env_version = '1111-5.0'
-
-    def create_env(self):
-        cluster = self.env.create(
-            release_kwargs={'version': self.env_version},
-            cluster_kwargs={
-                'mode': consts.CLUSTER_MODES.ha_compact,
-                'network_manager': 'FlatDHCPManager'
-            },
-            nodes_kwargs=[
-                {'roles': ['mongo'], 'pending_addition': True},
-                {'roles': ['mongo'], 'pending_addition': True},
-                {'roles': ['mongo'], 'pending_addition': True}
-            ]
-        )
-        cluster = self.db.query(Cluster).get(cluster['id'])
-        objects.Cluster.prepare_for_deployment(cluster)
-        return cluster
-
-    @property
-    def serializer_ha(self):
-        self.cluster_mock.release.environment_version = '5.0'
-        return DeploymentHASerializer(AstuteGraph(self.cluster_mock))
-
-    @property
-    def serializer_mn(self):
-        self.cluster_mock.release.environment_version = '5.0'
-        return DeploymentMultinodeSerializer(AstuteGraph(self.cluster_mock))
-
-    def test_mongo_roles_equals_in_defferent_modes(self):
-        cluster = self.create_env()
-        ha_nodes = self.serializer_ha.serialize_nodes(cluster.nodes)
-        mn_nodes = self.serializer_mn.serialize_nodes(cluster.nodes)
-        self.assertEqual(mn_nodes, ha_nodes)
 
 
 class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):

@@ -1893,7 +1893,6 @@ class TestNovaOrchestratorSerializer70(TestSerializer70Mixin,
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True},
-            {'roles': ['mongo'], 'pending_addition': True},
             {'roles': [], 'pending_roles': ['cinder'],
              'pending_addition': True}]
 

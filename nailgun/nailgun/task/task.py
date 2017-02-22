@@ -1528,9 +1528,6 @@ class CheckBeforeDeploymentTask(object):
             if objects.Cluster.dpdk_enabled(task.cluster):
                 cls._check_dpdk_properties(task)
 
-        if objects.Release.is_external_mongo_enabled(task.cluster.release):
-            cls._check_mongo_nodes(task)
-
     @classmethod
     def _check_nodes_are_online(cls, task):
         offline_nodes = db().query(Node).\
@@ -1637,26 +1634,6 @@ class CheckBeforeDeploymentTask(object):
         return 'Not enough IP addresses. Public network {0} must have ' \
             'at least {1} IP addresses '.format(public.cidr, nodes_count) + \
             'for the current environment.'
-
-    @classmethod
-    def _check_mongo_nodes(cls, task):
-        """Check for mongo nodes presence in env with external mongo."""
-        components = objects.Attributes.merged_attrs(
-            task.cluster.attributes).get("additional_components", None)
-
-        if (components and components["ceilometer"]["value"] and
-                components["mongo"]["value"] and
-                len(objects.Cluster.get_nodes_by_role(
-                    task.cluster, 'mongo')) > 0):
-
-                    raise errors.ExtMongoCheckerError
-
-        if (components and components["ceilometer"]["value"] and not
-                components["mongo"]["value"] and
-                len(objects.Cluster.get_nodes_by_role(
-                    task.cluster, 'mongo')) == 0):
-
-                    raise errors.MongoNodesCheckError
 
     @classmethod
     def _validate_network_template(cls, task):

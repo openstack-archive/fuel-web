@@ -408,8 +408,6 @@ MASTER_NODE_NAME = 'Fuel master node'
 FUEL_GRANULAR_DEPLOY = '6.1'
 # version of Fuel when we added remote repos
 FUEL_REMOTE_REPOS = '6.1'
-# version of Fuel when external mongo was added
-FUEL_EXTERNAL_MONGO = '6.1'
 
 # version of Fuel when classic provisioning is not available anymore.
 FUEL_IMAGE_BASED_ONLY = '7.0'

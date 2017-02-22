@@ -90,30 +90,6 @@
           - controller
         tags:
           - ceph-osd
-      mongo:
-        name: "Telemetry - MongoDB"
-        description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
-        weight: 60
-        group: "other"
-        conflicts:
-          - compute
-          - ceph-osd
-        limits:
-          min: 1
-          overrides:
-            - condition: "cluster:mode != 'ha_compact'"
-              max: 1
-              message: "At most 1 MongoDB node can be added for non-HA deployment"
-            - condition: "cluster:mode == 'ha_compact'"
-              recommended: 3
-              message: "At least 3 MongoDB nodes are recommended for HA deployment."
-        restrictions:
-          - condition: "settings:additional_components.ceilometer.value == false"
-            message: "Ceilometer should be enabled in the environment settings."
-          - condition: "settings:additional_components.mongo.value == true"
-            message: "You are already using external MongoDB."
-        tags:
-          - mongo
       base-os:
         name: "Operating System"
         description: "Install base Operating System without additional packages and configuration."
@@ -170,8 +146,6 @@
         has_primary: false
       ceph-osd:
         has_primary: false
-      mongo:
-        has_primary: true
       base-os:
         has_primary: false
       virt:
@@ -335,10 +309,6 @@
       -
         id: "cinder/iscsi"
         default_mapping: "storage"
-        properties: *default_network_roles_metadata_properties
-      -
-        id: "mongo/db"
-        default_mapping: "management"
         properties: *default_network_roles_metadata_properties
       -
         id: "fw-admin"
@@ -597,9 +567,6 @@
         cinder-block-device:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "full-disk", id: "cinder-block-device"}
-        mongo:
-          - {allocate_size: "min", id: "os"}
-          - {allocate_size: "all", id: "mongo"}
         other:
           - {allocate_size: "all", id: "os"}
         # NOTE(eli): it's better to use entire disk
@@ -643,18 +610,6 @@
               size:
                 generator: "calc_total_vg"
                 generator_args: ["logs"]
-              file_system: "ext4"
-        - id: "mongo"
-          type: "vg"
-          label: "MongoDB"
-          min_size: {generator: "calc_min_mongo_size"}
-          volumes:
-            - mount: "/var/lib/mongo"
-              type: "lv"
-              name: "mongodb"
-              size:
-                generator: "calc_total_vg"
-                generator_args: ["mongo"]
               file_system: "ext4"
         - id: "ceph"
           type: "partition"
@@ -895,57 +850,6 @@
             description: "If selected glance artifact repository will be enabled"
             weight: 40
             type: "checkbox"
-        external_mongo:
-          metadata:
-            label: "External MongoDB"
-            weight: 30
-            group: "openstack_services"
-            restrictions:
-              - condition: "settings:additional_components.mongo.value == false"
-                message: "Ceilometer and MongoDB are not enabled on the Additional Components section"
-                action: "hide"
-          hosts_ip:
-            value: ""
-            label: "MongoDB hosts IP"
-            description: "IP Addresses of MongoDB. Use comma to split IPs"
-            weight: 30
-            type: "text"
-            regex:
-              source: '^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?),)*((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
-              error: "Invalid hosts ip sequence"
-          mongo_user:
-            value: "ceilometer"
-            label: "Username"
-            description: "Mongo database username"
-            weight: 30
-            type: "text"
-            regex:
-              source: '^\w+$'
-              error: "Empty username"
-          mongo_password:
-            value: "ceilometer"
-            label: "Password"
-            description: "Mongo database password"
-            weight: 30
-            type: "password"
-            regex:
-              source: '^\S*$'
-              error: "Password contains spaces"
-          mongo_db_name:
-            value: "ceilometer"
-            label: "Database name"
-            description: "Mongo database name"
-            weight: 30
-            type: "text"
-            regex:
-              source: '^\w+$'
-              error: "Invalid database name"
-          mongo_replset:
-            value: ""
-            label: "Replset"
-            description: "Name for Mongo replication set"
-            weight: 30
-            type: "text"
         additional_components:
           metadata:
             label: "Additional Components"
@@ -983,20 +887,6 @@
             description: ""
             weight: 50
             type: "hidden"
-          ceilometer:
-            value: false
-            label: "Install Ceilometer and Aodh"
-            description: "If selected, Ceilometer and Aodh components will be installed"
-            weight: 60
-            type: "checkbox"
-          mongo:
-            value: false
-            label: "Use external Mongo DB"
-            description: "If selected, You can use external Mongo DB as ceilometer backend"
-            weight: 70
-            type: "checkbox"
-            restrictions:
-              - "settings:additional_components.ceilometer.value == false": "External Mongo aims to be an external backend for Ceilometer. Without Ceilometer enabled, External Mongo is useless and should not be installed."
           ironic:
             value: false
             label: "Install Ironic"
@@ -1774,25 +1664,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:ceilometer
-          - name: additional_service:ironic
-      - name: additional_service:ceilometer
-        bind:
-          - "settings:additional_components.ceilometer.value"
-        weight: 30
-        label: "dialog.create_cluster_wizard.additional.install_ceilometer"
-        description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
-        compatible:
-          - name: hypervisor:qemu
-          - name: network:neutron:core:ml2
-          - name: network:neutron:ml2:vlan
-          - name: network:neutron:ml2:tun
-          - name: storage:block:lvm
-          - name: storage:block:ceph
-          - name: storage:object:ceph
-          - name: storage:ephemeral:ceph
-          - name: storage:image:ceph
-          - name: additional_service:sahara
           - name: additional_service:ironic
       - name: additional_service:ironic
         bind:
@@ -1810,7 +1681,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:ceilometer
         incompatible:
           - name: network:neutron:ml2:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"

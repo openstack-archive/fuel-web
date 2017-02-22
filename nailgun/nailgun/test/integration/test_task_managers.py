@@ -50,8 +50,8 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(task_.name, consts.TASK_NAMES.cluster_deletion)
         self.assertEqual(task_.status, consts.TASK_STATUSES.ready)
         self.assertEqual(task_.progress, 100)
-        self.assertEqual(task_.cluster_id, None)
-        self.assertNotEqual(task_.deleted_at, None)
+        self.assertIsNone(task_.cluster_id)
+        self.assertIsNotNone(task_.deleted_at)
 
     def _check_timing(self, task):
         self.assertIsNotNone(task.time_start)

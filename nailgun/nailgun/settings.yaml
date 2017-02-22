@@ -24,7 +24,6 @@ VERSION:
 API: "1"
 
 FEATURE_GROUPS:
-  - "experimental"
   - "advanced"
 
 FUEL_KEY: "Unknown"

@@ -1006,6 +1006,9 @@
             description: "If selected, Murano component will be installed"
             weight: 20
             type: "checkbox"
+            restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
           murano-cfapi:
             value: false
             label: "Install Murano service broker for Cloud Foundry"
@@ -2036,27 +2039,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:murano
-          - name: additional_service:ceilometer
-          - name: additional_service:ironic
-      - name: additional_service:murano
-        bind:
-          - "settings:additional_components.murano.value"
-        weight: 20
-        label: "dialog.create_cluster_wizard.additional.install_murano"
-        description: "dialog.create_cluster_wizard.additional.install_murano_description"
-        compatible:
-          - name: hypervisor:qemu
-          - name: hypervisor:vmware
-          - name: network:neutron:core:ml2
-          - name: network:neutron:ml2:vlan
-          - name: network:neutron:ml2:tun
-          - name: storage:block:lvm
-          - name: storage:block:ceph
-          - name: storage:object:ceph
-          - name: storage:ephemeral:ceph
-          - name: storage:image:ceph
-          - name: additional_service:sahara
           - name: additional_service:ceilometer
           - name: additional_service:ironic
       - name: additional_service:ceilometer
@@ -2077,7 +2059,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:murano
           - name: additional_service:ironic
       - name: additional_service:ironic
         bind:
@@ -2095,7 +2076,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:murano
           - name: additional_service:ceilometer
         incompatible:
           - name: network:neutron:ml2:tun

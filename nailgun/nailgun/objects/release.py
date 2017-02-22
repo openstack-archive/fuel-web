@@ -224,7 +224,9 @@ class Release(NailgunObject):
         :returns: boolean
         """
         return (StrictVersion(instance.environment_version) >=
-                StrictVersion(consts.FUEL_EXTERNAL_MONGO))
+                StrictVersion(consts.FUEL_EXTERNAL_MONGO) and 
+                StrictVersion(instance.environment_version) <
+                StrictVersion(consts.FUEL_NO_MORE_EXTERNAL_MONGO))
 
     @classmethod
     def is_multiple_floating_ranges_enabled(cls, instance):

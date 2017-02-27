@@ -56,3 +56,16 @@ class RemovedIn51RedHatAccountHandler(RemovedIn51Handler):
 
 class RemovedIn51RedHatSetupHandler(RemovedIn51Handler):
     pass
+
+
+class RemovedIn10Handler(BaseRemovedInHandler):
+    """Removed resource handler for Fuel 10"""
+    fuel_version = "10"
+
+
+class RemovedIn10VmwareAttributesDefaultsHandler(BaseRemovedIn10Handler):
+    pass
+
+
+class RemovedIn10VmwareAttributesHandler(BaseRemovedIn10Handler):
+    pass

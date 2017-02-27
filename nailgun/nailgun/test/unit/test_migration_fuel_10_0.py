@@ -389,3 +389,16 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestRemoveVMware(base.BaseAlembicMigrationTest):
+    def test_vmware_attributes_metadata_not_exist_in_releases(self):
+        releases_table = self.meta.tables['releases']
+        self.assertNotIn('vmware_attributes_metadata', releases_table.c)
+
+    def test_there_is_no_table_vmware_attributes(self):
+        self.assertNotIn('vmware_attributes', self.meta.tables)
+
+    def test_vmware_attributes_not_exist_in_cluster_changes(self):
+        cluster_changes_table = self.meta.tables['cluster_changes']
+        self.assertNotIn('vmware_attributes', cluster_changes_table.c)

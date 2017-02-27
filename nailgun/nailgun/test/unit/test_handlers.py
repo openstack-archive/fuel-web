@@ -57,6 +57,18 @@ class TestHandlers(BaseIntegrationTest):
             )
             self.assertIn(resp.status_code, [404, 405])
 
+    def test_removed_urls(self):
+        urls = {
+            'RemovedIn51RedHatAccountHandler': {'obj_id', 1},
+            'RemovedIn51RedHatSetupHandler': {'obj_id', 1},
+            'RemovedIn10VmwareAttributesDefaultsHandler': {'cluster_id': 1},
+            'RemovedIn10VmwareAttributesHandler': {'cluster_id': 1},
+        }
+        for handler in urls:
+            test_url = reverse(handler, urls[handler])
+            resp = self.app.get(test_url, expect_errors=True)
+            self.assertIn(resp.status_code, [410])
+
     def test_http_response(self):
         web.ctx.headers = []
 

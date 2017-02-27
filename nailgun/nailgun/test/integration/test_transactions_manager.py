@@ -17,6 +17,7 @@
 import mock
 
 from nailgun import consts
+from nailgun.lcm.transaction_serializer import SingleWorkerConcurrencyPolicy
 from nailgun import objects
 from nailgun.rpc import receiver
 from nailgun.transactions import manager
@@ -521,6 +522,50 @@ class TestTransactionManager(base.BaseIntegrationTest):
 
         self._success(task.subtasks[0].uuid)
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
+
+    @mock.patch('nailgun.lcm.transaction_serializer.get_concurrency_policy',
+                return_value=SingleWorkerConcurrencyPolicy())
+    @mock.patch('nailgun.transactions.manager.rpc')
+    def test_execute_on_one_node_w_meta(self, rpc_mock, _):
+        node = self.env.create_node(
+            cluster_id=self.cluster.id, pending_roles=["compute"],
+            status=consts.NODE_STATUSES.ready
+        )
+
+        self.graph = objects.DeploymentGraph.create_for_model(
+            {
+                'tasks': [
+                    {
+                        'id': 'test_task',
+                        'type': consts.ORCHESTRATOR_TASK_TYPES.shell,
+                        'roles': ['/.*/'],
+                        'parameters':
+                            {
+                                'cmd':
+                                    {
+                                        'yaql_exp':
+                                            '"echo {0}".'
+                                            'format(" "'
+                                            '.join($meta.nodes.hostname))'
+                                    }
+                        }
+                    },
+                ],
+                'name': 'test_graph_with_meta',
+            },
+            instance=self.cluster,
+            graph_type='test_graph_with_meta')
+        task = self.manager.execute(graphs=[
+            {
+                "type": "test_graph_with_meta",
+                "nodes": [node.id],
+            }])
+
+        tasks_graph = rpc_mock.cast.call_args[0][1][0]['args']['tasks_graph']
+        task_cmd = tasks_graph[node.uid][0]['parameters']['cmd']
+
+        self._success(task.subtasks[0].uuid)
+        self.assertEqual(task_cmd, "echo %s" % node.hostname)
 
     @mock.patch('nailgun.transactions.manager.rpc')
     def test_execute_with_node_filter(self, rpc_mock):

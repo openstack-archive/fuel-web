@@ -367,12 +367,15 @@ class TransactionsManager(object):
             resolver,
             sub_transaction.cache.get('tasks'))
 
+        transaction_meta = dict()
+        transaction_meta['nodes'] = objects.NodeCollection.to_list(nodes)
+
         context = lcm.TransactionContext(
             _get_expected_state(cluster, nodes),
             _get_current_state(
                 cluster, nodes, graph['tasks'],
                 sub_transaction.cache.get('force')
-            ))
+            ), transaction_meta=transaction_meta)
 
         # Attach desired state to the sub transaction, so when we continue
         # our top-level transaction, the new state will be calculated on

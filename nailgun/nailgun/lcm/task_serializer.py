@@ -73,6 +73,7 @@ class Context(object):
         context['$node'] = self._transaction.get_new_node_data(node_id)
         context['$common'] = self._transaction.get_new_common_data()
         context['$'] = context['$%new']
+        context['$meta'] = self.get_transaction_option('transaction_meta')
         cache = self._yaql_expressions_cache
 
         def evaluate(expression):

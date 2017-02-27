@@ -56,3 +56,29 @@ class RemovedIn51RedHatAccountHandler(RemovedIn51Handler):
 
 class RemovedIn51RedHatSetupHandler(RemovedIn51Handler):
     pass
+
+
+class RemovedIn10Handler(BaseRemovedInHandler):
+    """Removed resource handler for Fuel 10"""
+    fuel_version = "10"
+
+    @handle_errors
+    @validate
+    @serialize
+    def GET(self, cluster_id):
+        """A stub for the request. Always returns 410 with removed message.
+
+        :http: 410 (Gone)
+        :raises: webapi.Gone Exception
+        :return: Removed in Fuel version message
+        """
+        message = u"Removed in Fuel version {0}".format(self.fuel_version)
+        raise self.http(410, message)
+
+
+class RemovedIn10VmwareAttributesDefaultsHandler(RemovedIn10Handler):
+    pass
+
+
+class RemovedIn10VmwareAttributesHandler(RemovedIn10Handler):
+    pass

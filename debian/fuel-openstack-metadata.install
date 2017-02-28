@@ -1,0 +1,2 @@
+nailgun/nailgun/fixtures/openstack.yaml usr/share/fuel-openstack-metadata
+fuel_openstack_version etc

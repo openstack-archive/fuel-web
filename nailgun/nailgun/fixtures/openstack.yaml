@@ -112,6 +112,8 @@
             message: "Ceilometer should be enabled in the environment settings."
           - condition: "settings:additional_components.mongo.value == true"
             message: "You are already using external MongoDB."
+          - condition: "not ('experimental' in version:feature_groups)"
+            action: "hide"
         tags:
           - mongo
       base-os:
@@ -989,6 +991,9 @@
             description: "If selected, Ceilometer and Aodh components will be installed"
             weight: 60
             type: "checkbox"
+            restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
           mongo:
             value: false
             label: "Use external Mongo DB"
@@ -996,6 +1001,8 @@
             weight: 70
             type: "checkbox"
             restrictions:
+              - condition: "not ('experimental' in version:feature_groups)"
+                action: "hide"
               - "settings:additional_components.ceilometer.value == false": "External Mongo aims to be an external backend for Ceilometer. Without Ceilometer enabled, External Mongo is useless and should not be installed."
           ironic:
             value: false
@@ -1775,25 +1782,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:ceilometer
-          - name: additional_service:ironic
-      - name: additional_service:ceilometer
-        bind:
-          - "settings:additional_components.ceilometer.value"
-        weight: 30
-        label: "dialog.create_cluster_wizard.additional.install_ceilometer"
-        description: "dialog.create_cluster_wizard.additional.install_ceilometer_description"
-        compatible:
-          - name: hypervisor:qemu
-          - name: network:neutron:core:ml2
-          - name: network:neutron:ml2:vlan
-          - name: network:neutron:ml2:tun
-          - name: storage:block:lvm
-          - name: storage:block:ceph
-          - name: storage:object:ceph
-          - name: storage:ephemeral:ceph
-          - name: storage:image:ceph
-          - name: additional_service:sahara
           - name: additional_service:ironic
       - name: additional_service:ironic
         bind:
@@ -1811,7 +1799,6 @@
           - name: storage:ephemeral:ceph
           - name: storage:image:ceph
           - name: additional_service:sahara
-          - name: additional_service:ceilometer
         incompatible:
           - name: network:neutron:ml2:tun
             message: "dialog.create_cluster_wizard.additional.ironic_network_mode_alert"

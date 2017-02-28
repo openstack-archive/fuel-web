@@ -1,11 +1,80 @@
 Source: fuel-nailgun
-Section: unknown
-Priority: net
-Maintainer: Mirantis Producta <product@mirantis.com>
-Build-Depends: debhelper (>= 8.0.0), python-setuptools
-X-Python-Version: 2.6, 2.7
-Standards-Version: 3.9.2
-Homepage: mirantis.com
+Section: python
+Priority: optional
+Maintainer: Mirantis <product@mirantis.com>
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               dh-systemd,
+               openstack-pkg-tools,
+               python-all,
+               python-setuptools (>= 16.0),
+               python-pbr (>= 1.8),
+               python-yaml (>= 3.1.0),
+               git,
+Standards-Version: 3.9.4
+Homepage: https://launchpad.net/fuel
+
+Package: fuel-nailgun
+Architecture: all
+Depends: fuel-openstack-metadata,
+         python-alembic (>= 0.8.4),
+         python-amqplib (>= 1.0.2),
+         python-anyjson (>= 0.3.3),
+         python-babel (>= 2.3.4),
+         python-crypto (>= 2.6.1),
+         python-decorator (>= 3.4.0),
+         python-fysom (>= 1.0.11),
+         python-iso8601 (>= 0.1.11),
+         python-jinja2 (>= 2.8),
+         python-jsonschema (>= 2.3.0),
+         python-keystoneclient (>= 1.7.0),
+         python-keystonemiddleware (>= 4.0.0),
+         python-kombu (>= 3.0.25),
+         python-mako (>= 0.9.1),
+         python-markupsafe (>= 0.18),
+         python-migrate (>= 0.9.6),
+         python-netaddr (>= 0.7.12),
+         python-netifaces (>= 0.10.4),
+         python-oslo-config (>= 1:1.2.1),
+         python-oslo-serialization (>= 1.0.0),
+         python-oslo-db (>= 1.0.0),
+         python-paste (>= 1.7.5.1),
+         python-ply (>= 3.4),
+         python-psycopg2 (>= 2.5.1),
+         python-requests (>= 2.10.0),
+         python-simplejson (>= 3.3.0),
+         python-six (>= 1.9.0),
+         python-sqlalchemy (>= 1.0.10),
+         python-stevedore (>= 1.10.0),
+         python-urllib3 (>= 1.15.1),
+         python-webpy (>= 0.37),
+         python-wsgilog (>= 0.3),
+         python-yaml (>= 3.10),
+         python-novaclient (>= 2.29.0),
+         python-networkx (>= 1.8),
+         python-cinderclient (>= 1.6.0),
+         python-pydot-ng (>= 1.0.0),
+         python-uwsgidecorators (>= 2.0.12),
+         python-yaql (>= 1.1.0),
+         python-tz (>= 2013.6),
+         ${python:Depends},
+         ${misc:Depends}
+Description: fuel-web (nailgun) implements REST API and deployment data management.
+ It manages disk volumes configuration data, networks configuration data
+ and any other environment specific data which are necessary for successful deployment.
+ <F11>It has required orchestration logic to build instructions for provisioning
+ and deployment in a right order. Nailgun uses SQL database to store its data
+ and AMQP service to interact with workers.
+
+Package: fuel-openstack-metadata
+Architecture: all
+Depends: ${misc:Depends}
+Description: fuel-web (nailgun) implements REST API and deployment data management.
+ It manages disk volumes configuration data, networks configuration data
+ and any other environment specific data which are necessary for successful deployment.
+ It has required orchestration logic to build instructions for provisioning
+ and deployment in a right order. Nailgun uses SQL database to store its data
+ and AMQP service to interact with workers.
 
 Package: fencing-agent
 Architecture: all
@@ -16,4 +85,3 @@ Depends: ohai,
   ruby-json,
   ${misc:Depends}
 Description: Fencing agent
- .

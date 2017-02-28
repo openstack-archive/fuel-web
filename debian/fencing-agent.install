@@ -1,1 +1,2 @@
-bin/fencing-agent.rb /opt/nailgun/bin
+bin/fencing-agent.rb opt/nailgun/bin
+bin/fencing-agent.cron etc/cron.d

@@ -1,0 +1,12 @@
+#! /usr/bin/env python2
+
+import sys
+import yaml
+
+if len(sys.argv) == 2:
+    openstack_yaml = open(sys.argv[1])
+    yaml = yaml.safe_load(openstack_yaml)
+    elems = filter(lambda r: r['fields'].get('name'), yaml)
+    print elems[0]['fields']['version']
+else:
+    print """Usage: {} OPENSTACK_YAML""".format(sys.argv[0])

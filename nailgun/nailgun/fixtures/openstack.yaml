@@ -2272,8 +2272,8 @@
 - pk: 3
   extend: *ubuntu_xenial
   fields:
-    name: "Newton on Ubuntu+UCA 16.04"
-    version: "newton-11.0"
+    name: "Ocata on Ubuntu+UCA 16.04"
+    version: "ocata-11.0"
     description: "This option will install the OpenStack Newton packages using Ubuntu as a base operating system, including Ubuntu Cloud Archive OpenStack packages. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
       editable:
@@ -2307,13 +2307,13 @@
               - type: "deb"
                 name: "uca"
                 uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
-                suite: "xenial-updates/newton"
+                suite: "xenial-updates/ocata"
                 section: "main"
                 priority: 1080
               - type: "deb"
                 name: "uca-proposed"
                 uri: "http://ubuntu-cloud.archive.canonical.com/ubuntu"
-                suite: "xenial-proposed/newton"
+                suite: "xenial-proposed/ocata"
                 section: "main"
                 priority: 1080
               - type: "deb"

@@ -27,6 +27,7 @@ from nailgun.extensions.network_manager.serializers.base \
     import NetworkDeploymentSerializer
 
 from nailgun import consts
+from nailgun.consts import DEFAULT_BRIDGES_NAMES as br_names
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
@@ -35,6 +36,17 @@ from nailgun.orchestrator.base_serializers import MellanoxMixin
 from nailgun.plugins.manager import PluginManager
 from nailgun.settings import settings
 from nailgun import utils
+
+
+def _is_ironic_multitenancy_enabled(cluster):
+    """Check if ironic multitenancy is neabled."""
+    ironic_settings = cluster.attributes.editable.get('ironic_settings')
+    if ironic_settings:
+        ironic_prov_network = ironic_settings.get('ironic_provision_network')
+        if ironic_prov_network:
+            return ironic_prov_network['value']
+
+    return False
 
 
 class NeutronNetworkDeploymentSerializer(
@@ -602,7 +614,7 @@ class NeutronNetworkDeploymentSerializer61(
                 (consts.NEUTRON_SEGMENT_TYPES.gre,
                  consts.NEUTRON_SEGMENT_TYPES.tun):
             transformations.append(
-                cls.add_bridge(consts.DEFAULT_BRIDGES_NAMES.br_mesh))
+                cls.add_bridge(br_names.br_mesh))
 
     @classmethod
     def add_bond_interface(cls, transformations, iface, nets_by_ifaces, nm):
@@ -792,14 +804,14 @@ class NeutronNetworkDeploymentSerializer61(
         """
 
         transformations.append(cls.add_bridge(
-            consts.DEFAULT_BRIDGES_NAMES.br_prv,
+            br_names.br_prv,
             provider=consts.NEUTRON_L23_PROVIDERS.ovs))
         if not prv_base_ep:
-            prv_base_ep = consts.DEFAULT_BRIDGES_NAMES.br_aux
+            prv_base_ep = br_names.br_aux
             transformations.append(cls.add_bridge(prv_base_ep))
 
         transformations.append(cls.add_patch(
-            bridges=[consts.DEFAULT_BRIDGES_NAMES.br_prv, prv_base_ep],
+            bridges=[br_names.br_prv, prv_base_ep],
             provider=consts.NEUTRON_L23_PROVIDERS.ovs,
             mtu=65000))
 
@@ -830,7 +842,7 @@ class NeutronNetworkDeploymentSerializer70(
     @classmethod
     def is_valid_non_default_bridge_name(cls, name):
         """Validate bridge name for non-default network."""
-        if name in consts.DEFAULT_BRIDGES_NAMES:
+        if name in br_names:
             return False
         return bool(cls.RE_BRIDGE_NAME.match(name))
 
@@ -1285,12 +1297,12 @@ class GenerateL23Mixin80(object):
     def generate_l2(cls, cluster):
         l2 = super(GenerateL23Mixin80, cls).generate_l2(cluster)
         l2["phys_nets"]["physnet1"] = {
-            "bridge": consts.DEFAULT_BRIDGES_NAMES.br_floating,
+            "bridge": br_names.br_floating,
             "vlan_range": None
         }
         if objects.Cluster.is_component_enabled(cluster, 'ironic'):
             l2["phys_nets"]["physnet-ironic"] = {
-                "bridge": consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                "bridge": br_names.br_ironic,
                 "vlan_range": None
             }
         return l2
@@ -1355,23 +1367,23 @@ class NeutronNetworkDeploymentSerializer80(
     def get_network_to_endpoint_mapping(cls, node):
         mapping = {
             consts.NETWORKS.fuelweb_admin:
-                consts.DEFAULT_BRIDGES_NAMES.br_fw_admin,
+                br_names.br_fw_admin,
             consts.NETWORKS.storage:
-                consts.DEFAULT_BRIDGES_NAMES.br_storage,
+                br_names.br_storage,
             consts.NETWORKS.management:
-                consts.DEFAULT_BRIDGES_NAMES.br_mgmt}
+                br_names.br_mgmt}
         # roles can be assigned to br-ex only in case it has a public IP
         if objects.Node.should_have_public_with_ip(node):
             mapping[consts.NETWORKS.public] = \
-                consts.DEFAULT_BRIDGES_NAMES.br_ex
+                br_names.br_ex
         if node.cluster.network_config.segmentation_type in \
                 (consts.NEUTRON_SEGMENT_TYPES.gre,
                  consts.NEUTRON_SEGMENT_TYPES.tun):
             mapping[consts.NETWORKS.private] = \
-                consts.DEFAULT_BRIDGES_NAMES.br_mesh
+                br_names.br_mesh
         if objects.Cluster.is_component_enabled(node.cluster, 'ironic'):
             mapping[consts.NETWORKS.baremetal] = \
-                consts.DEFAULT_BRIDGES_NAMES.br_baremetal
+                br_names.br_baremetal
         mapping.update(cls.get_node_non_default_bridge_mapping(node))
         return mapping
 
@@ -1383,12 +1395,12 @@ class NeutronNetworkDeploymentSerializer80(
                                                      is_public, prv_base_ep))
         if objects.Cluster.is_component_enabled(node.cluster, 'ironic'):
             transformations.insert(0, cls.add_bridge(
-                consts.DEFAULT_BRIDGES_NAMES.br_baremetal))
+                br_names.br_baremetal))
             transformations.append(cls.add_bridge(
-                consts.DEFAULT_BRIDGES_NAMES.br_ironic, provider='ovs'))
+                br_names.br_ironic, provider='ovs'))
             transformations.append(cls.add_patch(
-                bridges=[consts.DEFAULT_BRIDGES_NAMES.br_ironic,
-                         consts.DEFAULT_BRIDGES_NAMES.br_baremetal],
+                bridges=[br_names.br_ironic,
+                         br_names.br_baremetal],
                 provider='ovs'))
         return transformations
 
@@ -1489,9 +1501,9 @@ class DPDKSerializerMixin90(object):
         vendor_specific = {'datapath_type': 'netdev'}
         if node.cluster.network_config.segmentation_type == \
                 consts.NEUTRON_SEGMENT_TYPES.vlan:
-            br_name = consts.DEFAULT_BRIDGES_NAMES.br_prv
+            br_name = br_names.br_prv
         else:
-            br_name = consts.DEFAULT_BRIDGES_NAMES.br_mesh
+            br_name = br_names.br_mesh
             vlan_id = objects.NetworkGroup.get_node_network_by_name(
                 node, 'private').vlan_start
             if vlan_id:
@@ -1594,6 +1606,39 @@ class NeutronNetworkDeploymentSerializer90(
                     iface.name, bridge=None, provider='sriov',
                     vendor_specific=config))
 
+        # Ironic multitenancy support
+        if (objects.Cluster.is_component_enabled(node.cluster, 'ironic') and
+                _is_ironic_multitenancy_enabled(node.cluster)):
+            transformations.insert(
+                0, {'action': 'add-br',
+                    'name': br_names.br_bm})
+            netgroup = nm.get_network_by_netname('baremetal',
+                                                 node.network_data)
+            bm_int = netgroup['dev']
+            br_bm_sub = '{0}.{1}'.format(br_names.br_bm,
+                                         netgroup['vlan'])
+            bm_int_configured = False
+            for t in transformations:
+                action = t.get('action')
+                if (action == 'add-patch' and
+                        t.get('bridges') == [
+                            br_names.br_ironic,
+                            br_names.br_baremetal]):
+                    t['bridges'] = [br_names.br_ironic,
+                                    br_names.br_bm]
+                elif (action == 'add-port' and
+                        t.get('name') == bm_int):
+                    transformations.append(
+                        cls.add_patch(bridges=[br_names.br_bm,
+                                               t.get('bridge')]))
+                    bm_int_configured = True
+                elif (action == 'add-port' and
+                        t.get('bridge') == br_names.br_baremetal):
+                    t['name'] = br_bm_sub
+            if not bm_int_configured:
+                transformations.append(cls.add_port(
+                    bm_int, br_names.br_bm))
+
         return transformations
 
     @classmethod
@@ -1623,7 +1668,69 @@ class NeutronNetworkDeploymentSerializer90(
             if cls._is_bond(transformation):
                 cls._add_plugin_attributes_for_bond(node, transformation)
 
+        # Ironic multitenancy support
+        if (objects.Cluster.is_component_enabled(node.cluster, 'ironic') and
+                _is_ironic_multitenancy_enabled(node.cluster)):
+            schema['endpoints'][br_names.br_ironic] = {'IP': 'none'}
+
         return schema
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = (super(NeutronNetworkDeploymentSerializer90, cls)
+              .generate_l2(cluster))
+
+        if (objects.Cluster.is_component_enabled(cluster, 'ironic') and
+                _is_ironic_multitenancy_enabled(cluster)):
+            ng = objects.NetworkGroup.get_from_node_group_by_name(
+                objects.Cluster.get_default_group(cluster).id, 'baremetal')
+            vlan_range = "{0}:{0}".format(ng.vlan_start)
+            l2["phys_nets"]["physnet-ironic"] = {
+                "bridge": br_names.br_ironic,
+                "vlan_range": vlan_range
+            }
+        return l2
+
+    @classmethod
+    def _generate_baremetal_network(cls, cluster):
+        ng = objects.NetworkGroup.get_from_node_group_by_name(
+            objects.Cluster.get_default_group(cluster).id, 'baremetal')
+
+        network_type = 'flat'
+        segment_id = None
+        shared = True
+        if _is_ironic_multitenancy_enabled(cluster):
+            network_type = 'vlan'
+            segment_id = ng.vlan_start
+            shared = False
+            network_type = 'vlan'
+        return {
+            "L3": {
+                "subnet": ng.cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": cluster.network_config.baremetal_gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_range),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": network_type,
+                "segment_id": segment_id,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": objects.Cluster.get_creds(
+                cluster)['tenant']['value'],
+            "shared": shared
+        }
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = (super(NeutronNetworkDeploymentSerializer90, cls)
+                .generate_predefined_networks(cluster))
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets
 
     @classmethod
     def _add_plugin_attributes_for_bond(cls, node, transformation):

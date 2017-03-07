@@ -350,13 +350,6 @@ class TransactionsManager(object):
             "execute graph %s on nodes %s",
             sub_transaction.graph_type, [n.id for n in nodes]
         )
-        for node in nodes:
-            # set progress to show that node is in progress state
-            node.progress = 1
-            if not sub_transaction.dry_run:
-                node.error_type = None
-                node.error_msg = None
-
         # we should initialize primary roles for cluster before
         # role resolve has been created
         objects.Cluster.set_primary_tags(cluster, nodes)
@@ -373,6 +366,8 @@ class TransactionsManager(object):
                 cluster, nodes, graph['tasks'],
                 sub_transaction.cache.get('force')
             ))
+
+        _prepare_nodes(nodes, sub_transaction.dry_run, context.new['nodes'])
 
         # Attach desired state to the sub transaction, so when we continue
         # our top-level transaction, the new state will be calculated on
@@ -565,6 +560,15 @@ def _dump_expected_state(transaction, state, tasks):
         transaction, objects.Cluster.get_network_attributes(cluster))
 
     db().flush()
+
+
+def _prepare_nodes(nodes, dry_run, involved_node_ids):
+    for node in (node for node in nodes if node.uid in involved_node_ids):
+        # set progress to show that node is in progress state
+        node.progress = 1
+        if not dry_run:
+            node.error_type = None
+            node.error_msg = None
 
 
 def _update_nodes(transaction, nodes_instances, nodes_params):

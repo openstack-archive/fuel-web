@@ -37,6 +37,17 @@ from nailgun.settings import settings
 from nailgun import utils
 
 
+def _is_ironic_multitenancy_enabled(cluster):
+    """Check if ironic multitenancy is neabled."""
+    ironic_settings = cluster.attributes.editable.get('ironic_settings')
+    if ironic_settings:
+        ironic_prov_network = ironic_settings.get('ironic_provision_network')
+        if ironic_prov_network:
+           return ironic_prov_network['value']
+
+    return False
+
+
 class NeutronNetworkDeploymentSerializer(
     NetworkDeploymentSerializer,
     MellanoxMixin
@@ -1660,7 +1671,8 @@ class NeutronNetworkTemplateSerializer110(
 
 
 class NeutronNetworkDeploymentSerializer110(
-    NeutronNetworkDeploymentSerializer90
+    NeutronNetworkDeploymentSerializer90,
+    IronicMultitenancyMixIn
 ):
     @classmethod
     def generate_transformations_by_segmentation_type(
@@ -1670,3 +1682,115 @@ class NeutronNetworkDeploymentSerializer110(
             .generate_transformations_by_segmentation_type(
             node, nm, transformations, prv_base_ep, nets_by_ifaces,
             consts.NEUTRON_L23_PROVIDERS.dpdkovs))
+
+
+class IronicMultitenancyMixIn():
+    @classmethod
+    def _generate_baremetal_network(cls, cluster):
+        ng = objects.NetworkGroup.get_from_node_group_by_name(
+            objects.Cluster.get_default_group(cluster).id, 'baremetal')
+
+        network_type = 'flat'
+        segment_id = None
+        shared = True
+        if _is_ironic_multitenancy_enabled(cluster):
+            network_type='vlan'
+            segment_id = ng.vlan_start
+            shared = False
+            network_type = 'vlan'
+        return {
+            "L3": {
+                "subnet": ng.cidr,
+                "nameservers": cluster.network_config.dns_nameservers,
+                "gateway": cluster.network_config.baremetal_gateway,
+                "floating": utils.join_range(
+                    cluster.network_config.baremetal_range),
+                "enable_dhcp": True
+            },
+            "L2": {
+                "network_type": network_type,
+                "segment_id": segment_id,
+                "router_ext": False,
+                "physnet": "physnet-ironic"
+            },
+            "tenant": objects.Cluster.get_creds(
+                cluster)['tenant']['value'],
+            "shared": shared
+        }
+
+
+    @classmethod
+    def generate_predefined_networks(cls, cluster):
+        nets = super(NeutronNetworkDeploymentSerializer100, cls).generate_predefined_networks(
+            cluster
+        )
+        if objects.Cluster.is_component_enabled(cluster, 'ironic'):
+            nets["baremetal"] = cls._generate_baremetal_network(cluster)
+        return nets
+
+    @classmethod
+    def generate_l2(cls, cluster):
+        l2 = super(NeutronNetworkDeploymentSerializer100, cls).generate_l2(cluster)
+
+        if (objects.Cluster.is_component_enabled(cluster, 'ironic') and
+                _is_ironic_multitenancy_enabled(cluster)):
+            ng = objects.NetworkGroup.get_from_node_group_by_name(
+                objects.Cluster.get_default_group(cluster).id, 'baremetal')
+            vlan_range = "{0}:{0}".format(ng.vlan_start)
+            l2["phys_nets"]["physnet-ironic"] = {
+                "bridge": consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                "vlan_range": vlan_range
+            }
+        return l2
+
+    @classmethod
+    def generate_transformations(cls, node, nm, nets_by_ifaces, is_public,
+                                 prv_base_ep):
+        transformations = (
+            super(NeutronNetworkDeploymentSerializer100, cls)
+            .generate_transformations(
+                node, nm, nets_by_ifaces, is_public, prv_base_ep))
+
+        if (objects.Cluster.is_component_enabled(node.cluster, 'ironic') and
+                _is_ironic_multitenancy_enabled(node.cluster)):
+            transformations.insert(0, {'action': 'add-br',
+                                       'name': consts.DEFAULT_BRIDGES_NAMES.br_bm})
+            netgroup = nm.get_network_by_netname('baremetal', node.network_data)
+            bm_int = netgroup['dev']
+            br_bm_sub = '{0}.{1}'.format(consts.DEFAULT_BRIDGES_NAMES.br_bm, netgroup['vlan'])
+            bm_int_configured = False
+            for t in transformations:
+                action = t.get('action')
+                name = t.get('name', '')
+                if (action == 'add-patch' and
+                        t.get('bridges') == [consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                                             consts.DEFAULT_BRIDGES_NAMES.br_baremetal]):
+                    t['bridges'] = [consts.DEFAULT_BRIDGES_NAMES.br_ironic,
+                                    consts.DEFAULT_BRIDGES_NAMES.br_bm]
+                elif (action == 'add-port' and
+                        t.get('name') == bm_int):
+                    transformations.append(cls.add_patch(
+                      bridges=[consts.DEFAULT_BRIDGES_NAMES.br_bm, t.get('bridge')]))
+                    bm_int_configured = True
+                elif (action == 'add-port' and
+                        t.get('bridge') == consts.DEFAULT_BRIDGES_NAMES.br_baremetal):
+                    t['name'] = br_bm_sub
+            if not bm_int_configured:
+                transformations.append(cls.add_port(
+                    bm_int, consts.DEFAULT_BRIDGES_NAMES.br_bm))
+
+        return transformations
+
+    @classmethod
+    def generate_network_scheme(cls, node, networks):
+        attrs = (super(NeutronNetworkDeploymentSerializer100, cls).generate_network_scheme(node, networks))
+
+        if (objects.Cluster.is_component_enabled(node.cluster, 'ironic') and
+                _is_ironic_multitenancy_enabled(node.cluster)):
+            nm = objects.Cluster.get_network_manager(node.cluster)
+            netgroup = nm.get_network_by_netname('baremetal', node.network_data)
+            br_bm_sub = '{0}.{1}'.format(consts.DEFAULT_BRIDGES_NAMES.br_bm, netgroup['vlan'])
+
+            attrs['endpoints'][consts.DEFAULT_BRIDGES_NAMES.br_ironic] = {'IP': 'none'}
+
+        return attrs

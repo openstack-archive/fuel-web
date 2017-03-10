@@ -21,6 +21,7 @@ from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.handlers.base import validate
 from nailgun.extensions.network_manager.validators.network import \
     NetworkGroupValidator
+from nailgun.logger import logger
 
 from nailgun import errors
 from nailgun import objects
@@ -110,6 +111,7 @@ class NetworkGroupCollectionHandler(CollectionHandler):
         try:
             new_ng = self.collection.create(data)
         except errors.CannotCreate as exc:
+            logger.exception("Network group creation failed")
             raise self.http(400, exc.message)
 
         raise self.http(201, self.collection.single.to_json(new_ng))

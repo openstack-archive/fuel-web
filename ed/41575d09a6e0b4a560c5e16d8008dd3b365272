@@ -1,0 +1,9 @@
+Code-Review+2: Alexander Kislitsky <akislitsky@mirantis.com>
+Code-Review+1: Vladimir Kozhukalov <vkozhukalov@mirantis.com>
+Workflow+1: Alexander Kislitsky <akislitsky@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 14 Mar 2017 10:14:56 +0000
+Reviewed-on: https://review.openstack.org/445379
+Project: openstack/fuel-web
+Branch: refs/heads/stable/newton

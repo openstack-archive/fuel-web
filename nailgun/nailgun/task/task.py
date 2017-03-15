@@ -946,24 +946,16 @@ class StopDeploymentTask(object):
                 }
             }
         )
-        db().commit()
         return rpc_message
 
     @classmethod
     def execute(cls, task, deploy_task=None, provision_task=None):
-        db().commit()
         if provision_task:
-            rpc.cast(
-                'naily',
-                cls.message(task, provision_task),
-                service=True
-            )
+            message = cls.message(task, provision_task)
         if deploy_task:
-            rpc.cast(
-                'naily',
-                cls.message(task, deploy_task),
-                service=True
-            )
+            message = cls.message(task, deploy_task)
+        db().commit()
+        rpc.cast('naily', message, service=True)
 
 
 class ResetEnvironmentTask(object):
@@ -1962,8 +1954,9 @@ class CheckRepoAvailability(BaseNetworkVerification):
         return rpc_message
 
     def execute(self):
+        message = self.get_message()
         db().commit()
-        rpc.cast('naily', self.get_message())
+        rpc.cast('naily', message)
 
     def _get_nodes_to_check(self):
         nodes = [{'uid': consts.MASTER_NODE_UID}]
@@ -2091,11 +2084,9 @@ class CreateStatsUserTask(object):
 
     @classmethod
     def execute(cls, task, primary_controller):
+        message = cls.message(task, primary_controller)
         db().commit()
-        rpc.cast(
-            'naily',
-            cls.message(task, primary_controller)
-        )
+        rpc.cast('naily', message)
 
 
 class RemoveStatsUserTask(object):
@@ -2124,11 +2115,9 @@ class RemoveStatsUserTask(object):
 
     @classmethod
     def execute(cls, task, primary_controller):
+        message = cls.message(task, primary_controller)
         db().commit()
-        rpc.cast(
-            'naily',
-            cls.message(task, primary_controller)
-        )
+        rpc.cast('naily', message)
 
 
 class UpdateOpenstackConfigTask(BaseDeploymentTask):

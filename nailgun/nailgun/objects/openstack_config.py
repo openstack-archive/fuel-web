@@ -104,7 +104,7 @@ class OpenstackConfigCollection(NailgunCollection):
         """
         configs_query = cls.filter_by(
             None, cluster_id=cluster.id, is_active=True)
-        configs_query = configs_query.order_by(cls.single.model.node_role)
+        configs_query = configs_query.order_by(cls.single.model.created_at)
 
         node_ids = set(n.id for n in nodes)
         node_roles = set()

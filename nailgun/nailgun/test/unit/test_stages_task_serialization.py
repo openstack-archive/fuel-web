@@ -313,7 +313,7 @@ class TestHooksSerializers(BaseTaskSerializationTest):
                     'DEFAULT/param_b': {'value': 'value_cinder'}
                 },
                 'keystone_config': {
-                    'DEFAULT/param_a': {'value': 'value_compute'},
+                    'DEFAULT/param_a': {'value': 'value_cinder'},
                 }
             }})
 

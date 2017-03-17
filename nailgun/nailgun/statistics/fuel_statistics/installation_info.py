@@ -147,6 +147,9 @@ class InstallationInfo(object):
         WhiteListRule(('murano_settings',
                        'murano_glance_artifacts_plugin', 'value'),
                       'murano_glance_artifacts_plugin', None),
+        WhiteListRule(('ironic_settings',
+                       'ironic_provision_network', 'value'),
+                      'ironic_provision_network', None),
 
         WhiteListRule(('workloads_collector', 'enabled', 'value'),
                       'workloads_collector_enabled', None),

@@ -808,6 +808,16 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         return serialized_node
 
 
+class DeploymentLCMSerializer100(DeploymentLCMSerializer):
+
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return neutron_serializers.NeutronNetworkTemplateSerializer100
+        else:
+            return neutron_serializers.NeutronNetworkDeploymentSerializer100
+
+
 def get_serializer_for_cluster(cluster):
     """Returns a serializer depends on a given `cluster`.
 
@@ -884,8 +894,19 @@ def serialize(orchestrator_graph, cluster, nodes,
 
 def serialize_for_lcm(cluster, nodes,
                       ignore_customized=False, skip_extensions=False):
+    serializers_map = {
+        'default': DeploymentLCMSerializer,
+        '10.0': DeploymentLCMSerializer100,
+    }
+
+    serializer_lcm = serializers_map['default']
+    for version, serializer in six.iteritems(serializers_map):
+        if cluster.release.environment_version.startswith(version):
+            serializer_lcm = serializer
+            break
+
     return _invoke_serializer(
-        DeploymentLCMSerializer(), cluster, nodes,
+        serializer_lcm(), cluster, nodes,
         ignore_customized, skip_extensions
     )
 

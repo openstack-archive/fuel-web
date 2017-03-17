@@ -16,7 +16,7 @@
 
 from nailgun import consts
 from nailgun.orchestrator import deployment_serializers
-from nailgun.test.integration import test_orchestrator_serializer_90
+from nailgun.test.integration import test_orchestrator_serializer_100
 
 
 class TestSerializer110Mixin(object):
@@ -45,22 +45,15 @@ class TestSerializer110Mixin(object):
         return [plugin['name'] for plugin in plugins]
 
 
-class TestDeploymentAttributesSerialization110(
-    TestSerializer110Mixin,
-    test_orchestrator_serializer_90.TestDeploymentAttributesSerialization90
-):
-    pass
-
-
 class TestDeploymentLCMSerialization110(
     TestSerializer110Mixin,
-    test_orchestrator_serializer_90.TestDeploymentLCMSerialization90
+    test_orchestrator_serializer_100.TestDeploymentLCMSerialization100
 ):
     pass
 
 
 class TestSerializeInterfaceDriversData110(
     TestSerializer110Mixin,
-    test_orchestrator_serializer_90.TestSerializeInterfaceDriversData90
+    test_orchestrator_serializer_100.TestSerializeInterfaceDriversData100
 ):
     pass

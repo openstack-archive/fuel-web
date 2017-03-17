@@ -104,6 +104,7 @@ DEFAULT_BRIDGES_NAMES = Enum(
     'br-aux',
     'br-baremetal',
     'br-ironic',
+    'br-bm-phy',
     names=(
         'br_fw_admin',
         'br_storage',
@@ -115,7 +116,8 @@ DEFAULT_BRIDGES_NAMES = Enum(
         'br_mesh',
         'br_aux',
         'br_baremetal',
-        'br_ironic'
+        'br_ironic',
+        'br_bm_phy'
     )
 )
 

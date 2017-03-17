@@ -517,8 +517,10 @@ class Cluster(NailgunObject):
             if StrictVersion(ver) == StrictVersion('7.0'):
                 return neutron.NeutronManager70
 
-            if StrictVersion(ver) >= StrictVersion('8.0'):
+            if StrictVersion(ver) == StrictVersion('8.0'):
                 return neutron.NeutronManager80
+            if StrictVersion(ver) >= StrictVersion('9.0'):
+                return neutron.NeutronManager90
 
             return neutron.NeutronManager
         elif net_provider == consts.CLUSTER_NET_PROVIDERS.nova_network:

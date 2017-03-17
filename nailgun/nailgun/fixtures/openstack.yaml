@@ -948,6 +948,20 @@
             description: "Name for Mongo replication set"
             weight: 30
             type: "text"
+        ironic_settings:
+          metadata:
+            label: "Ironic Settings"
+            weight: 40
+            group: "openstack_services"
+            restrictions:
+              - condition: "settings:additional_components.ironic.value == false"
+                action: "hide"
+          ironic_provision_network:
+            value: false
+            label: "Use separate provisioning network"
+            description: "When selected Ironic instance will be provisioned in separate network."
+            weight: 10
+            type: "checkbox"
         additional_components:
           metadata:
             label: "Additional Components"

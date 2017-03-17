@@ -809,7 +809,17 @@ class DeploymentLCMSerializer(DeploymentHASerializer90):
         return serialized_node
 
 
-class DeploymentLCMSerializer110(DeploymentLCMSerializer):
+class DeploymentLCMSerializer100(DeploymentLCMSerializer):
+
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.network_config.configuration_template:
+            return neutron_serializers.NeutronNetworkTemplateSerializer100
+        else:
+            return neutron_serializers.NeutronNetworkDeploymentSerializer100
+
+
+class DeploymentLCMSerializer110(DeploymentLCMSerializer100):
 
     @classmethod
     def get_net_provider_serializer(cls, cluster):
@@ -897,6 +907,7 @@ def serialize_for_lcm(cluster, nodes,
                       ignore_customized=False, skip_extensions=False):
     serializers_map = {
         'default': DeploymentLCMSerializer,
+        '10.0': DeploymentLCMSerializer100,
         '11.0': DeploymentLCMSerializer110,
     }
 

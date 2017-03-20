@@ -102,6 +102,7 @@ def prepare():
         meta.tables['releases'].insert(),
         [{
             'name': 'test_name',
+            'vmware_attributes_metadata': 'test_meta',
             'version': '2015.1-10.0',
             'operating_system': 'ubuntu',
             'state': 'available',
@@ -187,6 +188,7 @@ def prepare():
             'timestamp': datetime.datetime.utcnow(),
         }]
     )
+    node_id = result.inserted_primary_key[0]
 
     result = db.execute(
         meta.tables['plugins'].insert(),
@@ -324,6 +326,28 @@ def prepare():
         ]
     )
 
+    db.execute(
+        meta.tables['cluster_changes'].insert(),
+        [
+            {
+                'cluster_id': cluster_ids[0],
+                'node_id': node_id,
+                'name': 'networks',
+                'vmware_attributes': 'vmware_attributes'
+            }
+        ]
+    )
+
+    db.execute(
+        meta.tables['vmware_attributes'].insert(),
+        [
+            {
+                'cluster_id': cluster_ids[0],
+                'editable': 'test_data'
+            }
+        ]
+    )
+
     TestRequiredComponentTypesField.prepare(meta)
     db.commit()
 
@@ -389,3 +413,22 @@ class TestRequiredComponentTypesField(base.BaseAlembicMigrationTest):
                     'required_component_types': None
                 })
         db.rollback()
+
+
+class TestRemoveVMware(base.BaseAlembicMigrationTest):
+    def test_vmware_attributes_metadata_not_exist_in_releases(self):
+        releases_table = self.meta.tables['releases']
+        self.assertNotIn('vmware_attributes_metadata', releases_table.c)
+
+    def test_there_is_no_table_vmware_attributes(self):
+        self.assertNotIn('vmware_attributes', self.meta.tables)
+
+    def test_vmware_attributes_not_exist_in_cluster_changes(self):
+        cluster_changes_table = self.meta.tables['cluster_changes']
+        self.assertNotIn('vmware_attributes', cluster_changes_table.c)
+
+    def test_cluster_changes_enum_doesnt_have_old_values(self):
+        result = db.execute(sa.text(
+            'select unnest(enum_range(NULL::possible_changes))'
+        )).fetchall()
+        self.assertNotIn('vmware_attributes', [x[0] for x in result])

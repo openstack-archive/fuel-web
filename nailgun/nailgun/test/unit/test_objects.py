@@ -1098,6 +1098,7 @@ class TestClusterObject(BaseTestCase):
         super(TestClusterObject, self).setUp()
         self.cluster = self.env.create(
             cluster_kwargs={'net_provider': 'neutron'},
+            release_kwargs={'version': 'newton-10.0', 'api': False},
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['controller']},
@@ -1240,6 +1241,10 @@ class TestClusterObject(BaseTestCase):
             controller.group_id,
             objects.Cluster.get_common_node_group(self.cluster,
                                                   ['controller']).id)
+        self.assertEqual(
+            controller.group_id,
+            objects.Cluster.get_common_node_group(self.cluster,
+                                                  ['neutron']).id)
 
     def test_get_node_group_multiple_return_same_group(self):
         group_id = self.env.create_node_group().json_body['id']

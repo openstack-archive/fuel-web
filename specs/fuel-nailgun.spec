@@ -1,6 +1,6 @@
 %define name fuel-nailgun
 %{!?version: %define version 10.0.0}
-%{!?release: %define release 1}
+%{!?release: %define release 2}
 
 Summary: Nailgun package
 Name: %{name}
@@ -12,7 +12,7 @@ Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Prefix: %{_prefix}
 BuildRequires:  python-devel
-BuildRequires:  python-setuptools
+BuildRequires:  python-setuptools >= 18.6.1
 BuildRequires:  python-yaml
 BuildRequires:  git
 BuildArch: noarch

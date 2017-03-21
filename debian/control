@@ -1,4 +1,5 @@
 Source: fuel-nailgun
+<<<<<<< HEAD
 Section: python
 Priority: optional
 Maintainer: Mirantis <product@mirantis.com>
@@ -7,7 +8,7 @@ Build-Depends: debhelper (>= 9),
                dh-systemd,
                openstack-pkg-tools,
                python-all,
-               python-setuptools (>= 16.0),
+               python-setuptools (>= 18.6.1),
                python-pbr (>= 1.8),
                python-yaml (>= 3.1.0),
                git,
@@ -75,6 +76,15 @@ Description: fuel-web (nailgun) implements REST API and deployment data manageme
  It has required orchestration logic to build instructions for provisioning
  and deployment in a right order. Nailgun uses SQL database to store its data
  and AMQP service to interact with workers.
+=======
+Section: unknown
+Priority: net
+Maintainer: Mirantis Producta <product@mirantis.com>
+Build-Depends: debhelper (>= 8.0.0), python-setuptools (>= 18.6.1)
+X-Python-Version: 2.6, 2.7
+Standards-Version: 3.9.2
+Homepage: mirantis.com
+>>>>>>> 5ac2c1b... Update requirements
 
 Package: fencing-agent
 Architecture: all

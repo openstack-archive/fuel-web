@@ -282,16 +282,16 @@ ALLOWED_VALUES_SCHEMA = {
 MULTIPLE_TEXT_FIELDS_SCHEMA = {
     'value': {
         'type': 'array',
-        'minItems': 1,
+        'minItems': 0,
         'items': {'type': 'string'},
     },
     'min': {
         'type': 'integer',
-        'minimum': 1,
+        'minimum': 0,
     },
     'max': {
         'type': 'integer',
-        'minimum': 1,
+        'minimum': 0,
     }
 }
 

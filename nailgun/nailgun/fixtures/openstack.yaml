@@ -1305,6 +1305,7 @@
             description: "List of upstream DNS servers"
             weight: 10
             type: "text_list"
+            min: 0
             max: 3
             regex:
               source: &ipv4_regex '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'

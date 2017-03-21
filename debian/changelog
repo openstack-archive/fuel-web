@@ -1,3 +1,10 @@
+fuel-nailgun (10.0.0-2) trusty; urgency=medium
+
+  * d/control: Set lower bound for python-setuptools
+               dependency.
+
+ -- Ivan Udovichenko <iudovichenko@mirantis.com>  Tue, 21 Mar 2017 19:13:58 +0300
+
 fuel-nailgun (10.0.0-1) trusty; urgency=low
 
   * Bump version to 10.0

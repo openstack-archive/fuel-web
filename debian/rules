@@ -1,15 +1,46 @@
 #!/usr/bin/make -f
+# -*- makefile -*-
+
 DH_VERBOSE=1
 
-topdir=$(shell pwd)
+PYTHONS:=$(shell pyversions -vr)
+
+include /usr/share/openstack-pkg-tools/pkgos.make
+
+#export OSLO_PACKAGE_VERSION=$(shell dpkg-parsechangelog | grep Version: | cut -d' ' -f2 | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//' -e 's/~/.0/' | head -n 1)
 
 %:
-	dh $@ --with python2
+	dh $@ --with python2,systemd
+
+override_dh_auto_build:
+	dh_auto_build
+	python $(CURDIR)/debian/openstack-version nailgun/nailgun/fixtures/openstack.yaml > $(CURDIR)/fuel_openstack_version
 
 override_dh_auto_install:
-	dh_auto_install
-override_dh_auto_build:
-	dh_clean
-	dh_auto_build
-override_dh_auto_clean:
-	dh_auto_clean
+	cd nailgun \
+	set -e ; for pyvers in $(PYTHONS); do \
+		python$$pyvers setup.py install --install-layout=deb \
+			--root $(CURDIR)/debian/fuel-nailgun; \
+	done
+
+override_dh_clean:
+	rm -rf  build
+	dh_clean -O--buildsystem=python_distutils
+	rm -f debian/nailgun-common.postinst
+	rm -f debian/*.service debian/*.init debian/*.upstart
+
+override_dh_systemd_enable: gen-init-configurations
+	dh_systemd_enable --no-enable
+
+override_dh_systemd_start: gen-init-configurations
+	dh_systemd_start --no-start
+
+# Commands not to run
+override_dh_installcatalogs:
+override_dh_installemacsen override_dh_installifupdown:
+override_dh_installinfo override_dh_installmenu override_dh_installmime:
+override_dh_installmodules override_dh_installlogcheck:
+override_dh_installpam override_dh_installppp override_dh_installudev override_dh_installwm:
+override_dh_installxfonts override_dh_gconf override_dh_icons override_dh_perl override_dh_usrlocal:
+override_dh_installcron override_dh_installdebconf:
+override_dh_installlogrotate override_dh_installgsettings:

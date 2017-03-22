@@ -507,7 +507,7 @@ class TestDeploymentAttributesSerialization70(
                 self.assertEqual(v['network_roles'], dict(network_roles))
                 net_manager = objects.Cluster.get_network_manager(node.cluster)
                 admin_ip = net_manager.get_admin_ip_for_node(node)
-                admin_mac = net_manager.get_admin_interface(node).mac
+                admin_mac = node.mac
                 dhcp_binding_params = {
                     'name': objects.Node.get_node_fqdn(node),
                     'ip_address': admin_ip,
@@ -1552,7 +1552,7 @@ class TestNetworkTemplateSerializer70(BaseDeploymentSerializer,
                 self.assertEqual(node_attrs['swift_zone'], node.uid)
                 net_manager = objects.Cluster.get_network_manager(node.cluster)
                 admin_ip = net_manager.get_admin_ip_for_node(node)
-                admin_mac = net_manager.get_admin_interface(node).mac
+                admin_mac = node.mac
                 dhcp_binding_params = {
                     'name': objects.Node.get_node_fqdn(node),
                     'ip_address': admin_ip,

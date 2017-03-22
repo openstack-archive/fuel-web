@@ -1072,7 +1072,8 @@ class NeutronNetworkDeploymentSerializer70(
     def _dhcp_binding_params(cls, node):
         net_manager = objects.Cluster.get_network_manager(node.cluster)
         admin_ip = net_manager.get_admin_ip_for_node(node)
-        admin_mac = net_manager.get_admin_interface(node).mac
+        pxe_iface_name = net_manager._get_pxe_iface_name(node)
+        admin_mac = objects.Node.get_interface_by_mac_or_name(node, name=pxe_iface_name).mac
         params = {
             'name': objects.Node.get_node_fqdn(node),
             'ip_address': admin_ip,

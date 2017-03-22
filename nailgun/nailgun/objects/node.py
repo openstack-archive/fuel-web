@@ -146,9 +146,12 @@ class Node(NailgunObject):
     @classmethod
     def get_interface_by_mac_or_name(cls, instance, mac=None, name=None):
         # try to get interface by mac address
-        interface = next((
-            n for n in instance.nic_interfaces
-            if network_utils.is_same_mac(n.mac, mac)), None)
+        if not mac is None:
+            interface = next((
+                n for n in instance.nic_interfaces
+                if network_utils.is_same_mac(n.mac, mac)), None)
+        else:
+            interface = None
 
         # try to get interface instance by interface name. this protects
         # us from loosing nodes when some NICs was replaced with a new one

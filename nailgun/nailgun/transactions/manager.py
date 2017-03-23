@@ -123,15 +123,11 @@ class try_transaction(object):
 
 class TransactionsManager(object):
 
-    # We're moving towards everything-is-a-graph approach where there's
-    # no place for transaction names. From now on we're going to use
-    # transaction's attributes (e.g. graph_type, dry_run) to find out
-    # what this transaction about. Still, we need to specify transaction
-    # name until we move everything to graphs.
-    task_name = consts.TASK_NAMES.deployment
-
-    def __init__(self, cluster_id):
+    def __init__(self, cluster_id, name=None):
         self.cluster_id = cluster_id
+        self.name = name
+        if self.name is None:
+            self.name = consts.TASK_NAMES.deploy
 
     def execute(self, graphs, dry_run=False, noop_run=False, force=False,
                 debug=False, subgraphs=None):
@@ -174,7 +170,7 @@ class TransactionsManager(object):
         _remove_obsolete_tasks(cluster)
 
         transaction = objects.Transaction.create({
-            'name': consts.TASK_NAMES.deploy,
+            'name': self.name,
             'cluster_id': self.cluster_id,
             'status': consts.TASK_STATUSES.running,
             'dry_run': dry_run or noop_run,
@@ -197,7 +193,7 @@ class TransactionsManager(object):
             cache['subgraphs'] = subgraphs
 
             transaction.create_subtask(
-                self.task_name,
+                graph['type'],
                 status=consts.TASK_STATUSES.pending,
                 dry_run=dry_run or noop_run,
                 graph_type=graph['type'],
@@ -674,6 +670,11 @@ def _calculate_progress(transaction, progress):
 
 def _update_cluster_status(transaction):
     if transaction.dry_run:
+        return
+
+    if transaction.graph_type == "delete-cluster":
+        status = consts.CLUSTER_STATUSES.remove
+        objects.Cluster.update(transaction.cluster, {'status': status})
         return
 
     nodes = objects.NodeCollection.filter_by(

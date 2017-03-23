@@ -723,6 +723,7 @@ class OrchestratorDeploymentTasksHandler(SingleHandler):
 
 
 class TransactionExecutorHandler(BaseHandler):
+
     def start_transaction(self, cluster, options):
         """Starts new transaction.
 
@@ -731,7 +732,7 @@ class TransactionExecutorHandler(BaseHandler):
         :return: JSONized task object
         """
         try:
-            manager = transactions.TransactionsManager(cluster.id)
+            manager = transactions.TransactionsManager(cluster.id, options.pop('name', None))
             self.raise_task(manager.execute(**options))
         except errors.ObjectNotFound as e:
             raise self.http(404, e.message)

@@ -28,6 +28,7 @@ from nailgun.api.v1.handlers.base import handle_errors
 from nailgun.api.v1.handlers.base import OrchestratorDeploymentTasksHandler
 from nailgun.api.v1.handlers.base import serialize
 from nailgun.api.v1.handlers.base import SingleHandler
+from nailgun.api.v1.handlers.base import TransactionExecutorHandler
 from nailgun.api.v1.handlers.base import validate
 from nailgun.api.v1.handlers.deployment_graph import \
     RelatedDeploymentGraphCollectionHandler
@@ -55,7 +56,7 @@ from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
 
 
-class ClusterHandler(SingleHandler):
+class ClusterHandler(SingleHandler, TransactionExecutorHandler):
     """Cluster single handler"""
 
     single = objects.Cluster
@@ -99,6 +100,24 @@ class ClusterHandler(SingleHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(self.single, obj_id)
+        if objects.Release.is_lcm_supported(cluster.release):
+            try:
+                sequence = objects.DeploymentSequence.get_by_name_for_release(
+                    cluster.release, 'delete-cluster'
+                )
+                if sequence:
+                    transaction_options = {
+                        'name': 'delete-cluster',
+                        'dry_run': False,
+                        'noop_run': False,
+                        'force': False,
+                        'graphs': sequence.graphs,
+                    }
+                    return self.start_transaction(cluster, transaction_options)
+            except errors.NailgunException as e:
+                logger.exception("Failed to get transaction options")
+                raise self.http(400, msg=six.text_type(e))
+
         task_manager = ClusterDeletionManager(cluster_id=cluster.id)
         try:
             logger.debug('Trying to execute cluster deletion task')

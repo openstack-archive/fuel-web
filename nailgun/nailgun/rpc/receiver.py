@@ -699,20 +699,6 @@ class NailgunReceiver(object):
                 objects.Task.bulk_delete(x.id for x in stop_tasks)
 
             node_uids = [n['uid'] for n in itertools.chain(nodes, ia_nodes)]
-            q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
-            q_nodes = objects.NodeCollection.filter_by(
-                q_nodes,
-                cluster_id=task.cluster_id
-            )
-            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
-
-            # locking Nodes for update
-            update_nodes = objects.NodeCollection.lock_for_update(
-                q_nodes
-            ).all()
-
-            for node in update_nodes:
-                objects.Node.reset_to_discover(node)
 
             if ia_nodes:
                 cls._notify_inaccessible(
@@ -722,7 +708,7 @@ class NailgunReceiver(object):
                 )
 
             message = cls._make_stop_deployment_message(
-                task, status, stop_tasks, update_nodes, message)
+                task, status, stop_tasks, node_uids, message)
 
             notifier.notify(
                 "done",

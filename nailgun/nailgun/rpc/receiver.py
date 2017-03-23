@@ -722,7 +722,7 @@ class NailgunReceiver(object):
                 )
 
             message = cls._make_stop_deployment_message(
-                task, status, stop_tasks, update_nodes, message)
+                task, status, stop_tasks, message)
 
             notifier.notify(
                 "done",
@@ -756,7 +756,7 @@ class NailgunReceiver(object):
 
             db().flush()
             message = cls._make_stop_deployment_message(
-                task, status, stop_tasks, update_nodes, message)
+                task, status, stop_tasks, message)
 
             notifier.notify(
                 "error",
@@ -770,17 +770,16 @@ class NailgunReceiver(object):
         cls._update_action_log_entry(status, task.name, task_uuid, nodes)
 
     @classmethod
-    def _make_stop_deployment_message(cls, task, status, stop_tasks, nodes,
-                                      message):
+    def _make_stop_deployment_message(cls, task, status, stop_tasks, message):
         messages_by_status = {
             consts.TASK_STATUSES.ready: [
                 u"Deployment of environment '{0}' was successfully stopped. ",
-                u"{0} of {1} environment node(s) was successfully stopped. "
+                u"{0} of environment was successfully stopped. "
             ],
             consts.TASK_STATUSES.error: [
                 u"Deployment of environment '{0}' was failed to stop: {1}. "
                 u"Please check logs for details.",
-                u"{0} of {1} environment node(s) was failed to stop: {2}. "
+                u"{0} of environment was failed to stop: {1}. "
                 u"Please check logs for details."
             ]
         }
@@ -792,8 +791,7 @@ class NailgunReceiver(object):
         process = u"Deployment"
         if consts.TASK_NAMES.deployment not in stop_task_names:
             process = u"Provisioning"
-        return messages_by_status[status][1].format(
-            process, len(nodes), message)
+        return messages_by_status[status][1].format(process, message)
 
     @classmethod
     def _restore_pending_changes(cls, nodes, task, ia_nodes):

@@ -165,8 +165,8 @@ class TestStopDeployment(BaseIntegrationTest):
         self.assertFalse(self.cluster.is_locked)
 
         for n in self.cluster.nodes:
-            self.assertEqual(n.roles, [])
-            self.assertNotEqual(n.pending_roles, [])
+            self.assertNotEqual(n.roles, [])
+            self.assertEqual(n.pending_roles, [])
 
         notification = self.db.query(Notification).filter_by(
             cluster_id=stop_task.cluster_id

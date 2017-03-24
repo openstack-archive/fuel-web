@@ -110,6 +110,8 @@ class Context(object):
         return evaluate
 
     def get_formatter_context(self, node_id):
+        # TODO(akislitsky) remove formatter context from the
+        # tasks serialization workflow
         data = self._transaction.get_new_data(node_id)
         return {
             'CLUSTER_ID': data.get('cluster', {}).get('id'),
@@ -147,9 +149,14 @@ class DeploymentTaskSerializer(object):
         :return: the result
         """
 
-    def serialize(self, node_id):
-        """Serialize task in expected by orchestrator format.
+    def serialize(self, node_id, formatter_context=None):
+        """Serialize task in expected by orchestrator format
 
+        If serialization is performed on the remote worker
+        we should pass formatter_context parameter with values
+        from the master node settings
+
+        :param formatter_context: formatter context
         :param node_id: the target node_id
         """
 
@@ -157,10 +164,12 @@ class DeploymentTaskSerializer(object):
             "serialize task %s for node %s",
             self.task_template['id'], node_id
         )
+        formatter_context = formatter_context \
+            or self.context.get_formatter_context(node_id)
         task = utils.traverse(
             self.task_template,
             utils.text_format_safe,
-            self.context.get_formatter_context(node_id),
+            formatter_context,
             {
                 'yaql_exp': self.context.get_yaql_interpreter(
                     node_id, self.task_template['id'])

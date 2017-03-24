@@ -177,6 +177,15 @@ YAQL_MEMORY_QUOTA: 104857600
 
 LCM_CHECK_TASK_VERSION: False
 
+# Coefficient for calculation max jobs queue length. If jobs number reaches the
+# len(nodes) * load_coef we stop generate and start consume of jobs.
+LCM_DS_NODE_LOAD_COEFF: 2
+# Port of dask-scheduler on the master node
+LCM_DS_JOB_SHEDULER_PORT: 8002
+# Size of tasks chunk sending to the distributed worker
+LCM_DS_TASKS_PER_JOB: 100
+
+
 DPDK_MAX_CPUS_PER_NIC: 4
 
 TRUNCATE_LOG_ENTRIES: 100

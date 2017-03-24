@@ -2319,6 +2319,12 @@
                 suite: "auxiliary"
                 section: "main restricted"
                 priority: 1150
+              - name: mos-review
+                section: "main restricted"
+                uri: "http://packages.fuel-infra.org/review/FUEL-449600/repositories/ubuntu/mitaka-trusty"
+                priority: 1050
+                suite: mitaka-trusty
+                type: deb
         provision:
           metadata:
             label: "Provision"
@@ -2564,6 +2570,12 @@
                 suite: "auxiliary"
                 section: "main restricted"
                 priority: 1150
+              - name: mos-review
+                section: "main restricted"
+                uri: "http://packages.fuel-infra.org/review/FUEL-449600/repositories/ubuntu/mitaka-trusty"
+                priority: 1050
+                suite: mitaka-trusty
+                type: deb
           repo_type:
             type: "hidden"
             weight: 58

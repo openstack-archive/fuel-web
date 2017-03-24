@@ -868,7 +868,7 @@ class Cluster(NailgunObject):
     @classmethod
     def get_roles_by_tag(cls, tag_name, instance):
         roles = set()
-        for role, meta in six.iteritems(cls.get_own_roles(instance)):
+        for role, meta in six.iteritems(cls.get_roles(instance)):
             if tag_name in meta.get('tags', {}):
                 roles.add(role)
         return roles
@@ -1036,13 +1036,16 @@ class Cluster(NailgunObject):
         return nodegroups[0]
 
     @classmethod
-    def get_node_groups(cls, instance, noderoles):
+    def get_node_groups(cls, instance, nodetags):
         """Returns node groups for given node roles.
 
         :param instance: a Cluster instance
         :param noderoles: a list of node roles
         :returns: a query for list of NodeGroup instances
         """
+        noderoles = set()
+        for tag in nodetags:
+            noderoles.update(cls.get_roles_by_tag(tag, instance) or [tag])
         psql_noderoles = sa.cast(
             psql.array(noderoles),
             psql.ARRAY(sa.String(consts.ROLE_NAME_MAX_SIZE)))

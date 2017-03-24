@@ -2130,19 +2130,19 @@
             value:
               - type: "deb"
                 name: "ubuntu"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "mirror://mirrors.ubuntu.com/mirrors.txt"
                 suite: "xenial"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-updates"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "mirror://mirrors.ubuntu.com/mirrors.txt"
                 suite: "xenial-updates"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-security"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "mirror://mirrors.ubuntu.com/mirrors.txt"
                 suite: "xenial-security"
                 section: "main universe multiverse"
                 priority: null
@@ -2393,19 +2393,19 @@
             value:
               - type: "deb"
                 name: "ubuntu"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "mirror://mirrors.ubuntu.com/mirrors.txt"
                 suite: "xenial"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-updates"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "mirror://mirrors.ubuntu.com/mirrors.txt"
                 suite: "xenial-updates"
                 section: "main universe multiverse"
                 priority: null
               - type: "deb"
                 name: "ubuntu-security"
-                uri: "http://archive.ubuntu.com/ubuntu/"
+                uri: "mirror://mirrors.ubuntu.com/mirrors.txt"
                 suite: "xenial-security"
                 section: "main universe multiverse"
                 priority: null

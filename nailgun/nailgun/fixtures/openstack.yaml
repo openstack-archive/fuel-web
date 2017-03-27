@@ -1114,55 +1114,6 @@
             group: "security"
             weight: 20
             type: "radio"
-          serialization_policy:
-            value: "default"
-            values:
-              - data: "default"
-                label: "Default serialization"
-                description: "Run serialization on the master node only"
-              - data: "distributed"
-                label: "Distributed serialization"
-                description: "Run serialization on the master and environment nodes. Nodes for serialization are selected only form that environment for wich serialization is performing."
-            label: "Serialization policy"
-            group: "general"
-            weight: 30
-            type: "radio"
-          ds_use_discover:
-            group: "general"
-            label: "Use discovered nodes as workers for serialization"
-            type: "checkbox"
-            value: true
-            weight: 31
-            restrictions:
-              - condition: "settings:common.serialization_policy.value != 'distributed'"
-                action: "hide"
-          ds_use_provisioned:
-            group: "general"
-            label: "Use provisioned nodes as workers for serialization"
-            type: "checkbox"
-            value: true
-            weight: 32
-            restrictions:
-              - condition: "settings:common.serialization_policy.value != 'distributed'"
-                action: "hide"
-          ds_use_error:
-            group: "general"
-            label: "Use nodes in error state as workers for serialization"
-            type: "checkbox"
-            value: true
-            weight: 33
-            restrictions:
-              - condition: "settings:common.serialization_policy.value != 'distributed'"
-                action: "hide"
-          ds_use_ready:
-            group: "general"
-            label: "Use ready nodes as workers for serialization"
-            type: "checkbox"
-            value: false
-            weight: 34
-            restrictions:
-              - condition: "settings:common.serialization_policy.value != 'distributed'"
-                action: "hide"
         public_network_assignment:
           metadata:
             weight: 10

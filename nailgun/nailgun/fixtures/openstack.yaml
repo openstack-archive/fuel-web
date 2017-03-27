@@ -2175,7 +2175,7 @@
             weight: 10
             type: "textarea"
             value: |
-              acl                                                                                                                                                                                                          [32/168]
+              acl
               anacron
               bash-completion
               bridge-utils
@@ -2204,48 +2204,7 @@
               openssh-client
               openssh-server
               puppet
-              python-alembic
               python-amqp
-              python-amqplib
-              python-anyjson
-              python-babel
-              python-cinderclient
-              python-crypto
-              python-decorator
-              python-distributed
-              python-fysom
-              python-iso8601
-              python-jinja2
-              python-jsonschema
-              python-keystoneclient
-              python-keystonemiddleware
-              python-kombu
-              python-mako
-              python-markupsafe
-              python-migrate
-              python-netaddr
-              python-netifaces
-              python-networkx
-              python-novaclient
-              python-oslo-config
-              python-oslo-db
-              python-oslo-serialization
-              python-paste
-              python-ply
-              python-psycopg2
-              python-pydot-ng
-              python-requests
-              python-simplejson
-              python-six
-              python-sqlalchemy
-              python-stevedore
-              python-tz
-              python-urllib3
-              python-uwsgidecorators
-              python-webpy
-              python-wsgilog
-              python-yaml
-              python-yaql
               ruby-augeas
               ruby-ipaddress
               ruby-json

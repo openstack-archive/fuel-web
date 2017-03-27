@@ -24,6 +24,7 @@ Requires:    python-anyjson >= 0.3.3
 Requires:    python-babel >= 1.3
 Requires:    python-crypto >= 2.6.1
 Requires:    python-decorator >= 3.4.0
+Requires:    python-distributed >= 1.16.0
 Requires:    python-fysom >= 1.0.11
 Requires:    python-iso8601 >= 0.1.9
 Requires:    python-jinja2 >= 2.7

@@ -187,7 +187,6 @@ class TestHandlers(BaseIntegrationTest):
                     'fail_if_error': is_critical,
                     'vms_conf': [],
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
-                    'ip': node.ip,
 
                     'network_data': {
                         'eth1': {
@@ -604,7 +603,6 @@ class TestHandlers(BaseIntegrationTest):
                     'online': node.online,
                     'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
-                    'ip': node.ip,
                     'priority': 100,
                     'vms_conf': [],
                     'network_scheme': {
@@ -1098,7 +1096,6 @@ class TestHandlers(BaseIntegrationTest):
                     'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
                     'priority': 100,
-                    'ip': node.ip,
                     'vms_conf': [],
 
                     'network_scheme': {

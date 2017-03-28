@@ -57,7 +57,7 @@ def _get_node_attributes(graph, kind):
     return r
 
 
-def make_astute_message(transaction, context, graph, node_resolver):
+def make_astute_message(transaction, context, graph, node_resolver, all_nodes):
     directory, tasks, metadata = lcm.TransactionSerializer.serialize(
         context, graph['tasks'], node_resolver
     )
@@ -71,6 +71,9 @@ def make_astute_message(transaction, context, graph, node_resolver):
     if subgraphs:
         metadata['subgraphs'] = subgraphs
     objects.DeploymentHistoryCollection.create(transaction, tasks)
+
+    for node in all_nodes:
+        tasks.setdefault(str(node.uid), [])
 
     return {
         'api_version': settings.VERSION['api'],
@@ -352,7 +355,7 @@ class TransactionsManager(object):
         )
         for node in nodes:
             # set progress to show that node is in progress state
-            node.progress = 1
+            node.progress = 0
             if not sub_transaction.dry_run:
                 node.error_type = None
                 node.error_msg = None
@@ -380,7 +383,7 @@ class TransactionsManager(object):
         _dump_expected_state(sub_transaction, context.new, graph['tasks'])
 
         message = make_astute_message(
-            sub_transaction, context, graph, resolver
+            sub_transaction, context, graph, resolver, nodes
         )
         objects.Transaction.on_start(sub_transaction)
         helpers.TaskHelper.create_action_log(sub_transaction)

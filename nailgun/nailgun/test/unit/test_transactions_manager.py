@@ -52,7 +52,7 @@ class TestMakeAstuteMessage(BaseUnitTest):
         lcm_mock.TransactionSerializer.serialize.return_value = (
             tasks_directory, tasks_graph, {}
         )
-        result = manager.make_astute_message(tx, context, graph, resolver)
+        result = manager.make_astute_message(tx, context, graph, resolver, [])
         self.assertEqual(
             {
                 'api_version': manager.settings.VERSION['api'],

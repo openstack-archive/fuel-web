@@ -89,6 +89,15 @@ class PgCountPipeline(VolumeObjectMethodsMixin, BasePipeline):
     @classmethod
     def process_deployment_for_cluster(cls, cluster, cluster_data):
         """Added ceph related information to deployment info for cluster."""
+        storage_attrs = cluster_data.setdefault('storage', {})
+
+        if 'pg_num' in storage_attrs and 'per_pool_pg_nums' in storage_attrs:
+            logger.debug("pg_num %s and per_pool_pg_nums %s are already "
+                         "calculated for cluster %s. Getting values from "
+                         "the cluster attributes", storage_attrs['pg_num'],
+                         storage_attrs['per_pool_pg_nums'], cluster.id)
+            return
+
         all_nodes = {n.uid: n for n in cluster.nodes}
         osd_num = 0
         for n in cluster_data['nodes']:
@@ -100,7 +109,6 @@ class PgCountPipeline(VolumeObjectMethodsMixin, BasePipeline):
                                 part.get('size', 0) > 0):
                             osd_num += 1
 
-        storage_attrs = cluster_data.setdefault('storage', {})
         pg_counts = get_pool_pg_count(
             osd_num=osd_num,
             pool_sz=int(storage_attrs['osd_pool_size']),
@@ -116,6 +124,20 @@ class PgCountPipeline(VolumeObjectMethodsMixin, BasePipeline):
         logger.debug("Ceph: PG values {%s}", pg_str)
         storage_attrs['pg_num'] = pg_counts['default_pg_num']
         storage_attrs['per_pool_pg_nums'] = pg_counts
+
+        cls._save_storage_attrs(cluster, storage_attrs['pg_num'],
+                                storage_attrs['per_pool_pg_nums'])
+
+    @classmethod
+    def _save_storage_attrs(cls, cluster, pg_num, per_pool_pg_nums):
+        attrs = objects.Cluster.get_attributes(cluster)
+        logger.debug("Saving pg_num and per_pool_pg_nums values to "
+                     "cluster attributes")
+        attrs['editable']['storage']['pg_num'] = \
+            {'value': pg_num, 'type': 'hidden'}
+        attrs['editable']['storage']['per_pool_pg_nums'] = \
+            {'value': per_pool_pg_nums, 'type': 'hidden'}
+        objects.Cluster.update_attributes(cluster, attrs)
 
 
 class SetImageCacheMaxSizePipeline(VolumeObjectMethodsMixin, BasePipeline):

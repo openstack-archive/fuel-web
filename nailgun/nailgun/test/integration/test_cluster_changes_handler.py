@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+
 from mock import patch
 import netaddr
 
@@ -1712,6 +1713,51 @@ class TestHandlers(BaseIntegrationTest):
 
         task = self.env.launch_deployment()
         self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
+
+    @mock_rpc()
+    def test_ceph_osd_pg_num_calculated_once(self):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller', 'ceph-osd'],
+                 'pending_addition': True}])
+        self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            params=jsonutils.dumps({
+                'editable': {
+                    'storage': {
+                        'volumes_ceph': {'value': True},
+                        'osd_pool_size': {'value': '1'},
+                        'volumes_lvm': {'value': False},
+                    }
+                }
+            }),
+            headers=self.default_headers)
+
+        task = self.env.launch_deployment()
+        self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
+
+        attrs = objects.Cluster.get_editable_attributes(cluster)
+        self.assertIn('pg_num', attrs['storage'])
+        self.assertIn('per_pool_pg_nums', attrs['storage'])
+
+        objects.Task.delete(task)
+        self.db.flush()
+
+        # Adding one more ceph node
+        self.env.create_node(roles=['ceph-osd'], cluster_id=cluster.id,
+                             pending_addition=True)
+
+        # Checking calculation is not performed
+        with patch('nailgun.extensions.volume_manager.extension.'
+                   'get_pool_pg_count') as calc:
+
+            # Starting another deployment
+            task = self.env.launch_deployment()
+            self.assertNotEqual(task.status, consts.TASK_STATUSES.error)
+
+            self.assertFalse(calc.called)
 
     @mock_rpc()
     def test_admin_untagged_intersection(self):

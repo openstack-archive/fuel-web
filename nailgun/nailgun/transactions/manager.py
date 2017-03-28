@@ -57,7 +57,7 @@ def _get_node_attributes(graph, kind):
     return r
 
 
-def make_astute_message(transaction, context, graph, node_resolver):
+def make_astute_message(transaction, context, graph, node_resolver, all_nodes):
     directory, tasks, metadata = lcm.TransactionSerializer.serialize(
         context, graph['tasks'], node_resolver
     )
@@ -81,6 +81,7 @@ def make_astute_message(transaction, context, graph, node_resolver):
             'tasks_directory': directory,
             'tasks_graph': tasks,
             'tasks_metadata': metadata,
+            'all_nodes': [str(n.uid) for n in all_nodes],
             'dry_run': transaction.cache.get('dry_run'),
             'noop_run': transaction.cache.get('noop_run'),
             'debug': transaction.cache.get('debug'),
@@ -380,7 +381,7 @@ class TransactionsManager(object):
         _dump_expected_state(sub_transaction, context.new, graph['tasks'])
 
         message = make_astute_message(
-            sub_transaction, context, graph, resolver
+            sub_transaction, context, graph, resolver, nodes
         )
         objects.Transaction.on_start(sub_transaction)
         helpers.TaskHelper.create_action_log(sub_transaction)

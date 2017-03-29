@@ -66,6 +66,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
     def test_returns_same_task_if_no_legacy(self):
         tasks = [
             {'id': 'test1', 'version': '2.0.0', 'roles': ['group1'],
+             'task_name': 'test1',
              'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
              'required_for': []},
             {'id': 'group1', 'type': consts.ORCHESTRATOR_TASK_TYPES.group},
@@ -123,6 +124,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group1_start',
+                'task_name': 'group1_start',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group1'],
@@ -134,6 +136,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group1_end',
+                'task_name': 'group1_end',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group1']
@@ -144,6 +147,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group2_start',
+                'task_name': 'group2_start',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group2'],
@@ -155,6 +159,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group2_end',
+                'task_name': 'group2_end',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group2']
@@ -165,6 +170,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group3_start',
+                'task_name': 'group3_start',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group3'],
@@ -176,6 +182,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group3_end',
+                'task_name': 'group3_end',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group3']
@@ -185,6 +192,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'task2',
+                'task_name': 'task2',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.puppet,
                 'version': '2.0.0',
                 'roles': ['group2'],
@@ -198,6 +206,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
             {
                 'roles': 'group1',
                 'id': 'task_pre2',
+                'task_name': 'task_pre2',
                 'version': '2.0.0',
                 'required_for': ['pre_deployment_end'],
                 'requires': ['task_pre'],
@@ -211,6 +220,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
             {
                 'roles': 'group1',
                 'id': 'task_pre',
+                'task_name': 'task_pre',
                 'version': '2.0.0',
                 'required_for': ['pre_deployment_end'],
                 'requires': ['pre_deployment_start'],
@@ -231,6 +241,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
             {
                 'roles': 'group1',
                 'id': 'task_post',
+                'task_name': 'task_post',
                 'version': '2.0.0',
                 'required_for': ['post_deployment_end'],
                 'requires': ['post_deployment_start'],
@@ -306,6 +317,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
             self.assertEqual(
                 {
                     'id': 'stage1_{0}'.format(idx),
+                    'task_name': 'stage1_{0}'.format(idx),
                     'type': legacy_plugin_tasks[idx]['type'],
                     'roles': legacy_plugin_tasks[idx]['roles'],
                     'version': consts.TASK_CROSS_DEPENDENCY,
@@ -325,6 +337,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
             self.assertEqual(
                 {
                     'id': 'stage3_{0}'.format(idx),
+                    'task_name': 'stage3_{0}'.format(idx),
                     'type': legacy_plugin_tasks[3 + idx]['type'],
                     'roles': legacy_plugin_tasks[3 + idx]['roles'],
                     'version': consts.TASK_CROSS_DEPENDENCY,

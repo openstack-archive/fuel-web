@@ -1,0 +1,10 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Alexey Shtokolov <ashtokolov@mirantis.com>
+Code-Review+2: Alexander Kislitsky <akislitsky@mirantis.com>
+Workflow+1: Alexander Kislitsky <akislitsky@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 29 Mar 2017 17:34:50 +0000
+Reviewed-on: https://review.openstack.org/451323
+Project: openstack/fuel-web
+Branch: refs/heads/stable/newton

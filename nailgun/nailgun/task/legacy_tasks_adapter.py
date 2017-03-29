@@ -68,6 +68,8 @@ def _get_group_start(group):
     return {
         'id': TASK_START_TEMPLATE.format(group['id']),
         'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
+        'task_name': TASK_START_TEMPLATE.format(group.get('task_name',
+                                                          group['id'])),
         'version': consts.TASK_CROSS_DEPENDENCY,
         'roles': _get_role(group),
         'cross_depends': group['cross_depends'],
@@ -80,6 +82,8 @@ def _get_group_start(group):
 def _get_group_end(group):
     return {
         'id': TASK_END_TEMPLATE.format(group['id']),
+        'task_name': TASK_END_TEMPLATE.format(group.get('task_name',
+                                                        group['id'])),
         'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
         'version': consts.TASK_CROSS_DEPENDENCY,
         'roles': _get_role(group)
@@ -140,6 +144,8 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, resolver):
             if task_version < min_task_version:
                 legacy_tasks.append(task)
                 continue
+            if not task.get('task_name'):
+                task['task_name'] = task['id']
         yield task
 
     if not (legacy_tasks or legacy_plugin_tasks):
@@ -169,7 +175,8 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, resolver):
                 {'name': TASK_START_TEMPLATE.format(g), 'role': 'self'}
                 for g in resolver.get_all_roles(_get_role(task))
             ]
-
+        if not task.get('task_name'):
+            task['task_name'] = task['id']
         yield _add_cross_depends(task, task_depends)
 
     if not legacy_plugin_tasks:
@@ -199,6 +206,7 @@ def adapt_legacy_tasks(deployment_tasks, legacy_plugin_tasks, resolver):
         for idx, task in enumerate(tasks):
             new_task = {
                 'id': '{0}_{1}'.format(stage, idx),
+                'task_name': '{0}_{1}'.format(stage, idx),
                 'type': task['type'],
                 'roles': _get_role(task),
                 'version': consts.TASK_CROSS_DEPENDENCY,

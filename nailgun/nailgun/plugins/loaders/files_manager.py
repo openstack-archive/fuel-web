@@ -21,6 +21,7 @@ import os
 import yaml
 
 from nailgun import errors
+from nailgun.logger import logger
 
 
 def deserializer_json(raw_data, *args, **kwargs):
@@ -46,6 +47,8 @@ def deserializer_yaml(raw_data, loader=yaml.Loader, *args, **kwargs):
     :return: data
     :rtype: list|dict
     """
+    logger.debug('deserializer_yaml(loader=%s), yaml.Loader=%s',
+                 loader, yaml.Loader)
     result = yaml.load(raw_data, Loader=loader)
     return result
 

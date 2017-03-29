@@ -123,6 +123,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group1_start',
+                'task_name': 'group1_start',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group1'],
@@ -134,6 +135,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group1_end',
+                'task_name': 'group1_end',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group1']
@@ -144,6 +146,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group2_start',
+                'task_name': 'group2_start',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group2'],
@@ -155,6 +158,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group2_end',
+                'task_name': 'group2_end',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group2']
@@ -165,6 +169,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group3_start',
+                'task_name': 'group3_start',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group3'],
@@ -176,6 +181,7 @@ class TestLegacyTasksAdapter(BaseTestCase):
         self.assertEqual(
             {
                 'id': 'group3_end',
+                'task_name': 'group3_end',
                 'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
                 'version': consts.TASK_CROSS_DEPENDENCY,
                 'roles': ['group3']

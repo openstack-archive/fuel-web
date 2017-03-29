@@ -68,6 +68,8 @@ def _get_group_start(group):
     return {
         'id': TASK_START_TEMPLATE.format(group['id']),
         'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
+        'task_name': TASK_START_TEMPLATE.format(group.get('task_name',
+                                                          group['id'])),
         'version': consts.TASK_CROSS_DEPENDENCY,
         'roles': _get_role(group),
         'cross_depends': group['cross_depends'],
@@ -80,6 +82,8 @@ def _get_group_start(group):
 def _get_group_end(group):
     return {
         'id': TASK_END_TEMPLATE.format(group['id']),
+        'task_name': TASK_END_TEMPLATE.format(group.get('task_name',
+                                                        group['id'])),
         'type': consts.ORCHESTRATOR_TASK_TYPES.skipped,
         'version': consts.TASK_CROSS_DEPENDENCY,
         'roles': _get_role(group)

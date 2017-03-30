@@ -101,7 +101,10 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             }]
         )
         self.env.wait_ready(self.env.launch_deployment())
-        self.env.wait_ready(self.env.reset_environment([200, 202]))
+        self.env.wait_ready(
+            self.env.reset_environment([200, 202]),
+            timeout=120
+        )
 
         node_db = self.env.nodes[0]
 

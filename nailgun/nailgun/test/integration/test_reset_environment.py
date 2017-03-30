@@ -55,7 +55,7 @@ class TestResetEnvironment(BaseIntegrationTest):
             self.assertEqual(n.pending_addition, False)
 
         reset_task = self.env.reset_environment()
-        self.env.wait_ready(reset_task, 60)
+        self.env.wait_ready(reset_task, 120)
 
         self.assertEqual(cluster_db.status, "new")
 

@@ -1105,9 +1105,7 @@ class EnvironmentManager(object):
                 )
             time.sleep(1)
 
-    def _wait_task(self, task, timeout, message):
-        wait_until_in_statuses = (consts.TASK_STATUSES.running,
-                                  consts.TASK_STATUSES.pending)
+    def _wait_task(self, task, timeout, message, wait_until_in_statuses):
         self._wait_task_status(task, timeout, wait_until_in_statuses)
         self.tester.assertEqual(task.progress, 100)
         if isinstance(message, type(re.compile("regexp"))):
@@ -1115,8 +1113,13 @@ class EnvironmentManager(object):
         elif isinstance(message, str):
             self.tester.assertEqual(task.message, message)
 
-    def wait_ready(self, task, timeout=60, message=None):
-        self._wait_task(task, timeout, message)
+    def wait_ready(
+        self, task, timeout=60, message=None,
+        wait_until_in_statuses=(consts.TASK_STATUSES.running,
+                                consts.TASK_STATUSES.pending)
+    ):
+
+        self._wait_task(task, timeout, message, wait_until_in_statuses)
         self.tester.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
     def wait_until_task_pending(self, task, timeout=60):

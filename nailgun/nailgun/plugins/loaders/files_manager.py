@@ -35,7 +35,7 @@ def deserializer_json(raw_data, *args, **kwargs):
     return json.load(raw_data, *args, **kwargs)
 
 
-def deserializer_yaml(raw_data, loader=yaml.Loader, *args, **kwargs):
+def deserializer_yaml(raw_data, *args, **kwargs):
     """Load YAML data from file object.
 
     :param raw_data: raw data
@@ -46,7 +46,7 @@ def deserializer_yaml(raw_data, loader=yaml.Loader, *args, **kwargs):
     :return: data
     :rtype: list|dict
     """
-    result = yaml.load(raw_data, Loader=loader)
+    result = yaml.load(raw_data, **kwargs)
     return result
 
 
@@ -76,7 +76,7 @@ def serializer_json(data, *args, **kwargs):
     return json.dumps(data, *args, **kwargs)
 
 
-def serializer_yaml(data, dumper=yaml.SafeDumper, *args, **kwargs):
+def serializer_yaml(data, *args, **kwargs):
     """Load YAML data from file object.
 
     :param data: data
@@ -87,7 +87,7 @@ def serializer_yaml(data, dumper=yaml.SafeDumper, *args, **kwargs):
     :return: data
     :rtype: basestring
     """
-    return yaml.dump(data, Dumper=dumper, **kwargs)
+    return yaml.dump(data, **kwargs)
 
 
 def serializer_plaintext(data, *args, **kwargs):

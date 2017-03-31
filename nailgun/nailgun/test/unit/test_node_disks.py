@@ -20,6 +20,7 @@ import string
 
 from oslo_serialization import jsonutils
 
+from nailgun import consts
 from nailgun.errors import errors
 from nailgun.extensions.volume_manager.extension import VolumeManagerExtension
 from nailgun.extensions.volume_manager.manager import Disk
@@ -101,7 +102,9 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             }]
         )
         self.env.wait_ready(self.env.launch_deployment())
-        self.env.wait_ready(self.env.reset_environment([200, 202]))
+        self.env.wait_ready(
+            self.env.reset_environment([200, 202]),
+            wait_until_in_statuses = (consts.TASK_STATUSES.ready))
 
         node_db = self.env.nodes[0]
 

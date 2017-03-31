@@ -19,6 +19,7 @@ from oslo_serialization import jsonutils
 
 from nailgun.db.sqlalchemy.models import Notification
 
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.utils import reverse
@@ -55,7 +56,11 @@ class TestResetEnvironment(BaseIntegrationTest):
             self.assertEqual(n.pending_addition, False)
 
         reset_task = self.env.reset_environment()
-        self.env.wait_ready(reset_task, 60)
+        self.env.wait_ready(
+            reset_task,
+            timeout = 60
+            wait_until_in_statuses = (consts.TASK_STATUSES.ready)
+        )
 
         self.assertEqual(cluster_db.status, "new")
 
@@ -122,7 +127,11 @@ class TestResetEnvironment(BaseIntegrationTest):
 
         # reset environment
         reset_task = self.env.reset_environment()
-        self.env.wait_ready(reset_task, 60)
+        self.env.wait_ready(
+            reset_task,
+            timeout = 60
+            wait_until_in_statuses = (consts.TASK_STATUSES.ready)
+        )
 
         # check node statuses
         self.env.refresh_nodes()

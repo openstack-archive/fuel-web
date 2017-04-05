@@ -1,0 +1,11 @@
+Code-Review+2: Aleksey Kasatkin <akasatkin@mirantis.com>
+Code-Review+1: Alexey Stupnikov <astupnikov@mirantis.com>
+Code-Review+1: Maksim Malchuk <mmalchuk@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Workflow+1: Denis V. Meltsaykin <dmeltsaykin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 05 Apr 2017 06:20:08 +0000
+Reviewed-on: https://review.openstack.org/386449
+Project: openstack/fuel-web
+Branch: refs/heads/stable/8.0

@@ -307,6 +307,32 @@ class TestPluginsApi(BasePluginTest):
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)
 
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
+    def test_sync_plugins_exist_in_db(self, list_fs_m):
+        list_fs_m.return_value = []
+        self._create_new_and_old_version_plugins_for_sync()
+        resp = self.sync_plugins()
+        self.assertEqual(resp.status_code, 200)
+
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
+    @mock.patch.object(PluginManager, 'get_installed_plugins')
+    def test_sync_plugins_exist_on_fs(self, list_db_m, list_fs_m):
+        list_fs_m.return_value = ['test_name_0', 'test_name_2-0.1',
+                                  'test_name_1-0.1']
+        list_db_m.return_value = {}
+        resp = self.sync_plugins()
+        self.assertEqual(resp.status_code, 200)
+
+    @mock.patch.object(PluginManager, '_list_plugins_on_fs')
+    @mock.patch.object(PluginManager, 'get_installed_plugins')
+    def test_sync_plugins_failed_when_neither_exist_nor_installed(self,
+                                                                  list_db_m,
+                                                                  list_fs_m):
+        list_fs_m.return_value = []
+        list_db_m.return_value = {}
+        resp = self.sync_plugins(expect_errors=True)
+        self.assertEqual(resp.status_code, 404)
+
     @mock.patch('nailgun.plugins.manager.wrap_plugin')
     def test_sync_specific_plugins(self, wrap_m):
         plugin_ids = self._create_new_and_old_version_plugins_for_sync()
@@ -580,7 +606,7 @@ class TestPluginSyncValidation(BasePluginTest):
 
     @mock.patch.object(PluginManager, '_list_plugins_on_fs')
     def test_valid(self, list_fs_m):
-        list_fs_m.return_value = []
+        list_fs_m.return_value = ['test_name_0']
         resp = self.sync_plugins()
         self.assertEqual(resp.status_code, 200)
 

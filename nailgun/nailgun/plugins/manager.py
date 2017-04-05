@@ -630,26 +630,44 @@ class PluginManager(object):
             cls._install_or_update_or_delete_plugins()
 
     @classmethod
+    def get_installed_plugins(cls):
+        installed_plugins = {}
+        for plugin in PluginCollection.all():
+            plugin_adapter = wrap_plugin(plugin)
+            installed_plugins[plugin_adapter.path_name] = plugin
+        return installed_plugins
+
+    @classmethod
+    def plugins_exist(cls):
+        """Check whether any plugins exist either in DB or on filesystem
+
+        :returns: boolean
+        """
+        return cls.get_installed_plugins() or cls._list_plugins_on_fs()
+
+    @classmethod
     def _install_or_update_or_delete_plugins(cls):
         """Sync plugins using FS and DB.
 
         If plugin:
             in DB and present on filesystem, it will be updated;
             in DB and not present on filesystem, it will be removed;
-            not in DB, but present on filesystem, it will be installed
+            not in DB, but present on filesystem, it will be installed;
+            not in DB and not present on filesystem, nothing to do.
         """
-        installed_plugins = {}
-        for plugin in PluginCollection.all():
-            plugin_adapter = wrap_plugin(plugin)
-            installed_plugins[plugin_adapter.path_name] = plugin
+        installed_plugins = cls.get_installed_plugins()
+        plugins_on_fs = cls._list_plugins_on_fs()
 
-        for plugin_dir in cls._list_plugins_on_fs():
-            if plugin_dir in installed_plugins:
-                cls._plugin_update(installed_plugins.pop(plugin_dir))
-            else:
-                cls._plugin_create(plugin_dir)
-        for deleted_plugin in installed_plugins.values():
-            cls._plugin_delete(deleted_plugin)
+        if plugins_on_fs:
+            for plugin_dir in plugins_on_fs:
+                if plugin_dir in installed_plugins:
+                    cls._plugin_update(installed_plugins.pop(plugin_dir))
+                else:
+                    cls._plugin_create(plugin_dir)
+
+        if installed_plugins:
+            for deleted_plugin in installed_plugins.values():
+                cls._plugin_delete(deleted_plugin)
 
     @classmethod
     def _plugin_update(cls, plugin):
@@ -722,6 +740,8 @@ class PluginManager(object):
 
         :returns: list containing the names of the plugins in the directory
         """
+        if not os.path.exists(settings.PLUGINS_PATH):
+            os.makedirs(settings.PLUGINS_PATH)
         return os.listdir(settings.PLUGINS_PATH)
 
     @classmethod

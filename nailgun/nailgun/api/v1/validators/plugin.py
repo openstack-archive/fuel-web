@@ -19,6 +19,7 @@ from nailgun.api.v1.validators.json_schema import plugin
 from nailgun import errors
 from nailgun.objects import ClusterPlugin
 from nailgun.objects import Plugin
+from nailgun.plugins.manager import PluginManager
 
 
 class PluginValidator(BasicValidator):
@@ -59,5 +60,7 @@ class PluginSyncValidator(BasicValidator):
                 Plugin.get_by_uid(plugin_id, fail_if_not_found=True)
 
             return parsed
+        elif not PluginManager.plugins_exist():
+            raise errors.ObjectNotFound("No plugins were found")
         else:
             return {}

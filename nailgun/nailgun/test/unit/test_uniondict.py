@@ -103,3 +103,9 @@ f: 6"""
     def test_repr(self):
         d = UnionDict(self.D1, self.D2, self.D3)
         self.assertEquals(eval(repr(d)), self.D)
+
+    def test_keys(self):
+        ud = UnionDict({'a': 1, 'b': 2, 'c': 3},
+                       {'b': 2, 'c': 3, 'd': 4},
+                       {'e': 5})
+        self.assertEquals(ud.keys(), {'a', 'b', 'c', 'd', 'e'})

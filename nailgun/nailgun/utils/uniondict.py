@@ -31,7 +31,7 @@ class UnionDict(collections.Mapping):
 
         self.dicts = list(dicts)
         self.dicts.reverse()
-        self.keys = set(itertools.chain.from_iterable(dicts))
+        self.keys = lambda: set(itertools.chain.from_iterable(dicts))
 
     def __getitem__(self, key):
         values = []

@@ -31,7 +31,7 @@ class UnionDict(collections.Mapping):
 
         self.dicts = list(dicts)
         self.dicts.reverse()
-        self.keys = set(itertools.chain.from_iterable(dicts))
+        self.keys = lambda: set(itertools.chain.from_iterable(dicts))
 
     def __getitem__(self, key):
         values = []
@@ -54,10 +54,10 @@ class UnionDict(collections.Mapping):
         return UnionDict(*values)
 
     def __iter__(self):
-        return iter(self.keys)
+        return iter(self.keys())
 
     def __len__(self):
-        return len(self.keys)
+        return len(self.keys())
 
     def __repr__(self):
         items = ['{!r}: {!r}'.format(k, v) for k, v in self.items()]

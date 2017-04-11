@@ -260,9 +260,6 @@ class TestInstallationInfo(BaseTestCase):
             pending_addition=True,
             cluster_id=cluster['id'])
 
-        self.env.make_bond_via_api(
-            'bond0', consts.BOND_MODES.active_backup,
-            ['eth1', 'eth2'], node_id=self.env.nodes[0].id)
         nodes_info = info.get_nodes_info(self.env.nodes)
         self.assertEquals(len(self.env.nodes), len(nodes_info))
         for idx, node in enumerate(self.env.nodes):

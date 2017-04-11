@@ -381,8 +381,10 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
     def test_not_yet_provisioned_nodes_roles_are_validated(self, validator):
         self.set_node_status(consts.NODE_STATUSES.discover)
         task.CheckBeforeDeploymentTask._check_nodes_roles(self.task)
-        validator.check_roles_for_conflicts.assert_called_once()
-        validator.check_roles_requirement.assert_called_once()
+        validator.check_roles_for_conflicts.assert_called_once_with(
+            mock.ANY, mock.ANY)
+        validator.check_roles_requirement.assert_called_once_with(
+            mock.ANY, mock.ANY, mock.ANY)
 
     def test_check_nodes_online_raises_exception(self):
         self.node.online = False

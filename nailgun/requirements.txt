@@ -42,10 +42,7 @@ oslo.utils>2.0.0,!=2.6.0
 # newest one which case version conflicts
 # See: https://bugs.launchpad.net/fuel/+bug/1481212
 stevedore>=1.5.0
-# NOTE(akscram): pinned until 18.6.2 because the installation in
-# the editable mode is broken
-# See: https://bugs.launchpad.net/fuel/+bug/1519727
-setuptools<=18.5
+setuptools>=16.0,!=24.0.0,!=34.0.0,!=34.0.1,!=34.0.2,!=34.0.3,!=34.1.0,!=34.1.1,!=34.2.0,!=34.3.0,!=34.3.1,!=34.3.2  # PSF/ZPL
 yaql>=1.0.0
 # Distributed nodes serialization
 distributed==1.16.0

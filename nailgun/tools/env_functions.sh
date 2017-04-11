@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+TERM=dumb
+PAGER=/bin/cat
+
 cleanup_server() {
     echo "Stopping Nailgun and waiting $NAILGUN_START_MAX_WAIT_TIME seconds."
     local pid="$(lsof -ti tcp:${NAILGUN_PORT})"

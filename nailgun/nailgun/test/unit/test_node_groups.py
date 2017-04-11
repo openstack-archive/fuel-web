@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import ANY
 from mock import patch
 
 import copy
@@ -194,7 +195,7 @@ class TestNodeGroups(BaseIntegrationTest):
         self.assertEqual(node2.status, consts.NODE_STATUSES.error)
         self.assertEqual(node2.error_type, consts.NODE_ERRORS.discover)
         self.assertIsNone(node2.cluster)
-        notify.assert_called()
+        notify.assert_any_call(ANY, ANY)
 
     def test_delete_non_default_node_group_error(self):
         node_group = self.env.create_node_group(api=False,

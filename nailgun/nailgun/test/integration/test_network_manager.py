@@ -276,40 +276,36 @@ class TestNetworkManager(BaseNetworkManagerTest):
         )
         node_group = self.env.create_node_group()
         self.env.nodes[1].group_id = node_group.json_body['id']
+        mgmt_net = self.db.query(NetworkGroup).filter_by(
+            group_id=node_group.json_body['id'],
+            name=consts.NETWORKS.management
+        ).first()
+
+        # since there's no delete-orphan cascade on network.ip_ranges
+        # relationship, we have to remove old ip_ranges manually
+        self.db.query(IPAddrRange).filter_by(
+            network_group_id=mgmt_net.id).delete()
+
+        # set new range for management network of non-default node group
+        mgmt_net.cidr = '7.7.7.0/24'
+        mgmt_net.ip_ranges = [IPAddrRange(first='7.7.7.1', last='7.7.7.254')]
         self.db().flush()
-        mgmt_net = self.db.query(NetworkGroup).\
-            filter(
-                NetworkGroup.group_id == node_group.json_body["id"]
-            ).filter_by(
-                name=consts.NETWORKS.management
-            ).first()
 
-        mock_range = IPAddrRange(
-            first='9.9.9.1',
-            last='9.9.9.254',
-            network_group_id=mgmt_net.id
+        self.env.network_manager.assign_ips(
+            self.env.nodes,
+            consts.NETWORKS.management
         )
-        self.db.add(mock_range)
-        self.db.commit()
 
-        self.env.network_manager.assign_ips(self.env.nodes,
-                                            consts.NETWORKS.management)
-
-        for n in self.env.nodes:
+        for node in self.env.nodes:
             mgmt_net = self.db.query(NetworkGroup).\
-                filter(
-                    NetworkGroup.group_id == n.group_id
-                ).filter_by(
-                    name=consts.NETWORKS.management
-                ).first()
-            ip = self.db.query(IPAddr).\
-                filter_by(network=mgmt_net.id).\
-                filter_by(node=n.id).first()
+                filter_by(
+                    group_id=node.group_id,
+                    name=consts.NETWORKS.management).first()
 
-            self.assertIn(
-                IPAddress(ip.ip_addr),
-                IPNetwork(mgmt_net.cidr)
-            )
+            ip = self.db.query(IPAddr).\
+                filter_by(network=mgmt_net.id, node=node.id).first()
+
+            self.assertIn(IPAddress(ip.ip_addr), IPNetwork(mgmt_net.cidr))
 
     def test_ipaddr_joinedload_relations(self):
         self.env.create(
@@ -565,7 +561,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def get_net_by_name(self, networks, name):
         for net in networks:
-            if net["meta"]["name"] == name:
+            if net["name"] == name:
                 return net
         raise Exception("Network with name {0} not found".format(name))
 
@@ -627,7 +623,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
         for net_name, net_changes in six.iteritems(updates):
             ng = self.get_net_by_name(nets["networks"], net_name)
-            ng.update(net_changes)
+            ng['meta'].update(net_changes['meta'])
 
         self.env.network_manager.update_networks(nets)
         nets_updated = get_network_config(cluster)

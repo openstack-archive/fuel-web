@@ -23,6 +23,7 @@ def Enum(*values, **kwargs):
         return namedtuple('Enum', names)(*values)
     return namedtuple('Enum', values)(*values)
 
+
 RELEASE_STATES = Enum(
     'available',
     'unavailable',

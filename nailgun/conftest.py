@@ -29,8 +29,8 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     db_name = config.getoption('dbname')
     if hasattr(config, 'slaveinput'):
-        #slaveid have next format gw1
-        #it is internal pytest thing, and we dont want to use it
+        # slaveid have next format gw1
+        # it is internal pytest thing, and we dont want to use it
         uid = re.search(r'\d+', config.slaveinput['slaveid']).group(0)
         db_name = '{0}{1}'.format(db_name, uid)
         connection = connect(

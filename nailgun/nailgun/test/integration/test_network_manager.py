@@ -565,7 +565,7 @@ class TestNetworkManager(BaseNetworkManagerTest):
 
     def get_net_by_name(self, networks, name):
         for net in networks:
-            if net["meta"]["name"] == name:
+            if net["name"] == name:
                 return net
         raise Exception("Network with name {0} not found".format(name))
 

@@ -378,10 +378,32 @@ class NeutronManager70(
         interfaces = {}
         for tx in transformations:
             if tx['action'] == 'add-port':
-                key = tx.get('bridge', tx['name'])
+                name = tx['name']
+                key = tx.get('bridge', name)
+
+                iface_type = consts.NETWORK_INTERFACE_TYPES.ether
+
+                if tx.get('provider') == consts.NEUTRON_L23_PROVIDERS.ovs:
+                    iface_name = name
+                    vlan = tx.get('vlan_id')
+                else:
+                    iface_name, vlan = cls._split_iface_name(name)
+
+                if vlan is not None:
+                    # We can't resolve bond type in case of adding port
+                    # on the bond. Ether type can be set only if NIC with
+                    # iface_name present in the DB
+                    nic = objects.Node.get_nic_by_name(node, iface_name)
+                    if nic is None:
+                        # We can't detect if vlan configured on the non
+                        # existent NIC. In this case iface will have type
+                        # BOND. Should be fixed in
+                        # https://bugs.launchpad.net/fuel/+bug/1664286
+                        iface_type = consts.NETWORK_INTERFACE_TYPES.bond
+
                 interfaces[key] = {
-                    'name': tx['name'],
-                    'type': consts.NETWORK_INTERFACE_TYPES.ether
+                    'name': name,
+                    'type': iface_type
                 }
 
             if tx['action'] == 'add-bond':

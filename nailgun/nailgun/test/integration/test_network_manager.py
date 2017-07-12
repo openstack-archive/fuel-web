@@ -43,6 +43,7 @@ from nailgun.logger import logger
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.neutron import NeutronManager70
 from nailgun.network.neutron import NeutronManager80
+#from nailgun.network.neutron import NeutronManager90
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.network.nova_network import NovaNetworkManager70
 from nailgun.test.base import BaseIntegrationTest
@@ -1898,3 +1899,59 @@ class TestNeutronManager80(BaseIntegrationTest):
         template['templates_for_node_role']['test_role'].remove('private')
 
         self.assertFalse(self.net_manager.dpdk_enabled_for_node(node))
+
+
+class TestTemplateManager80(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestTemplateManager80, self).setUp()
+        self.cluster = self.env.create(
+            release_kwargs={'version': '1111-9.0'},
+            cluster_kwargs={
+                'api': True,
+                'net_provider': consts.CLUSTER_NET_PROVIDERS.neutron,
+            }
+        )
+        self.cluster = objects.Cluster.get_by_uid(self.cluster['id'])
+        self.nm = objects.Cluster.get_network_manager(self.cluster)
+        self.net_templates = self.env.read_fixtures(['network_template_80'])
+
+    def test_get_network_manager(self):
+        self.assertIs(self.nm, NeutronManager80)
+
+    def test_get_interfaces_from_template(self):
+        nodes = self.env.create_nodes_w_interfaces_count(
+            1,
+            if_count=15,
+            cluster_id=self.cluster.id,
+            status=consts.NODE_STATUSES.ready,
+            roles=["controller"],
+            iface_name_prefix='eno{0}'
+        )
+        objects.Cluster.set_network_template(
+            self.cluster,
+            self.net_templates[3]
+        )
+
+        interfaces = self.nm.get_interfaces_from_template(nodes[0])
+
+        expected_interfaces = {
+            'br-fw-admin': {'type': 'ether', 'name': 'eno3'},
+            'bond0': {
+                'bond_properties': {
+                    'lacp_rate': 'fast',
+                    'mode': '802.3ad',
+                    'xmit_hash_policy': 'layer3+4'
+                },
+                'type': 'bond',
+                'name': 'bond0',
+                'slaves': [{'name': 'eno1'}, {'name': 'eno2'}]},
+            'br-prv': {'type': 'bond', 'name': 'bond0.342'},
+            'br-storage': {'type': 'bond', 'name': 'bond0.344'},
+            'br-mgmt': {'type': 'bond', 'name': 'bond0.346'},
+            'br-ex': {'type': 'bond', 'name': 'bond0.345'},
+            'br0': {'type': 'bond', 'name': 'port-with-tag-111'},
+            'br1': {'type': 'bond', 'name': 'eno3333.222'},
+            'br2': {'type': 'ether', 'name': 'eno3333'}
+        }
+        self.assertEqual(expected_interfaces, interfaces)

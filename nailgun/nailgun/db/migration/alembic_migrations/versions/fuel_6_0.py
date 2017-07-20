@@ -24,10 +24,10 @@ Create Date: 2014-09-18 12:44:28.327312
 revision = '1b1d4016375d'
 down_revision = '52924111f7d8'
 
-import uuid
 
 from alembic import op
 from oslo_serialization import jsonutils
+from oslo_utils import uuidutils
 import sqlalchemy as sa
 from sqlalchemy.sql import text
 
@@ -301,7 +301,7 @@ def dump_master_node_settings(connection):
     connection - a database connection
     """
 
-    generated_uuid = str(uuid.uuid4())
+    generated_uuid = uuidutils.generate_uuid()
     settings = jsonutils.dumps(_master_node_settings)
 
     update = text(

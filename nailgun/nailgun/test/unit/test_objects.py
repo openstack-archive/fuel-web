@@ -24,13 +24,13 @@ from itertools import ifilter
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-import uuid
 
 from sqlalchemy import inspect as sqlalchemy_inspect
 from sqlalchemy.orm import Query
 
 import jsonschema
 from oslo_serialization import jsonutils
+from oslo_utils import uuidutils
 import six
 from six.moves import range
 
@@ -1051,7 +1051,7 @@ class TestActionLogObject(BaseIntegrationTest):
             'additional_info': {},
             'is_sent': False,
             'cluster_id': 1,
-            'task_uuid': str(uuid.uuid4())
+            'task_uuid': uuidutils.generate_uuid()
         }
 
         al = self._create_log_entry(object_data)
@@ -1075,7 +1075,7 @@ class TestActionLogObject(BaseIntegrationTest):
             'additional_info': {'already_present_data': None},
             'is_sent': False,
             'cluster_id': 1,
-            'task_uuid': str(uuid.uuid4())
+            'task_uuid': uuidutils.generate_uuid()
         }
 
         al = self._create_log_entry(object_data)
@@ -1755,7 +1755,7 @@ class TestClusterObjectGetRoles(BaseTestCase):
 
     def create_plugin(self, roles_metadata):
         plugin = objects.Plugin.create(self.env.get_default_plugin_metadata(
-            name=uuid.uuid4().get_hex(),
+            name=uuidutils.generate_uuid(dashed=False),
             roles_metadata=roles_metadata,
         ))
         self.cluster.plugins.append(plugin)

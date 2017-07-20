@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid
-
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -36,6 +34,8 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 
+from oslo_utils import uuidutils
+
 
 class Task(Base):
     __tablename__ = 'tasks'
@@ -46,7 +46,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     uuid = Column(String(36), nullable=False,
-                  default=lambda: str(uuid.uuid4()))
+                  default=lambda: uuidutils.generate_uuid())
     name = Column(
         Enum(*consts.TASK_NAMES, name='task_name'),
         nullable=False,

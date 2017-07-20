@@ -17,7 +17,6 @@
 import datetime
 import mock
 import random
-import uuid
 
 from nailgun.db.sqlalchemy.models import Attributes
 from nailgun.db.sqlalchemy.models import Cluster
@@ -35,6 +34,7 @@ from nailgun.utils import reverse
 from nailgun import consts
 
 from nailgun import objects
+from oslo_utils import uuidutils
 
 
 class BaseReciverTestCase(BaseIntegrationTest):
@@ -894,7 +894,7 @@ class TestConsumer(BaseReciverTestCase):
         node, node2 = self.env.nodes
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="deploy",
             cluster_id=cluster.id
         )
@@ -927,7 +927,7 @@ class TestConsumer(BaseReciverTestCase):
         cluster.status = consts.CLUSTER_STATUSES.operational
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="dry_run_deployment",
             cluster_id=cluster.id
         )
@@ -1061,7 +1061,7 @@ class TestConsumer(BaseReciverTestCase):
         cluster = self.env.create_cluster()
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             status="running",
             cluster_id=cluster.id
@@ -1076,7 +1076,7 @@ class TestConsumer(BaseReciverTestCase):
 
     def test_node_deletion_subtask_progress(self):
         supertask = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             status="running"
         )
@@ -1139,7 +1139,7 @@ class TestConsumer(BaseReciverTestCase):
 
     def test_proper_progress_calculation(self):
         supertask = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             status="running"
         )
@@ -1187,7 +1187,7 @@ class TestConsumer(BaseReciverTestCase):
             ]
         )
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name=name,
             status=consts.TASK_STATUSES.running,
             cluster_id=cluster.id
@@ -1199,7 +1199,7 @@ class TestConsumer(BaseReciverTestCase):
     def _prepare_sub_task(self, name):
         task = self._prepare_task(consts.TASK_NAMES.super)
         sub_task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name=name,
             status=consts.TASK_STATUSES.running,
             cluster_id=self.env.clusters[0].id,
@@ -1337,7 +1337,7 @@ class TestConsumer(BaseReciverTestCase):
         node1, node2 = self.env.nodes
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             cluster_id=cluster_db.id
         )
@@ -1375,7 +1375,7 @@ class TestConsumer(BaseReciverTestCase):
         node1, node2 = self.env.nodes
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             cluster_id=cluster_db.id
         )
@@ -1416,7 +1416,7 @@ class TestConsumer(BaseReciverTestCase):
         group_id = objects.Cluster.get_default_group(cluster_db).id
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="cluster_deletion",
             cluster_id=cluster_id
         )
@@ -1518,7 +1518,7 @@ class TestConsumer(BaseReciverTestCase):
         )
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="cluster_deletion",
             cluster_id=cluster_db.id
         )
@@ -1567,7 +1567,7 @@ class TestConsumer(BaseReciverTestCase):
         node1, node2 = self.env.nodes
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name=consts.TASK_NAMES.provision,
             cluster_id=cluster.id)
         self.db.add(task)
@@ -1606,7 +1606,7 @@ class TestConsumer(BaseReciverTestCase):
         nodes = self.env.nodes
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name=consts.TASK_NAMES.deployment,
             cluster_id=cluster.id
         )
@@ -1640,7 +1640,7 @@ class TestConsumer(BaseReciverTestCase):
         nodes = self.env.nodes
         task_title = task_name.title()
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name=task_name,
             cluster_id=cluster.id
         )
@@ -1710,7 +1710,7 @@ class TestResetEnvironment(BaseReciverTestCase):
         node = self.env.nodes[0]
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name=consts.TASK_NAMES.reset_environment,
             cluster_id=cluster.id)
         self.db.add(task)
@@ -1737,7 +1737,7 @@ class TestResetEnvironment(BaseReciverTestCase):
         node = self.env.nodes[0]
 
         reset_environment = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name=consts.TASK_NAMES.reset_environment,
             cluster_id=cluster.id)
         self.db.add(reset_environment)

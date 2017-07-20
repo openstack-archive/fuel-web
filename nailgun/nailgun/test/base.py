@@ -26,7 +26,6 @@ import os
 import re
 import six
 from six.moves import range
-import uuid
 
 from datetime import datetime
 import functools
@@ -35,6 +34,7 @@ from netaddr import IPNetwork
 from random import randint
 
 from oslo_serialization import jsonutils
+from oslo_utils import uuidutils
 
 import sqlalchemy as sa
 import web
@@ -1895,7 +1895,7 @@ class BaseMasterNodeSettignsTest(BaseIntegrationTest):
 
     def create_master_node_settings(self):
         self.master_node_settings = {
-            'master_node_uid': str(uuid.uuid4()),
+            'master_node_uid': uuidutils.generate_uuid(),
         }
         self.master_node_settings.update(self.master_node_settings_template)
         MasterNodeSettings.create(self.master_node_settings)

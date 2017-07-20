@@ -13,7 +13,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import uuid
 
 from sqlalchemy import Boolean
 from sqlalchemy import Column
@@ -35,6 +34,8 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.mutable import MutableDict
 from nailgun.db.sqlalchemy.models.mutable import MutableList
 from nailgun.logger import logger
+
+from oslo_utils import uuidutils
 
 
 class NodeGroup(Base):
@@ -63,7 +64,7 @@ class Node(Base):
     )
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), nullable=False,
-                  default=lambda: str(uuid.uuid4()), unique=True)
+                  default=lambda: uuidutils.generate_uuid(), unique=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id', ondelete='CASCADE'))
     group_id = Column(
         Integer,

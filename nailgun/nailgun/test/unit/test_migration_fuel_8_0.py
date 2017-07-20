@@ -12,11 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid
-
 import alembic
 from datetime import datetime
 from oslo_serialization import jsonutils
+from oslo_utils import uuidutils
 import six
 import sqlalchemy as sa
 from sqlalchemy.exc import DataError
@@ -244,7 +243,7 @@ class TestNodeGroupsMigration(base.BaseAlembicMigrationTest):
                        self.meta.tables['nodegroups'].c.name])).fetchone()
         db.execute(self.meta.tables['nodegroups'].insert(),
                    [{'cluster_id': nodegroup['cluster_id'],
-                     'name': six.text_type(uuid.uuid4())}])
+                     'name': six.text_type(uuidutils.generate_uuid())}])
 
     def test_node_group_has_default_field(self):
         nodegroup = db.execute(
@@ -314,14 +313,14 @@ class TestTaskNameMigration(base.BaseAlembicMigrationTest):
         for name in added_task_names:
             insert_table_row(tasks_table,
                              {'name': name,
-                              'uuid': str(uuid.uuid4()),
+                              'uuid': uuidutils.genrate_uuid(),
                               'status': 'running'})
 
         with self.assertRaisesRegexp(DataError, 'invalid input value for '
                                                 'enum task_name'):
             insert_table_row(tasks_table,
                              {'name': 'wrong_task_name',
-                              'uuid': str(uuid.uuid4()),
+                              'uuid': uuidutils.genrate_uuid(),
                               'status': 'running'})
 
 
@@ -335,7 +334,7 @@ class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
                              {'name': 'node1',
                               'status': 'error',
                               'error_type': error_type,
-                              'uuid': str(uuid.uuid4()),
+                              'uuid': uuidutils.genrate_uuid(),
                               'mac': '00:00:00:00:00:00',
                               'timestamp': datetime.now()})
             inserted_count = db.execute(
@@ -350,7 +349,7 @@ class TestNodeErrorTypeMigration(base.BaseAlembicMigrationTest):
                              {'name': 'node1',
                               'status': 'error',
                               'error_type': 'wrong_error_type',
-                              'uuid': str(uuid.uuid4()),
+                              'uuid': uuidutils.genrate_uuid(),
                               'mac': '00:00:00:00:00:00',
                               'timestamp': datetime.now()})
 

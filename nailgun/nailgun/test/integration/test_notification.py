@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid
-
 from oslo_serialization import jsonutils
 
 from nailgun import consts
@@ -27,6 +25,8 @@ from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import reverse
 
+from oslo_utils import uuidutils
+
 
 class TestNotification(BaseIntegrationTest):
 
@@ -35,7 +35,7 @@ class TestNotification(BaseIntegrationTest):
         receiver = rcvr.NailgunReceiver()
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             cluster_id=cluster.id
         )
@@ -68,7 +68,7 @@ class TestNotification(BaseIntegrationTest):
         receiver = rcvr.NailgunReceiver()
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             cluster_id=cluster.id
         )
@@ -98,7 +98,7 @@ class TestNotification(BaseIntegrationTest):
         receiver = rcvr.NailgunReceiver()
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="super",
             cluster_id=cluster.id
         )
@@ -140,7 +140,7 @@ class TestNotification(BaseIntegrationTest):
         receiver = rcvr.NailgunReceiver()
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="cluster_deletion",
             cluster_id=cluster.id
         )
@@ -168,7 +168,7 @@ class TestNotification(BaseIntegrationTest):
         receiver = rcvr.NailgunReceiver()
 
         task = Task(
-            uuid=str(uuid.uuid4()),
+            uuid=uuidutils.generate_uuid(),
             name="cluster_deletion",
             cluster_id=cluster.id
         )

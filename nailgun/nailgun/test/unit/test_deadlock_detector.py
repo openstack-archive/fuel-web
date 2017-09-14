@@ -143,7 +143,7 @@ class TestDeadlockDetector(BaseTestCase):
 
         # Checking locks context isolation from other threads
         try:
-            self.assertEquals(
+            self.assertEqual(
                 len(objects),
                 len(dd.context.locks)
             )

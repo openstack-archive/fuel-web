@@ -172,7 +172,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.env._update_network_group(new_ng)
         updated_ng = resp.json_body
 
-        self.assertEquals('test2', updated_ng['name'])
+        self.assertEqual('test2', updated_ng['name'])
 
     def test_update_network_group_ipranges_regenerated(self):
         resp = self.env._create_network_group(

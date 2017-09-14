@@ -137,7 +137,7 @@ class TestHandlers(BaseIntegrationTest):
 
         d_e_query = self.db.query(PluginLink) \
             .filter_by(plugin_id=self.plugin.id)
-        self.assertEquals(d_e_query.count(), 0)
+        self.assertEqual(d_e_query.count(), 0)
 
     def test_plugin_link_patch(self):
         plugin_link_update = {

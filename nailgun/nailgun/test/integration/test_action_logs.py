@@ -161,7 +161,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         self.assertEqual(200, resp.status_code)
         duplicate_call_tasks_count = objects.TaskCollection.filter_by(
             None, name=consts.TASK_NAMES.create_stats_user).count()
-        self.assertEquals(tasks_count, duplicate_call_tasks_count)
+        self.assertEqual(tasks_count, duplicate_call_tasks_count)
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})
@@ -231,7 +231,7 @@ class TestActionLogs(BaseMasterNodeSettignsTest):
         self.assertEqual(200, resp.status_code)
         duplicate_call_tasks_count = objects.TaskCollection.filter_by(
             None, name=consts.TASK_NAMES.remove_stats_user).count()
-        self.assertEquals(tasks_count, duplicate_call_tasks_count)
+        self.assertEqual(tasks_count, duplicate_call_tasks_count)
 
     @fake_tasks(override_state={'progress': 100,
                                 'status': consts.TASK_STATUSES.ready})

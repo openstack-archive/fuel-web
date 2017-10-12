@@ -31,7 +31,8 @@ class ReleaseSerializer(BasicSerializer):
         "tags_metadata",
         "state",
         "attributes_metadata",
-        "components_metadata"
+        "components_metadata",
+        "volumes_metadata",
     )
 
     @classmethod

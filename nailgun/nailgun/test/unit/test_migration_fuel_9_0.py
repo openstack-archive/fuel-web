@@ -525,7 +525,7 @@ class TestNodeRolesMigration(base.BaseAlembicMigrationTest):
 
         for role_name in roles_metadata:
             role_group = roles_metadata[role_name].get('group')
-            self.assertEquals(
+            self.assertEqual(
                 role_group,
                 role_groups.get(role_name, 'other')
             )

@@ -109,7 +109,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
         self.assertIn('mlnx', quantum_settings_l2['mechanism_drivers'])
         self.assertIn('type_drivers', quantum_settings_l2)
         seg_type = self.cluster.network_config.segmentation_type
-        self.assertEquals(
+        self.assertEqual(
             quantum_settings_l2['type_drivers'],
             '{0},flat,local'.format(seg_type)
         )

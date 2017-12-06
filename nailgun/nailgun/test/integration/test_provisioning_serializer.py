@@ -294,7 +294,7 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
             ]),
             serialized_info['pre_provision']))
         self.assertIn('pre_provision', serialized_info)
-        self.assertEquals([], serialized_info['pre_provision'])
+        self.assertEqual([], serialized_info['pre_provision'])
 
     def test_centos_prov_task_for_images(self):
         release = self.env.create_release(
@@ -316,7 +316,7 @@ class TestProvisioningSerializer61(BaseIntegrationTest):
             ]),
             serialized_info['pre_provision']))
         self.assertIn('pre_provision', serialized_info)
-        self.assertEquals([], serialized_info['pre_provision'])
+        self.assertEqual([], serialized_info['pre_provision'])
 
     def test_engine_does_not_contain_provisioning_method(self):
         self.cluster = self.env.create_cluster(api=False)

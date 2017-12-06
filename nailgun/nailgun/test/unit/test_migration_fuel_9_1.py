@@ -450,7 +450,7 @@ class TestRulesToPickBootableDisk(base.BaseAlembicMigrationTest):
         ).fetchone()[0]
         volumes_metadata = jsonutils.loads(result)
         self.assertIn('rule_to_pick_boot_disk', volumes_metadata)
-        self.assertEquals(
+        self.assertEqual(
             volumes_metadata['rule_to_pick_boot_disk'],
             rule_to_pick_bootdisk
         )
@@ -671,7 +671,7 @@ class TestReleasesUpdate(base.BaseAlembicMigrationTest):
         self.assertEqual(
             attrs['editable']['common']['propagate_task_deploy']['type'],
             'checkbox')
-        self.assertEquals(
+        self.assertEqual(
             "console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset",
             attrs['editable']['kernel_params']['kernel']['value'])
 

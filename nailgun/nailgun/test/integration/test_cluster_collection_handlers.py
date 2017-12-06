@@ -107,7 +107,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster1_nets = sorted(cluster1_nets, key=lambda n: n['name'])
         cluster2_nets = sorted(cluster2_nets, key=lambda n: n['name'])
 
-        self.assertEquals(cluster1_nets, cluster2_nets)
+        self.assertEqual(cluster1_nets, cluster2_nets)
 
     def test_cluster_creation_same_networks(self):
         cluster1_id = self.env.create_cluster(

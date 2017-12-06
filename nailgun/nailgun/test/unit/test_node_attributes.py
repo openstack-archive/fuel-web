@@ -80,7 +80,7 @@ class TestNodeAttributes(base.BaseUnitTest):
                     'comp2': {'value': 3}}
             }
         )
-        self.assertEquals(
+        self.assertEqual(
             {'total_required_cpus': 4,
              'components': {
                  'comp1': {'name': 'comp1',

@@ -48,17 +48,17 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
     def test_nodegroup_creation(self):
-        self.assertEquals(
+        self.assertEqual(
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count(),
             1
         )
 
         resp = self.env.create_node_group()
-        self.assertEquals(resp.status_code, 201)
-        self.assertEquals(resp.json_body['cluster_id'], self.cluster['id'])
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json_body['cluster_id'], self.cluster['id'])
 
-        self.assertEquals(
+        self.assertEqual(
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count(),
             2
@@ -92,8 +92,8 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=False
         )
 
-        self.assertEquals(resp.status_code, 200)
-        self.assertEquals(node.group_id, ng_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(node.group_id, ng_id)
 
     def test_assign_invalid_nodegroup(self):
         node = self.env.create_node()
@@ -106,7 +106,7 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         message = resp.json_body['message']
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
 
     def test_nodegroup_create_network(self):
@@ -115,7 +115,7 @@ class TestNodeGroups(BaseIntegrationTest):
 
         nets = db().query(models.NetworkGroup).filter_by(
             group_id=response['id'])
-        self.assertEquals(nets.count(), 5)
+        self.assertEqual(nets.count(), 5)
 
     def _check_node_group_deleted(self, node_group_id):
         self.app.delete(
@@ -134,7 +134,7 @@ class TestNodeGroups(BaseIntegrationTest):
 
         nets = db().query(models.NetworkGroup).filter_by(
             group_id=node_group_id)
-        self.assertEquals(nets.count(), 0)
+        self.assertEqual(nets.count(), 0)
 
     @patch('nailgun.task.task.rpc.cast')
     def test_nodegroup_deletion_without_nodes(self, _):
@@ -222,10 +222,10 @@ class TestNodeGroups(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=False
         )
-        self.assertEquals(resp.status_code, 201)
-        self.assertEquals(resp.json_body['cluster_id'], cluster['id'])
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json_body['cluster_id'], cluster['id'])
 
-        self.assertEquals(
+        self.assertEqual(
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count(),
             1
@@ -244,8 +244,8 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 201)
-        self.assertEquals(resp.json_body['cluster_id'], cluster['id'])
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json_body['cluster_id'], cluster['id'])
 
     def test_nodegroup_invalid_net_provider(self):
         cluster = self.env.create_cluster(
@@ -259,7 +259,7 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 403)
+        self.assertEqual(resp.status_code, 403)
 
     def test_nodegroup_invalid_cluster_id(self):
         resp = self.app.post(
@@ -269,23 +269,23 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=True
         )
 
-        self.assertEquals(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 404)
 
     def test_nodegroup_create_duplication(self):
-        self.assertEquals(
+        self.assertEqual(
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count(), 1)
 
         resp = self.env.create_node_group()
-        self.assertEquals(resp.status_code, 201)
-        self.assertEquals(resp.json_body['cluster_id'], self.cluster['id'])
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json_body['cluster_id'], self.cluster['id'])
 
         msg = "Node group .*{0}.* already exists in environment {1}".format(
             resp.json_body['name'], self.cluster['id'])
         with self.assertRaisesRegexp(Exception, msg):
             self.env.create_node_group()
 
-        self.assertEquals(
+        self.assertEqual(
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count(), 2)
 
@@ -311,16 +311,16 @@ class TestNodeGroups(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 201)
 
     def test_nodegroup_rename(self):
-        self.assertEquals(
+        self.assertEqual(
             1,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
 
         resp = self.env.create_node_group(name='nodegroup_to_be_renamed')
-        self.assertEquals(201, resp.status_code)
-        self.assertEquals(self.cluster['id'], resp.json_body['cluster_id'])
+        self.assertEqual(201, resp.status_code)
+        self.assertEqual(self.cluster['id'], resp.json_body['cluster_id'])
 
-        self.assertEquals(
+        self.assertEqual(
             2,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
@@ -336,29 +336,29 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=False
         )
 
-        self.assertEquals(200, resp.status_code)
-        self.assertEquals(self.cluster['id'], resp.json_body['cluster_id'])
-        self.assertEquals(
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(self.cluster['id'], resp.json_body['cluster_id'])
+        self.assertEqual(
             2,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
-        self.assertEquals(
+        self.assertEqual(
             1,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).filter_by(name=nodegroup_name).count())
 
     def test_nodegroup_rename_same_nodegroup_using_same_name(self):
-        self.assertEquals(
+        self.assertEqual(
             1,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
 
         nodegroup_name = 'nodegroup_to_be_renamed'
         resp = self.env.create_node_group(name=nodegroup_name)
-        self.assertEquals(201, resp.status_code)
-        self.assertEquals(self.cluster['id'], resp.json_body['cluster_id'])
+        self.assertEqual(201, resp.status_code)
+        self.assertEqual(self.cluster['id'], resp.json_body['cluster_id'])
 
-        self.assertEquals(
+        self.assertEqual(
             2,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
@@ -373,40 +373,40 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=False
         )
 
-        self.assertEquals(200, resp.status_code)
-        self.assertEquals(self.cluster['id'], resp.json_body['cluster_id'])
-        self.assertEquals(
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(self.cluster['id'], resp.json_body['cluster_id'])
+        self.assertEqual(
             2,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
-        self.assertEquals(
+        self.assertEqual(
             1,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).filter_by(name=nodegroup_name).count())
 
     def test_nodegroup_rename_using_existing_name(self):
 
-        self.assertEquals(
+        self.assertEqual(
             1,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
 
         nodegroup_name = 'test_ng'
         ng_resp = self.env.create_node_group(name=nodegroup_name)
-        self.assertEquals(201, ng_resp.status_code)
-        self.assertEquals(self.cluster['id'], ng_resp.json_body['cluster_id'])
+        self.assertEqual(201, ng_resp.status_code)
+        self.assertEqual(self.cluster['id'], ng_resp.json_body['cluster_id'])
 
-        self.assertEquals(
+        self.assertEqual(
             2,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
 
         new_ng_resp = self.env.create_node_group(name='new_group')
-        self.assertEquals(201, new_ng_resp.status_code)
-        self.assertEquals(
+        self.assertEqual(201, new_ng_resp.status_code)
+        self.assertEqual(
             self.cluster['id'], new_ng_resp.json_body['cluster_id'])
 
-        self.assertEquals(
+        self.assertEqual(
             3,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
@@ -422,17 +422,17 @@ class TestNodeGroups(BaseIntegrationTest):
             expect_errors=True
         )
 
-        self.assertEquals(403, resp.status_code)
-        self.assertEquals(
+        self.assertEqual(403, resp.status_code)
+        self.assertEqual(
             resp.json_body['message'],
             "Node group '{0}' already exists in environment {1}.".format(
                 nodegroup_name, self.cluster['id']))
 
-        self.assertEquals(
+        self.assertEqual(
             1,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).filter_by(name=nodegroup_name).count())
-        self.assertEquals(
+        self.assertEqual(
             3,
             objects.NodeGroupCollection.get_by_cluster_id(
                 self.cluster['id']).count())
@@ -511,7 +511,7 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         message = resp.json_body['message']
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
 
     def test_assign_nodegroup_to_node_not_in_cluster(self):
@@ -528,7 +528,7 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         message = resp.json_body['message']
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
         self.assertRegexpMatches(message, 'Cannot assign node group')
 
     def test_default_group_created_at_cluster_creation(self):
@@ -543,7 +543,7 @@ class TestNodeGroups(BaseIntegrationTest):
         # group is created, i.e. this network configuration will pass through
         # the API validator.
         resp = self.env.create_node_group()
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
 
         config = self.env.neutron_networks_get(self.cluster.id).json_body
         resp = self.env.neutron_networks_put(self.cluster.id, config)
@@ -551,7 +551,7 @@ class TestNodeGroups(BaseIntegrationTest):
 
     def test_all_networks_have_gw_after_nodegroup_is_created(self):
         resp = self.env.create_node_group()
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
 
         for network in self.cluster.network_groups:
             if network.meta['notation'] is not None:
@@ -588,7 +588,7 @@ class TestNodeGroups(BaseIntegrationTest):
         )
 
         resp = self.env.create_node_group()
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
         self.env.neutron_networks_put(self.cluster.id, {})
 
         # VIP address was deleted
@@ -598,7 +598,7 @@ class TestNodeGroups(BaseIntegrationTest):
         )
         # Storage GW has this address now
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         config = resp.json_body
         for net in config['networks']:
             if net['name'] == consts.NETWORKS.storage:
@@ -628,7 +628,7 @@ class TestNodeGroups(BaseIntegrationTest):
         config['networking_parameters']['floating_ranges'] = [
             ['199.101.9.122', '199.101.9.233']]
         resp = self.env.neutron_networks_put(self.cluster.id, config)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         ranges_before = {
             'public': [['199.101.9.1', '199.101.9.1'],
@@ -662,7 +662,7 @@ class TestNodeGroups(BaseIntegrationTest):
 
             for n in range(2):
                 resp = self.env.create_node_group(name='group{0}'.format(n))
-                self.assertEquals(resp.status_code, 201)
+                self.assertEqual(resp.status_code, 201)
                 # one call is made when first custom node group is being added
                 # no more calls after that
                 self.assertEqual(

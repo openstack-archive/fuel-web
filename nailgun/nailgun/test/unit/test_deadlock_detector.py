@@ -54,10 +54,10 @@ class TestDeadlockDetector(BaseTestCase):
     def test_no_locks(self):
         len_exp = len(dd.context.locks)
         db().query(models.Node).all()
-        self.assertEquals(len_exp, len(dd.context.locks))
+        self.assertEqual(len_exp, len(dd.context.locks))
         db().query(models.Node).all()
         db().query(models.Cluster).all()
-        self.assertEquals(len_exp, len(dd.context.locks))
+        self.assertEqual(len_exp, len(dd.context.locks))
 
     def test_lock_same_table(self):
         # Cleaning locks
@@ -67,7 +67,7 @@ class TestDeadlockDetector(BaseTestCase):
         db().query(models.Node).with_lockmode('update').all()
         db().query(models.Node).with_lockmode('update').all()
         # Checking only one lock has been added
-        self.assertEquals(1, len(dd.context.locks))
+        self.assertEqual(1, len(dd.context.locks))
         db().commit()
 
     def test_lock_cleaned_on_commit(self):
@@ -75,7 +75,7 @@ class TestDeadlockDetector(BaseTestCase):
         db().query(models.Node).with_lockmode('update').all()
         self.assertGreater(len(dd.context.locks), 0)
         db().commit()
-        self.assertEquals(0, len(dd.context.locks))
+        self.assertEqual(0, len(dd.context.locks))
 
     def test_lock_not_cleaned_on_flush(self):
         db().query(models.Cluster).with_lockmode('update').\
@@ -89,7 +89,7 @@ class TestDeadlockDetector(BaseTestCase):
         db().query(models.Node).with_lockmode('update').all()
         self.assertGreater(len(dd.context.locks), 0)
         db().rollback()
-        self.assertEquals(0, len(dd.context.locks))
+        self.assertEqual(0, len(dd.context.locks))
 
     def test_different_order_in_chains_detected(self):
         db().query(models.Release).with_lockmode('update').all()
@@ -143,7 +143,7 @@ class TestDeadlockDetector(BaseTestCase):
 
         # Checking locks context isolation from other threads
         try:
-            self.assertEquals(
+            self.assertEqual(
                 len(objects),
                 len(dd.context.locks)
             )

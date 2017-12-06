@@ -147,44 +147,44 @@ class TestInstallationInfo(BaseTestCase):
         self.env.create_node(
             {'status': consts.NODE_STATUSES.discover})
         clusters_info = info.get_clusters_info()
-        self.assertEquals(1, len(clusters_info))
+        self.assertEqual(1, len(clusters_info))
         cluster_info = clusters_info[0]
 
-        self.assertEquals(len(nodes_params), len(cluster_info['nodes']))
-        self.assertEquals(len(nodes_params), cluster_info['nodes_num'])
+        self.assertEqual(len(nodes_params), len(cluster_info['nodes']))
+        self.assertEqual(len(nodes_params), cluster_info['nodes_num'])
 
-        self.assertEquals(consts.CLUSTER_MODES.ha_compact,
+        self.assertEqual(consts.CLUSTER_MODES.ha_compact,
                           cluster_info['mode'])
-        self.assertEquals(consts.CLUSTER_NET_PROVIDERS.neutron,
+        self.assertEqual(consts.CLUSTER_NET_PROVIDERS.neutron,
                           cluster_info['net_provider'])
-        self.assertEquals(consts.CLUSTER_STATUSES.new,
+        self.assertEqual(consts.CLUSTER_STATUSES.new,
                           cluster_info['status'])
-        self.assertEquals(False,
+        self.assertEqual(False,
                           cluster_info['is_customized'])
 
-        self.assertEquals(cluster['id'],
+        self.assertEqual(cluster['id'],
                           cluster_info['id'])
-        self.assertEquals(cluster.fuel_version,
+        self.assertEqual(cluster.fuel_version,
                           cluster_info['fuel_version'])
 
         self.assertIn('attributes', cluster_info)
 
         self.assertIn('release', cluster_info)
-        self.assertEquals(cluster.release.operating_system,
+        self.assertEqual(cluster.release.operating_system,
                           cluster_info['release']['os'])
-        self.assertEquals(cluster.release.name,
+        self.assertEqual(cluster.release.name,
                           cluster_info['release']['name'])
-        self.assertEquals(cluster.release.version,
+        self.assertEqual(cluster.release.version,
                           cluster_info['release']['version'])
 
-        self.assertEquals(1, len(cluster_info['node_groups']))
+        self.assertEqual(1, len(cluster_info['node_groups']))
         group_info = cluster_info['node_groups'][0]
         group = [ng for ng in cluster.node_groups][0]
-        self.assertEquals(group.id,
+        self.assertEqual(group.id,
                           group_info['id'])
-        self.assertEquals(len(nodes_params),
+        self.assertEqual(len(nodes_params),
                           len(group_info['nodes']))
-        self.assertEquals(set([n.id for n in group.nodes]),
+        self.assertEqual(set([n.id for n in group.nodes]),
                           set(group_info['nodes']))
 
     def test_network_configuration(self):
@@ -239,20 +239,20 @@ class TestInstallationInfo(BaseTestCase):
             ['eth1', 'eth2'], node_id=self.env.nodes[0].id,
             attrs={'type__': {'value': consts.BOND_TYPES.linux}})
         nodes_info = info.get_nodes_info(self.env.nodes)
-        self.assertEquals(len(self.env.nodes), len(nodes_info))
+        self.assertEqual(len(self.env.nodes), len(nodes_info))
         for idx, node in enumerate(self.env.nodes):
             node_info = nodes_info[idx]
-            self.assertEquals(node_info['id'], node.id)
-            self.assertEquals(node_info['group_id'], node.group_id)
+            self.assertEqual(node_info['id'], node.id)
+            self.assertEqual(node_info['group_id'], node.group_id)
             self.assertListEqual(node_info['roles'], node.roles)
-            self.assertEquals(node_info['os'], node.os_platform)
+            self.assertEqual(node_info['os'], node.os_platform)
 
-            self.assertEquals(node_info['status'], node.status)
-            self.assertEquals(node_info['error_type'], node.error_type)
-            self.assertEquals(node_info['online'], node.online)
+            self.assertEqual(node_info['status'], node.status)
+            self.assertEqual(node_info['error_type'], node.error_type)
+            self.assertEqual(node_info['online'], node.online)
 
-            self.assertEquals(node_info['manufacturer'], node.manufacturer)
-            self.assertEquals(node_info['platform_name'], node.platform_name)
+            self.assertEqual(node_info['manufacturer'], node.manufacturer)
+            self.assertEqual(node_info['platform_name'], node.platform_name)
 
             self.assertIn('meta', node_info)
             for iface in node_info['meta']['interfaces']:
@@ -266,11 +266,11 @@ class TestInstallationInfo(BaseTestCase):
             self.assertIn('interfaces', node_info['meta'])
             self.assertIn('numa_topology', node_info['meta'])
 
-            self.assertEquals(node_info['pending_addition'],
+            self.assertEqual(node_info['pending_addition'],
                               node.pending_addition)
-            self.assertEquals(node_info['pending_deletion'],
+            self.assertEqual(node_info['pending_deletion'],
                               node.pending_deletion)
-            self.assertEquals(node_info['pending_roles'], node.pending_roles)
+            self.assertEqual(node_info['pending_roles'], node.pending_roles)
 
             self.assertEqual(
                 node_info['nic_interfaces'],
@@ -314,9 +314,9 @@ class TestInstallationInfo(BaseTestCase):
         for unallocated_node in unallocated_nodes_params:
             self.env.create_node(**unallocated_node)
         info = info.get_installation_info()
-        self.assertEquals(1, info['clusters_num'])
-        self.assertEquals(len(nodes_params), info['allocated_nodes_num'])
-        self.assertEquals(len(unallocated_nodes_params),
+        self.assertEqual(1, info['clusters_num'])
+        self.assertEqual(len(nodes_params), info['allocated_nodes_num'])
+        self.assertEqual(len(unallocated_nodes_params),
                           info['unallocated_nodes_num'])
         self.assertIn('master_node_uid', info)
         self.assertIn('contact_info_provided', info['user_information'])

@@ -103,7 +103,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             cluster['changes']
         )
         # Checking no interfaces change after cluster deployed
-        self.assertEquals(0, len(changes))
+        self.assertEqual(0, len(changes))
 
         node_id = self.env.nodes[0].id
         # Change node status to be able to update its interfaces
@@ -119,7 +119,7 @@ class TestNodeCollectionNICsHandler(BaseIntegrationTest):
             consts.CLUSTER_CHANGES.interfaces,
             cluster['changes']
         )
-        self.assertEquals(1, len(changes))
+        self.assertEqual(1, len(changes))
 
     def test_interface_changes_locking(self):
         lock_vs_status = (

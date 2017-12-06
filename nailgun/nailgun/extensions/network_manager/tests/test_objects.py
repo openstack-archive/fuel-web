@@ -134,7 +134,7 @@ class TestBondObject(BaseTestCase):
 
         self.node.nic_interfaces[0].meta['offloading_modes'] = modes_1
         self.node.nic_interfaces[1].meta['offloading_modes'] = modes_2
-        self.assertEquals(
+        self.assertEqual(
             objects.Bond.get_available_offloading_modes(bond),
             expected_result)
 

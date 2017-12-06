@@ -86,7 +86,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         self.assertEqual(task.status, consts.TASK_STATUSES.ready)
 
         node_query = self.db.query(Node).filter_by(cluster_id=self.cluster.id)
-        self.assertEquals(node_query.count(), 0)
+        self.assertEqual(node_query.count(), 0)
 
     @fake_tasks(fake_rpc=False, mock_rpc=True)
     def test_delete_nodes_error_message(self, _):

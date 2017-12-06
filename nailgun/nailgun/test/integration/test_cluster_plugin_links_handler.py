@@ -136,7 +136,7 @@ class TestHandlers(BaseIntegrationTest):
 
         d_e_query = self.db.query(ClusterPluginLink) \
             .filter_by(cluster_id=self.cluster.id)
-        self.assertEquals(d_e_query.count(), 0)
+        self.assertEqual(d_e_query.count(), 0)
 
     def test_cluster_plugin_link_patch(self):
         cluster_plugin_link_update = {

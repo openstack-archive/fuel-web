@@ -92,7 +92,7 @@ class NodeOperationsLoadTest(base.BaseUnitLoadTestCase):
                 'NodeNICsHandler',
                 handler_kwargs={'node_id': node.id}
             )
-            self.assertEquals(200, resp.status_code)
+            self.assertEqual(200, resp.status_code)
             interfaces = jsonutils.loads(resp.body)
             nodes_list.append({'id': node.id, 'interfaces': interfaces})
         func = functools.partial(

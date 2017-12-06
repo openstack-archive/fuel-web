@@ -52,7 +52,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEquals(template, resp.json_body)
+        self.assertEqual(template, resp.json_body)
 
         resp = self.get_template(cluster.id)
         self.assertEqual(200, resp.status_code)
@@ -88,7 +88,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEquals(template, resp.json_body)
+        self.assertEqual(template, resp.json_body)
 
         resp = self.get_template(cluster.id)
         self.assertEqual(200, resp.status_code)
@@ -189,7 +189,7 @@ class TestHandlers(BaseIntegrationTest):
         if not forbidden:
             self.assertEqual(resp.status_code, 204)
             resp = self.get_template(cluster.id)
-            self.assertEquals(None, resp.json_body)
+            self.assertEqual(None, resp.json_body)
         else:
             self.assertEqual(resp.status_code, 403)
 
@@ -240,7 +240,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
-        self.assertEquals(template, resp.json_body)
+        self.assertEqual(template, resp.json_body)
 
         resp = self.get_template(cluster.id)
         self.assertEqual(200, resp.status_code)

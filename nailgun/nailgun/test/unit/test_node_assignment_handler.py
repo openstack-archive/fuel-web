@@ -62,7 +62,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             node.pending_roles,
             assignment_data[0]["roles"]
         )
-        # NOTE(el): Role can be reassigned after initial assigment
+        # NOTE(el): Role can be reassigned after initial assignment
         resp = self._assign_roles(assignment_data, True)
         self.assertEqual(200, resp.status_code)
 

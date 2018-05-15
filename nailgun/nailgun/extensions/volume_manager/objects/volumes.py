@@ -23,7 +23,7 @@ from nailgun.db import db
 
 
 class VolumeObject(object):
-    """Keep buisness logic which is related to volumes configuration."""
+    """Keep business logic which is related to volumes configuration."""
 
     @classmethod
     def get_volumes(cls, node):

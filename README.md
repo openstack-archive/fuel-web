@@ -1,7 +1,7 @@
 Team and repository tags
 ========================
 
-[![Team and repository tags](http://governance.openstack.org/badges/fuel-web.svg)](http://governance.openstack.org/reference/tags/index.html)
+[![Team and repository tags](https://governance.openstack.org/badges/fuel-web.svg)](https://governance.openstack.org/reference/tags/index.html)
 
 <!-- Change things from this point on -->
 
@@ -33,4 +33,4 @@ Anyone wishing to contribute to fuel-web should follow the general
 OpenStack process. A good reference for it can be found here:
   https://wiki.openstack.org/wiki/How_To_Contribute
 
-  http://docs.openstack.org/infra/manual/developers.html
+  https://docs.openstack.org/infra/manual/developers.html

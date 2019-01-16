@@ -162,7 +162,7 @@ def _make_dpdk_chunks(dpdk_info, nics_numas):
     DPDK required two types of CPUs to be pinned -
     ovs_core_mask and ovs_pmd_core_mask.
     Firstly, if dpdk_info is None or if it doesn't have
-    requried cpus, we don't care about DPDK CPU distribution
+    required cpus, we don't care about DPDK CPU distribution
     ovsdpdk will do it by itself.
     Secondly, if there is no DPDK NICs, algorithm doesn't know
     where CPUs should be placed.

@@ -222,7 +222,7 @@ class DeploymentMultinodeSerializer(object):
             'vms_conf': node.vms_conf,
             'fail_if_error': role in self.critical_roles,
             'ip': node.ip,
-            # TODO(eli): need to remove, requried for the fake thread only
+            # TODO(eli): need to remove, required for the fake thread only
             'online': node.online,
         }
 

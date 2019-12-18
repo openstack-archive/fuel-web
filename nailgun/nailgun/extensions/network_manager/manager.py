@@ -548,7 +548,7 @@ class NetworkManager(object):
         """Assign network to interface by default for all nodes in node group
 
         For each existing node in node group assign specified network to
-        first avalable interface. Checks interface type and already assigned
+        first available interface. Checks interface type and already assigned
         networks.
         """
         node_group = objects.NodeGroup.get_by_uid(ng.group_id)

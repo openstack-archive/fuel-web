@@ -1,9 +1,0 @@
-[Unit]
-Name=Statsenderd daemon
-
-[Service]
-ExecStart=/usr/bin/statsenderd
-
-[Install]
-WantedBy=multi-user.target
-

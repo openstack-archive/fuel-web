@@ -1,9 +1,0 @@
-[Unit]
-Name=Assassind daemon
-
-[Service]
-ExecStart=/usr/bin/assassind
-
-[Install]
-WantedBy=multi-user.target
-
